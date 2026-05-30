@@ -3,15 +3,19 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * MIT App Inventor-compatible default property values for all palette components.
- * Every property shown in the MIT AI2 designer Properties panel should have
+ * Leap-compatible default property values for all palette components.
+ * Every property shown in the Leap designer Properties panel should have
  * a default value here so the LeapLab PropertiesPanel can display them.
  */
 
+const LENGTH_AUTOMATIC = -1;
+const LENGTH_FILL_PARENT = -2;
+
 const baseVisible = {
-  Width: 'Automatic',
-  Height: 'Automatic',
-  Visible: true
+  Width: LENGTH_AUTOMATIC,
+  Height: LENGTH_AUTOMATIC,
+  Visible: true,
+  Enabled: true
 };
 
 const baseButton = {
@@ -39,7 +43,7 @@ const withLegacyAliases = (props) => ({
 
 /**
  * Returns a complete set of default properties for the given component type.
- * These mirror the MIT App Inventor designer defaults.
+ * These mirror the Leap designer defaults.
  */
 export function defaultPropsFor(type) {
   switch (type) {
@@ -162,7 +166,7 @@ export function defaultPropsFor(type) {
         MinValue: 10,
         ThumbEnabled: true,
         ThumbPosition: 50,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Image':
@@ -189,8 +193,8 @@ export function defaultPropsFor(type) {
         SelectionIndex: 0,
         ShowFilterBar: false,
         TextColor: '#ffffff',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'DatePicker':
@@ -220,8 +224,8 @@ export function defaultPropsFor(type) {
         PromptForPermission: true,
         UsesLocation: false,
         WebViewString: '',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Notifier':
@@ -233,6 +237,14 @@ export function defaultPropsFor(type) {
 
     // ─── Layout ───────────────────────────────────────────────────────
 
+    case 'AbsoluteArrangement':
+      return withLegacyAliases({
+        ...baseVisible,
+        BackgroundColor: 'transparent',
+        Image: '',
+        Width: LENGTH_FILL_PARENT
+      });
+
     case 'HorizontalArrangement':
     case 'HorizontalScrollArrangement':
       return withLegacyAliases({
@@ -241,7 +253,7 @@ export function defaultPropsFor(type) {
         AlignVertical: 'Top',
         BackgroundColor: 'transparent',
         Image: '',
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'VerticalArrangement':
@@ -252,7 +264,7 @@ export function defaultPropsFor(type) {
         AlignVertical: 'Top',
         BackgroundColor: 'transparent',
         Image: '',
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'TableArrangement':
@@ -260,7 +272,7 @@ export function defaultPropsFor(type) {
         ...baseVisible,
         Columns: 2,
         Rows: 2,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Media ────────────────────────────────────────────────────────
@@ -339,13 +351,13 @@ export function defaultPropsFor(type) {
       return {
         Enabled: true,
         Heading: 0,
-        Height: 'Automatic',
+        Height: LENGTH_AUTOMATIC,
         Interval: 100,
         Picture: '',
         Rotates: true,
         Speed: 0,
         Visible: true,
-        Width: 'Automatic',
+        Width: LENGTH_AUTOMATIC,
         X: 0,
         Y: 0,
         Z: 1
@@ -386,8 +398,8 @@ export function defaultPropsFor(type) {
         ShowUser: false,
         ShowZoom: false,
         ZoomLevel: 13,
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     case 'Marker':
@@ -407,8 +419,8 @@ export function defaultPropsFor(type) {
         StrokeWidth: 1,
         Title: '',
         Visible: true,
-        Width: 'Automatic',
-        Height: 'Automatic'
+        Width: LENGTH_AUTOMATIC,
+        Height: LENGTH_AUTOMATIC
       };
 
     case 'Circle':
@@ -424,6 +436,62 @@ export function defaultPropsFor(type) {
         StrokeColor: '#000000',
         StrokeOpacity: 1,
         StrokeWidth: 1,
+        Title: '',
+        Visible: true
+      };
+
+    case 'Polygon':
+      return {
+        Description: '',
+        Draggable: false,
+        EnableInfobox: false,
+        FillColor: '#F44336',
+        FillOpacity: 1,
+        HolePointsFromString: '',
+        PointsFromString: '',
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true
+      };
+
+    case 'LineString':
+      return {
+        Description: '',
+        Draggable: false,
+        EnableInfobox: false,
+        PointsFromString: '',
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true
+      };
+
+    case 'Rectangle':
+      return {
+        Description: '',
+        Draggable: false,
+        EastLongitude: 0,
+        EnableInfobox: false,
+        FillColor: '#F44336',
+        FillOpacity: 1,
+        NorthLatitude: 0,
+        SouthLatitude: 0,
+        StrokeColor: '#000000',
+        StrokeOpacity: 1,
+        StrokeWidth: 1,
+        Title: '',
+        Visible: true,
+        WestLongitude: 0
+      };
+
+    case 'FeatureCollection':
+      return {
+        Description: '',
+        FeaturesFromGeoJSON: '',
+        Source: '',
         Title: '',
         Visible: true
       };
@@ -472,10 +540,9 @@ export function defaultPropsFor(type) {
 
     case 'Barometer':
     case 'Hygrometer':
-    case 'HygrometrySensor':
     case 'LightSensor':
     case 'MagneticFieldSensor':
-    case 'ThermometerSensor':
+    case 'Thermometer':
       return { Enabled: true, RefreshTime: 1000 };
 
     // ─── Social ───────────────────────────────────────────────────────
@@ -518,7 +585,7 @@ export function defaultPropsFor(type) {
       return { Namespace: 'TinyDB1' };
 
     case 'TinyWebDB':
-      return { ServiceURL: 'http://tinywebdb.appinventor.mit.edu' };
+      return { ServiceURL: 'http://tinywebdb.leapblocks.app' };
 
     case 'CloudDB':
       return {
@@ -624,7 +691,7 @@ export function defaultPropsFor(type) {
         LegendEnabled: true,
         PieRadius: 100,
         Type: 0,
-        Width: 'Fill parent',
+        Width: LENGTH_FILL_PARENT,
         XFromZero: false,
         YFromZero: false
       });
@@ -682,8 +749,8 @@ export function defaultPropsFor(type) {
       return withLegacyAliases({
         ...baseVisible,
         HomeUrl: '',
-        Height: 'Fill parent',
-        Width: 'Fill parent'
+        Height: LENGTH_FILL_PARENT,
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Data Science ─────────────────────────────────────────────────
@@ -712,7 +779,7 @@ export function defaultPropsFor(type) {
         Maximum: 100,
         Minimum: 0,
         Progress: 0,
-        Width: 'Fill parent'
+        Width: LENGTH_FILL_PARENT
       });
 
     // ─── Navigation ───────────────────────────────────────────────────

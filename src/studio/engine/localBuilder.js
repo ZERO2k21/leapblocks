@@ -1,20 +1,42 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // AppForge Studio — Local Builder Client
-// Communicates with localhost:3001 build server
+// Communicates with localhost:3001 build server,
+// falls back to Render cloud server if local is unavailable.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs-extra');
 
 const LOCAL_SERVER = 'http://localhost:3001';
+const CLOUD_SERVER = 'https://leapblocks-server.onrender.com';
+
+let activeServer = null;
+
+async function resolveServer() {
+  if (activeServer) return activeServer;
+  // Try local first
+  try {
+    const { data } = await axios.get(`${LOCAL_SERVER}/health`, { timeout: 3000 });
+    if (data && (data.status === 'ok' || data.service)) {
+      activeServer = LOCAL_SERVER;
+      console.log(`[Builder] Using local server: ${LOCAL_SERVER}`);
+      return activeServer;
+    }
+  } catch {}
+  // Fall back to cloud
+  activeServer = CLOUD_SERVER;
+  console.log(`[Builder] Local server unavailable. Using cloud: ${CLOUD_SERVER}`);
+  return activeServer;
+}
 
 module.exports = {
   async build(project, onLog, onProgress) {
-    // Step 1: Send project to local server
-    onLog('Sending project to local build server...', 'info');
-    const { data } = await axios.post(`${LOCAL_SERVER}/build`, { project });
+    const server = await resolveServer();
+    const serverLabel = server === LOCAL_SERVER ? 'local' : 'cloud';
+    onLog(`Sending project to ${serverLabel} build server...`, 'info');
+    const { data } = await axios.post(`${server}/build`, { project });
     const { jobId } = data;
-    onLog(`Build job created: ${jobId}`, 'info');
+    onLog(`Build job created: ${jobId} (${serverLabel})`, 'info');
 
     // Step 2: Poll for status
     return new Promise((resolve, reject) => {
@@ -22,7 +44,7 @@ module.exports = {
 
       const interval = setInterval(async () => {
         try {
-          const { data: job } = await axios.get(`${LOCAL_SERVER}/status/${jobId}`);
+          const { data: job } = await axios.get(`${server}/status/${jobId}`);
 
           onProgress(job.progress);
 
@@ -39,7 +61,7 @@ module.exports = {
             // Step 3: Download APK
             onLog('Downloading APK...', 'info');
             const response = await axios.get(
-              `${LOCAL_SERVER}/download/${jobId}`,
+              `${server}/download/${jobId}`,
               { responseType: 'arraybuffer' }
             );
 
@@ -50,7 +72,7 @@ module.exports = {
             await fs.writeFile(outPath, response.data);
 
             // Cleanup job on server
-            await axios.delete(`${LOCAL_SERVER}/job/${jobId}`).catch(() => {});
+            await axios.delete(`${server}/job/${jobId}`).catch(() => {});
 
             onLog(`APK saved to: ${outPath}`, 'success');
             resolve(outPath);
@@ -75,5 +97,7 @@ module.exports = {
     } catch {
       return false;
     }
-  }
+  },
+
+  async resolveServer
 };

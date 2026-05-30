@@ -9,7 +9,7 @@
  * then ApkInjector to package them into a signed APK.
  *
  * This module can be used standalone (from Node.js) or called by
- * the Electron main process via electron/buildApk.js.
+ * the Electron main process via src/studio/apk/electron-bridge.js.
  */
 
 const ApkInjector = require('./apkInjector');
@@ -18,8 +18,72 @@ const path = require('path');
 const fs = require('fs-extra');
 
 const os = require('os');
-const TEMPLATE_APK = path.join(__dirname, 'base_template.apk');
+
+// Template APK path resolution — works in dev and packaged Electron.
+// In a packaged app, __dirname sits inside app.asar which external tools
+// (apktool) cannot read.  When the best candidate is an ASAR path we copy
+// the file to a real-filesystem temp location so apktool can open it.
+function resolveTemplatePath() {
+  const candidates = [
+    process.resourcesPath && path.join(process.resourcesPath, 'tools', 'base_template.apk'),
+    process.resourcesPath && path.join(process.resourcesPath, 'base_template.apk'),
+    path.join(__dirname, 'base_template.apk'),
+    path.join(__dirname, '..', '..', '..', 'tools', 'base_template.apk'),
+  ].filter(Boolean);
+
+  let found = null;
+  for (const c of candidates) {
+    if (fs.pathExistsSync(c)) { found = c; break; }
+  }
+  if (!found) found = candidates[0]; // will fail downstream with a clear error
+
+  // If the path lives inside an ASAR archive, copy it out so that
+  // external processes (java -jar apktool) can read it.
+  if (found && found.includes('.asar' + path.sep)) {
+    const tmpDir = path.join(os.tmpdir(), 'leapblocks_apk');
+    const realPath = path.join(tmpDir, 'base_template.apk');
+    if (!fs.pathExistsSync(realPath)) {
+      fs.ensureDirSync(tmpDir);
+      fs.copySync(found, realPath);
+    }
+    return realPath;
+  }
+  return found;
+}
+
+const TEMPLATE_APK = resolveTemplatePath();
 const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
+
+// Permissions required by specific component types
+const COMPONENT_PERMISSIONS = {
+  BluetoothClient:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  BluetoothServer:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  LocationSensor:      ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
+  Camera:              ['android.permission.CAMERA'],
+  Texting:             ['android.permission.SEND_SMS'],
+  SpeechRecognizer:    ['android.permission.RECORD_AUDIO'],
+  SoundRecorder:       ['android.permission.RECORD_AUDIO'],
+  PhoneCall:           ['android.permission.CALL_PHONE'],
+  ContactPicker:       ['android.permission.READ_CONTACTS'],
+  ImagePicker:         ['android.permission.READ_EXTERNAL_STORAGE'],
+  FilePicker:          ['android.permission.READ_EXTERNAL_STORAGE'],
+};
+
+function collectPermissions(screens = []) {
+  const perms = new Set();
+  const walk = (components = []) => {
+    for (const comp of components) {
+      const mapped = COMPONENT_PERMISSIONS[comp.type];
+      if (mapped) mapped.forEach(p => perms.add(p));
+      if (comp.children?.length) walk(comp.children);
+    }
+  };
+  for (const screen of screens) {
+    walk(screen.components || []);
+    walk(screen.nonVisibleComponents || []);
+  }
+  return [...perms];
+}
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -39,6 +103,18 @@ function normalizeVersionCode(value) {
   const parsed = Number.parseInt(`${value ?? ''}`, 10);
   if (Number.isFinite(parsed) && parsed > 1) return parsed;
   return Math.floor(Date.now() / 1000);
+}
+
+function resolveScreenOrientation(screens = [], designViewport = null) {
+  const raw = String(
+    screens[0]?.screenOrientation ||
+    screens[0]?.ScreenOrientation ||
+    designViewport?.orientation ||
+    ''
+  ).toLowerCase();
+  if (raw.includes('portrait')) return 'portrait';
+  if (raw.includes('landscape')) return 'landscape';
+  return null;
 }
 
 class ApkBuilder {
@@ -88,6 +164,9 @@ class ApkBuilder {
         // Full injection pipeline with template
         onProgress?.({ stage: 'template_found', progress: 12, message: 'Using WebView template APK' });
 
+        const permissions = collectPermissions(screens);
+        const screenOrientation = resolveScreenOrientation(screens, appState.designViewport);
+
         const signedPath = await this.injector.fullBuild(
           this.templatePath,
           webAppFiles,
@@ -95,6 +174,8 @@ class ApkBuilder {
             appName,
             packageName,
             mediaAssets: appState.media || [],
+            permissions,
+            screenOrientation,
           },
           onProgress
         );
@@ -129,6 +210,7 @@ class ApkBuilder {
 
     const decodedDir = path.join(this.injector.workingDir, 'decoded');
     const pkgPath = packageName.replace(/\./g, '/');
+    const screenOrientation = resolveScreenOrientation(Array.isArray(appState.screens) ? appState.screens : [], appState.designViewport);
 
     // Create minimal APK structure
     onProgress?.({ stage: 'creating_structure', progress: 15, message: 'Creating APK structure...' });
@@ -151,7 +233,8 @@ class ApkBuilder {
         android:hardwareAccelerated="true">
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboard|keyboardHidden"${screenOrientation ? `
+            android:screenOrientation="${screenOrientation}"` : ''}
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -192,6 +275,19 @@ versionInfo:
   versionCode: ${versionCode}
   versionName: '${versionName}'
 `);
+
+    // Inject permissions
+    const screens = Array.isArray(appState.screens) ? appState.screens : [];
+    const permissions = collectPermissions(screens);
+
+    // Write updated manifest with all required permissions
+    let manifest = await fs.readFile(path.join(decodedDir, 'AndroidManifest.xml'), 'utf8');
+    for (const perm of permissions) {
+      if (!manifest.includes(perm)) {
+        manifest = manifest.replace('</manifest>', `    <uses-permission android:name="${perm}" />\n</manifest>`);
+      }
+    }
+    await fs.writeFile(path.join(decodedDir, 'AndroidManifest.xml'), manifest);
 
     // Inject web assets
     onProgress?.({ stage: 'injecting_assets', progress: 30, message: 'Injecting web assets...' });

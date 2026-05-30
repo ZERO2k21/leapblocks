@@ -30,26 +30,127 @@
 
 /* Blockly Overrides */
 .leap-blockly-workspace {
+  background-color: #f4f6f8 !important;
+
   & .blocklyToolboxDiv {
-    background: var(--color-slate-50) !important;
-    border-right: 1px solid var(--color-slate-200) !important;
+    background: #edf1f6 !important;
+    border-right: 1px solid #cbd5e1 !important;
+    width: 80px !important;
+    box-shadow: none !important;
+    padding: 16px 0 !important;
+    overflow-x: hidden !important;
   }
+
+  & .blocklyTreeRoot {
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
   & .blocklyTreeRow {
-    height: 36px !important;
-    line-height: 36px !important;
-    border-radius: 6px;
-    margin: 2px 8px;
+    width: 68px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    min-height: 64px !important;
+    margin: 8px 0 !important;
+    padding: 8px 2px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: transparent !important;
   }
+
   & .blocklyTreeLabel {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 13px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
-    color: var(--color-slate-700) !important;
+    color: #475569 !important;
+    text-align: center !important;
+    margin-top: 6px !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    display: block !important;
   }
+
+  & .blocklyTreeIcon {
+    background: none !important;
+    display: block !important;
+    width: 32px !important;
+    height: 16px !important;
+    border-radius: 8px !important;
+    margin: 0 auto !important;
+    background-color: currentColor !important;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.2s ease !important;
+  }
+
+  /* Assign category colors for the ovals based on aria-label */
+  & .blocklyTreeRow[aria-label="Control"] .blocklyTreeIcon { background-color: #B18E35 !important; }
+  & .blocklyTreeRow[aria-label="Logic"] .blocklyTreeIcon { background-color: #77AB41 !important; }
+  & .blocklyTreeRow[aria-label="Math"] .blocklyTreeIcon { background-color: #3F71B5 !important; }
+  & .blocklyTreeRow[aria-label="Matrices"] .blocklyTreeIcon { background-color: #008B8B !important; }
+  & .blocklyTreeRow[aria-label="Text"] .blocklyTreeIcon { background-color: #B32D5E !important; }
+  & .blocklyTreeRow[aria-label="Lists"] .blocklyTreeIcon { background-color: #49A6D4 !important; }
+  & .blocklyTreeRow[aria-label="Dictionaries"] .blocklyTreeIcon { background-color: #AA5585 !important; }
+  & .blocklyTreeRow[aria-label="Colors"] .blocklyTreeIcon { background-color: #A55BA5 !important; }
+  & .blocklyTreeRow[aria-label="Variables"] .blocklyTreeIcon { background-color: #D47B42 !important; }
+  & .blocklyTreeRow[aria-label="Procedures"] .blocklyTreeIcon { background-color: #7C5385 !important; }
+
+  /* Screen1 icon (custom white screen capsule with green top header) */
+  & .blocklyTreeRow[aria-label="Screen1"] .blocklyTreeIcon {
+    background-color: #ffffff !important;
+    border: 1px solid #94a3b8 !important;
+    box-shadow: inset 0 3px 0 #77ab41 !important;
+  }
+
+  /* Generic component categories or default capsule styling */
+  & .blocklyTreeRow:not([aria-label="Control"]):not([aria-label="Logic"]):not([aria-label="Math"]):not([aria-label="Matrices"]):not([aria-label="Text"]):not([aria-label="Lists"]):not([aria-label="Dictionaries"]):not([aria-label="Colors"]):not([aria-label="Variables"]):not([aria-label="Procedures"]):not([aria-label="Screen1"]) .blocklyTreeIcon {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: inset 0 3px 0 #3b82f6 !important;
+  }
+
+  & .blocklyTreeRow:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+    & .blocklyTreeLabel {
+      color: #1e293b !important;
+    }
+  }
+
+  /* Selected active state (replicates the white outline ring around the category pill) */
+  & .blocklyTreeRow.blocklyTreeSelected {
+    background: #cbd5e1 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    
+    & .blocklyTreeLabel {
+      color: #0f172a !important;
+      font-weight: 700 !important;
+    }
+    
+    & .blocklyTreeIcon {
+      outline: 2px solid #ffffff !important;
+      outline-offset: 1.5px !important;
+      transform: scale(1.05) !important;
+    }
+  }
+
+  /* Hide category separators to keep the list unified */
+  & .blocklyToolboxSeparator {
+    display: none !important;
+  }
+
   & .blocklyFlyoutBackground {
     fill: var(--color-white) !important;
     fill-opacity: 0.95 !important;
   }
+
   & .blocklyMainBackground {
     stroke: var(--color-slate-300) !important;
   }
@@ -70,4 +171,10 @@ rect[display="none"] {
   -webkit-font-smoothing: subpixel-antialiased !important;
   -moz-osx-font-smoothing: auto !important;
   text-rendering: optimizeLegibility !important;
+}
+
+@keyframes linear-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(350%); }
 }

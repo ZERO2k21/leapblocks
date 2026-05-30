@@ -6,7 +6,7 @@
  * APK Injector — Low-level APKTool operations
  *
  * Provides decode, inject, rebuild, and sign primitives.
- * Used by both electron/buildApk.js (main build path) and
+ * Used by both src/studio/apk/electron-bridge.js (main build path) and
  * src/studio/apk/buildAPK.js (standalone).
  */
 
@@ -190,9 +190,18 @@ class ApkInjector {
       await fs.ensureDir(mediaDir);
 
       for (const item of mediaAssets) {
-        if (item.data) {
-          const buffer = Buffer.from(item.data.split(',').pop(), 'base64');
-          await fs.writeFile(path.join(mediaDir, item.filename), buffer);
+        if (!item.data) continue;
+        const dataStr = String(item.data);
+        const commaIdx = dataStr.indexOf(',');
+        const b64 = commaIdx >= 0 ? dataStr.substring(commaIdx + 1) : dataStr;
+        if (!b64) continue;
+        try {
+          const buffer = Buffer.from(b64, 'base64');
+          if (buffer.length > 0) {
+            await fs.writeFile(path.join(mediaDir, item.filename), buffer);
+          }
+        } catch (_) {
+          onProgress?.({ stage: 'media_skip', message: `Skipped unreadable media: ${item.filename}` });
         }
       }
     }
@@ -204,7 +213,7 @@ class ApkInjector {
   /**
    * Modify AndroidManifest.xml with app-specific values
    */
-  async modifyManifest(decodedDir, { appName, packageName, permissions = [] }, onProgress) {
+  async modifyManifest(decodedDir, { appName, packageName, permissions = [], screenOrientation = null }, onProgress) {
     onProgress?.({ stage: 'manifest', progress: 55, message: 'Patching manifest...' });
 
     const manifestPath = path.join(decodedDir, 'AndroidManifest.xml');
@@ -247,6 +256,13 @@ class ApkInjector {
     }
     if (!manifest.includes('hardwareAccelerated')) {
       manifest = manifest.replace('<application', '<application android:hardwareAccelerated="true"');
+    }
+
+    if (screenOrientation && !manifest.includes('android:screenOrientation=')) {
+      manifest = manifest.replace(
+        /(<activity\b[^>]*android:name="\.MainActivity"[^>]*)(>)/,
+        `$1 android:screenOrientation="${screenOrientation}"$2`
+      );
     }
 
     await fs.writeFile(manifestPath, manifest);
@@ -389,13 +405,15 @@ class ApkInjector {
       appName = 'LeapApp',
       packageName = 'com.leaplab.myapp',
       mediaAssets = [],
+      permissions = [],
+      screenOrientation = null,
     } = appConfig;
 
     await this.initialize(appName);
 
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
-    await this.modifyManifest(decodedDir, { appName, packageName }, onProgress);
+    await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, onProgress);
 
     const unsignedPath = path.join(this.workingDir, 'unsigned.apk');

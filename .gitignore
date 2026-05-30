@@ -96,6 +96,7 @@ everything-claude-code
 dist/
 dist-electron/
 build/
+/build
 
 
 *storybook.log

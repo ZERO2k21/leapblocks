@@ -3,6 +3,8 @@ import { ESP32C3GPIO } from './peripherals/GPIO';
 import { ESP32C3UART } from './peripherals/UART';
 import { ESP32C3ADC } from './peripherals/ADC';
 import { ESP32C3SysTimer } from './peripherals/SysTimer';
+import { ESP32C3I2C } from './peripherals/I2C';
+import { ESP32C3SPI } from './peripherals/SPI';
 import { FirmwareLoader } from './compiler/FirmwareLoader';
 
 // Web Worker context
@@ -14,6 +16,10 @@ let uart0: any = null;
 let uart1: any = null;
 let adc: any = null;
 let sysTimer: any = null;
+let i2c0: any = null;
+let i2c1: any = null;
+let spi2: any = null;
+let spi3: any = null;
 let running = false;
 let executionInterval: any = null;
 let cyclesPerBatch = 266666; // Cycles to run in each batch
@@ -22,6 +28,31 @@ let timerIntervalMs = 16; // Loop tick interval (60 FPS target)
 // Abstract WASM Emulator reference if loaded
 let wasmInstance: any = null;
 let usingWasm = false;
+
+// ── Batched message buffers (avoids per-event postMessage overhead) ──
+let gpioBatch: { pin: number; value: number; isAnalog: boolean }[] = [];
+let uartBatch: { uart: number; line: string }[] = [];
+let batchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushBatches(): void {
+  batchTimer = null;
+  if (gpioBatch.length > 0) {
+    const batch = gpioBatch;
+    gpioBatch = [];
+    ctx.postMessage({ type: 'gpioBatch', events: batch });
+  }
+  if (uartBatch.length > 0) {
+    const batch = uartBatch;
+    uartBatch = [];
+    ctx.postMessage({ type: 'uartBatch', events: batch });
+  }
+}
+
+function scheduleFlush(): void {
+  if (batchTimer === null) {
+    batchTimer = setTimeout(flushBatches, 0);
+  }
+}
 
 function initJSEmulator(firmware: Uint8Array) {
   // Clear any existing state
@@ -41,6 +72,10 @@ function initJSEmulator(firmware: Uint8Array) {
   uart1 = new ESP32C3UART(1);
   adc = new ESP32C3ADC();
   sysTimer = new ESP32C3SysTimer();
+  i2c0 = new ESP32C3I2C(0);
+  i2c1 = new ESP32C3I2C(1);
+  spi2 = new ESP32C3SPI(2);
+  spi3 = new ESP32C3SPI(3);
 
   // Register MMIO peripherals
   core.mmio.register(gpio);
@@ -48,6 +83,10 @@ function initJSEmulator(firmware: Uint8Array) {
   core.mmio.register(uart1);
   core.mmio.register(adc);
   core.mmio.register(sysTimer);
+  core.mmio.register(i2c0);
+  core.mmio.register(i2c1);
+  core.mmio.register(spi2);
+  core.mmio.register(spi3);
 
   // Wire interrupts
   const irqCtrl = core.irqCtrl;
@@ -55,30 +94,36 @@ function initJSEmulator(firmware: Uint8Array) {
   uart0.onInterrupt(raiseIRQ);
   uart1.onInterrupt(raiseIRQ);
   sysTimer.onInterrupt(raiseIRQ);
+  i2c0.onInterrupt(raiseIRQ);
+  i2c1.onInterrupt(raiseIRQ);
 
   // Load firmware
   const loader = new FirmwareLoader(core);
-  const result = loader.load(firmware);
+  let result;
+  try {
+    result = loader.load(firmware);
+  } catch (e: any) {
+    ctx.postMessage({ type: 'error', message: `Firmware load failed: ${e.message}` });
+    return;
+  }
 
   core.reset(result.entryPoint);
   sysTimer.cpuCycles = 0;
 
-  // Listen to GPIO output changes to send back to main thread
+  // Listen to GPIO output changes — batch for efficient postMessage
   gpio.onPinChange((gpioPin: number, value: number, isAnalog: boolean) => {
-    ctx.postMessage({
-      type: 'gpioChange',
-      pin: gpioPin,
-      value,
-      isAnalog
-    });
+    gpioBatch.push({ pin: gpioPin, value, isAnalog });
+    scheduleFlush();
   });
 
-  // Listen to UART serial output to forward logs to main thread
+  // Listen to UART serial output — batch for efficient postMessage
   uart0.onSerialOutput((line: string) => {
-    ctx.postMessage({ type: 'uartTx', uart: 0, line });
+    uartBatch.push({ uart: 0, line });
+    scheduleFlush();
   });
   uart1.onSerialOutput((line: string) => {
-    ctx.postMessage({ type: 'uartTx', uart: 1, line });
+    uartBatch.push({ uart: 1, line });
+    scheduleFlush();
   });
 
   ctx.postMessage({
@@ -183,12 +228,19 @@ function stopLoop() {
 
 function cleanup() {
   stopLoop();
+  if (batchTimer) { clearTimeout(batchTimer); batchTimer = null; }
+  gpioBatch = [];
+  uartBatch = [];
   core = null;
   gpio = null;
   uart0 = null;
   uart1 = null;
   adc = null;
   sysTimer = null;
+  i2c0 = null;
+  i2c1 = null;
+  spi2 = null;
+  spi3 = null;
   wasmInstance = null;
   usingWasm = false;
 }

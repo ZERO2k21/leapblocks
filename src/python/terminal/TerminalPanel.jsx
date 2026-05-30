@@ -77,7 +77,14 @@ export default function TerminalPanel({
             </div>
 
             {activePanel === "terminal" && (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#1E1E1E" }}>
+                <div
+                    onClick={() => {
+                        if (isWaitingForInput) {
+                            terminalInputRef.current?.focus();
+                        }
+                    }}
+                    style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#1E1E1E", cursor: isWaitingForInput ? "text" : "default" }}
+                >
                     <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6 }}>
                         {terminalOutput.length === 0 ? (
                             <div style={{ color: "#6A9955", fontStyle: "italic" }}>
@@ -91,10 +98,10 @@ export default function TerminalPanel({
                                 style={{
                                     color: log.type === "error" ? "#F44747"
                                         : log.type === "success" ? "#6A9955"
-                                        : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#9CDCFE" : "#569CD6"
-                                        : log.type === "warning" ? "#FFD700"
-                                        : log.type === "repl-in" ? "#C586C0"
-                                        : "#D4D4D4",
+                                            : log.type === "info" ? (log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭")) ? "#9CDCFE" : "#569CD6"
+                                                : log.type === "warning" ? "#FFD700"
+                                                    : log.type === "repl-in" ? "#C586C0"
+                                                        : "#D4D4D4",
                                     marginBottom: 2,
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
@@ -107,9 +114,30 @@ export default function TerminalPanel({
                                 {log.text}
                             </div>
                         ))}
-                        {isWaitingForInput && inputPromptText && (
-                            <div style={{ color: "#CE9178", marginTop: 4, marginBottom: 4, fontStyle: "italic" }}>
-                                {inputPromptText}
+                        {isWaitingForInput && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13 }}>
+                                {inputPromptText ? (
+                                    <span style={{ color: "#CE9178" }}>{inputPromptText}</span>
+                                ) : (
+                                    <span style={{ color: "#7C3AED", fontWeight: "bold" }}>❯ </span>
+                                )}
+                                <input
+                                    ref={terminalInputRef}
+                                    value={terminalInputValue}
+                                    onChange={(e) => setTerminalInputValue(e.target.value)}
+                                    onKeyDown={handleTerminalInputKey}
+                                    style={{
+                                        flex: 1,
+                                        border: "none",
+                                        outline: "none",
+                                        fontFamily: "'Fira Code', Consolas, monospace",
+                                        fontSize: 13,
+                                        background: "transparent",
+                                        color: "#D4D4D4",
+                                        caretColor: "#D4D4D4",
+                                    }}
+                                    autoFocus
+                                />
                             </div>
                         )}
                         {isRunning && !isWaitingForInput && (
@@ -119,60 +147,6 @@ export default function TerminalPanel({
                         )}
                         <div ref={terminalEndRef} />
                     </div>
-                    {isWaitingForInput && (
-                        <div style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "6px 10px",
-                            borderTop: "1px solid #3C3C3C",
-                            background: "#2D2D2D",
-                        }}>
-                            <span style={{
-                                color: "#CE9178",
-                                fontFamily: "'Fira Code', Consolas, monospace",
-                                fontSize: 12,
-                                fontWeight: 600,
-                            }}>
-                                ⌨
-                            </span>
-                            <input
-                                ref={terminalInputRef}
-                                value={terminalInputValue}
-                                onChange={(e) => setTerminalInputValue(e.target.value)}
-                                onKeyDown={handleTerminalInputKey}
-                                placeholder="Type your response and press Enter..."
-                                style={{
-                                    flex: 1,
-                                    border: "none",
-                                    outline: "none",
-                                    fontFamily: "'Fira Code', Consolas, monospace",
-                                    fontSize: 13,
-                                    background: "transparent",
-                                    color: "#D4D4D4",
-                                }}
-                            />
-                            <button
-                                onClick={handleTerminalInputSubmit}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                    padding: "4px 10px",
-                                    background: "#7C3AED",
-                                    color: "#fff",
-                                    border: "none",
-                                    borderRadius: 4,
-                                    cursor: "pointer",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                <CornerDownLeft size={12} />
-                                Submit
-                            </button>
-                        </div>
-                    )}
                 </div>
             )}
 

@@ -3,13 +3,16 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * Properties Panel — MIT App Inventor-style property editor
+ * Properties Panel — Leap-style property editor
  * Shows ALL properties defined in COMPONENT_METADATA for the selected
  * component, falling back to the component's own props for values.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Trash2, Smartphone, Plus, ChevronDown, ChevronRight, Pencil, Image, AlertTriangle, X } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
+import AssetPicker from './AssetPicker';
+import ComponentIcon from './ComponentIcon';
 
 // Color input with local state and debounced parent updates to prevent lag
 function ColorPickerInput({ id, propKey, value, updateProp }) {
@@ -91,27 +94,44 @@ function ColorPickerInput({ id, propKey, value, updateProp }) {
 export default function PropertiesPanel({ appState }) {
   const {
     screens, activeScreen, selectedId, selectedComponent,
-    setSelectedId, updateProp, removeComponent, addScreen
+    setSelectedId, updateProp, removeComponent, addScreen, renameComponent,
+    media
   } = appState;
 
   const [newScreenName, setNewScreenName] = useState('');
   const [isAddingScreen, setIsAddingScreen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [assetPickerProp, setAssetPickerProp] = useState({ key: '', filter: 'image', currentValue: '' });
+
+  const MEDIA_PROPERTIES = useMemo(() => ({
+    BackgroundImage: 'image',
+    Picture: 'image',
+    Image: 'image',
+    Source: 'all',
+  }), []);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const renameInputRef = useRef(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
   const components = currentScreen?.components || [];
   const nonVisibleComponents = currentScreen?.nonVisibleComponents || [];
 
-  // MIT App Inventor style Width/Height options
+  const LENGTH_AUTO = -1;
+  const LENGTH_FILL = -2;
+
+  // Leap Style Width/Height options
   const sizeOptions = {
     Width: [
-      { value: 'Automatic', label: 'Automatic' },
-      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: LENGTH_AUTO, label: 'Automatic' },
+      { value: LENGTH_FILL, label: 'Fill parent...' },
       { value: 'custom', label: 'Custom (pixels)...' }
     ],
     Height: [
-      { value: 'Automatic', label: 'Automatic' },
-      { value: 'Fill parent', label: 'Fill parent...' },
+      { value: LENGTH_AUTO, label: 'Automatic' },
+      { value: LENGTH_FILL, label: 'Fill parent...' },
       { value: 'custom', label: 'Custom (pixels)...' }
     ]
   };
@@ -121,7 +141,8 @@ export default function PropertiesPanel({ appState }) {
     Shape: ['default', 'rounded', 'rectangular', 'oval'],
     AlignHorizontal: ['Left', 'Center', 'Right'],
     AlignVertical: ['Top', 'Center', 'Bottom'],
-    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User']
+    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User'],
+    HorizontalAlignment: ['Left', 'Center', 'Right']
   };
 
   const handleAddScreen = () => {
@@ -129,6 +150,38 @@ export default function PropertiesPanel({ appState }) {
       addScreen(newScreenName.trim());
       setNewScreenName('');
       setIsAddingScreen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleStartRename = () => {
+    if (!selectedComponent) return;
+    setIsRenaming(true);
+    setRenameValue(selectedComponent.id);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!selectedComponent) return;
+    const oldId = selectedComponent.id;
+    const newId = renameValue?.trim();
+    if (newId && newId !== oldId && renameComponent) {
+      renameComponent(oldId, newId);
+    }
+    setIsRenaming(false);
+    setRenameValue('');
+  };
+
+  const handleRenameKeyDown = (e) => {
+    if (e.key === 'Enter') handleRenameSubmit();
+    if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setRenameValue('');
     }
   };
 
@@ -158,7 +211,7 @@ export default function PropertiesPanel({ appState }) {
         // Infer default based on type
         switch (propDef.type) {
           case 'Boolean':
-            fullProps[name] = false;
+            fullProps[name] = name === 'Enabled' ? true : false;
             break;
           case 'Number':
             fullProps[name] = 0;
@@ -245,7 +298,8 @@ export default function PropertiesPanel({ appState }) {
       const sizeKeys = new Set([
         'Width', 'Height', 'X', 'Y', 'Z', 'Radius',
         'AlignHorizontal', 'AlignVertical', 'Columns', 'Rows',
-        'Latitude', 'Longitude', 'ZoomLevel'
+        'Latitude', 'Longitude', 'ZoomLevel',
+        'HorizontalAlignment'
       ]);
 
       const dataKeys = new Set([
@@ -275,8 +329,10 @@ export default function PropertiesPanel({ appState }) {
     const categorizedProps = categorizeProps(fullProps);
 
     const renderSizeProperty = (key, value) => {
-      const isCustom = typeof value === 'number';
-      const currentValue = isCustom ? 'custom' : value;
+      const isAuto = value === LENGTH_AUTO;
+      const isFill = value === LENGTH_FILL;
+      const isCustom = typeof value === 'number' && value > 0;
+      const currentValue = isAuto ? LENGTH_AUTO : (isFill ? LENGTH_FILL : 'custom');
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="w-full">
@@ -290,7 +346,7 @@ export default function PropertiesPanel({ appState }) {
                 if (newValue === 'custom') {
                   updateProp(id, key, 100);
                 } else {
-                  updateProp(id, key, newValue);
+                  updateProp(id, key, parseInt(newValue, 10));
                 }
               }}
             >
@@ -418,6 +474,41 @@ export default function PropertiesPanel({ appState }) {
               className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
             />
+          ) : MEDIA_PROPERTIES[key] ? (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={value ?? ''}
+                readOnly
+                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f1f5f9', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, cursor: 'pointer' }}
+                className="w-full"
+                placeholder="None"
+                onClick={() => {
+                  setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
+                  setAssetPickerOpen(true);
+                }}
+              />
+              <button
+                onClick={() => {
+                  setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
+                  setAssetPickerOpen(true);
+                }}
+                style={{ padding: '8px 12px', height: '36px', fontSize: '12px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                className="hover:bg-white hover:border-blue-300 transition-all"
+              >
+                Select
+              </button>
+              {value ? (
+                <button
+                  onClick={() => updateProp(id, key, '')}
+                  style={{ padding: '8px', height: '36px', width: '36px', fontSize: '14px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}
+                  className="hover:bg-red-50 hover:border-red-300 transition-all"
+                  title="Clear"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
           ) : (
             <input
               type="text"
@@ -439,25 +530,47 @@ export default function PropertiesPanel({ appState }) {
           <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
             <div className="flex-1 min-w-0">
               <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
-              <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+              {isRenaming ? (
+                <input
+                  ref={renameInputRef}
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={handleRenameKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '-0.02em', padding: '2px 8px', borderRadius: '6px', border: '2px solid #3b82f6', backgroundColor: '#f8fafc', color: '#0f172a', width: '100%' }}
+                  className="outline-none"
+                />
+              ) : (
+                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                 <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
                 <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
                 <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (window.confirm(`Delete ${id}?`)) {
-                  removeComponent(id);
-                }
-              }}
-              style={{ padding: '14px' }}
-              className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
-              title="Delete Module"
-            >
-              <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {!isRenaming && (
+                <button
+                  onClick={handleStartRename}
+                  style={{ padding: '14px' }}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-blue-600 border border-slate-200 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                  title="Rename Module"
+                >
+                  <Pencil style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:scale-110" />
+                </button>
+              )}
+              <button
+                onClick={() => setDeleteConfirm({ id, type: selectedComponent.type })}
+                style={{ padding: '14px' }}
+                className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                title="Delete Module"
+              >
+                <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -499,9 +612,126 @@ export default function PropertiesPanel({ appState }) {
         <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
       </div>
       {/* Property Editor */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
         {renderPropertyEditor()}
       </div>
+      {assetPickerOpen && (
+        <AssetPicker
+          isOpen={assetPickerOpen}
+          onClose={() => setAssetPickerOpen(false)}
+          onSelect={(filename) => {
+            updateProp(selectedId, assetPickerProp.key, filename);
+            setAssetPickerOpen(false);
+          }}
+          media={media || []}
+          filterType={assetPickerProp.filter}
+          currentValue={assetPickerProp.currentValue}
+        />
+      )}
+      {deleteConfirm && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setDeleteConfirm(null)}
+        >
+          <div
+            className="bg-white rounded-[20px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.15)] w-full max-w-[380px] overflow-hidden border border-slate-100 animate-scale-in flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 pt-6 pb-0 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-100 shadow-sm">
+                  <AlertTriangle className="w-5 h-5 text-rose-500" />
+                </div>
+                <span className="text-[17px] font-bold text-slate-900 tracking-tight">Delete Module</span>
+              </div>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-90"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 flex-1">
+              <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100 shadow-inner">
+                <ComponentIcon type={deleteConfirm.type} size={36} />
+                <div>
+                  <div className="text-[15px] font-bold text-slate-900 leading-snug">{deleteConfirm.id}</div>
+                  <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.1em] mt-0.5">{deleteConfirm.type}</div>
+                </div>
+              </div>
+              <p className="mt-4 text-[13px] text-slate-500 font-medium leading-relaxed">
+                Are you sure you want to delete this module? This action cannot be undone. All properties and block references will be permanently removed.
+              </p>
+            </div>
+            <div 
+              style={{
+                padding: '18px 24px 24px 24px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                alignItems: 'center',
+                backgroundColor: '#f8fafc',
+                borderTop: '1px solid #f1f5f9',
+                flexShrink: 0
+              }}
+            >
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: '#475569',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                className="hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  removeComponent(deleteConfirm.id);
+                  setDeleteConfirm(null);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  border: 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                className="hover:shadow-rose-500/35 hover:brightness-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

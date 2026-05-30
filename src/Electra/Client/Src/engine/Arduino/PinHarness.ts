@@ -920,42 +920,42 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       {
         "name": "A1-",
         "x": 45,
-        "y": 226
+        "y": 104.5
       },
       {
         "name": "A1+",
         "x": 45,
-        "y": 236
+        "y": 114
       },
       {
         "name": "B1+",
         "x": 45,
-        "y": 246
+        "y": 123
       },
       {
         "name": "B1-",
         "x": 45,
-        "y": 255
+        "y": 133
       },
       {
         "name": "A2-",
         "x": 45,
-        "y": 265
+        "y": 142
       },
       {
         "name": "A2+",
         "x": 45,
-        "y": 274
+        "y": 152
       },
       {
         "name": "B2+",
         "x": 45,
-        "y": 280
+        "y": 161
       },
       {
         "name": "B2-",
         "x": 45,
-        "y": 284
+        "y": 170
       }
     ]
   },

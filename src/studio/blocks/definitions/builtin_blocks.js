@@ -7,7 +7,7 @@ import * as Blockly from 'blockly';
 // Leap App Inventor Block Colors
 // Leap App Inventor Block Colors from Utility
 import { BLOCK_COLORS } from '../utils/blockColors';
-export const MIT_COLORS = BLOCK_COLORS;
+export const LEAP_COLORS = BLOCK_COLORS;
 
 // ============================================================================
 // CONTROL BLOCKS
@@ -298,7 +298,7 @@ Blockly.Blocks['controls_break'] = {
     }
 };
 
-// open another screen with start value (MIT-style: no next statement — terminates flow)
+// open another screen with start value (Leap-style: no next statement — terminates flow)
 Blockly.Blocks['controls_openAnotherScreenWithStartValue'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.control);
@@ -337,7 +337,7 @@ Blockly.Blocks['controls_getPlainStartText'] = {
     }
 };
 
-// close screen with value (MIT-style: terminates flow)
+// close screen with value (Leap-style: terminates flow)
 Blockly.Blocks['controls_closeScreenWithValue'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.control);
@@ -350,7 +350,7 @@ Blockly.Blocks['controls_closeScreenWithValue'] = {
     }
 };
 
-// close screen with plain text (MIT-style: terminates flow)
+// close screen with plain text (Leap-style: terminates flow)
 Blockly.Blocks['controls_closeScreenWithPlainText'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.control);
@@ -401,7 +401,7 @@ Blockly.Blocks['logic_negate'] = {
     }
 };
 
-// comparison block (Logic category — only = and ≠, matching MIT)
+// comparison block (Logic category — only = and ≠)
 Blockly.Blocks['logic_compare'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.logic);
@@ -440,7 +440,7 @@ Blockly.Blocks['logic_operation'] = {
 // number block
 Blockly.Blocks['math_number'] = {
     init: function () {
-        this.setColour(MIT_COLORS.math);
+        this.setColour(LEAP_COLORS.math);
         this.appendDummyInput()
             .appendField(new Blockly.FieldNumber(0), 'NUM');
         this.setOutput(true, 'Number');
@@ -635,7 +635,7 @@ Blockly.Blocks['math_random_set_seed'] = {
     }
 };
 
-// single operation block (sqrt, abs, neg, ln, exp, round, ceiling, floor — matches MIT)
+// single operation block (sqrt, abs, neg, ln, exp, round, ceiling, floor — matches Leap)
 Blockly.Blocks['math_single'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -731,7 +731,7 @@ Blockly.Blocks['math_round'] = {
     }
 };
 
-// modulo/remainder/quotient (unified block matching MIT's math_divide)
+// modulo/remainder/quotient (unified block matching Leap's math_divide)
 Blockly.Blocks['math_divide'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -799,7 +799,7 @@ Blockly.Blocks['math_on_list'] = {
     }
 };
 
-// atan2 block (MIT-style: header label + separate y / x value inputs)
+// atan2 block (Leap-style: header label + separate y / x value inputs)
 Blockly.Blocks['math_atan2'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -819,7 +819,7 @@ Blockly.Blocks['math_atan2'] = {
     }
 };
 
-// convert radians to degrees / degrees to radians (MIT-style: "convert" label + dropdown)
+// convert radians to degrees / degrees to radians (Leap-style: "convert" label + dropdown)
 Blockly.Blocks['math_convert_angles'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -835,7 +835,7 @@ Blockly.Blocks['math_convert_angles'] = {
     }
 };
 
-// format as decimal (MIT-style: "format as decimal" header + number/places inputs)
+// format as decimal (Leap-style: "format as decimal" header + number/places inputs)
 Blockly.Blocks['math_format_as_decimal'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -855,7 +855,7 @@ Blockly.Blocks['math_format_as_decimal'] = {
     }
 };
 
-// is a number? (MIT-style: dropdown with 4 options)
+// is a number? (Leap-style: dropdown with 4 options)
 Blockly.Blocks['math_is_a_number'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -871,7 +871,7 @@ Blockly.Blocks['math_is_a_number'] = {
     }
 };
 
-// convert number (MIT-style: single directional dropdown)
+// convert number (Leap-style: single directional dropdown)
 Blockly.Blocks['math_convert_number'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -905,7 +905,7 @@ Blockly.Blocks['math_number_radix'] = {
     }
 };
 
-// list math operations — MIT's math_on_list2 (takes a LIST as input)
+// list math operations — Leap's math_on_list2 (takes a LIST as input)
 Blockly.Blocks['math_on_list2'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -926,7 +926,7 @@ Blockly.Blocks['math_on_list2'] = {
 // Keep old name as alias for backwards compatibility
 Blockly.Blocks['math_on_list_op'] = Blockly.Blocks['math_on_list2'];
 
-// Mode of list (MIT has this as a separate standalone block)
+// Mode of list (Leap has this as a separate standalone block)
 Blockly.Blocks['math_mode_of_list'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);
@@ -938,7 +938,7 @@ Blockly.Blocks['math_mode_of_list'] = {
     }
 };
 
-// math_compare — MIT's Math comparison block (6 operators: =, ≠, <, ≤, >, ≥)
+// math_compare — Leap's Math comparison block (6 operators: =, ≠, <, ≤, >, ≥)
 Blockly.Blocks['math_compare'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.math);

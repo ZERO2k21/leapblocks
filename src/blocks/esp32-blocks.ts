@@ -234,8 +234,9 @@ export const esp32Blocks = [
     },
     {
         type: 'esp32_dht_temp',
-        message0: '🌡️ DHT %1 on pin %2',
+        message0: '🌡️ DHT %1 %2 on pin %3',
         args0: [
+            { type: 'field_dropdown', name: 'SENSOR_TYPE', options: [['DHT11', '11'], ['DHT22', '22']] },
             { type: 'field_dropdown', name: 'TYPE', options: [['temperature °C', 'temperature'], ['humidity %', 'humidity']] },
             { type: 'field_dropdown', name: 'PIN', options: ESP32_DIGITAL_PINS },
         ],
@@ -686,8 +687,8 @@ export const esp32Toolbox = {
                 {
                     kind: 'block', type: 'esp32_wifi_connect',
                     inputs: {
-                        SSID: { shadow: { type: 'arduino_text', fields: { TEXT: 'MyNetwork' } } },
-                        PASSWORD: { shadow: { type: 'arduino_text', fields: { TEXT: 'password123' } } },
+                        SSID: { shadow: { type: 'arduino_text', fields: { TEXT: '' } } },
+                        PASSWORD: { shadow: { type: 'arduino_text', fields: { TEXT: '' } } },
                     }
                 },
                 { kind: 'block', type: 'esp32_wifi_connected' },

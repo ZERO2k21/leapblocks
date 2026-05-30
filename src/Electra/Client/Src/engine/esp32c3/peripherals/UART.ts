@@ -67,6 +67,7 @@ export class ESP32C3UART implements MemoryRegion {
 
   // RX FIFO
   private rxFifo: number[] = [];
+  private static readonly RX_FIFO_MAX = 128; // Match real hardware FIFO depth
   // TX accumulation buffer — emit on newline
   private txBuf: string = '';
 
@@ -84,7 +85,10 @@ export class ESP32C3UART implements MemoryRegion {
   onInterrupt(cb: (irq: number) => void): void { this.onIRQ = cb; }
 
   injectRx(str: string): void {
-    for (const ch of str) this.rxFifo.push(ch.charCodeAt(0));
+    for (const ch of str) {
+      if (this.rxFifo.length >= ESP32C3UART.RX_FIFO_MAX) break; // Overflow protection
+      this.rxFifo.push(ch.charCodeAt(0));
+    }
     this.intRaw |= UART_RXFIFO_FULL_INT;
     if (this.intEna & UART_RXFIFO_FULL_INT && this.onIRQ) {
       this.onIRQ(this.uartNo === 0 ? 21 : 22);
@@ -136,7 +140,6 @@ export class ESP32C3UART implements MemoryRegion {
         // TX: write one byte to the FIFO
         const ch = String.fromCharCode(val & 0xFF);
         this.txBuf += ch;
-        console.log(`[UART${this.uartNo}] TX byte: 0x${(val & 0xFF).toString(16)} '${ch.replace(/\n/, '\\n')}'`);
         // Emit on newline OR when buffer gets large (flush)
         if (ch === '\n' || this.txBuf.length >= 256) {
           const line = this.txBuf;

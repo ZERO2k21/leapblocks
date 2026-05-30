@@ -25,8 +25,7 @@ interface StepperMotorNodeProps {
   selected?: boolean;
 }
 
-export const StepperMotorNode = memo(({ nodeId, data, selected = false }: StepperMotorNodeProps) => {
-  const angle = data.angle ?? 0;
+export const StepperMotorNode = memo(({ nodeId, data }: StepperMotorNodeProps) => {
   const totalDegrees = data.totalDegrees ?? 0;
   const stepCount = data.stepCount ?? 0;
   const rpm = data.rpm ?? 0;
@@ -47,11 +46,13 @@ export const StepperMotorNode = memo(({ nodeId, data, selected = false }: Steppe
         width: 220,
         height: 230,
         borderRadius: 12,
-        border: `1px solid ${selected ? '#BEF264' : '#334155'}`,
+        border: '1px solid #334155',
         background: '#0b1220',
         color: '#e2e8f0',
         position: 'relative',
         boxShadow: '0 8px 24px rgba(2,6,23,0.35)',
+        transform: 'scale(0.75)',
+        transformOrigin: 'center',
       }}
     >
       {(['IN1', 'IN2', 'IN3', 'IN4'] as const).map((pin, i) => (

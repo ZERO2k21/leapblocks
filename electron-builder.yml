@@ -1,44 +1,53 @@
-appId: com.leapblocks.app
+appId: com.creoleap.leapblocks
 productName: LeapBlocks
+copyright: Copyright © 2026 Creoleap Technologies Pvt. Ltd.
 directories:
   output: out
-  buildResources: build
+  buildResources: .
 files:
   - dist/**/*
   - package.json
   - node_modules/**/*
-  - remove_bg.py
-  - electron/buildApk.js
+  - src/studio/apk/**/*
   - tools/**/*
-  - engine/**/*
-  - local-build-server/**/*
-win:
-  target:
-    - target: squirrel
-      arch:
-        - x64
-    - target: portable
-      arch:
-        - x64
-  artifactName: "${productName}-Setup-${version}.${ext}"
 asar: true
-npmRebuild: true
+asarUnpack:
+  - node_modules/serialport/**/*
+  - node_modules/@serialport/**/*
+npmRebuild: false
+win:
+  icon: public/assets/leapblocks.ico
+  requestedExecutionLevel: asInvoker
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: LeapBlocks
+  menuCategory: Creoleap
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  include: installer/installer.nsh
 extraResources:
   - from: public
     to: public
     filter:
       - "**/*"
-  # ── QEMU binary for ESP32 simulation ──────────────────────────────────────
-  # Run `node scripts/download-qemu.js` before building to populate resources/.
-  # The binary is platform-specific; only the matching one will be present.
-  - from: resources
-    to: .
-    filter:
-      - "qemu-system-xtensa"
-      - "qemu-system-xtensa.exe"
   - from: tools
     to: tools
-  - from: engine
-    to: engine
-  - from: local-build-server
-    to: local-build-server
+    filter:
+      - "**/*"
+  # arduino-cli bundled directly — Electra ONLY uses this binary,
+  # never system-installed arduino-cli. See src/utils/ensureArduinoCli.ts
+  - from: arduino-cli
+    to: arduino-cli
+    filter:
+      - "**/*"

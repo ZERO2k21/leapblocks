@@ -3,7 +3,7 @@
  *
  * The ESP32-C3 uses SYSTIMER for:
  *   - millis() / micros() / delay() in Arduino core
- *   - FreeRTOS tick (not needed for single-task sketches)
+ *   - FreeRTOS tick (simulated via cooperative scheduler in FreeRTOS.ts)
  *
  * SYSTIMER base: 0x6002_3000
  *
@@ -83,16 +83,24 @@ export class ESP32C3SysTimer implements MemoryRegion {
 
   onInterrupt(cb: (irq: number) => void): void { this.onIRQ = cb; }
 
-  /** Returns current SYSTIMER ticks (16 MHz counter from simulation cycles) */
-  private timerTicks(): bigint {
-    const seconds = this.cpuCycles / this.cpuFreqHz;
-    return BigInt(Math.floor(seconds * SYSTIMER_CLOCK_HZ));
+  /**
+   * Returns current SYSTIMER ticks using Number arithmetic (no BigInt).
+   * CPU runs at 160 MHz, SYSTIMER at 16 MHz → ratio is 1/10.
+   * Number.MAX_SAFE_INTEGER (2^53) can represent ~3.6 years of ticks at 16 MHz.
+   */
+  private timerTicks(): number {
+    return (this.cpuCycles / this.cpuFreqHz) * SYSTIMER_CLOCK_HZ;
   }
 
   private latchUnit0(): void {
     const ticks = this.timerTicks();
-    this.unit0LatchLo = Number(ticks & BigInt(0xFFFFFFFF)) >>> 0;
-    this.unit0LatchHi = Number((ticks >> BigInt(32)) & BigInt(0xFFFFF));
+    this.unit0LatchLo = ticks >>> 0;
+    this.unit0LatchHi = (ticks / 0x100000000) >>> 0;
+  }
+
+  /** Build a 64-bit tick target from lo/hi register values */
+  private buildTarget(lo: u32, hi: u32): number {
+    return (hi & 0xFFFFF) * 0x100000000 + (lo >>> 0);
   }
 
   /** Called by simulation runner each tick to check alarms */
@@ -101,15 +109,15 @@ export class ESP32C3SysTimer implements MemoryRegion {
 
     // Alarm 0
     if (this.target0Conf & 1) {
-      const target = (BigInt(this.target0Hi & 0xFFFFF) << BigInt(32)) | BigInt(this.target0Lo >>> 0);
+      const target = this.buildTarget(this.target0Lo, this.target0Hi);
       if (ticks >= target) {
         this.intRaw |= 1;
         if (this.intEna & 1 && this.onIRQ) this.onIRQ(37);
         if (this.target0Conf & 2) {
-          const period = (BigInt((this.target0Conf >> 16) & 0xFFFF)) << BigInt(16);
+          const period = ((this.target0Conf >> 16) & 0xFFFF) * 0x10000;
           const next = target + period;
-          this.target0Lo = Number(next & BigInt(0xFFFFFFFF)) >>> 0;
-          this.target0Hi = Number((next >> BigInt(32)) & BigInt(0xFFFFF));
+          this.target0Lo = next >>> 0;
+          this.target0Hi = ((next / 0x100000000) >>> 0) & 0xFFFFF;
         } else {
           this.target0Conf &= ~1;
         }
@@ -118,15 +126,15 @@ export class ESP32C3SysTimer implements MemoryRegion {
 
     // Alarm 1
     if (this.target1Conf & 1) {
-      const target = (BigInt(this.target1Hi & 0xFFFFF) << BigInt(32)) | BigInt(this.target1Lo >>> 0);
+      const target = this.buildTarget(this.target1Lo, this.target1Hi);
       if (ticks >= target) {
         this.intRaw |= 2;
         if (this.intEna & 2 && this.onIRQ) this.onIRQ(38);
         if (this.target1Conf & 2) {
-          const period = (BigInt((this.target1Conf >> 16) & 0xFFFF)) << BigInt(16);
+          const period = ((this.target1Conf >> 16) & 0xFFFF) * 0x10000;
           const next = target + period;
-          this.target1Lo = Number(next & BigInt(0xFFFFFFFF)) >>> 0;
-          this.target1Hi = Number((next >> BigInt(32)) & BigInt(0xFFFFF));
+          this.target1Lo = next >>> 0;
+          this.target1Hi = ((next / 0x100000000) >>> 0) & 0xFFFFF;
         } else {
           this.target1Conf &= ~1;
         }

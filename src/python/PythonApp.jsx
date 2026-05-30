@@ -1272,12 +1272,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 addLog(cleaned, "error");
             }),
             window.electronAPI.onPythonExit((code) => {
-                if (code === 0) {
+                if (code === null) {
+                    addLog(`✗ Failed to start Python. Is Python installed and in your PATH?`, "error");
+                    addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                } else if (code === 0) {
                     addLog(`✓ Program finished successfully`, "success");
-                } else if (code !== null) {
+                } else {
                     addLog(`✗ Program exited with code ${code}`, "warning");
                 }
                 setIsRunning(false);
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
             }),
             window.electronAPI.onPythonReplOutput((data) => {
                 replOutputBufferRef.current += data;
@@ -1307,6 +1313,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             }),
             window.electronAPI.onPythonPipError((data) => {
                 addLog(data, "error");
+            }),
+            window.electronAPI.onPythonFilesUpdated((files) => {
+                setProjectFiles(prev => ({ ...prev, ...files }));
+                const fileNames = Object.keys(files).join(', ');
+                addLog(`📁 Files updated: ${fileNames}`, "info");
             }),
         ];
 
@@ -1376,14 +1387,37 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             // Execute the code
             if (window.electronAPI?.isElectron) {
-                await window.electronAPI.pythonRun(code);
+                // Check if Python is available (if the API exists)
+                if (window.electronAPI.pythonCheck) {
+                    const pythonCheck = await window.electronAPI.pythonCheck();
+                    if (!pythonCheck.available) {
+                        addLog(`✗ Python is not available: ${pythonCheck.error}`, "error");
+                        addLog(`💡 Tip: Install Python from python.org and ensure it's in your system PATH.`, "info");
+                        setIsRunning(false);
+                        return;
+                    }
+                }
+
+                setIsWaitingForInput(true);
+                setInputPromptText("");
+                setTerminalInputValue("");
+                setTimeout(() => terminalInputRef.current?.focus(), 80);
+                await window.electronAPI.pythonRun(code, projectFiles);
             } else {
                 if (!skulptRef.current) {
                     throw new Error("Python engine (Skulpt) not initialized. Try refreshing the page.");
                 }
+                skulptRef.current.loadProjectFiles(projectFiles);
                 await skulptRef.current.runPython(code);
                 if (runStopRequestedRef.current) {
                     return;
+                }
+
+                const modifiedFiles = skulptRef.current.getModifiedFiles();
+                if (Object.keys(modifiedFiles).length > 0) {
+                    setProjectFiles(prev => ({ ...prev, ...modifiedFiles }));
+                    const fileNames = Object.keys(modifiedFiles).join(', ');
+                    addLog(`📁 Files updated: ${fileNames}`, "info");
                 }
 
                 const endTime = performance.now();
@@ -1410,17 +1444,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // If the IPC call itself failed (process never started), reset state
             if (window.electronAPI?.isElectron) {
                 setIsRunning(false);
-                try { window.electronAPI.pythonStop(); } catch (_) { }
+                try { window.electronAPI.pythonStop(); } catch (_) { /* noop */ }
             }
         } finally {
             if (!window.electronAPI?.isElectron) {
                 setIsRunning(false);
+                // Clean up any pending input state when execution finishes
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
+                inputResolverRef.current = null;
             }
-            // Clean up any pending input state when execution finishes
-            setIsWaitingForInput(false);
-            setInputPromptText("");
-            setTerminalInputValue("");
-            inputResolverRef.current = null;
             runStopRequestedRef.current = false;
         }
     }
@@ -1457,6 +1491,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             inputResolverRef.current = null;
             setIsWaitingForInput(false);
             setInputPromptText("");
+            setTerminalInputValue("");
+        } else if (window.electronAPI?.isElectron) {
+            addLog(val, "input");
+            window.electronAPI.pythonSendInput(val);
             setTerminalInputValue("");
         }
     }
@@ -1551,14 +1589,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         if (!line) return;
 
         // If waiting for input from a running program, route REPL text as the input response
-        if (isWaitingForInput && inputResolverRef.current) {
+        if (isWaitingForInput) {
             setReplInput("");
             addLog(line, "input");
-            inputResolverRef.current(line);
-            inputResolverRef.current = null;
-            setIsWaitingForInput(false);
-            setInputPromptText("");
-            setTerminalInputValue("");
+            if (window.electronAPI?.isElectron) {
+                window.electronAPI.pythonSendInput(line);
+            } else if (inputResolverRef.current) {
+                inputResolverRef.current(line);
+                inputResolverRef.current = null;
+                setIsWaitingForInput(false);
+                setInputPromptText("");
+                setTerminalInputValue("");
+            }
             setActivePanel("terminal");
             return;
         }
@@ -3071,10 +3113,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div title="Redo (Ctrl+Y)" onClick={() => editorRef.current?.trigger('keyboard', 'redo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <Redo size={16} />
                             </div>
-                            <div title="Copy (Ctrl+C)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardCopyAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Copy (Ctrl+C)" onClick={() => { try { const ed = editorRef.current; if (ed) { const sel = ed.getModel()?.getValueInRange(ed.getSelection()); if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📋</span>
                             </div>
-                            <div title="Paste (Ctrl+V)" onClick={() => editorRef.current?.trigger('keyboard', 'editor.action.clipboardPasteAction', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Paste (Ctrl+V)" onClick={() => { try { if (navigator.clipboard) { navigator.clipboard.readText().then(text => { const ed = editorRef.current; if (ed && text) { const sel = ed.getSelection(); ed.executeEdits('', [{ range: sel, text, forceMoveMarkers: true }]); } }).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <span style={{ fontSize: 14 }}>📄</span>
                             </div>
                             <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>

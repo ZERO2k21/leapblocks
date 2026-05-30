@@ -95,6 +95,30 @@ export class StageManager {
         this.onUpdate();
     }
 
+    async updateBackdrop(index: number, name: string, src: string): Promise<void> {
+        if (index < 0 || index >= this.backdrops.length) return;
+        return new Promise((resolve) => {
+            if (!src) {
+                this.backdrops[index] = { name, src };
+                this.onUpdate();
+                resolve();
+                return;
+            }
+            const img = new Image();
+            img.onload = () => {
+                this.backdrops[index] = { name, src, image: img };
+                this.onUpdate();
+                resolve();
+            };
+            img.onerror = () => {
+                this.backdrops[index] = { name, src };
+                this.onUpdate();
+                resolve();
+            };
+            img.src = src;
+        });
+    }
+
     deleteBackdrop(index: number): void {
         if (index >= 0 && index < this.backdrops.length) {
             this.backdrops.splice(index, 1);

@@ -158,7 +158,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('serial-data');
         ipcRenderer.removeAllListeners('connection-change');
         ipcRenderer.removeAllListeners('upload-progress');
-        ['python-output', 'python-error', 'python-exit', 'python-repl-output', 'python-repl-error', 'python-repl-exit', 'python-pip-output', 'python-pip-error', 'python-pip-exit'].forEach(e => ipcRenderer.removeAllListeners(e));
+        ['python-output', 'python-error', 'python-exit', 'python-repl-output', 'python-repl-error', 'python-repl-exit', 'python-pip-output', 'python-pip-error', 'python-pip-exit', 'python-download-progress', 'tool-download-progress'].forEach(e => ipcRenderer.removeAllListeners(e));
     },
 
     removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string, base64?: string }> => {
@@ -185,11 +185,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // ═══════════════════════════════════════════════════════════════════════
     // PYTHON NATIVE APIS
     // ═══════════════════════════════════════════════════════════════════════
-    pythonRun: (code: string) => ipcRenderer.invoke('python-run', code),
+    pythonCheck: () => ipcRenderer.invoke('python-check'),
+    pythonRun: (code: string, projectFiles?: Record<string, string>) => ipcRenderer.invoke('python-run', code, projectFiles),
+    pythonSendInput: (input: string) => ipcRenderer.invoke('python-send-input', input),
     pythonReplStart: () => ipcRenderer.invoke('python-repl-start'),
     pythonReplSend: (input: string) => ipcRenderer.invoke('python-repl-send', input),
     pythonStop: () => ipcRenderer.invoke('python-stop'),
     pythonPipInstall: (pkg: string) => ipcRenderer.invoke('python-pip-install', pkg),
+    onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => {
+        const handler = (_: any, files: any) => callback(files as Record<string, string>);
+        ipcRenderer.on('python-files-updated', handler);
+        return () => ipcRenderer.removeListener('python-files-updated', handler);
+    },
 
     onPythonOutput: (callback: (data: string) => void) => {
         const handler = (_: any, msg: any) => callback(msg as string);
@@ -235,6 +242,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         const handler = (_: any, code: any) => callback(code as number);
         ipcRenderer.on('python-pip-exit', handler);
         return () => ipcRenderer.removeListener('python-pip-exit', handler);
+    },
+    onPythonDownloadProgress: (callback: (data: { status: string; message: string }) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as { status: string; message: string });
+        ipcRenderer.on('python-download-progress', handler);
+        return () => ipcRenderer.removeListener('python-download-progress', handler);
+    },
+
+    // ── Startup tool download notifications (Arduino CLI + Python 3.10) ──
+    onToolDownloadProgress: (callback: (data: { tool: string; status: string; message: string }) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as { tool: string; status: string; message: string });
+        ipcRenderer.on('tool-download-progress', handler);
+        return () => ipcRenderer.removeListener('tool-download-progress', handler);
     },
 
     /**
@@ -287,11 +306,14 @@ declare global {
             getForgeLibPath: () => Promise<string>;
             isElectron: boolean;
 
-            pythonRun: (code: string) => Promise<void>;
+            pythonCheck: () => Promise<{ available: boolean; version?: string; error?: string }>;
+            pythonRun: (code: string, projectFiles?: Record<string, string>) => Promise<void>;
+            pythonSendInput: (input: string) => Promise<void>;
             pythonReplStart: () => Promise<void>;
             pythonReplSend: (input: string) => Promise<void>;
             pythonStop: () => Promise<void>;
             pythonPipInstall: (pkg: string) => Promise<void>;
+            onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => () => void;
 
             onPythonOutput: (callback: (data: string) => void) => () => void;
             onPythonError: (callback: (data: string) => void) => () => void;
@@ -302,6 +324,8 @@ declare global {
             onPythonPipOutput: (callback: (data: string) => void) => () => void;
             onPythonPipError: (callback: (data: string) => void) => () => void;
             onPythonPipExit: (callback: (code: number) => void) => () => void;
+            onPythonDownloadProgress: (callback: (data: { status: string; message: string }) => void) => () => void;
+            onToolDownloadProgress: (callback: (data: { tool: string; status: string; message: string }) => void) => () => void;
 
             invoke: (channel: string, ...args: any[]) => Promise<any>;
         };

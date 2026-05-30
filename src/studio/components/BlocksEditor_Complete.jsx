@@ -21,8 +21,31 @@ import 'blockly/blocks';
 // Import our custom blocks
 import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
-import { COMPONENT_METADATA, ANY_COMPONENT_METADATA } from '../data/componentMetadata';
-const MIT_COLORS = BLOCK_COLORS;
+import { COMPONENT_METADATA } from '../data/componentMetadata';
+import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
+const LEAP_COLORS = BLOCK_COLORS;
+
+// Map palette category names to Leap block category colors
+const CATEGORY_COLORS = {
+    'User Interface': LEAP_COLORS.math,
+    'Layout': LEAP_COLORS.lists,
+    'Media': LEAP_COLORS.procedures,
+    'Drawing and Animation': LEAP_COLORS.text,
+    'Maps': LEAP_COLORS.getters,
+    'Sensors': LEAP_COLORS.variables,
+    'Social': LEAP_COLORS.control,
+    'Storage': LEAP_COLORS.logic,
+    'Connectivity': LEAP_COLORS.dictionaries,
+    'LEGO MINDSTORMS': LEAP_COLORS.colors,
+    'Experimental': LEAP_COLORS.setters,
+    'Charts': LEAP_COLORS.text,
+    'Data Science': LEAP_COLORS.matrices,
+};
+const GET_CATEGORY_COLOR = (() => {
+    const cache = {};
+    PALETTE_ENHANCED.forEach(p => { cache[p.type] = CATEGORY_COLORS[p.category] || LEAP_COLORS.variables; });
+    return (type) => cache[type] || LEAP_COLORS.variables;
+})();
 
 // Import icons
 import { Search, ZoomIn, ZoomOut, Trash2, Download, Upload, Code, AlertTriangle, XCircle } from 'lucide-react';
@@ -107,39 +130,44 @@ export default function BlocksEditorComplete({ appState }) {
         workspaceRef.current = workspace;
         logSession('WORKSPACE_INJECTED', { id: workspace.id });
 
-        const getMitSkinForType = (type) => {
+        const getLeapSkinForType = (type) => {
             if (!type) return null;
             if (type === 'component_method' || type === 'any_component_method') {
                 return {
-                    bodyFill: '#8F5DB7',
-                    bodyStroke: '#734A94',
-                    fieldFill: '#CFC7D8',
-                    fieldStroke: '#A79CB5',
+                    bodyFill: LEAP_COLORS.methods,
+                    bodyStroke: '#63406B',
+                    fieldFill: '#B7A0BE',
+                    fieldStroke: '#93789D',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
             }
             if (type === 'component_event' || type === 'any_component_event') {
                 return {
-                    bodyFill: '#b49235',
-                    bodyStroke: '#8f7227',
-                    fieldFill: '#d7bb72',
-                    fieldStroke: '#a98b43',
+                    bodyFill: LEAP_COLORS.events,
+                    bodyStroke: '#8F7227',
+                    fieldFill: '#D7BB72',
+                    fieldStroke: '#A98B43',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
             }
-            if (
-                type === 'component_get_property' ||
-                type === 'component_set_property' ||
-                type === 'any_component_get_property' ||
-                type === 'any_component_set_property'
-            ) {
+            if (type === 'component_get_property' || type === 'any_component_get_property') {
                 return {
-                    bodyFill: '#3f8d67',
-                    bodyStroke: '#2f6f51',
-                    fieldFill: '#8cc0a3',
-                    fieldStroke: '#5f9a7b',
+                    bodyFill: LEAP_COLORS.getters,
+                    bodyStroke: '#347A59',
+                    fieldFill: '#8CC0A3',
+                    fieldStroke: '#5F9A7B',
+                    bodyText: '#ffffff',
+                    fieldText: '#1f1f1f'
+                };
+            }
+            if (type === 'component_set_property' || type === 'any_component_set_property') {
+                return {
+                    bodyFill: LEAP_COLORS.setters,
+                    bodyStroke: '#1B4D31',
+                    fieldFill: '#6B9A7E',
+                    fieldStroke: '#44785F',
                     bodyText: '#ffffff',
                     fieldText: '#1f1f1f'
                 };
@@ -147,9 +175,9 @@ export default function BlocksEditorComplete({ appState }) {
             return null;
         };
 
-        const applyMitSkinToBlock = (block) => {
+        const applyLeapSkinToBlock = (block) => {
             if (!block || !block.svgGroup_ || !block.type) return;
-            const skin = getMitSkinForType(block.type);
+            const skin = getLeapSkinForType(block.type);
             if (!skin) return;
 
             const group = block.svgGroup_;
@@ -192,7 +220,7 @@ export default function BlocksEditorComplete({ appState }) {
                 if (block?.svgGroup_ && block?.type) {
                     block.svgGroup_.setAttribute('data-type', block.type);
                 }
-                applyMitSkinToBlock(block);
+                applyLeapSkinToBlock(block);
             });
         };
 
@@ -228,7 +256,7 @@ export default function BlocksEditorComplete({ appState }) {
                     if (block?.svgGroup_ && block?.type) {
                         block.svgGroup_.setAttribute('data-type', block.type);
                     }
-                    applyMitSkinToBlock(block);
+                    applyLeapSkinToBlock(block);
                     let blockError = null;
                     let blockWarning = null;
 
@@ -297,7 +325,7 @@ export default function BlocksEditorComplete({ appState }) {
                     if (block.svgGroup_ && block.type) {
                         block.svgGroup_.setAttribute('data-type', block.type);
                     }
-                    applyMitSkinToBlock(block);
+                    applyLeapSkinToBlock(block);
                     logSession('BLOCK_CREATED', { type: block.type });
                     block.setCollapsed(false);
                     block.setMovable(true);
@@ -412,90 +440,90 @@ export default function BlocksEditorComplete({ appState }) {
             'base': Blockly.Themes.Classic,
             'blockStyles': {
                 'control_blocks': {
-                    'colourPrimary': MIT_COLORS.control,
+                    'colourPrimary': LEAP_COLORS.control,
                     'colourSecondary': '#E89B0C',
                     'colourTertiary': '#D08B0B'
                 },
                 'logic_blocks': {
-                    'colourPrimary': MIT_COLORS.logic,
+                    'colourPrimary': LEAP_COLORS.logic,
                     'colourSecondary': '#3A7BC8',
                     'colourTertiary': '#2E5FA8'
                 },
                 'math_blocks': {
-                    'colourPrimary': MIT_COLORS.math,
+                    'colourPrimary': LEAP_COLORS.math,
                     'colourSecondary': '#4A5785',
                     'colourTertiary': '#3A4765'
                 },
                 'text_blocks': {
-                    'colourPrimary': MIT_COLORS.text,
+                    'colourPrimary': LEAP_COLORS.text,
                     'colourSecondary': '#58983A',
                     'colourTertiary': '#488830'
                 },
                 'list_blocks': {
-                    'colourPrimary': MIT_COLORS.lists,
+                    'colourPrimary': LEAP_COLORS.lists,
                     'colourSecondary': '#B03030',
                     'colourTertiary': '#A02020'
                 },
                 'color_blocks': {
-                    'colourPrimary': MIT_COLORS.colors,
+                    'colourPrimary': LEAP_COLORS.colors,
                     'colourSecondary': '#954B95',
                     'colourTertiary': '#853B85'
                 },
                 'variable_blocks': {
-                    'colourPrimary': MIT_COLORS.variables,
+                    'colourPrimary': LEAP_COLORS.variables,
                     'colourSecondary': '#E96316',
                     'colourTertiary': '#D95306'
                 },
                 'procedure_blocks': {
-                    'colourPrimary': MIT_COLORS.procedures,
+                    'colourPrimary': LEAP_COLORS.procedures,
                     'colourSecondary': '#793FB4',
                     'colourTertiary': '#692FA4'
                 },
                 'event_blocks': {
-                    'colourPrimary': MIT_COLORS.events,
+                    'colourPrimary': LEAP_COLORS.events,
                     'colourSecondary': '#B08805',
                     'colourTertiary': '#906800'
                 },
                 'method_blocks': {
-                    'colourPrimary': MIT_COLORS.methods,
+                    'colourPrimary': LEAP_COLORS.methods,
                     'colourSecondary': '#610CA5',
                     'colourTertiary': '#410085'
                 },
                 'getter_blocks': {
-                    'colourPrimary': MIT_COLORS.getters,
+                    'colourPrimary': LEAP_COLORS.getters,
                     'colourSecondary': '#419245',
                     'colourTertiary': '#217225'
                 },
                 'setter_blocks': {
-                    'colourPrimary': MIT_COLORS.setters,
+                    'colourPrimary': LEAP_COLORS.setters,
                     'colourSecondary': '#0E5D12',
                     'colourTertiary': '#003D00'
                 }
             },
             'categoryStyles': {
                 'control_category': {
-                    'colour': MIT_COLORS.control
+                    'colour': LEAP_COLORS.control
                 },
                 'logic_category': {
-                    'colour': MIT_COLORS.logic
+                    'colour': LEAP_COLORS.logic
                 },
                 'math_category': {
-                    'colour': MIT_COLORS.math
+                    'colour': LEAP_COLORS.math
                 },
                 'text_category': {
-                    'colour': MIT_COLORS.text
+                    'colour': LEAP_COLORS.text
                 },
                 'list_category': {
-                    'colour': MIT_COLORS.lists
+                    'colour': LEAP_COLORS.lists
                 },
                 'color_category': {
-                    'colour': MIT_COLORS.colors
+                    'colour': LEAP_COLORS.colors
                 },
                 'variable_category': {
-                    'colour': MIT_COLORS.variables
+                    'colour': LEAP_COLORS.variables
                 },
                 'procedure_category': {
-                    'colour': MIT_COLORS.procedures
+                    'colour': LEAP_COLORS.procedures
                 }
             }
         });
@@ -526,7 +554,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Control',
-                    colour: MIT_COLORS.control,
+                    colour: LEAP_COLORS.control,
                     contents: [
                         { kind: 'block', type: 'controls_if' },
                         {
@@ -560,7 +588,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Logic',
-                    colour: MIT_COLORS.logic,
+                    colour: LEAP_COLORS.logic,
                     contents: [
                         { kind: 'block', type: 'logic_boolean' },
                         { kind: 'block', type: 'logic_negate' },
@@ -654,7 +682,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Lists',
-                    colour: MIT_COLORS.lists,
+                    colour: LEAP_COLORS.lists,
                     contents: [
                         { kind: 'block', type: 'lists_create_empty' },
                         { kind: 'block', type: 'lists_create_with' },
@@ -685,7 +713,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Dictionaries',
-                    colour: MIT_COLORS.lists,
+                    colour: LEAP_COLORS.dictionaries,
                     contents: [
                         { kind: 'block', type: 'dictionaries_create_with' },
                         { kind: 'block', type: 'dictionaries_pair' },
@@ -707,7 +735,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Colors',
-                    colour: MIT_COLORS.colors,
+                    colour: LEAP_COLORS.colors,
                     contents: [
                         { kind: 'block', type: 'colour_picker' },
                         { kind: 'block', type: 'colour_random' },
@@ -719,7 +747,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Variables',
-                    colour: MIT_COLORS.variables,
+                    colour: LEAP_COLORS.variables,
                     contents: [
                         { kind: 'block', type: 'global_declaration' },
                         { kind: 'block', type: 'lexical_variable_get' },
@@ -731,7 +759,7 @@ export default function BlocksEditorComplete({ appState }) {
                 {
                     kind: 'category',
                     name: 'Procedures',
-                    colour: MIT_COLORS.procedures,
+                    colour: LEAP_COLORS.procedures,
                     contents: [
                         { kind: 'block', type: 'procedures_defnoreturn' },
                         { kind: 'block', type: 'procedures_defreturn' },
@@ -744,9 +772,7 @@ export default function BlocksEditorComplete({ appState }) {
                 },
                 // Component blocks (Dynamic based on added components)
                 ...generateComponentCategories(components),
-                { kind: 'sep' },
-                // Generic Component blocks (Any Component)
-                ...generateAnyComponentCategories(components)
+
             ]
         };
     };
@@ -763,7 +789,7 @@ export default function BlocksEditorComplete({ appState }) {
             const screenCategory = {
                 kind: 'category',
                 name: currentScreen.id,
-                colour: MIT_COLORS.events,
+                colour: LEAP_COLORS.events,
                 contents: [
                     ...metadata.events.map(event => ({
                         kind: 'block',
@@ -824,10 +850,13 @@ export default function BlocksEditorComplete({ appState }) {
             const metadata = COMPONENT_METADATA[comp.type];
             if (!metadata) return;
 
+            const propPreview = comp.props?.Text || comp.props?.Hint || '';
+            const categoryName = propPreview ? `${comp.id} (${propPreview})` : comp.id;
+
             const category = {
                 kind: 'category',
-                name: comp.id,
-                colour: comp.type === 'Screen' ? MIT_COLORS.control : MIT_COLORS.variables,
+                name: categoryName,
+                colour: GET_CATEGORY_COLOR(comp.type),
                 contents: []
             };
 
@@ -918,70 +947,6 @@ export default function BlocksEditorComplete({ appState }) {
         return categories;
     };
 
-    // Generate Any Component categories
-    const generateAnyComponentCategories = (components) => {
-        const types = [...new Set(components.map(c => c.type))];
-        logSession('GENERATING_ANY_COMPONENT_CATEGORIES', { typesCount: types.length });
-        const categories = [];
-
-        types.forEach(type => {
-            const metadata = COMPONENT_METADATA[type];
-            if (!metadata) return;
-
-            const category = {
-                kind: 'category',
-                name: `Any ${type}`,
-                colour: '#3366cc',
-                contents: [
-                    ...(metadata.events || []).map(event => ({
-                        kind: 'block',
-                        type: 'any_component_event',
-                        extraState: {
-                            component_type: type,
-                            is_generic: true,
-                            event_name: event.name
-                        }
-                    })),
-                    ...(metadata.methods || []).map(method => ({
-                        kind: 'block',
-                        type: 'any_component_method',
-                        extraState: {
-                            component_type: type,
-                            method_name: method.name || method,
-                            is_generic: true
-                        }
-                    })),
-                    ...(metadata.properties || []).flatMap(prop => [
-                        {
-                            kind: 'block',
-                            type: 'any_component_set_property',
-                            extraState: {
-                                component_type: type,
-                                property_name: prop.name || prop,
-                                is_generic: true
-                            }
-                        },
-                        {
-                            kind: 'block',
-                            type: 'any_component_get_property',
-                            extraState: {
-                                component_type: type,
-                                property_name: prop.name || prop,
-                                is_generic: true
-                            }
-                        }
-                    ])
-                ]
-            };
-            categories.push(category);
-        });
-
-        if (categories.length > 0) {
-            return [{ kind: 'category', name: 'Any Component', contents: categories }];
-        }
-        return [];
-    };
-
     // Generate code
     const handleGenerateCode = () => {
         if (!workspaceRef.current) return;
@@ -1011,9 +976,17 @@ export default function BlocksEditorComplete({ appState }) {
     };
 
     // Clear workspace
-    const handleClear = () => {
-        if (workspaceRef.current && window.confirm('Clear all blocks?')) {
-            workspaceRef.current.clear();
+    const handleClear = async () => {
+        if (workspaceRef.current) {
+            const confirmed = await appState.confirm({
+                title: "Clear Workspace",
+                message: "Are you sure you want to clear all blocks from the workspace? This action cannot be undone.",
+                confirmText: "Clear All",
+                type: "danger"
+            });
+            if (confirmed) {
+                workspaceRef.current.clear();
+            }
         }
     };
 
@@ -1167,7 +1140,7 @@ export default function BlocksEditorComplete({ appState }) {
                     pointer-events: auto !important;
                 }
 
-                /* MIT-like component call styling */
+                /* Leap component call styling */
                 .leap-blockly-workspace .blocklyDraggable[data-type="component_method"] .blocklyPath,
                 .leap-blockly-workspace .blocklyDraggable[data-type="any_component_method"] .blocklyPath {
                     fill: #8F5DB7 !important;
@@ -1197,7 +1170,7 @@ export default function BlocksEditorComplete({ appState }) {
                     font-weight: 700 !important;
                 }
 
-                /* MIT-like component event styling (gold) */
+                /* Leap component event styling (gold) */
                 .leap-blockly-workspace .blocklyDraggable[data-type="component_event"] .blocklyPath,
                 .leap-blockly-workspace .blocklyDraggable[data-type="any_component_event"] .blocklyPath {
                     fill: #b49235 !important;
@@ -1220,7 +1193,7 @@ export default function BlocksEditorComplete({ appState }) {
                     font-weight: 700 !important;
                 }
 
-                /* MIT-like getter/setter styling (green) */
+                /* Leap getter/setter styling (green) */
                 .leap-blockly-workspace .blocklyDraggable[data-type="component_get_property"] .blocklyPath,
                 .leap-blockly-workspace .blocklyDraggable[data-type="component_set_property"] .blocklyPath,
                 .leap-blockly-workspace .blocklyDraggable[data-type="any_component_get_property"] .blocklyPath,
@@ -1272,8 +1245,7 @@ export default function BlocksEditorComplete({ appState }) {
                         <div className="flex flex-col sm:flex-row justify-end gap-2 px-4 py-3 border-t bg-gray-50">
                             <button
                                 onClick={() => {
-                                    navigator.clipboard.writeText(generatedCode);
-                                    alert('Code copied to clipboard!');
+                                    try { navigator.clipboard?.writeText(generatedCode).then(() => alert('Code copied to clipboard!')).catch(() => alert('Failed to copy code. Please select and copy manually.')); } catch (_) { alert('Failed to copy code. Please select and copy manually.'); }
                                 }}
                                 className="w-full sm:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors active:scale-95 font-medium"
                             >

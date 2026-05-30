@@ -48,9 +48,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     padding: 0,
     borderRadius: '4px',
     background: 'transparent',
-    border: `1px solid ${isSelected ? '#BEF264' : 'transparent'}`,
+    border: '1px solid transparent',
     transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border 0.2s ease-out',
-    transform: `rotate(${data.rotation || 0}deg)`,
+    transform: `rotate(${data.rotation || 0}deg) scale(0.75)`,
+    transformOrigin: 'center',
     position: 'relative',
     boxSizing: 'border-box'
   };
@@ -720,29 +721,13 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
         })}
       </div>
 
-      {/* Labels or sub-info if needed */}
-      {data.label && (
-        <div style={{
-          marginTop: '8px',
-          fontSize: '11px',
-          color: '#0f172a', /* High contrast dark text */
-          fontWeight: 800,
-          fontFamily: 'Outfit, sans-serif',
-          pointerEvents: 'none',
-          textShadow: '0 1px 2px rgba(255,255,255,0.8)'
-        }}>
-          {data.label}
-        </div>
-      )}
 
-      {/* ── SENSOR OVERLAY (sliders shown when node is selected) ── */}
-      {isSelected && (
-        <SensorOverlay
-          nodeId={id}
-          type={data.type}
-          currentValues={data.sensorValues}
-        />
-      )}
+      {/* ── SENSOR OVERLAY (sliders shown below the node) ── */}
+      <SensorOverlay
+        nodeId={id}
+        type={data.type}
+        currentValues={data.sensorValues}
+      />
     </div>
   );
 });

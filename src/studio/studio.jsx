@@ -287,8 +287,9 @@ export default function AppInventor({ onBack }) {
           setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
         }
       } else {
-        setBuildLogs((prev) => [...prev, 'Sending build request to cloud compiler...']);
         const { CLOUD_COMPILER_URL } = await import('../config/platform');
+        const serverLabel = CLOUD_COMPILER_URL.includes('localhost') ? 'local' : 'cloud';
+        setBuildLogs((prev) => [...prev, `Sending build request to ${serverLabel} compiler (${CLOUD_COMPILER_URL})...`]);
 
         const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
           method: 'POST',
@@ -302,12 +303,14 @@ export default function AppInventor({ onBack }) {
         }
 
         const result = await response.json();
-        if (result.success) {
+        if (result.logs && result.logs.length) {
+          setBuildLogs((prev) => [...prev, ...result.logs]);
+        }
+        if (result.cloudBuildUnsupported) {
+          setBuildState('error');
+          setBuildLogs((prev) => [...prev, `⚠ ${result.error}`]);
+        } else if (result.success) {
           setBuildState('success');
-          if (Array.isArray(result.logs) && result.logs.length) {
-            setBuildLogs((prev) => [...prev, ...result.logs]);
-          }
-          // downloadUrl should be a full or relative URL
           setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
         } else {

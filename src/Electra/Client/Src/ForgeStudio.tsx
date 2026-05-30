@@ -27,6 +27,35 @@ interface ForgeStudioProps {
   initialBoard?: 'arduino-uno' | 'esp32-c3';
 }
 
+const ESP32_DEFAULT_CODE = `// ESP32-C3 Project
+void setup() {
+  Serial.begin(115200);
+  pinMode(8, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(8, HIGH);
+  Serial.println("LED ON");
+  delay(1000);
+  digitalWrite(8, LOW);
+  Serial.println("LED OFF");
+  delay(1000);
+}`;
+
+const ARDUINO_DEFAULT_CODE = `// Electra Project
+void setup() {
+  Serial.begin(9600);
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  Serial.println("System Active");
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}`;
+
 export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: ForgeStudioProps) {
   const {
     nodes,
@@ -46,24 +75,13 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     setProjectName,
     board,
     setBoard,
+    uiTheme,
   } = useForgeStore();
 
   // Undo/Redo History Management
   const [history, setHistory] = useState<Array<{ nodes: any[]; edges: any[]; code: string }>>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [code, setCode] = useState(`// Electra Project
-void setup() {
-  Serial.begin(9600);
-  pinMode(13, OUTPUT);
-}
-
-void loop() {
-  digitalWrite(13, HIGH);
-  Serial.println("System Active");
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
-}`);
+  const [code, setCode] = useState(initialBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
 
   // Save current state to history
   const saveToHistory = () => {
@@ -97,6 +115,15 @@ void loop() {
       setHistoryIndex(historyIndex + 1);
     }
   };
+
+  // Stop simulation when navigating away from ForgeStudio
+  useEffect(() => {
+    return () => {
+      if (useForgeStore.getState().isSimulating) {
+        useForgeStore.getState().stopSimulation();
+      }
+    };
+  }, []);
 
   // Initialize history on mount
   useEffect(() => {
@@ -174,14 +201,7 @@ void loop() {
     if (confirm('Create a new project? Unsaved changes will be lost.')) {
       setNodes([]);
       setEdges([]);
-      setCode(`// New Electra Project
-void setup() {
-  Serial.begin(9600);
-}
-
-void loop() {
-  // Your code here
-}`);
+      setCode(board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
       setProjectName('Untitled Project');
       setProjectPath(null);
       setHistory([]);
@@ -477,19 +497,20 @@ void loop() {
     try {
       if (board === 'esp32-c3') {
         // ── ESP32-C3 Simulation via Transpilation ──────────────────────────────
-        // ESP32 firmware requires ESP-IDF runtime (FreeRTOS, HAL) which the
-        // RISC-V soft-core cannot emulate. Instead, we transpile Arduino C++
-        // to JavaScript and run it through ArduinoRuntime — this mirrors
-        // how the AVR path works: API-level simulation, not binary emulation.
+        // ESP32 firmware uses FreeRTOS for multitasking. We simulate FreeRTOS
+        // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
+        // browser's event loop. Arduino C++ is transpiled to JavaScript and
+        // run through ArduinoRuntime with FreeRTOS API stubs.
         const { appendSerial } = useForgeStore.getState();
         appendSerial('[ESP32-C3] Transpiling sketch for simulation...\n');
 
         try {
           const { transpileCode } = await import('./services/CompilerService');
+          appendSerial('[ESP32-C3] Calling transpileCode()...\n');
           const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
 
           if (transpileResult.success && transpileResult.jsCode) {
-            appendSerial('[ESP32-C3] ✓ Transpilation successful!\n');
+            appendSerial(`[ESP32-C3] ✓ Transpilation successful! (${transpileResult.jsCode.length} bytes)\n`);
             appendSerial('[ESP32-C3] Starting Arduino API simulation...\n\n');
 
             const runner = await getSimulationRunner();
@@ -542,12 +563,20 @@ void loop() {
     }
   };
 
+  const handleBack = () => {
+    if (isSimulating) {
+      stopSimulation();
+      setWifiStatus('');
+    }
+    onBack();
+  };
+
   return (
-    <div className={`forge-root board-${board}`}>
+    <div className={`forge-root board-${board} theme-${uiTheme}`}>
       <IgniteTopbar
         title={projectName}
         onTitleChange={setProjectName}
-        onBack={onBack}
+        onBack={handleBack}
         onSave={handleSaveProject}
         onSaveAs={handleSaveAsProject}
         onNew={handleNewProject}
@@ -562,7 +591,21 @@ void loop() {
       />
 
       <main className="forge-main-split">
-        {/* Left: Simulation Canvas (takes flex: 1) */}
+        {/* Far Left: Component Drawer */}
+        {showPartPicker && (
+          <div className="part-picker-pane">
+            <ComponentSidebar
+              onSelect={(type) => {
+                const state = useForgeStore.getState();
+                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+              }}
+              onClose={() => setShowPartPicker(false)}
+              currentBoard={board as any}
+            />
+          </div>
+        )}
+
+        {/* Middle: Simulation Canvas (takes flex: 1) */}
         <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
             <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
@@ -690,20 +733,6 @@ void loop() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Far Right: Component Drawer */}
-        {showPartPicker && (
-          <div className="part-picker-pane">
-            <ComponentSidebar
-              onSelect={(type) => {
-                const state = useForgeStore.getState();
-                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
-              }}
-              onClose={() => setShowPartPicker(false)}
-              currentBoard={board as any}
-            />
           </div>
         )}
       </main>

@@ -12,7 +12,7 @@ interface SensorOverlayProps {
   currentValues: any;
 }
 
-// ── Single-value slider row ───────────────────────────────────────────────────
+// ── Single-value slider row (Horizontal and Compact) ─────────────────────────
 interface SliderRowProps {
   label: string;
   unit: string;
@@ -24,52 +24,84 @@ interface SliderRowProps {
   onChange: (v: number) => void;
 }
 
-const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, value, color = '#BEF264', onChange }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-      <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'system-ui' }}>
+const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, value, color = '#BEF264', onChange }) => {
+  const uiTheme = useForgeStore(state => state.uiTheme);
+  const isLightTheme = uiTheme === 'light';
+
+  const displayColor = isLightTheme ? '#0f172a' : '#f8fafc';
+  const labelColor = isLightTheme ? '#475569' : '#94a3b8';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', userSelect: 'none' }}>
+      <span style={{ fontSize: '9px', color: labelColor, fontWeight: 700, width: '45px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </span>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={e => onChange(parseFloat(e.target.value) || 0)}
-          style={{
-            width: '56px',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: `1px dotted ${color}80`,
-            color,
-            fontSize: '13px',
-            fontWeight: 800,
-            fontFamily: 'monospace',
-            textAlign: 'right',
-            outline: 'none',
-            padding: '0 2px',
-          }}
-        />
-        <span style={{ fontSize: '11px', color, fontWeight: 800, fontFamily: 'monospace' }}>{unit}</span>
-      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ flex: 1, accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px', outline: 'none' }}
+      />
+      <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace', width: '45px', textAlign: 'right' }}>
+        {value.toFixed(step >= 1 ? 0 : 1)}{unit}
+      </span>
     </div>
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={e => onChange(parseFloat(e.target.value))}
-      style={{ width: '100%', accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px' }}
-    />
-  </div>
-);
+  );
+};
+
+// ── Compact theme-aware Card Wrapper sitting right above the component ──────
+interface CompactCardProps {
+  borderColor?: string;
+  children: React.ReactNode;
+}
+
+const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
+  const uiTheme = useForgeStore(state => state.uiTheme);
+  const isLightTheme = uiTheme === 'light';
+
+  const defaultBorder = isLightTheme ? '#cbd5e1' : (borderColor || 'rgba(255, 255, 255, 0.08)');
+
+  return (
+    <div
+      onPointerDown={e => e.stopPropagation()}
+      onPointerUp={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+      className="nodrag nopan"
+      style={{
+        position: 'absolute',
+        bottom: 'calc(100% + 6px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '170px',
+        background: isLightTheme ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.92)',
+        backdropFilter: 'blur(8px)',
+        border: `1px solid ${defaultBorder}`,
+        borderRadius: '8px',
+        padding: '6px 8px',
+        boxShadow: isLightTheme 
+          ? '0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)' 
+          : '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        userSelect: 'none',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 // ── Main overlay ──────────────────────────────────────────────────────────────
 export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues }) => {
   const updateNodeData = useForgeStore(state => state.updateNodeData);
+  const uiTheme = useForgeStore(state => state.uiTheme);
+  const isLightTheme = uiTheme === 'light';
 
   const isDHT       = type === 'dht22' || type === 'dht11';
   const isDistance  = type === 'hc-sr04';
@@ -86,7 +118,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
 
-  // ── DHT: two sliders ─────────────────────────────────────────────────────
+  // ── DHT Sensor ──────────────────────────────────────────────────────────
   if (isDHT) {
     const temp     = currentValues?.temperature ?? 25;
     const humidity = currentValues?.humidity    ?? 50;
@@ -98,36 +130,9 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-130px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '200px',
-          background: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(186, 242, 100, 0.3)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          {type.toUpperCase()} SENSOR
-        </div>
-
+      <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
         <SliderRow
-          label="TEMPERATURE"
+          label="TEMP"
           unit="°C"
           min={type === 'dht11' ? 0 : -40}
           max={type === 'dht11' ? 50 : 80}
@@ -136,7 +141,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#f97316"
           onChange={v => update('temperature', v)}
         />
-
         <SliderRow
           label="HUMIDITY"
           unit="%"
@@ -147,11 +151,11 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#38bdf8"
           onChange={v => update('humidity', v)}
         />
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── PIR Motion Sensor: toggle button ────────────────────────────────────
+  // ── PIR Motion Sensor ───────────────────────────────────────────────────
   if (isPIR) {
     const motionDetected = currentValues?.motionDetected ?? false;
 
@@ -159,94 +163,42 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       e.stopPropagation();
       e.preventDefault();
       const next = !motionDetected;
-      // 1. Update the store so the visual element re-renders
       updateNodeData(nodeId, {
         sensorValues: { ...currentValues, motionDetected: next },
       });
-      // 2. Inject the OUT pin signal directly into the AVR simulation
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, 'OUT', next);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-90px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '170px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: `1px solid ${motionDetected ? 'rgba(74,222,128,0.5)' : 'rgba(186,242,100,0.3)'}`,
-          borderRadius: '12px',
-          padding: '10px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          alignItems: 'center',
-          userSelect: 'none',
-        }}
-      >
-        <div style={{
-          fontSize: '10px',
-          color: '#64748b',
-          fontWeight: 800,
-          letterSpacing: '0.08em',
-          fontFamily: 'system-ui',
-        }}>
-          PIR SENSOR
-        </div>
-
-        {/* Status indicator dot */}
-        <div style={{
-          width: '10px',
-          height: '10px',
-          borderRadius: '50%',
-          background: motionDetected ? '#4ade80' : '#475569',
-          boxShadow: motionDetected ? '0 0 8px rgba(74,222,128,0.8)' : 'none',
-          transition: 'all 0.2s',
-        }} />
-
+      <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'}>
         <button
-          onPointerDown={e => e.stopPropagation()}
-          onMouseDown={e => e.stopPropagation()}
           onClick={toggle}
           style={{
             width: '100%',
-            padding: '8px 0',
-            borderRadius: '8px',
+            padding: '4px 0',
+            borderRadius: '6px',
             border: 'none',
             cursor: 'pointer',
             fontWeight: 800,
-            fontSize: '11px',
+            fontSize: '9px',
             fontFamily: 'monospace',
             letterSpacing: '0.05em',
-            transition: 'all 0.2s',
             background: motionDetected
               ? 'rgba(74, 222, 128, 0.9)'
-              : 'rgba(51, 65, 85, 0.9)',
-            color: motionDetected ? '#0f172a' : '#94a3b8',
-            boxShadow: motionDetected
-              ? '0 0 12px rgba(74,222,128,0.4)'
-              : 'none',
+              : (isLightTheme ? '#e2e8f0' : 'rgba(51, 65, 85, 0.9)'),
+            color: motionDetected ? '#0f172a' : (isLightTheme ? '#334155' : '#94a3b8'),
+            boxShadow: motionDetected ? '0 0 6px rgba(74,222,128,0.3)' : 'none',
           }}
         >
           {motionDetected ? '● MOTION DETECTED' : '○ TRIGGER MOTION'}
         </button>
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── MPU6050 — 7 sliders (accel X/Y/Z, gyro X/Y/Z, temp) ────────────────
+  // ── MPU6050 3D IMU ──────────────────────────────────────────────────────
   if (isMPU6050) {
     const sv = currentValues ?? {};
     const accelX = sv.accelX ?? 0;
@@ -260,65 +212,21 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const update = (key: string, val: number) => {
       const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      // Push live into the I2C emulator
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushMPU6050Values(nodeId, next);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-340px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '220px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(186, 242, 100, 0.3)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          MPU-6050 IMU
-        </div>
-
-        {/* Accelerometer group */}
-        <div style={{ fontSize: '9px', color: '#38bdf8', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(56,189,248,0.2)', paddingBottom: '2px' }}>
-          ACCELEROMETER (g)
-        </div>
-        <SliderRow label="ACCEL X" unit="g"   min={-2}   max={2}   step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
-        <SliderRow label="ACCEL Y" unit="g"   min={-2}   max={2}   step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
-        <SliderRow label="ACCEL Z" unit="g"   min={-2}   max={2}   step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
-
-        {/* Gyroscope group */}
-        <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(167,139,250,0.2)', paddingBottom: '2px' }}>
-          GYROSCOPE (°/s)
-        </div>
-        <SliderRow label="GYRO X"  unit="°/s" min={-250} max={250} step={1}    value={gyroX}  color="#a78bfa" onChange={v => update('gyroX',  v)} />
-        <SliderRow label="GYRO Y"  unit="°/s" min={-250} max={250} step={1}    value={gyroY}  color="#a78bfa" onChange={v => update('gyroY',  v)} />
-        <SliderRow label="GYRO Z"  unit="°/s" min={-250} max={250} step={1}    value={gyroZ}  color="#a78bfa" onChange={v => update('gyroZ',  v)} />
-
-        {/* Temperature */}
-        <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'system-ui', borderBottom: '1px solid rgba(249,115,22,0.2)', paddingBottom: '2px' }}>
-          TEMPERATURE
-        </div>
-        <SliderRow label="TEMP"    unit="°C"  min={-40}  max={85}  step={0.1}  value={temp}   color="#f97316" onChange={v => update('temp',   v)} />
-      </div>
+      <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
+        <SliderRow label="ACCEL X" unit="g" min={-2} max={2} step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
+        <SliderRow label="ACCEL Y" unit="g" min={-2} max={2} step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
+        <SliderRow label="ACCEL Z" unit="g" min={-2} max={2} step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
+        <SliderRow label="GYRO X" unit="°" min={-250} max={250} step={1} value={gyroX} color="#a78bfa" onChange={v => update('gyroX', v)} />
+        <SliderRow label="GYRO Y" unit="°" min={-250} max={250} step={1} value={gyroY} color="#a78bfa" onChange={v => update('gyroY', v)} />
+        <SliderRow label="GYRO Z" unit="°" min={-250} max={250} step={1} value={gyroZ} color="#a78bfa" onChange={v => update('gyroZ', v)} />
+        <SliderRow label="TEMP" unit="°C" min={-40} max={85} step={0.1} value={temp} color="#f97316" onChange={v => update('temp', v)} />
+      </CompactCard>
     );
   }
 
@@ -326,7 +234,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   if (isNTC) {
     const tempC = currentValues?.value ?? 25;
 
-    // NTC voltage-divider formula (same as CircuitEngine) — shown live in the overlay
     const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
     const T = tempC + 273.15;
     const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
@@ -341,38 +248,9 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-140px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '200px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(249,115,22,0.4)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          NTC THERMISTOR
-        </div>
-
+      <CompactCard borderColor="rgba(249,115,22,0.3)">
         <SliderRow
-          label="TEMPERATURE"
+          label="TEMP"
           unit="°C"
           min={-40}
           max={125}
@@ -381,15 +259,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#f97316"
           onChange={handleChange}
         />
-
-        {/* Live readout row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
-          <span style={{ color: '#64748b' }}>V<sub>out</sub></span>
-          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
-          <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: '#bef264' }}>{adcRaw}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>Vout</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+          <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>ADC</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
@@ -398,59 +274,27 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const lux       = Number(currentValues?.value     ?? 500);
     const threshold = Number(currentValues?.threshold ?? 500);
 
-    // Live voltage + ADC calculation (LDR voltage-divider model)
     const R_ldr    = 500000 / Math.max(1, lux);
     const R_series = 10000;
     const voltage  = 5.0 * R_series / (R_ldr + R_series);
     const adcRaw   = Math.round((voltage / 5.0) * 1023);
-    const doLow    = lux < threshold; // DO is active-LOW
+    const doLow    = lux < threshold;
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        // AO — analog output
         circuitEngine.pushInputSignal(nodeId, 'AO', true);
-        // DO — digital output (active-LOW: LOW when dark, HIGH when bright)
         const doIsLow = (key === 'value' ? val : lux) < (key === 'threshold' ? val : threshold);
         circuitEngine.pushInputSignal(nodeId, 'DO', !doIsLow);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-185px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '210px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(251,191,36,0.4)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          PHOTORESISTOR (LDR)
-        </div>
-
+      <CompactCard borderColor="rgba(251,191,36,0.3)">
         <SliderRow
-          label="LIGHT LEVEL"
-          unit="lux"
+          label="LIGHT"
+          unit="lx"
           min={0}
           max={1000}
           step={1}
@@ -458,30 +302,17 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#fbbf24"
           onChange={v => handleChange('value', v)}
         />
-
-        <SliderRow
-          label="DO THRESHOLD"
-          unit="lux"
-          min={0}
-          max={1000}
-          step={1}
-          value={threshold}
-          color="#94a3b8"
-          onChange={v => handleChange('threshold', v)}
-        />
-
-        {/* Live readout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
-          <span style={{ color: '#64748b' }}>AO</span>
-          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: '#64748b' }}>Vout</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(1)}V</span>
           <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: '#bef264' }}>{adcRaw}</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
           <span style={{ color: '#64748b' }}>DO</span>
           <span style={{ color: doLow ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {doLow ? 'LOW ●' : 'HIGH ○'}
+            {doLow ? 'LOW' : 'HIGH'}
           </span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
@@ -491,7 +322,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const threshold = Number(currentValues?.threshold ?? 50);
     const flameOn   = intensity > threshold;
     const voltage   = 5.0 * (1 - intensity / 100);
-    const adcRaw    = Math.round((voltage / 5.0) * 1023);
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -499,61 +329,14 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
         const nowFlame = (key === 'value' ? val : intensity) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowFlame); // DOUT active-LOW
+        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowFlame);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-185px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '210px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: `1px solid ${flameOn ? 'rgba(249,115,22,0.6)' : 'rgba(186,242,100,0.3)'}`,
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          FLAME SENSOR
-        </div>
-
-        {/* Flame status indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '6px',
-          borderRadius: '8px',
-          background: flameOn ? 'rgba(249,115,22,0.15)' : 'rgba(51,65,85,0.4)',
-          border: `1px solid ${flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(100,116,139,0.2)'}`,
-          transition: 'all 0.3s',
-        }}>
-          <span style={{ fontSize: '18px' }}>{flameOn ? '🔥' : '💧'}</span>
-          <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', color: flameOn ? '#f97316' : '#64748b' }}>
-            {flameOn ? 'FLAME DETECTED' : 'NO FLAME'}
-          </span>
-        </div>
-
+      <CompactCard borderColor={flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(186,242,100,0.2)'}>
         <SliderRow
-          label="FLAME INTENSITY"
+          label="FLAME"
           unit="%"
           min={0}
           max={100}
@@ -562,40 +345,24 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#f97316"
           onChange={v => handleChange('value', v)}
         />
-
-        <SliderRow
-          label="DOUT THRESHOLD"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={threshold}
-          color="#94a3b8"
-          onChange={v => handleChange('threshold', v)}
-        />
-
-        {/* Live readout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
-          <span style={{ color: '#64748b' }}>AOUT</span>
-          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
-          <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: '#bef264' }}>{adcRaw}</span>
-          <span style={{ color: '#64748b' }}>DOUT</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: '#64748b' }}>State</span>
           <span style={{ color: flameOn ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {flameOn ? 'LOW ●' : 'HIGH ○'}
+            {flameOn ? 'ACTIVE' : 'SAFE'}
           </span>
+          <span style={{ color: '#64748b' }}>Vout</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── Gas Sensor (MQ-series) ───────────────────────────────────────────────
+  // ── Gas Sensor ──────────────────────────────────────────────────────────
   if (isGas) {
     const concentration = Number(currentValues?.value     ?? 0);
     const threshold     = Number(currentValues?.threshold ?? 50);
     const gasDetected   = concentration > threshold;
     const voltage       = 5.0 * concentration / 100;
-    const adcRaw        = Math.round((voltage / 5.0) * 1023);
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -603,61 +370,14 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
         const nowGas = (key === 'value' ? val : concentration) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowGas); // DOUT active-LOW
+        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowGas);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-185px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '210px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: `1px solid ${gasDetected ? 'rgba(251,146,60,0.6)' : 'rgba(186,242,100,0.3)'}`,
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          GAS SENSOR (MQ)
-        </div>
-
-        {/* Gas status indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '6px',
-          borderRadius: '8px',
-          background: gasDetected ? 'rgba(251,146,60,0.15)' : 'rgba(51,65,85,0.4)',
-          border: `1px solid ${gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(100,116,139,0.2)'}`,
-          transition: 'all 0.3s',
-        }}>
-          <span style={{ fontSize: '18px' }}>{gasDetected ? '☁️' : '✅'}</span>
-          <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', color: gasDetected ? '#fb923c' : '#64748b' }}>
-            {gasDetected ? 'GAS DETECTED' : 'CLEAN AIR'}
-          </span>
-        </div>
-
+      <CompactCard borderColor={gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
         <SliderRow
-          label="GAS CONCENTRATION"
+          label="GAS"
           unit="%"
           min={0}
           max={100}
@@ -666,98 +386,31 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#fb923c"
           onChange={v => handleChange('value', v)}
         />
-
-        <SliderRow
-          label="DOUT THRESHOLD"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={threshold}
-          color="#94a3b8"
-          onChange={v => handleChange('threshold', v)}
-        />
-
-        {/* Live readout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
-          <span style={{ color: '#64748b' }}>AOUT</span>
-          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
-          <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: '#bef264' }}>{adcRaw}</span>
-          <span style={{ color: '#64748b' }}>DOUT</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: '#64748b' }}>Air</span>
           <span style={{ color: gasDetected ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {gasDetected ? 'LOW ●' : 'HIGH ○'}
+            {gasDetected ? 'SMOKE' : 'CLEAN'}
           </span>
+          <span style={{ color: '#64748b' }}>Vout</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
   // ── Heart Rate Sensor ────────────────────────────────────────────────────
   if (isHeartRate) {
-    const bpm     = Number(currentValues?.bpm      ?? 72);
-    const liveADC = Number(currentValues?.adcValue ?? 512);
-
-    // Derived values for display
-    const beatIntervalMs = Math.round(60000 / bpm);
-    const liveVoltage    = ((liveADC / 1023) * 5.0).toFixed(2);
+    const bpm = Number(currentValues?.bpm ?? 72);
 
     const handleChange = (val: number) => {
       updateNodeData(nodeId, { sensorValues: { ...currentValues, bpm: val } });
-      // CircuitEngine picks up the new BPM from sensorValues on next tick
     };
+
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-155px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '210px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(239,68,68,0.4)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          HEART RATE SENSOR
-        </div>
-
-        {/* BPM indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '6px',
-          borderRadius: '8px',
-          background: 'rgba(239,68,68,0.1)',
-          border: '1px solid rgba(239,68,68,0.3)',
-        }}>
-          <span style={{ fontSize: '20px' }}>❤️</span>
-          <span style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace', color: '#ef4444' }}>
-            {bpm}
-          </span>
-          <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>BPM</span>
-        </div>
-
+      <CompactCard borderColor="rgba(239,68,68,0.3)">
         <SliderRow
-          label="HEART RATE"
-          unit="BPM"
+          label="PULSE"
+          unit="bpm"
           min={20}
           max={200}
           step={1}
@@ -765,27 +418,16 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#ef4444"
           onChange={handleChange}
         />
-
-        {/* Live readout — matches Serial.println(analogRead(A0)) output */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
-          <span style={{ color: '#64748b' }}>analogRead</span>
-          <span style={{ color: liveADC > 650 ? '#ef4444' : '#bef264', fontWeight: 900 }}>{liveADC}</span>
-          <span style={{ color: '#64748b' }}>V</span>
-          <span style={{ color: '#bef264' }}>{liveVoltage}</span>
-          <span style={{ color: '#64748b' }}>interval</span>
-          <span style={{ color: '#bef264' }}>{beatIntervalMs}ms</span>
-        </div>
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── Big Sound Sensor ─────────────────────────────────────────────────────
+  // ── Sound Sensor ────────────────────────────────────────────────────────
   if (isBigSound) {
     const level     = Number(currentValues?.value     ?? 0);
     const threshold = Number(currentValues?.threshold ?? 50);
     const soundOn   = level > threshold;
     const voltage   = 5.0 * level / 100;
-    const adcRaw    = Math.round((voltage / 5.0) * 1023);
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -793,61 +435,14 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
         const nowSound = (key === 'value' ? val : level) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', nowSound); // DOUT active-HIGH (KY-037/038 convention)
+        circuitEngine.pushInputSignal(nodeId, 'DOUT', nowSound);
       });
     };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-185px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '210px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: `1px solid ${soundOn ? 'rgba(251,146,60,0.6)' : 'rgba(186,242,100,0.3)'}`,
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          {type === 'small-sound-sensor' ? 'SMALL SOUND SENSOR' : 'SOUND SENSOR'}
-        </div>
-
-        {/* Sound status indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '6px',
-          borderRadius: '8px',
-          background: soundOn ? 'rgba(251,146,60,0.15)' : 'rgba(51,65,85,0.4)',
-          border: `1px solid ${soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(100,116,139,0.2)'}`,
-          transition: 'all 0.3s',
-        }}>
-          <span style={{ fontSize: '18px' }}>{soundOn ? '🔊' : '🔇'}</span>
-          <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', color: soundOn ? '#fb923c' : '#64748b' }}>
-            {soundOn ? 'SOUND DETECTED' : 'SILENT'}
-          </span>
-        </div>
-
+      <CompactCard borderColor={soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
         <SliderRow
-          label="SOUND LEVEL"
+          label="SOUND"
           unit="%"
           min={0}
           max={100}
@@ -856,99 +451,30 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#fb923c"
           onChange={v => handleChange('value', v)}
         />
-
-        <SliderRow
-          label="DOUT THRESHOLD"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={threshold}
-          color="#94a3b8"
-          onChange={v => handleChange('threshold', v)}
-        />
-
-        {/* Live readout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700, flexWrap: 'wrap', gap: '4px' }}>
-          <span style={{ color: '#64748b' }}>AOUT</span>
-          <span style={{ color: '#bef264' }}>{voltage.toFixed(3)} V</span>
-          <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: '#bef264' }}>{adcRaw}</span>
-          <span style={{ color: '#64748b' }}>DOUT</span>
-          <span style={{ color: soundOn ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {soundOn ? 'LOW ●' : 'HIGH ○'}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: '#64748b' }}>Mic</span>
+          <span style={{ color: soundOn ? '#fb923c' : '#64748b', fontWeight: 900 }}>
+            {soundOn ? 'LOUD' : 'QUIET'}
           </span>
+          <span style={{ color: '#64748b' }}>Vout</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── HX711 Load Cell Amplifier ────────────────────────────────────────────
+  // ── HX711 Load Cell ─────────────────────────────────────────────────────
   if (isHX711) {
     const weight    = Number(currentValues?.weight    ?? 0);
     const maxWeight = Number(currentValues?.maxWeight ?? 5000);
-    const weightKg  = (weight / 1000).toFixed(3);
-    const rawValue  = Math.round((weight / maxWeight) * 8388607);
-    const pct       = Math.round((weight / maxWeight) * 100);
+    const weightKg  = (weight / 1000).toFixed(2);
 
     const handleWeightChange = (val: number) => {
       updateNodeData(nodeId, { sensorValues: { ...currentValues, weight: val } });
     };
-    const handleMaxChange = (val: number) => {
-      updateNodeData(nodeId, { sensorValues: { ...currentValues, maxWeight: val } });
-    };
 
     return (
-      <div
-        onPointerDown={e => e.stopPropagation()}
-        onPointerUp={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          bottom: '-165px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '220px',
-          background: 'rgba(15, 23, 42, 0.97)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(186,242,100,0.3)',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          userSelect: 'none',
-        }}
-      >
-        {/* Header */}
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', textAlign: 'center', fontFamily: 'system-ui' }}>
-          HX711 LOAD CELL AMP
-        </div>
-
-        {/* Weight display */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '6px',
-          padding: '6px',
-          borderRadius: '8px',
-          background: 'rgba(190,242,100,0.08)',
-          border: '1px solid rgba(190,242,100,0.2)',
-        }}>
-          <span style={{ fontSize: '22px', fontWeight: 900, fontFamily: 'monospace', color: '#bef264' }}>
-            {weightKg}
-          </span>
-          <span style={{ fontSize: '13px', color: '#94a3b8', fontFamily: 'monospace' }}>kg</span>
-          <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace', marginLeft: '8px' }}>
-            ({pct}%)
-          </span>
-        </div>
-
+      <CompactCard borderColor="rgba(186,242,100,0.2)">
         <SliderRow
           label="WEIGHT"
           unit="g"
@@ -959,43 +485,30 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
           color="#bef264"
           onChange={handleWeightChange}
         />
-
-        <SliderRow
-          label="MAX CAPACITY"
-          unit="g"
-          min={100}
-          max={50000}
-          step={100}
-          value={maxWeight}
-          color="#94a3b8"
-          onChange={handleMaxChange}
-        />
-
-        {/* Raw value readout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
-          <span style={{ color: '#64748b' }}>24-bit raw</span>
-          <span style={{ color: '#bef264' }}>{rawValue}</span>
-          <span style={{ color: '#64748b' }}>hex</span>
-          <span style={{ color: '#bef264' }}>0x{rawValue.toString(16).toUpperCase().padStart(6, '0')}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+          <span style={{ color: '#64748b' }}>Mass</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{weightKg} kg</span>
+          <span style={{ color: '#64748b' }}>Max</span>
+          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{maxWeight}g</span>
         </div>
-      </div>
+      </CompactCard>
     );
   }
 
-  // ── Single-value sensors ─────────────────────────────────────────────────
+  // ── Single-value sensors (hc-sr04, resistor, etc.) ──────────────────────
   const config = isDistance
-    ? { label: 'DISTANCE', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
+    ? { label: 'DIST', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
     : type === 'potentiometer'
-    ? { label: 'POSITION',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
+    ? { label: 'POS',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
     : type === 'slide-potentiometer'
-    ? { label: 'POSITION',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
+    ? { label: 'POS',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
     : type === 'resistor'
-    ? { label: 'RESISTANCE',unit: 'Ω',   min: 0,   max: 1000000, step: 100, key: 'value',    color: '#BEF264' }
+    ? { label: 'RES',  unit: 'Ω',   min: 0,   max: 1000000, step: 100, key: 'value',    color: '#BEF264' }
     : type === 'photoresistor'
-    ? { label: 'LIGHT',     unit: 'lux', min: 0,   max: 1000,    step: 1,   key: 'value',    color: '#fbbf24' }
+    ? { label: 'LIGHT',unit: 'lux', min: 0,   max: 1000,    step: 1,   key: 'value',    color: '#fbbf24' }
     : type === 'ntc-temperature-sensor'
-    ? { label: 'TEMP',      unit: '°C',  min: -40, max: 125,     step: 0.1, key: 'value',    color: '#f97316' }
-    : { label: 'VALUE',     unit: '',    min: 0,   max: 1023,    step: 1,   key: 'value',    color: '#BEF264' };
+    ? { label: 'TEMP', unit: '°C',  min: -40, max: 125,     step: 0.1, key: 'value',    color: '#f97316' }
+    : { label: 'VAL',  unit: '',    min: 0,   max: 1023,    step: 1,   key: 'value',    color: '#BEF264' };
 
   const currentValue = currentValues?.[config.key] ?? config.min;
 
@@ -1004,7 +517,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       sensorValues: { ...currentValues, [config.key]: val },
     });
     if (isAnalog) {
-      // Determine the correct output pin name for this sensor type
       const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
                    : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
                    : 'OUT';
@@ -1015,29 +527,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   };
 
   return (
-    <div
-      onPointerDown={e => e.stopPropagation()}
-      onMouseDown={e => e.stopPropagation()}
-      onClick={e => e.stopPropagation()}
-      className="nodrag nopan"
-      style={{
-        position: 'absolute',
-        bottom: '-80px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '190px',
-        background: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(186, 242, 100, 0.3)',
-        borderRadius: '12px',
-        padding: '10px 14px',
-        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-      }}
-    >
+    <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
       <SliderRow
         label={config.label}
         unit={config.unit}
@@ -1048,6 +538,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
         color={config.color}
         onChange={handleChange}
       />
-    </div>
+    </CompactCard>
   );
 };

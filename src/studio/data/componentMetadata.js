@@ -666,7 +666,8 @@ export const ANY_COMPONENT_METADATA = {
 const DEFAULT_VISIBLE_PROPERTIES = [
     { name: 'Width', type: 'Number' },
     { name: 'Height', type: 'Number' },
-    { name: 'Visible', type: 'Boolean' }
+    { name: 'Visible', type: 'Boolean' },
+    { name: 'Enabled', type: 'Boolean' }
 ];
 
 const DEFAULT_NON_VISIBLE_PROPERTIES = [
@@ -682,7 +683,7 @@ const DEFAULT_LAYOUT_PROPERTIES = [
 ];
 
 // ============================================================================
-// MIT App Inventor Inheritance Map
+// Leap Component Inheritance Map
 // Maps child component → parent class(es) in order of resolution priority.
 // The auto-generated metadata doesn't capture Java class hierarchy, so events/
 // methods/properties from parent classes are missing. This map fixes that.
@@ -709,9 +710,7 @@ const INHERITANCE_MAP = {
     Barometer: ['SingleValueSensor'],
     Hygrometer: ['SingleValueSensor'],
     LightSensor: ['SingleValueSensor'],
-    ThermometerSensor: ['SingleValueSensor'],
     Thermometer: ['SingleValueSensor'],
-    HygrometrySensor: ['SingleValueSensor'],
     // Bluetooth
     BluetoothClient: ['BluetoothConnectionBase'],
     BluetoothServer: ['BluetoothConnectionBase'],

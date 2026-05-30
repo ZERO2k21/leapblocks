@@ -11,6 +11,7 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { transpileArduinoToJS } from './transpiler.js';
+import { getArduinoCliPathIfAvailable, ensureArduinoCli } from '../../utils/ensureArduinoCli.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,20 +22,24 @@ app.use(express.json({ limit: '10mb' }));
 
 /**
  * Resolve the path to the arduino-cli binary.
+ * Electra ONLY uses the bundled binary or cached download.
+ * NEVER uses system PATH or standard Arduino install paths.
  */
 const getCLIBinary = () => {
-  const isWindows = os.platform() === 'win32';
-  const binaryName = isWindows ? 'arduino-cli.exe' : 'arduino-cli';
-
-  const localBundledPath = path.resolve(__dirname, '..', 'arduino-cli', binaryName);
-
-  if (fs.existsSync(localBundledPath)) {
-    console.log(`[SERVER] Using bundled CLI: ${localBundledPath}`);
-    return `"${localBundledPath}"`;
+  const available = getArduinoCliPathIfAvailable();
+  if (available) {
+    console.log(`[SERVER] Using arduino-cli: ${available}`);
+    return `"${available}"`;
   }
 
-  console.log(`[SERVER] Bundled CLI not found. Falling back to global command.`);
-  return 'arduino-cli';
+  // Check if ARDUINO_CLI_PATH env var was set by main.js (bundled path)
+  if (process.env.ARDUINO_CLI_PATH && fs.existsSync(process.env.ARDUINO_CLI_PATH)) {
+    console.log(`[SERVER] Using arduino-cli from env: ${process.env.ARDUINO_CLI_PATH}`);
+    return `"${process.env.ARDUINO_CLI_PATH}"`;
+  }
+
+  console.log(`[SERVER] arduino-cli not found. Will download on first compile.`);
+  return 'arduino-cli'; // fallback; ensureArduinoCli will handle download when compile is called
 };
 
 /**
@@ -57,7 +62,7 @@ const getForgePaths = () => {
   };
 };
 
-const CLI_BIN = getCLIBinary();
+let CLI_BIN = getCLIBinary();
 const FORGE = getForgePaths();
 let isInitialized = false;
 
@@ -86,6 +91,13 @@ const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> =>
  */
 const initCores = async () => {
   try {
+    // Ensure arduino-cli is downloaded — resolves the binary path
+    const resolvedPath = await ensureArduinoCli((msg) => {
+      console.log(`[SERVER] ${msg}`);
+    });
+    CLI_BIN = resolvedPath === 'arduino-cli' ? resolvedPath : `"${resolvedPath}"`;
+    console.log(`[SERVER] Using arduino-cli: ${CLI_BIN}`);
+
     console.log('[SERVER] Checking for arduino:avr core...');
     const result = await runCommand(`${CLI_BIN} core list --format json --config-file "${FORGE.configFile}"`);
 

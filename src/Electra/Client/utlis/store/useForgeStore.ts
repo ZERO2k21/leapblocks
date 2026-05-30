@@ -113,6 +113,13 @@ export interface ForgeState {
   // UI State
   showPartPicker: boolean;
   setShowPartPicker: (show: boolean) => void;
+  uiTheme: 'light' | 'dark';
+  setUiTheme: (theme: 'light' | 'dark') => void;
+  toggleUiTheme: () => void;
+
+  // Viewport (zoom/pan persistence)
+  viewport: { x: number; y: number; zoom: number };
+  setViewportState: (vp: { x: number; y: number; zoom: number }) => void;
 }
 
 /** Map canvas node data.type → store board ID */
@@ -150,6 +157,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   librarySearchQuery: '',
   librarySearchResults: [],
   showPartPicker: false,
+  uiTheme: 'light',
+  viewport: { x: 0, y: 0, zoom: 1 },
+
+  setUiTheme: (theme) => set({ uiTheme: theme }),
+  toggleUiTheme: () => set((state) => ({ uiTheme: state.uiTheme === 'light' ? 'dark' : 'light' })),
+  setViewportState: (vp) => set({ viewport: vp }),
 
   setProjectPath: (path) => {
     console.log(`[FORGE STORE] projectPath updated to: ${path}`);

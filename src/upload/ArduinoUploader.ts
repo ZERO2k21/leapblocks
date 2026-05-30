@@ -10,6 +10,7 @@ import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { spawn } from 'child_process';
+import { ensureArduinoCli, getArduinoCliPathIfAvailable } from '../utils/ensureArduinoCli';
 
 const execAsync = promisify(exec);
 
@@ -769,26 +770,34 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
         return hex;
     }
 
+    /**
+     * Resolve the arduino-cli binary path.
+     * Electra ONLY uses the bundled binary. Falls back to cached download if bundled is missing.
+     * NEVER uses system PATH or standard Arduino install paths.
+     */
     private async getArduinoCliPath(): Promise<string> {
-        try {
-            await execAsync('arduino-cli version');
-            return 'arduino-cli';
-        } catch {
-            const possiblePaths = [
-                path.join(process.cwd(), 'arduino-cli', 'arduino-cli.exe'),
-                path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.exe'),
-                'C:\\Program Files\\Arduino CLI\\arduino-cli.exe',
-                'C:\\arduino-cli\\arduino-cli.exe',
-            ];
+        // Fast check: bundled or cached binary available?
+        const available = getArduinoCliPathIfAvailable();
+        if (available) {
+            console.log(`[FORGE UPLOADER] arduino-cli found at: ${available}`);
+            return available;
+        }
 
-            for (const p of possiblePaths) {
-                if (fs.existsSync(p)) {
-                    console.log(`[FORGE UPLOADER] Found arduino-cli at: ${p}`);
-                    return p;
-                }
-            }
-            console.error('[FORGE UPLOADER] ERROR: arduino-cli not found in any common path.');
-            throw new Error('arduino-cli not found. Please install it.');
+        // Slow path: download from GitHub on first use (bundled binary missing — shouldn't happen)
+        console.log('[FORGE UPLOADER] Bundled arduino-cli not found. Downloading as fallback...');
+        try {
+            const cliPath = await ensureArduinoCli((msg) => {
+                console.log(`[FORGE UPLOADER] ${msg}`);
+            });
+            console.log(`[FORGE UPLOADER] arduino-cli ready at: ${cliPath}`);
+            return cliPath;
+        } catch (err: any) {
+            console.error('[FORGE UPLOADER] Failed to obtain arduino-cli:', err.message);
+            throw new Error(
+                'arduino-cli is required but could not be found.\n' +
+                'The bundled binary is missing and download failed.\n' +
+                'Please check your internet connection, or reinstall LeapBlocks.'
+            );
         }
     }
 

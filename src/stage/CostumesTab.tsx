@@ -215,12 +215,15 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
                     onSave={async (imageData: string, svgData?: string, name?: string) => {
-                        // Use imageData (PNG) for the thumbnail `src` string, and keep the svg logic if needed somewhere else
-                        // But StageManager expects an Image capable of being drawn to a Canvas, so PNG `imageData` is much safer and more reliable.
-                        const savedData = imageData;
-                        const backdropName = name || 'custom';
-                        await stageManager.addBackdrop(backdropName, savedData);
-                        stageManager.setBackdrop(backdropName);
+                        const idx = stageManager.getCurrentBackdropIndex();
+                        const backdropName = name || stageManager.getAllBackdrops()[idx]?.name || 'custom';
+                        if (idx >= 0) {
+                            await stageManager.updateBackdrop(idx, backdropName, imageData);
+                            stageManager.setBackdrop(idx);
+                        } else {
+                            await stageManager.addBackdrop(backdropName, imageData);
+                            stageManager.setBackdrop(backdropName);
+                        }
                         addLog(`Saved backdrop for Stage: ${backdropName}`);
                     }}
                     onDeleteSound={(index: number) => {

@@ -4,44 +4,42 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 
+/* Overlay Container */
 .board-selection-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 14, 26, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(8, 9, 12, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: overlay-fade-in 0.3s ease-out;
+  animation: overlay-fade-in 0.25s ease-out;
 }
 
 @keyframes overlay-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Modal Content Container */
 .board-selection-modal {
-  background: linear-gradient(135deg, #151b2e 0%, #0a0e1a 100%);
-  border: 2px solid rgba(6, 182, 212, 0.3);
-  border-radius: 24px;
-  padding: 48px;
-  max-width: 1200px;
+  background: #0f111a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 40px 48px;
+  max-width: 900px;
   width: 90%;
-  box-shadow: 0 25px 60px rgba(6, 182, 212, 0.3), 0 0 40px rgba(6, 182, 212, 0.2);
-  animation: modal-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  animation: modal-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
 
 @keyframes modal-slide-up {
   from {
     opacity: 0;
-    transform: translateY(40px) scale(0.95);
+    transform: translateY(20px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -49,284 +47,335 @@
   }
 }
 
-.board-modal-header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.board-modal-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 24px;
-  background: linear-gradient(135deg, #06b6d4, #22d3ee);
-  border-radius: 20px;
+/* Floating Close Button */
+.board-modal-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #09090b;
-  box-shadow: 0 12px 30px rgba(6, 182, 212, 0.5);
-  animation: icon-pulse 2s ease-in-out infinite;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-@keyframes icon-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 12px 30px rgba(6, 182, 212, 0.5);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 15px 40px rgba(6, 182, 212, 0.7);
-  }
+.board-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}
+
+/* Header */
+.board-modal-header {
+  text-align: center;
+  margin-bottom: 36px;
 }
 
 .board-modal-title {
-  font-size: 42px;
-  font-weight: 900;
+  font-size: 32px;
+  font-weight: 700;
   color: #f8fafc;
-  margin: 0 0 12px 0;
-  letter-spacing: -1px;
-  background: linear-gradient(135deg, #f8fafc, #22d3ee);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.board-modal-subtitle {
-  font-size: 16px;
-  color: #94a3b8;
-  margin: 0;
-  font-weight: 500;
-}
-
-.board-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
-  margin-bottom: 32px;
-}
-
-.board-card {
-  background: linear-gradient(135deg, #1a2137 0%, #151b2e 100%);
-  border: 2px solid rgba(6, 182, 212, 0.2);
-  border-radius: 20px;
-  padding: 40px;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.board-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.5), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.board-card:hover::before {
-  opacity: 1;
-}
-
-.board-card-glow {
-  position: absolute;
-  inset: -100px;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.arduino-glow {
-  background: radial-gradient(circle at center, rgba(251, 146, 60, 0.15), transparent 70%);
-}
-
-.esp32-glow {
-  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.15), transparent 70%);
-}
-
-.board-card:hover .board-card-glow {
-  opacity: 1;
-}
-
-.board-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  border-color: rgba(168, 85, 247, 0.5);
-}
-
-.arduino-card:hover {
-  box-shadow: 0 20px 50px rgba(251, 146, 60, 0.4), 0 0 30px rgba(251, 146, 60, 0.2);
-  border-color: rgba(251, 146, 60, 0.5);
-}
-
-.esp32-card:hover {
-  box-shadow: 0 20px 50px rgba(6, 182, 212, 0.4), 0 0 30px rgba(6, 182, 212, 0.2);
-  border-color: rgba(6, 182, 212, 0.5);
-}
-
-.board-card-content {
-  position: relative;
-  z-index: 1;
-}
-
-.board-icon-wrapper {
-  width: 80px;
-  height: 80px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.arduino-icon {
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(239, 68, 68, 0.2));
-  border: 2px solid rgba(251, 146, 60, 0.4);
-  color: #fb923c;
-}
-
-.esp32-icon {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.2));
-  border: 2px solid rgba(6, 182, 212, 0.4);
-  color: #06b6d4;
-}
-
-.board-card:hover .board-icon-wrapper {
-  transform: scale(1.1) rotate(5deg);
-}
-
-.board-card-title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #f8fafc;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
-.board-card-description {
+.board-modal-subtitle {
   font-size: 14px;
-  color: #94a3b8;
-  line-height: 1.6;
-  margin: 0 0 24px 0;
-  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+  font-weight: 400;
 }
 
-.board-features {
+/* Board Options Grid */
+.board-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* Board Card styling */
+.board-card {
+  background: rgba(28, 28, 35, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 32px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 32px;
 }
 
-.board-feature {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  color: #e2e8f0;
-  font-weight: 600;
+.board-card:hover {
+  transform: translateY(-4px);
+  background: rgba(28, 28, 35, 0.6);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
-.feature-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.arduino-card:hover {
+  border-color: rgba(251, 146, 60, 0.3);
 }
 
-.arduino-dot {
-  background: #fb923c;
-  box-shadow: 0 0 10px rgba(251, 146, 60, 0.6);
+.esp32-card:hover {
+  border-color: rgba(6, 182, 212, 0.3);
 }
 
-.esp32-dot {
-  background: #06b6d4;
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
-}
-
-.board-select-btn {
+/* Hardware Preview container */
+.board-card-preview-container {
+  height: 180px;
   width: 100%;
-  padding: 14px 24px;
-  border: none;
+  background: rgba(8, 9, 12, 0.5);
   border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  cursor: pointer;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  position: relative;
 }
 
-.arduino-btn {
-  background: linear-gradient(135deg, #fb923c, #ef4444);
-  color: white;
-  box-shadow: 0 8px 20px rgba(251, 146, 60, 0.4);
+.board-card-hardware-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
 
-.arduino-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(251, 146, 60, 0.6);
-}
-
-.esp32-btn {
-  background: linear-gradient(135deg, #06b6d4, #22d3ee);
-  color: white;
-  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4);
-}
-
-.esp32-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(6, 182, 212, 0.6);
-}
-
-.board-modal-close {
+.board-preview-hardware {
   display: block;
-  margin: 0 auto;
-  padding: 12px 32px;
-  background: transparent;
-  border: 2px solid rgba(148, 163, 184, 0.3);
-  border-radius: 12px;
+  transform: scale(0.65);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* Card Content details */
+.board-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.board-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0 0 8px 0;
+}
+
+.board-card-description {
+  font-size: 13px;
   color: #94a3b8;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Outfit', sans-serif;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  flex: 1;
 }
 
-.board-modal-close:hover {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.5);
-  color: #e2e8f0;
-  transform: translateY(-2px);
+/* Tag Pills */
+.board-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
 }
 
-@media (max-width: 968px) {
+.board-feature-tag {
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 500;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Custom tag specific hover triggers */
+.board-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.board-action-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.board-action-arrow {
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+/* Card hover transitions on button arrow */
+.board-card:hover .board-action-text {
+  color: #ffffff;
+}
+
+.board-card:hover .board-action-arrow {
+  color: #ffffff;
+  transform: translateX(4px);
+}
+
+.arduino-card:hover .board-action-text {
+  color: #fb923c;
+}
+.arduino-card:hover .board-action-arrow {
+  color: #fb923c;
+}
+
+.esp32-card:hover .board-action-text {
+  color: #06b6d4;
+}
+.esp32-card:hover .board-action-arrow {
+  color: #06b6d4;
+}
+
+/* ========================================== */
+/* LIGHT MODE THEME OVERRIDES (.theme-light)  */
+/* ========================================== */
+
+.theme-light.board-selection-overlay {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.theme-light .board-selection-modal {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.theme-light .board-modal-close-btn {
+  color: #94a3b8;
+}
+
+.theme-light .board-modal-close-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+.theme-light .board-modal-title {
+  color: #0f172a;
+}
+
+.theme-light .board-modal-subtitle {
+  color: #475569;
+}
+
+.theme-light .board-card {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+}
+
+.theme-light .board-card:hover {
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.theme-light .arduino-card:hover {
+  border-color: rgba(251, 146, 60, 0.5);
+}
+
+.theme-light .esp32-card:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+}
+
+.theme-light .board-card-preview-container {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.04);
+}
+
+.theme-light .board-card-title {
+  color: #0f172a;
+}
+
+.theme-light .board-card-description {
+  color: #475569;
+}
+
+.theme-light .board-feature-tag {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.05);
+  color: #475569;
+}
+
+.theme-light .board-action-text,
+.theme-light .board-action-arrow {
+  color: #94a3b8;
+}
+
+.theme-light .arduino-card:hover .board-action-text,
+.theme-light .arduino-card:hover .board-action-arrow {
+  color: #fb923c;
+}
+
+.theme-light .esp32-card:hover .board-action-text,
+.theme-light .esp32-card:hover .board-action-arrow {
+  color: #06b6d4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .board-options {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
 
   .board-selection-modal {
     padding: 32px 24px;
+    max-width: 480px;
   }
 
   .board-modal-title {
-    font-size: 32px;
-  }
-
-  .board-card {
-    padding: 32px 24px;
+    font-size: 26px;
   }
 }
+
+/* Footer & Cancel Button */
+.board-modal-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.board-modal-cancel-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.board-modal-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Light Mode Overrides for Footer / Cancel Button */
+.theme-light .board-modal-cancel-btn {
+  background: rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #64748b;
+}
+
+.theme-light .board-modal-cancel-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.25);
+  color: #0f172a;
+}
+

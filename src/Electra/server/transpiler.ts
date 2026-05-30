@@ -89,14 +89,39 @@ export function transpileArduinoToJS(arduinoCode: string): string {
   // (these will be provided by the runtime, but ensure they're uppercase)
 
   // Convert C-style casts: (int)x → Math.trunc(x), (float)x → Number(x)
+  // Each cast wraps the next atomic expression in parentheses.
   code = code.replace(/\(int\)\s*/g, 'Math.trunc(');
   code = code.replace(/\(float\)\s*/g, 'Number(');
   code = code.replace(/\(double\)\s*/g, 'Number(');
   code = code.replace(/\(byte\)\s*/g, '(0xFF & ');
   code = code.replace(/\(char\)\s*/g, 'String.fromCharCode(');
 
-  // Convert sizeof
-  code = code.replace(/sizeof\s*\(([^)]+)\)/g, '($1.length || 1)');
+  // Post-fix: close unclosed parens from cast conversions.
+  // Scan for each cast function and ensure its opening paren has a matching close.
+  {
+    const castPrefixes = ['Math.trunc(', 'Number(', '(0xFF & ', 'String.fromCharCode('];
+    for (const prefix of castPrefixes) {
+      let idx = 0;
+      while ((idx = code.indexOf(prefix, idx)) !== -1) {
+        const start = idx + prefix.length;
+        let depth = 1;
+        let i = start;
+        while (i < code.length && depth > 0) {
+          if (code[i] === '(') depth++;
+          else if (code[i] === ')') depth--;
+          i++;
+        }
+        if (depth !== 0) {
+          code = code.substring(0, i) + ')' + code.substring(i);
+        }
+        idx = start;
+      }
+    }
+  }
+
+  // Convert sizeof(x) → (x.length || sizeof_lookup)
+  // For arrays/strings use .length, for primitives approximate typical sizes
+  code = code.replace(/sizeof\s*\(\s*(\w+)\s*\)/g, '(__sizeof_val($1))');
 
   // ── Step 8: Arduino-specific API mappings ───────────────────
   // These are provided by the runtime, but ensure correct syntax

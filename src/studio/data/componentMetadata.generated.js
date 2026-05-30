@@ -1,5 +1,5 @@
 /**
- * Auto-generated from MIT App Inventor runtime annotations.
+ * Auto-generated from component definitions.
  * Source: appinventor-sources-ref/appinventor/components/.../runtime/*.java
  */
 export const GENERATED_COMPONENT_METADATA = {

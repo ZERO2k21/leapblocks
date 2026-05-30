@@ -202,7 +202,7 @@ Blockly.Blocks['text_contains'] = {
     }
 };
 
-// Split (with all MIT variants)
+// Split (with all Leap variants)
 Blockly.Blocks['text_split'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.text);
@@ -261,7 +261,7 @@ Blockly.Blocks['text_getSubstring'] = {
     }
 };
 
-// Segment (MIT specific: start + length)
+// Segment (Leap specific: start + length)
 Blockly.Blocks['text_segment'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.text);
@@ -344,7 +344,7 @@ Blockly.Blocks['text_replace_all_mappings'] = {
     }
 };
 
-// Starts At (MIT uses a separate block, but we keep it in the contains dropdown too)
+// Starts At (Leap uses a separate block, but we keep it in the contains dropdown too)
 Blockly.Blocks['text_starts_at'] = {
     init: function () {
         this.setColour(BLOCK_COLORS.text);

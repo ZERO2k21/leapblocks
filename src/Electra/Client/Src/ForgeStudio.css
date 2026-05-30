@@ -129,6 +129,7 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
   position: relative;
+  transform: translateY(0);
 }
 
 .forge-tab-btn svg {
@@ -137,14 +138,22 @@
 
 .forge-tab-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .forge-tab-btn.active {
   color: var(--lp-accent-bright);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 8px var(--lp-accent-primary);
+}
+
+.forge-tab-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 12px var(--lp-accent-primary);
 }
 
 .forge-tab-btn.active::after {
@@ -550,7 +559,7 @@
 /* Arduino custom library drawer overrides */
 .board-arduino-uno .component-sidebar {
   background: rgba(10, 15, 20, 0.75) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
   font-family: 'Outfit', sans-serif !important;
 }
 
@@ -942,3 +951,329 @@
   box-shadow: var(--lp-glow);
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   MINIMALIST LIGHT THEME OVERRIDES (TOPBAR UNCHANGED)
+   ========================================================================== */
+.forge-root.theme-light .forge-main-split,
+.forge-root.theme-light .forge-footer {
+  /* Slate-100 background, clean white surfaces */
+  --lp-bg: #e2e8f0;
+  --lp-dark-bg: #f1f5f9;
+  --lp-dark-surface: #ffffff;
+  --lp-border: #e2e8f0;
+  --lp-border-active: #cbd5e1;
+  --lp-zinc-800: #f1f5f9;
+  --lp-zinc-700: #e2e8f0;
+  --lp-zinc-600: #94a3b8;
+  --lp-zinc-400: #475569;
+  --lp-text-color: #0f172a;
+  --lp-glass: rgba(255, 255, 255, 0.85);
+  --lp-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --lp-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+  /* Specific light mode styling overrides */
+  color: #0f172a;
+}
+
+
+/* Adjust board-specific colors for light-mode text readability */
+.forge-root.theme-light.board-arduino-uno .forge-main-split {
+  --lp-accent-primary: #0284c7; /* darker blue for light mode contrast */
+  --lp-accent-bright: #0ea5e9;
+  --lp-border-active: rgba(2, 132, 199, 0.3);
+}
+
+.forge-root.theme-light.board-esp32-c3 .forge-main-split {
+  --lp-accent-primary: #ea580c; /* darker orange for light mode contrast */
+  --lp-accent-bright: #f97316;
+  --lp-border-active: rgba(234, 88, 12, 0.3);
+}
+
+/* Canvas action panel borders & shadow */
+.theme-light .canvas-action-panel {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Make sure active buttons in the canvas action panel look light mode compatible */
+.theme-light .canvas-btn.secondary.active {
+  background: var(--lp-accent-primary) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+}
+.theme-light .canvas-btn.secondary.active:hover {
+  background: var(--lp-accent-bright) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35) !important;
+}
+
+
+/* Tab button active state overrides */
+.theme-light .forge-tab-btn {
+  color: var(--lp-zinc-400);
+}
+.theme-light .forge-tab-btn:hover {
+  color: var(--lp-text-color);
+  background: rgba(0, 0, 0, 0.03);
+}
+.theme-light .forge-tab-btn.active {
+  color: var(--lp-accent-primary);
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Controls panel buttons styling inside light mode canvas */
+.theme-light .glass-controls button {
+  color: #64748b !important;
+}
+.theme-light .glass-controls button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--lp-accent-primary) !important;
+}
+
+/* Serial monitor light styling overrides */
+.theme-light .serial-monitor-output {
+  background-color: #f8fafc !important;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.02) 1px, transparent 0) !important;
+  color: #334155 !important;
+}
+.theme-light .serial-input-field {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.theme-light .serial-input-field::placeholder {
+  color: #94a3b8 !important;
+}
+.theme-light .serial-select-ending {
+  background: #ffffff !important;
+  color: #475569 !important;
+}
+
+/* Component drawer card styling in light mode */
+.theme-light .component-sidebar {
+  background: #f8fafc !important;
+  border-right: 1px solid var(--lp-border) !important;
+}
+.theme-light .component-sidebar div,
+.theme-light .component-sidebar span {
+  color: #334155 !important;
+}
+.theme-light .component-sidebar button {
+  color: #64748b !important;
+}
+.theme-light .component-sidebar input {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.theme-light .component-sidebar .component-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+}
+.theme-light .component-sidebar .component-card:hover {
+  border-color: var(--lp-accent-primary) !important;
+  background: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Highlight border colors for elements on mouse enter / hover */
+.theme-light .editor-pane::before, 
+.theme-light .canvas-pane::before,
+.theme-light .part-picker-pane::before {
+  background: linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent) !important;
+  opacity: 0.5;
+}
+
+/* Adjust secondary buttons style in light mode */
+.theme-light .canvas-btn.secondary {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+}
+.theme-light .canvas-btn.secondary:hover {
+  background: #ffffff !important;
+  color: var(--lp-accent-primary) !important;
+  border-color: var(--lp-accent-primary) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Elevate the primary plus add button in light mode */
+.theme-light .canvas-btn.primary-add {
+  background: var(--lp-accent-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2) !important;
+}
+.theme-light .canvas-btn.primary-add:hover {
+  background: var(--lp-accent-bright) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3) !important;
+}
+
+
+/* ==========================================================================
+   MINIMALIST MODERN SIDEBAR & CONSOLE POLISH
+   ========================================================================== */
+
+/* Active Tab Underline & Glow Polish */
+.forge-tab-btn {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.forge-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.forge-tab-btn.active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--lp-accent-bright) !important;
+}
+
+.forge-tab-btn.active::after {
+  height: 2px !important;
+  bottom: -1px !important;
+  left: 8px !important;
+  right: 8px !important;
+  box-shadow: none !important; /* Remove glowing shadows */
+  background: var(--lp-accent-primary) !important;
+}
+
+.theme-light .forge-tabs-container {
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+.theme-light .forge-tab-btn:hover {
+  background: rgba(15, 23, 42, 0.03) !important;
+  color: var(--lp-text-color) !important;
+}
+
+.theme-light .forge-tab-btn.active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--lp-accent-primary) !important;
+}
+
+/* Board Badge Polish (Remove Neon Glowing & Pulsing Dots) */
+.board-badge {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--lp-accent-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.board-badge-dot {
+  background: var(--lp-accent-primary) !important;
+  box-shadow: none !important;
+}
+
+.board-badge-dot::after {
+  display: none !important; /* Disable pulse ring animation */
+}
+
+.theme-light .board-badge {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  color: var(--lp-accent-primary) !important;
+}
+
+/* Serial Monitor Layout Polish */
+.serial-monitor-header {
+  box-shadow: none !important; /* Remove header shadow */
+}
+
+.theme-light .serial-monitor-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+  box-shadow: none !important;
+}
+
+.theme-light .serial-monitor-footer {
+  background: #ffffff !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Serial Monitor Action Buttons Polish */
+.serial-btn, .serial-btn-clear {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.serial-btn:hover {
+  background: var(--lp-accent-primary) !important;
+  border-color: var(--lp-accent-primary) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.serial-btn-clear:hover {
+  background: var(--lp-rose) !important;
+  border-color: var(--lp-rose) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.theme-light .serial-btn {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-color: rgba(15, 23, 42, 0.06) !important;
+  color: var(--lp-accent-primary) !important;
+}
+
+.theme-light .serial-btn-clear {
+  background: rgba(244, 63, 94, 0.04) !important;
+  border-color: rgba(244, 63, 94, 0.08) !important;
+  color: var(--lp-rose) !important;
+}
+
+/* Serial Monitor Form Controls Polish */
+.serial-input-field:focus {
+  box-shadow: none !important; /* Remove blue glowing shadow */
+}
+
+.theme-light .serial-input-field {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.theme-light .serial-input-field:focus {
+  border-color: var(--lp-accent-primary) !important;
+  box-shadow: none !important;
+}
+
+.theme-light .serial-select-ending {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  color: #475569 !important;
+}
+
+.serial-send-btn {
+  box-shadow: none !important;
+}
+
+.serial-send-btn:not(:disabled):hover {
+  background: var(--lp-accent-bright) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.theme-light .serial-send-btn {
+  color: #ffffff !important;
+}
+

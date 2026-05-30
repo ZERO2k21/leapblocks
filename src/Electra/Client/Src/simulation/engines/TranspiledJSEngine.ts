@@ -1,9 +1,10 @@
 /**
  * TranspiledJSEngine.ts
- * Wraps the EXISTING ArduinoRuntime.ts + transpiler.ts as a fallback engine.
+ * Wraps the EXISTING ArduinoRuntime.ts + transpiler.ts as the PRIMARY engine.
  * DO NOT copy or duplicate ArduinoRuntime logic — only wrap it.
  *
- * Priority 2 — tried SECOND, after VelxioEngine fails.
+ * Priority 1 — tried FIRST (recommended path).
+ * Bypasses RISC-V emulation entirely, runs Arduino API directly in browser.
  */
 
 import type { ESP32C3SimulationRunner } from '../../engine/esp32c3/ESP32C3SimulationRunner';
@@ -12,7 +13,7 @@ import { SimulationEngineError } from '../types';
 
 export class TranspiledJSEngine implements ISimulationEngine {
   name = 'transpiled-js';
-  priority = 2;
+  priority = 1;
 
   private transpiledCode: string | null = null;
 

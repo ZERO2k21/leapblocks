@@ -12,8 +12,13 @@ import {
   removeLibrary,
   Library,
 } from '../../services/LibraryService';
+import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
 export const LibraryManager: React.FC = () => {
+  const uiTheme = useForgeStore((state) => state.uiTheme);
+  const board = useForgeStore((state) => state.board);
+  const isLightTheme = uiTheme === 'light';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [allLibraries, setAllLibraries] = useState<Library[]>([]);
@@ -161,6 +166,11 @@ export const LibraryManager: React.FC = () => {
     }
   };
 
+  const accentDim = useMemo(() => {
+    if (!isLightTheme) return 'rgba(34, 211, 238, 0.1)';
+    return board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.08)' : 'rgba(2, 132, 199, 0.08)';
+  }, [isLightTheme, board]);
+
   const t = {
     bg: 'var(--lp-dark-bg)',
     surface: 'var(--lp-dark-surface)',
@@ -171,20 +181,20 @@ export const LibraryManager: React.FC = () => {
     dim: 'var(--lp-zinc-600)',
     accent: 'var(--lp-accent-primary)',
     accentBright: 'var(--lp-accent-bright)',
-    accentDim: 'rgba(34, 211, 238, 0.1)',
+    accentDim,
     cyan: 'var(--lp-accent-primary)',
     cyanBright: 'var(--lp-accent-bright)',
     orange: 'var(--lp-amber)',
     danger: 'var(--lp-rose)',
     success: 'var(--lp-emerald)',
-    white: '#ffffff',
+    white: isLightTheme ? '#0f172a' : '#ffffff',
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: "'Space Mono', monospace", overflow: 'hidden', borderRadius: '12px' }}>
 
       {/* Header */}
-      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
+      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface, boxShadow: isLightTheme ? '0 1px 4px rgba(0,0,0,0.05)' : '0 1px 4px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LibraryIcon size={18} color="#000" strokeWidth={3} />
@@ -197,7 +207,7 @@ export const LibraryManager: React.FC = () => {
       </div>
 
       {/* Status bar */}
-      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(34, 211, 238, 0.08)' }}>
+      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase', boxShadow: isLightTheme ? 'none' : '0 2px 8px rgba(34, 211, 238, 0.08)' }}>
         <Info size={14} strokeWidth={3} />
         <span>
           {isLoading
@@ -220,9 +230,15 @@ export const LibraryManager: React.FC = () => {
               placeholder="FILTER_MODULES..."
               value={searchQuery}
               onChange={handleQueryChange}
-              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit', boxShadow: '0 2px 6px rgba(0,0,0,0.15)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-              onFocus={(e) => { e.target.style.borderColor = t.accent; e.target.style.boxShadow = `0 0 0 3px rgba(34, 211, 238, 0.15)`; }}
-              onBlur={(e) => { e.target.style.borderColor = t.border; e.target.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)'; }}
+              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit', boxShadow: isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+              onFocus={(e) => { 
+                e.target.style.borderColor = t.accent; 
+                e.target.style.boxShadow = `0 0 0 3px ${isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.15)' : 'rgba(2, 132, 199, 0.15)') : 'rgba(34, 211, 238, 0.15)'}`; 
+              }}
+              onBlur={(e) => { 
+                e.target.style.borderColor = t.border; 
+                e.target.style.boxShadow = isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)'; 
+              }}
             />
           </div>
 
@@ -252,7 +268,7 @@ export const LibraryManager: React.FC = () => {
                     e.currentTarget.style.borderColor = t.accent;
                     e.currentTarget.style.background = t.surfaceHover;
                     e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                    e.currentTarget.style.boxShadow = isLightTheme ? '0 4px 12px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.3)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = t.border;
@@ -267,7 +283,15 @@ export const LibraryManager: React.FC = () => {
                       <div style={{ fontSize: '9px', color: t.dim, marginTop: '2px', fontWeight: 700 }}>AUTOR: {lib.author}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px', flexShrink: 0 }}>
-                      <span style={{ fontSize: '9px', color: t.cyan, background: 'rgba(34, 211, 238, 0.05)', padding: '2px 6px', borderRadius: '1px', fontWeight: 700, border: `1px solid rgba(34, 211, 238, 0.2)` }}>{lib.version}</span>
+                      <span style={{ 
+                        fontSize: '9px', 
+                        color: t.cyan, 
+                        background: isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.05)' : 'rgba(2, 132, 199, 0.05)') : 'rgba(34, 211, 238, 0.05)', 
+                        padding: '2px 6px', 
+                        borderRadius: '1px', 
+                        fontWeight: 700, 
+                        border: `1px solid ${isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.2)' : 'rgba(2, 132, 199, 0.2)') : 'rgba(34, 211, 238, 0.2)'}` 
+                      }}>{lib.version}</span>
                       {lib.isInstalled ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: t.success, fontSize: '9px', fontWeight: 900 }}>
                           <CheckCircle size={12} strokeWidth={3} /> LINKED
@@ -292,8 +316,8 @@ export const LibraryManager: React.FC = () => {
         </div>
 
         {/* Right — installed */}
-          <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '8px', border: `1px solid ${t.border}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+        <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '8px', border: `1px solid ${t.border}`, boxShadow: isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)' }}>
             <div style={{ width: '24px', height: '24px', borderRadius: '2px', background: t.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Package size={14} color="#000" strokeWidth={3} />
             </div>

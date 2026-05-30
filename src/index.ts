@@ -6,7 +6,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { spawn } from 'child_process';
+import { spawn, fork } from 'child_process';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
@@ -231,23 +231,23 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
   const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
   log('IPC', `isESP32: ${isESP32}`);
 
-    if (isESP32) {
-      log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
-      const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
-      
-      // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
-      // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back
-      if (result.success && result.binPath) {
-        const binDir = path.dirname(result.binPath);
-        if (lastESP32BinTempDir && lastESP32BinTempDir !== binDir) {
-           getCleanupESP32Build()(lastESP32BinTempDir);
-        }
-        lastESP32BinTempDir = binDir;
+  if (isESP32) {
+    log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
+    const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+
+    // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
+    // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back
+    if (result.success && result.binPath) {
+      const binDir = path.dirname(result.binPath);
+      if (lastESP32BinTempDir && lastESP32BinTempDir !== binDir) {
+        getCleanupESP32Build()(lastESP32BinTempDir);
       }
-      
-      log('IPC', `compile-code ESP32 returning result from Uploader.`);
-      return result;
+      lastESP32BinTempDir = binDir;
     }
+
+    log('IPC', `compile-code ESP32 returning result from Uploader.`);
+    return result;
+  }
 
   // ── AVR path ─────────────────────────────────────────────────────────────
   log('IPC', `compile-code AVR path, FQBN: ${fqbn}`);
@@ -303,8 +303,14 @@ ipcMain.handle('forge-lib-cache-info', async () => {
 });
 
 // Python Handlers
-ipcMain.handle('python-run', async (event, code: string) => {
-  await pythonManager.runCode(code);
+ipcMain.handle('python-check', async () => {
+  return await pythonManager.checkPython();
+});
+ipcMain.handle('python-run', async (event, code: string, projectFiles?: Record<string, string>) => {
+  await pythonManager.runCode(code, projectFiles);
+});
+ipcMain.handle('python-send-input', async (event, input: string) => {
+  pythonManager.sendInput(input);
 });
 ipcMain.handle('python-repl-start', async () => {
   await pythonManager.startRepl();
@@ -347,9 +353,13 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
     ? targetPath
     : path.join(app.getAppPath(), targetPath);
 
+  const scriptPath = path.join(app.getAppPath(), 'remove_bg.py');
+  if (!fs.existsSync(scriptPath)) {
+    return Promise.resolve({ success: false, error: 'Background removal script not available in this build.' });
+  }
+
   return new Promise((resolve) => {
-    // Note: ensure python is in PATH or use a specific path
-    exec(`python "${path.join(app.getAppPath(), 'remove_bg.py')}" "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
+    exec(`python "${scriptPath}" "${fullPath}"`, (error: any, stdout: any, stderr: any) => {
       let resultBase64;
 
       // If we used a temp file, the python script outputs a new file (replace extension with .png)
@@ -376,33 +386,48 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
 });
 
 ipcMain.handle('build-apk', async (event, appState) => {
-  // In Vite/Electron-Vite, we can just use regular require for our external build script
-  const buildApkPath = path.join(app.getAppPath(), 'electron', 'buildApk.js');
-  let buildApk: any;
-  try {
-    buildApk = require(buildApkPath);
-  } catch (e) {
-    console.error('Could not load buildApk from', buildApkPath, e);
-    return { success: false, error: `Build script not found at ${buildApkPath}` };
-  }
+  // Run the heavy APK build in a forked child process so the main thread
+  // (and therefore the renderer) never freezes or shows "Not Responding".
+  const workerPath = path.join(
+    app.getAppPath(),
+    'src', 'studio', 'apk', 'build-worker.js'
+  );
 
+  return new Promise((resolve) => {
+    const child = fork(workerPath, [], {
+      // Inside ASAR: Electron's fork handles it transparently
+      silent: false,
+      env: { ...process.env },
+    });
 
-  const logCallback = (msg: string) => {
-    try {
-      if (!event.sender.isDestroyed()) {
-        event.sender.send('build-log', msg);
+    child.send({ type: 'build', appState, appRoot: app.getAppPath() });
+
+    child.on('message', (msg: any) => {
+      if (msg.type === 'log') {
+        try {
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('build-log', msg.message);
+          }
+        } catch (_) { /* renderer may have navigated away */ }
+      } else if (msg.type === 'done') {
+        resolve({ success: true, outputPath: msg.outputPath });
+      } else if (msg.type === 'error') {
+        resolve({ success: false, error: msg.message });
       }
-    } catch (err) {
-      console.error("Failed to send log:", err);
-    }
-  };
+    });
 
-  try {
-    const outputPath = await buildApk(appState, app.getAppPath(), logCallback);
-    return { success: true, outputPath };
-  } catch (error: any) {
-    return { success: false, error: error.message || error.toString() };
-  }
+    child.on('error', (err) => {
+      console.error('[build-apk] Worker error:', err);
+      resolve({ success: false, error: err.message || 'Build worker crashed' });
+    });
+
+    child.on('exit', (code) => {
+      // If the worker exited without sending 'done' or 'error', treat as failure
+      if (code !== 0) {
+        resolve({ success: false, error: `Build worker exited with code ${code}` });
+      }
+    });
+  });
 });
 
 ipcMain.handle('show-in-folder', (_, filePath) => {

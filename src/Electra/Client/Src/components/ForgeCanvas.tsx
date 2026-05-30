@@ -3,10 +3,9 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactFlow, {
   Background,
-  Controls,
   MiniMap,
   Connection,
   ConnectionMode,
@@ -15,7 +14,10 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
-  BackgroundVariant
+  BackgroundVariant,
+  useReactFlow,
+  useViewport,
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
@@ -24,7 +26,7 @@ import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
-import { Plus, Play, Square, RotateCcw, Code } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 // Define custom node types outside component to prevent re-renders
 const nodeTypes = {
@@ -48,6 +50,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   showEditor = true,
   onToggleEditor
 }) => {
+  const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport } = useReactFlow();
+  const currentViewport = useViewport();
   const store = useForgeStore();
   const {
     isSimulating,
@@ -56,7 +60,11 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     edges: storeEdges,
     addNode,
     addEdge: addStoreEdge,
-    updateNodePosition
+    updateNodePosition,
+    uiTheme,
+    toggleUiTheme,
+    viewport: savedViewport,
+    setViewportState
   } = store;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -70,6 +78,54 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   useEffect(() => {
     setEdges(storeEdges);
   }, [storeEdges, setEdges]);
+
+  // ── Keyboard zoom shortcuts (Wokwi-style) ──────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      if (ctrl && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        zoomIn({ duration: 200 });
+      } else if (ctrl && e.key === '-') {
+        e.preventDefault();
+        zoomOut({ duration: 200 });
+      } else if (ctrl && e.key === '0') {
+        e.preventDefault();
+        const selected = getNodes().filter((n) => n.selected);
+        if (selected.length > 0) {
+          fitView({ nodes: selected, duration: 300, padding: 0.3 });
+        } else {
+          fitView({ duration: 300, padding: 0.2 });
+        }
+      } else if (ctrl && e.key === '1') {
+        e.preventDefault();
+        // Zoom to 100%
+        const vp = getViewport();
+        setViewport({ ...vp, zoom: 1 }, { duration: 200 });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomIn, zoomOut, fitView, setViewport, getViewport, getNodes]);
+
+  // ── Restore viewport from saved state on mount ────────────────────
+  useEffect(() => {
+    if (savedViewport.x !== 0 || savedViewport.y !== 0 || savedViewport.zoom !== 1) {
+      setViewport(savedViewport);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Persist viewport to store on every pan/zoom change ────────────
+  useEffect(() => {
+    setViewportState(currentViewport);
+  }, [currentViewport.x, currentViewport.y, currentViewport.zoom, setViewportState]);
 
   // Handle new connections (wiring)
   const onConnect = useCallback(
@@ -135,7 +191,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         height: '100%',
         background: 'var(--lp-dark-bg)',
         position: 'relative',
-        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
+        backgroundImage: uiTheme === 'light'
+          ? 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)'
+          : 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
         backgroundSize: '24px 24px'
       }}
       onDrop={onDrop}
@@ -159,6 +217,11 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         snapGrid={[10, 10]}
         connectionLineComponent={PhysicalConnectionLine}
         connectionMode={ConnectionMode.Loose}
+        minZoom={0.1}
+        maxZoom={4}
+        zoomOnScroll
+        zoomOnPinch
+        zoomOnDoubleClick={false}
         style={{ background: 'transparent' }}
       >
         <Background
@@ -168,21 +231,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           color="var(--lp-border-active)"
         />
 
-        <Controls
-          className="glass-controls"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            background: 'var(--lp-glass)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid var(--lp-border)',
-            borderRadius: 12,
-            padding: 4,
-            boxShadow: 'var(--lp-shadow)'
-          }}
-        />
-
+        {/* ── Wokwi-style MiniMap with component labels ── */}
         <MiniMap
           className="glass-minimap"
           style={{
@@ -192,9 +241,30 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             borderRadius: 16,
             overflow: 'hidden'
           }}
-          nodeColor={(n: any) => n.data?.type === 'boards' ? 'var(--lp-accent-primary)' : '#cbd5e1'}
+          nodeColor={(n: any) => {
+            const t = n.data?.type;
+            if (t === 'boards') return 'var(--lp-accent-primary)';
+            if (t?.includes('oled') || t?.includes('ssd1306')) return '#f59e0b';
+            if (t?.includes('led')) return '#ef4444';
+            if (t?.includes('sensor') || t?.includes('dht') || t?.includes('pir')) return '#10b981';
+            if (t?.includes('motor') || t?.includes('servo') || t?.includes('stepper')) return '#8b5cf6';
+            if (t?.includes('button') || t?.includes('keypad')) return '#6366f1';
+            if (t?.includes('tft') || t?.includes('ili9341')) return '#06b6d4';
+            return '#cbd5e1';
+          }}
+          nodeStrokeWidth={2}
+          nodeBorderRadius={4}
           maskColor="rgba(0, 0, 0, 0.6)"
+          pannable
+          zoomable
         />
+
+        {/* ── Zoom percentage display (Wokwi-style) ── */}
+        <Panel position="bottom-right" style={{ marginBottom: 8, marginRight: 8 }}>
+          <div className="zoom-display">
+            {Math.round(currentViewport.zoom * 100)}%
+          </div>
+        </Panel>
       </ReactFlow>
 
       <style>{`
@@ -205,20 +275,190 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         .react-flow__handle { z-index: 10 !important; }
         .react-flow__attribution { display: none !important; }
         
-        /* Modern Controls Styling */
-        .glass-controls button {
-          background: transparent !important;
-          border: none !important;
-          border-radius: 8px !important;
-          color: #64748b !important;
+        /* Modern Zoom Controls Styling */
+        .zoom-display {
+          background: var(--lp-glass);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--lp-border);
+          border-radius: 8px;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--lp-text);
+          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          user-select: none;
+          min-width: 48px;
+          text-align: center;
+          box-shadow: var(--lp-shadow);
+        }
+        .theme-light .zoom-display {
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          background: rgba(255, 255, 255, 0.7);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+        .glass-minimap {
+          border-radius: 6px !important;
+          color: var(--lp-zinc-400) !important;
           transition: all 0.2s !important;
+          margin: 1px !important;
         }
-        .glass-controls button:hover {
-          background: rgba(123, 79, 196, 0.1) !important;
-          color: #7B4FC4 !important;
+
+        /* Modern MiniMap Styling */
+        .glass-minimap {
+          border: 1px solid var(--lp-border) !important;
+          border-radius: 12px !important;
+          background: var(--lp-glass) !important;
+          box-shadow: var(--lp-shadow) !important;
+          overflow: hidden !important;
         }
-        .react-flow__controls-button svg {
-          fill: currentColor !important;
+        .theme-light .glass-minimap {
+          border: 1px solid rgba(15, 23, 42, 0.08) !important;
+          background: rgba(255, 255, 255, 0.7) !important;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Floating Action Panel */
+        .canvas-action-panel {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: var(--lp-glass);
+          border: 1px solid var(--lp-border);
+          border-radius: 24px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          z-index: 100;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .theme-light .canvas-action-panel {
+          background: #ffffff !important;
+          border: 1px solid rgba(15, 23, 42, 0.08) !important;
+          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Divider */
+        .canvas-divider {
+          width: 1px;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.12);
+          margin: 0 4px;
+        }
+        .theme-light .canvas-divider {
+          background: rgba(15, 23, 42, 0.08);
+        }
+
+        /* Floating Panel Buttons */
+        .canvas-btn {
+          height: 38px;
+          border-radius: 19px;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: inherit;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        /* Simulation Buttons */
+        .sim-btn {
+          padding: 0 16px;
+          background: var(--lp-emerald);
+          color: #ffffff;
+          gap: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .sim-btn:hover {
+          background: #059669;
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .sim-btn.simulating {
+          background: var(--lp-rose);
+        }
+        .sim-btn.simulating:hover {
+          background: #e11d48;
+          box-shadow: 0 6px 16px rgba(244, 63, 94, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Secondary Round Buttons */
+        .canvas-btn.secondary {
+          width: 38px;
+          background: var(--lp-zinc-800);
+          border: 1px solid var(--lp-border);
+          color: var(--lp-zinc-400);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+        .canvas-btn.secondary:hover {
+          color: var(--lp-accent-bright);
+          border-color: rgba(96, 165, 250, 0.3);
+          background: var(--lp-zinc-700);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        }
+        .canvas-btn.secondary.active {
+          background: var(--lp-accent-primary);
+          border-color: transparent;
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+        }
+        .canvas-btn.secondary.active:hover {
+          background: var(--lp-accent-bright);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35);
+        }
+
+        /* Primary Add Button */
+        .canvas-btn.primary-add {
+          width: 38px;
+          background: var(--lp-accent-primary);
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+        }
+        .canvas-btn.primary-add:hover {
+          background: var(--lp-accent-bright);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
+        }
+        .canvas-btn.primary-add.active {
+          background: var(--lp-accent-bright);
+        }
+
+
+        /* Compiling Spinner */
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        /* Zoom label in toolbar (Wokwi-style) */
+        .canvas-zoom-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--lp-text-secondary, #94a3b8);
+          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          user-select: none;
+          min-width: 40px;
+          text-align: center;
+          padding: 0 4px;
+          cursor: default;
+        }
+        .canvas-zoom-label:hover {
+          color: var(--lp-text, #e2e8f0);
         }
 
         @media (max-width: 768px) {
@@ -232,50 +472,15 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       <SelectionToolbar />
 
       {/* ── FLOATING ACTION PANEL (Tinkercad Style Toolbar) ────────────────── */}
-      <div className="canvas-action-panel" style={{
-        position: 'absolute',
-        top: '16px',
-        right: '16px',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '6px 12px',
-        background: 'var(--lp-glass)',
-        border: '1px solid var(--lp-border-active)',
-        borderRadius: '24px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 100
-      }}>
+      <div className="canvas-action-panel">
         {/* Play/Stop Labeled Simulation Button */}
         <button
           onClick={onToggleSimulation || toggleStoreSimulation}
           disabled={isCompiling}
-          className="canvas-btn sim-btn"
-          style={{
-            height: '38px',
-            padding: '0 16px',
-            borderRadius: '19px',
-            background: isSimulating ? 'var(--lp-rose)' : 'var(--lp-emerald)',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '11px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            boxShadow: isSimulating ? '0 0 10px rgba(244,63,94,0.3)' : '0 0 10px rgba(16,185,129,0.3)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+          className={`canvas-btn sim-btn ${isSimulating ? 'simulating' : ''}`}
         >
           {isCompiling ? (
-            <div className="spinner" style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div className="spinner" />
           ) : isSimulating ? (
             <>
               <Square size={14} fill="currentColor" />
@@ -293,65 +498,64 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         <button
           onClick={store.resetSimulation}
           className="canvas-btn secondary"
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '19px',
-            background: 'var(--lp-zinc-800)',
-            border: '1px solid var(--lp-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--lp-zinc-400)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--lp-accent-primary)'; e.currentTarget.style.borderColor = 'var(--lp-accent-primary)'; e.currentTarget.style.background = 'var(--lp-zinc-700)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--lp-zinc-400)'; e.currentTarget.style.borderColor = 'var(--lp-border)'; e.currentTarget.style.background = 'var(--lp-zinc-800)'; }}
           title="Reset Simulation"
         >
           <RotateCcw size={16} />
         </button>
 
-        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }} />
+        {/* Zoom In Button */}
+        <button
+          onClick={() => zoomIn({ duration: 200 })}
+          className="canvas-btn secondary"
+          title="Zoom In (Ctrl+=)"
+        >
+          <ZoomIn size={16} />
+        </button>
+
+        {/* Zoom Percentage Display */}
+        <div className="canvas-zoom-label" title="Current zoom level">
+          {Math.round(currentViewport.zoom * 100)}%
+        </div>
+
+        {/* Zoom Out Button */}
+        <button
+          onClick={() => zoomOut({ duration: 200 })}
+          className="canvas-btn secondary"
+          title="Zoom Out (Ctrl+-)"
+        >
+          <ZoomOut size={16} />
+        </button>
+
+        {/* Fit View Button */}
+        <button
+          onClick={() => fitView({ duration: 400, padding: 0.2 })}
+          className="canvas-btn secondary"
+          title="Fit View (Ctrl+0)"
+        >
+          <Maximize size={16} />
+        </button>
+
+        <div className="canvas-divider" />
 
         {/* Code Panel Toggle Button */}
         {onToggleEditor && (
           <button
             onClick={onToggleEditor}
             className={`canvas-btn secondary ${showEditor ? 'active' : ''}`}
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '19px',
-              background: showEditor ? 'var(--lp-accent-primary)' : 'var(--lp-zinc-800)',
-              border: showEditor ? 'none' : '1px solid var(--lp-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: showEditor ? 'var(--lp-btn-text, #000)' : 'var(--lp-zinc-400)',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!showEditor) {
-                e.currentTarget.style.color = 'var(--lp-accent-primary)';
-                e.currentTarget.style.borderColor = 'var(--lp-accent-primary)';
-                e.currentTarget.style.background = 'var(--lp-zinc-700)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!showEditor) {
-                e.currentTarget.style.color = 'var(--lp-zinc-400)';
-                e.currentTarget.style.borderColor = 'var(--lp-border)';
-                e.currentTarget.style.background = 'var(--lp-zinc-800)';
-              }
-            }}
             title="Toggle Code Panel"
           >
             <Code size={16} />
           </button>
         )}
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleUiTheme}
+          className="canvas-btn secondary"
+          title={uiTheme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+        >
+          {uiTheme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
 
         {/* Add Component (Part Picker) Button */}
         <button
@@ -361,21 +565,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             }
             store.setShowPartPicker(!store.showPartPicker);
           }}
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '19px',
-            background: store.showPartPicker ? 'var(--lp-accent-bright)' : 'var(--lp-accent-primary)',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--lp-btn-text, #000)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lp-accent-bright)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lp-accent-primary)'; }}
+          className={`canvas-btn primary-add ${store.showPartPicker ? 'active' : ''}`}
           title="Toggle Components Panel"
         >
           <Plus size={20} />
@@ -387,6 +577,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     </div>
   );
 };
+
 
 const ForgeCanvas: React.FC<ForgeCanvasProps> = (props) => (
   <ReactFlowProvider>

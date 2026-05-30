@@ -26,6 +26,9 @@ const LandingPage = lazy(() => {
 
 const IntermediateApp = lazy(() => {
     logAppTiming('IntermediateApp lazy load started');
+    if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
+        (window as any).define = undefined;
+    }
     return import('./IntermediateApp').then(module => {
         logAppTiming('IntermediateApp lazy load completed');
         return module;
@@ -35,6 +38,9 @@ const IntermediateApp = lazy(() => {
 // @ts-ignore
 const JuniorApp = lazy(() => {
     logAppTiming('JuniorApp lazy load started');
+    if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
+        (window as any).define = undefined;
+    }
     return import('./leapignite/client/JuniorApp').then(module => {
         logAppTiming('JuniorApp lazy load completed');
         return module;
@@ -62,6 +68,9 @@ const PythonNotebook = lazy(() => {
 // @ts-ignore
 const AppInventor = lazy(() => {
     logAppTiming('AppInventor lazy load started');
+    if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
+        (window as any).define = undefined;
+    }
     return import('./studio').then(module => {
         logAppTiming('AppInventor lazy load completed');
         return module;
@@ -134,6 +143,9 @@ export default function App() {
         cleanBlocklyStyles();
         if (newMode === 'junior') {
             setJuniorKey(k => k + 1);
+        }
+        if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
+            (window as any).define = undefined;
         }
         setMode(newMode);
     }, [cleanBlocklyStyles]);
@@ -221,8 +233,8 @@ export default function App() {
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
                 {mode === 'appinventor' && <AppInventor {...({ onBack: requestExit } as any)} />}
-                {mode === 'appforge' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
-                {mode === 'electra' && <ElectraStudio {...({ onBack: requestExit } as any)} />}
+                {mode === 'appforge' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
+                {mode === 'electra' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
                 {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>

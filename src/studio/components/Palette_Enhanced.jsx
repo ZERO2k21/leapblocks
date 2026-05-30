@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import ComponentIcon from './ComponentIcon';
 
 export default function PaletteEnhanced() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +44,7 @@ export default function PaletteEnhanced() {
     return (
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
-            <div 
+            <div
                 style={{ paddingTop: '28px', paddingBottom: '12px', paddingLeft: '24px', paddingRight: '24px' }}
                 className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm"
             >
@@ -63,7 +64,7 @@ export default function PaletteEnhanced() {
             </div>
 
             {/* Component Categories */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
                 {Object.entries(categories).map(([category, items]) => {
                     const filteredItems = items.filter(item =>
                         item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -89,7 +90,7 @@ export default function PaletteEnhanced() {
                                 </span>
                                 <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">{filteredItems.length}</span>
                             </button>
- 
+
                             {/* Category Items */}
                             {!isCollapsed && (
                                 <div className="grid grid-cols-2 gap-3 p-4 bg-gradient-to-b from-slate-50/50 to-white">
@@ -103,17 +104,17 @@ export default function PaletteEnhanced() {
                                             className="group/item relative flex flex-col items-center gap-2.5 p-4 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10"
                                             title={item.description}
                                         >
-                                            <span className="text-3xl text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grayscale-[20%] group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:text-blue-600 group-hover/item:grayscale-0">{item.icon}</span>
-                                            <span 
-                                                style={{ 
-                                                    fontSize: item.label.length > 20 ? '8px' : item.label.length > 15 ? '9.5px' : '11px', 
-                                                    wordBreak: 'break-all' 
-                                                }} 
+                                            <ComponentIcon type={item.type} size={36} className="transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-80 group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:opacity-100" />
+                                            <span
+                                                style={{
+                                                    fontSize: item.label.length > 20 ? '8px' : item.label.length > 15 ? '9.5px' : '11px',
+                                                    wordBreak: 'break-all'
+                                                }}
                                                 className="w-full px-1 font-extrabold text-slate-900 uppercase tracking-wider transition-colors duration-300 leading-tight group-hover/item:text-blue-600 group-hover/item:font-black"
                                             >
                                                 {item.label}
                                             </span>
- 
+
                                             {/* Info icon */}
                                             {item.description && (
                                                 <Info className="h-3.5 w-3.5 text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -1782,7 +1782,7 @@ export const registerleapBlocks = () => {
                 this.setNextStatement(true, null);
                 this.setColour('#FFBF00');
                 this.setTooltip('Send message and wait for all handlers to finish');
-                // ✅ NO extension here — applied later after initBlocklyOnce registers it
+                Blockly.Extensions.apply('broadcast_dropdown_ext', this, false);
             }
         };
     }
@@ -1823,6 +1823,7 @@ export const registerleapBlocks = () => {
                 this.setNextStatement(true, null);
                 this.setColour('#FFBF00');
                 this.setTooltip('Runs when message is received');
+                Blockly.Extensions.apply('broadcast_dropdown_ext', this, false);
             }
         };
     }

@@ -13,10 +13,16 @@ const ARRANGEMENT_TYPES = new Set([
   'HorizontalScrollArrangement',
   'VerticalArrangement',
   'VerticalScrollArrangement',
-  'TableArrangement'
+  'TableArrangement',
+  'AbsoluteArrangement',
+  'Map',
+  'FeatureCollection'
 ]);
+const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
+const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
+const DEFAULT_DESIGN_VIEWPORT = { width: 412, height: 915, deviceType: 'phone', orientation: 'portrait' };
 
-const makeScreen = (id) => ({ id, title: id, components: [], nonVisibleComponents: [] });
+const makeScreen = (id) => ({ id, title: id, backgroundColor: '#ffffff', backgroundImage: '', alignHorizontal: 'Left', alignVertical: 'Top', components: [], nonVisibleComponents: [] });
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
@@ -107,6 +113,7 @@ export function useAppState() {
   const [packageName, setPackageName] = useState('com.leapblocks.myapp');
   const [blockLogic, setBlockLogic] = useState(''); // XML canonical source
   const [media, setMedia] = useState([]);
+  const [designViewport, setDesignViewport] = useState(DEFAULT_DESIGN_VIEWPORT);
 
   const getCurrentScreen = (stateScreens) =>
     stateScreens.find(s => s.id === activeScreen) || stateScreens[0];
@@ -122,7 +129,7 @@ export function useAppState() {
     return `${type}${idx}`;
   };
 
-  const addComponent = (type, x = 0, y = 0, options = {}) => {
+  const addComponent = (type, options = {}) => {
     const meta = COMPONENT_META.get(type) || {};
     const visible = options.visible ?? meta.visible ?? true;
     let addedId = null;
@@ -139,21 +146,25 @@ export function useAppState() {
         icon: meta.icon,
         visible,
         children: ARRANGEMENT_TYPES.has(type) ? [] : undefined,
-        props: defaultProps,
-        x,
-        y
+        props: defaultProps
       };
 
       const selectedParent = screen.components && isInTree(screen.components, selectedId)
         ? findNodeById(screen.components, selectedId)
         : null;
-      const canNest = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type);
+      const canNestInArrangement = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type) && selectedParent.type !== 'Map' && selectedParent.type !== 'FeatureCollection';
+      const canNestInCanvas = selectedParent?.type === 'Canvas' && CANVAS_CHILD_TYPES.has(type);
+      const canNestInMap = visible && selectedParent && (selectedParent.type === 'Map' || selectedParent.type === 'FeatureCollection') && MAP_CHILD_TYPES.has(type);
 
       const nextScreen = deepClone(screen);
 
       if (!visible) {
         nextScreen.nonVisibleComponents.push(newComponent);
-      } else if (canNest) {
+      } else if (canNestInArrangement) {
+        nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
+      } else if (canNestInCanvas) {
+        nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
+      } else if (canNestInMap) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
       } else {
         nextScreen.components.push(newComponent);
@@ -173,6 +184,7 @@ export function useAppState() {
         // Update Screen property directly
         if (key === 'AboutScreen') next.aboutScreen = value;
         else if (key === 'BackgroundColor') next.backgroundColor = value;
+        else if (key === 'BackgroundImage') next.backgroundImage = value;
         else if (key === 'AlignHorizontal') next.alignHorizontal = value;
         else if (key === 'AlignVertical') next.alignVertical = value;
         else if (key === 'ShowStatusBar') next.showStatusBar = value;
@@ -282,6 +294,7 @@ export function useAppState() {
     if (projectData.packageName) setPackageName(projectData.packageName);
     if (projectData.blockLogic !== undefined) setBlockLogic(projectData.blockLogic);
     if (projectData.media) setMedia(projectData.media || []);
+    setDesignViewport(projectData.designViewport || DEFAULT_DESIGN_VIEWPORT);
     setSelectedId(null);
   };
 
@@ -293,6 +306,7 @@ export function useAppState() {
     setPackageName('com.leapblocks.myapp');
     setBlockLogic('');
     setMedia([]);
+    setDesignViewport(DEFAULT_DESIGN_VIEWPORT);
   };
 
   const currentScreen = useMemo(() => getCurrentScreen(screens), [screens, activeScreen]);
@@ -330,7 +344,8 @@ export function useAppState() {
     versionName: '1.0',
     screens,
     blockLogic,
-    media
+    media,
+    designViewport
   });
 
   const selectComponent = (id) => setSelectedId(id);
@@ -344,6 +359,7 @@ export function useAppState() {
     packageName,
     blockLogic,
     media,
+    designViewport,
     currentScreen,
     selectedComponent,
     addComponent,
@@ -356,6 +372,7 @@ export function useAppState() {
     setAppName,
     setPackageName,
     setBlockLogic,
+    setDesignViewport,
     getSerializedState,
     selectComponent,
     deleteComponent,
@@ -375,6 +392,7 @@ export function useAppState() {
     packageName,
     blockLogic,
     media,
+    designViewport,
     currentScreen,
     selectedComponent
   ]);

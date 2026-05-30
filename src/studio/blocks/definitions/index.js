@@ -14,7 +14,7 @@ import './variables';
 import './procedures';
 
 // Export colors and utilities
-export { MIT_COLORS } from './builtin_blocks';
+export { LEAP_COLORS } from './builtin_blocks';
 export { createComponentBlocks } from './color_component_blocks';
 
 /**

@@ -63,6 +63,10 @@ export class MembraneKeypadElement extends LitElement {
 
   static get styles() {
     return css`
+      :host {
+        display: inline-block;
+      }
+
       text {
         fill: #dfe2e5;
         user-select: none;

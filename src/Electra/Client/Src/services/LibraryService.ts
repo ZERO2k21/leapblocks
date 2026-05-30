@@ -125,7 +125,7 @@ export const getLibraries = async (): Promise<Library[]> => {
   try {
     console.log('[LibraryService] Getting libraries from browser storage...');
     const storedLibs = await browserLibraryStorage.getInstalledLibraries();
-    
+
     // Optional: Fetch from server to ensure sync
     try {
       const res = await fetch(`${CLOUD_COMPILER_URL}/libraries/installed`);
@@ -162,7 +162,7 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
   try {
     console.log('[LibraryService] Installing library to browser storage:', lib.name);
     const result = await browserLibraryStorage.installLibrary(lib);
-    
+
     if (result.success) {
       // Also trigger install on the compiler server so arduino-cli has it
       console.log('[LibraryService] Syncing installation with compiler server...');
@@ -176,7 +176,7 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
         console.warn('[LibraryService] Failed to sync install with server (it may be offline):', e);
       }
     }
-    
+
     return result;
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -197,7 +197,7 @@ export const removeLibrary = async (name: string): Promise<{ success: boolean; e
   try {
     console.log('[LibraryService] Removing library from browser storage:', name);
     const result = await browserLibraryStorage.uninstallLibrary(name);
-    
+
     if (result.success) {
       // Also trigger remove on the compiler server
       console.log('[LibraryService] Syncing removal with compiler server...');
