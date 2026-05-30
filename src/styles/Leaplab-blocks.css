@@ -107,11 +107,11 @@
 }
 
 /* Toolbox category styling */
-.pictoblox-icon {
+.leapblox-icon {
     transition: transform 0.2s ease !important;
 }
 
-.blocklyTreeRow:hover .pictoblox-icon {
+.blocklyTreeRow:hover .leapblox-icon {
     transform: scale(1.1) !important;
 }
 
@@ -346,7 +346,7 @@
 
 /* ── EXTRACTED FROM INDEX.CSS ── */
 /* ═══════════════════════════════════════════════════════════════════════════
-   BLOCKLY TOOLBOX - PictoBlox Style
+   BLOCKLY TOOLBOX - LeapBlox Style
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Toolbox container */
@@ -570,7 +570,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CATEGORY COLORED CIRCLES (PictoBlox-style circular icons)
+   CATEGORY COLORED CIRCLES (LeapBlox-style circular icons)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Create circular icon before each category label */
@@ -804,7 +804,7 @@
   border-color: #e0e0e0 !important;
 }
 
-/* Dropdown Menu Items - PictoBlox Style */
+/* Dropdown Menu Items - LeapBlox Style */
 .blocklyDropDownDiv .goog-menuitem,
 .blocklyDropDownDiv .blocklyMenuItem {
   padding: 8px 16px !important;
@@ -848,7 +848,7 @@
 }
 
 /* Fix category icons scale */
-.pictoblox-icon {
+.leapblox-icon {
   transform: scale(1) !important;
   flex-shrink: 0 !important;
   /* Allow clicks to pass through the icon to the toolbox category row */

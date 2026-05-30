@@ -160,6 +160,9 @@ interface StageProps {
     onVariableModeChange?: (id: string, mode: 'normal' | 'large' | 'slider') => void;
     onVariableValueChange?: (id: string, value: number | string) => void;
     onVariableSliderRangeChange?: (id: string, min: number, max: number) => void;
+    onListAddItem?: (listName: string, item: string) => void;
+    onListEditItem?: (listName: string, index: number, value: string) => void;
+    onListDeleteItem?: (listName: string, index: number) => void;
 }
 
 export const Stage: React.FC<StageProps> = ({
@@ -182,7 +185,10 @@ export const Stage: React.FC<StageProps> = ({
     onMonitorBringToFront,
     onVariableModeChange,
     onVariableValueChange,
-    onVariableSliderRangeChange
+    onVariableSliderRangeChange,
+    onListAddItem,
+    onListEditItem,
+    onListDeleteItem
 }) => {
     const canvasRef     = useRef<HTMLCanvasElement>(null);
     const penCanvasRef  = useRef<HTMLCanvasElement>(null);
@@ -654,6 +660,9 @@ export const Stage: React.FC<StageProps> = ({
                         onPositionChange={(x, y) => onMonitorPositionChange?.('list', m.id, x, y)}
                         onResize={(w, h) => onMonitorResize?.('list', m.id, w, h)}
                         onPointerDown={() => onMonitorBringToFront?.('list', m.id)}
+                        onItemAdd={(item) => onListAddItem?.(m.name, item)}
+                        onItemEdit={(index, value) => onListEditItem?.(m.name, index, value)}
+                        onItemDelete={(index) => onListDeleteItem?.(m.name, index)}
                     />
                 ))}
 

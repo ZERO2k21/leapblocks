@@ -34,7 +34,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
         block.setPreviousStatement(true);
         block.setNextStatement(true);
-        block.setColour("#4C97FF"); // PictoBlox Blue
+        block.setColour("#4C97FF"); // LeapBlox Blue
         block.setTooltip("");
     }
 
@@ -379,7 +379,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     javascriptGenerator.forBlock['sound_mute'] = () => `showFeedback("Muted");\n${wait()}`;
 
     // ===========================================
-    // NEW PICTOBLOX BLOCKS
+    // NEW LEAPBLOX BLOCKS
     // ===========================================
 
     // --- MOTION: Go to Random Position (Zone-Constrained) ---

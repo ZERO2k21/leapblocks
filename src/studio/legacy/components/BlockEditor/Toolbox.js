@@ -45,7 +45,7 @@ const Toolbox = {
       `;
     });
 
-    // Build standard leap/PictoBlox categories
+    // Build standard leap/LeapBlox categories
     // Note: We'll add more categories as we implement them
     return `
       <xml id="toolbox" style="display: none">

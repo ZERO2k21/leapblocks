@@ -26,7 +26,7 @@ if (!Sk && typeof window !== 'undefined') {
     console.warn('[SkulptEngine] Skulpt not resolved via import, waiting for window.Sk...');
 }
 
-// ─── Sprite preamble (PictoBlox-compatible API) ──────────────────────────────
+// ─── Sprite preamble (LeapBlox-compatible API) ──────────────────────────────
 const SPRITE_PREAMBLE = `
 class Sprite:
     """Control a sprite on the LeapBlocks stage from Python.
@@ -175,42 +175,42 @@ export class SkulptEngine {
 
         const toJS = (a) => {
             if (a == null) return a;
-            if (a instanceof sk.builtin.int_)   return a.v;
+            if (a instanceof sk.builtin.int_) return a.v;
             if (a instanceof sk.builtin.float_) return parseFloat(sk.ffi.remapToJs(a));
-            if (a instanceof sk.builtin.str)    return a.v;
+            if (a instanceof sk.builtin.str) return a.v;
             try { return sk.ffi.remapToJs(a); } catch (_) { return a?.v; }
         };
 
         const dispatch = (skName, skAction, skArgs) => {
-            const n   = toJS(skName);
+            const n = toJS(skName);
             const act = toJS(skAction);
             const args = (skArgs?.v ?? []).map(toJS);
             switch (act) {
                 case '__STOP__':
                     throw new Error('Execution stopped');
                 // Initialization
-                case 'INIT':       bridge.initSprite(n); break;
+                case 'INIT': bridge.initSprite(n); break;
 
                 // Movement
-                case 'RIGHT':      bridge.moveRelative(n, 'RIGHT',  args[0] ?? 20); break;
-                case 'LEFT':       bridge.moveRelative(n, 'LEFT',   args[0] ?? 20); break;
-                case 'UP':         bridge.moveRelative(n, 'UP',     args[0] ?? 20); break;
-                case 'DOWN':       bridge.moveRelative(n, 'DOWN',   args[0] ?? 20); break;
-                case 'FORWARD':    bridge.moveSteps(n,              args[0] ?? 20); break;
-                case 'GOTO':       bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
-                case 'SETX':       bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
-                case 'SETY':       bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
+                case 'RIGHT': bridge.moveRelative(n, 'RIGHT', args[0] ?? 20); break;
+                case 'LEFT': bridge.moveRelative(n, 'LEFT', args[0] ?? 20); break;
+                case 'UP': bridge.moveRelative(n, 'UP', args[0] ?? 20); break;
+                case 'DOWN': bridge.moveRelative(n, 'DOWN', args[0] ?? 20); break;
+                case 'FORWARD': bridge.moveSteps(n, args[0] ?? 20); break;
+                case 'GOTO': bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
+                case 'SETX': bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
+                case 'SETY': bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
                 case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old ?? 0) + (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
-                case 'TURN_LEFT':  bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
+                case 'TURN_LEFT': bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)), direction: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
 
                 // Appearance
-                case 'SAY':     bridge.update(n, { speech: args[0] ?? '' }); break;
-                case 'THINK':   bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
-                case 'HIDE':    bridge.update(n, { visible: false }); break;
-                case 'SHOW':    bridge.update(n, { visible: true  }); break;
-                case 'SIZE':    bridge.update(n, { size:  args[0] ?? 100 }); break;
+                case 'SAY': bridge.update(n, { speech: args[0] ?? '' }); break;
+                case 'THINK': bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
+                case 'HIDE': bridge.update(n, { visible: false }); break;
+                case 'SHOW': bridge.update(n, { visible: true }); break;
+                case 'SIZE': bridge.update(n, { size: args[0] ?? 100 }); break;
                 case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
-                case 'ANGLE':   bridge.update(n, { angle: args[0] ?? 0  }); break;
+                case 'ANGLE': bridge.update(n, { angle: args[0] ?? 0 }); break;
                 case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
                 case 'NEXT_COSTUME':
                     bridge.update(n, { nextCostume: true });

@@ -111,7 +111,7 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
         if (!isDragging) {
             setIsDragging(true);
         }
-        
+
         let newX = dragStartRef.current.startX + dx;
         let newY = dragStartRef.current.startY + dy;
 
@@ -211,10 +211,10 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                             <span style={styles.value}>{displayValue}</span>
                         </div>
                         {isNumber ? (
-                            <input 
-                                type="range" 
-                                min={sliderMin} 
-                                max={sliderMax} 
+                            <input
+                                type="range"
+                                min={sliderMin}
+                                max={sliderMax}
                                 value={Number(value) || 0}
                                 onChange={(e) => onValueChange?.(Number(e.target.value))}
                                 style={styles.rangeInput}
@@ -318,7 +318,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginRight: '2px'
     },
     value: {
-        backgroundColor: '#FF8C1A', // PictoBlox orange
+        backgroundColor: '#FF8C1A', // LeapBlox orange
         padding: '1px 8px',
         borderRadius: '4px',
         color: 'white',

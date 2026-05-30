@@ -7,7 +7,7 @@ import WebcamModal from '../../components/WebcamModal';
 import useTFClassifier from '../../hooks/useTFClassifier';
 
 /**
- * Full 3-panel PictoBlox layout
+ * Full 3-panel LeapBlox layout
  * Image classification using webcam or uploads
  */
 function ImageClassifier({ project, onBack }) {

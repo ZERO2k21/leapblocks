@@ -79,7 +79,7 @@ g[class*="blocklyNonEditableText"]>text {
 }
 
 /* ============================================
-   UNICODE ICON STYLES (PictoBlox-style)
+   UNICODE ICON STYLES (LeapBlox-style)
    ============================================ */
 
 /* Large block icon (40x40 equivalent) - Target SVG text */
@@ -117,7 +117,7 @@ text.blocklyText.junior-icon,
 }
 
 /* ============================================
-   GRID STAGE STYLES (PictoBlox-style)
+   GRID STAGE STYLES (LeapBlox-style)
    ============================================ */
 
 .grid-stage {

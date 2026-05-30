@@ -1587,7 +1587,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Events',
 
@@ -1603,7 +1603,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Control',
 
@@ -1633,7 +1633,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Operators',
 
@@ -1799,7 +1799,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Variables',
 
@@ -1817,7 +1817,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Arduino',
 
@@ -1857,7 +1857,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Communication',
 
@@ -1921,7 +1921,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Actuators',
 
@@ -1943,7 +1943,7 @@ export const arduinoToolbox = {
 
         {
 
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
 
             name: 'Sensors',
 

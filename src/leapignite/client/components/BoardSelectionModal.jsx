@@ -111,7 +111,7 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
                 overflow: 'hidden',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
             }} onClick={e => e.stopPropagation()}>
-                {/* Header - PictoBlox Teal Style */}
+                {/* Header - LeapBlox Teal Style */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',

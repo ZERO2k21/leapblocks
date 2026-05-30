@@ -1,8 +1,3 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import React from 'react';
 
 interface ListMonitorProps {
@@ -17,6 +12,9 @@ interface ListMonitorProps {
     onPositionChange?: (x: number, y: number) => void;
     onResize?: (w: number, h: number) => void;
     onPointerDown?: () => void;
+    onItemAdd?: (item: string) => void;
+    onItemEdit?: (index: number, value: string) => void;
+    onItemDelete?: (index: number) => void;
 }
 
 export const ListMonitor: React.FC<ListMonitorProps> = ({
@@ -30,11 +28,44 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
     zIndex = 100,
     onPositionChange,
     onResize,
-    onPointerDown
+    onPointerDown,
+    onItemAdd,
+    onItemEdit,
+    onItemDelete
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
-    const dragStartRef = React.useRef({ x: 0, y: 0, startX: 0, startY: 0 });
+    const dragStartRef = React.useRef({ x: 0, y: 0, startX: 0, startY: y });
+    const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+    const [editingValue, setEditingValue] = React.useState('');
+    const editInputRef = React.useRef<HTMLInputElement>(null);
+    const prevLengthRef = React.useRef(items.length);
+
+    // Auto-focus and highlight input when entering edit mode
+    React.useEffect(() => {
+        if (editingIndex !== null && editInputRef.current) {
+            editInputRef.current.focus();
+            editInputRef.current.select();
+        }
+    }, [editingIndex]);
+
+    // Polish: When a new item is added, automatically focus the edit input and scroll to it
+    React.useEffect(() => {
+        if (items.length > prevLengthRef.current) {
+            const newIndex = items.length - 1;
+            setEditingIndex(newIndex);
+            setEditingValue(String(items[newIndex] || ''));
+
+            // Allow DOM to render then scroll to bottom
+            setTimeout(() => {
+                if (scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+                }
+            }, 30);
+        }
+        prevLengthRef.current = items.length;
+    }, [items.length]);
 
     const handlePointerDown = (e: React.PointerEvent) => {
         onPointerDown?.();
@@ -63,7 +94,10 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
 
         const dx = (e.clientX - dragStartRef.current.x) / scale;
         const dy = (e.clientY - dragStartRef.current.y) / scale;
-        onPositionChange?.(Math.max(-100, dragStartRef.current.startX + dx), Math.max(-100, dragStartRef.current.startY + dy));
+        onPositionChange?.(
+            Math.max(-100, dragStartRef.current.startX + dx),
+            Math.max(-100, dragStartRef.current.startY + dy)
+        );
     };
 
     const handlePointerUp = (e: React.PointerEvent) => {
@@ -71,16 +105,13 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
         e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
-    // Use ResizeObserver to detect CSS resize changes and report back to parent
     React.useEffect(() => {
         if (!containerRef.current || !onResize) return;
         let animationFrameId: number;
-        
+
         const resizeObserver = new ResizeObserver((entries) => {
             animationFrameId = requestAnimationFrame(() => {
                 for (const entry of entries) {
-                    const { width, height } = entry.contentRect;
-                    // Add borders/padding bounds if box-sizing is border-box
                     const el = entry.target as HTMLElement;
                     onResize(el.offsetWidth, el.offsetHeight);
                 }
@@ -93,6 +124,37 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
             cancelAnimationFrame(animationFrameId);
         };
     }, [onResize]);
+
+    const handleAdd = () => {
+        // In Scratch, clicking '+' immediately appends a blank line and goes to edit mode
+        onItemAdd?.('');
+    };
+
+    const startEditing = (index: number, currentValue: string) => {
+        setEditingIndex(index);
+        setEditingValue(currentValue);
+    };
+
+    const commitEdit = () => {
+        if (editingIndex !== null) {
+            onItemEdit?.(editingIndex, editingValue);
+            setEditingIndex(null);
+            setEditingValue('');
+        }
+    };
+
+    const cancelEdit = () => {
+        setEditingIndex(null);
+        setEditingValue('');
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            commitEdit();
+        } else if (e.key === 'Escape') {
+            cancelEdit();
+        }
+    };
 
     if (!visible) return null;
 
@@ -107,11 +169,142 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                 height: height,
                 zIndex: zIndex,
             }}
-            className="list-monitor"
-            onPointerDown={onPointerDown} // still register click for z-index on background
+            className="list-monitor list-monitor-container"
+            onPointerDown={onPointerDown}
         >
-            {/* Header */}
-            <div 
+            {/* Inline CSS style block to ensure reliable, high-fidelity styles and hover states */}
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .list-monitor-container {
+                    box-sizing: border-box;
+                }
+                .list-monitor-items::-webkit-scrollbar {
+                    width: 7px;
+                    height: 7px;
+                }
+                .list-monitor-items::-webkit-scrollbar-track {
+                    background: #f9f9f9;
+                    border-radius: 4px;
+                }
+                .list-monitor-items::-webkit-scrollbar-thumb {
+                    background: #d2d2d2;
+                    border-radius: 4px;
+                }
+                .list-monitor-items::-webkit-scrollbar-thumb:hover {
+                    background: #b5b5b5;
+                }
+
+                .list-monitor-row {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 4px;
+                    gap: 6px;
+                    position: relative;
+                    box-sizing: border-box;
+                }
+
+                .list-monitor-item-box {
+                    flex: 1;
+                    background-color: #ff661a;
+                    border: 1px solid #e65c00;
+                    color: white;
+                    border-radius: 4px;
+                    padding: 3px 8px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                    min-height: 22px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    cursor: pointer;
+                    overflow: hidden;
+                    position: relative;
+                    box-sizing: border-box;
+                    transition: background-color 0.1s ease;
+                }
+
+                .list-monitor-item-box:hover {
+                    background-color: #e65c00;
+                }
+
+                .list-monitor-delete-btn {
+                    opacity: 0;
+                    transition: opacity 0.15s ease;
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 14px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    padding: 0;
+                    margin: 0;
+                    width: 14px;
+                    height: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                    margin-left: 4px;
+                    border-radius: 50%;
+                }
+
+                .list-monitor-row:hover .list-monitor-delete-btn {
+                    opacity: 0.7;
+                }
+
+                .list-monitor-delete-btn:hover {
+                    opacity: 1 !important;
+                    background-color: rgba(0, 0, 0, 0.15);
+                }
+
+                .list-monitor-input {
+                    flex: 1;
+                    font-size: 11px;
+                    font-weight: bold;
+                    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                    border: 1px solid #4c97ff;
+                    box-shadow: 0 0 0 2px rgba(76, 151, 255, 0.25);
+                    border-radius: 3px;
+                    padding: 2px 6px;
+                    background-color: #ffffff;
+                    color: #333;
+                    outline: none;
+                    min-width: 0;
+                    box-sizing: border-box;
+                    height: 22px;
+                }
+
+                .list-monitor-footer-btn {
+                    background: #ffffff;
+                    border: 1px solid #cccccc;
+                    color: #575e75;
+                    font-weight: bold;
+                    font-size: 14px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                    padding: 0;
+                    box-sizing: border-box;
+                    transition: background 0.1s, border-color 0.1s;
+                }
+
+                .list-monitor-footer-btn:hover {
+                    background: #f5f5f5;
+                    border-color: #a8a8a8;
+                }
+
+                .list-monitor-footer-btn:active {
+                    background: #e5e5e5;
+                }
+            ` }} />
+
+            <div
                 style={{ ...styles.header, cursor: isDragging ? 'grabbing' : 'grab' }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -121,23 +314,51 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                 <span style={styles.headerText}>{name}</span>
             </div>
 
-            {/* Items List */}
-            <div style={styles.itemsContainer}>
+            <div
+                ref={scrollContainerRef}
+                className="list-monitor-items"
+                style={styles.itemsContainer}
+            >
                 {items.length === 0 ? (
                     <div style={styles.emptyState}>(empty)</div>
                 ) : (
                     items.map((item, index) => (
-                        <div key={index} style={styles.itemRow}>
+                        <div key={index} className="list-monitor-row">
                             <span style={styles.itemIndex}>{index + 1}</span>
-                            <span style={styles.itemValue}>{String(item)}</span>
+                            {editingIndex === index ? (
+                                <input
+                                    ref={editInputRef}
+                                    className="list-monitor-input"
+                                    value={editingValue}
+                                    onChange={(e) => setEditingValue(e.target.value)}
+                                    onBlur={commitEdit}
+                                    onKeyDown={handleKeyDown}
+                                />
+                            ) : (
+                                <div
+                                    className="list-monitor-item-box"
+                                    onClick={() => startEditing(index, String(item))}
+                                >
+                                    <span style={styles.itemValue}>{String(item)}</span>
+                                    <button
+                                        className="list-monitor-delete-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onItemDelete?.(index);
+                                        }}
+                                        title="Delete item"
+                                    >×</button>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}
             </div>
 
-            {/* Footer with length */}
             <div style={styles.footer}>
-                <span style={styles.lengthText}>length: {items.length}</span>
+                <button className="list-monitor-footer-btn" onClick={handleAdd} title="Add item">+</button>
+                <span style={styles.footerText}>length {items.length}</span>
+                <span style={styles.resizeHandle} title="Resize monitor">=</span>
             </div>
         </div>
     );
@@ -146,80 +367,93 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
         position: 'absolute',
-        backgroundColor: '#CF63CF',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-        fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-        fontSize: '13px',
-        color: 'white',
+        backgroundColor: '#ffffff',
+        border: '1px solid #d9d9d9',
+        borderRadius: '4px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        fontSize: '12px',
+        color: '#575e75',
         zIndex: 100,
         cursor: 'default',
         userSelect: 'none',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        minWidth: '120px',
+        minWidth: '100px',
         minHeight: '100px',
         resize: 'both',
     },
     header: {
-        backgroundColor: 'rgba(0, 0, 0, 0.15)',
-        padding: '8px 12px',
-        borderTopLeftRadius: '8px',
-        borderTopRightRadius: '8px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        backgroundColor: '#ffffff',
+        padding: '6px 8px',
+        borderBottom: '1px solid #d9d9d9',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     headerText: {
-        fontWeight: 600,
-        fontSize: '14px',
+        fontWeight: 'bold',
+        fontSize: '12px',
+        color: '#575e75',
     },
     itemsContainer: {
         flex: 1,
-        overflow: 'auto',
-        padding: '6px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '6px 8px',
+        backgroundColor: '#ffffff',
     },
     emptyState: {
-        padding: '20px',
+        padding: '16px',
         textAlign: 'center',
-        opacity: 0.6,
+        color: '#999',
         fontStyle: 'italic',
-    },
-    itemRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '4px 6px',
-        borderRadius: '4px',
-        marginBottom: '2px',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        fontSize: '11px',
     },
     itemIndex: {
         fontSize: '11px',
-        opacity: 0.7,
-        minWidth: '20px',
+        fontWeight: 'bold',
+        color: '#575e75',
+        minWidth: '16px',
+        textAlign: 'right',
+        userSelect: 'none',
     },
     itemValue: {
         flex: 1,
-        fontFamily: "'Consolas', 'Monaco', monospace",
-        fontSize: '12px',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+        lineHeight: '1.2',
     },
     footer: {
-        backgroundColor: 'rgba(0, 0, 0, 0.15)',
-        padding: '6px 12px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-        borderBottomLeftRadius: '8px',
-        borderBottomRightRadius: '8px',
+        backgroundColor: '#ffffff',
+        padding: '4px 6px',
+        borderTop: '1px solid #d9d9d9',
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        height: '28px',
     },
-    lengthText: {
+    footerText: {
         fontSize: '11px',
-        fontWeight: 500,
-        opacity: 0.9,
+        fontWeight: 'bold',
+        color: '#575e75',
+        marginRight: 'auto',
+        marginLeft: '8px',
+        userSelect: 'none',
     },
+    resizeHandle: {
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#b3b3b3',
+        cursor: 'nwse-resize',
+        userSelect: 'none',
+        lineHeight: 1,
+        display: 'flex',
+        alignItems: 'center',
+    }
 };
 
 export default ListMonitor;
