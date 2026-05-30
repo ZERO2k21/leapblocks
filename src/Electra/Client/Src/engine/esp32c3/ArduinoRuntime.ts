@@ -1003,6 +1003,12 @@ export class ArduinoRuntime {
         _ip: '192.168.1.100',
 
         begin(ssid: string, _password?: string): void {
+          if (!ssid || ssid.trim() === '') {
+            self.onSerial?.('[WiFi] Error: SSID is empty\n');
+            this._status = 6; // WL_DISCONNECTED
+            return;
+          }
+
           this._ssid = ssid;
           this._status = 0; // WL_IDLE_STATUS
 

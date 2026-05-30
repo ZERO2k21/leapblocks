@@ -213,6 +213,11 @@ var WiFiClass = (typeof WiFiClass !== 'undefined' && WiFiClass) || class {
     this._ip = new IPAddress(192,168,1,100);
   }
   begin(ssid,pass){
+    if (!ssid || ssid.trim() === '') {
+      console.warn('[WiFi] Error: SSID is empty');
+      this._status = 6;
+      return;
+    }
     this._ssid = ssid;
     this._status = 0;
     setTimeout(() => { this._status = 3; }, 1);

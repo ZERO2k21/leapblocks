@@ -3,10 +3,11 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  *
- * PhysicalConnectionLine — Clean Wokwi/Velxio style wire preview while dragging.
+ * PhysicalConnectionLine — Flat, clean wire preview while dragging (no 3D effects).
+ * Matches Wokwi style: simple colored line with pin dots.
  */
 import React from 'react';
-import { ConnectionLineComponentProps, getBezierPath } from 'reactflow';
+import { type ConnectionLineComponentProps, getBezierPath } from 'reactflow';
 
 export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
   fromX,
@@ -16,7 +17,6 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
   fromPosition,
   toPosition,
 }) => {
-  // Use bezier path matching the placed wire style
   const [edgePath] = getBezierPath({
     sourceX: fromX,
     sourceY: fromY,
@@ -26,27 +26,14 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
     targetPosition: toPosition,
   });
 
-  const wireColor = '#22c55e'; // Default dragging color (Green)
+  const wireColor = '#22c55e';
 
   return (
     <g className="physical-connection-line">
-      {/* 1. SELECTION HIGHLIGHT */}
       <path
         style={{
           stroke: wireColor,
-          strokeWidth: 5,
-          opacity: 0.2,
-          fill: 'none',
-          filter: 'blur(3px)',
-        }}
-        d={edgePath}
-      />
-
-      {/* 2. MAIN WIRE — clean thin line */}
-      <path
-        style={{
-          stroke: wireColor,
-          strokeWidth: 2.5,
+          strokeWidth: 2,
           fill: 'none',
           strokeLinecap: 'round',
           strokeLinejoin: 'round',
@@ -54,25 +41,21 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
         d={edgePath}
       />
 
-      {/* 3. SOURCE PIN DOT */}
       <circle
         cx={fromX}
         cy={fromY}
-        r={3}
+        r={2.5}
         fill={wireColor}
-        stroke="#fff"
-        strokeWidth={0.5}
+        stroke="none"
       />
 
-      {/* 4. TARGET PREVIEW DOT */}
       <circle
         cx={toX}
         cy={toY}
-        r={3}
+        r={2.5}
         fill={wireColor}
-        stroke="#fff"
-        strokeWidth={0.5}
-        opacity={0.6}
+        stroke="none"
+        opacity={0.5}
       />
     </g>
   );

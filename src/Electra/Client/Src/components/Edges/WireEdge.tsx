@@ -174,15 +174,14 @@ export const WireEdge: React.FC<EdgeProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 1. SELECTION HIGHLIGHT */}
+      {/* 1. SELECTION HIGHLIGHT — flat, no blur */}
       {(selected || isHovered) && (
         <path
           style={{
             stroke: wireColor,
-            strokeWidth: 5,
-            opacity: 0.25,
+            strokeWidth: 4,
+            opacity: 0.2,
             fill: 'none',
-            filter: 'blur(3px)',
           }}
           d={edgePath}
         />
@@ -250,7 +249,6 @@ export const WireEdge: React.FC<EdgeProps> = ({
             onDoubleClick={(e) => removeWaypoint(e, i)}
             style={{
               cursor: 'grab',
-              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.2))',
             }}
           />
         </g>
