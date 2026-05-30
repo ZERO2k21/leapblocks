@@ -11,6 +11,7 @@ import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 import './styles/Leaplab-blocks.css'; // Import leap-style blocks CSS
 import './leapignite/client/styles/juniorBlocks.css';
 import './leapignite/client/styles/juniorLooksBlocks.css';
+import './blockly/registerCustomFields'; // Register field_colour, field_angle, etc.
 
 
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
