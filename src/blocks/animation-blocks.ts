@@ -1173,151 +1173,146 @@ export const animationBlocks = [
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // LISTS
+    // LISTS - WITH DIRECT TEXT INPUT FIELDS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    // List Stack blocks (7 blocks)
+    // Add to List - Direct editable text field
     {
         type: 'data_addtolist',
         message0: 'add %1 to %2',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
+        colour: '#FF8C00',
         tooltip: 'Add item to list',
-        helpUrl: '',
+        helpUrl: ''
     },
+
+    // Delete at index
     {
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
             { type: 'input_value', name: 'INDEX', check: 'Number' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Delete item from list',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
+
+    // Delete all items
     {
         type: 'data_deletealloflist',
         message0: 'delete all of %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Delete all items from list',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
+
+    // Insert at position
     {
         type: 'data_insertatlist',
         message0: 'insert %1 at %2 of %3',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Insert item at position in list',
-        helpUrl: '',
+        colour: '#FF8C00',
+        tooltip: 'Insert item at position',
+        helpUrl: ''
     },
+
+    // Replace item
     {
         type: 'data_replaceitemoflist',
         message0: 'replace item %1 of %2 with %3',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
-            { type: 'input_value', name: 'ITEM' }
+            { type: 'field_input', name: 'INDEX', text: '1' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] },
+            { type: 'field_input', name: 'ITEM', text: 'thing' }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
+        colour: '#FF8C00',
         tooltip: 'Replace item in list',
-        helpUrl: '',
+        helpUrl: ''
     },
+
+    // Show list
     {
         type: 'data_showlist',
         message0: 'show list %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Show list monitor',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
+
+    // Hide list
     {
         type: 'data_hidelist',
         message0: 'hide list %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Hide list monitor',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
 
-    // List Reporter blocks (4 blocks)
+    // List Reporter blocks
     {
         type: 'data_list',
         message0: '%1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         output: 'String',
-        colour: COLORS.list,
-        tooltip: 'List contents',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_itemoflist',
         message0: 'item %1 of %2',
         args0: [
             { type: 'input_value', name: 'INDEX', check: 'Number' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         output: null,
-        colour: COLORS.list,
-        tooltip: 'Get item from list',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_itemnumoflist',
         message0: 'item # of %1 in %2',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         output: 'Number',
-        colour: COLORS.list,
-        tooltip: 'Get item number in list',
-        helpUrl: '',
+        colour: '#FF8C00',
+        tooltip: 'Get index of item'
     },
     {
         type: 'data_lengthoflist',
         message0: 'length of %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         output: 'Number',
-        colour: COLORS.list,
-        tooltip: 'Length of list',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
 
-    // List Boolean block (1 block)
+    // List Boolean block
     {
         type: 'data_listcontainsitem',
         message0: '%1 contains %2 ?',
         args0: [
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
-            { type: 'input_value', name: 'ITEM' }
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] },
+            { type: 'field_input', name: 'ITEM', text: '' }
         ],
         output: 'Boolean',
-        colour: COLORS.list,
-        tooltip: 'Check if list contains item',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
 
 
@@ -1690,145 +1685,128 @@ export const animationBlocks = [
     // ═══════════════════════════════════════════════════════════════════════════
     // VARIABLES
     // ═══════════════════════════════════════════════════════════════════════════
-    // LISTS
+    // LISTS - WITH DIRECT TEXT INPUT FIELDS
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'data_listcontents',
         message0: 'list %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
-        output: 'String', // Returns string representation
-        colour: COLORS.list,
-        tooltip: 'List contents',
-        helpUrl: '',
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
+        output: 'String',
+        colour: '#FF8C00'
     },
     {
         type: 'data_addtolist',
         message0: 'add %1 to %2',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
+        colour: '#FF8C00',
         tooltip: 'Add item to list',
-        helpUrl: '',
+        helpUrl: ''
     },
     {
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Delete item at index',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_deletealloflist',
         message0: 'delete all of %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Delete all items',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_insertatlist',
         message0: 'insert %1 at %2 of %3',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'input_value', name: 'INDEX' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Insert item at index',
-        helpUrl: '',
+        colour: '#FF8C00',
+        tooltip: 'Insert item at position',
+        helpUrl: ''
     },
     {
         type: 'data_replaceitemoflist',
         message0: 'replace item %1 of %2 with %3',
         args0: [
-            { type: 'input_value', name: 'INDEX' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
-            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] },
+            { type: 'field_input', name: 'ITEM', text: 'thing' }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Replace item at index',
-        helpUrl: '',
+        colour: '#FF8C00',
+        tooltip: 'Replace item in list',
+        helpUrl: ''
     },
     {
         type: 'data_itemoflist',
         message0: 'item %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         output: null,
-        colour: COLORS.list,
-        tooltip: 'Get item at index',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_itemnumoflist',
         message0: 'item # of %1 in %2',
         args0: [
-            { type: 'input_value', name: 'ITEM' },
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
+            { type: 'field_input', name: 'ITEM', text: 'thing' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         output: 'Number',
-        colour: COLORS.list,
-        tooltip: 'Get index of item',
-        helpUrl: '',
+        colour: '#FF8C00',
+        tooltip: 'Get index of item'
     },
     {
         type: 'data_lengthoflist',
         message0: 'length of %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         output: 'Number',
-        colour: COLORS.list,
-        tooltip: 'Length of list',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_listcontainsitem',
         message0: '%1 contains %2 ?',
         args0: [
-            { type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' },
-            { type: 'input_value', name: 'ITEM' },
+            { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] },
+            { type: 'field_input', name: 'ITEM', text: '' }
         ],
         output: 'Boolean',
-        colour: COLORS.list,
-        tooltip: 'Check if list contains item',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_showlist',
         message0: 'show list %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Show list monitor',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
     {
         type: 'data_hidelist',
         message0: 'hide list %1',
-        args0: [{ type: 'field_variable', name: 'LIST', variable: 'my list', variableTypes: ['list'], defaultType: 'list' }],
+        args0: [{ type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLORS.list,
-        tooltip: 'Hide list monitor',
-        helpUrl: '',
+        colour: '#FF8C00'
     },
 
 

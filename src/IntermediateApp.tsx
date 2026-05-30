@@ -1047,55 +1047,85 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Dialog handlers
     const handleCreateVariable = (variable: { name: string; type: 'Number' | 'String'; scope: 'all_sprites' | 'this_sprite' }) => {
-        const newMonitor = normalizeVariableMonitor({
-            id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: variable.name,
-            type: variable.type,
-            scope: variable.scope,
-            spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            value: variable.type === 'Number' ? 0 : '',
-            x: 10 + (variableMonitors.length * 20),
-            y: 10 + (variableMonitors.length * 30)
-        }, variableMonitors.length);
-        setVariableMonitors(prev => [...prev, newMonitor]);
+        setVariableMonitors(prev => {
+            const existing = prev.find(m => m.name === variable.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === variable.name
+                        ? { ...m, type: variable.type, scope: variable.scope, spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor = normalizeVariableMonitor({
+                id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: variable.name,
+                type: variable.type,
+                scope: variable.scope,
+                spriteId: variable.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                value: variable.type === 'Number' ? 0 : '',
+                x: 10 + (prev.length * 20),
+                y: 10 + (prev.length * 30)
+            }, prev.length);
+            return [...prev, newMonitor];
+        });
         addLog(`Created variable: ${variable.name} (${variable.type})`);
     };
 
     const handleCreateList = (list: { name: string; scope: 'all_sprites' | 'this_sprite' }) => {
-        const newMonitor: ListMonitorState = {
-            id: `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: list.name,
-            scope: list.scope,
-            spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            items: [],
-            x: 10 + (listMonitors.length * 20),
-            y: 60 + (listMonitors.length * 30),
-            width: 140,
-            height: 180
-        };
-        setListMonitors(prev => [...prev, newMonitor]);
+        setListMonitors(prev => {
+            const existing = prev.find(m => m.name === list.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === list.name
+                        ? { ...m, scope: list.scope, spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor: ListMonitorState = {
+                id: `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: list.name,
+                scope: list.scope,
+                spriteId: list.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                items: [],
+                x: 10 + (prev.length * 20),
+                y: 60 + (prev.length * 30),
+                width: 140,
+                height: 180
+            };
+            return [...prev, newMonitor];
+        });
         addLog(`Created list: ${list.name}`);
     };
 
     const handleCreateTable = (table: { name: string; rows: number; cols: number; scope: 'all_sprites' | 'this_sprite' }) => {
         const emptyData = Array(table.rows).fill(null).map(() => Array(table.cols).fill(''));
-        const newMonitor: TableMonitorState = {
-            id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: table.name,
-            rows: table.rows,
-            cols: table.cols,
-            scope: table.scope,
-            spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
-            visible: true,
-            data: emptyData,
-            x: 10 + (tableMonitors.length * 20),
-            y: 260 + (tableMonitors.length * 30),
-            width: 200,
-            height: 150
-        };
-        setTableMonitors(prev => [...prev, newMonitor]);
+        setTableMonitors(prev => {
+            const existing = prev.find(m => m.name === table.name);
+            if (existing) {
+                return prev.map(m =>
+                    m.name === table.name
+                        ? { ...m, scope: table.scope, spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined, visible: true }
+                        : m
+                );
+            }
+            const newMonitor: TableMonitorState = {
+                id: `table_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: table.name,
+                rows: table.rows,
+                cols: table.cols,
+                scope: table.scope,
+                spriteId: table.scope === 'this_sprite' ? selectedSpriteId || 'stage' : undefined,
+                visible: true,
+                data: emptyData,
+                x: 10 + (prev.length * 20),
+                y: 260 + (prev.length * 30),
+                width: 200,
+                height: 150
+            };
+            return [...prev, newMonitor];
+        });
         addLog(`Created table: ${table.name} (${table.rows}×${table.cols})`);
     };
 
@@ -1390,7 +1420,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             id: `list_${Date.now()}`,
                             name: varName,
                             scope: 'all_sprites' as const,
-                            visible: false,
+                            visible: true,
                             x: 10, y: 10 + (prev.length * 30),
                             items: [],
                             width: 100, height: 200
@@ -1403,7 +1433,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             id: `table_${Date.now()}`,
                             name: varName,
                             scope: 'all_sprites' as const,
-                            visible: false,
+                            visible: true,
                             x: 10, y: 10 + (prev.length * 30),
                             data: [],
                             rows: 0, cols: 0,

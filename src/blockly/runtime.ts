@@ -181,6 +181,24 @@ if (Blockly.FieldVariable && !(Blockly.FieldVariable.prototype as any)._initMode
     (Blockly.FieldVariable.prototype as any)._initModelPatched = true;
 }
 
+// 4b. PATCH FIELD_VARIABLE.FROMJSON TO HEAL MISSING DEFAULTTYPE
+// In Blockly, if options.variableTypes is set (e.g. to ['list']) but options.defaultType is missing,
+// the FieldVariable constructor defaults the type to '' (empty string), which triggers a crash
+// because '' is not in the allowed variableTypes. We dynamically set options.defaultType to 
+// options.variableTypes[0] if the allowed types list does not include the empty string.
+if (Blockly.FieldVariable && !(Blockly.FieldVariable as any)._fromJsonPatched) {
+    const origFromJson = Blockly.FieldVariable.fromJson;
+    Blockly.FieldVariable.fromJson = function (options: any) {
+        if (options && options.variableTypes && !options.defaultType) {
+            if (!options.variableTypes.includes('')) {
+                options.defaultType = options.variableTypes[0];
+            }
+        }
+        return origFromJson.call(this, options);
+    };
+    (Blockly.FieldVariable as any)._fromJsonPatched = true;
+}
+
 const BLOCK_MENU_WEIGHT_DUPLICATE = 1;
 const BLOCK_MENU_WEIGHT_COMMENT = 2;
 const BLOCK_MENU_WEIGHT_INLINE = 3;

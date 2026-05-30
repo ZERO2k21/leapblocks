@@ -334,7 +334,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── TOPBAR ─── */
 .landing-page-container nav {
   position: sticky; top: 0; left: 0; right: 0; z-index: 200;
-  height: 8vh;
+  height: 10vh;
   min-height: 50px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 clamp(12px, 2vw, 30px);

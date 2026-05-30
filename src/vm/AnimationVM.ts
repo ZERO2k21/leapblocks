@@ -1720,6 +1720,7 @@ export class AnimationVM {
                 list.push(item);
                 ctx.onLog?.(`List '${step.list}': Added item '${item}'`);
                 vmLog.step('list_add', { list: step.list, item });
+                this.onListChange?.(step.list, [...this.getList(step.list)]);
                 break;
             }
             case 'list_delete': {
@@ -1729,6 +1730,7 @@ export class AnimationVM {
                     const removed = list.splice(idx - 1, 1);
                     ctx.onLog?.(`List '${step.list}': Deleted item at index ${idx} ('${removed[0]}')`);
                     vmLog.step('list_delete', { list: step.list, index: idx });
+                    this.onListChange?.(step.list, [...this.getList(step.list)]);
                 }
                 break;
             }
@@ -1736,6 +1738,7 @@ export class AnimationVM {
                 this.lists.set(step.list, []);
                 ctx.onLog?.(`List '${step.list}': Deleted all items`);
                 vmLog.step('list_delete_all', { list: step.list });
+                this.onListChange?.(step.list, []);
                 break;
             }
             case 'list_insert': {
@@ -1746,6 +1749,7 @@ export class AnimationVM {
                     list.splice(idx - 1, 0, item);
                     ctx.onLog?.(`List '${step.list}': Inserted '${item}' at index ${idx}`);
                     vmLog.step('list_insert', { list: step.list, index: idx, item });
+                    this.onListChange?.(step.list, [...this.getList(step.list)]);
                 }
                 break;
             }
@@ -1757,6 +1761,7 @@ export class AnimationVM {
                     list[idx - 1] = item;
                     ctx.onLog?.(`List '${step.list}': Replaced item at index ${idx} with '${item}'`);
                     vmLog.step('list_replace', { list: step.list, index: idx, item });
+                    this.onListChange?.(step.list, [...this.getList(step.list)]);
                 }
                 break;
             }
