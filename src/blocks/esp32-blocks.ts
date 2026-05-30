@@ -687,8 +687,8 @@ export const esp32Toolbox = {
                 {
                     kind: 'block', type: 'esp32_wifi_connect',
                     inputs: {
-                        SSID: { shadow: { type: 'arduino_text', fields: { TEXT: 'MyNetwork' } } },
-                        PASSWORD: { shadow: { type: 'arduino_text', fields: { TEXT: 'password123' } } },
+                        SSID: { shadow: { type: 'arduino_text', fields: { TEXT: '' } } },
+                        PASSWORD: { shadow: { type: 'arduino_text', fields: { TEXT: '' } } },
                     }
                 },
                 { kind: 'block', type: 'esp32_wifi_connected' },
