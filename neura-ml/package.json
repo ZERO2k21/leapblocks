@@ -1,7 +1,7 @@
 {
   "name": "neura-ml",
   "version": "1.0.0",
-  "description": "Machine Learning platform for Neura - PictoBlox-style ML classifiers",
+  "description": "Machine Learning platform for Neura - LeapBlox-style ML classifiers",
   "main": "NeuraML.jsx",
   "scripts": {
     "dev": "vite",

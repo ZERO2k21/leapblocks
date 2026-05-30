@@ -480,7 +480,7 @@ arduinoGenerator.forBlock['arduino_digital_sensor'] = function (block) {
 
     // However, some users might want the raw state.
 
-    // Based on the PictoBlox style, usually "read digital sensor" returns true if detection is high.
+    // Based on the LeapBlox style, usually "read digital sensor" returns true if detection is high.
 
     // But for IR proximity, it's usually low.
 
@@ -694,7 +694,7 @@ arduinoGenerator.forBlock['variables_set'] = function (block, generator) {
 
 
 
-// PictoBlox/leap-style variable blocks used by LEAP_VARIABLES category
+// LeapBlox/leap-style variable blocks used by LEAP_VARIABLES category
 
 arduinoGenerator.forBlock['data_setvariableto'] = function (block, generator) {
 

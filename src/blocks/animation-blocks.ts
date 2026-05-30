@@ -309,7 +309,7 @@ export const animationBlocks = [
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // PICToblOX MOTION BLOCKS (Additional)
+    // LeapblOX MOTION BLOCKS (Additional)
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'motion_go_to',
@@ -2005,7 +2005,7 @@ export const animationToolbox = {
     kind: 'categoryToolbox',
     contents: [
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Events',
             colour: COLORS.events,
             contents: [
@@ -2023,7 +2023,7 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Motion',
             colour: COLORS.motion,
             contents: [
@@ -2115,7 +2115,7 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Looks',
             colour: COLORS.looks,
             contents: [
@@ -2174,7 +2174,7 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Sound',
             colour: COLORS.sound,
             contents: [
@@ -2192,7 +2192,7 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Control',
             colour: COLORS.control,
             contents: [
@@ -2227,13 +2227,13 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Sensing',
             colour: COLORS.sensing,
             custom: 'LEAP_SENSING'
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Operators',
             colour: COLORS.operators,
             contents: [
@@ -2372,19 +2372,19 @@ export const animationToolbox = {
             ],
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Variables',
             colour: COLORS.data,
             custom: 'LEAP_VARIABLES'
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'My Blocks',
             colour: COLORS.myblocks,
             custom: 'LEAP_MYBLOCKS'
         },
         {
-            kind: 'pictobloxCategory',
+            kind: 'leapbloxCategory',
             name: 'Pen',
             colour: COLORS.pen,
             contents: [

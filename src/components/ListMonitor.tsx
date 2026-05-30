@@ -56,7 +56,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
             const newIndex = items.length - 1;
             setEditingIndex(newIndex);
             setEditingValue(String(items[newIndex] || ''));
-            
+
             // Allow DOM to render then scroll to bottom
             setTimeout(() => {
                 if (scrollContainerRef.current) {
@@ -95,7 +95,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
         const dx = (e.clientX - dragStartRef.current.x) / scale;
         const dy = (e.clientY - dragStartRef.current.y) / scale;
         onPositionChange?.(
-            Math.max(-100, dragStartRef.current.startX + dx), 
+            Math.max(-100, dragStartRef.current.startX + dx),
             Math.max(-100, dragStartRef.current.startY + dy)
         );
     };
@@ -173,7 +173,8 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
             onPointerDown={onPointerDown}
         >
             {/* Inline CSS style block to ensure reliable, high-fidelity styles and hover states */}
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .list-monitor-container {
                     box-sizing: border-box;
                 }
@@ -313,9 +314,9 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                 <span style={styles.headerText}>{name}</span>
             </div>
 
-            <div 
+            <div
                 ref={scrollContainerRef}
-                className="list-monitor-items" 
+                className="list-monitor-items"
                 style={styles.itemsContainer}
             >
                 {items.length === 0 ? (
@@ -334,7 +335,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                                     onKeyDown={handleKeyDown}
                                 />
                             ) : (
-                                <div 
+                                <div
                                     className="list-monitor-item-box"
                                     onClick={() => startEditing(index, String(item))}
                                 >

@@ -84,7 +84,7 @@ import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
-import { registerPictoBloxCategory } from './custom-toolbox';
+import { registerLeapBloxCategory } from './custom-toolbox';
 
 // Import dialog components
 import MakeVariableDialog from './components/MakeVariableDialog';
@@ -188,7 +188,7 @@ function initBlocklyOnce() {
     initPythonGenerator();
 
     // Register custom toolbox category (deferred from module scope)
-    registerPictoBloxCategory();
+    registerLeapBloxCategory();
 
     // Configure Blockly dialogs for Electron (native prompt/alert not supported)
     Blockly.dialog.setPrompt((message, defaultValue, callback) => {
@@ -240,8 +240,8 @@ const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
 const MORE_BLOCKS_CATEGORY_COLOUR = '#94A3B8';
 
 const isToolboxCategory = (category: any) =>
-    category?.kind === 'pictobloxCategory' ||
-    category?.kind === 'pictoBloxCategory' ||
+    category?.kind === 'leapbloxCategory' ||
+    category?.kind === 'leapBloxCategory' ||
     category?.kind === 'category';
 
 const normalizeCategoryClassName = (value: string) =>
@@ -280,7 +280,7 @@ const createMonitorReporterPlaceholder = (
 });
 
 const createMoreBlocksCategory = () => ({
-    kind: 'pictobloxCategory',
+    kind: 'leapbloxCategory',
     name: MORE_BLOCKS_CATEGORY_NAME,
     colour: MORE_BLOCKS_CATEGORY_COLOUR,
     custom: 'LEAP_MOREBLOCKS'
@@ -1239,7 +1239,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             const definition = EXTENSIONS[id];
             if (definition) {
                 extensionCategories.push({
-                    kind: 'pictobloxCategory',
+                    kind: 'leapbloxCategory',
                     name: definition.name,
                     colour: definition.color,
                     contents: definition.getToolbox(),

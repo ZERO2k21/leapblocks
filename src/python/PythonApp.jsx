@@ -1410,7 +1410,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             // If the IPC call itself failed (process never started), reset state
             if (window.electronAPI?.isElectron) {
                 setIsRunning(false);
-                try { window.electronAPI.pythonStop(); } catch (_) {}
+                try { window.electronAPI.pythonStop(); } catch (_) { }
             }
         } finally {
             if (!window.electronAPI?.isElectron) {
@@ -3024,7 +3024,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 </div>
             </header>
 
-            {/* ══ SECOND TOOLBAR (PictoBlox Style) ══════════════════════════════ */}
+            {/* ══ SECOND TOOLBAR (LeapBlox Style) ══════════════════════════════ */}
             {workflowMode === "stage" ? (
                 <div style={{
                     position: "sticky",
@@ -3082,7 +3082,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             </div>
                         </div>
                         <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                        {/* Quick Run Button (PictoBlox Green) */}
+                        {/* Quick Run Button (LeapBlox Green) */}
                         <div onClick={handleRun} title="Run Code (Ctrl+Enter or F5)"
                             className="run-button"
                             style={{
@@ -3128,7 +3128,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <Play size={10} fill="#4CAF50" />
                             <span>Run All</span>
                         </div>
-                        {/* Stop Button (PictoBlox Red) */}
+                        {/* Stop Button (LeapBlox Red) */}
                         <div onClick={handleStop} title="Stop (Escape)"
                             className="stop-button"
                             style={{
@@ -3419,7 +3419,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
 
 
-                    {/* ── LEFT SIDEBAR (PictoBlox Style) ── */}
+                    {/* ── LEFT SIDEBAR (LeapBlox Style) ── */}
                     <SidePanel
                         sidePanel={sidePanel}
                         setSidePanel={setSidePanel}
