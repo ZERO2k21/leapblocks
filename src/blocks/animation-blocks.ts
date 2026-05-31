@@ -1191,17 +1191,19 @@ export const animationBlocks = [
         helpUrl: ''
     },
 
-    // Delete at index
+    // Delete at index - Direct editable text field
     {
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
             { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: '#FF8C00'
+        colour: '#FF8C00',
+        tooltip: 'Delete item at index from list',
+        helpUrl: ''
     },
 
     // Delete all items
