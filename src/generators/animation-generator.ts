@@ -509,6 +509,58 @@ export class AnimationCompiler {
             case 'tts_is_speaking':
                 return () => String((window as any).runtime?.tts?.isSpeaking() ?? false);
 
+            // ── Speech Recognition string reporters ─────────────────────────
+            case 'speech_get_last_result':
+                return () => (window as any).runtime?.speech?.getLastResult() ?? '';
+            case 'speech_is_listening':
+                return () => String((window as any).runtime?.speech?.isListening() ?? false);
+
+            // ── Text Recognition (OCR) string reporters ────────────────────
+            case 'ocr_get_text':
+                return () => (window as any).runtime?.ocr?.getLastResult() ?? '';
+            case 'ocr_contains': {
+                const phrase = valueBlock.getFieldValue('PHRASE') || '';
+                return () => String((window as any).runtime?.ocr?.contains(phrase) ?? false);
+            }
+
+            // ── Weather Data string reporters ──────────────────────────────
+            case 'weather_condition':
+                return () => (window as any).runtime?.weather?.getCondition() ?? '';
+            case 'weather_is_raining':
+                return () => String((window as any).runtime?.weather?.isRaining() ?? false);
+
+            // ── Translate string reporters ──────────────────────────────────
+            case 'translate_last_result':
+                return () => (window as any).runtime?.translate?.getLastResult() ?? '';
+
+            // ── Data Logger string reporters ────────────────────────────────
+            case 'logger_get_entry': {
+                const idx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.logger?.getEntry(idx) ?? '';
+            }
+            case 'logger_get_label': {
+                const idx2 = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.logger?.getLabel(idx2) ?? '';
+            }
+
+            // ── Computer Vision string reporters ────────────────────────────
+            case 'vision_get_object_name': {
+                const vIdx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.vision?.getObjectName(vIdx) ?? '';
+            }
+            case 'vision_is_object_present': {
+                const vName = valueBlock.getFieldValue('NAME') || '';
+                return () => String((window as any).runtime?.vision?.isObjectPresent(vName) ?? false);
+            }
+            case 'vision_get_emotion': {
+                const vFaceIdx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.vision?.getEmotion(vFaceIdx) ?? 'neutral';
+            }
+
+            // ── Video Player string reporter ───────────────────────────────
+            case 'video_get_source':
+                return () => (window as any).runtime?.video?.getSource() ?? '';
+
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
@@ -900,6 +952,66 @@ export class AnimationCompiler {
                 return () => (window as any).runtime?.tts?.getVolume() ?? 1;
             case 'tts_is_speaking':
                 return () => (window as any).runtime?.tts?.isSpeaking() ? 1 : 0;
+
+            // ── Speech Recognition number reporters ─────────────────────────
+            case 'speech_get_confidence':
+                return () => (window as any).runtime?.speech?.getConfidence() ?? 0;
+            case 'speech_is_listening':
+                return () => (window as any).runtime?.speech?.isListening() ? 1 : 0;
+
+            // ── Text Recognition (OCR) number reporters ─────────────────────
+            case 'ocr_get_word_count':
+                return () => (window as any).runtime?.ocr?.getWordCount() ?? 0;
+
+            // ── Weather Data number reporters ───────────────────────────────
+            case 'weather_temperature':
+                return () => (window as any).runtime?.weather?.getTemperature() ?? 0;
+            case 'weather_humidity':
+                return () => (window as any).runtime?.weather?.getHumidity() ?? 0;
+            case 'weather_wind_speed':
+                return () => (window as any).runtime?.weather?.getWindSpeed() ?? 0;
+            case 'weather_is_raining':
+                return () => (window as any).runtime?.weather?.isRaining() ? 1 : 0;
+
+            // ── Data Logger number reporters ────────────────────────────────
+            case 'logger_get_count':
+                return () => (window as any).runtime?.logger?.getCount() ?? 0;
+
+            // ── Computer Vision number reporters ────────────────────────────
+            case 'vision_get_object_count':
+                return () => (window as any).runtime?.vision?.getObjectCount() ?? 0;
+            case 'vision_get_object_confidence': {
+                const vCIdx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.vision?.getObjectConfidence(vCIdx) ?? 0;
+            }
+            case 'vision_get_object_x': {
+                const vXIdx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.vision?.getObjectX(vXIdx) ?? 0;
+            }
+            case 'vision_get_object_y': {
+                const vYIdx = Number(valueBlock.getFieldValue('INDEX') ?? 1);
+                return () => (window as any).runtime?.vision?.getObjectY(vYIdx) ?? 0;
+            }
+            case 'vision_get_face_count':
+                return () => (window as any).runtime?.vision?.getFaceCount() ?? 0;
+
+            // ── Music reporter ─────────────────────────────────────────────
+            case 'music_get_tempo':
+                return () => (window as any).runtime?.music?.getTempo() ?? 60;
+
+            // ── Video Player number reporters ─────────────────────────────
+            case 'video_get_time':
+                return () => (window as any).runtime?.video?.getCurrentTime() ?? 0;
+            case 'video_get_duration':
+                return () => (window as any).runtime?.video?.getDuration() ?? 0;
+            case 'video_get_percent':
+                return () => (window as any).runtime?.video?.getPercent() ?? 0;
+
+            // ── Video Player boolean reporters ─────────────────────────────
+            case 'video_is_playing':
+                return () => (window as any).runtime?.video?.isPlaying() ? 1 : 0;
+            case 'video_is_loaded':
+                return () => (window as any).runtime?.video?.isLoaded() ? 1 : 0;
 
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
@@ -1441,6 +1553,155 @@ export class AnimationCompiler {
             case 'tts_stop':
                 step = { type: 'tts_stop' } as any;
                 break;
+
+            // Speech Recognition extension blocks
+            case 'speech_start_listening':
+                step = { type: 'speech_start_listening' } as any;
+                break;
+            case 'speech_stop_listening':
+                step = { type: 'speech_stop_listening' } as any;
+                break;
+            case 'speech_set_language': {
+                const lang = block.getFieldValue('LANGUAGE') || 'en-US';
+                step = { type: 'speech_set_language', language: lang } as any;
+                break;
+            }
+            case 'speech_on_result': {
+                step = { type: 'speech_on_result', body: this.compileStatementInput(block, 'BODY') } as any;
+                break;
+            }
+
+            // Text Recognition (OCR) extension blocks
+            case 'ocr_from_camera':
+                step = { type: 'ocr_from_camera' } as any;
+                break;
+            case 'ocr_from_image': {
+                const ocrSource = block.getFieldValue('SOURCE') || 'uploaded';
+                step = { type: 'ocr_from_image', source: ocrSource } as any;
+                break;
+            }
+
+            // Weather Data extension blocks
+            case 'weather_get_for_city': {
+                const city = block.getFieldValue('CITY') || 'London';
+                step = { type: 'weather_get_for_city', city } as any;
+                break;
+            }
+            case 'weather_get_for_location': {
+                const lat = Number(block.getFieldValue('LAT') || 0);
+                const lon = Number(block.getFieldValue('LON') || 0);
+                step = { type: 'weather_get_for_location', lat, lon } as any;
+                break;
+            }
+
+            // Translate extension blocks
+            case 'translate_text': {
+                const text = block.getFieldValue('TEXT') || '';
+                const lang = block.getFieldValue('TARGET_LANG') || 'en';
+                step = { type: 'translate_text', text, targetLang: lang } as any;
+                break;
+            }
+            case 'translate_set_source': {
+                const srcLang = block.getFieldValue('SOURCE_LANG') || 'auto';
+                step = { type: 'translate_set_source', sourceLang: srcLang } as any;
+                break;
+            }
+            case 'translate_set_target': {
+                const tgtLang = block.getFieldValue('TARGET_LANG') || 'en';
+                step = { type: 'translate_set_target', targetLang: tgtLang } as any;
+                break;
+            }
+
+            // Data Logger extension blocks
+            case 'logger_log': {
+                const logVal = this.compileStringValue(block, 'VALUE');
+                step = { type: 'logger_log', value: logVal } as any;
+                break;
+            }
+            case 'logger_log_with_label': {
+                const logVal2 = this.compileStringValue(block, 'VALUE');
+                const logLabel = block.getFieldValue('LABEL') || 'data';
+                step = { type: 'logger_log_with_label', value: logVal2, label: logLabel } as any;
+                break;
+            }
+            case 'logger_clear':
+                step = { type: 'logger_clear' } as any;
+                break;
+            case 'logger_save_to_csv':
+                step = { type: 'logger_save_to_csv' } as any;
+                break;
+            case 'logger_on_new_entry': {
+                step = { type: 'logger_on_new_entry', body: this.compileStatementInput(block, 'BODY') } as any;
+                break;
+            }
+
+            // Computer Vision extension blocks
+            case 'vision_camera_on':
+                step = { type: 'vision_camera_on' } as any;
+                break;
+            case 'vision_camera_off':
+                step = { type: 'vision_camera_off' } as any;
+                break;
+            case 'vision_analyze':
+                step = { type: 'vision_analyze' } as any;
+                break;
+            case 'vision_detect_objects':
+                step = { type: 'vision_detect_objects' } as any;
+                break;
+            case 'vision_draw_bounding_boxes': {
+                const state = block.getFieldValue('STATE') || 'off';
+                step = { type: 'vision_draw_bounding_boxes', state } as any;
+                break;
+            }
+
+            // Video Player extension blocks
+            case 'video_set_source': {
+                const url = block.getFieldValue('URL') || '';
+                step = { type: 'video_set_source', url } as any;
+                break;
+            }
+            case 'video_play':
+                step = { type: 'video_play' } as any;
+                break;
+            case 'video_pause':
+                step = { type: 'video_pause' } as any;
+                break;
+            case 'video_stop':
+                step = { type: 'video_stop' } as any;
+                break;
+            case 'video_show':
+                step = { type: 'video_show' } as any;
+                break;
+            case 'video_hide':
+                step = { type: 'video_hide' } as any;
+                break;
+            case 'video_set_speed': {
+                const speed = Number(block.getFieldValue('SPEED') || 1);
+                step = { type: 'video_set_speed', speed } as any;
+                break;
+            }
+            case 'video_set_volume': {
+                const volume = Number(block.getFieldValue('VOLUME') || 100);
+                step = { type: 'video_set_volume', volume } as any;
+                break;
+            }
+            case 'video_seek': {
+                const seekTime = Number(block.getFieldValue('TIME') || 0);
+                step = { type: 'video_seek', time: seekTime } as any;
+                break;
+            }
+            case 'video_set_position': {
+                const vx = Number(block.getFieldValue('X') || 50);
+                const vy = Number(block.getFieldValue('Y') || 50);
+                const vsize = Number(block.getFieldValue('SIZE') || 100);
+                step = { type: 'video_set_position', x: vx, y: vy, size: vsize } as any;
+                break;
+            }
+            case 'video_set_loop': {
+                const loopState = block.getFieldValue('LOOP') || 'off';
+                step = { type: 'video_set_loop', loop: loopState === 'on' } as any;
+                break;
+            }
 
             case 'music_set_instrument': {
                 const instrument = Number(block.getFieldValue('INST') || 1);

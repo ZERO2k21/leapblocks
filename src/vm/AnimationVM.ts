@@ -173,6 +173,44 @@ export type ScriptStep = (
     | { type: 'tts_set_volume'; volume: number }
     | { type: 'tts_set_pitch'; pitch: number }
     | { type: 'tts_stop' }
+    // Speech Recognition
+    | { type: 'speech_start_listening' }
+    | { type: 'speech_stop_listening' }
+    | { type: 'speech_set_language'; language: string }
+    | { type: 'speech_on_result'; body: ScriptStep[] }
+    // Text Recognition (OCR)
+    | { type: 'ocr_from_camera' }
+    | { type: 'ocr_from_image'; source: string }
+    // Weather Data
+    | { type: 'weather_get_for_city'; city: string }
+    | { type: 'weather_get_for_location'; lat: number; lon: number }
+    // Translate
+    | { type: 'translate_text'; text: string; targetLang: string }
+    | { type: 'translate_set_source'; sourceLang: string }
+    | { type: 'translate_set_target'; targetLang: string }
+    // Data Logger
+    | { type: 'logger_log'; value: string | (() => string) }
+    | { type: 'logger_log_with_label'; value: string | (() => string); label: string }
+    | { type: 'logger_clear' }
+    | { type: 'logger_save_to_csv' }
+    | { type: 'logger_on_new_entry'; body: ScriptStep[] }
+    | { type: 'vision_camera_on' }
+    | { type: 'vision_camera_off' }
+    | { type: 'vision_analyze' }
+    | { type: 'vision_detect_objects' }
+    | { type: 'vision_draw_bounding_boxes'; state: string }
+    // Video Player
+    | { type: 'video_set_source'; url: string | (() => string) }
+    | { type: 'video_play' }
+    | { type: 'video_pause' }
+    | { type: 'video_stop' }
+    | { type: 'video_show' }
+    | { type: 'video_hide' }
+    | { type: 'video_set_speed'; speed: number | (() => number) }
+    | { type: 'video_set_volume'; volume: number | (() => number) }
+    | { type: 'video_seek'; time: number | (() => number) }
+    | { type: 'video_set_position'; x: number | (() => number); y: number | (() => number); size: number | (() => number) }
+    | { type: 'video_set_loop'; loop: boolean }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -1678,6 +1716,272 @@ export class AnimationVM {
                 if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
                     (window as any).runtime.tts.stop();
                     vmLog.info('Stopped speaking');
+                }
+                break;
+            }
+
+            // Speech Recognition extension steps
+            case 'speech_start_listening' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.startListening();
+                    vmLog.info('Started listening');
+                }
+                break;
+            }
+            case 'speech_stop_listening' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.stopListening();
+                    vmLog.info('Stopped listening');
+                }
+                break;
+            }
+            case 'speech_set_language' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.setLanguage((step as any).language);
+                    vmLog.info(`Set speech language to ${(step as any).language}`);
+                }
+                break;
+            }
+            case 'speech_on_result' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    const bodySteps = (step as any).body as ScriptStep[];
+                    (window as any).runtime.speech.onResult((_text: string, _conf: number) => {
+                        if (bodySteps && bodySteps.length > 0) {
+                            bodySteps.forEach((s: any) => {
+                                if (s.type === 'tts_speak') {
+                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
+                                    (window as any).runtime?.tts?.speak(msg);
+                                } else if (s.type === 'say') {
+                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
+                                    if (sprite) sprite.say(msg);
+                                } else if (s.type === 'data_setvariableto') {
+                                    const val = typeof s.value === 'function' ? s.value() : s.value;
+                                    this.setVariable(s.variable, val);
+                                }
+                            });
+                        }
+                    });
+                    vmLog.info('Registered speech result handler');
+                }
+                break;
+            }
+
+            // Text Recognition (OCR) extension steps
+            case 'ocr_from_camera' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.ocr) {
+                    await (window as any).runtime.ocr.recognizeFromCamera();
+                    vmLog.info('OCR from camera complete');
+                }
+                break;
+            }
+            case 'ocr_from_image' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.ocr) {
+                    const src = (step as any).source || 'uploaded';
+                    await (window as any).runtime.ocr.recognizeFromImage(src);
+                    vmLog.info(`OCR from image (${src}) complete`);
+                }
+                break;
+            }
+
+            // Weather Data extension steps
+            case 'weather_get_for_city' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.weather) {
+                    const city = (step as any).city || 'London';
+                    await (window as any).runtime.weather.fetchWeather(city);
+                    vmLog.info(`Weather fetched for ${city}`);
+                }
+                break;
+            }
+            case 'weather_get_for_location' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.weather) {
+                    const { lat, lon } = step as any;
+                    await (window as any).runtime.weather.fetchWeatherByLocation(lat, lon);
+                    vmLog.info(`Weather fetched for ${lat}, ${lon}`);
+                }
+                break;
+            }
+
+            // Translate extension steps
+            case 'translate_text' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.translate) {
+                    const { text, targetLang } = step as any;
+                    await (window as any).runtime.translate.translate(text, targetLang);
+                    vmLog.info(`Translated "${text}" to ${targetLang}`);
+                }
+                break;
+            }
+            case 'translate_set_source' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.translate) {
+                    (window as any).runtime.translate.setSourceLanguage((step as any).sourceLang);
+                    vmLog.info(`Set source language to ${(step as any).sourceLang}`);
+                }
+                break;
+            }
+            case 'translate_set_target' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.translate) {
+                    (window as any).runtime.translate.setTargetLanguage((step as any).targetLang);
+                    vmLog.info(`Set target language to ${(step as any).targetLang}`);
+                }
+                break;
+            }
+
+            // Data Logger extension steps
+            case 'logger_log' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.logger) {
+                    const val = typeof (step as any).value === 'function' ? (step as any).value() : (step as any).value;
+                    (window as any).runtime.logger.log(val);
+                }
+                break;
+            }
+            case 'logger_log_with_label' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.logger) {
+                    const val = typeof (step as any).value === 'function' ? (step as any).value() : (step as any).value;
+                    (window as any).runtime.logger.logWithLabel((step as any).label, val);
+                }
+                break;
+            }
+            case 'logger_clear' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.logger) {
+                    (window as any).runtime.logger.clear();
+                    vmLog.info('Log cleared');
+                }
+                break;
+            }
+            case 'logger_save_to_csv' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.logger) {
+                    (window as any).runtime.logger.saveToCSV();
+                    vmLog.info('Log saved as CSV');
+                }
+                break;
+            }
+            case 'logger_on_new_entry' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.logger) {
+                    const bodySteps = (step as any).body as ScriptStep[];
+                    (window as any).runtime.logger.onNewEntry((_entry: any) => {
+                        if (bodySteps && bodySteps.length > 0) {
+                            bodySteps.forEach((s: any) => {
+                                if (s.type === 'logger_log') {
+                                    const val = typeof s.value === 'function' ? s.value() : s.value;
+                                    (window as any).runtime?.logger?.log(val);
+                                }
+                            });
+                        }
+                    });
+                    vmLog.info('Registered logger on_new_entry handler');
+                }
+                break;
+            }
+
+            // Computer Vision blocks
+            case 'vision_camera_on':
+                if (typeof window !== 'undefined' && (window as any).runtime?.vision) {
+                    (window as any).runtime.vision.cameraOn_();
+                    vmLog.info('Vision camera on');
+                }
+                break;
+            case 'vision_camera_off':
+                if (typeof window !== 'undefined' && (window as any).runtime?.vision) {
+                    (window as any).runtime.vision.cameraOff();
+                    vmLog.info('Vision camera off');
+                }
+                break;
+            case 'vision_analyze':
+                if (typeof window !== 'undefined' && (window as any).runtime?.vision) {
+                    await (window as any).runtime.vision.analyze();
+                    vmLog.info('Vision analyze frame');
+                }
+                break;
+            case 'vision_detect_objects':
+                if (typeof window !== 'undefined' && (window as any).runtime?.vision) {
+                    await (window as any).runtime.vision.detectObjects();
+                    vmLog.info('Vision detect objects');
+                }
+                break;
+            case 'vision_draw_bounding_boxes':
+                if (typeof window !== 'undefined' && (window as any).runtime?.vision) {
+                    (window as any).runtime.vision.setBoundingBoxes((step as any).state);
+                    vmLog.info('Vision bounding boxes', (step as any).state);
+                }
+                break;
+
+            // Video Player blocks
+            case 'video_set_source': {
+                const videoUrl = typeof (step as any).url === 'function' ? (step as any).url() : (step as any).url;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.setSource(videoUrl);
+                    vmLog.info('Video set source', videoUrl);
+                }
+                break;
+            }
+            case 'video_play':
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.play();
+                    vmLog.info('Video play');
+                }
+                break;
+            case 'video_pause':
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.pause();
+                    vmLog.info('Video pause');
+                }
+                break;
+            case 'video_stop':
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.stop();
+                    vmLog.info('Video stop');
+                }
+                break;
+            case 'video_show':
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.show();
+                    vmLog.info('Video show');
+                }
+                break;
+            case 'video_hide':
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.hide();
+                    vmLog.info('Video hide');
+                }
+                break;
+            case 'video_set_speed': {
+                const videoSpeed = typeof (step as any).speed === 'function' ? (step as any).speed() : (step as any).speed;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.setSpeed(videoSpeed);
+                    vmLog.info('Video set speed', videoSpeed);
+                }
+                break;
+            }
+            case 'video_set_volume': {
+                const videoVol = typeof (step as any).volume === 'function' ? (step as any).volume() : (step as any).volume;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.setVolume(videoVol);
+                    vmLog.info('Video set volume', videoVol);
+                }
+                break;
+            }
+            case 'video_seek': {
+                const videoTime = typeof (step as any).time === 'function' ? (step as any).time() : (step as any).time;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.seek(videoTime);
+                    vmLog.info('Video seek', videoTime);
+                }
+                break;
+            }
+            case 'video_set_position': {
+                const videoX = typeof (step as any).x === 'function' ? (step as any).x() : (step as any).x;
+                const videoY = typeof (step as any).y === 'function' ? (step as any).y() : (step as any).y;
+                const videoSize = typeof (step as any).size === 'function' ? (step as any).size() : (step as any).size;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.setPosition(videoX, videoY, videoSize);
+                    vmLog.info('Video set position', { x: videoX, y: videoY, size: videoSize });
+                }
+                break;
+            }
+            case 'video_set_loop': {
+                const videoLoop = (step as any).loop;
+                if (typeof window !== 'undefined' && (window as any).runtime?.video) {
+                    (window as any).runtime.video.setLoop(videoLoop);
+                    vmLog.info('Video set loop', videoLoop);
                 }
                 break;
             }
