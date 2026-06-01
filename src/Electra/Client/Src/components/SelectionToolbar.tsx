@@ -257,7 +257,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentSize}
           onChange={(e) => updateNodeData(selectedNode!.id, { size: parseInt(e.target.value) || 23 })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {sizes.map(s => <option key={s} value={s}>NEMA {s}</option>)}
         </select>
@@ -267,7 +267,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentDisplay}
           onChange={(e) => updateNodeData(selectedNode!.id, { display: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {displays.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
@@ -282,7 +282,7 @@ export const SelectionToolbar: React.FC = () => {
                 updateNodeData(selectedNode!.id, { gearRatio: e.target.value });
               }
             }}
-            style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+            style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
           >
             {gearRatios.map(g => <option key={g} value={g}>{g}</option>)}
             {!gearRatios.includes(currentGearRatio) && <option value={currentGearRatio}>{currentGearRatio} (Custom)</option>}
@@ -295,7 +295,7 @@ export const SelectionToolbar: React.FC = () => {
               placeholder="e.g. 5:1"
               value={currentGearRatio === 'custom' ? '' : currentGearRatio}
               onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })}
-              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
             />
           )}
         </div>
@@ -305,7 +305,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentArrow}
           onChange={(e) => updateNodeData(selectedNode!.id, { arrow: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {arrowColors.map(ac => <option key={ac.value} value={ac.value}>{ac.label}</option>)}
         </select>

@@ -667,7 +667,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
             pinGlow = `0 0 6px ${wireColor}`;
           }
 
-          const pinSize = isConnected ? 5 : 3;
+          const pinSize = isConnected ? 3 : 2;
           const halfSize = pinSize / 2;
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,

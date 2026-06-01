@@ -1,30 +1,17 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * PhysicalConnectionLine — Flat, clean wire preview while dragging (no 3D effects).
- * Matches Wokwi style: simple colored line with pin dots.
- */
 import React from 'react';
-import { type ConnectionLineComponentProps, getBezierPath } from 'reactflow';
+import { type ConnectionLineComponentProps } from 'reactflow';
+import { computeOrthogonalPath, buildOrthogonalPath } from '../../lib/orthogonalRouting';
 
 export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
   fromX,
   fromY,
   toX,
   toY,
-  fromPosition,
-  toPosition,
 }) => {
-  const [edgePath] = getBezierPath({
-    sourceX: fromX,
-    sourceY: fromY,
-    sourcePosition: fromPosition,
-    targetX: toX,
-    targetY: toY,
-    targetPosition: toPosition,
-  });
+  const src = { x: fromX, y: fromY };
+  const tgt = { x: toX, y: toY };
+  const bends = computeOrthogonalPath(src, tgt);
+  const edgePath = buildOrthogonalPath([src, ...bends, tgt]);
 
   const wireColor = '#22c55e';
 
@@ -35,7 +22,6 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
           stroke: wireColor,
           strokeWidth: 2,
           fill: 'none',
-          strokeLinecap: 'round',
           strokeLinejoin: 'round',
         }}
         d={edgePath}
@@ -44,7 +30,7 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
       <circle
         cx={fromX}
         cy={fromY}
-        r={2.5}
+        r={1.5}
         fill={wireColor}
         stroke="none"
       />
@@ -52,7 +38,7 @@ export const PhysicalConnectionLine: React.FC<ConnectionLineComponentProps> = ({
       <circle
         cx={toX}
         cy={toY}
-        r={2.5}
+        r={1.5}
         fill={wireColor}
         stroke="none"
         opacity={0.5}
