@@ -122,11 +122,11 @@ export class SoundManager {
                 // We use slice() because decodeAudioData might detach the buffer on some platforms
                 audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
             } catch (e) {
-                // Fallback to Scratch ADPCM decoder
+                // Fallback to Leap ADPCM decoder
                 const decoder = new ADPCMSoundDecoder(this.audioContext);
                 audioBuffer = await decoder.decode(arrayBuffer);
             }
-            
+
             this.soundBuffers.set(bufferKey, audioBuffer);
             return audioBuffer;
 

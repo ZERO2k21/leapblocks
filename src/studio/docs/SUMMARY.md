@@ -69,7 +69,7 @@ We will use **Google Blockly** (open source, Apache 2.0 license) for visual prog
 
 **✅ Our Approach**:
 - Study MIT App Inventor's concepts and workflow
-- Implement our own code from scratch
+- Implement our own code from Leap
 - Use open source libraries legally
 - Credit MIT App Inventor: "Inspired by MIT App Inventor"
 - Credit Google Blockly: "Powered by Google Blockly"

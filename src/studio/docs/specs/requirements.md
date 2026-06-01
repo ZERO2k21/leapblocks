@@ -715,7 +715,7 @@ The Studio module will be considered successful when:
 
 1. **Inspired By, Not Copied From**:
    - Study MIT App Inventor's concepts and workflow
-   - Implement our own code from scratch
+   - Implement our own code from Leap
    - Create our own visual design and branding
    - Use open source libraries (Blockly, Capacitor) legally
 
