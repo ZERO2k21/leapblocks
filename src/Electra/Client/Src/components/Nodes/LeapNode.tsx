@@ -64,8 +64,6 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     transformOrigin: 'center center',
     position: 'relative',
     boxSizing: 'border-box',
-    contain: 'layout style paint',
-    willChange: 'transform',
   };
 
   // ── Hardware Property Mapper ──
