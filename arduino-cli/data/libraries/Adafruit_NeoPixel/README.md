@@ -36,7 +36,7 @@ Compatibility notes: Port A is not supported on any AVR processors at this time
 
 - ### Simple to use
 
-  Controlling NeoPixels “from scratch” is quite a challenge, so we provide a library letting you focus on the fun and interesting bits.
+  Controlling NeoPixels “from Leap” is quite a challenge, so we provide a library letting you focus on the fun and interesting bits.
 
 - ### Give back
 

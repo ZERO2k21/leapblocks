@@ -814,14 +814,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, []);
 
     const handleListAddItem = useCallback((listName: string, item: string) => {
+        setListMonitors(prev => prev.map(m => m.name === listName ? { ...m, items: [...m.items, item] } : m));
         animationVM.addToList(listName, item);
     }, []);
 
     const handleListEditItem = useCallback((listName: string, index: number, value: string) => {
+        setListMonitors(prev => prev.map(m => m.name === listName ? {
+            ...m,
+            items: m.items.map((item, idx) => idx === index ? value : item)
+        } : m));
         animationVM.replaceItemOfList(listName, index + 1, value);
     }, []);
 
     const handleListDeleteItem = useCallback((listName: string, index: number) => {
+        setListMonitors(prev => prev.map(m => m.name === listName ? {
+            ...m,
+            items: m.items.filter((_, idx) => idx !== index)
+        } : m));
         animationVM.deleteOfList(listName, index + 1);
     }, []);
 
