@@ -505,6 +505,10 @@ export class AnimationCompiler {
                 return () => String((window as any).runtime?.objectDetection?.getConfidence(n) ?? 0);
             }
 
+            // ── Text to Speech reporters ────────────────────────────────────
+            case 'tts_is_speaking':
+                return () => String((window as any).runtime?.tts?.isSpeaking() ?? false);
+
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
@@ -888,6 +892,14 @@ export class AnimationCompiler {
                 const n = Number(valueBlock.getFieldValue('N') ?? 1);
                 return () => (window as any).runtime?.objectDetection?.getLabel(n) ?? '';
             }
+
+            // ── Text to Speech number reporters ─────────────────────────────
+            case 'tts_get_rate':
+                return () => (window as any).runtime?.tts?.getRate() ?? 1;
+            case 'tts_get_volume':
+                return () => (window as any).runtime?.tts?.getVolume() ?? 1;
+            case 'tts_is_speaking':
+                return () => (window as any).runtime?.tts?.isSpeaking() ? 1 : 0;
 
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
@@ -1398,6 +1410,36 @@ export class AnimationCompiler {
             // ML Environment
             case 'ml_analyze':
                 step = { type: 'ml_action', action: block.getFieldValue('ACTION') || 'on' } as any;
+                break;
+
+            // Text to Speech extension blocks
+            case 'tts_speak': {
+                const msg = this.compileStringValue(block, 'MESSAGE');
+                step = { type: 'tts_speak', message: msg } as any;
+                break;
+            }
+            case 'tts_set_voice': {
+                const voice = block.getFieldValue('VOICE') || '';
+                step = { type: 'tts_set_voice', voice } as any;
+                break;
+            }
+            case 'tts_set_rate': {
+                const rate = Number(block.getFieldValue('RATE') || 1);
+                step = { type: 'tts_set_rate', rate } as any;
+                break;
+            }
+            case 'tts_set_volume': {
+                const volume = Number(block.getFieldValue('VOLUME') || 1);
+                step = { type: 'tts_set_volume', volume } as any;
+                break;
+            }
+            case 'tts_set_pitch': {
+                const pitch = Number(block.getFieldValue('PITCH') || 1);
+                step = { type: 'tts_set_pitch', pitch } as any;
+                break;
+            }
+            case 'tts_stop':
+                step = { type: 'tts_stop' } as any;
                 break;
 
             case 'music_set_instrument': {

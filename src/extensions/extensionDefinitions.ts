@@ -543,6 +543,141 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             { kind: 'block', type: 'ml_get_confidence' },
             { kind: 'block', type: 'ml_is_class' },
         ]
+    },
+    text_to_speech: {
+        id: 'text_to_speech',
+        name: 'Text to Speech',
+        color: '#4a90d9',
+        icon: '🔊',
+        registerBlocks: (Blockly: any) => {
+            const ttsBlockDefs = [
+                {
+                    type: 'tts_speak',
+                    message0: 'speak %1',
+                    args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Speak the given text aloud'
+                },
+                {
+                    type: 'tts_set_voice',
+                    message0: 'set voice to %1',
+                    args0: [{ type: 'field_input', name: 'VOICE', text: '' }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Set the speech voice by name or language code'
+                },
+                {
+                    type: 'tts_set_rate',
+                    message0: 'set speech rate to %1',
+                    args0: [{ type: 'field_number', name: 'RATE', value: 1, min: 0.1, max: 10, step: 0.1 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Set the speech rate (0.1 - 10, default 1)'
+                },
+                {
+                    type: 'tts_set_volume',
+                    message0: 'set speech volume to %1',
+                    args0: [{ type: 'field_number', name: 'VOLUME', value: 1, min: 0, max: 1, step: 0.1 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Set the speech volume (0 - 1, default 1)'
+                },
+                {
+                    type: 'tts_set_pitch',
+                    message0: 'set speech pitch to %1',
+                    args0: [{ type: 'field_number', name: 'PITCH', value: 1, min: 0, max: 2, step: 0.1 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Set the speech pitch (0 - 2, default 1)'
+                },
+                {
+                    type: 'tts_stop',
+                    message0: 'stop speaking',
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#4a90d9',
+                    tooltip: 'Stop current speech'
+                },
+                {
+                    type: 'tts_is_speaking',
+                    message0: 'is speaking',
+                    output: 'Boolean',
+                    colour: '#2d6cb5',
+                    tooltip: 'Returns true if speech is in progress'
+                },
+                {
+                    type: 'tts_get_rate',
+                    message0: 'speech rate',
+                    output: 'Number',
+                    colour: '#2d6cb5',
+                    tooltip: 'Get the current speech rate'
+                },
+                {
+                    type: 'tts_get_volume',
+                    message0: 'speech volume',
+                    output: 'Number',
+                    colour: '#2d6cb5',
+                    tooltip: 'Get the current speech volume'
+                }
+            ];
+            const newTtsDefs = ttsBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newTtsDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newTtsDefs));
+            }
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+
+            jsGen.forBlock['tts_speak'] = (b: any) => {
+                const msg = b.getFieldValue('MESSAGE') || 'Hello';
+                return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
+            };
+            jsGen.forBlock['tts_set_voice'] = (b: any) => {
+                const voice = b.getFieldValue('VOICE') || '';
+                return `if(window.runtime?.tts) window.runtime.tts.setVoice('${voice.replace(/'/g, "\\'")}');\n`;
+            };
+            jsGen.forBlock['tts_set_rate'] = (b: any) => {
+                const rate = b.getFieldValue('RATE') || 1;
+                return `if(window.runtime?.tts) window.runtime.tts.setRate(${rate});\n`;
+            };
+            jsGen.forBlock['tts_set_volume'] = (b: any) => {
+                const volume = b.getFieldValue('VOLUME') || 1;
+                return `if(window.runtime?.tts) window.runtime.tts.setVolume(${volume});\n`;
+            };
+            jsGen.forBlock['tts_set_pitch'] = (b: any) => {
+                const pitch = b.getFieldValue('PITCH') || 1;
+                return `if(window.runtime?.tts) window.runtime.tts.setPitch(${pitch});\n`;
+            };
+            jsGen.forBlock['tts_stop'] = () =>
+                'if(window.runtime?.tts) window.runtime.tts.stop();\n';
+            jsGen.forBlock['tts_is_speaking'] = () =>
+                [`window.runtime?.tts?.isSpeaking()||false`, 0];
+            jsGen.forBlock['tts_get_rate'] = () =>
+                [`window.runtime?.tts?.getRate()||1`, 0];
+            jsGen.forBlock['tts_get_volume'] = () =>
+                [`window.runtime?.tts?.getVolume()||1`, 0];
+        },
+        getToolbox: () => [
+            { kind: 'label', text: 'Speak' },
+            { kind: 'block', type: 'tts_speak' },
+            { kind: 'block', type: 'tts_stop' },
+            { kind: 'label', text: 'Settings' },
+            { kind: 'block', type: 'tts_set_voice' },
+            { kind: 'block', type: 'tts_set_rate' },
+            { kind: 'block', type: 'tts_set_volume' },
+            { kind: 'block', type: 'tts_set_pitch' },
+            { kind: 'label', text: 'Reporters' },
+            { kind: 'block', type: 'tts_is_speaking' },
+            { kind: 'block', type: 'tts_get_rate' },
+            { kind: 'block', type: 'tts_get_volume' },
+        ]
     }
 
 };
