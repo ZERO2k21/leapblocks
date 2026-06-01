@@ -8,7 +8,7 @@
    ============================================ */
 
 /* Rounded vibrant block body */
-.blocklySvg .blocklyBlockBackground {
+.junior-mode .blocklySvg .blocklyBlockBackground{
     rx: 22px !important;
     ry: 22px !important;
     fill: #4C97FF !important;
@@ -16,20 +16,20 @@
 }
 
 /* Block text - exclude fields and icons */
-.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon) {
+.junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon){
     font-size: 14px;
     font-weight: 700;
     fill: #ffffff !important;
 }
 
 /* Icon spacing */
-.blocklySvg image,
-.blocklySvg .blocklyText:first-child {
+.junior-mode .blocklySvg image,
+.junior-mode .blocklySvg .blocklyText:first-child{
     margin-right: 6px;
 }
 
 /* White number pill (Targeting standard Blockly editable fields) */
-.blocklyEditableText>rect {
+.junior-mode .blocklyEditableText>rect{
     fill: #ffffff !important;
     stroke: none !important;
     rx: 14px !important;
@@ -38,18 +38,18 @@
     stroke-width: 0 !important;
 }
 
-.blocklyEditableText:hover>rect {
+.junior-mode .blocklyEditableText:hover>rect{
     stroke: #ddd !important;
     stroke-width: 2px !important;
 }
 
 /* FORCE BLACK TEXT for Number Fields */
-.blocklyEditableText>text,
-.blocklyEditableText>text.blocklyText,
-.blocklyNonEditableText>text,
-.blocklyNonEditableText>text.blocklyText,
-g[class*="blocklyEditableText"]>text,
-g[class*="blocklyNonEditableText"]>text {
+.junior-mode .blocklyEditableText>text,
+.junior-mode .blocklyEditableText>text.blocklyText,
+.junior-mode .blocklyNonEditableText>text,
+.junior-mode .blocklyNonEditableText>text.blocklyText,
+.junior-mode g[class*="blocklyEditableText"]>text,
+.junior-mode g[class*="blocklyNonEditableText"]>text{
     fill: #000000 !important;
     font-size: 13px !important;
     font-weight: 700 !important;
@@ -58,8 +58,8 @@ g[class*="blocklyNonEditableText"]>text {
 }
 
 /* Ensure background rect is white for both editable and non-editable (flyout) */
-.blocklyEditableText>rect,
-.blocklyNonEditableText>rect {
+.junior-mode .blocklyEditableText>rect,
+.junior-mode .blocklyNonEditableText>rect{
     fill: #ffffff !important;
     stroke: none !important;
     rx: 14px !important;
@@ -69,12 +69,12 @@ g[class*="blocklyNonEditableText"]>text {
 }
 
 /* Remove sharp outlines */
-.blocklyPath {
+.junior-mode .blocklyPath{
     stroke-width: 0 !important;
 }
 
 /* Vertical spacing between blocks */
-.blocklyBlock {
+.junior-mode .blocklyBlock{
     margin-bottom: 10px;
 }
 
@@ -82,37 +82,9 @@ g[class*="blocklyNonEditableText"]>text {
    UNICODE ICON STYLES (LeapBlox-style)
    ============================================ */
 
-/* Large block icon (40x40 equivalent) - Target SVG text */
-text.blocklyText.junior-block-icon,
-.blocklySvg text.junior-block-icon,
-.blocklyFlyout text.junior-block-icon {
-    font-size: 48px !important;
-    fill: white !important;
-    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
-    dominant-baseline: middle !important;
-}
-
-/* Large lookup icon */
-text.blocklyText.junior-icon-large,
-.blocklySvg text.junior-icon-large,
-.blocklyFlyout text.junior-icon-large {
-    font-size: 44px !important;
-    fill: white !important;
-    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
-}
-
-/* Small icon (20x20 equivalent) */
-text.blocklyText.junior-icon,
-.blocklySvg text.junior-icon,
-.blocklyFlyout text.junior-icon {
-    font-size: 38px !important;
-    fill: white !important;
-    font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', 'Apple Color Emoji', Arial, sans-serif !important;
-}
-
-/* Make all arrow/icon text in blocks larger and visible */
-.blocklySvg .blocklyText:first-child {
-    font-size: 36px !important;
+/* Icon text in blocks - slightly larger than body text for visibility */
+.junior-mode .blocklySvg .blocklyText:first-child{
+    font-size: 18px !important;
     fill: white !important;
 }
 
@@ -120,7 +92,7 @@ text.blocklyText.junior-icon,
    GRID STAGE STYLES (LeapBlox-style)
    ============================================ */
 
-.grid-stage {
+.junior-mode .grid-stage{
     position: relative;
     width: 100%;
     height: 100%;
@@ -131,20 +103,20 @@ text.blocklyText.junior-icon,
     overflow: hidden;
 }
 
-.grid-axis {
+.junior-mode .grid-axis{
     position: absolute;
     color: #999;
     font-size: 10px;
     font-family: 'Segoe UI', sans-serif;
 }
 
-.grid-axis-y {
+.junior-mode .grid-axis-y{
     left: -15px;
     writing-mode: vertical-rl;
     text-orientation: mixed;
 }
 
-.grid-axis-x {
+.junior-mode .grid-axis-x{
     bottom: -15px;
 }
 
@@ -153,7 +125,7 @@ text.blocklyText.junior-icon,
    ============================================ */
 
 /* Make flyout background lighter and cleaner */
-.blocklyFlyoutBackground {
+.junior-mode .blocklyFlyoutBackground{
     fill: #f0f0f0 !important;
     fill-opacity: 0.97 !important;
     stroke: #e0e0e0 !important;
@@ -161,53 +133,53 @@ text.blocklyText.junior-icon,
 }
 
 /* Flyout scrollbar styling */
-.blocklyFlyout .blocklyScrollbarHandle {
+.junior-mode .blocklyFlyout .blocklyScrollbarHandle{
     fill: #c0c0c0 !important;
     rx: 4px !important;
     ry: 4px !important;
 }
 
-.blocklyFlyout .blocklyScrollbarBackground {
+.junior-mode .blocklyFlyout .blocklyScrollbarBackground{
     fill: transparent !important;
 }
 
 /* The flyout container in horizontal mode */
 
 /* Workspace area - ensure proper height allocation */
-.workspace {
+.junior-mode .workspace{
     width: 100% !important;
     height: 100% !important;
 }
 
 /* Main Blockly SVG - take full workspace area */
-.blocklySvg {
+.junior-mode .blocklySvg{
     width: 100% !important;
     height: 100% !important;
 }
 
 /* Toolbox styling for horizontal bottom */
-.blocklyToolboxDiv {
+.junior-mode .blocklyToolboxDiv{
     background: #f5f5f5 !important;
     border-top: 1px solid #e0e0e0 !important;
     padding: 0 !important;
 }
 
 /* Scrollbar track for horizontal flyout */
-.blocklyMainWorkspaceScrollbar .blocklyScrollbarHorizontal {
+.junior-mode .blocklyMainWorkspaceScrollbar .blocklyScrollbarHorizontal{
     height: 8px !important;
 }
 
 /* Make sure blocks in flyout are visible and well-spaced */
-.blocklyFlyout .blocklyDraggable {
+.junior-mode .blocklyFlyout .blocklyDraggable{
     cursor: grab !important;
 }
 
-.blocklyFlyout .blocklyDraggable:active {
+.junior-mode .blocklyFlyout .blocklyDraggable:active{
     cursor: grabbing !important;
 }
 
 /* Junior toolbar - protect layout from leaked Blockly styles */
-.junior-toolbar {
+.junior-mode .junior-toolbar{
     width: calc(100% - 28px) !important;
     overflow: hidden !important;
     position: absolute !important;
@@ -215,18 +187,18 @@ text.blocklyText.junior-icon,
     flex-wrap: nowrap !important;
 }
 
-.junior-toolbar .junior-extensions-btn {
+.junior-mode .junior-toolbar .junior-extensions-btn{
     position: relative !important;
     flex-shrink: 0 !important;
     margin-left: auto !important;
 }
 
 /* No-scrollbar utility */
-.no-scrollbar::-webkit-scrollbar {
+.junior-mode .no-scrollbar::-webkit-scrollbar{
     display: none;
 }
 
-.no-scrollbar {
+.junior-mode .no-scrollbar{
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
@@ -235,7 +207,7 @@ text.blocklyText.junior-icon,
    JUNIOR SOUND RECORDER STYLES (Mockup Match)
    ============================================ */
 
-.junior-recorder-overlay {
+.junior-mode .junior-recorder-overlay{
     position: fixed;
     top: 0;
     left: 0;
@@ -249,7 +221,7 @@ text.blocklyText.junior-icon,
     z-index: 5000;
 }
 
-.junior-recorder-modal.complex {
+.junior-mode .junior-recorder-modal.complex{
     width: 700px;
     height: 500px;
     padding: 0;
@@ -264,18 +236,18 @@ text.blocklyText.junior-icon,
 }
 
 @keyframes junior-pop {
-    0% {
+        0%{
         transform: scale(0.8);
         opacity: 0;
     }
 
-    100% {
+        100%{
         transform: scale(1);
         opacity: 1;
     }
 }
 
-.junior-recorder-header-new {
+.junior-mode .junior-recorder-header-new{
     background: #6b21a8;
     color: white;
     padding: 16px 20px;
@@ -287,7 +259,7 @@ text.blocklyText.junior-icon,
     font-weight: 600;
 }
 
-.junior-recorder-close-new {
+.junior-mode .junior-recorder-close-new{
     position: absolute;
     right: 15px;
     background: rgba(255, 255, 255, 0.1);
@@ -303,7 +275,7 @@ text.blocklyText.junior-icon,
     transition: background 0.2s;
 }
 
-.junior-recorder-body {
+.junior-mode .junior-recorder-body{
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -311,14 +283,14 @@ text.blocklyText.junior-icon,
     background: #f8fafc;
 }
 
-.junior-recorder-main-view {
+.junior-mode .junior-recorder-main-view{
     display: flex;
     gap: 20px;
     height: 240px;
     margin-bottom: 24px;
 }
 
-.junior-waveform-container {
+.junior-mode .junior-waveform-container{
     flex: 1;
     background: white;
     border: 2px solid #e2e8f0;
@@ -327,18 +299,18 @@ text.blocklyText.junior-icon,
     overflow: hidden;
 }
 
-.junior-waveform-canvas {
+.junior-mode .junior-waveform-canvas{
     width: 100%;
     height: 100%;
 }
 
-.junior-recorder-level-v {
+.junior-mode .junior-recorder-level-v{
     background: #f1f5f9;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
 
-.trim-handle {
+.junior-mode .trim-handle{
     position: absolute;
     top: 0;
     bottom: 0;
@@ -349,7 +321,7 @@ text.blocklyText.junior-icon,
     transform: translateX(-50%);
 }
 
-.trim-handle-pill {
+.junior-mode .trim-handle-pill{
     position: absolute;
     left: -10px;
     width: 24px;
@@ -360,21 +332,21 @@ text.blocklyText.junior-icon,
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.trim-handle-pill.top {
+.junior-mode .trim-handle-pill.top{
     top: -12px;
 }
 
-.trim-handle-pill.bottom {
+.junior-mode .trim-handle-pill.bottom{
     bottom: -12px;
 }
 
-.junior-recorder-mid-controls {
+.junior-mode .junior-recorder-mid-controls{
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.junior-play-big {
+.junior-mode .junior-play-big{
     width: 90px;
     height: 90px;
     background: #4C97FF;
@@ -390,12 +362,12 @@ text.blocklyText.junior-icon,
     color: white;
 }
 
-.junior-play-big:active {
+.junior-mode .junior-play-big:active{
     transform: translateY(4px);
     box-shadow: 0 2px 0 #3a7bd5;
 }
 
-.play-icon-shape {
+.junior-mode .play-icon-shape{
     width: 0;
     height: 0;
     border-top: 14px solid transparent;
@@ -404,7 +376,7 @@ text.blocklyText.junior-icon,
     margin-left: 6px;
 }
 
-.play-icon-shape.stop {
+.junior-mode .play-icon-shape.stop{
     width: 20px;
     height: 20px;
     background: white;
@@ -412,13 +384,13 @@ text.blocklyText.junior-icon,
     margin-left: 0;
 }
 
-.play-label {
+.junior-mode .play-label{
     margin-top: 4px;
     font-weight: 700;
     font-size: 14px;
 }
 
-.junior-recorder-footer {
+.junior-mode .junior-recorder-footer{
     padding: 24px;
     display: flex;
     justify-content: space-between;
@@ -426,7 +398,7 @@ text.blocklyText.junior-icon,
     border-top: 1px solid #e2e8f0;
 }
 
-.junior-btn-primary {
+.junior-mode .junior-btn-primary{
     background: #6b21a8;
     color: white;
     padding: 12px 40px;
@@ -439,7 +411,7 @@ text.blocklyText.junior-icon,
     transition: all 0.1s;
 }
 
-.junior-btn-secondary {
+.junior-mode .junior-btn-secondary{
     background: white;
     color: #6b21a8;
     padding: 12px 24px;
@@ -453,7 +425,7 @@ text.blocklyText.junior-icon,
     cursor: pointer;
 }
 
-.junior-record-circle {
+.junior-mode .junior-record-circle{
     width: 100px;
     height: 100px;
     background: #ff4d4d;
@@ -466,36 +438,36 @@ text.blocklyText.junior-icon,
     transition: all 0.2s;
 }
 
-.junior-record-circle.active {
+.junior-mode .junior-record-circle.active{
     background: #333;
     animation: pulse-red 1s infinite;
 }
 
 @keyframes pulse-red {
-    0% {
+        0%{
         transform: scale(1);
         box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);
     }
 
-    70% {
+        70%{
         transform: scale(1.05);
         box-shadow: 0 0 0 15px rgba(255, 77, 77, 0);
     }
 
-    100% {
+        100%{
         transform: scale(1);
         box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
     }
 }
 
-.record-inner-circle {
+.junior-mode .record-inner-circle{
     width: 24px;
     height: 24px;
     background: white;
     border-radius: 50%;
 }
 
-.junior-recorder-placeholder {
+.junior-mode .junior-recorder-placeholder{
     width: 100%;
     height: 100%;
     display: flex;
@@ -506,7 +478,7 @@ text.blocklyText.junior-icon,
     color: #94a3b8;
 }
 /* Junior toolbar - protect layout from leaked Blockly styles */
-.junior-toolbar {
+.junior-mode .junior-toolbar{
     width: calc(100% - 28px) !important;
     overflow: hidden !important;
     position: absolute !important;
@@ -514,7 +486,7 @@ text.blocklyText.junior-icon,
     flex-wrap: nowrap !important;
 }
 
-.junior-toolbar .junior-extensions-btn {
+.junior-mode .junior-toolbar .junior-extensions-btn{
     position: relative !important;
     flex-shrink: 0 !important;
     margin-left: auto !important;

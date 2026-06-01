@@ -8,7 +8,7 @@ import { STAGE_CONFIG } from './engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
-import './styles/Leaplab-blocks.css'; // Import leap-style blocks CSS
+import leaplabBlocksCss from './styles/Leaplab-blocks.css?inline'; // Import leap-style blocks CSS (inlined for dynamic injection)
 import { registerCustomFields } from './blockly/registerCustomFields'; // Register field_colour, field_angle, etc.
 
 
@@ -393,6 +393,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
     initBlocklyOnce();
+
+    // Dynamically inject Leaplab-blocks CSS only while Intermediate is mounted.
+    // This prevents the global unscoped rules from leaking into Junior mode.
+    useEffect(() => {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = leaplabBlocksCss;
+        styleEl.setAttribute('data-leaplab-blocks', 'true');
+        document.head.appendChild(styleEl);
+        return () => {
+            styleEl.remove();
+        };
+    }, []);
 
     // ═══════════════════════════════════════════════════════════════════════
 

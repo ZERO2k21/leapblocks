@@ -653,7 +653,7 @@ export default function JuniorApp({ onBack }) {
 
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
+        <div className="junior-mode" style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
             <style>
                 {`
                     @keyframes pulse {
