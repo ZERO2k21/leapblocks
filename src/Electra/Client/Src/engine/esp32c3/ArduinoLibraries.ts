@@ -633,6 +633,28 @@ export function createNeoPixelClass(runtime: any) {
                 (Math.round(b * 255) & 0xFF);
         }
 
+        // Gamma correction (8-bit) — simplified sRGB-like curve
+        static gamma8(value: number): number {
+            const v = value / 255;
+            return Math.round(255 * (v * v));
+        }
+
+        // Apply gamma correction to a 32-bit packed color
+        gamma32(color: number): number {
+            return Adafruit_NeoPixel.gamma32(color);
+        }
+
+        static gamma32(color: number): number {
+            const r = (color >> 16) & 0xFF;
+            const g = (color >> 8) & 0xFF;
+            const b = color & 0xFF;
+            return Adafruit_NeoPixel.Color(
+                Adafruit_NeoPixel.gamma8(r),
+                Adafruit_NeoPixel.gamma8(g),
+                Adafruit_NeoPixel.gamma8(b)
+            );
+        }
+
         private updateCircuitEngine(pixelData: Uint8Array): void {
             try {
                 const { nodes, edges } = useForgeStore.getState();

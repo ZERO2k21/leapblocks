@@ -153,6 +153,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
           strokeWidth: 1,
           fill: 'none',
           strokeLinejoin: 'round',
+          pointerEvents: 'none',
         }}
         className="react-flow__edge-path"
         d={edgePath}
@@ -165,6 +166,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
           strokeWidth: 12,
           fill: 'none',
           cursor: 'pointer',
+          pointerEvents: 'stroke',
         }}
         className="react-flow__edge-interaction"
         d={edgePath}

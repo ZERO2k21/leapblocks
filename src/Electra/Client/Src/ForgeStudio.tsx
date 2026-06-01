@@ -151,12 +151,13 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     return () => clearTimeout(timer);
   }, [nodes, edges, code]);
 
-  // Initialize board from prop
+  // Initialize board from prop on mount (does not re-fire on internal board changes)
   useEffect(() => {
     if (initialBoard && board !== initialBoard) {
       setBoard(initialBoard);
     }
-  }, [initialBoard, board, setBoard]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialBoard, setBoard]);
 
   // Add the selected board to canvas on mount if no nodes exist
   useEffect(() => {
