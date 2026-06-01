@@ -65,4 +65,12 @@ export class L298NElement extends LitElement {
       </div>
     `;
   }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('ena') || changedProperties.has('enb') ||
+        changedProperties.has('in1') || changedProperties.has('in2') ||
+        changedProperties.has('in3') || changedProperties.has('in4')) {
+      console.log(`[L298N ELEMENT] state update: ENA=${this.ena} ENB=${this.enb} IN1=${this.in1} IN2=${this.in2} IN3=${this.in3} IN4=${this.in4}`);
+    }
+  }
 }
