@@ -458,8 +458,8 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           handlePaste();
         }
       }
-      // R: Rotate selected node
-      else if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+      // R: Rotate selected node (works regardless of CapsLock)
+      else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
         const activeElement = document.activeElement;
         const isInEditor = activeElement?.classList.contains('monaco-editor') ||
           activeElement?.closest('.monaco-editor') ||
@@ -469,6 +469,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         if (!isInEditor) {
           const state = useForgeStore.getState();
           if (state.selectedNodeId) {
+            e.preventDefault();
             rotateNode(state.selectedNodeId);
           }
         }

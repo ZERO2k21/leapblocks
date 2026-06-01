@@ -180,21 +180,21 @@ export const SelectionToolbar: React.FC = () => {
     if (nodeType !== 'ir-receiver') return null;
     return (
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: '#000000', textTransform: 'uppercase' }}>ADDR</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>ADDR</span>
         <input
           type="text"
           value={irAddress}
           onChange={(e) => setIrAddress(e.target.value)}
           title="IR Address (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: '#000000', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: '#000000', textTransform: 'uppercase' }}>CMD</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>CMD</span>
         <input
           type="text"
           value={irCommand}
           onChange={(e) => setIrCommand(e.target.value)}
           title="IR Command (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: '#000000', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         />
         <button
           onClick={() => {
@@ -208,7 +208,7 @@ export const SelectionToolbar: React.FC = () => {
           }}
           style={{
             background: 'var(--lp-accent-primary)',
-            color: 'black',
+            color: 'var(--lp-text-color)',
             border: 'none',
             padding: '2px 8px',
                     borderRadius: '8px',

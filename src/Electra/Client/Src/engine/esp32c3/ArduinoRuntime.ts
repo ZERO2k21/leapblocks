@@ -1389,16 +1389,18 @@ export class ArduinoRuntime {
         _type = 22;
         constructor(_pin?: number, _type?: number) { if (_type) this._type = _type; }
         begin(): void { }
-        readTemperature(): number {
+        readTemperature(fahrenheit = false): number {
+          let temp = 25.0;
           try {
             const { nodes } = useForgeStore.getState();
             for (const n of nodes) {
               if (n.data?.type === 'dht22' || n.data?.type === 'dht11') {
-                return n.data?.sensorValues?.temperature ?? 25.0;
+                temp = n.data?.sensorValues?.temperature ?? 25.0;
+                break;
               }
             }
           } catch (e) { /* store not available */ }
-          return 25.0;
+          return fahrenheit ? (temp * 9 / 5) + 32 : temp;
         }
         readHumidity(): number {
           try {
@@ -1410,6 +1412,17 @@ export class ArduinoRuntime {
             }
           } catch (e) { /* store not available */ }
           return 50.0;
+        }
+        computeHeatIndex(temperature: number, humidity: number, isFahrenheit = false): number {
+          let t = temperature;
+          if (!isFahrenheit) {
+            t = (temperature * 9 / 5) + 32;
+          }
+          const hi = -42.379 + 2.04901523 * t + 10.14333127 * humidity
+            - 0.22475541 * t * humidity - 0.00683783 * t * t
+            - 0.05481717 * humidity * humidity + 0.00122874 * t * t * humidity
+            + 0.00085282 * t * humidity * humidity - 0.00000199 * t * t * humidity * humidity;
+          return isFahrenheit ? hi : (hi - 32) * 5 / 9;
         }
       },
       DHTesp: class {
@@ -1429,6 +1442,17 @@ export class ArduinoRuntime {
             }
           } catch (e) { /* store not available */ }
           return { temperature: 25.0, humidity: 50.0 };
+        }
+        computeHeatIndex(temperature: number, humidity: number, isFahrenheit = false): number {
+          let t = temperature;
+          if (!isFahrenheit) {
+            t = (temperature * 9 / 5) + 32;
+          }
+          const hi = -42.379 + 2.04901523 * t + 10.14333127 * humidity
+            - 0.22475541 * t * humidity - 0.00683783 * t * t
+            - 0.05481717 * humidity * humidity + 0.00122874 * t * t * humidity
+            + 0.00085282 * t * humidity * humidity - 0.00000199 * t * t * humidity * humidity;
+          return isFahrenheit ? hi : (hi - 32) * 5 / 9;
         }
         getStatus(): number { return 0; }
         getStatusString(): string { return 'OK'; }
