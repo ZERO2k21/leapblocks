@@ -126,7 +126,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
     }, [onResize]);
 
     const handleAdd = () => {
-        // In Scratch, clicking '+' immediately appends a blank line and goes to edit mode
+        // In Leap, clicking '+' immediately appends a blank line and goes to edit mode
         onItemAdd?.('');
     };
 
@@ -323,7 +323,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                     <div style={styles.emptyState}>(empty)</div>
                 ) : (
                     items.map((item, index) => (
-                        <div key={index} className="list-monitor-row">
+                        <div key={`${index}-${String(item)}`} className="list-monitor-row">
                             <span style={styles.itemIndex}>{index + 1}</span>
                             {editingIndex === index ? (
                                 <input
@@ -333,19 +333,23 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
                                     onChange={(e) => setEditingValue(e.target.value)}
                                     onBlur={commitEdit}
                                     onKeyDown={handleKeyDown}
+                                    onPointerDown={(e) => e.stopPropagation()}
                                 />
                             ) : (
                                 <div
                                     className="list-monitor-item-box"
                                     onClick={() => startEditing(index, String(item))}
+                                    onPointerDown={(e) => e.stopPropagation()}
                                 >
                                     <span style={styles.itemValue}>{String(item)}</span>
                                     <button
+                                        type="button"
                                         className="list-monitor-delete-btn"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onItemDelete?.(index);
                                         }}
+                                        onPointerDown={(e) => e.stopPropagation()}
                                         title="Delete item"
                                     >×</button>
                                 </div>
@@ -356,7 +360,7 @@ export const ListMonitor: React.FC<ListMonitorProps> = ({
             </div>
 
             <div style={styles.footer}>
-                <button className="list-monitor-footer-btn" onClick={handleAdd} title="Add item">+</button>
+                <button type="button" className="list-monitor-footer-btn" onClick={handleAdd} title="Add item">+</button>
                 <span style={styles.footerText}>length {items.length}</span>
                 <span style={styles.resizeHandle} title="Resize monitor">=</span>
             </div>

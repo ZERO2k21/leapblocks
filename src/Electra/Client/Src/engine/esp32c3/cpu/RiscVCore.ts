@@ -450,7 +450,7 @@ export class RiscVCore {
   private mepc: u32 = 0;
   private mcause: u32 = 0;
   private mtvec: u32 = 0;
-  private mscratch: u32 = 0;
+  private mLeap: u32 = 0;
   private minstret: number = 0;
   private mcycle: number = 0;
 
@@ -620,7 +620,7 @@ export class RiscVCore {
       case 0x341: return this.mepc;
       case 0x342: return this.mcause;
       case 0x305: return this.mtvec;
-      case 0x340: return this.mscratch;
+      case 0x340: return this.mLeap;
       case 0xC00: return u32m(this.mcycle & 0xFFFFFFFF);
       case 0xC80: return u32m((this.mcycle / 0x100000000) & 0xFFFFFFFF);
       case 0xC02: return u32m(this.minstret & 0xFFFFFFFF);
@@ -636,7 +636,7 @@ export class RiscVCore {
       case 0x341: this.mepc = val; break;
       case 0x342: this.mcause = val; break;
       case 0x305: this.mtvec = val; break;
-      case 0x340: this.mscratch = val; break;
+      case 0x340: this.mLeap = val; break;
     }
   }
 

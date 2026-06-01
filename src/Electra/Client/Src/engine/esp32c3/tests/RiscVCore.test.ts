@@ -22,8 +22,8 @@ import { RiscVCore } from '../cpu/RiscVCore';
 
 function makeCore(): RiscVCore {
   return new RiscVCore({
-    onEcall:   () => false, // halt on ECALL
-    onEbreak:  () => {},
+    onEcall: () => false, // halt on ECALL
+    onEbreak: () => { },
     onIllegal: (c, insn) => {
       throw new Error(`Illegal instruction 0x${insn.toString(16)} @ 0x${c.pc.toString(16)}`);
     },
@@ -445,11 +445,11 @@ describe('RV32M Multiply/Divide extension', () => {
 describe('CSR instructions', () => {
   test('CSRRW reads old value, writes new', () => {
     const core = makeCore();
-    // Write 0xABCD to mscratch (CSR 0x340), then read it back
+    // Write 0xABCD to mLeap (CSR 0x340), then read it back
     runProgram(core, BASE, [
       0x0AB00093,    // addi x1, x0, 0xAB
-      0x34009073,    // csrrw x0, mscratch, x1   (write, discard old)
-      0x34002173,    // csrrs x2, mscratch, x0   (read without modify)
+      0x34009073,    // csrrw x0, mLeap, x1   (write, discard old)
+      0x34002173,    // csrrs x2, mLeap, x0   (read without modify)
     ]);
     expect(core.regs[2] >>> 0).toBe(0xAB);
   });
@@ -458,10 +458,10 @@ describe('CSR instructions', () => {
     const core = makeCore();
     runProgram(core, BASE, [
       0x00300093,    // addi x1, x0, 3       (bits to set)
-      0x34009073,    // csrrw x0, mscratch, x1
+      0x34009073,    // csrrw x0, mLeap, x1
       0x00500113,    // addi x2, x0, 5
-      0x34012173,    // csrrs x2, mscratch, x2   (OR in 5 → 3|5=7)
-      0x340021F3,    // csrrs x3, mscratch, x0   (read)
+      0x34012173,    // csrrs x2, mLeap, x2   (OR in 5 → 3|5=7)
+      0x340021F3,    // csrrs x3, mLeap, x0   (read)
     ]);
     expect(core.regs[3] >>> 0).toBe(7);
   });
@@ -480,7 +480,7 @@ describe('Interrupt handling', () => {
     // lui x1, upper20(HANDLER)
     const upper = (HANDLER >>> 12) & 0xFFFFF;
     const lower = HANDLER & 0xFFF;
-    const luiInsn  = 0x00000037 | (upper << 12) | (1 << 7);
+    const luiInsn = 0x00000037 | (upper << 12) | (1 << 7);
     const addiInsn = 0x00000013 | (1 << 7) | (1 << 15) | ((lower & 0xFFF) << 20);
     const csrwMtvec = 0x30509073; // csrrw x0, mtvec, x1
 
@@ -501,7 +501,7 @@ describe('Interrupt handling', () => {
     core.memWrite32(BASE + program.length * 4, 0x00000073); // ecall → halt
 
     // Handler at HANDLER: addi x10, x0, 0xAA; mret
-    core.memWrite32(HANDLER,     0x0AA00513); // addi x10, x0, 0xAA
+    core.memWrite32(HANDLER, 0x0AA00513); // addi x10, x0, 0xAA
     core.memWrite32(HANDLER + 4, 0x30200073); // mret
 
     core.reset(BASE);
@@ -622,7 +622,7 @@ describe('ROM Emulation Layer', () => {
     core.memWrite8(strAddr + 3, 0x6c); // 'l'
     core.memWrite8(strAddr + 4, 0x6f); // 'o'
     core.memWrite8(strAddr + 5, 0); // null
-    
+
     core.regs[10] = strAddr; // a0
     core.regs[1] = BASE + 12; // ra
     core.pc = 0x40000374;
