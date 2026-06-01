@@ -334,11 +334,12 @@ export class SkulptEngine {
             killableFor: true,
             nonreadopen: true,
             filewrite: (fileObj, str) => {
+                if (fileObj.fileno < 10) return; // skip stdin/stdout/stderr
                 const name = fileObj.name;
+                // Skulpt calls filewrite once per write() with only the
+                // newly written chunk, so we always append to the VFS.
                 const content = sk.ffi.remapToJs(str);
-                const mode = sk.ffi.remapToJs(fileObj.mode);
-                const append = mode === 'a' || mode === 'ab';
-                this.vfs.writeFile(name, content, append);
+                this.vfs.writeFile(name, content, true);
             },
             inputfun: (promptText) => {
                 if (this._stopRequested) {
@@ -359,6 +360,15 @@ export class SkulptEngine {
         });
 
         this._patchFileConstructor(sk);
+
+        // Override Python's open() builtin to use our patched file class.
+        // This ensures the filewrite hook fires for all open() calls,
+        // bypassing any io module wrappers that might skip it.
+        if (sk.builtins) {
+            sk.builtins.open = new sk.builtin.func(function (name, mode, buffering) {
+                return new sk.builtin.file(name, mode, buffering);
+            });
+        }
     }
 
     _patchFileConstructor(sk) {
@@ -393,8 +403,12 @@ export class SkulptEngine {
                         } catch (_) {
                             this.data$ = "";
                         }
+                        console.log('[SkulptEngine] open append:', this.name, 'data$ len:', this.data$.length);
                     } else {
                         this.data$ = "";
+                        // Truncate VFS on 'w' so subsequent filewrite appends
+                        // start from a clean file.
+                        vfs.writeFile(this.name, "", false);
                     }
                 } else {
                     try {
