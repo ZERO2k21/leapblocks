@@ -403,7 +403,7 @@ export class SkulptEngine {
                         } catch (_) {
                             this.data$ = "";
                         }
-                        console.log('[SkulptEngine] open append:', this.name, 'data$ len:', this.data$.length);
+
                     } else {
                         this.data$ = "";
                         // Truncate VFS on 'w' so subsequent filewrite appends
