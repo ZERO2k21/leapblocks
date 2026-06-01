@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, lazy, Suspense, useEffect } from 'react';
+import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
@@ -82,6 +82,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
   const [history, setHistory] = useState<Array<{ nodes: any[]; edges: any[]; code: string }>>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [code, setCode] = useState(initialBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Save current state to history
   const saveToHistory = () => {
@@ -151,12 +152,13 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     return () => clearTimeout(timer);
   }, [nodes, edges, code]);
 
-  // Initialize board from prop
+  // Initialize board from prop on mount (does not re-fire on internal board changes)
   useEffect(() => {
     if (initialBoard && board !== initialBoard) {
       setBoard(initialBoard);
     }
-  }, [initialBoard, board, setBoard]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialBoard, setBoard]);
 
   // Add the selected board to canvas on mount if no nodes exist
   useEffect(() => {
@@ -240,10 +242,42 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         alert('Failed to open project.');
       }
     } else {
-      const projects = await ProjectService.listProjects();
-      setRecentProjects(projects);
-      setShowWebOpenModal(true);
+      fileInputRef.current?.click();
     }
+  };
+
+  const handleWebImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const projectData = JSON.parse(content);
+        if (projectData.nodes && projectData.edges) {
+          setNodes(projectData.nodes || []);
+          setEdges(projectData.edges || []);
+          setCode(projectData.code || '');
+          if (projectData.board) setBoard(projectData.board);
+
+          const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+          setProjectName(nameWithoutExt);
+          setProjectPath(null);
+
+          setHistory([]);
+          setHistoryIndex(-1);
+          saveToHistory();
+          alert('Project imported successfully!');
+        } else {
+          alert('Invalid project file format. Missing nodes or edges.');
+        }
+      } catch (err: any) {
+        console.error('Failed to parse project file:', err);
+        alert('Failed to parse project file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const loadWebProject = (project: ProjectService.LeapProject) => {
@@ -277,6 +311,24 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           setProjectName(folderName || projectName);
         }
       } else {
+        const projectData = {
+          nodes,
+          edges,
+          code,
+          board,
+          version: '1.0.0',
+          timestamp: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectName || 'project'}.lbp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
         const id = projectPath || uuidv4();
         await ProjectService.saveProject({
           id,
@@ -287,7 +339,6 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           updatedAt: new Date().toISOString()
         });
         setProjectPath(id);
-        alert('Project saved successfully!');
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project:', err);
@@ -297,7 +348,8 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
 
   const handleSaveAsProject = async () => {
     if (!IS_ELECTRON) {
-      handleSaveProject(); // On web, save as is just save
+      // In web mode, Save As behaves the same as Save (downloads the project file)
+      handleSaveProject();
       return;
     }
     try {
@@ -458,8 +510,8 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           handlePaste();
         }
       }
-      // R: Rotate selected node
-      else if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+      // R: Rotate selected node (works regardless of CapsLock)
+      else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
         const activeElement = document.activeElement;
         const isInEditor = activeElement?.classList.contains('monaco-editor') ||
           activeElement?.closest('.monaco-editor') ||
@@ -469,6 +521,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         if (!isInEditor) {
           const state = useForgeStore.getState();
           if (state.selectedNodeId) {
+            e.preventDefault();
             rotateNode(state.selectedNodeId);
           }
         }
@@ -501,23 +554,17 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
         // browser's event loop. Arduino C++ is transpiled to JavaScript and
         // run through ArduinoRuntime with FreeRTOS API stubs.
-        const { appendSerial } = useForgeStore.getState();
-        appendSerial('[ESP32-C3] Transpiling sketch for simulation...\n');
-
         try {
           const { transpileCode } = await import('./services/CompilerService');
-          appendSerial('[ESP32-C3] Calling transpileCode()...\n');
           const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
 
           if (transpileResult.success && transpileResult.jsCode) {
-            appendSerial(`[ESP32-C3] ✓ Transpilation successful! (${transpileResult.jsCode.length} bytes)\n`);
-            appendSerial('[ESP32-C3] Starting Arduino API simulation...\n\n');
-
             const runner = await getSimulationRunner();
             runner.setBoard(board);
             runner.setTranspiledJS(transpileResult.jsCode);
             startSimulation('__esp32_c3_transpiled__');
           } else if (transpileResult.error) {
+            const { appendSerial } = useForgeStore.getState();
             appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
             appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
             appendSerial(transpileResult.error + '\n');
@@ -525,6 +572,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
             appendSerial('\nPlease fix the errors and try again.\n');
           }
         } catch (transpileErr: any) {
+          const { appendSerial } = useForgeStore.getState();
           appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
           appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           appendSerial((transpileErr.message || String(transpileErr)) + '\n');
@@ -573,6 +621,13 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
 
   return (
     <div className={`forge-root board-${board} theme-${uiTheme}`}>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".lbp,.json"
+        onChange={handleWebImport}
+      />
       <IgniteTopbar
         title={projectName}
         onTitleChange={setProjectName}

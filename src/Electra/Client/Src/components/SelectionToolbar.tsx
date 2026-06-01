@@ -180,21 +180,21 @@ export const SelectionToolbar: React.FC = () => {
     if (nodeType !== 'ir-receiver') return null;
     return (
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase' }}>ADDR</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>ADDR</span>
         <input
           type="text"
           value={irAddress}
           onChange={(e) => setIrAddress(e.target.value)}
           title="IR Address (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase' }}>CMD</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>CMD</span>
         <input
           type="text"
           value={irCommand}
           onChange={(e) => setIrCommand(e.target.value)}
           title="IR Command (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         />
         <button
           onClick={() => {
@@ -208,7 +208,7 @@ export const SelectionToolbar: React.FC = () => {
           }}
           style={{
             background: 'var(--lp-accent-primary)',
-            color: 'black',
+            color: 'var(--lp-text-color)',
             border: 'none',
             padding: '2px 8px',
                     borderRadius: '8px',
@@ -257,7 +257,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentSize}
           onChange={(e) => updateNodeData(selectedNode!.id, { size: parseInt(e.target.value) || 23 })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {sizes.map(s => <option key={s} value={s}>NEMA {s}</option>)}
         </select>
@@ -267,7 +267,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentDisplay}
           onChange={(e) => updateNodeData(selectedNode!.id, { display: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {displays.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
@@ -282,7 +282,7 @@ export const SelectionToolbar: React.FC = () => {
                 updateNodeData(selectedNode!.id, { gearRatio: e.target.value });
               }
             }}
-            style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+            style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
           >
             {gearRatios.map(g => <option key={g} value={g}>{g}</option>)}
             {!gearRatios.includes(currentGearRatio) && <option value={currentGearRatio}>{currentGearRatio} (Custom)</option>}
@@ -295,7 +295,7 @@ export const SelectionToolbar: React.FC = () => {
               placeholder="e.g. 5:1"
               value={currentGearRatio === 'custom' ? '' : currentGearRatio}
               onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })}
-              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
             />
           )}
         </div>
@@ -305,7 +305,7 @@ export const SelectionToolbar: React.FC = () => {
         <select
           value={currentArrow}
           onChange={(e) => updateNodeData(selectedNode!.id, { arrow: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'white', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
         >
           {arrowColors.map(ac => <option key={ac.value} value={ac.value}>{ac.label}</option>)}
         </select>

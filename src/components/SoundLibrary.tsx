@@ -8,7 +8,7 @@ import { Volume2, Play, Square } from 'lucide-react';
 
 // Load the leap sounds metadata
 import soundsData from '../lib/libraries/sounds.json';
-import { ADPCMSoundDecoder } from '../scratch-audio/src/ADPCMSoundDecoder';
+import { ADPCMSoundDecoder } from '../Leap-audio/src/ADPCMSoundDecoder';
 
 export interface SoundEntry {
     name: string;

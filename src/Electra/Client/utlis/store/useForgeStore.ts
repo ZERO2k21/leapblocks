@@ -218,8 +218,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         runner.initCPU(hexString);
       } else if (isESP32Transpiled) {
         // Transpiled JS path — ArduinoRuntime handles everything.
-        // Serial & GPIO wiring is done in SimulationRunner.start().
-        console.log('[FORGE STORE] ESP32-C3 transpiled path — runner.start() will init ArduinoRuntime');
+        // Initialize early so ESP32C3Runner is available during syncCircuitGraph()
+        console.log('[FORGE STORE] ESP32-C3 transpiled path — initializing early...');
+        runner.setBoard(state.board);
+        runner.initCPU('');
       } else {
         console.log('[FORGE STORE] ESP32-C3 RISC-V path — initializing ESP32-C3 runner before syncCircuitGraph...');
         runner.initCPU(''); // triggers ESP32-C3 branch in initCPU (board already set via setBoard)
@@ -270,6 +272,16 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       console.log('[FORGE STORE] Firing simulationRunner.start()');
       runner.start().catch((err: any) => {
         console.error('[FORGE STORE] simulationRunner.start() failed:', err);
+        set((state) => ({
+          serialOutput: state.serialOutput +
+            `\n❌ SIMULATION RUNTIME ERROR:\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `${err.message || String(err)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `Please check your code for typos or syntax errors.\n`,
+          isSimulating: false
+        }));
+        runner.stop();
       });
     });
   },

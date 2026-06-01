@@ -47,7 +47,7 @@ export class ESP32CircuitDiagnostics {
         // 3. Check circuit graph
         console.group('3️⃣ Circuit Graph');
         const { nodes, edges } = useForgeStore.getState();
-        const esp32Board = nodes.find(n => n.data?.type === 'esp32-c3');
+        const esp32Board = nodes.find(n => n.data?.type === 'esp32-c3' || n.data?.type === 'esp32');
 
         if (esp32Board) {
             const connectedEdges = edges.filter(e => e.source === esp32Board.id || e.target === esp32Board.id);
@@ -166,7 +166,7 @@ export class ESP32CircuitDiagnostics {
             return;
         }
 
-        for (let gpio = 0; gpio <= 21; gpio++) {
+        for (let gpio = 0; gpio <= 39; gpio++) {
             const pinName = `ESP${gpio}`;
             const state = simulationRunner.ESP32C3Runner.getPinState(pinName);
             console.log(`GPIO${gpio.toString().padStart(2, ' ')}: ${state}`);

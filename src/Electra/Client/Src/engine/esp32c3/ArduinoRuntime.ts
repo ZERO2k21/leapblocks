@@ -107,10 +107,16 @@ export class ArduinoRuntime {
     }
   }
 
+  public getPinMode(pin: number): PinMode {
+    return this.pinModes.get(pin) || 'INPUT';
+  }
+
+
   public digitalWrite(pin: number, value: number): void {
     const prev = this.pinValues.get(pin) ?? LOW;
     const curr = value ? HIGH : LOW;
     this.pinValues.set(pin, curr);
+    console.log(`[ESP32C3 digitalWrite] pin=${pin} value=${value ? 'HIGH' : 'LOW'} (prev=${prev === HIGH ? 'HIGH' : prev === LOW ? 'LOW' : 'UNINIT'}) ${prev !== curr ? '→ CHANGED' : '→ no change'}`);
     if (prev !== curr && this.onPinChange) {
       this.onPinChange(pin, curr, false);
     }
@@ -123,6 +129,7 @@ export class ArduinoRuntime {
   public analogWrite(pin: number, value: number): void {
     const clamped = Math.max(0, Math.min(255, value));
     this.pinValues.set(pin, clamped);
+    console.log(`[ESP32C3 analogWrite] pin=${pin} value=${clamped} (PWM duty)`);
     if (this.onPinChange) {
       this.onPinChange(pin, clamped, true);
     }
@@ -677,9 +684,11 @@ export class ArduinoRuntime {
       LED_BUILTIN,
       A0: 0, A1: 1, A2: 2, A3: 3, A4: 4, A5: 5,
       // ESP32-C3 specific
-      D0: 0, D1: 1, D2: 2, D3: 3, D4: 4, D5: 5,
-      D6: 6, D7: 7, D8: 8, D9: 9, D10: 10,
-      D13: 13, D18: 18, D19: 19,
+      D0: 0, D1: 1, D2: 2, D3: 3, D4: 4, D5: 5, D6: 6, D7: 7, D8: 8, D9: 9, D10: 10,
+      D11: 11, D12: 12, D13: 13, D14: 14, D15: 15, D16: 16, D17: 17, D18: 18, D19: 19,
+      D20: 20, D21: 21, D22: 22, D23: 23, D24: 24, D25: 25, D26: 26, D27: 27, D28: 28,
+      D29: 29, D30: 30, D31: 31, D32: 32, D33: 33, D34: 34, D35: 35, D36: 36, D37: 37,
+      D38: 38, D39: 39,
       // Interrupt modes
       RISING: 1, FALLING: 2, CHANGE: 3,
 
@@ -821,6 +830,13 @@ export class ArduinoRuntime {
         // Store channel-to-pin mapping
         if (!self._ledcChannelMap) self._ledcChannelMap = new Map();
         self._ledcChannelMap.set(channel, pin);
+      },
+      ledcAttach(pin: number, freq: number, resolution: number): number {
+        // Simplified ledcAttach(pin, freq, resolution) — new ESP32 API
+        if (!self._ledcChannelMap) self._ledcChannelMap = new Map();
+        const channel = pin % 8; // ESP32 has 8 LEDC channels
+        self._ledcChannelMap.set(channel, pin);
+        return channel;
       },
       ledcWrite(channel: number, duty: number): void {
         // Map channel to the pin attached via ledcAttachPin
@@ -1382,16 +1398,18 @@ export class ArduinoRuntime {
         _type = 22;
         constructor(_pin?: number, _type?: number) { if (_type) this._type = _type; }
         begin(): void { }
-        readTemperature(): number {
+        readTemperature(fahrenheit = false): number {
+          let temp = 25.0;
           try {
             const { nodes } = useForgeStore.getState();
             for (const n of nodes) {
               if (n.data?.type === 'dht22' || n.data?.type === 'dht11') {
-                return n.data?.sensorValues?.temperature ?? 25.0;
+                temp = n.data?.sensorValues?.temperature ?? 25.0;
+                break;
               }
             }
           } catch (e) { /* store not available */ }
-          return 25.0;
+          return fahrenheit ? (temp * 9 / 5) + 32 : temp;
         }
         readHumidity(): number {
           try {
@@ -1403,6 +1421,17 @@ export class ArduinoRuntime {
             }
           } catch (e) { /* store not available */ }
           return 50.0;
+        }
+        computeHeatIndex(temperature: number, humidity: number, isFahrenheit = false): number {
+          let t = temperature;
+          if (!isFahrenheit) {
+            t = (temperature * 9 / 5) + 32;
+          }
+          const hi = -42.379 + 2.04901523 * t + 10.14333127 * humidity
+            - 0.22475541 * t * humidity - 0.00683783 * t * t
+            - 0.05481717 * humidity * humidity + 0.00122874 * t * t * humidity
+            + 0.00085282 * t * humidity * humidity - 0.00000199 * t * t * humidity * humidity;
+          return isFahrenheit ? hi : (hi - 32) * 5 / 9;
         }
       },
       DHTesp: class {
@@ -1422,6 +1451,17 @@ export class ArduinoRuntime {
             }
           } catch (e) { /* store not available */ }
           return { temperature: 25.0, humidity: 50.0 };
+        }
+        computeHeatIndex(temperature: number, humidity: number, isFahrenheit = false): number {
+          let t = temperature;
+          if (!isFahrenheit) {
+            t = (temperature * 9 / 5) + 32;
+          }
+          const hi = -42.379 + 2.04901523 * t + 10.14333127 * humidity
+            - 0.22475541 * t * humidity - 0.00683783 * t * t
+            - 0.05481717 * humidity * humidity + 0.00122874 * t * t * humidity
+            + 0.00085282 * t * humidity * humidity - 0.00000199 * t * t * humidity * humidity;
+          return isFahrenheit ? hi : (hi - 32) * 5 / 9;
         }
         getStatus(): number { return 0; }
         getStatusString(): string { return 'OK'; }

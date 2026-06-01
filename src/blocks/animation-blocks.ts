@@ -405,10 +405,9 @@ export const animationBlocks = [
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
-            { type: 'input_value', name: 'SECS' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
+            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
-        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -418,8 +417,7 @@ export const animationBlocks = [
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
-        inputsInline: true,
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -536,10 +534,9 @@ export const animationBlocks = [
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE' },
-            { type: 'input_value', name: 'SECS' },
+            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
+            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
-        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -549,8 +546,7 @@ export const animationBlocks = [
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE' }],
-        inputsInline: true,
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -2121,15 +2117,9 @@ export const animationToolbox = {
             name: 'Looks',
             colour: COLORS.looks,
             contents: [
-                // Note: looks_say/think blocks are registered from leapBlocks.ts which uses
-                // field_input (not input_value), so no shadow inputs should be specified here.
                 {
                     kind: 'block',
-                    type: 'looks_say_for_secs',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hello!' } } },
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
-                    }
+                    type: 'looks_say_for_secs'
                 },
                 {
                     kind: 'block',
@@ -2137,11 +2127,7 @@ export const animationToolbox = {
                 },
                 {
                     kind: 'block',
-                    type: 'looks_think_for_secs',
-                    inputs: {
-                        MESSAGE: { shadow: { type: 'text', fields: { TEXT: 'Hmm...' } } },
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 2 } } }
-                    }
+                    type: 'looks_think_for_secs'
                 },
                 {
                     kind: 'block',

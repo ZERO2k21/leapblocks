@@ -17,24 +17,34 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
-  const edges = useForgeStore((state) => state.edges);
   const isSimulating = useForgeStore((state) => state.isSimulating);
   const isSelected = selected || selectedNodeId === id;
 
-  // Build a Set of pin names on this node that have at least one wire connected.
-  // This powers the Wokwi-style green glow on wired pins.
-  const connectedPinNames = useMemo(() => {
-    const set = new Set<string>();
-    for (const edge of edges) {
+  // Subscribe only to edge count (number) — cheap comparison, no re-render during drag.
+  // Full edges accessed via getState() inside useMemo.
+  const edgeCount = useForgeStore((state) => state.edges.length);
+  const connectedPinColors = useMemo(() => {
+    const map = new Map<string, string>();
+    const WIRE_COLORS: Record<string, string> = {
+      green: '#22c55e', red: '#ef4444', blue: '#3b82f6',
+      yellow: '#eab308', black: '#1e293b', white: '#f8fafc',
+      orange: '#f97316', purple: '#a855f7', pink: '#ec4899', cyan: '#06b6d4',
+    };
+    for (const edge of useForgeStore.getState().edges) {
+      let pinName: string | null = null;
       if (edge.source === id && edge.sourceHandle) {
-        set.add(edge.sourceHandle.replace(/__target$/, ''));
+        pinName = edge.sourceHandle.replace(/__target$/, '');
       }
       if (edge.target === id && edge.targetHandle) {
-        set.add(edge.targetHandle.replace(/__target$/, ''));
+        pinName = edge.targetHandle.replace(/__target$/, '');
+      }
+      if (pinName && !map.has(pinName)) {
+        const wireColor = WIRE_COLORS[edge.data?.color as string] || edge.data?.color || '#22c55e';
+        map.set(pinName, wireColor);
       }
     }
-    return set;
-  }, [edges, id]);
+    return map;
+  }, [edgeCount, id]);
 
   // I2C variants map to the same element as their parallel counterpart
   const elementType = data.type === 'lcd1602-i2c' ? 'lcd1602'
@@ -50,10 +60,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     background: 'transparent',
     border: '1px solid transparent',
     transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border 0.2s ease-out',
-    transform: `rotate(${data.rotation || 0}deg) scale(0.75)`,
-    transformOrigin: 'center',
+    transform: `rotate(${data.rotation || 0}deg)`,
+    transformOrigin: 'center center',
     position: 'relative',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   };
 
   // ── Hardware Property Mapper ──
@@ -620,7 +630,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   return (
     <div style={nodeStyle} className="leap-node-wrapper">
       {/* ── COMPONENT & HANDLES CONTAINER ── */}
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ position: 'relative', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'center center' }}>
         {/* Dynamic Leap Element */}
         <Tag
           ref={elementRef}
@@ -636,52 +646,34 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
         {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators with power glow ── */}
         {pins.map((pin, idx) => {
-          const pinPosition = pin.y < 50 ? Position.Top : Position.Bottom;
-          const isConnected = connectedPinNames.has(pin.name);
+          const isConnected = connectedPinColors.has(pin.name);
+          const wireColor = connectedPinColors.get(pin.name);
           const isPinHigh = data.pinStates?.[`pin_${pin.name}`] === true;
 
           // Check if this is a power/ground pin
           const isPowerPin = ['VCC', '5V', '3V3', '3.3V', 'VIN', 'POWER', 'V+'].includes(pin.name);
           const isGroundPin = ['GND', 'GROUND', 'V-', 'VSS'].includes(pin.name);
 
-          // Enhanced pin color logic with power visualization:
-          //   Power pins (VCC/5V) connected → bright red glow (always powered)
-          //   Ground pins (GND) connected → blue glow (ground reference)
-          //   Signal pins HIGH → red glow
-          //   Signal pins connected but LOW → green
-          //   Unconnected → dim gray
+          // Pin color matches wire color when connected
           let pinColor = '#475569';
           let pinOpacity = isSelected ? 0.5 : 0.1;
           let pinGlow = 'none';
 
-          if (isConnected) {
-            if (isPowerPin) {
-              // VCC/5V pins glow bright red when connected (always powered)
-              pinColor = '#ef4444';
-              pinOpacity = 1.0;
-              pinGlow = '0 0 8px #ef4444, 0 0 12px #ef4444';
-            } else if (isGroundPin) {
-              // GND pins glow blue when connected (ground reference)
-              pinColor = '#3b82f6';
-              pinOpacity = 0.9;
-              pinGlow = '0 0 6px #3b82f6';
-            } else if (isSimulating && isPinHigh) {
-              // Signal pins glow red when HIGH
-              pinColor = '#ef4444';
-              pinOpacity = 1.0;
-              pinGlow = '0 0 8px #ef4444, 0 0 12px #ef4444';
-            } else {
-              // Signal pins connected but LOW → green
-              pinColor = '#22c55e';
-              pinOpacity = 0.9;
-            }
+          if (isConnected && wireColor) {
+            pinColor = wireColor;
+            pinOpacity = 1.0;
+            pinGlow = `0 0 6px ${wireColor}`;
           }
 
+          const pinSize = isConnected ? 3 : 2;
+          const halfSize = pinSize / 2;
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
             top: `${pin.y}%`,
-            width: isConnected ? '5px' : '3px',
-            height: isConnected ? '5px' : '3px',
+            width: `${pinSize}px`,
+            height: `${pinSize}px`,
+            marginLeft: `-${halfSize}px`,
+            marginTop: `-${halfSize}px`,
             zIndex: 10,
             pointerEvents: 'all',
             transition: 'all 0.25s ease',
@@ -689,23 +681,27 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
           return (
             <React.Fragment key={`${pin.name}-${idx}`}>
-              {/* Hidden handle (target) — renders first, underneath */}
+              {/* Hidden handle (target) — 0-size at exact pin center for wire connection */}
               <Handle
                 id={`${pin.name}__target`}
                 type="target"
-                position={pinPosition}
+                position={Position.Top}
                 style={{
-                  ...handleStyle,
+                  left: `${pin.x}%`,
+                  top: `${pin.y}%`,
+                  width: 0,
+                  height: 0,
+                  zIndex: 10,
+                  pointerEvents: 'all',
                   background: 'transparent',
                   border: 'none',
-                  opacity: 0,
                 }}
               />
-              {/* Visible handle (source) - Enhanced with power glow */}
+              {/* Visible handle (source) - visual pin dot centered at pin position */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
-                position={pinPosition}
+                position={Position.Top}
                 style={{
                   ...handleStyle,
                   background: pinColor,

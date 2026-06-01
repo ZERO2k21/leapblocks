@@ -1277,7 +1277,8 @@ class CircuitEngine {
     // 2. Map board nodes (Arduino/ESP32) and their connected peripherals
     const boardNodes = nodes.filter(n =>
       n.data?.type === 'arduino-uno' ||
-      n.data?.type === 'esp32-c3'
+      n.data?.type === 'esp32-c3' ||
+      n.data?.type === 'esp32'
     );
 
     console.log(`[CIRCUIT ENGINE] Found ${boardNodes.length} board(s) to wire:`, boardNodes.map(b => `${b.id} (${b.data?.type})`));
@@ -1300,7 +1301,7 @@ class CircuitEngine {
 
         // For ESP32: GPIO numbers map directly to ESP{n} pin IDs.
         // For AVR boards: convert Arduino pin number to AVR port pin (e.g. "13" → "PB5").
-        const isESP32Board = board.data?.type === 'esp32-c3';
+        const isESP32Board = board.data?.type === 'esp32-c3' || board.data?.type === 'esp32';
         let pinId: string;
 
         if (isESP32Board) {
@@ -1705,7 +1706,7 @@ class CircuitEngine {
                 const connectedPin = connectedPinRaw?.replace(/__target$/, '') || '';
                 const connectedNode = currentStateStore.nodes.find(n => n.id === connectedNodeId);
 
-                if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3')) {
+                if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3' || connectedNode.data?.type === 'esp32')) {
                   // Check if connected to a power pin
                   if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === '3.3V' || connectedPin === 'VCC' || connectedPin === 'VIN') {
                     comSignal = true;
@@ -2287,8 +2288,11 @@ class CircuitEngine {
         // ── AVR path ──────────────────────────────────────────────────────────
         simulationRunner.addListener(avrPin, listener);
 
-        // Log 7-segment listener registration
+        // Log ESP32 listener mapping
         const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+        if (isESP32Board) {
+          console.log(`[ESP32 LISTENER] Mapped listener for ${pinId} ← Board[${arduinoPinName}] → Peripheral[${peripheralId.slice(0, 8)}/${peripheralPinName}] (type=${pType || '?'})`);
+        }
         if (pType === '7segment') {
           console.log(`[CIRCUIT 7SEG] Registered listener for ${avrPin} → peripheral pin ${peripheralPinName}`);
         }
@@ -2329,6 +2333,7 @@ class CircuitEngine {
         // Store the unsubscribe thunk to clean up if the wire is deleted
         this.activeSubscriptions.set(edge.id, () => {
           simulationRunner.removeListener(avrPin, listener);
+
           if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
         });
 
@@ -2559,7 +2564,7 @@ class CircuitEngine {
     if (!boardNode) return;
 
     const cleanBoardPin = boardPinName.replace(/__target$/, '');
-    const isESP32 = boardNode.data?.type === 'esp32-c3';
+    const isESP32 = boardNode.data?.type === 'esp32-c3' || boardNode.data?.type === 'esp32';
 
     // ── ESP32 path ────────────────────────────────────────────────────────
     if (isESP32) {
@@ -2770,7 +2775,7 @@ class CircuitEngine {
     const issues: string[] = [];
 
     // Find ESP32 board
-    const esp32Board = nodes.find(n => n.data?.type === 'esp32-c3');
+    const esp32Board = nodes.find(n => n.data?.type === 'esp32-c3' || n.data?.type === 'esp32');
 
     if (!esp32Board) {
       issues.push('No ESP32-C3 board found in circuit');

@@ -29,6 +29,36 @@ fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 fs.mkdirSync(LOGS_DIR, { recursive: true });
 
+// Firmware cache eviction: keep under 500 MB or 1000 files
+const CACHE_MAX_SIZE = 500 * 1024 * 1024;
+const CACHE_MAX_FILES = 1000;
+function evictCache() {
+  try {
+    const files = fs.readdirSync(CACHE_DIR)
+      .filter(f => f.endsWith('.bin') || f.endsWith('.json'))
+      .map(f => {
+        const p = path.join(CACHE_DIR, f);
+        try { return { name: f, path: p, size: fs.statSync(p).size, mtime: fs.statSync(p).mtimeMs }; }
+        catch { return null; }
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.mtime - b.mtime);
+    let totalSize = files.reduce((s, f) => s + f.size, 0);
+    while ((totalSize > CACHE_MAX_SIZE || files.length > CACHE_MAX_FILES) && files.length > 2) {
+      const oldest = files.shift();
+      try {
+        const jsonPath = oldest.name.replace(/\.bin$/, '.json');
+        const binPath = oldest.name;
+        const jsonFull = path.join(CACHE_DIR, jsonPath);
+        const binFull = path.join(CACHE_DIR, binPath);
+        if (fs.existsSync(jsonFull)) { totalSize -= fs.statSync(jsonFull).size; fs.rmSync(jsonFull, { force: true }); }
+        if (fs.existsSync(binFull)) { totalSize -= fs.statSync(binFull).size; fs.rmSync(binFull, { force: true }); }
+      } catch {}
+    }
+  } catch {}
+}
+setInterval(evictCache, 30 * 60 * 1000).unref();
+
 const logFilePath = path.join(LOGS_DIR, 'access.log');
 
 // Realtime logging middleware
@@ -49,6 +79,7 @@ app.use((req, res, next) => {
         const stats = fs.statSync(logFilePath);
         if (stats.size > 5 * 1024 * 1024) { // 5MB limit
           const oldLogPath = path.join(LOGS_DIR, 'access.old.log');
+          if (fs.existsSync(oldLogPath)) fs.rmSync(oldLogPath, { force: true });
           fs.renameSync(logFilePath, oldLogPath);
         }
       }
@@ -116,34 +147,50 @@ console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
 console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
 console.log(`[SERVER] libraries:   ${FORGE_LIB_LIBRARIES || '(none)'}`);
 
-function runCLI(args) {
+function runCLI(args, timeoutMs = 120_000) {
   return new Promise((resolve) => {
     const cliArgs = CLI_CONFIG ? ['--config-file', CLI_CONFIG, ...args] : args;
     const proc = spawn(CLI_PATH, cliArgs, { env: { ...process.env } });
+    proc.unref();
     let stdout = '', stderr = '';
+    let settled = false;
+    const done = (result) => { if (!settled) { settled = true; resolve(result); } };
+    const timer = setTimeout(() => {
+      proc.kill('SIGTERM');
+      done({ stdout, stderr: `[TIMEOUT] Process killed after ${timeoutMs}ms\n${stderr}`, code: -1 });
+    }, timeoutMs);
+    timer.unref();
     proc.stdout.on('data', d => { stdout += d.toString(); });
     proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.on('close', code => resolve({ stdout, stderr, code }));
-    proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
+    proc.on('close', code => { clearTimeout(timer); done({ stdout, stderr, code }); });
+    proc.on('error', err => { clearTimeout(timer); done({ stdout: '', stderr: err.message, code: -1 }); });
   });
 }
 
-function runCommand(cmd) {
+function runCommand(cmd, timeoutMs = 60_000) {
   return new Promise((resolve, reject) => {
     console.log(`[EXEC] ${cmd}`);
     const proc = spawn('cmd.exe', ['/c', cmd], {
       shell: true,
       env: { ...process.env },
-      timeout: 60000
     });
+    proc.unref();
     let stdout = '', stderr = '';
+    let settled = false;
+    const done = (err, result) => { if (!settled) { settled = true; err ? reject(err) : resolve(result); } };
+    const timer = setTimeout(() => {
+      proc.kill('SIGTERM');
+      done(new Error(`[TIMEOUT] Command killed after ${timeoutMs}ms\n${stderr || stdout}`));
+    }, timeoutMs);
+    timer.unref();
     proc.stdout.on('data', d => { stdout += d.toString(); });
     proc.stderr.on('data', d => { stderr += d.toString(); });
     proc.on('close', code => {
-      if (code === 0) resolve({ stdout, stderr });
-      else reject(new Error(stderr || stdout || `Exit code ${code}`));
+      clearTimeout(timer);
+      if (code === 0) done(null, { stdout, stderr });
+      else done(new Error(stderr || stdout || `Exit code ${code}`));
     });
-    proc.on('error', err => reject(err));
+    proc.on('error', err => { clearTimeout(timer); done(err); });
   });
 }
 
@@ -341,6 +388,28 @@ app.post('/build-apk', async (req, res) => {
 
 // ─── POST /build (APK build job) ──────────────────────────────
 const jobs = new Map();
+
+// Auto-cleanup: purge stale jobs every 5 minutes
+const JOB_TTL_MS = 60 * 60 * 1000;       // 1 hour max age regardless of status
+const JOB_DONE_TTL_MS = 5 * 60 * 1000;   // 5 minutes after completion/error
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, job] of jobs) {
+    const age = now - new Date(job.createdAt).getTime();
+    if (age > JOB_TTL_MS) {
+      console.log(`[CLEANUP] Removing stale job ${id} (age ${Math.round(age / 1000)}s)`);
+      jobs.delete(id);
+      continue;
+    }
+    if ((job.status === 'done' || job.status === 'error') && age > JOB_DONE_TTL_MS) {
+      console.log(`[CLEANUP] Removing completed job ${id} (age ${Math.round(age / 1000)}s)`);
+      if (job.apkPath) {
+        try { fs.rmSync(job.apkPath, { force: true }); } catch {}
+      }
+      jobs.delete(id);
+    }
+  }
+}, 5 * 60 * 1000).unref();
 
 let builderModule = null;
 async function getBuilder() {
@@ -607,6 +676,7 @@ app.post('/compile/esp32', async (req, res) => {
     fs.writeFileSync(binPath, binBuffer);
     const metadata = { id: hash, board, compiledAt: new Date().toISOString(), size: binBuffer.length, hash };
     fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+    evictCache();
 
     return res.json({
       success: true, id: hash, binBase64: binBuffer.toString('base64'),

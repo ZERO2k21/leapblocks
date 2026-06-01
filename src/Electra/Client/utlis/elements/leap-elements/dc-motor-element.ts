@@ -60,7 +60,14 @@ export class DCMotorElement extends LitElement {
   }
 
   firstUpdated() {
+    console.log(`[DC-MOTOR ELEMENT] firstUpdated: speed=${this.speed} direction=${this.direction}`);
     this.runAnimationLoop();
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('speed') || changedProperties.has('direction')) {
+      console.log(`[DC-MOTOR ELEMENT] state update: speed=${this.speed} direction=${this.direction} (${this.speed !== 0 ? 'SPINNING ' + this.direction.toUpperCase() : 'IDLE'})`);
+    }
   }
 
   render() {

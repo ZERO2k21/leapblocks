@@ -173,21 +173,24 @@ export class AnimationCompiler {
     private getVariableName(block: Blockly.Block): string {
         const id = this.getVariableId(block);
         const ws = block.workspace;
-        const variable = ws.getVariableById(id);
-        if (variable) return (variable as any).name;
 
-        // Fallback: The stored value might be the variable name instead of the ID
-        // (e.g. if the block was created from a checkbox reporter replacement).
-        // Try to find the variable by name across all types.
-        const byName = ws.getVariable(id, 'Number')
-            || ws.getVariable(id, 'String')
-            || ws.getVariable(id, '')
-            || ws.getVariable(id);
-        if (byName) return (byName as any).name;
+        if (id) {
+            const variable = ws.getVariableById(id);
+            if (variable) return (variable as any).name;
+
+            // Fallback: The stored value might be the variable name instead of the ID
+            // (e.g. if the block was created from a checkbox reporter replacement).
+            // Try to find the variable by name across all types.
+            const byName = ws.getVariable(id, 'Number')
+                || ws.getVariable(id, 'String')
+                || ws.getVariable(id, '')
+                || ws.getVariable(id);
+            if (byName) return (byName as any).name;
+        }
 
         // Last resort: get the human-readable text from the field itself.
         const field = block.getField('VARIABLE') || block.getField('VAR') || block.getField('LIST');
-        const nameFallback = field ? field.getText() : id;
+        const nameFallback = field ? field.getText() : (id || 'unknown');
 
         compilerLog.warn(`Variable ID not found in workspace: ${id}. Using display text as name: ${nameFallback}`);
         return nameFallback;

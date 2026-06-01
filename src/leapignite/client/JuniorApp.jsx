@@ -32,7 +32,7 @@ import { useJuniorUIHandlers } from "./hooks/useJuniorUIHandlers";
 import { getLessonConfig } from "../server/engine/LessonConfig";
 import { GoalManager } from "../server/engine/GoalManager";
 import { HintManager } from "../server/engine/HintManager";
-import { AudioEngine } from "../../scratch-audio/src/AudioEngine";
+import { AudioEngine } from "../../Leap-audio/src/AudioEngine";
 import { initRuntime } from "../../runtime/RuntimeBridge";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
@@ -653,7 +653,7 @@ export default function JuniorApp({ onBack }) {
 
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
+        <div className="junior-mode" style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
             <style>
                 {`
                     @keyframes pulse {

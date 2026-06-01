@@ -125,13 +125,13 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_avery",
-    "name": "Avery",
+    "id": "leap_ayati",
+    "name": "ayati",
     "emoji": "🤖",
-    "image": "assets/sprites/leap/avery_avery-a.svg",
+    "image": "assets/sprites/leap/ayati_ayati-a.svg",
     "costumes": [
-      "assets/sprites/leap/avery_avery-a.svg",
-      "assets/sprites/leap/avery_avery-b.svg"
+      "assets/sprites/leap/ayati_ayati-a.svg",
+      "assets/sprites/leap/ayati_ayati-b.svg"
     ],
     "tags": [
       "people"

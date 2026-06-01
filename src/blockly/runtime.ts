@@ -24,6 +24,28 @@ export const LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG = '__leap_custom_block_context_
 // GLOBAL BLOCKLY OVERRIDES & PATCHES
 // ═══════════════════════════════════════════════════════════════════════════
 
+// 0. SAFE CSS REGISTRATION
+// Blockly.Css.register() throws "CSS already injected" if called after inject().
+// Field plugins (@blockly/field-angle, @blockly/field-colour) call register()
+// at module scope, which crashes if the module is first loaded after inject() has
+// already been called (e.g., when switching from Junior to Intermediate mode).
+// Patch to inject CSS directly into the DOM if injection has already occurred.
+if (Blockly.Css && Blockly.Css.register) {
+    const origRegister = Blockly.Css.register.bind(Blockly.Css);
+    if (!(Blockly.Css as any).__leapblocksRegisterPatched) {
+        Blockly.Css.register = (cssContent: string) => {
+            try {
+                origRegister(cssContent);
+            } catch {
+                const styleEl = document.createElement('style');
+                styleEl.textContent = cssContent;
+                document.head.appendChild(styleEl);
+            }
+        };
+        (Blockly.Css as any).__leapblocksRegisterPatched = true;
+    }
+}
+
 // 1. DYNAMIC DROPDOWN COLORS
 // Update highlight and background color based on block color when opening a dropdown.
 // We use showEditor_ instead of onMouseDown_ to avoid interfering with Blockly's gesture system

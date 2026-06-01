@@ -1044,146 +1044,148 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             return { x: pixelX, y: pixelY };
         };
 
-        skulptRef.current = new SkulptEngine({
-            onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
-            onErr: (text) => addLog(text, "error"),
-            onInputRequested: (promptText, resolve) => {
-                inputResolverRef.current = resolve;
-                setInputPromptText(promptText || "");
-                setIsWaitingForInput(true);
-                setTerminalInputValue("");
-                // Auto-focus the terminal input after a brief delay
-                setTimeout(() => terminalInputRef.current?.focus(), 80);
-            },
-            actions: {
-                initSprite: (name) => {
-                    setSprites(prev => {
-                        if (prev.find(s => s.name.toLowerCase() === name.toLowerCase())) return prev;
-
-                        // Add default sprite from library if found, else generic
-                        const preset = getDefaultSpritePresets()[name.toLowerCase()] || {
-                            name,
-                            type: 'robot', // Default to robot type for initialization
-                            costumes: { default: "assets/sprites/robot/robot_idle.svg" }
-                        };
-
-                        const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
-                        const newSprite = {
-                            id,
-                            name: preset.name || name,
-                            type: preset.type || 'robot',
-                            position: { x: (Math.random() - 0.5) * 40, y: (Math.random() - 0.5) * 40 },
-                            direction: 0,
-                            size: 100,
-                            visible: true,
-                            speech: '',
-                            currentCostume: 'default',
-                            costumes: preset.costumes || { default: "assets/sprites/robot/robot_idle.svg" },
-                            mirrored: false
-                        };
-
-                        addLog('Initialized sprite: ' + name, 'success');
-                        return [...prev, newSprite];
-                    });
+        if (!skulptRef.current) {
+            skulptRef.current = new SkulptEngine({
+                onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
+                onErr: (text) => addLog(text, "error"),
+                onInputRequested: (promptText, resolve) => {
+                    inputResolverRef.current = resolve;
+                    setInputPromptText(promptText || "");
+                    setIsWaitingForInput(true);
+                    setTerminalInputValue("");
+                    // Auto-focus the terminal input after a brief delay
+                    setTimeout(() => terminalInputRef.current?.focus(), 80);
                 },
-                moveRelative: (name, dir, steps) => {
-                    setSprites(prev => prev.map(s => {
-                        if (s.name.toLowerCase() !== name.toLowerCase()) return s;
-                        const d = steps || 20;
-                        let dx = 0, dy = 0;
-                        if (dir === "RIGHT") dx = d;
-                        if (dir === "LEFT") dx = -d;
-                        if (dir === "UP") dy = d;  // In leap, UP increases Y
-                        if (dir === "DOWN") dy = -d; // In leap, DOWN decreases Y
-                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
-                        addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
-                        return {
-                            ...s,
-                            x: pos.x + dx,
-                            y: pos.y + dy,
-                            position: { x: pos.x + dx, y: pos.y + dy }
-                        };
-                    }));
-                },
-                moveSteps: (name, steps) => {
-                    setSprites(prev => prev.map(s => {
-                        if (s.name.toLowerCase() !== name.toLowerCase()) return s;
-                        const angle = s.direction ?? s.angle ?? 0;
-                        const rad = (angle * Math.PI) / 180;
-                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
-                        const newX = pos.x + Math.cos(rad) * steps;
-                        const newY = pos.y + Math.sin(rad) * steps;
-                        addLog(`🏃 ${name}: Move ${steps} steps (direction: ${angle}°)`, 'info');
-                        return {
-                            ...s,
-                            x: newX,
-                            y: newY,
-                            position: { x: newX, y: newY }
-                        };
-                    }));
-                },
-                update: (name, props) => {
-                    setSprites(prev => prev.map(s => {
-                        if (s.name.toLowerCase() !== name.toLowerCase()) return s;
-                        const newProps = { ...s };
-                        const pos = s.position || { x: s.x || 0, y: s.y || 0 };
-                        newProps.position = { ...pos };
+                actions: {
+                    initSprite: (name) => {
+                        setSprites(prev => {
+                            if (prev.find(s => s.name.toLowerCase() === name.toLowerCase())) return prev;
 
-                        // Log sprite action to terminal
-                        const actionType = Object.keys(props).join(', ');
-                        addLog(`🤖 ${name}: ${actionType}`, 'info');
+                            // Add default sprite from library if found, else generic
+                            const preset = getDefaultSpritePresets()[name.toLowerCase()] || {
+                                name,
+                                type: 'robot', // Default to robot type for initialization
+                                costumes: { default: "assets/sprites/robot/robot_idle.svg" }
+                            };
 
-                        Object.keys(props).forEach(key => {
-                            if (typeof props[key] === 'function') {
-                                const oldVal = key === 'direction' ? (s.direction ?? s.angle ?? 0) :
-                                    key === 'angle' ? (s.angle ?? s.direction ?? 0) :
-                                        s[key];
-                                const newVal = props[key](oldVal);
-                                newProps[key] = newVal;
-                                // Sync direction/angle
-                                if (key === 'direction') newProps.angle = newVal;
-                                if (key === 'angle') newProps.direction = newVal;
-                            } else if (key === 'nextCostume' && props[key]) {
-                                // Handle next costume
-                                const costumeKeys = Object.keys(s.costumes || {});
-                                const currentIdx = costumeKeys.indexOf(s.currentCostume);
-                                const nextIdx = (currentIdx + 1) % costumeKeys.length;
-                                newProps.currentCostume = costumeKeys[nextIdx] || 'default';
-                                addLog(`🎭 ${name}: Changed costume to ${newProps.currentCostume}`, 'info');
-                            } else if (key === 'position') {
-                                // Merge position updates
-                                newProps.position = { ...newProps.position, ...props[key] };
-                                newProps.x = newProps.position.x;
-                                newProps.y = newProps.position.y;
-                            } else if (key === 'x') {
-                                newProps.x = props[key];
-                                newProps.position.x = props[key];
-                            } else if (key === 'y') {
-                                newProps.y = props[key];
-                                newProps.position.y = props[key];
-                            } else {
-                                newProps[key] = props[key];
-                                // Sync direction/angle
-                                if (key === 'direction') newProps.angle = props[key];
-                                if (key === 'angle') newProps.direction = props[key];
-                            }
+                            const id = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
+                            const newSprite = {
+                                id,
+                                name: preset.name || name,
+                                type: preset.type || 'robot',
+                                position: { x: (Math.random() - 0.5) * 40, y: (Math.random() - 0.5) * 40 },
+                                direction: 0,
+                                size: 100,
+                                visible: true,
+                                speech: '',
+                                currentCostume: 'default',
+                                costumes: preset.costumes || { default: "assets/sprites/robot/robot_idle.svg" },
+                                mirrored: false
+                            };
+
+                            addLog('Initialized sprite: ' + name, 'success');
+                            return [...prev, newSprite];
                         });
-                        return newProps;
-                    }));
-                },
-                softResetAll: () => setSprites(prev => prev.map(s => ({
-                    ...s,
-                    x: 0,
-                    y: 0,
-                    position: { x: 0, y: 0 },
-                    speech: '',
-                    angle: 0,
-                    direction: 0,
-                    size: 100,
-                    visible: true
-                }))),
-            }
-        });
+                    },
+                    moveRelative: (name, dir, steps) => {
+                        setSprites(prev => prev.map(s => {
+                            if (s.name.toLowerCase() !== name.toLowerCase()) return s;
+                            const d = steps || 20;
+                            let dx = 0, dy = 0;
+                            if (dir === "RIGHT") dx = d;
+                            if (dir === "LEFT") dx = -d;
+                            if (dir === "UP") dy = d;  // In leap, UP increases Y
+                            if (dir === "DOWN") dy = -d; // In leap, DOWN decreases Y
+                            const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                            addLog(`➡️ ${name}: Move ${dir} ${d} steps`, 'info');
+                            return {
+                                ...s,
+                                x: pos.x + dx,
+                                y: pos.y + dy,
+                                position: { x: pos.x + dx, y: pos.y + dy }
+                            };
+                        }));
+                    },
+                    moveSteps: (name, steps) => {
+                        setSprites(prev => prev.map(s => {
+                            if (s.name.toLowerCase() !== name.toLowerCase()) return s;
+                            const angle = s.direction ?? s.angle ?? 0;
+                            const rad = (angle * Math.PI) / 180;
+                            const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                            const newX = pos.x + Math.cos(rad) * steps;
+                            const newY = pos.y + Math.sin(rad) * steps;
+                            addLog(`🏃 ${name}: Move ${steps} steps (direction: ${angle}°)`, 'info');
+                            return {
+                                ...s,
+                                x: newX,
+                                y: newY,
+                                position: { x: newX, y: newY }
+                            };
+                        }));
+                    },
+                    update: (name, props) => {
+                        setSprites(prev => prev.map(s => {
+                            if (s.name.toLowerCase() !== name.toLowerCase()) return s;
+                            const newProps = { ...s };
+                            const pos = s.position || { x: s.x || 0, y: s.y || 0 };
+                            newProps.position = { ...pos };
+
+                            // Log sprite action to terminal
+                            const actionType = Object.keys(props).join(', ');
+                            addLog(`🤖 ${name}: ${actionType}`, 'info');
+
+                            Object.keys(props).forEach(key => {
+                                if (typeof props[key] === 'function') {
+                                    const oldVal = key === 'direction' ? (s.direction ?? s.angle ?? 0) :
+                                        key === 'angle' ? (s.angle ?? s.direction ?? 0) :
+                                            s[key];
+                                    const newVal = props[key](oldVal);
+                                    newProps[key] = newVal;
+                                    // Sync direction/angle
+                                    if (key === 'direction') newProps.angle = newVal;
+                                    if (key === 'angle') newProps.direction = newVal;
+                                } else if (key === 'nextCostume' && props[key]) {
+                                    // Handle next costume
+                                    const costumeKeys = Object.keys(s.costumes || {});
+                                    const currentIdx = costumeKeys.indexOf(s.currentCostume);
+                                    const nextIdx = (currentIdx + 1) % costumeKeys.length;
+                                    newProps.currentCostume = costumeKeys[nextIdx] || 'default';
+                                    addLog(`🎭 ${name}: Changed costume to ${newProps.currentCostume}`, 'info');
+                                } else if (key === 'position') {
+                                    // Merge position updates
+                                    newProps.position = { ...newProps.position, ...props[key] };
+                                    newProps.x = newProps.position.x;
+                                    newProps.y = newProps.position.y;
+                                } else if (key === 'x') {
+                                    newProps.x = props[key];
+                                    newProps.position.x = props[key];
+                                } else if (key === 'y') {
+                                    newProps.y = props[key];
+                                    newProps.position.y = props[key];
+                                } else {
+                                    newProps[key] = props[key];
+                                    // Sync direction/angle
+                                    if (key === 'direction') newProps.angle = props[key];
+                                    if (key === 'angle') newProps.direction = props[key];
+                                }
+                            });
+                            return newProps;
+                        }));
+                    },
+                    softResetAll: () => setSprites(prev => prev.map(s => ({
+                        ...s,
+                        x: 0,
+                        y: 0,
+                        position: { x: 0, y: 0 },
+                        speech: '',
+                        angle: 0,
+                        direction: 0,
+                        size: 100,
+                        visible: true
+                    }))),
+                }
+            });
+        }
 
         // Create intermediate blocks bridge for sprite panel functions
         const spriteBridge = createIntermediateBlocksBridge(sprites, setSprites, selectedSpriteId, addLog);
@@ -1790,6 +1792,47 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         }));
         setActiveFile(fileName);
         addLog(`Created new file: ${fileName}`, "success");
+    };
+
+    const handleCreateNewTextFile = () => {
+        let baseName = "new_file";
+        let ext = ".txt";
+        let fileName = `${baseName}${ext}`;
+        let counter = 1;
+        while (projectFiles[fileName]) {
+            fileName = `${baseName}${counter}${ext}`;
+            counter++;
+        }
+        setProjectFiles((prev) => ({
+            ...prev,
+            [fileName]: "",
+        }));
+        setActiveFile(fileName);
+        addLog(`Created new text file: ${fileName}`, "success");
+    };
+
+    const handleRenameFile = (oldName, newName) => {
+        if (!newName || newName === oldName) return;
+        if (projectFiles[newName]) {
+            alert(`A file named "${newName}" already exists.`);
+            return;
+        }
+        setProjectFiles((prev) => {
+            const entries = Object.entries(prev);
+            const next = {};
+            entries.forEach(([name, content]) => {
+                if (name === oldName) {
+                    next[newName] = content;
+                } else {
+                    next[name] = content;
+                }
+            });
+            return next;
+        });
+        if (activeFile === oldName) {
+            setActiveFile(newName);
+        }
+        addLog(`Renamed ${oldName} to ${newName}`, "success");
     };
 
     const handleAddPythonFiles = () => {
@@ -3482,6 +3525,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleAddCsvFiles={handleAddCsvFiles}
                         handleDeleteFile={handleDeleteFile}
                         onAddNewFile={handleCreateNewFile}
+                        onAddNewTextFile={handleCreateNewTextFile}
+                        onRenameFile={handleRenameFile}
                         spriteFilter={spriteFilter}
                         setSpriteFilter={setSpriteFilter}
                         addSpriteFromLibrary={addSpriteFromLibrary}
@@ -3570,6 +3615,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleAddCsvFiles={handleAddCsvFiles}
                         handleDeleteFile={handleDeleteFile}
                         onAddNewFile={handleCreateNewFile}
+                        onAddNewTextFile={handleCreateNewTextFile}
+                        onRenameFile={handleRenameFile}
                         spriteFilter={spriteFilter}
                         setSpriteFilter={setSpriteFilter}
                         addSpriteFromLibrary={addSpriteFromLibrary}

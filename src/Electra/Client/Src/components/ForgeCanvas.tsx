@@ -28,15 +28,6 @@ import { WireEdge } from './Edges/WireEdge';
 import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
 import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
-// Define custom node types outside component to prevent re-renders
-const nodeTypes = {
-  leap: LeapNode,
-};
-
-const edgeTypes = {
-  wire: WireEdge,
-};
-
 interface ForgeCanvasProps {
   onToggleSimulation?: () => void;
   isCompiling?: boolean;
@@ -50,6 +41,14 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   showEditor = true,
   onToggleEditor
 }) => {
+  const nodeTypes = useMemo(() => ({
+    leap: LeapNode,
+  }), []);
+
+  const edgeTypes = useMemo(() => ({
+    wire: WireEdge,
+  }), []);
+
   const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport } = useReactFlow();
   const currentViewport = useViewport();
   const store = useForgeStore();

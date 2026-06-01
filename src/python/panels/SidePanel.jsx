@@ -19,6 +19,7 @@ import {
     Wrench,
     ArrowLeft,
     FilePlus,
+    Pencil,
 } from "lucide-react";
 import BackdropPanel from "./BackdropPanel";
 import FileAddMenu, { PythonSessionActionMenu } from "./FileAddMenu";
@@ -46,7 +47,11 @@ function FilesPanel({
     onOpenPipPanel,
     onOpenExtensionsPanel,
     onAddNewFile,
+    onAddNewTextFile,
+    onRenameFile,
 }) {
+    const [renameTarget, setRenameTarget] = React.useState(null);
+    const [renameValue, setRenameValue] = React.useState("");
     return (
         <>
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
@@ -60,29 +65,49 @@ function FilesPanel({
                     }}
                 >
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</span>
-                    {onAddNewFile && (
-                        <button
-                            onClick={onAddNewFile}
-                            style={{
-                                cursor: "pointer",
-                                color: C.PURPLE,
-                                padding: 2,
-                                borderRadius: 4,
-                                border: "none",
-                                background: "transparent",
-                            }}
-                            title="New Python File"
-                        >
-                            <FilePlus size={14} />
-                        </button>
-                    )}
+                    <div style={{ display: "flex", gap: 4 }}>
+                        {onAddNewFile && (
+                            <button
+                                onClick={onAddNewFile}
+                                style={{
+                                    cursor: "pointer",
+                                    color: C.PURPLE,
+                                    padding: 2,
+                                    borderRadius: 4,
+                                    border: "none",
+                                    background: "transparent",
+                                }}
+                                title="New Python File"
+                            >
+                                <FilePlus size={14} />
+                            </button>
+                        )}
+                        {onAddNewTextFile && (
+                            <button
+                                onClick={onAddNewTextFile}
+                                style={{
+                                    cursor: "pointer",
+                                    color: C.PURPLE,
+                                    padding: 2,
+                                    borderRadius: 4,
+                                    border: "none",
+                                    background: "transparent",
+                                }}
+                                title="New Text File"
+                            >
+                                <FileText size={14} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ flex: 1, overflowY: "auto", padding: "4px 0 64px" }}>
                     {Object.keys(projectFiles).map((file) => (
                         <div
                             key={file}
-                            onClick={() => setActiveFile(file)}
+                            onClick={() => {
+                                if (renameTarget !== file) setActiveFile(file);
+                            }}
                             style={{
                                 padding: "8px 12px",
                                 cursor: "pointer",
@@ -95,7 +120,7 @@ function FilesPanel({
                                 borderLeft: activeFile === file ? "3px solid #4CAF50" : "3px solid transparent",
                             }}
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
                                 <div
                                     style={{
                                         width: 18,
@@ -105,34 +130,101 @@ function FilesPanel({
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
+                                        flexShrink: 0,
                                     }}
                                 >
                                     <FileText size={12} style={{ color: "#4CAF50" }} />
                                 </div>
-                                <span style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400 }}>
-                                    {file}
-                                </span>
+                                {renameTarget === file ? (
+                                    <input
+                                        autoFocus
+                                        value={renameValue}
+                                        onChange={(e) => setRenameValue(e.target.value)}
+                                        onBlur={() => {
+                                            onRenameFile?.(file, renameValue.trim());
+                                            setRenameTarget(null);
+                                            setRenameValue("");
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                onRenameFile?.(file, renameValue.trim());
+                                                setRenameTarget(null);
+                                                setRenameValue("");
+                                            } else if (e.key === "Escape") {
+                                                setRenameTarget(null);
+                                                setRenameValue("");
+                                            }
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{
+                                            fontSize: 12,
+                                            fontWeight: activeFile === file ? 600 : 400,
+                                            border: `1px solid ${C.PURPLE}`,
+                                            borderRadius: 3,
+                                            padding: "2px 4px",
+                                            outline: "none",
+                                            flex: 1,
+                                            minWidth: 0,
+                                            background: "#fff",
+                                            color: C.TEXT,
+                                        }}
+                                    />
+                                ) : (
+                                    <span
+                                        style={{ fontSize: 12, fontWeight: activeFile === file ? 600 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                                        onDoubleClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenameTarget(file);
+                                            setRenameValue(file);
+                                        }}
+                                    >
+                                        {file}
+                                    </span>
+                                )}
                             </div>
-                            {handleDeleteFile && Object.keys(projectFiles).length > 1 && (
-                                <button
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        handleDeleteFile(file);
-                                    }}
-                                    style={{
-                                        cursor: "pointer",
-                                        color: C.MUTED,
-                                        padding: 2,
-                                        borderRadius: 4,
-                                        border: "none",
-                                        background: "transparent",
-                                        opacity: 0.5,
-                                    }}
-                                    title="Delete file"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
-                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                                {onRenameFile && renameTarget !== file && (
+                                    <button
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setRenameTarget(file);
+                                            setRenameValue(file);
+                                        }}
+                                        style={{
+                                            cursor: "pointer",
+                                            color: C.MUTED,
+                                            padding: 2,
+                                            borderRadius: 4,
+                                            border: "none",
+                                            background: "transparent",
+                                            opacity: 0.5,
+                                        }}
+                                        title="Rename file"
+                                    >
+                                        <Pencil size={12} />
+                                    </button>
+                                )}
+                                {handleDeleteFile && Object.keys(projectFiles).length > 1 && (
+                                    <button
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleDeleteFile(file);
+                                        }}
+                                        style={{
+                                            cursor: "pointer",
+                                            color: C.MUTED,
+                                            padding: 2,
+                                            borderRadius: 4,
+                                            border: "none",
+                                            background: "transparent",
+                                            opacity: 0.5,
+                                        }}
+                                        title="Delete file"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -611,6 +703,8 @@ export default function SidePanel({
     handleAddCsvFiles,
     handleDeleteFile,
     onAddNewFile,
+    onAddNewTextFile,
+    onRenameFile,
     spriteFilter,
     setSpriteFilter,
     addSpriteFromLibrary,
@@ -651,6 +745,8 @@ export default function SidePanel({
                     handleAddCsvFiles={handleAddCsvFiles}
                     handleDeleteFile={handleDeleteFile}
                     onAddNewFile={onAddNewFile}
+                    onAddNewTextFile={onAddNewTextFile}
+                    onRenameFile={onRenameFile}
                     onOpenPipPanel={() => setSidePanel?.("pip")}
                     onOpenExtensionsPanel={() => setSidePanel?.("extensions")}
                 />
