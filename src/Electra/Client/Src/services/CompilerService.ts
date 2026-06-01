@@ -194,6 +194,8 @@ var DateTime = (typeof DateTime !== 'undefined' && DateTime) || class {
 var Adafruit_NeoPixel = (typeof Adafruit_NeoPixel !== 'undefined' && Adafruit_NeoPixel) || class {
   constructor(){} begin(){} show(){} setPixelColor(){} setBrightness(){} clear(){}
   numPixels(){return 0;} Color(r,g,b){return (r<<16)|(g<<8)|b;}
+  ColorHSV(h,s,v){return (Math.round((h||0)/256*6)%6)<<16|0;}
+  gamma32(c){return c;} gamma8(v){return(v/255)*(v/255)*255|0;}
 };
 var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9341) || class {
   constructor(){} begin(){} setRotation(){} fillScreen(){} setCursor(){}
@@ -453,6 +455,9 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*=/gm, 'let $2 =');
     // #define → const
     js = js.replace(/^\s*#define\s+(\w+)\s+(.+)$/gm, (_m, n, v) => `const ${n} = ${v.trim()};`);
+    // Strip C++ numeric literal suffixes (L, UL, U, LL, F, etc.) that are invalid JS
+    // e.g. 65536L → 65536,  1000UL → 1000,  3.14f → 3.14
+    js = js.replace(/\b(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(?:ULL|LL|UL|LU|U|L|F|f)\b/g, '$1');
     // Collect user-defined function names before type conversion changes the syntax
     const userFunctions: string[] = [];
     const funcRegex = /\b(?:void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*\([^)]*\)\s*\{/g;
