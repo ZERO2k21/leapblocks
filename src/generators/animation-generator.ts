@@ -502,6 +502,16 @@ export class AnimationCompiler {
                 return () => String((window as any).runtime?.objectDetection?.getConfidence(n) ?? 0);
             }
 
+            // ── Text to Speech reporters ────────────────────────────────────
+            case 'tts_is_speaking':
+                return () => String((window as any).runtime?.tts?.isSpeaking() ?? false);
+
+            // ── Speech Recognition string reporters ─────────────────────────
+            case 'speech_get_last_result':
+                return () => (window as any).runtime?.speech?.getLastResult() ?? '';
+            case 'speech_is_listening':
+                return () => String((window as any).runtime?.speech?.isListening() ?? false);
+
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
@@ -885,6 +895,20 @@ export class AnimationCompiler {
                 const n = Number(valueBlock.getFieldValue('N') ?? 1);
                 return () => (window as any).runtime?.objectDetection?.getLabel(n) ?? '';
             }
+
+            // ── Text to Speech number reporters ─────────────────────────────
+            case 'tts_get_rate':
+                return () => (window as any).runtime?.tts?.getRate() ?? 1;
+            case 'tts_get_volume':
+                return () => (window as any).runtime?.tts?.getVolume() ?? 1;
+            case 'tts_is_speaking':
+                return () => (window as any).runtime?.tts?.isSpeaking() ? 1 : 0;
+
+            // ── Speech Recognition number reporters ─────────────────────────
+            case 'speech_get_confidence':
+                return () => (window as any).runtime?.speech?.getConfidence() ?? 0;
+            case 'speech_is_listening':
+                return () => (window as any).runtime?.speech?.isListening() ? 1 : 0;
 
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
@@ -1396,6 +1420,53 @@ export class AnimationCompiler {
             case 'ml_analyze':
                 step = { type: 'ml_action', action: block.getFieldValue('ACTION') || 'on' } as any;
                 break;
+
+            // Text to Speech extension blocks
+            case 'tts_speak': {
+                const msg = this.compileStringValue(block, 'MESSAGE');
+                step = { type: 'tts_speak', message: msg } as any;
+                break;
+            }
+            case 'tts_set_voice': {
+                const voice = block.getFieldValue('VOICE') || '';
+                step = { type: 'tts_set_voice', voice } as any;
+                break;
+            }
+            case 'tts_set_rate': {
+                const rate = Number(block.getFieldValue('RATE') || 1);
+                step = { type: 'tts_set_rate', rate } as any;
+                break;
+            }
+            case 'tts_set_volume': {
+                const volume = Number(block.getFieldValue('VOLUME') || 1);
+                step = { type: 'tts_set_volume', volume } as any;
+                break;
+            }
+            case 'tts_set_pitch': {
+                const pitch = Number(block.getFieldValue('PITCH') || 1);
+                step = { type: 'tts_set_pitch', pitch } as any;
+                break;
+            }
+            case 'tts_stop':
+                step = { type: 'tts_stop' } as any;
+                break;
+
+            // Speech Recognition extension blocks
+            case 'speech_start_listening':
+                step = { type: 'speech_start_listening' } as any;
+                break;
+            case 'speech_stop_listening':
+                step = { type: 'speech_stop_listening' } as any;
+                break;
+            case 'speech_set_language': {
+                const lang = block.getFieldValue('LANGUAGE') || 'en-US';
+                step = { type: 'speech_set_language', language: lang } as any;
+                break;
+            }
+            case 'speech_on_result': {
+                step = { type: 'speech_on_result', body: this.compileStatementInput(block, 'BODY') } as any;
+                break;
+            }
 
             case 'music_set_instrument': {
                 const instrument = Number(block.getFieldValue('INST') || 1);

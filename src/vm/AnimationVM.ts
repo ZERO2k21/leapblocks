@@ -166,6 +166,18 @@ export type ScriptStep = (
     | { type: 'music_rest'; beats: number }
     // Procedures / My Blocks
     | { type: 'procedures_call'; proccode: string; args?: Record<string, any> }
+    // Text to Speech
+    | { type: 'tts_speak'; message: string | (() => string) }
+    | { type: 'tts_set_voice'; voice: string }
+    | { type: 'tts_set_rate'; rate: number }
+    | { type: 'tts_set_volume'; volume: number }
+    | { type: 'tts_set_pitch'; pitch: number }
+    | { type: 'tts_stop' }
+    // Speech Recognition
+    | { type: 'speech_start_listening' }
+    | { type: 'speech_stop_listening' }
+    | { type: 'speech_set_language'; language: string }
+    | { type: 'speech_on_result'; body: ScriptStep[] }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -1626,6 +1638,97 @@ export class AnimationVM {
                     const { beats } = step as any;
                     await (window as any).runtime.music.rest(beats);
                     vmLog.info(`Rested for ${beats} beats`);
+                }
+                break;
+            }
+
+            // Text to Speech extension steps
+            case 'tts_speak' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    const msg = typeof (step as any).message === 'function' ? (step as any).message() : (step as any).message;
+                    await (window as any).runtime.tts.speak(msg);
+                    vmLog.info(`Spoke: ${msg}`);
+                }
+                break;
+            }
+            case 'tts_set_voice' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    (window as any).runtime.tts.setVoice((step as any).voice);
+                    vmLog.info(`Set voice to ${(step as any).voice}`);
+                }
+                break;
+            }
+            case 'tts_set_rate' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    (window as any).runtime.tts.setRate((step as any).rate);
+                    vmLog.info(`Set speech rate to ${(step as any).rate}`);
+                }
+                break;
+            }
+            case 'tts_set_volume' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    (window as any).runtime.tts.setVolume((step as any).volume);
+                    vmLog.info(`Set speech volume to ${(step as any).volume}`);
+                }
+                break;
+            }
+            case 'tts_set_pitch' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    (window as any).runtime.tts.setPitch((step as any).pitch);
+                    vmLog.info(`Set speech pitch to ${(step as any).pitch}`);
+                }
+                break;
+            }
+            case 'tts_stop' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
+                    (window as any).runtime.tts.stop();
+                    vmLog.info('Stopped speaking');
+                }
+                break;
+            }
+
+            // Speech Recognition extension steps
+            case 'speech_start_listening' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.startListening();
+                    vmLog.info('Started listening');
+                }
+                break;
+            }
+            case 'speech_stop_listening' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.stopListening();
+                    vmLog.info('Stopped listening');
+                }
+                break;
+            }
+            case 'speech_set_language' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    (window as any).runtime.speech.setLanguage((step as any).language);
+                    vmLog.info(`Set speech language to ${(step as any).language}`);
+                }
+                break;
+            }
+            case 'speech_on_result' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+                    const bodySteps = (step as any).body as ScriptStep[];
+                    (window as any).runtime.speech.onResult((_text: string, _conf: number) => {
+                        if (bodySteps && bodySteps.length > 0) {
+                            bodySteps.forEach((s: any) => {
+                                if (s.type === 'tts_speak') {
+                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
+                                    (window as any).runtime?.tts?.speak(msg);
+                                } else if (s.type === 'say') {
+                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
+                                    if (sprite) sprite.say(msg);
+                                } else if (s.type === 'data_setvariableto') {
+                                    const val = typeof s.value === 'function' ? s.value() : s.value;
+                                    this.setVariable(s.variable, val);
+                                }
+                            });
+                        }
+                    });
+                    vmLog.info('Registered speech result handler');
                 }
                 break;
             }
