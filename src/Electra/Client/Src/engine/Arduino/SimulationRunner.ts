@@ -76,7 +76,7 @@ class SimulationRunner {
    */
   initCPU(hexString: string = BLINK_HEX) {
     // ── ESP32-C3 RISC-V path ──────────────────────
-    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       this.esp32c3Runner = new ESP32C3SimulationRunner();
       console.log(`[FORGE ENGINE] ESP32-C3 RISC-V runner created for board: ${this.selectedBoard}`);
@@ -176,7 +176,7 @@ class SimulationRunner {
     } else {
       // No binPath provided (e.g. canvas node added, board selector changed)
       // Only clear binPath if switching AWAY from an ESP32 board
-      const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+      const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
       const wasESP32 = ESP32_C3_BOARD_IDS.includes(prevBoard);
       const isESP32 = ESP32_C3_BOARD_IDS.includes(boardId);
       if (wasESP32 && !isESP32) {
@@ -206,7 +206,7 @@ class SimulationRunner {
   async start() {
     console.log(`[SimulationRunner] start() called, selectedBoard="${this.selectedBoard}"`);
     // ── ESP32-C3 path ──────────────────────
-    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       console.log('[SimulationRunner] ESP32-C3 board detected');
       this.isRunning = true;
@@ -255,11 +255,19 @@ class SimulationRunner {
         // from SimulationRunner into ArduinoRuntime so digitalRead() works.
         const runtime = this.esp32c3Runner.runtime;
         if (runtime) {
-          for (let gpio = 0; gpio <= 21; gpio++) {
+          for (let gpio = 0; gpio <= 39; gpio++) {
             const pinId = `ESP${gpio}`;
             const g = gpio;
             const fn = (state: PinState) => {
-              runtime.setDigitalInput(g, state === 'HIGH');
+              // Only forward digital inputs into the runtime for pins that are NOT OUTPUTs
+              const pinMode = runtime.getPinMode ? runtime.getPinMode(g) : 'INPUT';
+              if (pinMode === 'OUTPUT') return;
+
+              if (state === 'HIGH') {
+                runtime.setDigitalInput(g, true);
+              } else if (state === 'LOW') {
+                runtime.setDigitalInput(g, false);
+              }
             };
             this.addListener(pinId, fn);
             this._esp32ReverseBridgeListeners.push({ pinId, fn });
@@ -336,7 +344,7 @@ class SimulationRunner {
    */
   stop() {
     // ── ESP32-C3 path ──────────────────────
-    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       this.isRunning = false;
       this.esp32c3Runner?.stop();
@@ -354,6 +362,11 @@ class SimulationRunner {
       this.esp32c3Runner = null;
       this._esp32ListenersWired = false;
 
+      // Broadcast LOW to visually turn off LEDs/peripherals immediately
+      this.pinStates.forEach((_, pinId) => {
+        this.setPinState(pinId, 'LOW');
+      });
+
       console.log('[FORGE] ESP32-C3 simulation stopped and cleaned up.');
       return;
     }
@@ -365,6 +378,12 @@ class SimulationRunner {
       cancelAnimationFrame(this.tickInterval);
       this.tickInterval = null;
     }
+
+    // Broadcast LOW to visually turn off LEDs/peripherals immediately
+    this.pinStates.forEach((_, pinId) => {
+      this.setPinState(pinId, 'LOW');
+    });
+
     console.log('[FORGE] AVR Simulator Engine stopped.');
   }
 
@@ -373,7 +392,7 @@ class SimulationRunner {
    */
   reset() {
     // ── ESP32-C3 RISC-V path (board IDs that map to ESP32-C3) ───────────────────────────────────────────
-    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
     if (ESP32_C3_BOARD_IDS.includes(this.selectedBoard)) {
       this.isRunning = false;
       this.esp32c3Runner?.stop();
@@ -703,7 +722,7 @@ class SimulationRunner {
   }
 
   public get isESP32C3Board(): boolean {
-    const ESP32_C3_BOARD_IDS = ['esp32-c3'];
+    const ESP32_C3_BOARD_IDS = ['esp32-c3', 'esp32'];
     return ESP32_C3_BOARD_IDS.includes(this.selectedBoard);
   }
 

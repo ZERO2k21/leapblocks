@@ -1576,6 +1576,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             return "Check if the object has the method or attribute you're trying to use.";
         }
         if (msg.includes('importerror') || msg.includes('module not found')) {
+            if (msg.includes('numpy') || msg.includes('pandas') || msg.includes('matplotlib') || msg.includes('tensorflow') || msg.includes('torch') || msg.includes('opencv') || msg.includes('mediapipe') || msg.includes('sklearn') || msg.includes('pillow') || msg.includes('pygame')) {
+                return "This package is not available in web Skulpt mode because it depends on native Python extensions. Use desktop Python mode or replace it with a supported built-in module.";
+            }
             return "The module might not be available in Skulpt. Try using built-in modules like math, random, or time.";
         }
         if (msg.includes('timeout') || msg.includes('too long')) {
@@ -2127,6 +2130,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             if (importExamples[pkgName]) {
                 addLog(`  → Use: ${importExamples[pkgName]}`, "info");
+            }
+
+            addLog(`  ⚠ Browser mode uses Skulpt — only built-in modules run natively.`, "warning");
+            if (!pkg.builtin) {
+                addLog(`  ❗ ${pkgName} cannot actually be imported in browser mode due to missing native Python extension support. Use desktop Python mode for full support.`, "warning");
             }
 
             // Add category-specific tips

@@ -375,7 +375,7 @@ export class SkulptEngine {
         const vfs = this.vfs;
         const OriginalFile = sk.builtin.file;
 
-        sk.builtin.file = function(name, mode, buffering) {
+        sk.builtin.file = function (name, mode, buffering) {
             if (!(this instanceof sk.builtin.file)) {
                 return new sk.builtin.file(name, mode, buffering);
             }
@@ -434,6 +434,17 @@ export class SkulptEngine {
 
             return this;
         };
+
+        // Copy any static methods from the original file constructor
+        Object.getOwnPropertyNames(OriginalFile).forEach((propName) => {
+            if (propName !== 'prototype') {
+                Object.defineProperty(
+                    sk.builtin.file,
+                    propName,
+                    Object.getOwnPropertyDescriptor(OriginalFile, propName)
+                );
+            }
+        });
 
         sk.builtin.file.prototype = OriginalFile.prototype;
         sk.builtin.file.prototype.constructor = sk.builtin.file;

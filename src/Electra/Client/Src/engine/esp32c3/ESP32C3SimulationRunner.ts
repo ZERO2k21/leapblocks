@@ -516,11 +516,14 @@ export class ESP32C3SimulationRunner {
     /** Called internally when GPIO fires a change event */
     setPinState(pin: string, state: PinState): void {
         this.pinStates.set(pin, state);
-        const listeners = this.pinListeners.get(pin);
-        if (listeners) listeners.forEach(cb => cb(pin, state));
+        const directListeners = this.pinListeners.get(pin);
+        const wildcardListeners = this.pinListeners.get('*');
+        const directCount = directListeners ? directListeners.length : 0;
+        const wildcardCount = wildcardListeners ? wildcardListeners.length : 0;
+        console.log(`[ESP32C3 setPinState] ${pin} = ${typeof state === 'number' ? `PWM ${state}` : state} → notifying ${directCount} direct listener(s), ${wildcardCount} wildcard listener(s)`);
+        if (directListeners) directListeners.forEach(cb => cb(pin, state));
         // Also notify wildcard listeners (registered with '*')
-        const wildcards = this.pinListeners.get('*');
-        if (wildcards) wildcards.forEach(cb => cb(pin, state));
+        if (wildcardListeners) wildcardListeners.forEach(cb => cb(pin, state));
     }
 
     /** Returns the last known state of a pin */

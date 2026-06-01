@@ -59,7 +59,8 @@ export const CircuitAnalysisPanel: React.FC = () => {
         // Find power source (Arduino/ESP32 board)
         const powerSource = nodes.find(n =>
             n.data.type === 'arduino-uno' ||
-            n.data.type === 'esp32-c3'
+            n.data.type === 'esp32-c3' ||
+            n.data.type === 'esp32'
         );
 
         const supplyVoltage = powerSource ? 5.0 : 5.0; // 5V for Arduino, 3.3V for ESP32

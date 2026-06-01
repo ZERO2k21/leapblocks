@@ -56,17 +56,17 @@ const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
 
 // Permissions required by specific component types
 const COMPONENT_PERMISSIONS = {
-  BluetoothClient:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
-  BluetoothServer:     ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
-  LocationSensor:      ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
-  Camera:              ['android.permission.CAMERA'],
-  Texting:             ['android.permission.SEND_SMS'],
-  SpeechRecognizer:    ['android.permission.RECORD_AUDIO'],
-  SoundRecorder:       ['android.permission.RECORD_AUDIO'],
-  PhoneCall:           ['android.permission.CALL_PHONE'],
-  ContactPicker:       ['android.permission.READ_CONTACTS'],
-  ImagePicker:         ['android.permission.READ_EXTERNAL_STORAGE'],
-  FilePicker:          ['android.permission.READ_EXTERNAL_STORAGE'],
+  BluetoothClient: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  BluetoothServer: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  LocationSensor: ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
+  Camera: ['android.permission.CAMERA'],
+  Texting: ['android.permission.SEND_SMS'],
+  SpeechRecognizer: ['android.permission.RECORD_AUDIO'],
+  SoundRecorder: ['android.permission.RECORD_AUDIO'],
+  PhoneCall: ['android.permission.CALL_PHONE'],
+  ContactPicker: ['android.permission.READ_CONTACTS'],
+  ImagePicker: ['android.permission.READ_EXTERNAL_STORAGE'],
+  FilePicker: ['android.permission.READ_EXTERNAL_STORAGE'],
 };
 
 function collectPermissions(screens = []) {
@@ -190,13 +190,13 @@ class ApkBuilder {
         return finalPath;
 
       } else {
-        // No template — build from scratch using APKTool
+        // No template — build from Leap using APKTool
         onProgress?.({ stage: 'no_template', progress: 12, message: 'No template APK — building from minimal structure' });
         return await this.buildWithoutTemplate(appName, packageName, appState, webAppFiles, onProgress);
       }
 
     } catch (error) {
-      await this.injector.cleanup().catch(() => {});
+      await this.injector.cleanup().catch(() => { });
       throw error;
     }
   }
