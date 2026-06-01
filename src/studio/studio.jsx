@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited. deploy
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // ── FIX: Neutralize AMD define() before any Blockly imports ─────────────────
 // Monaco Editor's CDN loader sets window.define globally. Blockly's UMD
@@ -51,6 +51,7 @@ export default function AppInventor({ onBack }) {
   const appState = useAppState();
   const [activeTab, setActiveTab] = useState('designer');
   const [projectPath, setProjectPath] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [buildState, setBuildState] = useState('idle');
@@ -69,7 +70,7 @@ export default function AppInventor({ onBack }) {
 
   const handleOpenProject = async () => {
     if (!window.electronAPI || !window.electronAPI.openProject) {
-      alert("Opening projects is only supported in desktop mode.");
+      fileInputRef.current?.click();
       return;
     }
     try {
@@ -92,9 +93,51 @@ export default function AppInventor({ onBack }) {
     }
   };
 
+  const handleWebImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target.result;
+        const projectData = JSON.parse(content);
+        appState.loadProject(projectData);
+
+        const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+        appState.setAppName(nameWithoutExt);
+        setProjectPath(null);
+        alert('Project imported successfully!');
+      } catch (err) {
+        console.error('Failed to parse project file:', err);
+        alert('Failed to parse project file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const handleSaveProject = async () => {
     if (!window.electronAPI || !window.electronAPI.saveProject) {
-      alert("Saving is only supported in desktop mode.");
+      try {
+        const payload = appState.getSerializedState();
+        const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+        if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+          payload.blockLogic = liveBlockXml;
+        }
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${appState.appName || 'project'}.lbp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Failed to save project locally:", err);
+        alert(`Failed to save project: ${err.message}`);
+      }
       return;
     }
     try {
@@ -124,7 +167,7 @@ export default function AppInventor({ onBack }) {
 
   const handleSaveAsProject = async () => {
     if (!window.electronAPI || !window.electronAPI.saveProject) {
-      alert("Saving is only supported in desktop mode.");
+      handleSaveProject();
       return;
     }
     try {
@@ -335,6 +378,13 @@ export default function AppInventor({ onBack }) {
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col bg-slate-50 text-slate-900 font-sans">
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".lbp,.json"
+        onChange={handleWebImport}
+      />
       <IgniteTopbar
         title={appState.appName}
         onTitleChange={(val) => appState.setAppName(val)}
