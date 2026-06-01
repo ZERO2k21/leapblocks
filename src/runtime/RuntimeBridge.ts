@@ -19,6 +19,9 @@ import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
 import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
 import { MusicRuntime } from '../extensions/MusicExtension';
+import { OCRRuntime } from '../extensions/TextRecognition';
+import { TTSRuntime } from '../extensions/TextToSpeech';
+import { SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME  — MediaPipe-powered, works in all modern browsers
@@ -680,182 +683,29 @@ class MLRuntime {
 export const mlRuntime = new MLRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TEXT TO SPEECH RUNTIME
+// TEXT TO SPEECH & SPEECH RECOGNITION (imported from standalone extension files)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class TTSRuntime {
-    private synth: SpeechSynthesis;
-    private currentVoice: SpeechSynthesisVoice | null = null;
-    private _rate = 1;
-    private _volume = 1;
-    private _pitch = 1;
-    private _speaking = false;
-    private voicesLoaded = false;
+import { TTSRuntime as _TTSRuntime } from '../extensions/TextToSpeech';
+import { SpeechRecognitionRuntime as _SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
+import { WeatherRuntime } from '../extensions/WeatherData';
+import { TranslateRuntime } from '../extensions/Translate';
+import { DataLoggerRuntime } from '../extensions/DataLogger';
+import { VisionRuntime } from '../extensions/ComputerVision';
+import { VideoPlayerRuntime } from '../extensions/VideoPlayer';
 
-    constructor() {
-        this.synth = window.speechSynthesis || null as any;
-        if (this.synth) {
-            this._loadVoices();
-            this.synth.onvoiceschanged = () => this._loadVoices();
-        }
-    }
+// Re-export classes for consumers that import from RuntimeBridge
+export { _TTSRuntime as TTSRuntime };
+export { _SpeechRecognitionRuntime as SpeechRecognitionRuntime };
+export { WeatherRuntime };
+export { TranslateRuntime };
+export { DataLoggerRuntime };
+export { VisionRuntime };
+export { VideoPlayerRuntime };
 
-    private _loadVoices() {
-        if (!this.synth) return;
-        const voices = this.synth.getVoices();
-        if (voices.length > 0 && !this.voicesLoaded) {
-            this.voicesLoaded = true;
-            if (!this.currentVoice) {
-                this.currentVoice = voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
-            }
-        }
-    }
-
-    speak(message: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.synth) {
-                console.warn('[TTS] Speech synthesis not available');
-                resolve();
-                return;
-            }
-            this.synth.cancel();
-            const utterance = new SpeechSynthesisUtterance(String(message));
-            if (this.currentVoice) utterance.voice = this.currentVoice;
-            utterance.rate = this._rate;
-            utterance.volume = this._volume;
-            utterance.pitch = this._pitch;
-            utterance.onstart = () => { this._speaking = true; };
-            utterance.onend = () => { this._speaking = false; resolve(); };
-            utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
-                this._speaking = false;
-                if (e.error === 'canceled') { resolve(); } else { reject(e); }
-            };
-            this.synth.speak(utterance);
-        });
-    }
-
-    setVoice(voiceName: string) {
-        if (!this.synth) return;
-        const voices = this.synth.getVoices();
-        const match = voices.find(v => v.name === voiceName || v.lang === voiceName);
-        if (match) this.currentVoice = match;
-    }
-
-    setRate(rate: number) { this._rate = Math.max(0.1, Math.min(10, Number(rate) || 1)); }
-    setVolume(volume: number) { this._volume = Math.max(0, Math.min(1, Number(volume) || 1)); }
-    setPitch(pitch: number) { this._pitch = Math.max(0, Math.min(2, Number(pitch) || 1)); }
-
-    stop() { if (this.synth) this.synth.cancel(); this._speaking = false; }
-    isSpeaking(): boolean { return this._speaking; }
-    getVoices(): string[] {
-        if (!this.synth) return [];
-        return this.synth.getVoices().map(v => v.name);
-    }
-    getRate(): number { return this._rate; }
-    getVolume(): number { return this._volume; }
-    getPitch(): number { return this._pitch; }
-}
-
-export const ttsRuntime = new TTSRuntime();
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SPEECH RECOGNITION RUNTIME
-// ─────────────────────────────────────────────────────────────────────────────
-
-class SpeechRecognitionRuntime {
-    private recognition: any = null;
-    private _isListening = false;
-    private _lastResult = '';
-    private _confidence = 0;
-    private _language = 'en-US';
-    private _resultCallbacks: Array<(text: string, confidence: number) => void> = [];
-
-    constructor() {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            this.recognition = new SpeechRecognition();
-            this.recognition.continuous = true;
-            this.recognition.interimResults = false;
-            this.recognition.lang = this._language;
-
-            this.recognition.onresult = (event: any) => {
-                let finalText = '';
-                let lastConfidence = 0;
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        finalText += event.results[i][0].transcript;
-                        lastConfidence = event.results[i][0].confidence;
-                    }
-                }
-                if (finalText) {
-                    this._lastResult = finalText.trim();
-                    this._confidence = Math.round(lastConfidence * 100);
-                    this._resultCallbacks.forEach(cb => cb(this._lastResult, this._confidence));
-                }
-            };
-
-            this.recognition.onerror = (event: any) => {
-                console.warn('[SpeechRecognition] Error:', event.error);
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    this._isListening = false;
-                }
-            };
-
-            this.recognition.onend = () => {
-                this._isListening = false;
-            };
-        }
-    }
-
-    isAvailable(): boolean {
-        return this.recognition !== null;
-    }
-
-    startListening() {
-        if (!this.recognition) {
-            console.warn('[SpeechRecognition] Not available in this browser');
-            return;
-        }
-        if (this._isListening) return;
-        try {
-            this.recognition.lang = this._language;
-            this.recognition.start();
-            this._isListening = true;
-        } catch (e) {
-            console.warn('[SpeechRecognition] Failed to start:', e);
-        }
-    }
-
-    stopListening() {
-        if (!this.recognition) return;
-        try {
-            this.recognition.stop();
-        } catch (e) { /* ignore */ }
-        this._isListening = false;
-    }
-
-    setLanguage(lang: string) {
-        this._language = lang;
-        if (this.recognition) {
-            this.recognition.lang = lang;
-        }
-    }
-
-    isListening(): boolean { return this._isListening; }
-    getLastResult(): string { return this._lastResult; }
-    getConfidence(): number { return this._confidence; }
-    getLanguage(): string { return this._language; }
-
-    onResult(callback: (text: string, confidence: number) => void) {
-        this._resultCallbacks.push(callback);
-    }
-
-    removeResultCallback(callback: (text: string, confidence: number) => void) {
-        this._resultCallbacks = this._resultCallbacks.filter(cb => cb !== callback);
-    }
-}
-
-export const speechRecognitionRuntime = new SpeechRecognitionRuntime();
+// Singleton instances for window.runtime
+export const ttsRuntime = new _TTSRuntime();
+export const speechRecognitionRuntime = new _SpeechRecognitionRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -885,6 +735,12 @@ export function initRuntime() {
     // Initialize extension runtimes
     const objectDetectionRuntime = new ObjectDetectionRuntime();
     const musicRuntime = new MusicRuntime();
+    const ocrRuntime = new OCRRuntime();
+    const weatherRuntime = new WeatherRuntime();
+    const translateRuntime = new TranslateRuntime();
+    const loggerRuntime = new DataLoggerRuntime();
+    const visionRuntime = new VisionRuntime();
+    const videoRuntime = new VideoPlayerRuntime();
 
     (window as any).runtime = {
         pen: penRuntime,
@@ -897,9 +753,15 @@ export function initRuntime() {
         music: musicRuntime,
         tts: ttsRuntime,
         speech: speechRecognitionRuntime,
+        ocr: ocrRuntime,
+        weather: weatherRuntime,
+        translate: translateRuntime,
+        logger: loggerRuntime,
+        vision: visionRuntime,
+        video: videoRuntime,
     };
 
-    console.log('[RuntimeBridge] window.runtime initialized with extensions (TTS, Speech Recognition)');
+    console.log('[RuntimeBridge] window.runtime initialized with all extensions');
 }
 
 
@@ -922,6 +784,22 @@ export function setFaceVideoElement(video: HTMLVideoElement | null) {
     mlRuntime.setVideoElement(video);
     if ((window as any).runtime?.objectDetection) {
         (window as any).runtime.objectDetection.setVideoElement(video);
+    }
+    if ((window as any).runtime?.ocr) {
+        (window as any).runtime.ocr.setVideoElement(video);
+    }
+    if ((window as any).runtime?.vision) {
+        (window as any).runtime.vision.setVideoElement(video);
+    }
+}
+
+/**
+ * Give the VideoPlayerRuntime a reference to the playback video element.
+ * Call this from Stage.tsx after the video-playback element mounts.
+ */
+export function setVideoPlayerElement(video: HTMLVideoElement | null, container?: HTMLDivElement | null) {
+    if ((window as any).runtime?.video) {
+        (window as any).runtime.video.setVideoElement(video, container);
     }
 }
 
