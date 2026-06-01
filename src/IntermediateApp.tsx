@@ -9,9 +9,7 @@ import { STAGE_CONFIG } from './engine/StageConfig';
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
 import './styles/Leaplab-blocks.css'; // Import leap-style blocks CSS
-import './leapignite/client/styles/juniorBlocks.css';
-import './leapignite/client/styles/juniorLooksBlocks.css';
-import './blockly/registerCustomFields'; // Register field_colour, field_angle, etc.
+import { registerCustomFields } from './blockly/registerCustomFields'; // Register field_colour, field_angle, etc.
 
 
 import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
@@ -190,6 +188,9 @@ function initBlocklyOnce() {
 
     // Register custom toolbox category (deferred from module scope)
     registerLeapBloxCategory();
+
+    // Register custom fields (field_angle, field_colour) before any Blockly.inject call
+    registerCustomFields();
 
     // Configure Blockly dialogs for Electron (native prompt/alert not supported)
     Blockly.dialog.setPrompt((message, defaultValue, callback) => {

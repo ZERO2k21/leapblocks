@@ -28,6 +28,3 @@ export function registerCustomFields(): void {
         globalWindow.__leapblocksBlocklyFieldsRegistered = true;
     }
 }
-
-// Auto-register when imported (for backward compat with dynamic import)
-registerCustomFields();
