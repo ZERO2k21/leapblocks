@@ -37,11 +37,13 @@ export class KeypadEmulator {
     const rowIdx = this.rowPins.indexOf(rowPin);
     if (rowIdx === -1) return;
     this.rowStates[rowIdx] = isHigh;
+    console.log(`[KEYPAD EMULATOR] onRowChange pin=${rowPin} (rowIdx=${rowIdx}) isHigh=${isHigh}, current pressedKey=${this.pressedKey}`);
     this.updateColumns();
   }
 
   /** Set the currently pressed key from UI */
   pressKey(key: string | null) {
+    console.log(`[KEYPAD EMULATOR] pressKey called with "${key}", prev="${this.pressedKey}"`);
     this.pressedKey = key;
     this.updateColumns();
   }
@@ -49,7 +51,9 @@ export class KeypadEmulator {
   private updateColumns() {
     if (!this.pressedKey) {
       // No key pressed: all columns HIGH (pull-up)
-      this.colPins.forEach(pin => this.setPin(pin, true));
+      this.colPins.forEach(pin => {
+        this.setPin(pin, true);
+      });
       return;
     }
 
@@ -65,7 +69,9 @@ export class KeypadEmulator {
     // If the row being scanned is LOW and matches pressed key's row,
     // then the corresponding column goes LOW
     this.colPins.forEach((colPin, colIdx) => {
-      if (colIdx === pressedCol && !this.rowStates[pressedRow]) {
+      const shouldBeLow = colIdx === pressedCol && !this.rowStates[pressedRow];
+      console.log(`[KEYPAD EMULATOR] updateColumns key=${this.pressedKey} pin=${colPin} colIdx=${colIdx} pressedCol=${pressedCol} pressedRow=${pressedRow} rowState=${this.rowStates[pressedRow]} -> shouldBeLow=${shouldBeLow}`);
+      if (shouldBeLow) {
         this.setPin(colPin, false);
       } else {
         this.setPin(colPin, true);

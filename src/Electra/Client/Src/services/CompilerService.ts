@@ -140,8 +140,14 @@ var DHT = (typeof DHT !== 'undefined' && DHT) || class { constructor(){} begin()
 var DHTesp = (typeof DHTesp !== 'undefined' && DHTesp) || class { constructor(){} setup(){} getTempAndHumidity(){ return { temperature: 25.0, humidity: 50.0 }; } getStatus(){ return 0; } getStatusString(){ return 'OK'; } };
 var TempAndHumidity = (typeof TempAndHumidity !== 'undefined' && TempAndHumidity) || class { constructor(){ this.temperature = 0; this.humidity = 0; } };
 var Adafruit_MPU6050 = (typeof Adafruit_MPU6050 !== 'undefined' && Adafruit_MPU6050) || class {
-  constructor(){} begin(){return true;}
-  setAccelerometerRange(){} setGyroRange(){} setFilterBandwidth(){}
+  constructor(){ this._accelRange = 0; this._gyroRange = 0; this._filterBw = 0; }
+  begin(){return true;}
+  setAccelerometerRange(r){this._accelRange = r;}
+  getAccelerometerRange(){return this._accelRange || 0;}
+  setGyroRange(r){this._gyroRange = r;}
+  getGyroRange(){return this._gyroRange || 0;}
+  setFilterBandwidth(b){this._filterBw = b;}
+  getFilterBandwidth(){return this._filterBw || 0;}
   getEvent(a,g,t){
     if(a) a.acceleration={x:0,y:0,z:9.8};
     if(g) g.gyro={x:0,y:0,z:0};

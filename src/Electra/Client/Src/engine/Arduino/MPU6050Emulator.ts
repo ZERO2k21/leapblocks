@@ -111,8 +111,19 @@ export class MPU6050Emulator {
       this.regPointer = data & 0xFF;
       this.pointerSet = true;
     } else {
-      // Write to register (config registers only — sensor data is read-only)
-      this.regs[this.regPointer] = data;
+      if (this.regPointer === 0x6B) {
+        if (data & 0x80) {
+          // Device reset: reset registers to default state and clear the reset bit
+          this.regs.fill(0);
+          this.regs[0x75] = 0x68; // WHO_AM_I
+          this.regs[0x6B] = 0x40; // Default sleep mode (reset bit 0x80 is cleared)
+        } else {
+          this.regs[0x6B] = data;
+        }
+      } else {
+        // Write to register
+        this.regs[this.regPointer] = data;
+      }
       this.regPointer = (this.regPointer + 1) & 0xFF;
     }
     return true; // ACK

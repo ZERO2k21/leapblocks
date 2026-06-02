@@ -899,16 +899,15 @@ export function createUltrasonicClass(runtime: any) {
             runtime.__delayMicroseconds(10);
             runtime.digitalWrite(this.trigPin, 0);
 
-            // Read echo pulse duration
-            const duration = runtime.pulseIn(this.echoPin, 1, 30000);
+            // Read distance directly from store (avoids floating-point round-trip via pulseIn)
+            const distanceCm = runtime.getUltrasonicDistanceCm();
 
-            // Convert to distance
             if (unit === 'CM') {
-                return duration / 58.2; // Speed of sound: 343 m/s
+                return distanceCm;
             } else if (unit === 'IN') {
-                return duration / 148.0;
+                return distanceCm / 2.54;
             }
-            return duration;
+            return distanceCm * 58.2;
         }
 
         distanceRead(unit = 'CM'): number {
@@ -948,17 +947,17 @@ export function createNewPingClass(runtime: any) {
         }
 
         ping_cm(): number {
-            return this.ping() / 58.2;
+            return runtime.getUltrasonicDistanceCm();
         }
 
         ping_in(): number {
-            return this.ping() / 148.0;
+            return runtime.getUltrasonicDistanceCm() / 2.54;
         }
 
         ping_median(iterations = 5): number {
             const readings: number[] = [];
             for (let i = 0; i < iterations; i++) {
-                readings.push(this.ping());
+                readings.push(runtime.getUltrasonicDistanceCm());
                 runtime.__delay(29); // Wait between pings
             }
             readings.sort((a, b) => a - b);

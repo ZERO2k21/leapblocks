@@ -132,6 +132,12 @@ class SimulationRunner {
     // Attach I2C (TWI)
     if (config.hasTWI) {
       this.twi = new AVRTWI(this.cpu!, twiConfig, config.frequency);
+      import('./CircuitEngine').then(({ circuitEngine }) => {
+        if (this.twi) {
+          this.twi.eventHandler = (circuitEngine as any).i2cBusManager;
+          console.log('[FORGE] TWI eventHandler bound to CircuitEngine i2cBusManager');
+        }
+      });
     }
 
     // Attach SPI
@@ -455,6 +461,9 @@ class SimulationRunner {
     try {
       let executedInstructions = 0;
       while (this.cpu.cycles - startCycles < cyclesToRun) {
+        if (this.cpu.cycles % 10000 === 0) {
+          console.log(`[CPU TICK] PC=${this.cpu.pc} cycles=${this.cpu.cycles} SP=${this.cpu.SP}`);
+        }
         avrInstruction(this.cpu);
         this.cpu.tick();
 
@@ -658,6 +667,26 @@ class SimulationRunner {
    */
   convertPin(pinLabel: string, isESP32: boolean): PinMapping | null {
     return isESP32 ? this.convertESP32Pin(pinLabel) : this.convertArduinoPin(pinLabel);
+  }
+
+  /**
+   * Helper to check if an AVR pin is configured as an OUTPUT.
+   * Reads the CPU's DDR registers directly.
+   */
+  isPinOutput(pinId: string): boolean {
+    if (!this.cpu) return false;
+    if (pinId.startsWith('ESP')) return false; // Not applicable for AVR
+    const portLetter = pinId.charAt(1);
+    const bit = parseInt(pinId.charAt(2), 10);
+
+    let ddrAddr = 0;
+    if (portLetter === 'B') ddrAddr = 0x24;
+    else if (portLetter === 'C') ddrAddr = 0x27;
+    else if (portLetter === 'D') ddrAddr = 0x2a;
+    else return false;
+
+    const ddrValue = this.cpu.data[ddrAddr];
+    return (ddrValue & (1 << bit)) !== 0;
   }
 
   /**

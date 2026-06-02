@@ -244,12 +244,24 @@ export class ArduinoRuntime {
       for (const n of nodes) {
         if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
           const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
-          const duration_us = distanceCm * 58.2;
-          return Math.round(duration_us);
+          return distanceCm * 58.2;
         }
       }
     } catch (e) { /* store not available */ }
     return 1000;
+  }
+
+  /** Read HC-SR04 distance directly from the store (avoids floating-point round-trip via pulseIn) */
+  getUltrasonicDistanceCm(): number {
+    try {
+      const { nodes } = useForgeStore.getState();
+      for (const n of nodes) {
+        if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
+          return n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
+        }
+      }
+    } catch (e) { /* store not available */ }
+    return 6;
   }
 
   constructor() { }
@@ -980,7 +992,7 @@ export class ArduinoRuntime {
         console.warn('[ArduinoRuntime] delayMicroseconds() called directly — transpiler should have converted to await __delayMicroseconds()');
         if (!self.running || us <= 100) return;
         // For microsecond delays, yield once to the event loop
-        setTimeout(() => {}, 0);
+        setTimeout(() => { }, 0);
       },
 
       // ── pulseIn — measures pulse duration on a pin (used by ultrasonic sensors) ──
@@ -1469,10 +1481,23 @@ export class ArduinoRuntime {
 
       // ── MPU6050 sensor class (read live from store) ─────────
       Adafruit_MPU6050: class {
-        begin(): boolean { return true; }
-        setAccelerometerRange(_r: number): void { }
-        setGyroRange(_r: number): void { }
-        setFilterBandwidth(_b: number): void { }
+        private _accelRange = 0;
+        private _gyroRange = 0;
+        private _filterBw = 0;
+        begin(): boolean {
+          try {
+            const { nodes } = useForgeStore.getState();
+            return nodes.some((n: any) => n.data?.type === 'mpu6050');
+          } catch (e) {
+            return true;
+          }
+        }
+        setAccelerometerRange(r: number): void { this._accelRange = r; }
+        getAccelerometerRange(): number { return this._accelRange; }
+        setGyroRange(r: number): void { this._gyroRange = r; }
+        getGyroRange(): number { return this._gyroRange; }
+        setFilterBandwidth(b: number): void { this._filterBw = b; }
+        getFilterBandwidth(): number { return this._filterBw; }
         getEvent(accelEvt: any, gyroEvt: any, tempEvt: any): boolean {
           let ax = 0, ay = 0, az = 9.8, gx = 0, gy = 0, gz = 0, t = 25;
           try {

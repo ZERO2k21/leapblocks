@@ -1073,10 +1073,48 @@ class CircuitEngine {
       // Register membrane-keypad emulator
       if (node.data?.type === 'membrane-keypad') {
         const nodeId = node.id;
+        
+        // Find row and column pins from connections
+        const keypadEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
+        
+        const rowPins: string[] = new Array(4).fill('');
+        const colPins: string[] = new Array(4).fill('');
+        
+        keypadEdges.forEach(edge => {
+          const isOutput = edge.source === nodeId;
+          const keypadPin = isOutput ? edge.sourceHandle : edge.targetHandle;
+          const boardPin = (isOutput ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '') ?? '';
+          
+          if (!keypadPin || !boardPin) return;
+          const cleanKeypadPin = keypadPin.replace(/__target$/, '');
+          
+          // Map board pin to AVR pin name
+          const mapping = simulationRunner.convertArduinoPin(boardPin);
+          if (!mapping) return;
+          const avrPin = mapping.avrPin;
+          
+          if (cleanKeypadPin.startsWith('R')) {
+            const rowIdx = parseInt(cleanKeypadPin.replace('R', ''), 10) - 1;
+            if (rowIdx >= 0 && rowIdx < 4) {
+              rowPins[rowIdx] = avrPin;
+            }
+          } else if (cleanKeypadPin.startsWith('C')) {
+            const colIdx = parseInt(cleanKeypadPin.replace('C', ''), 10) - 1;
+            if (colIdx >= 0 && colIdx < 4) {
+              colPins[colIdx] = avrPin;
+            }
+          }
+        });
+        
+        console.log(`[KEYPAD] Mapped rows:`, rowPins, `cols:`, colPins);
+        
         const emulator = new KeypadEmulator(
-          [], [], // row/col pins — not used in transpiled path, UI drives via pushKeypadKey
-          (_pin: string, _high: boolean) => { } // no-op pin setter for transpiled path
+          rowPins, colPins,
+          (pin: string, high: boolean) => {
+            simulationRunner.setVirtualInput(pin, high);
+          }
         );
+        emulator.pressKey(null); // Initialize columns to HIGH (pull-up)
         this.keypadEmulators.set(nodeId, emulator);
         console.log(`[KEYPAD] Registered membrane-keypad emulator: nodeId=${nodeId}`);
       }
@@ -1219,10 +1257,9 @@ class CircuitEngine {
             const cleanPin = boardPin.replace(/__target$/, '');
 
             // Try ESP32-C3 RISC-V runner first, then AVR
-            const esp32Mapping = simulationRunner.convertESP32Pin(cleanPin);
-            if (esp32Mapping && esp32Mapping.avrPin && esp32Mapping.avrPin.startsWith('ESP')) {
-              // ESP32-C3 RISC-V path
-              if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
+            if (simulationRunner.isESP32C3Board) {
+              const esp32Mapping = simulationRunner.convertESP32Pin(cleanPin);
+              if (esp32Mapping && esp32Mapping.adcChannel !== undefined) {
                 const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
                 const scaledVoltage = (adcValue / 1023) * 3.3;
                 simulationRunner.setESP32C3AnalogInput(gpioNum, scaledVoltage);
@@ -1367,6 +1404,7 @@ class CircuitEngine {
           } */
 
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
+            'mpu6050',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
             'ir-receiver', 'ir-remote'].includes(pType);
@@ -1892,6 +1930,19 @@ class CircuitEngine {
               propagate('OUT2', a_neg, motorASpeed);
               propagate('OUT3', b_pos, motorBSpeed);
               propagate('OUT4', b_neg, motorBSpeed);
+            }
+
+            // --- Membrane Keypad Emulation ---
+            if (peripheralNode.data?.type === 'membrane-keypad') {
+              console.log(`[KEYPAD LISTENER] avrPin=${avrPin} peripheralPinName=${peripheralPinName} state=${state} isHigh=${isHigh}`);
+              const emulator = this.keypadEmulators.get(peripheralId);
+              if (emulator && peripheralPinName.startsWith('R')) {
+                // A row pin is only considered active LOW if it is configured as OUTPUT and is LOW.
+                // If it is configured as INPUT (high impedance), we treat it as HIGH (inactive).
+                const isOutput = simulationRunner.isPinOutput(avrPin);
+                const activeState = isOutput ? isHigh : true;
+                emulator.onRowChange(avrPin, activeState);
+              }
             }
 
             // --- Stepper Motor Emulation ---

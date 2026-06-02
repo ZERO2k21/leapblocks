@@ -1,5 +1,5 @@
 import { css, html, LitElement, svg } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { property } from 'lit/decorators.js';
 import { pinsFemalePattern } from './patterns/pins-female';
 import { ElementPin } from './pin';
 import { SPACE_KEYS } from './utils/keys';
@@ -11,7 +11,6 @@ function isNumeric(text: string) {
   return !isNaN(parseFloat(text));
 }
 
-@customElement('leap-membrane-keypad')
 export class MembraneKeypadElement extends LitElement {
   /**
    * Number of columns (3 or 4)
@@ -132,10 +131,10 @@ export class MembraneKeypadElement extends LitElement {
       @blur=${(e: FocusEvent) => {
         this.up(text, e.currentTarget as SVGElement);
       }}
-      @mousedown=${() => this.down(text)}
-      @mouseup=${() => this.up(text)}
-      @touchstart=${() => this.down(text)}
-      @touchend=${() => this.up(text)}
+      @mousedown=${(e: MouseEvent) => this.down(text, e.currentTarget as SVGElement)}
+      @mouseup=${(e: MouseEvent) => this.up(text, e.currentTarget as SVGElement)}
+      @touchstart=${(e: TouchEvent) => this.down(text, e.currentTarget as SVGElement)}
+      @touchend=${(e: TouchEvent) => this.up(text, e.currentTarget as SVGElement)}
       @keydown=${(e: KeyboardEvent) =>
         SPACE_KEYS.includes(e.key) && this.down(text, e.currentTarget as SVGElement)}
       @keyup=${(e: KeyboardEvent) =>
@@ -247,6 +246,7 @@ export class MembraneKeypadElement extends LitElement {
   }
 
   private down(key: string, element?: Element) {
+    console.trace(`[KEYPAD ELEMENT] down() called for key "${key}"`);
     if (!this.pressedKeys.has(key)) {
       if (element) {
         element.classList.add('pressed');
@@ -261,6 +261,7 @@ export class MembraneKeypadElement extends LitElement {
   }
 
   private up(key: string, element?: Element) {
+    console.trace(`[KEYPAD ELEMENT] up() called for key "${key}"`);
     if (this.pressedKeys.has(key)) {
       if (element) {
         element.classList.remove('pressed');
@@ -275,6 +276,7 @@ export class MembraneKeypadElement extends LitElement {
   }
 
   private keyStrokeDown(key: string) {
+    console.log(`[KEYPAD ELEMENT] keyStrokeDown() called with key "${key}"`);
     const text = key.toUpperCase();
     const selectedKey = this.shadowRoot?.querySelector(`[data-key-name="${text}"]`);
     if (selectedKey) {
@@ -301,4 +303,8 @@ export class MembraneKeypadElement extends LitElement {
       this.up(text, selectedKey as SVGElement);
     }
   }
+}
+
+if (!customElements.get('leap-membrane-keypad')) {
+  customElements.define('leap-membrane-keypad', MembraneKeypadElement);
 }
