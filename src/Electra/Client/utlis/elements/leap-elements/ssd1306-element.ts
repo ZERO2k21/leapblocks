@@ -3,6 +3,7 @@
 // Default I2C address: 0x3C (60). Some modules use 0x3D.
 import { css, html, LitElement } from 'lit';
 import { ElementPin, i2c } from './pin';
+import oledSvgUrl from '/src/Electra/Client/Assets/oled.svg';
 
 type CanvasContext = CanvasRenderingContext2D | null | undefined;
 
@@ -137,7 +138,7 @@ export class SSD1306Element extends LitElement {
     return html`
       <div class="oled-wrap">
         <img
-          src="/src/Electra/Client/Assets/oled.svg"
+          src="${oledSvgUrl}"
           alt="SSD1306 OLED"
           draggable="false"
         />

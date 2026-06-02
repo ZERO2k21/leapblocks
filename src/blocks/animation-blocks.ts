@@ -1191,12 +1191,12 @@ export const animationBlocks = [
         helpUrl: ''
     },
 
-    // Delete at index - Direct editable text field
+    // Delete at index - Accepts dynamic index input (Number blocks or input())
     {
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
-            { type: 'field_input', name: 'INDEX', text: '1' },
+            { type: 'input_value', name: 'INDEX', check: 'Number' },
             { type: 'field_variable', name: 'LIST', variable: 'hi', variableTypes: ['list'] }
         ],
         previousStatement: null,
