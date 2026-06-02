@@ -17,7 +17,7 @@ export class QRScannerExtension extends Extension {
             blocks: [
                 { opcode: 'qr_scan_camera', blockType: 'command', text: 'scan QR from camera' },
                 { opcode: 'qr_scan_image', blockType: 'command', text: 'scan QR from image [SOURCE]', arguments: { SOURCE: { type: 'string', defaultValue: '' } } },
-                { opcode: 'qr_get_text', blockType: 'reporter', text: 'QR text' },
+                { opcode: 'qr_get_text', blockType: 'reporter', returnType: 'String', text: 'QR text' },
                 { opcode: 'qr_get_count', blockType: 'reporter', text: 'QR scan count' },
             ]
         };

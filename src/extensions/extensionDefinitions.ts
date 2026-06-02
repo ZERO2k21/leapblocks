@@ -627,7 +627,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_speak',
                     message0: 'speak %1',
-                    args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
+                    args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -709,7 +709,20 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             if (!jsGen) return;
 
             jsGen.forBlock['tts_speak'] = (b: any) => {
-                const msg = b.getFieldValue('MESSAGE') || 'Hello';
+                const input = b.getInput('MESSAGE');
+                const targetBlock = input?.connection?.targetBlock();
+                let msg = 'Hello';
+                if (targetBlock) {
+                    if (targetBlock.type === 'text') {
+                        msg = targetBlock.getFieldValue('TEXT') || 'Hello';
+                    } else {
+                        const val = b.getFieldValue('MESSAGE');
+                        if (val !== null && val !== undefined) msg = String(val);
+                    }
+                } else {
+                    const val = b.getFieldValue('MESSAGE');
+                    if (val !== null && val !== undefined) msg = String(val);
+                }
                 return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
             };
             jsGen.forBlock['tts_set_voice'] = (b: any) => {

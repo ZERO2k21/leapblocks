@@ -12,7 +12,7 @@ export class MLEnvironmentExtension extends Extension {
                 { opcode: 'ml_clear_all', blockType: 'command', text: 'clear all samples' },
                 { opcode: 'ml_clear_class', blockType: 'command', text: 'clear samples of [LABEL]', arguments: { LABEL: { type: 'string', defaultValue: 'class1' } } },
                 { opcode: 'ml_analyze', blockType: 'command', text: '[ACTION] classification', arguments: { ACTION: { type: 'dropdown', defaultValue: 'on', menu: [['start', 'on'], ['stop', 'off']] } } },
-                { opcode: 'ml_get_prediction', blockType: 'reporter', text: 'prediction' },
+                { opcode: 'ml_get_prediction', blockType: 'reporter', returnType: 'String', text: 'prediction' },
                 { opcode: 'ml_get_confidence', blockType: 'reporter', text: 'confidence' },
                 { opcode: 'ml_is_class', blockType: 'Boolean', text: 'prediction is [CLASS]?', arguments: { CLASS: { type: 'string', defaultValue: 'class1' } } },
                 { opcode: 'ml_get_class_count', blockType: 'reporter', text: 'number of classes' },

@@ -34,7 +34,7 @@ export class VideoPlayerExtension extends Extension {
                 { opcode: 'video_is_playing', blockType: 'Boolean', text: 'is video playing' },
                 { opcode: 'video_is_loaded', blockType: 'Boolean', text: 'is video loaded' },
                 { opcode: 'video_get_percent', blockType: 'reporter', text: 'video progress %' },
-                { opcode: 'video_get_source', blockType: 'reporter', text: 'video source' },
+                { opcode: 'video_get_source', blockType: 'reporter', returnType: 'String', text: 'video source' },
             ]
         };
     }

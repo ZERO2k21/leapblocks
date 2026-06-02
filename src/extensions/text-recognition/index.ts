@@ -17,8 +17,8 @@ export class TextRecognitionExtension extends Extension {
             blocks: [
                 { opcode: 'ocr_from_camera', blockType: 'command', text: 'capture text from camera' },
                 { opcode: 'ocr_from_image', blockType: 'command', text: 'capture text from image [SOURCE]', arguments: { SOURCE: { type: 'dropdown', defaultValue: 'uploaded', menu: [['uploaded image', 'uploaded'], ['stage backdrop', 'backdrop'], ['url', 'url']] } } },
-                { opcode: 'ocr_get_text', blockType: 'reporter', text: 'recognized text' },
-                { opcode: 'ocr_get_word_count', blockType: 'reporter', text: 'word count' },
+                { opcode: 'ocr_get_text', blockType: 'reporter', returnType: 'String', text: 'recognized text' },
+                { opcode: 'ocr_get_word_count', blockType: 'reporter', returnType: 'Number', text: 'word count' },
                 { opcode: 'ocr_contains', blockType: 'Boolean', text: 'text contains [PHRASE]', arguments: { PHRASE: { type: 'string', defaultValue: 'hello' } } },
             ]
         };

@@ -230,7 +230,7 @@ const leapBlocks = [
         type: 'looks_sayforsecs',
         message0: 'say %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
+            { type: 'input_value', name: 'MESSAGE', check: 'String' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 }
         ],
         previousStatement: null,
@@ -242,7 +242,7 @@ const leapBlocks = [
     {
         type: 'looks_say',
         message0: 'say %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#9966FF',
@@ -253,7 +253,7 @@ const leapBlocks = [
         type: 'looks_thinkforsecs',
         message0: 'think %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
+            { type: 'input_value', name: 'MESSAGE', check: 'String' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 }
         ],
         previousStatement: null,
@@ -265,7 +265,7 @@ const leapBlocks = [
     {
         type: 'looks_think',
         message0: 'think %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#9966FF',

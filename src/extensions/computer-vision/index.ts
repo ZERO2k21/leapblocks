@@ -20,14 +20,14 @@ export class ComputerVisionExtension extends Extension {
                 { opcode: 'vision_analyze', blockType: 'command', text: 'analyze frame' },
                 { opcode: 'vision_detect_objects', blockType: 'command', text: 'detect objects' },
                 { opcode: 'vision_get_object_count', blockType: 'reporter', text: 'object count' },
-                { opcode: 'vision_get_object_name', blockType: 'reporter', text: 'name of object [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
+                { opcode: 'vision_get_object_name', blockType: 'reporter', returnType: 'String', text: 'name of object [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'vision_get_object_confidence', blockType: 'reporter', text: 'confidence of object [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'vision_get_object_x', blockType: 'reporter', text: 'x of object [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'vision_get_object_y', blockType: 'reporter', text: 'y of object [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'vision_is_object_present', blockType: 'Boolean', text: 'is [NAME] present', arguments: { NAME: { type: 'string', defaultValue: 'person' } } },
                 { opcode: 'vision_draw_bounding_boxes', blockType: 'command', text: 'bounding boxes [STATE]', arguments: { STATE: { type: 'dropdown', defaultValue: 'on', menu: [['on', 'on'], ['off', 'off']] } } },
                 { opcode: 'vision_get_face_count', blockType: 'reporter', text: 'face count' },
-                { opcode: 'vision_get_emotion', blockType: 'reporter', text: 'emotion of face [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
+                { opcode: 'vision_get_emotion', blockType: 'reporter', returnType: 'String', text: 'emotion of face [INDEX]', arguments: { INDEX: { type: 'number', defaultValue: 1 } } },
             ]
         };
     }

@@ -14,6 +14,7 @@ export interface BlockDefinition {
         defaultValue?: any;
         menu?: Array<[string, string]>;
     }>;
+    returnType?: 'Number' | 'String' | 'Boolean';
     isEdge?: boolean;
 }
 
@@ -112,7 +113,7 @@ export function blocksToBlocklyDefs(blocks: BlockDefinition[], colour: string): 
                 def.nextStatement = null;
                 break;
             case 'reporter':
-                def.output = 'Number';
+                def.output = block.returnType || 'Number';
                 break;
             case 'Boolean':
                 def.output = 'Boolean';

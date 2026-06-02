@@ -18,7 +18,7 @@ export class SpeechRecognitionExtension extends Extension {
                 { opcode: 'speech_start_listening', blockType: 'command', text: 'start listening' },
                 { opcode: 'speech_stop_listening', blockType: 'command', text: 'stop listening' },
                 { opcode: 'speech_set_language', blockType: 'command', text: 'set speech language to [LANGUAGE]', arguments: { LANGUAGE: { type: 'string', defaultValue: 'en-US' } } },
-                { opcode: 'speech_get_last_result', blockType: 'reporter', text: 'last speech result' },
+                { opcode: 'speech_get_last_result', blockType: 'reporter', returnType: 'String', text: 'last speech result' },
                 { opcode: 'speech_get_confidence', blockType: 'reporter', text: 'speech confidence' },
                 { opcode: 'speech_is_listening', blockType: 'Boolean', text: 'is listening' },
                 { opcode: 'speech_on_result', blockType: 'command', text: 'when speech recognized' },

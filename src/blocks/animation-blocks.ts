@@ -405,7 +405,7 @@ export const animationBlocks = [
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hello!' },
+            { type: 'input_value', name: 'MESSAGE', check: 'String' },
             { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
         ],
         previousStatement: null,
@@ -417,7 +417,7 @@ export const animationBlocks = [
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello!' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,

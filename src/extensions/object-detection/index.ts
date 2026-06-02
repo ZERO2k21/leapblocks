@@ -17,7 +17,7 @@ export class ObjectDetectionExtension extends Extension {
             blocks: [
                 { opcode: 'object_detect', blockType: 'command', text: 'detect objects in camera' },
                 { opcode: 'object_when_detected', blockType: 'command', text: 'when [OBJECT] detected', arguments: { OBJECT: { type: 'dropdown', defaultValue: 'cat', menu: [['cat', 'cat'], ['dog', 'dog'], ['person', 'person'], ['car', 'car'], ['ball', 'ball']] } } },
-                { opcode: 'object_label', blockType: 'reporter', text: 'label of object [N]', arguments: { N: { type: 'number', defaultValue: 1 } } },
+                { opcode: 'object_label', blockType: 'reporter', returnType: 'String', text: 'label of object [N]', arguments: { N: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'object_confidence', blockType: 'reporter', text: 'confidence of object [N]', arguments: { N: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'object_x', blockType: 'reporter', text: 'x of object [N]', arguments: { N: { type: 'number', defaultValue: 1 } } },
                 { opcode: 'object_y', blockType: 'reporter', text: 'y of object [N]', arguments: { N: { type: 'number', defaultValue: 1 } } },
