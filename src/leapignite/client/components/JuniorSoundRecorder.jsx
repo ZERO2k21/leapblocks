@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import AudioRecorder from '../../../scratch-audio/src/audio/audio-recorder';
+import AudioRecorder from '../../../Leap-audio/src/audio/audio-recorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';
 
 // --- SUB-COMPONENTS ---

@@ -19,6 +19,9 @@ import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
 import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
 import { MusicRuntime } from '../extensions/MusicExtension';
+import { OCRRuntime } from '../extensions/TextRecognition';
+import { TTSRuntime } from '../extensions/TextToSpeech';
+import { SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME  — MediaPipe-powered, works in all modern browsers
@@ -680,6 +683,31 @@ class MLRuntime {
 export const mlRuntime = new MLRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEXT TO SPEECH & SPEECH RECOGNITION (imported from standalone extension files)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { TTSRuntime as _TTSRuntime } from '../extensions/TextToSpeech';
+import { SpeechRecognitionRuntime as _SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
+import { WeatherRuntime } from '../extensions/WeatherData';
+import { TranslateRuntime } from '../extensions/Translate';
+import { DataLoggerRuntime } from '../extensions/DataLogger';
+import { VisionRuntime } from '../extensions/ComputerVision';
+import { VideoPlayerRuntime } from '../extensions/VideoPlayer';
+
+// Re-export classes for consumers that import from RuntimeBridge
+export { _TTSRuntime as TTSRuntime };
+export { _SpeechRecognitionRuntime as SpeechRecognitionRuntime };
+export { WeatherRuntime };
+export { TranslateRuntime };
+export { DataLoggerRuntime };
+export { VisionRuntime };
+export { VideoPlayerRuntime };
+
+// Singleton instances for window.runtime
+export const ttsRuntime = new _TTSRuntime();
+export const speechRecognitionRuntime = new _SpeechRecognitionRuntime();
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -707,6 +735,12 @@ export function initRuntime() {
     // Initialize extension runtimes
     const objectDetectionRuntime = new ObjectDetectionRuntime();
     const musicRuntime = new MusicRuntime();
+    const ocrRuntime = new OCRRuntime();
+    const weatherRuntime = new WeatherRuntime();
+    const translateRuntime = new TranslateRuntime();
+    const loggerRuntime = new DataLoggerRuntime();
+    const visionRuntime = new VisionRuntime();
+    const videoRuntime = new VideoPlayerRuntime();
 
     (window as any).runtime = {
         pen: penRuntime,
@@ -717,9 +751,17 @@ export function initRuntime() {
         sprite: spriteRuntime,
         objectDetection: objectDetectionRuntime,
         music: musicRuntime,
+        tts: ttsRuntime,
+        speech: speechRecognitionRuntime,
+        ocr: ocrRuntime,
+        weather: weatherRuntime,
+        translate: translateRuntime,
+        logger: loggerRuntime,
+        vision: visionRuntime,
+        video: videoRuntime,
     };
 
-    console.log('[RuntimeBridge] window.runtime initialized with extensions (including Body & ML)');
+    console.log('[RuntimeBridge] window.runtime initialized with all extensions');
 }
 
 
@@ -742,6 +784,22 @@ export function setFaceVideoElement(video: HTMLVideoElement | null) {
     mlRuntime.setVideoElement(video);
     if ((window as any).runtime?.objectDetection) {
         (window as any).runtime.objectDetection.setVideoElement(video);
+    }
+    if ((window as any).runtime?.ocr) {
+        (window as any).runtime.ocr.setVideoElement(video);
+    }
+    if ((window as any).runtime?.vision) {
+        (window as any).runtime.vision.setVideoElement(video);
+    }
+}
+
+/**
+ * Give the VideoPlayerRuntime a reference to the playback video element.
+ * Call this from Stage.tsx after the video-playback element mounts.
+ */
+export function setVideoPlayerElement(video: HTMLVideoElement | null, container?: HTMLDivElement | null) {
+    if ((window as any).runtime?.video) {
+        (window as any).runtime.video.setVideoElement(video, container);
     }
 }
 

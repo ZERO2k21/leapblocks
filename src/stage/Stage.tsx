@@ -87,7 +87,7 @@ import VariableMonitor from '../components/VariableMonitor';
 import ListMonitor from '../components/ListMonitor';
 import TableMonitor from '../components/TableMonitor';
 import { animationVM } from '../vm/AnimationVM';
-import { setFaceVideoElement } from '../runtime/RuntimeBridge';
+import { setFaceVideoElement, setVideoPlayerElement } from '../runtime/RuntimeBridge';
 
 // ── Monitor type interfaces (unchanged) ────────────────────────────────────
 interface VariableMonitorState {
@@ -193,6 +193,8 @@ export const Stage: React.FC<StageProps> = ({
     const canvasRef     = useRef<HTMLCanvasElement>(null);
     const penCanvasRef  = useRef<HTMLCanvasElement>(null);
     const videoRef      = useRef<HTMLVideoElement>(null);
+    const videoPlaybackRef = useRef<HTMLVideoElement>(null);
+    const videoPlaybackContainerRef = useRef<HTMLDivElement>(null);
     const [draggingSpriteId, setDraggingSpriteId] = useState<string | null>(null);
     const [dragOffset,       setDragOffset]       = useState({ x: 0, y: 0 });
     const prevPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -225,6 +227,14 @@ export const Stage: React.FC<StageProps> = ({
         }
         return () => { stream?.getTracks().forEach(t => t.stop()); };
     }, [isCameraOn]);
+
+    // ── Video Player setup ───────────────────────────────────────────────
+    useEffect(() => {
+        if (videoPlaybackRef.current) {
+            setVideoPlayerElement(videoPlaybackRef.current, videoPlaybackContainerRef.current);
+        }
+        return () => { setVideoPlayerElement(null, null); };
+    }, []);
 
     // ── Canvas click handler (unchanged logic) ─────────────────────────────
     const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -572,6 +582,33 @@ export const Stage: React.FC<StageProps> = ({
                     }}
                 />
             )}
+
+            {/* ── VIDEO PLAYBACK OVERLAY ────────────────────────────────────── */}
+            <div
+                id="video-playback-container"
+                ref={videoPlaybackContainerRef}
+                style={{
+                    position: 'absolute',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '100%', height: '100%',
+                    display: 'none',
+                    overflow: 'hidden',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                }}
+            >
+                <video
+                    id="video-playback"
+                    ref={videoPlaybackRef}
+                    playsInline
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                    }}
+                />
+            </div>
 
             {/* ── MAIN CANVAS ──────────────────────────────────────────────── */}
             {/* CHANGED: maxWidth/maxHeight added so canvas scales down in CSS  */}

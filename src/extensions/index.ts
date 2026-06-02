@@ -13,3 +13,8 @@ export {
     MusicRuntime,
     musicExtension
 } from './MusicExtension';
+
+export {
+    VideoPlayerRuntime,
+    videoPlayerExtension
+} from './VideoPlayer';
