@@ -135,16 +135,26 @@ const log = {
 /**
  * Normalize an asset path for saving.
  * Strips the current origin and converts legacy /scratch/ paths to /leap/.
+ * Preserves data URLs (base64) for custom uploaded assets.
  */
 function normalizeAssetPath(src: string): string {
     if (!src) return src;
+    // Preserve data URLs (custom uploaded images/backdrops) as-is
+    if (src.startsWith('data:')) {
+        return src;
+    }
     try {
         const url = new URL(src, window.location.href);
-        let path = url.pathname;
-        // Convert legacy scratch sprite paths to current leap paths
-        path = path.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
-        // Return relative path (strip leading slash for consistency)
-        return path.startsWith('/') ? path.slice(1) : path;
+        // For absolute URLs from the same origin, strip origin to make relative
+        if (url.origin === window.location.origin) {
+            let path = url.pathname;
+            // Convert legacy scratch sprite paths to current leap paths
+            path = path.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+            // Return relative path (strip leading slash for consistency)
+            return path.startsWith('/') ? path.slice(1) : path;
+        }
+        // External URLs stay as-is
+        return src;
     } catch {
         // If it's not a valid URL, just fix the scratch -> leap mapping
         return src.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
@@ -154,9 +164,14 @@ function normalizeAssetPath(src: string): string {
 /**
  * Resolve an asset path for loading.
  * Ensures legacy /scratch/ paths are rewritten to /leap/.
+ * Preserves data URLs (base64) for custom uploaded assets.
  */
 function resolveAssetPath(src: string): string {
     if (!src) return src;
+    // Preserve data URLs as-is
+    if (src.startsWith('data:')) {
+        return src;
+    }
     // Convert legacy scratch sprite paths to current leap paths
     return src.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
 }
