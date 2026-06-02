@@ -405,9 +405,10 @@ export const animationBlocks = [
         type: 'looks_say_for_secs',
         message0: '🗣️ say %1 for %2 seconds',
         args0: [
-            { type: 'input_value', name: 'MESSAGE', check: 'String' },
-            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
+            { type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] },
+            { type: 'input_value', name: 'SECS', check: 'Number' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -417,7 +418,8 @@ export const animationBlocks = [
     {
         type: 'looks_say',
         message0: '🗣️ say %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -534,9 +536,10 @@ export const animationBlocks = [
         type: 'looks_think_for_secs',
         message0: '💭 think %1 for %2 seconds',
         args0: [
-            { type: 'field_input', name: 'MESSAGE', text: 'Hmm...' },
-            { type: 'field_number', name: 'SECS', value: 2, min: 0.1 },
+            { type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] },
+            { type: 'input_value', name: 'SECS', check: 'Number' },
         ],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -546,7 +549,8 @@ export const animationBlocks = [
     {
         type: 'looks_think',
         message0: '💭 think %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hmm...' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] }],
+        inputsInline: true,
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.looks,
@@ -2119,19 +2123,63 @@ export const animationToolbox = {
             contents: [
                 {
                     kind: 'block',
-                    type: 'looks_say_for_secs'
+                    type: 'looks_say_for_secs',
+                    inputs: {
+                        MESSAGE: {
+                            shadow: {
+                                type: 'text',
+                                fields: { TEXT: 'Hello!' }
+                            }
+                        },
+                        SECS: {
+                            shadow: {
+                                type: 'math_number',
+                                fields: { NUM: 2 }
+                            }
+                        }
+                    }
                 },
                 {
                     kind: 'block',
-                    type: 'looks_say'
+                    type: 'looks_say',
+                    inputs: {
+                        MESSAGE: {
+                            shadow: {
+                                type: 'text',
+                                fields: { TEXT: 'Hello!' }
+                            }
+                        }
+                    }
                 },
                 {
                     kind: 'block',
-                    type: 'looks_think_for_secs'
+                    type: 'looks_think_for_secs',
+                    inputs: {
+                        MESSAGE: {
+                            shadow: {
+                                type: 'text',
+                                fields: { TEXT: 'Hmm...' }
+                            }
+                        },
+                        SECS: {
+                            shadow: {
+                                type: 'math_number',
+                                fields: { NUM: 2 }
+                            }
+                        }
+                    }
                 },
                 {
                     kind: 'block',
-                    type: 'looks_think'
+                    type: 'looks_think',
+                    inputs: {
+                        MESSAGE: {
+                            shadow: {
+                                type: 'text',
+                                fields: { TEXT: 'Hmm...' }
+                            }
+                        }
+                    }
                 },
                 { kind: 'label', text: '── Visibility ──' },
                 { kind: 'block', type: 'looks_show' },

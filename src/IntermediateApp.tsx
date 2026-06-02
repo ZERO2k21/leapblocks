@@ -28,6 +28,8 @@ import { AnimationCompiler } from './generators/animation-generator';
 
 import { initPythonGenerator } from './generators/python-generator'; // Deferred registration
 
+import { migrateWorkspaceBlocks, migrateSingleBlock } from './utils/blocklyMigration';
+
 import { animationVM } from './vm/AnimationVM';
 import type { CompiledScript } from './vm/AnimationVM';
 
@@ -129,6 +131,52 @@ const log = {
     generator: (msg: string, data?: any) => console.log(`[GENERATOR] ${msg}`, data ?? ''),
 
 };
+
+/**
+ * Normalize an asset path for saving.
+ * Strips the current origin and converts legacy /scratch/ paths to /leap/.
+ * Preserves data URLs (base64) for custom uploaded assets.
+ */
+function normalizeAssetPath(src: string): string {
+    if (!src) return src;
+    // Preserve data URLs (custom uploaded images/backdrops) as-is
+    if (src.startsWith('data:')) {
+        return src;
+    }
+    let normalized = src;
+    // Convert legacy scratch sprite paths to current leap paths
+    normalized = normalized.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
+    normalized = normalized.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    return normalized;
+}
+
+/**
+ * Resolve an asset path for loading.
+ * Ensures legacy /scratch/ paths are rewritten to /leap/.
+ * Preserves data URLs (base64) for custom uploaded assets.
+ */
+function resolveAssetPath(src: string): string {
+    if (!src) return src;
+    // Preserve data URLs as-is
+    if (src.startsWith('data:')) {
+        return src;
+    }
+    let resolved = src;
+    // Convert legacy scratch sprite paths to current leap paths
+    resolved = resolved.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
+    resolved = resolved.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    // Fix sprites that changed naming convention from hyphen to underscore in leap folder
+    const NAMING_FIXES: Record<string, string> = {
+        'cat_cat-a.svg': 'cat_cat_a.svg',
+        'cat_cat-b.svg': 'cat_cat_b.svg',
+        'retro_robot_retro_robot-a.svg': 'retro_robot_retro_robot_a.svg',
+        'retro_robot_retro_robot-b.svg': 'retro_robot_retro_robot_b.svg',
+    };
+    for (const [oldName, newName] of Object.entries(NAMING_FIXES)) {
+        resolved = resolved.replace(oldName, newName);
+    }
+    return resolved;
+}
 
 
 
@@ -1931,7 +1979,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         }
 
         for (const b of blocksState) {
-            merged.blocks.blocks.push(reassignBlockIds(b));
+            const migratedBlock = migrateSingleBlock(b);
+            merged.blocks.blocks.push(reassignBlockIds(migratedBlock));
         }
 
         spriteWorkspacesRef.current.set(targetSpriteId, merged);
@@ -1940,7 +1989,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             const json = spriteWorkspacesRef.current.get(targetSpriteId);
             workspaceRef.current.clear();
             if (json && Object.keys(json).length > 0) {
-                Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                const migratedJson = migrateWorkspaceBlocks(json);
+                Blockly.serialization.workspaces.load(migratedJson, workspaceRef.current);
             }
         }
     }, []);
@@ -2294,7 +2344,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             workspaceRef.current.clear();
 
             if (json && Object.keys(json).length > 0) {
-                Blockly.serialization.workspaces.load(json, workspaceRef.current);
+                const migratedJson = migrateWorkspaceBlocks(json);
+                Blockly.serialization.workspaces.load(migratedJson, workspaceRef.current);
                 console.log('[APP] Successfully loaded workspace for target:', spriteId);
             } else {
                 console.log('[APP] Initialized empty workspace for target:', spriteId);
@@ -2884,7 +2935,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 name: sound.name,
 
-                src: sound.src
+                src: normalizeAssetPath(sound.src)
 
             })),
 
@@ -2892,7 +2943,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 name: c.name,
 
-                src: c.image.src
+                src: normalizeAssetPath(c.image.src)
 
             }))
 
@@ -2921,7 +2972,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             workspaces: workspacesData,
             backdrops: stageManager.getAllBackdrops().map(b => ({
                 name: b.name,
-                src: b.src
+                src: normalizeAssetPath(b.src)
             })),
             currentBackdropIndex: stageManager.getCurrentBackdropIndex(),
             broadcasts: animationVM.getBroadcastMessages(),
@@ -3002,22 +3053,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 setProjectName(data.projectName || 'My Project');
 
-
+                console.log(`[LoadProject] Loading ${data.sprites?.length || 0} sprites from file`);
 
                 const newSprites: Sprite[] = [];
                 stageManager.clearSounds();
                 stageManager.clearBackdrops();
 
                 for (const sData of data.sprites) {
+                    console.log(`[LoadProject] Creating sprite: ${sData.name} (id=${sData.id}, type=${sData.spriteType || 'cat'})`);
 
                     const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
 
                     s.setX(sData.x);
-
                     s.setY(sData.y);
-
                     s.pointInDirection(sData.direction);
-
                     s.setSize(sData.size);
 
                     if (sData.visible) s.show(); else s.hide();
@@ -3035,31 +3084,31 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }
                     }
 
-
-
                     for (const cData of sData.costumes) {
-
-                        await s.addCostume(cData.name, cData.src);
-
+                        const resolvedSrc = resolveAssetPath(cData.src);
+                        console.log(`[LoadProject]   Adding costume: ${cData.name} -> ${resolvedSrc}`);
+                        await s.addCostume(cData.name, resolvedSrc);
                     }
+
+                    console.log(`[LoadProject]   Sprite ${sData.name} has ${s.costumes.length} costumes loaded`);
 
                     if (Array.isArray(sData.sounds)) {
                         if (sData.id === 'stage') {
                             for (const soundData of sData.sounds) {
-                                await stageManager.addSound(soundData.name, soundData.src);
+                                await stageManager.addSound(soundData.name, resolveAssetPath(soundData.src));
                             }
                         } else {
                             for (const soundData of sData.sounds) {
-                                await s.addSound(soundData.name, soundData.src);
+                                await s.addSound(soundData.name, resolveAssetPath(soundData.src));
                             }
                         }
                     }
 
                     newSprites.push(s);
-
                     animationVM.registerSprite(s);
-
                 }
+
+                console.log(`[LoadProject] Total sprites loaded: ${newSprites.map(s => s.name).join(', ')}`);
 
 
 
@@ -3067,7 +3116,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 if (Array.isArray(data.backdrops)) {
                     for (const bData of data.backdrops) {
-                        await stageManager.addBackdrop(bData.name, bData.src);
+                        await stageManager.addBackdrop(bData.name, resolveAssetPath(bData.src));
                     }
                     if (typeof data.currentBackdropIndex === 'number' && data.currentBackdropIndex >= 0) {
                         stageManager.setBackdrop(data.currentBackdropIndex);
@@ -3083,10 +3132,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 }
 
                 // 5. Restore All Workspaces to the Map FIRST
+                // Migrate legacy block formats (input_value -> field_input) before storing
 
                 Object.keys(data.workspaces).forEach(id => {
 
-                    spriteWorkspacesRef.current.set(id, data.workspaces[id]);
+                    spriteWorkspacesRef.current.set(id, migrateWorkspaceBlocks(data.workspaces[id]));
 
                 });
 
@@ -3221,7 +3271,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 } else {
                     Blockly.Events.disable();
                     tempWs = new Blockly.Workspace();
-                    Blockly.serialization.workspaces.load(savedJson, tempWs);
+                    const migratedSavedJson = migrateWorkspaceBlocks(savedJson);
+                    Blockly.serialization.workspaces.load(migratedSavedJson, tempWs);
                     Blockly.Events.enable();
                     compileWs = tempWs;
                 }
@@ -5033,7 +5084,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             console.log('[APP] Restoring workspace for sprite after re-init:', targetSpriteId);
 
-                            Blockly.serialization.workspaces.load(savedJson, blocksWorkspace);
+                            const migratedSavedJson = migrateWorkspaceBlocks(savedJson);
+                            Blockly.serialization.workspaces.load(migratedSavedJson, blocksWorkspace);
 
                         }
 

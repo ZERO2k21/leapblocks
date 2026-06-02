@@ -244,7 +244,7 @@ export class ArduinoRuntime {
       for (const n of nodes) {
         if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
           const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
-          const duration_us = distanceCm * 58;
+          const duration_us = distanceCm * 58.2;
           return Math.round(duration_us);
         }
       }
@@ -783,7 +783,7 @@ export class ArduinoRuntime {
       shiftOut(_dataPin: number, _clockPin: number, _bitOrder: number, _val: number): void { },
       // pulseInLong — same as pulseIn but for longer pulses
       pulseInLong(pin: number, state: number, timeout?: number): number {
-        return 0; // stub — real timing not available in browser
+        return self.pulseIn(pin, state, timeout);
       },
       // noInterrupts / interrupts — no-ops in browser simulation
       noInterrupts(): void { },

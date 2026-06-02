@@ -904,7 +904,7 @@ export function createUltrasonicClass(runtime: any) {
 
             // Convert to distance
             if (unit === 'CM') {
-                return duration / 58.0; // Speed of sound: 343 m/s
+                return duration / 58.2; // Speed of sound: 343 m/s
             } else if (unit === 'IN') {
                 return duration / 148.0;
             }
@@ -944,15 +944,15 @@ export function createNewPingClass(runtime: any) {
             runtime.__delayMicroseconds(10);
             runtime.digitalWrite(this.trigPin, 0);
 
-            return runtime.pulseIn(this.echoPin, 1, this.maxDistance * 58 * 2);
+            return runtime.pulseIn(this.echoPin, 1, this.maxDistance * 58.2 * 2);
         }
 
         ping_cm(): number {
-            return this.ping() / 58;
+            return this.ping() / 58.2;
         }
 
         ping_in(): number {
-            return this.ping() / 148;
+            return this.ping() / 148.0;
         }
 
         ping_median(iterations = 5): number {

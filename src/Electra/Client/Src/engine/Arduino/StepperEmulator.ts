@@ -113,7 +113,7 @@ export class StepperEmulator {
 
   // ── Rotation Constraints ───────────────────────────────────────────────────
   private readonly ANGLE_MIN = 0;    // Minimum angle in degrees (0°)
-  private readonly ANGLE_MAX = 359;  // Maximum angle in degrees (359°)
+  private readonly ANGLE_MAX = 360;  // Maximum angle in degrees (360°)
   private constrainRotation = true;  // Enable rotation constraints (0-359°)
   private anglePosition = 0;         // Current angle position (0-359°)
 
@@ -133,7 +133,7 @@ export class StepperEmulator {
     this.anglePosition = 0; // Start at 0°
     this.onUpdate = onUpdate;
 
-    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-359° (${(360 / this.stepsPerRev).toFixed(2)}° per step, wraps)` : 'unbounded'}`);
+    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-360° (${(360 / this.stepsPerRev).toFixed(2)}° per step, wraps)` : 'unbounded'}`);
 
     // Start physics simulation loop for smooth motion
     this.startPhysicsLoop();
@@ -304,11 +304,17 @@ export class StepperEmulator {
 
     // Apply step with proper angle calculation based on stepsPerRev
     if (this.constrainRotation) {
-      // Keep stepCount authoritative, derive angle from normalized step index to avoid float drift.
-      const degreesPerStep = 360 / this.stepsPerRev;
       this.stepCount += direction;
-      const normalizedStep = ((this.stepCount % this.stepsPerRev) + this.stepsPerRev) % this.stepsPerRev;
-      this.anglePosition = normalizedStep * degreesPerStep;
+      // Phase detection direction is inverted from Arduino conventions
+      // (ALL Arduino "CW" steps are detected as CCW due to pin order vs FULL_STEP_SEQ mapping).
+      // Negate direction so angle visually matches the Arduino's intended rotation.
+      // Wrap (0→360→0) so the AVR's step(2048) loop completes normally and serial
+      // output progresses, instead of hanging with steps rejected at the boundary.
+      const degreesPerStep = 360 / this.stepsPerRev;
+      let nextAngle = this.anglePosition + (-direction) * degreesPerStep;
+      if (nextAngle >= 360) nextAngle -= 360;
+      else if (nextAngle < 0) nextAngle += 360;
+      this.anglePosition = nextAngle;
     } else {
       // Original unbounded behavior
       if (this.steppingMode === 'micro') {
@@ -526,6 +532,9 @@ export class StepperEmulator {
   }
 
   public getAngle(): number {
+    if (this.constrainRotation) {
+      return this.anglePosition;
+    }
     const range = this.subStepRange();
     const totalSteps = this.stepCount + (this.microSubStep / range);
     return (totalSteps / this.stepsPerRev) * 360;
@@ -535,7 +544,9 @@ export class StepperEmulator {
     const range = this.subStepRange();
     const moving = this.currentSpeed > 0.1 || Math.abs(this.angularVelocity) > 0.05;
     return {
-      stepCount: this.stepCount,
+      stepCount: this.constrainRotation
+        ? Math.min(this.stepsPerRev, Math.max(0, Math.round(this.anglePosition * this.stepsPerRev / 360)))
+        : this.stepCount,
       microPosition: range > 1 ? this.microSubStep / range : 0,
       angle: this.getAngle(),
       currentSpeed: this.currentSpeed,

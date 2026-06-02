@@ -507,7 +507,8 @@
 }
 
 /* Actual input element while typing */
-.blocklyHtmlInput {
+.blocklyHtmlInput,
+.blocklyWidgetDiv input {
   color: #000 !important;
   background-color: #fff !important;
   border: 2px solid #4C97FF !important;
@@ -518,6 +519,13 @@
   font-size: 13px !important;
   font-weight: 700 !important;
   box-sizing: border-box !important;
+  caret-color: #000 !important;
+}
+
+.blocklyHtmlInput::selection,
+.blocklyWidgetDiv input::selection {
+  background-color: #4C97FF !important;
+  color: #fff !important;
 }
 
 /* Ensure consistency in flyout — dropdowns should also have white bg */
@@ -760,7 +768,7 @@
    BLOCKS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText) {
+.blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.blocklyShadow .blocklyText) {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
   font-size: 13px !important;
   font-weight: 600 !important;

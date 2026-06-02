@@ -185,77 +185,29 @@ export function initPythonGenerator(): void {
     // ═══════════════════════════════════════════════════════════════════════════
 
     pythonGen.forBlock['looks_say'] = function (block: Blockly.Block): string {
-        const input = block.getInput('MESSAGE');
-        const targetBlock = input?.connection?.targetBlock();
-        let msg = '';
-        if (targetBlock) {
-            if (targetBlock.type === 'text') {
-                msg = targetBlock.getFieldValue('TEXT') || '';
-            } else {
-                const val = block.getFieldValue('MESSAGE');
-                if (val !== null && val !== undefined) msg = String(val);
-            }
-        } else {
-            const val = block.getFieldValue('MESSAGE');
-            if (val !== null && val !== undefined) msg = String(val);
-        }
-        return `sprite.say(${JSON.stringify(msg)})\n`;
+        const gen = this;
+        const message = gen.valueToCode(block, 'MESSAGE', ORDER_NONE) || JSON.stringify(block.getFieldValue('MESSAGE') || '');
+        return `sprite.say(${message})\n`;
     };
 
     pythonGen.forBlock['looks_say_for_secs'] = function (block: Blockly.Block): string {
-        const input = block.getInput('MESSAGE');
-        const targetBlock = input?.connection?.targetBlock();
-        let msg = '';
-        if (targetBlock) {
-            if (targetBlock.type === 'text') {
-                msg = targetBlock.getFieldValue('TEXT') || '';
-            } else {
-                const val = block.getFieldValue('MESSAGE');
-                if (val !== null && val !== undefined) msg = String(val);
-            }
-        } else {
-            const val = block.getFieldValue('MESSAGE');
-            if (val !== null && val !== undefined) msg = String(val);
-        }
-        const secs = block.getFieldValue('SECS');
-        return `sprite.say(${JSON.stringify(msg)}, ${secs})\n`;
+        const gen = this;
+        const message = gen.valueToCode(block, 'MESSAGE', ORDER_NONE) || JSON.stringify(block.getFieldValue('MESSAGE') || '');
+        const secs = gen.valueToCode(block, 'SECS', ORDER_NONE) || (block.getFieldValue('SECS') ?? 2);
+        return `sprite.say(${message}, ${secs})\n`;
     };
 
     pythonGen.forBlock['looks_think'] = function (block: Blockly.Block): string {
-        const input = block.getInput('MESSAGE');
-        const targetBlock = input?.connection?.targetBlock();
-        let msg = '';
-        if (targetBlock) {
-            if (targetBlock.type === 'text') {
-                msg = targetBlock.getFieldValue('TEXT') || '';
-            } else {
-                const val = block.getFieldValue('MESSAGE');
-                if (val !== null && val !== undefined) msg = String(val);
-            }
-        } else {
-            const val = block.getFieldValue('MESSAGE');
-            if (val !== null && val !== undefined) msg = String(val);
-        }
-        return `sprite.think(${JSON.stringify(msg)})\n`;
+        const gen = this;
+        const message = gen.valueToCode(block, 'MESSAGE', ORDER_NONE) || JSON.stringify(block.getFieldValue('MESSAGE') || '');
+        return `sprite.think(${message})\n`;
     };
 
     pythonGen.forBlock['looks_think_for_secs'] = function (block: Blockly.Block): string {
-        const input = block.getInput('MESSAGE');
-        const targetBlock = input?.connection?.targetBlock();
-        let msg = '';
-        if (targetBlock) {
-            if (targetBlock.type === 'text') {
-                msg = targetBlock.getFieldValue('TEXT') || '';
-            } else {
-                const val = block.getFieldValue('MESSAGE');
-                if (val !== null && val !== undefined) msg = String(val);
-            }
-        } else {
-            const val = block.getFieldValue('MESSAGE');
-            if (val !== null && val !== undefined) msg = String(val);
-        }
-        const secs = block.getFieldValue('SECS');
-        return `sprite.think(${JSON.stringify(msg)}, ${secs})\n`;
+        const gen = this;
+        const message = gen.valueToCode(block, 'MESSAGE', ORDER_NONE) || JSON.stringify(block.getFieldValue('MESSAGE') || '');
+        const secs = gen.valueToCode(block, 'SECS', ORDER_NONE) || (block.getFieldValue('SECS') ?? 2);
+        return `sprite.think(${message}, ${secs})\n`;
     };
 
     pythonGen.forBlock['looks_switch_costume'] = function (block: Blockly.Block): string {
