@@ -17,11 +17,16 @@
 import * as faceapi from '@vladmandic/face-api';
 import { penManager } from '../engine/PenManager';
 import { spriteManager } from '../engine/SpriteManager';
-import { ObjectDetectionRuntime } from '../extensions/ObjectDetectionExtension';
-import { MusicRuntime } from '../extensions/MusicExtension';
-import { OCRRuntime } from '../extensions/TextRecognition';
-import { TTSRuntime } from '../extensions/TextToSpeech';
-import { SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
+import { ObjectDetectionRuntime } from '../extensions/object-detection/runtime';
+import { MusicRuntime } from '../extensions/music/runtime';
+import { OCRRuntime } from '../extensions/text-recognition/runtime';
+import { TTSRuntime } from '../extensions/text-to-speech/runtime';
+import { SpeechRecognitionRuntime } from '../extensions/speech-recognition/runtime';
+import { VideoSensingRuntime } from '../extensions/video-sensing/runtime';
+import { QRScannerRuntime } from '../extensions/qr-scanner/runtime';
+import { PhysicsEngineRuntime } from '../extensions/physics-engine/runtime';
+import { MakeyMakeyRuntime } from '../extensions/makey-makey/runtime';
+import { VideoPlayerRuntime } from '../extensions/video-player/runtime';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME  — MediaPipe-powered, works in all modern browsers
@@ -539,12 +544,36 @@ class HandPoseRuntime {
 export const handPoseRuntime = new HandPoseRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BODY DETECTION RUNTIME
+// BODY DETECTION RUNTIME — MoveNet real pose detection
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DetectedBody {
     landmarks: Record<string, { x: number; y: number; score?: number }>;
 }
+
+// MoveNet keypoint name mapping: our dropdown names → MoveNet keypoint indices
+const BODY_PART_MAP: Record<string, number> = {
+    nose: 0,
+    left_eye: 1,
+    right_eye: 2,
+    left_ear: 3,
+    right_ear: 4,
+    left_shoulder: 5,
+    right_shoulder: 6,
+    left_elbow: 7,
+    right_elbow: 8,
+    left_wrist: 9,
+    right_wrist: 10,
+    left_hip: 11,
+    right_hip: 12,
+    left_knee: 13,
+    right_knee: 14,
+    left_ankle: 15,
+    right_ankle: 16,
+    // aliases used by blocks
+    left_hand: 9,
+    right_hand: 10,
+};
 
 class BodyDetectionRuntime {
     public bodyCount = 0;
@@ -554,10 +583,17 @@ class BodyDetectionRuntime {
     private analyzeInterval: ReturnType<typeof setInterval> | null = null;
     private lastAnalyzeTime = 0;
 
+    // MoveNet detector (lazy loaded)
+    private detector: any = null;
+    private detectorLoading = false;
+    private detectorReady = false;
+
     setCameraOn(state: string) {
         this.isCameraOn = (state === "on");
         if (this.isCameraOn) {
-            this.videoEl = document.querySelector('video') || document.getElementById('stageVideo') as HTMLVideoElement;
+            if (!this.videoEl) {
+                this.videoEl = document.querySelector('video') || document.getElementById('stageVideo') as HTMLVideoElement;
+            }
             this._startDetection();
         } else {
             this._stopDetection();
@@ -569,6 +605,59 @@ class BodyDetectionRuntime {
             this.setCameraOn("on");
         } else if (action === 'off') {
             this.setCameraOn("off");
+        }
+    }
+
+    private async _loadDetector() {
+        if (this.detectorReady || this.detector) return;
+        if (this.detectorLoading) {
+            // Wait for ongoing load
+            await new Promise<void>((resolve) => {
+                const check = setInterval(() => {
+                    if (this.detectorReady) { clearInterval(check); resolve(); }
+                    if (!this.detectorLoading && !this.detectorReady) { clearInterval(check); resolve(); }
+                }, 200);
+            });
+            return;
+        }
+
+        this.detectorLoading = true;
+        try {
+            // Dynamic import TF.js + pose-detection
+            const tf = await import('@tensorflow/tfjs');
+            await tf.ready();
+
+            const poseDetection = await import('@tensorflow-models/pose-detection');
+
+            // Try CDN approach for pose-detection model
+            const loadScript = (src: string) => new Promise<void>((res, rej) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = () => res();
+                s.onerror = () => rej(new Error(`Failed to load ${src}`));
+                document.head.appendChild(s);
+            });
+
+            // Ensure poseDetection global is available for the detector factory
+            if (!(window as any).poseDetection) {
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
+            }
+
+            const pd = (window as any).poseDetection || poseDetection;
+            if (pd && pd.createDetector) {
+                this.detector = await pd.createDetector(
+                    pd.SupportedModels.MoveNet,
+                    { modelType: pd.movenet?.modelType?.SINGLEPOSE_LIGHTNING || 'SinglePose.Lightning' }
+                );
+                this.detectorReady = true;
+                console.log('[BodyDetection] MoveNet detector ready');
+            } else {
+                console.warn('[BodyDetection] pose-detection not available, using fallback');
+            }
+        } catch (err) {
+            console.warn('[BodyDetection] Could not load MoveNet:', err);
+        } finally {
+            this.detectorLoading = false;
         }
     }
 
@@ -585,28 +674,47 @@ class BodyDetectionRuntime {
             this.analyzeInterval = null;
         }
         this.bodyCount = 0;
+        this.bodies = [];
     }
 
-    private _detectPerson() {
+    private async _detectPerson() {
         if (!this.isCameraOn) return;
         const now = Date.now();
         if (now - this.lastAnalyzeTime < 100) return;
         this.lastAnalyzeTime = now;
 
-        this.bodies = [{
-            landmarks: {
-                nose:       { x: 320, y: 180 },
-                left_hand:  { x: 240, y: 260 },
-                right_hand: { x: 400, y: 250 }
+        // Lazy-load the detector
+        if (!this.detectorReady) {
+            await this._loadDetector();
+        }
+
+        if (this.detector && this.videoEl && this.videoEl.readyState >= 2) {
+            try {
+                const poses = await this.detector.estimatePoses(this.videoEl);
+                const videoW = this.videoEl.videoWidth || 640;
+                const videoH = this.videoEl.videoHeight || 480;
+
+                this.bodies = poses.map((pose: any) => {
+                    const landmarks: Record<string, { x: number; y: number; score?: number }> = {};
+                    for (const kp of pose.keypoints) {
+                        // Map keypoint name to our format
+                        const name = kp.name || '';
+                        // Convert video coords → stage coords (480x360, origin center)
+                        const stageX = Math.round((kp.x / videoW) * 480 - 240);
+                        const stageY = Math.round(180 - (kp.y / videoH) * 360);
+                        landmarks[name] = { x: stageX, y: stageY, score: kp.score };
+                    }
+                    return { landmarks };
+                });
+
+                this.bodyCount = this.bodies.length;
+            } catch (err) {
+                // Silently handle per-frame errors
             }
-        }];
-
-        this.bodyCount = 1;
-
-        const sprite = (window as any).currentSprite || ((window as any).runtime?.sprites && (window as any).runtime.sprites[0]);
-        if (sprite) {
-            sprite.x = this.bodies[0].landmarks.nose.x;
-            sprite.y = this.bodies[0].landmarks.nose.y;
+        } else {
+            // Fallback when no detector: no bodies detected
+            this.bodies = [];
+            this.bodyCount = 0;
         }
     }
 
@@ -616,20 +724,25 @@ class BodyDetectionRuntime {
 
     getX(part: string, bodyIndex = 1): number {
         const body = this.bodies[bodyIndex - 1];
-        return body?.landmarks?.[part]?.x ?? 0;
+        if (!body) return 0;
+        // Try direct match first, then alias
+        const lm = body.landmarks[part] || body.landmarks[part.replace(' ', '_')];
+        return lm?.x ?? 0;
     }
 
     getY(part: string, bodyIndex = 1): number {
         const body = this.bodies[bodyIndex - 1];
-        return body?.landmarks?.[part]?.y ?? 0;
+        if (!body) return 0;
+        const lm = body.landmarks[part] || body.landmarks[part.replace(' ', '_')];
+        return lm?.y ?? 0;
     }
 
-    async setVideoElement(video: HTMLVideoElement | null) {
+    setVideoElement(video: HTMLVideoElement | null) {
         this.videoEl = video;
     }
 
     isVideoReady(): boolean {
-        return true;
+        return !!(this.videoEl && this.videoEl.readyState >= 2);
     }
 
     waitForFirstDetection(_timeoutMs = 5000): Promise<void> {
@@ -640,14 +753,29 @@ class BodyDetectionRuntime {
 export const bodyDetectionRuntime = new BodyDetectionRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ML RUNTIME (Machine Learning Environment)
+// ML RUNTIME — MobileNet + KNN classifier for image classification
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface MLExample {
+    embedding: any; // TF.js tensor
+    label: string;
+}
+
 class MLRuntime {
-    private lastResult: { label: string; confidence: number } | null = null;
+    private lastPrediction: string = 'none';
+    private lastConfidence: number = 0;
     private isDetecting = false;
     private videoEl: HTMLVideoElement | null = null;
     private rafId: number | null = null;
+
+    // MobileNet for feature extraction
+    private mobileNet: any = null;
+    private mobileNetLoading = false;
+    private mobileNetReady = false;
+
+    // KNN classifier data
+    private examples: Record<string, any> = {}; // label → concatenated tensor
+    private trained = false;
 
     setVideoElement(video: HTMLVideoElement | null) {
         this.videoEl = video;
@@ -664,19 +792,213 @@ class MLRuntime {
         }
     }
 
-    getPrediction(): string { return this.lastResult?.label || 'none'; }
-    getConfidence(): number { return this.lastResult?.confidence || 0; }
+    getPrediction(): string { return this.lastPrediction; }
+    getConfidence(): number { return this.lastConfidence; }
+    isClass(targetClass: string): boolean {
+        return this.lastPrediction === targetClass;
+    }
+
+    // ── MobileNet Loading ──────────────────────────────────────────────────
+
+    private async _loadMobileNet() {
+        if (this.mobileNetReady) return;
+        if (this.mobileNetLoading) {
+            await new Promise<void>((resolve) => {
+                const check = setInterval(() => {
+                    if (this.mobileNetReady) { clearInterval(check); resolve(); }
+                    if (!this.mobileNetLoading && !this.mobileNetReady) { clearInterval(check); resolve(); }
+                }, 200);
+            });
+            return;
+        }
+
+        this.mobileNetLoading = true;
+        try {
+            // Load TF.js + MobileNet from CDN (same approach as MLEnvironment.tsx)
+            const loadScript = (src: string) => new Promise<void>((res, rej) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = () => res();
+                s.onerror = () => rej(new Error(`Failed to load ${src}`));
+                document.head.appendChild(s);
+            });
+
+            if (!(window as any).tf) {
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js');
+            }
+            if (!(window as any).mobilenet) {
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js');
+            }
+
+            await (window as any).tf.ready();
+            const model = await (window as any).mobilenet.load({ version: 2, alpha: 1.0 });
+            this.mobileNet = model;
+            this.mobileNetReady = true;
+            console.log('[ML] MobileNet loaded');
+        } catch (err) {
+            console.warn('[ML] Could not load MobileNet:', err);
+        } finally {
+            this.mobileNetLoading = false;
+        }
+    }
+
+    // ── Embedding extraction ───────────────────────────────────────────────
+
+    private _getEmbedding(canvas: HTMLCanvasElement): any | null {
+        if (!this.mobileNet || !(window as any).tf) return null;
+        return (window as any).tf.tidy(() => {
+            const tf = (window as any).tf;
+            const imgTensor = tf.browser.fromPixels(canvas).toFloat().div(127.5).sub(1).expandDims(0);
+            const { values } = this.mobileNet.infer(imgTensor, true);
+            return values.squeeze();
+        });
+    }
+
+    private _captureFrame(): HTMLCanvasElement | null {
+        if (!this.videoEl || this.videoEl.readyState < 2) return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = 224;
+        canvas.height = 224;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(this.videoEl, 0, 0, 224, 224);
+        return canvas;
+    }
+
+    // ── Training API ───────────────────────────────────────────────────────
+
+    async addSample(label: string): Promise<boolean> {
+        if (!this.mobileNetReady) await this._loadMobileNet();
+        if (!this.mobileNetReady) return false;
+
+        const canvas = this._captureFrame();
+        if (!canvas) return false;
+
+        const embedding = this._getEmbedding(canvas);
+        if (!embedding) return false;
+
+        // Store embedding under label
+        if (!this.examples[label]) {
+            this.examples[label] = embedding;
+        } else {
+            const prev = this.examples[label];
+            this.examples[label] = (window as any).tf.concat([prev, embedding], 0);
+            prev.dispose();
+            embedding.dispose();
+        }
+
+        this.trained = false; // Need retrain after adding samples
+        console.log(`[ML] Added sample for "${label}". Total classes: ${Object.keys(this.examples).length}`);
+        return true;
+    }
+
+    train(): boolean {
+        const labels = Object.keys(this.examples);
+        if (labels.length < 2) {
+            console.warn('[ML] Need at least 2 classes to train');
+            return false;
+        }
+
+        const totalSamples = labels.reduce((sum, l) => sum + this.examples[l].shape[0], 0);
+        if (totalSamples < 4) {
+            console.warn('[ML] Need at least 4 total samples to train');
+            return false;
+        }
+
+        this.trained = true;
+        console.log(`[ML] Trained with ${totalSamples} samples across ${labels.length} classes`);
+        return true;
+    }
+
+    // ── Prediction (KNN in-browser) ────────────────────────────────────────
+
+    private async _predict(): Promise<void> {
+        if (!this.trained || !this.mobileNetReady) return;
+
+        const canvas = this._captureFrame();
+        if (!canvas) return;
+
+        const embedding = this._getEmbedding(canvas);
+        if (!embedding) return;
+
+        try {
+            const tf = (window as any).tf;
+            const labels = Object.keys(this.examples);
+            if (!labels.length) { this.lastPrediction = 'none'; this.lastConfidence = 0; return; }
+
+            const emb = embedding.expandDims(0);
+            const scores: Record<string, number> = {};
+
+            for (const label of labels) {
+                const examples = this.examples[label];
+                const sim = tf.tidy(() => {
+                    const normEmb = tf.div(emb, tf.norm(emb));
+                    const normEx = tf.div(examples, tf.norm(examples, 2, 1, true));
+                    return normEmb.matMul(normEx.transpose()).squeeze();
+                });
+                const vals = await sim.data();
+                sim.dispose();
+                const sorted = Array.from(vals).sort((a: any, b: any) => b - a);
+                scores[label] = sorted.slice(0, 3).reduce((s: number, v: any) => s + v, 0) / Math.min(3, sorted.length);
+            }
+
+            emb.dispose();
+
+            const total = Object.values(scores).reduce((s, v) => s + Math.max(0, v), 0) || 1;
+            const confidences: Record<string, number> = {};
+            labels.forEach(l => confidences[l] = Math.max(0, scores[l]) / total);
+            const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b);
+
+            this.lastPrediction = winner;
+            this.lastConfidence = Math.round(confidences[winner] * 100);
+        } catch (err) {
+            console.error('[ML] Prediction error:', err);
+        } finally {
+            embedding.dispose();
+        }
+    }
+
+    // ── Live prediction loop ───────────────────────────────────────────────
 
     private _startLoop() {
         if (!this.videoEl || !this.isDetecting) return;
-        const loop = () => {
+        let lastPredTime = 0;
+        const loop = async () => {
             if (!this.isDetecting || !this.videoEl) return;
-            if (this.videoEl.readyState >= 2) {
-                this.lastResult = { label: 'Class 1', confidence: 95 };
+            const now = Date.now();
+            if (now - lastPredTime > 300 && this.trained) {
+                lastPredTime = now;
+                await this._predict();
             }
             this.rafId = requestAnimationFrame(loop);
         };
         this.rafId = requestAnimationFrame(loop);
+    }
+
+    // ── Utility ────────────────────────────────────────────────────────────
+
+    getClassCount(): number { return Object.keys(this.examples).length; }
+    getSampleCount(label: string): number { return this.examples[label]?.shape[0] ?? 0; }
+    isTrained(): boolean { return this.trained; }
+
+    clearAll() {
+        const tf = (window as any).tf;
+        if (tf) {
+            Object.values(this.examples).forEach((t: any) => t.dispose());
+        }
+        this.examples = {};
+        this.trained = false;
+        this.lastPrediction = 'none';
+        this.lastConfidence = 0;
+    }
+
+    clearClass(label: string) {
+        const tf = (window as any).tf;
+        if (this.examples[label] && tf) {
+            this.examples[label].dispose();
+            delete this.examples[label];
+            this.trained = false;
+        }
     }
 }
 
@@ -686,13 +1008,12 @@ export const mlRuntime = new MLRuntime();
 // TEXT TO SPEECH & SPEECH RECOGNITION (imported from standalone extension files)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { TTSRuntime as _TTSRuntime } from '../extensions/TextToSpeech';
-import { SpeechRecognitionRuntime as _SpeechRecognitionRuntime } from '../extensions/SpeechRecognition';
-import { WeatherRuntime } from '../extensions/WeatherData';
-import { TranslateRuntime } from '../extensions/Translate';
-import { DataLoggerRuntime } from '../extensions/DataLogger';
-import { VisionRuntime } from '../extensions/ComputerVision';
-import { VideoPlayerRuntime } from '../extensions/VideoPlayer';
+import { TTSRuntime as _TTSRuntime } from '../extensions/text-to-speech/runtime';
+import { SpeechRecognitionRuntime as _SpeechRecognitionRuntime } from '../extensions/speech-recognition/runtime';
+import { WeatherRuntime } from '../extensions/weather-data/runtime';
+import { TranslateRuntime } from '../extensions/translate/runtime';
+import { DataLoggerRuntime } from '../extensions/data-logger/runtime';
+import { VisionRuntime } from '../extensions/computer-vision/runtime';
 
 // Re-export classes for consumers that import from RuntimeBridge
 export { _TTSRuntime as TTSRuntime };
@@ -741,6 +1062,10 @@ export function initRuntime() {
     const loggerRuntime = new DataLoggerRuntime();
     const visionRuntime = new VisionRuntime();
     const videoRuntime = new VideoPlayerRuntime();
+    const videoSensingRuntime = new VideoSensingRuntime();
+    const qrScannerRuntime = new QRScannerRuntime();
+    const physicsRuntime = new PhysicsEngineRuntime();
+    const makeyMakeyRuntime = new MakeyMakeyRuntime();
 
     (window as any).runtime = {
         pen: penRuntime,
@@ -759,6 +1084,10 @@ export function initRuntime() {
         logger: loggerRuntime,
         vision: visionRuntime,
         video: videoRuntime,
+        videoSensing: videoSensingRuntime,
+        qrScanner: qrScannerRuntime,
+        physics: physicsRuntime,
+        makeyMakey: makeyMakeyRuntime,
     };
 
     console.log('[RuntimeBridge] window.runtime initialized with all extensions');
@@ -790,6 +1119,12 @@ export function setFaceVideoElement(video: HTMLVideoElement | null) {
     }
     if ((window as any).runtime?.vision) {
         (window as any).runtime.vision.setVideoElement(video);
+    }
+    if ((window as any).runtime?.videoSensing) {
+        (window as any).runtime.videoSensing.setVideoElement(video);
+    }
+    if ((window as any).runtime?.qrScanner) {
+        (window as any).runtime.qrScanner.setVideoElement(video);
     }
 }
 
