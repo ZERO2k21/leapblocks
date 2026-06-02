@@ -1904,7 +1904,7 @@ class CircuitEngine {
                       }
                     });
                   }
-                }, { stepsPerRev, constrainRotation: false }, peripheralId));
+                }, { stepsPerRev, constrainRotation: true }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
