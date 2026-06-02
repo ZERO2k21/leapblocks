@@ -1,14 +1,14 @@
-# Fix Ayati Walking SVG Background Script
+# Fix avery Walking SVG Background Script
 # This script removes ONLY large background rectangles while preserving character design elements
 
-Write-Host "=== Ayati Walking SVG Background Fix ===" -ForegroundColor Cyan
+Write-Host "=== avery Walking SVG Background Fix ===" -ForegroundColor Cyan
 Write-Host ""
 
 $svgFiles = @(
-    "public/assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
-    "public/assets/sprites/leap/ayati_walking_ayati_walking-b.svg",
-    "public/assets/sprites/leap/ayati_walking_ayati_walking-c.svg",
-    "public/assets/sprites/leap/ayati_walking_ayati_walking-d.svg"
+    "public/assets/sprites/leap/avery_walking_avery_walking-a.svg",
+    "public/assets/sprites/leap/avery_walking_avery_walking-b.svg",
+    "public/assets/sprites/leap/avery_walking_avery_walking-c.svg",
+    "public/assets/sprites/leap/avery_walking_avery_walking-d.svg"
 )
 
 $filesFixed = 0

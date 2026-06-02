@@ -152,13 +152,13 @@ export class AnimationCompiler {
                 };
             }
             case 'fd_is_class_detected': {
-                const className = conditionBlock.getFieldValue('CLASS') ?? '';
-                const n = Number(conditionBlock.getFieldValue('N') ?? 1);
+                const classN = Number(conditionBlock.getFieldValue('CLASS_N') ?? 1);
                 return () => {
-                    const detectedClass = (window as any).runtime?.face?.getClassOfFace?.(n) ?? '';
-                    return detectedClass.toLowerCase() === className.toLowerCase();
+                    return !!(window as any).runtime?.face?.isClassDetected?.(classN);
                 };
             }
+            case 'video_sense_motion':
+                return () => !!(window as any).runtime?.videoSensing?.isMotionDetected();
 
             default:
                 console.warn('[AnimationCompiler] Unknown condition block:', conditionBlock.type);
@@ -561,6 +561,14 @@ export class AnimationCompiler {
             case 'video_get_source':
                 return () => (window as any).runtime?.video?.getSource() ?? '';
 
+            // ── QR Scanner string reporter ────────────────────────────────
+            case 'qr_get_text':
+                return () => (window as any).runtime?.qrScanner?.getText() ?? '';
+
+            // ── Makey Makey string reporter ──────────────────────────────
+            case 'makey_get_key':
+                return () => (window as any).runtime?.makeyMakey?.getLastKey() ?? '';
+
             default: {
                 console.warn(`[Compiler] Unknown string block type: ${valueBlock.type} - trying numFunc fallback`);
                 // Try compileNumberValue as fallback, convert to string
@@ -915,14 +923,33 @@ export class AnimationCompiler {
                 const n = Number(valueBlock.getFieldValue('BODY') ?? 1);
                 return () => (window as any).runtime?.bodyDetection?.getY(lm, n) ?? 0;
             }
+            case 'bd_is_part_visible': {
+                const partName = valueBlock.getFieldValue('PART') || 'nose';
+                const bodyIdx = Number(valueBlock.getFieldValue('BODY') ?? 1);
+                return () => {
+                    const bd = (window as any).runtime?.bodyDetection;
+                    if (!bd) return 0;
+                    const x = bd.getX(partName, bodyIdx);
+                    const y = bd.getY(partName, bodyIdx);
+                    return (x !== 0 || y !== 0) ? 1 : 0;
+                };
+            }
 
             // ── ML Environment reporter blocks ─────────────────────────────
             case 'ml_get_confidence':
                 return () => (window as any).runtime?.ml?.getConfidence() ?? 0;
             case 'ml_is_class': {
                 const target = valueBlock.getFieldValue('CLASS') || '';
-                return () => (window as any).runtime?.ml?.getPrediction() === target ? 1 : 0;
+                return () => (window as any).runtime?.ml?.isClass(target) ? 1 : 0;
             }
+            case 'ml_get_class_count':
+                return () => (window as any).runtime?.ml?.getClassCount() ?? 0;
+            case 'ml_get_sample_count': {
+                const mlSampleLabel = valueBlock.getFieldValue('LABEL') || 'class1';
+                return () => (window as any).runtime?.ml?.getSampleCount(mlSampleLabel) ?? 0;
+            }
+            case 'ml_is_trained':
+                return () => (window as any).runtime?.ml?.isTrained() ? 1 : 0;
 
             // ── Object Detection reporter blocks ───────────────────────────
 
@@ -1013,6 +1040,26 @@ export class AnimationCompiler {
             case 'video_is_loaded':
                 return () => (window as any).runtime?.video?.isLoaded() ? 1 : 0;
 
+            // ── Video Sensing number reporters ─────────────────────────────
+            case 'video_motion_level':
+                return () => (window as any).runtime?.videoSensing?.getMotionLevel() ?? 0;
+            case 'video_sense_direction':
+                return () => (window as any).runtime?.videoSensing?.getDirection() ?? 0;
+
+            // ── QR Scanner number reporter ────────────────────────────────
+            case 'qr_get_count':
+                return () => (window as any).runtime?.qrScanner?.getCount() ?? 0;
+
+            // ── Physics Engine number reporters ───────────────────────────
+            case 'physics_get_velocity_x': {
+                const pvxSprite = valueBlock.getFieldValue('SPRITE') || '';
+                return () => (window as any).runtime?.physics?.getVelocityX(pvxSprite) ?? 0;
+            }
+            case 'physics_get_velocity_y': {
+                const pvySprite = valueBlock.getFieldValue('SPRITE') || '';
+                return () => (window as any).runtime?.physics?.getVelocityY(pvySprite) ?? 0;
+            }
+
             default:
                 compilerLog.warn(`Unknown value block: ${valueBlock.type}`);
                 return () => 0;
@@ -1048,7 +1095,7 @@ export class AnimationCompiler {
     }
 
     private compileTopBlock(block: Blockly.Block): CompiledScript | null {
-        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure';
+        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure' | 'physics_collision';
         let triggerKey: string | undefined;
 
         compilerLog.block(block.type, 'checking trigger type...');
@@ -1106,6 +1153,16 @@ export class AnimationCompiler {
                 trigger = 'procedure';
                 triggerKey = block.getFieldValue('NAME');
                 compilerLog.info(`  Trigger: custom procedure (${triggerKey})`);
+                break;
+            case 'physics_on_collision':
+                trigger = 'physics_collision';
+                triggerKey = (block.getFieldValue('SPRITE1') || '') + ':' + (block.getFieldValue('SPRITE2') || '');
+                compilerLog.info(`  Trigger: physics collision (${triggerKey})`);
+                break;
+            case 'makey_on_key':
+                trigger = 'key';
+                triggerKey = block.getFieldValue('KEY') || 'space';
+                compilerLog.info(`  Trigger: makey makey key (${triggerKey})`);
                 break;
             default:
                 compilerLog.info(`  Not an event block (type: ${block.type}), returning null`);
@@ -1453,7 +1510,8 @@ export class AnimationCompiler {
             // New reference-style blocks
             case 'fd_video_on_stage': {
                 const state = block.getFieldValue('STATE') || 'on';
-                step = { type: 'fd_action', action: state } as any;
+                const transparency = Number(block.getFieldValue('TRANSPARENCY') ?? 0);
+                step = { type: 'fd_action', action: state, transparency } as any;
                 break;
             }
             case 'fd_analyse_image': {
@@ -1461,9 +1519,23 @@ export class AnimationCompiler {
                 step = { type: 'fd_action', action: src === 'camera' ? 'on' : 'analyze' } as any;
                 break;
             }
-            case 'fd_show_bounding_box':
-            case 'fd_set_threshold':
-            case 'fd_add_class':
+            case 'fd_show_bounding_box': {
+                const boxState = block.getFieldValue('STATE') || 'show';
+                step = { type: 'fd_report', feature: block.type, state: boxState } as any;
+                break;
+            }
+            case 'fd_set_threshold': {
+                const threshold = Number(block.getFieldValue('THRESHOLD') ?? 0.5);
+                step = { type: 'fd_report', feature: block.type, threshold } as any;
+                break;
+            }
+            case 'fd_add_class': {
+                const classN = Number(block.getFieldValue('CLASS_N') ?? 1);
+                const className = block.getFieldValue('CLASS_NAME') || 'Jarvis';
+                const classSource = block.getFieldValue('SOURCE') || 'camera';
+                step = { type: 'fd_report', feature: block.type, classN, className, classSource } as any;
+                break;
+            }
             case 'fd_reset_class':
             case 'fd_do_face_matching': {
                 // These are runtime-only operations — execute via fd_report step
@@ -1510,6 +1582,11 @@ export class AnimationCompiler {
             case 'hp_guess_sign':
                 step = { type: 'hp_report', feature: 'sign' } as any;
                 break;
+            case 'hp_when_sign': {
+                const signName = block.getFieldValue('SIGN') || '2';
+                step = { type: 'hp_when_sign', sign: signName } as any;
+                break;
+            }
 
             // Body Detection
             case 'bd_camera':
@@ -1520,6 +1597,22 @@ export class AnimationCompiler {
                 break;
 
             // ML Environment
+            case 'ml_add_sample': {
+                const mlLabel = block.getFieldValue('LABEL') || 'class1';
+                step = { type: 'ml_add_sample', label: mlLabel } as any;
+                break;
+            }
+            case 'ml_train':
+                step = { type: 'ml_train' } as any;
+                break;
+            case 'ml_clear_all':
+                step = { type: 'ml_clear_all' } as any;
+                break;
+            case 'ml_clear_class': {
+                const mlClearLabel = block.getFieldValue('LABEL') || 'class1';
+                step = { type: 'ml_clear_class', label: mlClearLabel } as any;
+                break;
+            }
             case 'ml_analyze':
                 step = { type: 'ml_action', action: block.getFieldValue('ACTION') || 'on' } as any;
                 break;
@@ -1700,6 +1793,65 @@ export class AnimationCompiler {
             case 'video_set_loop': {
                 const loopState = block.getFieldValue('LOOP') || 'off';
                 step = { type: 'video_set_loop', loop: loopState === 'on' } as any;
+                break;
+            }
+            case 'video_set_sensitivity': {
+                const vsThreshold = Number(block.getFieldValue('THRESHOLD') || 30);
+                step = { type: 'vs_set_sensitivity', threshold: vsThreshold } as any;
+                break;
+            }
+            case 'qr_scan_camera':
+                step = { type: 'qr_scan_camera' } as any;
+                break;
+            case 'qr_scan_image': {
+                const qrSource = block.getFieldValue('SOURCE') || '';
+                step = { type: 'qr_scan_image', source: qrSource } as any;
+                break;
+            }
+            case 'physics_start':
+                step = { type: 'physics_start' } as any;
+                break;
+            case 'physics_stop':
+                step = { type: 'physics_stop' } as any;
+                break;
+            case 'physics_set_gravity': {
+                const pgx = Number(block.getFieldValue('GX') || 0);
+                const pgy = Number(block.getFieldValue('GY') || 1);
+                step = { type: 'physics_set_gravity', gx: pgx, gy: pgy } as any;
+                break;
+            }
+            case 'physics_add_body': {
+                const pbSprite = block.getFieldValue('SPRITE') || '';
+                step = { type: 'physics_add_body', spriteId: pbSprite } as any;
+                break;
+            }
+            case 'physics_add_force': {
+                const pfSprite = block.getFieldValue('SPRITE') || '';
+                const pfx = Number(block.getFieldValue('FX') || 0);
+                const pfy = Number(block.getFieldValue('FY') || -0.01);
+                step = { type: 'physics_add_force', spriteId: pfSprite, fx: pfx, fy: pfy } as any;
+                break;
+            }
+            case 'physics_set_bounce': {
+                const pbVal = Number(block.getFieldValue('VALUE') || 0.5);
+                step = { type: 'physics_set_bounce', value: pbVal } as any;
+                break;
+            }
+            case 'physics_set_mass': {
+                const pmVal = Number(block.getFieldValue('VALUE') || 1);
+                step = { type: 'physics_set_mass', value: pmVal } as any;
+                break;
+            }
+            case 'physics_set_static': {
+                const psSprite = block.getFieldValue('SPRITE') || '';
+                const psVal = block.getFieldValue('VALUE') || 'no';
+                step = { type: 'physics_set_static', spriteId: psSprite, value: psVal } as any;
+                break;
+            }
+            case 'makey_set_key': {
+                const mmSignal = block.getFieldValue('SIGNAL') || '';
+                const mmKey = block.getFieldValue('KEY') || '';
+                step = { type: 'mm_set_key', signal: mmSignal, key: mmKey } as any;
                 break;
             }
 
