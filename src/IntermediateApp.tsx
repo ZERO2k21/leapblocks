@@ -143,22 +143,11 @@ function normalizeAssetPath(src: string): string {
     if (src.startsWith('data:')) {
         return src;
     }
-    try {
-        const url = new URL(src, window.location.href);
-        // For absolute URLs from the same origin, strip origin to make relative
-        if (url.origin === window.location.origin) {
-            let path = url.pathname;
-            // Convert legacy scratch sprite paths to current leap paths
-            path = path.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
-            // Return relative path (strip leading slash for consistency)
-            return path.startsWith('/') ? path.slice(1) : path;
-        }
-        // External URLs stay as-is
-        return src;
-    } catch {
-        // If it's not a valid URL, just fix the scratch -> leap mapping
-        return src.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
-    }
+    let normalized = src;
+    // Convert legacy scratch sprite paths to current leap paths
+    normalized = normalized.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
+    normalized = normalized.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    return normalized;
 }
 
 /**
@@ -172,8 +161,21 @@ function resolveAssetPath(src: string): string {
     if (src.startsWith('data:')) {
         return src;
     }
+    let resolved = src;
     // Convert legacy scratch sprite paths to current leap paths
-    return src.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
+    resolved = resolved.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
+    resolved = resolved.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    // Fix sprites that changed naming convention from hyphen to underscore in leap folder
+    const NAMING_FIXES: Record<string, string> = {
+        'cat_cat-a.svg': 'cat_cat_a.svg',
+        'cat_cat-b.svg': 'cat_cat_b.svg',
+        'retro_robot_retro_robot-a.svg': 'retro_robot_retro_robot_a.svg',
+        'retro_robot_retro_robot-b.svg': 'retro_robot_retro_robot_b.svg',
+    };
+    for (const [oldName, newName] of Object.entries(NAMING_FIXES)) {
+        resolved = resolved.replace(oldName, newName);
+    }
+    return resolved;
 }
 
 
@@ -3051,22 +3053,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 setProjectName(data.projectName || 'My Project');
 
-
+                console.log(`[LoadProject] Loading ${data.sprites?.length || 0} sprites from file`);
 
                 const newSprites: Sprite[] = [];
                 stageManager.clearSounds();
                 stageManager.clearBackdrops();
 
                 for (const sData of data.sprites) {
+                    console.log(`[LoadProject] Creating sprite: ${sData.name} (id=${sData.id}, type=${sData.spriteType || 'cat'})`);
 
                     const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
 
                     s.setX(sData.x);
-
                     s.setY(sData.y);
-
                     s.pointInDirection(sData.direction);
-
                     s.setSize(sData.size);
 
                     if (sData.visible) s.show(); else s.hide();
@@ -3084,13 +3084,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         }
                     }
 
-
-
                     for (const cData of sData.costumes) {
-
-                        await s.addCostume(cData.name, resolveAssetPath(cData.src));
-
+                        const resolvedSrc = resolveAssetPath(cData.src);
+                        console.log(`[LoadProject]   Adding costume: ${cData.name} -> ${resolvedSrc}`);
+                        await s.addCostume(cData.name, resolvedSrc);
                     }
+
+                    console.log(`[LoadProject]   Sprite ${sData.name} has ${s.costumes.length} costumes loaded`);
 
                     if (Array.isArray(sData.sounds)) {
                         if (sData.id === 'stage') {
@@ -3105,10 +3105,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     }
 
                     newSprites.push(s);
-
                     animationVM.registerSprite(s);
-
                 }
+
+                console.log(`[LoadProject] Total sprites loaded: ${newSprites.map(s => s.name).join(', ')}`);
 
 
 
