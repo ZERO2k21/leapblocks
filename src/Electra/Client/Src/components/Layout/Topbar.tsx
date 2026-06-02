@@ -193,7 +193,6 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         zIndex: 100,
         borderBottom: topbarBorder,
         userSelect: 'none',
-        overflow: 'hidden',
         minWidth: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 0%', minWidth: '0px' }}>

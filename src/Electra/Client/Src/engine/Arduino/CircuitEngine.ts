@@ -1465,7 +1465,7 @@ class CircuitEngine {
               } else {
                 const distStr = peripheralNode.data?.sensorValues?.distance;
                 const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
-                const echoPulseUs = distParam * 58;
+                const echoPulseUs = distParam * 58.2;
 
                 const echoWire = currentStateStore.edges.find(e =>
                   (e.source === peripheralId && (e.sourceHandle === 'ECHO' || e.sourceHandle === 'ECHO__target')) ||
@@ -1780,17 +1780,44 @@ class CircuitEngine {
             if (pType === 'l298n') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
 
-              // Only process if the pin state actually changed in the buffer
-              if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
-                return;
+              // Standard dedup for direction pins (IN1-IN4);
+              // ENA/ENB get PWM dedup separately below.
+              if (peripheralPinName !== 'ENA' && peripheralPinName !== 'ENB') {
+                if (buf[peripheralPinName] === isHigh && buf['_initialized']) {
+                  return;
+                }
               }
+
               buf[peripheralPinName] = isHigh;
-              buf['_initialized'] = true;
+              if (!buf['_initialized']) {
+                buf['_initialized'] = true;
+              }
+
+              // PWM debounce for ENA/ENB: AVR analogWrite() generates a pin-toggle PWM
+              // (~1 kHz).  Without debounce, ena/enb would flicker on/off and the motor
+              // would appear motionless.  We keep the enable active for ~25 ms after the
+              // last observed HIGH — far longer than a single PWM period (~1 ms).
+              if (peripheralPinName === 'ENA' || peripheralPinName === 'ENB') {
+                const now = Date.now();
+                if (isHigh) {
+                  buf[`_${peripheralPinName}_lastHigh`] = now;
+                }
+                const lastHigh = (buf[`_${peripheralPinName}_lastHigh`] as number) || 0;
+                if (!isHigh && (now - lastHigh <= 25)) {
+                  // Still inside a PWM off-cycle — keep the enable asserted
+                  // and do not re-run the (expensive) propagation logic.
+                  return;
+                }
+              }
+
+              // Track per-pin speed from ESP32 analogWrite (isAnalogState with 0-255 value)
+              if (isAnalogState && (peripheralPinName === 'ENA' || peripheralPinName === 'ENB')) {
+                buf[`_${peripheralPinName}_speed`] = pwmIntensity;
+              }
 
               // Cache the 12V terminal power check (very expensive trace)
               // Only re-check if graph hasn't been checked for a while or on start
               if (buf['_lastPowerCheck'] === undefined || (Date.now() - (buf['_lastPowerCheck'] as any)) > 1000) {
-                // FIXED: traceNet now correctly follows wires out of the 12V pin
                 buf['_has12VPower'] = this.traceNet(peripheralId, '12V').some(t => t.type === 'battery-12v');
                 buf['_lastPowerCheck'] = Date.now();
               }
@@ -1805,6 +1832,10 @@ class CircuitEngine {
 
               // Update visuals for L298N itself
               updateNodeData(peripheralId, { ena, enb, in1, in2, in3, in4 });
+
+              // Motor A speed from ENA: ESP32 analogWrite → pwmIntensity, AVR digitalWrite → 1.0
+              const motorASpeed = (buf['_ENA_speed'] as number) ?? 1.0;
+              const motorBSpeed = (buf['_ENB_speed'] as number) ?? 1.0;
 
               // Motor A Logic (OUT1, OUT2)
               let a_pos = false, a_neg = false;
@@ -1825,7 +1856,7 @@ class CircuitEngine {
               if (buf['_lastMotorState'] === motorStateKey) return;
               buf['_lastMotorState'] = motorStateKey;
 
-              const propagate = (outPin: string, signal: boolean) => {
+              const propagate = (outPin: string, signal: boolean, speed: number) => {
                 const targets = this.traceNet(peripheralId, outPin);
                 targets.forEach(target => {
                   const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
@@ -1841,26 +1872,26 @@ class CircuitEngine {
                   if (target.type === 'dc-motor') {
                     const pos = !!newPinStates['pin_POS'];
                     const neg = !!newPinStates['pin_NEG'];
-                    let speed = 0;
+                    let dSpeed = 0;
                     let direction = 'cw';
                     if (pos && !neg) {
-                      speed = 1.0;
+                      dSpeed = speed;
                       direction = 'cw';
                     } else if (!pos && neg) {
-                      speed = 1.0;
+                      dSpeed = speed;
                       direction = 'ccw';
                     }
-                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed, direction });
+                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed: dSpeed, direction });
                   } else {
                     updateNodeData(target.nodeId, { pinStates: newPinStates });
                   }
                 });
               };
 
-              propagate('OUT1', a_pos);
-              propagate('OUT2', a_neg);
-              propagate('OUT3', b_pos);
-              propagate('OUT4', b_neg);
+              propagate('OUT1', a_pos, motorASpeed);
+              propagate('OUT2', a_neg, motorASpeed);
+              propagate('OUT3', b_pos, motorBSpeed);
+              propagate('OUT4', b_neg, motorBSpeed);
             }
 
             // --- Stepper Motor Emulation ---
@@ -1871,13 +1902,19 @@ class CircuitEngine {
                 let rafScheduled = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
-                let stepsPerRev = 200;
-                const parts = gearRatioStr.split(':');
-                if (parts.length === 2) {
-                  const num = parseFloat(parts[0]);
-                  const den = parseFloat(parts[1]);
-                  if (!isNaN(num) && !isNaN(den) && den > 0) {
-                    stepsPerRev = Math.round(200 * (num / den));
+                let stepsPerRev: number;
+                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
+                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
+                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                } else {
+                  stepsPerRev = 200;
+                  const parts = gearRatioStr.split(':');
+                  if (parts.length === 2) {
+                    const num = parseFloat(parts[0]);
+                    const den = parseFloat(parts[1]);
+                    if (!isNaN(num) && !isNaN(den) && den > 0) {
+                      stepsPerRev = Math.round(200 * (num / den));
+                    }
                   }
                 }
 
@@ -1964,13 +2001,19 @@ class CircuitEngine {
                 let rafPending = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
-                let stepsPerRev = 200;
-                const parts = gearRatioStr.split(':');
-                if (parts.length === 2) {
-                  const num = parseFloat(parts[0]);
-                  const den = parseFloat(parts[1]);
-                  if (!isNaN(num) && !isNaN(den) && den > 0) {
-                    stepsPerRev = Math.round(200 * (num / den));
+                let stepsPerRev: number;
+                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
+                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
+                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                } else {
+                  stepsPerRev = 200;
+                  const parts = gearRatioStr.split(':');
+                  if (parts.length === 2) {
+                    const num = parseFloat(parts[0]);
+                    const den = parseFloat(parts[1]);
+                    if (!isNaN(num) && !isNaN(den) && den > 0) {
+                      stepsPerRev = Math.round(200 * (num / den));
+                    }
                   }
                 }
 
@@ -1997,13 +2040,19 @@ class CircuitEngine {
                 let rafPending = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
-                let stepsPerRev = 200;
-                const parts = gearRatioStr.split(':');
-                if (parts.length === 2) {
-                  const num = parseFloat(parts[0]);
-                  const den = parseFloat(parts[1]);
-                  if (!isNaN(num) && !isNaN(den) && den > 0) {
-                    stepsPerRev = Math.round(200 * (num / den));
+                let stepsPerRev: number;
+                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
+                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
+                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                } else {
+                  stepsPerRev = 200;
+                  const parts = gearRatioStr.split(':');
+                  if (parts.length === 2) {
+                    const num = parseFloat(parts[0]);
+                    const den = parseFloat(parts[1]);
+                    if (!isNaN(num) && !isNaN(den) && den > 0) {
+                      stepsPerRev = Math.round(200 * (num / den));
+                    }
                   }
                 }
 

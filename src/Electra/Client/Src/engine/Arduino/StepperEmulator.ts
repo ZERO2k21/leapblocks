@@ -133,7 +133,7 @@ export class StepperEmulator {
     this.anglePosition = 0; // Start at 0°
     this.onUpdate = onUpdate;
 
-    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-360° (${(360 / this.stepsPerRev).toFixed(2)}° per step, clamped)` : 'unbounded'}`);
+    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-360° (${(360 / this.stepsPerRev).toFixed(2)}° per step, wraps)` : 'unbounded'}`);
 
     // Start physics simulation loop for smooth motion
     this.startPhysicsLoop();
@@ -308,13 +308,12 @@ export class StepperEmulator {
       // Phase detection direction is inverted from Arduino conventions
       // (ALL Arduino "CW" steps are detected as CCW due to pin order vs FULL_STEP_SEQ mapping).
       // Negate direction so angle visually matches the Arduino's intended rotation.
+      // Wrap (0→360→0) so the AVR's step(2048) loop completes normally and serial
+      // output progresses, instead of hanging with steps rejected at the boundary.
       const degreesPerStep = 360 / this.stepsPerRev;
-      const nextAngle = this.anglePosition + (-direction) * degreesPerStep;
-      if (nextAngle > this.ANGLE_MAX || nextAngle < this.ANGLE_MIN) {
-        this.stalled = true;
-        this.stepsLost++;
-        return;
-      }
+      let nextAngle = this.anglePosition + (-direction) * degreesPerStep;
+      if (nextAngle >= 360) nextAngle -= 360;
+      else if (nextAngle < 0) nextAngle += 360;
       this.anglePosition = nextAngle;
     } else {
       // Original unbounded behavior

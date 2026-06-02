@@ -1661,7 +1661,7 @@ arduinoGenerator.forBlock['esp32_ultrasonic'] = function (block: any) {
         `  pinMode(trig, OUTPUT); digitalWrite(trig, LOW); delayMicroseconds(2);\n` +
         `  digitalWrite(trig, HIGH); delayMicroseconds(10); digitalWrite(trig, LOW);\n` +
         `  pinMode(echo, INPUT);\n` +
-        `  return pulseInLong(echo, HIGH) / 58.0;\n` +
+        `  return pulseInLong(echo, HIGH) / 58.2;\n` +
         `}`
     );
     return [`_ultrasonicRead(${trig}, ${echo})`, ORDER_ATOMIC];
