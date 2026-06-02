@@ -358,14 +358,14 @@ export default function MediaManager({ appState }) {
 
             {/* Stats Footer - Standardized Pro Style */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/30">
-                <div style={{ gap: '12px' }} className="flex">
-                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-900 mb-1">Total Files</div>
-                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{stats.total}</div>
+                <div className="flex gap-3">
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300 text-center">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-900 mb-1 leading-none">Total Files</div>
+                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{stats.total}</div>
                     </div>
-                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300">
-                        <div style={{ fontSize: '10px', fontWeight: '900' }} className="uppercase tracking-wider text-slate-900 mb-1">Total Size</div>
-                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">{formatFileSize(stats.totalSize)}</div>
+                    <div className="flex-1 relative overflow-hidden p-3.5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-blue-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left transition-all duration-300 text-center">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-900 mb-1 leading-none">Total Size</div>
+                        <div className="text-xl font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{formatFileSize(stats.totalSize)}</div>
                     </div>
                 </div>
                 {selectedFile && (
