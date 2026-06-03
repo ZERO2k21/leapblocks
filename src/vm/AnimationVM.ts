@@ -35,7 +35,7 @@ export interface VMContext {
 }
 
 export interface CompiledScript {
-    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure';
+    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure' | 'physics_collision';
     triggerKey?: string;
     spriteId: string;
     hatBlockId?: string; // Unique identifier for the hat block that started this script
@@ -211,6 +211,22 @@ export type ScriptStep = (
     | { type: 'video_seek'; time: number | (() => number) }
     | { type: 'video_set_position'; x: number | (() => number); y: number | (() => number); size: number | (() => number) }
     | { type: 'video_set_loop'; loop: boolean }
+    // Video Sensing
+    | { type: 'vs_set_sensitivity'; threshold: number | (() => number) }
+    // QR Scanner
+    | { type: 'qr_scan_camera' }
+    | { type: 'qr_scan_image'; source: string | (() => string) }
+    // Physics Engine
+    | { type: 'physics_start' }
+    | { type: 'physics_stop' }
+    | { type: 'physics_set_gravity'; gx: number | (() => number); gy: number | (() => number) }
+    | { type: 'physics_add_body'; spriteId: string | (() => string) }
+    | { type: 'physics_add_force'; spriteId: string | (() => string); fx: number | (() => number); fy: number | (() => number) }
+    | { type: 'physics_set_bounce'; value: number | (() => number) }
+    | { type: 'physics_set_mass'; value: number | (() => number) }
+    | { type: 'physics_set_static'; spriteId: string | (() => string); value: string }
+    // Makey Makey
+    | { type: 'mm_set_key'; signal: string | (() => string); key: string | (() => string) }
 ) & { blockId?: string };
 
 // Logging utility for AnimationVM
@@ -277,6 +293,10 @@ export class AnimationVM {
     // Refactor: stageScripts is redundant if the stage is registered as a sprite,
     // but we'll keep it as a proxy for the stage's scripts for backward compatibility if needed.
     public stageScripts: CompiledScript[] = [];
+
+    // Greater-than trigger polling
+    private greaterThanPollingId: ReturnType<typeof setInterval> | null = null;
+    private greaterThanFired: Set<string> = new Set(); // Track which hat blocks have already fired
 
     constructor() {
         // Initialize sound manager
@@ -675,6 +695,9 @@ export class AnimationVM {
             }
         }
 
+        // Start polling for greater_than triggers (e.g. "when timer > 5")
+        this.startGreaterThanPolling();
+
         if (flagScripts === 0) {
             this.checkAllFinished();
         }
@@ -766,6 +789,9 @@ export class AnimationVM {
     stopAll(): void {
         vmLog.info('stopAll() called');
         this.setRunning(false);
+
+        // Stop greater_than trigger polling
+        this.stopGreaterThanPolling();
 
         // Resolve any pending pause so aborted scripts can exit cleanly
         if (this.isPaused && this.resolvePause) {
@@ -1493,6 +1519,7 @@ export class AnimationVM {
             // Face Detection extension steps
             case 'fd_action' as any: {
                 const fdAction = (step as any).action;
+                const fdTransparency = (step as any).transparency;
                 // Turn camera on/off via React state callback
                 if (typeof window !== 'undefined') {
                     if (fdAction === 'on' || fdAction === 'analyze') {
@@ -1503,6 +1530,10 @@ export class AnimationVM {
                     // Also call face runtime to start/stop detection loop
                     if ((window as any).runtime?.face) {
                         (window as any).runtime.face.analyse(fdAction);
+                        // Apply transparency if provided
+                        if (fdTransparency !== undefined) {
+                            (window as any).runtime.face.setVideoTransparency?.(fdTransparency);
+                        }
                     }
                 }
                 break;
@@ -1515,16 +1546,26 @@ export class AnimationVM {
                     let result: string;
 
                     switch (feature) {
-                        case 'fd_show_bounding_box':
-                            face.setBoundingBox?.('show');
+                        case 'fd_show_bounding_box': {
+                            const boxState = (step as any).state || 'show';
+                            face.setBoundingBox?.(boxState);
                             result = '';
                             break;
-                        case 'fd_set_threshold':
+                        }
+                        case 'fd_set_threshold': {
+                            const threshold = (step as any).threshold ?? 0.5;
+                            face.setThreshold?.(threshold);
                             result = '';
                             break;
-                        case 'fd_add_class':
+                        }
+                        case 'fd_add_class': {
+                            const classN = (step as any).classN ?? 1;
+                            const className = (step as any).className || 'Jarvis';
+                            const classSource = (step as any).classSource || 'camera';
+                            face.addClass?.(classN, className, classSource);
                             result = '';
                             break;
+                        }
                         case 'fd_reset_class':
                             face.resetClasses?.();
                             result = '';
@@ -1568,6 +1609,19 @@ export class AnimationVM {
                 }
                 break;
             }
+            case 'hp_when_sign' as any: {
+                // Event-style block: check if current hand sign matches
+                const targetSign = (step as any).sign || '2';
+                if (typeof window !== 'undefined' && (window as any).runtime?.handPose) {
+                    const currentSign = (window as any).runtime.handPose.getSign();
+                    const signMap: Record<string, string> = { '2': 'Peace', '5': 'Open', 'thumbs_up': 'Thumbs Up' };
+                    const targetName = signMap[targetSign] || targetSign;
+                    if (currentSign === targetName) {
+                        vmLog.info(`Hand sign matched: ${targetName}`);
+                    }
+                }
+                break;
+            }
 
 
 
@@ -1591,6 +1645,38 @@ export class AnimationVM {
                 const mlAction = (step as any).action;
                 if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
                     (window as any).runtime.ml.analyse(mlAction);
+                }
+                break;
+            }
+            case 'ml_add_sample' as any: {
+                const mlLabel = (step as any).label || 'class1';
+                if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
+                    (window as any).__setCameraOn?.(true);
+                    await new Promise(r => setTimeout(r, 500)); // let camera warm up
+                    await (window as any).runtime.ml.addSample(mlLabel);
+                    vmLog.info(`ML: Added sample for "${mlLabel}"`);
+                }
+                break;
+            }
+            case 'ml_train' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
+                    (window as any).runtime.ml.train();
+                    vmLog.info('ML: Model trained');
+                }
+                break;
+            }
+            case 'ml_clear_all' as any: {
+                if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
+                    (window as any).runtime.ml.clearAll();
+                    vmLog.info('ML: Cleared all samples');
+                }
+                break;
+            }
+            case 'ml_clear_class' as any: {
+                const mlClearLabel = (step as any).label || 'class1';
+                if (typeof window !== 'undefined' && (window as any).runtime?.ml) {
+                    (window as any).runtime.ml.clearClass(mlClearLabel);
+                    vmLog.info(`ML: Cleared class "${mlClearLabel}"`);
                 }
                 break;
             }
@@ -1982,6 +2068,104 @@ export class AnimationVM {
                 if (typeof window !== 'undefined' && (window as any).runtime?.video) {
                     (window as any).runtime.video.setLoop(videoLoop);
                     vmLog.info('Video set loop', videoLoop);
+                }
+                break;
+            }
+            case 'vs_set_sensitivity': {
+                const vsThreshold = typeof (step as any).threshold === 'function' ? (step as any).threshold() : (step as any).threshold;
+                if (typeof window !== 'undefined' && (window as any).runtime?.videoSensing) {
+                    (window as any).runtime.videoSensing.setSensitivity(vsThreshold);
+                    vmLog.info('Video Sensing set sensitivity', vsThreshold);
+                }
+                break;
+            }
+            case 'qr_scan_camera': {
+                if (typeof window !== 'undefined' && (window as any).runtime?.qrScanner) {
+                    await (window as any).runtime.qrScanner.scanCamera();
+                    vmLog.info('QR Scanner: camera scan');
+                }
+                break;
+            }
+            case 'qr_scan_image': {
+                const qrSource = typeof (step as any).source === 'function' ? (step as any).source() : (step as any).source;
+                if (typeof window !== 'undefined' && (window as any).runtime?.qrScanner) {
+                    await (window as any).runtime.qrScanner.scanImage(qrSource);
+                    vmLog.info('QR Scanner: image scan', qrSource);
+                }
+                break;
+            }
+            case 'physics_start': {
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.start();
+                    vmLog.info('Physics engine started');
+                }
+                break;
+            }
+            case 'physics_stop': {
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.stop();
+                    vmLog.info('Physics engine stopped');
+                }
+                break;
+            }
+            case 'physics_set_gravity': {
+                const pgx = typeof (step as any).gx === 'function' ? (step as any).gx() : (step as any).gx;
+                const pgy = typeof (step as any).gy === 'function' ? (step as any).gy() : (step as any).gy;
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.setGravity(pgx, pgy);
+                    vmLog.info('Physics set gravity', { x: pgx, y: pgy });
+                }
+                break;
+            }
+            case 'physics_add_body': {
+                const pbSprite = typeof (step as any).spriteId === 'function' ? (step as any).spriteId() : (step as any).spriteId;
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.addBody(pbSprite);
+                    vmLog.info('Physics add body', pbSprite);
+                }
+                break;
+            }
+            case 'physics_add_force': {
+                const pfSprite = typeof (step as any).spriteId === 'function' ? (step as any).spriteId() : (step as any).spriteId;
+                const pfx = typeof (step as any).fx === 'function' ? (step as any).fx() : (step as any).fx;
+                const pfy = typeof (step as any).fy === 'function' ? (step as any).fy() : (step as any).fy;
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.addForce(pfSprite, pfx, pfy);
+                    vmLog.info('Physics add force', { sprite: pfSprite, fx: pfx, fy: pfy });
+                }
+                break;
+            }
+            case 'physics_set_bounce': {
+                const pbVal = typeof (step as any).value === 'function' ? (step as any).value() : (step as any).value;
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.setBounce(sprite.id, pbVal);
+                    vmLog.info('Physics set bounce', pbVal);
+                }
+                break;
+            }
+            case 'physics_set_mass': {
+                const pmVal = typeof (step as any).value === 'function' ? (step as any).value() : (step as any).value;
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.setMass(sprite.id, pmVal);
+                    vmLog.info('Physics set mass', pmVal);
+                }
+                break;
+            }
+            case 'physics_set_static': {
+                const psSprite = typeof (step as any).spriteId === 'function' ? (step as any).spriteId() : (step as any).spriteId;
+                const psVal = (step as any).value === 'yes';
+                if (typeof window !== 'undefined' && (window as any).runtime?.physics) {
+                    (window as any).runtime.physics.setStatic(psSprite, psVal);
+                    vmLog.info('Physics set static', { sprite: psSprite, value: psVal });
+                }
+                break;
+            }
+            case 'mm_set_key': {
+                const mmSignal = typeof (step as any).signal === 'function' ? (step as any).signal() : (step as any).signal;
+                const mmKey = typeof (step as any).key === 'function' ? (step as any).key() : (step as any).key;
+                if (typeof window !== 'undefined' && (window as any).runtime?.makeyMakey) {
+                    (window as any).runtime.makeyMakey.setKeyMap(mmSignal, mmKey);
+                    vmLog.info('Makey Makey set key', { signal: mmSignal, key: mmKey });
                 }
                 break;
             }
@@ -2590,10 +2774,93 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
     resetTimer(): void {
         this.timerStart = Date.now();
+        // Reset greater_than fired states so timer-based triggers can fire again
+        this.greaterThanFired.clear();
     }
 
     getTimer(): number {
         return (Date.now() - this.timerStart) / 1000;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // GREATER-THAN TRIGGER POLLING
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Start polling for "when timer/loudness > X" hat blocks.
+     * These triggers need a periodic check since they aren't event-driven.
+     * Uses edge detection: fires once when the condition transitions from false to true.
+     */
+    private startGreaterThanPolling(): void {
+        this.stopGreaterThanPolling();
+        this.greaterThanFired.clear();
+
+        const allSprites = spriteManager.getAllSprites();
+        const allScripts: CompiledScript[] = [];
+
+        for (const sprite of allSprites) {
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                if (script.trigger === 'greater_than') {
+                    allScripts.push(script);
+                }
+            }
+        }
+        // Also check stage scripts
+        for (const script of this.stageScripts) {
+            if (script.trigger === 'greater_than') {
+                allScripts.push(script);
+            }
+        }
+
+        if (allScripts.length === 0) return;
+
+        vmLog.info(`Starting greater_than polling for ${allScripts.length} script(s)`);
+
+        this.greaterThanPollingId = setInterval(() => {
+            if (!this.isRunning) return;
+
+            for (const script of allScripts) {
+                if (!script.triggerKey) continue;
+
+                const [sensor, valueStr] = script.triggerKey.split(':');
+                const threshold = Number(valueStr);
+                if (isNaN(threshold)) continue;
+
+                let currentValue = 0;
+                if (sensor === 'timer') {
+                    currentValue = this.getTimer();
+                } else if (sensor === 'loudness') {
+                    currentValue = this.getLoudness() || 0;
+                } else {
+                    continue;
+                }
+
+                const conditionMet = currentValue > threshold;
+                const hatId = script.hatBlockId || script.triggerKey;
+
+                if (conditionMet && !this.greaterThanFired.has(hatId)) {
+                    // Condition just became true — fire the script (edge trigger)
+                    this.greaterThanFired.add(hatId);
+                    this.setRunning(true);
+                    this.stopScriptByHat(script.spriteId, hatId);
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in greater_than trigger script', err);
+                    });
+                } else if (!conditionMet) {
+                    // Condition no longer met — allow re-firing next time it crosses threshold
+                    this.greaterThanFired.delete(hatId);
+                }
+            }
+        }, 100); // Poll every 100ms (matches Scratch behavior)
+    }
+
+    private stopGreaterThanPolling(): void {
+        if (this.greaterThanPollingId !== null) {
+            clearInterval(this.greaterThanPollingId);
+            this.greaterThanPollingId = null;
+        }
+        this.greaterThanFired.clear();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2625,6 +2892,11 @@ export class AnimationVM {
             this.onBeforeBroadcast(message);
         }
 
+        // Collect scripts to run, then defer execution to break synchronous recursion.
+        // Without deferral, triggerBroadcast → runScript → executeSteps → broadcast step
+        // → triggerBroadcast creates an infinite synchronous call chain that overflows.
+        const scriptsToRun: CompiledScript[] = [];
+
         // 2. Use the cached broadcast listeners for efficiency
         const listeners = this.broadcastListeners.get(normalizedMessage) || [];
 
@@ -2638,39 +2910,71 @@ export class AnimationVM {
                 }
                 const targetSprite = spriteManager.getSprite(script.spriteId);
                 console.log(`[AnimationVM]   -> Triggering receiver on sprite: ${targetSprite?.name || script.spriteId}`);
-                this.runScript(script).catch(err => {
-                    vmLog.error('Error in broadcast receive script', err);
-                });
+                scriptsToRun.push(script);
             }
-            return;
+        } else {
+            // Fallback: Scan all sprites if the cache is empty or doesn't match
+            // (This handles cases where setScripts wasn't called correctly)
+            let matchedInFallback = 0;
+            const allSprites = spriteManager.getAllSprites();
+            vmLog.info(`TriggerBroadcast Fallback: scanning ${allSprites.length} entities for message: ${message}`);
+
+            for (const sprite of allSprites) {
+                const scripts = (sprite.scripts as CompiledScript[]) || [];
+                for (const script of scripts) {
+                    if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
+                        matchedInFallback++;
+                        this.setRunning(true);
+                        if (script.hatBlockId) {
+                            this.stopScriptByHat(sprite.id, script.hatBlockId);
+                        }
+                        console.log(`[AnimationVM]   -> Triggering fallback receiver on sprite: ${sprite.name} (${sprite.id})`);
+                        scriptsToRun.push(script);
+                    }
+                }
+            }
+            if (matchedInFallback > 0) {
+                console.log(`[AnimationVM] TriggerBroadcast Fallback: Dispatched "${message}" to ${matchedInFallback} matching script(s) via full scan.`);
+            } else {
+                console.log(`[AnimationVM] TriggerBroadcast: No receivers found for "${message}" across ${allSprites.length} sprites.`);
+            }
         }
 
-        // Fallback: Scan all sprites if the cache is empty or doesn't match
-        // (This handles cases where setScripts wasn't called correctly)
-        let matchedInFallback = 0;
-        const allSprites = spriteManager.getAllSprites();
-        vmLog.info(`TriggerBroadcast Fallback: scanning ${allSprites.length} entities for message: ${message}`);
+        // Defer all script execution to the next microtask to prevent stack overflow
+        // from recursive broadcast chains (broadcast triggers script that broadcasts again)
+        if (scriptsToRun.length > 0) {
+            queueMicrotask(() => {
+                for (const script of scriptsToRun) {
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in broadcast receive script', err);
+                    });
+                }
+            });
+        }
+    }
 
+    triggerPhysicsCollision(sprite1Id: string, sprite2Id: string): void {
+        const triggerKey = `${sprite1Id}:${sprite2Id}`;
+        const triggerKeyReverse = `${sprite2Id}:${sprite1Id}`;
+        vmLog.info(`Physics collision: ${sprite1Id} <-> ${sprite2Id}`);
+
+        const allSprites = spriteManager.getAllSprites();
         for (const sprite of allSprites) {
             const scripts = (sprite.scripts as CompiledScript[]) || [];
             for (const script of scripts) {
-                if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
-                    matchedInFallback++;
-                    this.setRunning(true);
-                    if (script.hatBlockId) {
-                        this.stopScriptByHat(sprite.id, script.hatBlockId);
+                if (script.trigger === 'physics_collision') {
+                    const key = script.triggerKey || '';
+                    if (key === triggerKey || key === triggerKeyReverse) {
+                        this.setRunning(true);
+                        if (script.hatBlockId) {
+                            this.stopScriptByHat(script.spriteId, script.hatBlockId);
+                        }
+                        this.runScript(script).catch(err => {
+                            vmLog.error('Error in physics collision script', err);
+                        });
                     }
-                    console.log(`[AnimationVM]   -> Triggering fallback receiver on sprite: ${sprite.name} (${sprite.id})`);
-                    this.runScript(script).catch(err => {
-                        vmLog.error('Error in fallback broadcast receive script', err);
-                    });
                 }
             }
-        }
-        if (matchedInFallback > 0) {
-            console.log(`[AnimationVM] TriggerBroadcast Fallback: Dispatched "${message}" to ${matchedInFallback} matching script(s) via full scan.`);
-        } else {
-            console.log(`[AnimationVM] TriggerBroadcast: No receivers found for "${message}" across ${allSprites.length} sprites.`);
         }
     }
 
@@ -2684,7 +2988,8 @@ export class AnimationVM {
             this.onBeforeBroadcast(message);
         }
 
-        const promises: Promise<void>[] = [];
+        // Collect scripts to run, then defer execution to break synchronous recursion.
+        const scriptsToRun: CompiledScript[] = [];
 
         // 2. Use cached listeners if available
         const listeners = this.broadcastListeners.get(normalizedMessage) || [];
@@ -2694,7 +2999,7 @@ export class AnimationVM {
                 if (script.hatBlockId) {
                     this.stopScriptByHat(script.spriteId, script.hatBlockId);
                 }
-                promises.push(this.runScript(script));
+                scriptsToRun.push(script);
             }
         } else {
             // Fallback scan
@@ -2707,13 +3012,21 @@ export class AnimationVM {
                         if (script.hatBlockId) {
                             this.stopScriptByHat(sprite.id, script.hatBlockId);
                         }
-                        promises.push(this.runScript(script));
+                        scriptsToRun.push(script);
                     }
                 }
             }
         }
 
-        if (promises.length > 0) {
+        if (scriptsToRun.length > 0) {
+            // Defer script execution to prevent stack overflow from recursive broadcast chains
+            const promises = scriptsToRun.map(script =>
+                new Promise<void>((resolve, reject) => {
+                    queueMicrotask(() => {
+                        this.runScript(script).then(resolve, reject);
+                    });
+                })
+            );
             await Promise.all(promises);
         }
     }

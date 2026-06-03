@@ -8,7 +8,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_speak',
         message0: 'speak %1',
-        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
+        args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -178,7 +178,20 @@ export function registerTextToSpeechGenerators() {
     if (!jsGen) return;
 
     jsGen['tts_speak'] = (block: any) => {
-        const msg = block.getFieldValue('MESSAGE') || 'Hello';
+        const input = block.getInput('MESSAGE');
+        const targetBlock = input?.connection?.targetBlock();
+        let msg = 'Hello';
+        if (targetBlock) {
+            if (targetBlock.type === 'text') {
+                msg = targetBlock.getFieldValue('TEXT') || 'Hello';
+            } else {
+                const val = block.getFieldValue('MESSAGE');
+                if (val !== null && val !== undefined) msg = String(val);
+            }
+        } else {
+            const val = block.getFieldValue('MESSAGE');
+            if (val !== null && val !== undefined) msg = String(val);
+        }
         return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
     };
     jsGen['tts_set_voice'] = (block: any) => {

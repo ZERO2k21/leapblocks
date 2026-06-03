@@ -437,6 +437,34 @@ interface TableMonitorState {
 
 
 
+/**
+ * Recursively scan workspace JSON blocks for broadcast-related field values
+ * and register them with the AnimationVM. This ensures Blockly dropdown
+ * validation passes when loading workspaces that reference custom broadcast
+ * messages (e.g. "Game Over") that aren't yet in the broadcast registry.
+ */
+function extractBroadcastValues(workspaceJson: { blocks?: { blocks?: any[] } }, vm: typeof animationVM): void {
+    const blocks = workspaceJson?.blocks?.blocks || [];
+    const scanBlock = (block: any): void => {
+        if (!block) return;
+        if (block.fields) {
+            const value = block.fields.BROADCAST_INPUT || block.fields.BROADCAST_OPTION || block.fields.MESSAGE;
+            if (value && value !== 'new') {
+                vm.registerBroadcast(String(value));
+            }
+        }
+        if (block.inputs) {
+            for (const key of Object.keys(block.inputs)) {
+                const input = block.inputs[key];
+                if (input?.block) scanBlock(input.block);
+                if (input?.shadow) scanBlock(input.shadow);
+            }
+        }
+        if (block.next?.block) scanBlock(block.next.block);
+    };
+    blocks.forEach(scanBlock);
+}
+
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds' }> = ({ onBack, onOpenPython, openTab = 'blocks' }) => {
 
     // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
@@ -482,7 +510,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const [isRunning, setIsRunning] = useState(false);
 
-
+    // Keep ref in sync with isRunning state (for use in intervals/callbacks with stale closures)
+    useEffect(() => {
+        isRunningRef.current = isRunning;
+    }, [isRunning]);
 
     useEffect(() => {
 
@@ -523,6 +554,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const isLoadingWorkspaceRef = useRef(false);
 
     const syncAllWorkspacesRef = useRef<(() => CompiledScript[]) | null>(null);
+
+    // Ref to track isRunning for sensing sync (avoids stale closure in setInterval)
+    const isRunningRef = useRef(false);
 
     // Drag-tracking refs for block-to-sprite copying
     const draggedBlockStateRef = useRef<any>(null);
@@ -780,6 +814,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const variableMonitorsRef = useRef(variableMonitors);
     const listMonitorsRef = useRef(listMonitors);
+    const tableMonitorsRef = useRef(tableMonitors);
     const sensingMonitorsRef = useRef(sensingMonitors);
     const syncedVariableMonitorNamesRef = useRef<Set<string>>(new Set());
 
@@ -792,8 +827,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     }, [listMonitors]);
 
     useEffect(() => {
+        tableMonitorsRef.current = tableMonitors;
+    }, [tableMonitors]);
+
+    useEffect(() => {
         sensingMonitorsRef.current = sensingMonitors;
     }, [sensingMonitors]);
+
+    const tableMonitorsRef = useRef(tableMonitors);
+    useEffect(() => {
+        tableMonitorsRef.current = tableMonitors;
+    }, [tableMonitors]);
 
     // Keep window monitors in sync for Blockly toolbox checkboxes
     useEffect(() => {
@@ -825,6 +869,87 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         syncedVariableMonitorNamesRef.current = activeVariableNames;
     }, [variableMonitors]);
+
+    // Sync list monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    // This ensures lists created via React state (e.g., project load) are reflected in Blockly's variable map
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingListNames = new Set(
+            existingVars.filter((v: any) => v.type === 'list').map((v: any) => v.name)
+        );
+
+        let changed = false;
+        // Add lists from monitors that are missing in Blockly's variable map
+        listMonitors.forEach(m => {
+            if (!existingListNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, 'list');
+                    changed = true;
+                } catch (err) {
+                    console.warn('[SyncLists] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+
+        // Only refresh toolbox if new lists were added
+        if (changed && ws.getToolbox()) {
+            setToolboxUpdateKey(k => k + 1);
+        }
+    }, [listMonitors]);
+
+    // Sync variable monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingVarNames = new Set(
+            existingVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String').map((v: any) => v.name)
+        );
+
+        variableMonitors.forEach(m => {
+            if (!existingVarNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, m.type || '');
+                } catch (err) {
+                    console.warn('[SyncVars] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+    }, [variableMonitors]);
+
+    // Sync table monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingTableNames = new Set(
+            existingVars.filter((v: any) => v.type === 'table').map((v: any) => v.name)
+        );
+
+        tableMonitors.forEach(m => {
+            if (!existingTableNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, 'table');
+                } catch (err) {
+                    console.warn('[SyncTables] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+    }, [tableMonitors]);
 
     const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
@@ -1552,13 +1677,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Workspace changed, recompiling scripts...');
 
-                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'selectedSpriteId:', selectedSpriteId);
+                // IMPORTANT: use activeSpriteIdRef to avoid stale closures during sprite switches
+                const compileTargetId = activeSpriteIdRef.current;
+
+                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'compileTargetId:', compileTargetId);
 
                 console.log('[APP] Sprites available:', sprites.map(s => ({ id: s.id, name: s.name })));
 
 
 
-                const sprite = sprites.find(s => s.id === selectedSpriteId);
+                const sprite = sprites.find(s => s.id === compileTargetId);
 
                 if (sprite) {
 
@@ -2352,21 +2480,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             }
 
             // Sync global variables found in state to this workspace's variable map
-            variableMonitors.forEach(m => {
+            // IMPORTANT: use refs to avoid stale closures during sprite switches
+            variableMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, m.type || '');
                 }
             });
 
-            listMonitors.forEach(m => {
+            listMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, 'list');
                 }
             });
 
-            tableMonitors.forEach(m => {
+            tableMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, 'table');
@@ -2980,7 +3109,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 variables: variableMonitors,
                 lists: listMonitors,
                 tables: tableMonitors
-            }
+            },
+            installedExtensions: Array.from(installedExtensionsRef.current)
         };
 
 
@@ -3131,6 +3261,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     }
                 }
 
+                // Also scan workspace blocks for any broadcast field values that may not
+                // be in the saved broadcasts list (e.g. projects saved without broadcasts).
+                // This ensures Blockly dropdown validation succeeds on workspace load.
+                for (const [id, workspaceJson] of Object.entries(data.workspaces)) {
+                    extractBroadcastValues(workspaceJson as any, animationVM);
+                }
+
                 // 5. Restore All Workspaces to the Map FIRST
                 // Migrate legacy block formats (input_value -> field_input) before storing
 
@@ -3142,7 +3279,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 6. Update UI state (triggers re-render)
+                // 7. Update UI state (triggers re-render)
                 if (data.monitors) {
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
@@ -3169,7 +3306,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 7. Final attempt to load the workspace for the selected sprite
+                // 8. Final attempt to load the workspace for the selected sprite
 
                 if (initialId) {
 
@@ -3258,7 +3395,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
             }
 
-            if (!savedJson || Object.keys(savedJson).length === 0) continue;
+            if (!savedJson || Object.keys(savedJson).length === 0) {
+                // Clear any stale scripts on sprites with no workspace code
+                if (typeof s.setScripts === 'function') {
+                    s.setScripts([]);
+                }
+                continue;
+            }
 
             let tempWs: Blockly.Workspace | null = null;
             try {
@@ -3272,6 +3415,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     Blockly.Events.disable();
                     tempWs = new Blockly.Workspace();
                     const migratedSavedJson = migrateWorkspaceBlocks(savedJson);
+                    // Pre-register any broadcast values in the workspace JSON so Blockly
+                    // dropdown validation doesn't silently fall back to a wrong value.
+                    extractBroadcastValues(migratedSavedJson as any, animationVM);
                     Blockly.serialization.workspaces.load(migratedSavedJson, tempWs);
                     Blockly.Events.enable();
                     compileWs = tempWs;
@@ -4078,7 +4224,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         // --- SENSING SYNC ---
         const sensingSyncInterval = setInterval(() => {
-            if (isRunning) {
+            if (isRunningRef.current) {
                 setSensingMonitors(prev => prev.map(m => {
                     if (m.name === 'timer') return { ...m, value: Math.round(animationVM.getTimer() * 10) / 10 };
                     if (m.name === 'answer') return { ...m, value: animationVM.getAnswer() };
@@ -4163,6 +4309,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             console.log('[IntermediateApp] Cleaning up workspace...');
 
+            clearInterval(sensingSyncInterval);
             animationVM.resetState();
             stageManager.reset();
             spriteManager.clear();

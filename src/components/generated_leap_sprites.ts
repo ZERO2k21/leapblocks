@@ -125,13 +125,13 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_ayati",
-    "name": "ayati",
+    "id": "leap_avery",
+    "name": "avery",
     "emoji": "🤖",
-    "image": "assets/sprites/leap/ayati_ayati-a.svg",
+    "image": "assets/sprites/leap/avery_avery-a.svg",
     "costumes": [
-      "assets/sprites/leap/ayati_ayati-a.svg",
-      "assets/sprites/leap/ayati_ayati-b.svg"
+      "assets/sprites/leap/avery_avery-a.svg",
+      "assets/sprites/leap/avery_avery-b.svg"
     ],
     "tags": [
       "people"
@@ -139,15 +139,15 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_ayati_walking",
-    "name": "Ayati Walking",
+    "id": "leap_avery_walking",
+    "name": "avery Walking",
     "emoji": "🚶‍♀️",
-    "image": "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
+    "image": "assets/sprites/leap/avery_walking_avery_walking-a.svg",
     "costumes": [
-      "assets/sprites/leap/ayati_walking_ayati_walking-a.svg",
-      "assets/sprites/leap/ayati_walking_ayati_walking-b.svg",
-      "assets/sprites/leap/ayati_walking_ayati_walking-c.svg",
-      "assets/sprites/leap/ayati_walking_ayati_walking-d.svg"
+      "assets/sprites/leap/avery_walking_avery_walking-a.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-b.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-c.svg",
+      "assets/sprites/leap/avery_walking_avery_walking-d.svg"
     ],
     "tags": [
       "people",
@@ -5761,6 +5761,24 @@ export const leapSprites: any[] = [
     "tags": [
       "alphabet",
       "letters"
+    ],
+    "category": "leap"
+  },
+  {
+    "id": "leap_moon",
+    "name": "moon",
+    "emoji": "🐾",
+    "image": "assets/sprites/leap/moon_moon.svg",
+    "costumes": [
+      "assets/sprites/leap/moon_moon.svg"
+    ],
+    "tags": [
+      "animals",
+      "paw",
+      "moon",
+      "print",
+      "track",
+      "nature"
     ],
     "category": "leap"
   }

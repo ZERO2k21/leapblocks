@@ -491,11 +491,43 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         icon: '🤸',
         registerBlocks: (Blockly: any) => {
             const bdBlockDefs = [
-                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'STATE', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'bd_analyze', message0: 'analyze body', previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#D43D41' },
-                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'PART', options: [['nose', 'nose'], ['left hand', 'left_wrist'], ['right hand', 'right_wrist']] }, { type: 'field_number', name: 'BODY', value: 1 }], output: 'Number', colour: '#D43D41' },
-                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [{ type: 'field_dropdown', name: 'PART', options: [['nose', 'nose'], ['left hand', 'left_wrist'], ['right hand', 'right_wrist']] }, { type: 'field_number', name: 'BODY', value: 1 }], output: 'Number', colour: '#D43D41' }
+                { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'STATE', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Turn camera on or off for body detection' },
+                { type: 'bd_analyze', message0: 'detect body pose', previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Run MoveNet pose detection on the current camera frame' },
+                { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#D43D41', tooltip: 'Number of people detected' },
+                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [
+                    { type: 'field_dropdown', name: 'PART', options: [
+                        ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
+                        ['left ear', 'left_ear'], ['right ear', 'right_ear'],
+                        ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
+                        ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
+                        ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                        ['left hip', 'left_hip'], ['right hip', 'right_hip'],
+                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                    ] },
+                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                ], output: 'Number', colour: '#D43D41', tooltip: 'X position of a body part (stage coords)' },
+                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [
+                    { type: 'field_dropdown', name: 'PART', options: [
+                        ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
+                        ['left ear', 'left_ear'], ['right ear', 'right_ear'],
+                        ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
+                        ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
+                        ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                        ['left hip', 'left_hip'], ['right hip', 'right_hip'],
+                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                    ] },
+                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                ], output: 'Number', colour: '#D43D41', tooltip: 'Y position of a body part (stage coords)' },
+                { type: 'bd_is_part_visible', message0: 'is %1 of body %2 visible?', args0: [
+                    { type: 'field_dropdown', name: 'PART', options: [
+                        ['nose', 'nose'], ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                    ] },
+                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                ], output: 'Boolean', colour: '#D43D41', tooltip: 'Check if a body part is detected with high confidence' },
             ];
             const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
@@ -503,18 +535,26 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         registerGenerators: (_Blockly: any) => {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
-            jsGen.forBlock['bd_camera'] = (b: any) => `window.runtime.bodyDetection.setCameraOn("${b.getFieldValue('STATE')}");\n`;
-            jsGen.forBlock['bd_analyze'] = () => `window.runtime.bodyDetection._detectPerson();\n`;
-            jsGen.forBlock['bd_body_count'] = () => [`window.runtime.bodyDetection.getBodyCount()`, 0];
-            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime.bodyDetection.getX('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})`, 0];
-            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime.bodyDetection.getY('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})`, 0];
+            jsGen.forBlock['bd_camera'] = (b: any) => `if(window.runtime?.bodyDetection) window.runtime.bodyDetection.setCameraOn("${b.getFieldValue('STATE')}");\n`;
+            jsGen.forBlock['bd_analyze'] = () => 'if(window.runtime?.bodyDetection) window.runtime.bodyDetection.analyse("analyze");\n';
+            jsGen.forBlock['bd_body_count'] = () => [`window.runtime?.bodyDetection?.getBodyCount()||0`, 0];
+            jsGen.forBlock['bd_get_x'] = (b: any) => [`window.runtime?.bodyDetection?.getX('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})||0`, 0];
+            jsGen.forBlock['bd_get_y'] = (b: any) => [`window.runtime?.bodyDetection?.getY('${b.getFieldValue('PART')}', ${b.getFieldValue('BODY') || 1})||0`, 0];
+            jsGen.forBlock['bd_is_part_visible'] = (b: any) => {
+                const part = b.getFieldValue('PART');
+                const body = b.getFieldValue('BODY') || 1;
+                return [`(window.runtime?.bodyDetection?.getX('${part}',${body})!==0||window.runtime?.bodyDetection?.getY('${part}',${body})!==0)`, 0];
+            };
         },
         getToolbox: () => [
+            { kind: 'label', text: 'Camera' },
             { kind: 'block', type: 'bd_camera' },
             { kind: 'block', type: 'bd_analyze' },
+            { kind: 'label', text: 'Body Parts' },
             { kind: 'block', type: 'bd_body_count' },
             { kind: 'block', type: 'bd_get_x' },
             { kind: 'block', type: 'bd_get_y' },
+            { kind: 'block', type: 'bd_is_part_visible' },
         ]
     },
     ml_machine_learning: {
@@ -524,10 +564,20 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         icon: '🤖',
         registerBlocks: (Blockly: any) => {
             const mlBlockDefs = [
-                { type: 'ml_analyze', message0: '%1 classification', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41' },
-                { type: 'ml_get_prediction', message0: 'prediction', output: 'String', colour: '#b71c1c' },
-                { type: 'ml_get_confidence', message0: 'confidence', output: 'Number', colour: '#b71c1c' },
-                { type: 'ml_is_class', message0: 'prediction is %1?', args0: [{ type: 'field_input', name: 'CLASS', text: 'Class 1' }], output: 'Boolean', colour: '#b71c1c' }
+                // Training
+                { type: 'ml_add_sample', message0: 'add camera sample as %1', args0: [{ type: 'field_input', name: 'LABEL', text: 'class1' }], previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Capture current camera frame and add as training sample for the given class label' },
+                { type: 'ml_train', message0: 'train model', previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Train the classifier with all collected samples' },
+                { type: 'ml_clear_all', message0: 'clear all samples', previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Remove all training samples and reset the model' },
+                { type: 'ml_clear_class', message0: 'clear samples of %1', args0: [{ type: 'field_input', name: 'LABEL', text: 'class1' }], previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Remove all samples for the given class' },
+                // Detection
+                { type: 'ml_analyze', message0: '%1 classification', args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['start', 'on'], ['stop', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Start or stop live classification from camera' },
+                // Reporters
+                { type: 'ml_get_prediction', message0: 'prediction', output: 'String', colour: '#b71c1c', tooltip: 'Get the current classification prediction' },
+                { type: 'ml_get_confidence', message0: 'confidence', output: 'Number', colour: '#b71c1c', tooltip: 'Get the confidence of the current prediction (0-100)' },
+                { type: 'ml_is_class', message0: 'prediction is %1?', args0: [{ type: 'field_input', name: 'CLASS', text: 'class1' }], output: 'Boolean', colour: '#b71c1c', tooltip: 'Check if the current prediction matches the given class' },
+                { type: 'ml_get_class_count', message0: 'number of classes', output: 'Number', colour: '#b71c1c', tooltip: 'Get the number of trained classes' },
+                { type: 'ml_get_sample_count', message0: 'sample count of %1', args0: [{ type: 'field_input', name: 'LABEL', text: 'class1' }], output: 'Number', colour: '#b71c1c', tooltip: 'Get the number of samples collected for a class' },
+                { type: 'ml_is_trained', message0: 'model trained?', output: 'Boolean', colour: '#b71c1c', tooltip: 'Check if the model has been trained' },
             ];
             const newDefs = mlBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
@@ -535,16 +585,36 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         registerGenerators: (_Blockly: any) => {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
+            // Training
+            jsGen.forBlock['ml_add_sample'] = (b: any) => `if(window.runtime?.ml) await window.runtime.ml.addSample('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}');\n`;
+            jsGen.forBlock['ml_train'] = () => 'if(window.runtime?.ml) window.runtime.ml.train();\n';
+            jsGen.forBlock['ml_clear_all'] = () => 'if(window.runtime?.ml) window.runtime.ml.clearAll();\n';
+            jsGen.forBlock['ml_clear_class'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.clearClass('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}');\n`;
+            // Detection
             jsGen.forBlock['ml_analyze'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.analyse('${b.getFieldValue('ACTION')}');\n`;
-            jsGen.forBlock['ml_get_prediction'] = () => [`window.runtime?.ml?.getPrediction()||''`, 0];
+            // Reporters
+            jsGen.forBlock['ml_get_prediction'] = () => [`window.runtime?.ml?.getPrediction()||'none'`, 0];
             jsGen.forBlock['ml_get_confidence'] = () => [`window.runtime?.ml?.getConfidence()||0`, 0];
-            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.getPrediction()==='${b.getFieldValue('CLASS')}'`, 0];
+            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.isClass('${(b.getFieldValue('CLASS')||'').replace(/'/g, "\\'")}')`, 0];
+            jsGen.forBlock['ml_get_class_count'] = () => [`window.runtime?.ml?.getClassCount()||0`, 0];
+            jsGen.forBlock['ml_get_sample_count'] = (b: any) => [`window.runtime?.ml?.getSampleCount('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}')||0`, 0];
+            jsGen.forBlock['ml_is_trained'] = () => [`window.runtime?.ml?.isTrained()`, 0];
         },
         getToolbox: () => [
+            { kind: 'label', text: 'Training' },
+            { kind: 'block', type: 'ml_add_sample' },
+            { kind: 'block', type: 'ml_train' },
+            { kind: 'block', type: 'ml_clear_all' },
+            { kind: 'block', type: 'ml_clear_class' },
+            { kind: 'label', text: 'Detection' },
             { kind: 'block', type: 'ml_analyze' },
+            { kind: 'label', text: 'Reporters' },
             { kind: 'block', type: 'ml_get_prediction' },
             { kind: 'block', type: 'ml_get_confidence' },
             { kind: 'block', type: 'ml_is_class' },
+            { kind: 'block', type: 'ml_get_class_count' },
+            { kind: 'block', type: 'ml_get_sample_count' },
+            { kind: 'block', type: 'ml_is_trained' },
         ]
     },
     text_to_speech: {
@@ -557,7 +627,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_speak',
                     message0: 'speak %1',
-                    args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
+                    args0: [{ type: 'input_value', name: 'MESSAGE', check: 'String' }],
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -639,7 +709,20 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             if (!jsGen) return;
 
             jsGen.forBlock['tts_speak'] = (b: any) => {
-                const msg = b.getFieldValue('MESSAGE') || 'Hello';
+                const input = b.getInput('MESSAGE');
+                const targetBlock = input?.connection?.targetBlock();
+                let msg = 'Hello';
+                if (targetBlock) {
+                    if (targetBlock.type === 'text') {
+                        msg = targetBlock.getFieldValue('TEXT') || 'Hello';
+                    } else {
+                        const val = b.getFieldValue('MESSAGE');
+                        if (val !== null && val !== undefined) msg = String(val);
+                    }
+                } else {
+                    const val = b.getFieldValue('MESSAGE');
+                    if (val !== null && val !== undefined) msg = String(val);
+                }
                 return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
             };
             jsGen.forBlock['tts_set_voice'] = (b: any) => {
@@ -1359,6 +1442,384 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             { kind: 'block', type: 'video_is_loaded' },
             { kind: 'block', type: 'video_get_percent' },
             { kind: 'block', type: 'video_get_source' },
+        ]
+    },
+
+    video_sensing: {
+        id: 'video_sensing',
+        name: 'Video Sensing',
+        color: '#1565C0',
+        icon: '📹',
+        registerBlocks: (Blockly: any) => {
+            const vsBlockDefs = [
+                {
+                    type: 'video_set_sensitivity',
+                    message0: 'set motion sensitivity to %1',
+                    args0: [{ type: 'field_number', name: 'THRESHOLD', value: 30, min: 1, max: 100 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#0D47A1',
+                    tooltip: 'Set the motion detection threshold (1-100)',
+                },
+                {
+                    type: 'video_sense_motion',
+                    message0: 'motion detected?',
+                    output: 'Boolean',
+                    colour: '#1565C0',
+                    tooltip: 'True when motion level exceeds the sensitivity threshold',
+                },
+                {
+                    type: 'video_motion_level',
+                    message0: 'motion level',
+                    output: 'Number',
+                    colour: '#0D47A1',
+                    tooltip: 'Current motion intensity (0-100)',
+                },
+                {
+                    type: 'video_sense_direction',
+                    message0: 'motion direction',
+                    output: 'Number',
+                    colour: '#0D47A1',
+                    tooltip: 'Dominant direction of motion (0-360 degrees)',
+                },
+            ];
+            const newDefs = vsBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+            }
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+
+            jsGen.forBlock['video_set_sensitivity'] = (b: any) =>
+                `if(window.runtime?.videoSensing) window.runtime.videoSensing.setSensitivity(${b.getFieldValue('THRESHOLD') || 30});\n`;
+            jsGen.forBlock['video_sense_motion'] = () =>
+                ['window.runtime?.videoSensing?.isMotionDetected()||false', 0];
+            jsGen.forBlock['video_motion_level'] = () =>
+                ['window.runtime?.videoSensing?.getMotionLevel()||0', 0];
+            jsGen.forBlock['video_sense_direction'] = () =>
+                ['window.runtime?.videoSensing?.getDirection()||0', 0];
+        },
+        getToolbox: () => [
+            { kind: 'label', text: 'Motion Detection' },
+            { kind: 'block', type: 'video_set_sensitivity' },
+            { kind: 'block', type: 'video_sense_motion' },
+            { kind: 'block', type: 'video_motion_level' },
+            { kind: 'block', type: 'video_sense_direction' },
+        ]
+    },
+
+    qr_scanner: {
+        id: 'qr_scanner',
+        name: 'QR Code Scanner',
+        color: '#6A1B9A',
+        icon: '📷',
+        registerBlocks: (Blockly: any) => {
+            const qrBlockDefs = [
+                {
+                    type: 'qr_scan_camera',
+                    message0: 'scan QR from camera',
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#6A1B9A',
+                    tooltip: 'Capture a frame from the camera and scan for a QR code',
+                },
+                {
+                    type: 'qr_scan_image',
+                    message0: 'scan QR from image %1',
+                    args0: [{ type: 'field_input', name: 'SOURCE', text: '' }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#6A1B9A',
+                    tooltip: 'Scan a QR code from an image URL or data URI',
+                },
+                {
+                    type: 'qr_get_text',
+                    message0: 'QR text',
+                    output: 'String',
+                    colour: '#4A148C',
+                    tooltip: 'Returns the text from the last scanned QR code',
+                },
+                {
+                    type: 'qr_get_count',
+                    message0: 'QR scan count',
+                    output: 'Number',
+                    colour: '#4A148C',
+                    tooltip: 'Total number of successful QR scans this session',
+                },
+            ];
+            const newDefs = qrBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+            }
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+
+            jsGen.forBlock['qr_scan_camera'] = () =>
+                `await window.runtime?.qrScanner?.scanCamera();\n`;
+            jsGen.forBlock['qr_scan_image'] = (b: any) =>
+                `await window.runtime?.qrScanner?.scanImage('${(b.getFieldValue('SOURCE') || '').replace(/'/g, "\\'")}');\n`;
+            jsGen.forBlock['qr_get_text'] = () =>
+                ['window.runtime?.qrScanner?.getText()||""', 0];
+            jsGen.forBlock['qr_get_count'] = () =>
+                ['window.runtime?.qrScanner?.getCount()||0', 0];
+        },
+        getToolbox: () => [
+            { kind: 'label', text: 'QR Scanning' },
+            { kind: 'block', type: 'qr_scan_camera' },
+            { kind: 'block', type: 'qr_scan_image' },
+            { kind: 'label', text: 'Results' },
+            { kind: 'block', type: 'qr_get_text' },
+            { kind: 'block', type: 'qr_get_count' },
+        ]
+    },
+
+    physics_engine: {
+        id: 'physics_engine',
+        name: 'Physics Engine',
+        color: '#E65100',
+        icon: '⚙',
+        registerBlocks: (Blockly: any) => {
+            const phBlockDefs = [
+                {
+                    type: 'physics_start',
+                    message0: 'start physics',
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Start the physics simulation engine',
+                },
+                {
+                    type: 'physics_stop',
+                    message0: 'stop physics',
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Stop the physics simulation',
+                },
+                {
+                    type: 'physics_set_gravity',
+                    message0: 'set gravity x %1 y %2',
+                    args0: [
+                        { type: 'field_number', name: 'GX', value: 0 },
+                        { type: 'field_number', name: 'GY', value: 1 }
+                    ],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Set gravity vector',
+                },
+                {
+                    type: 'physics_add_body',
+                    message0: 'add physics to sprite %1',
+                    args0: [{ type: 'field_input', name: 'SPRITE', text: '' }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Add a physics body to a sprite',
+                },
+                {
+                    type: 'physics_add_force',
+                    message0: 'apply force x %1 y %2 to sprite %3',
+                    args0: [
+                        { type: 'field_number', name: 'FX', value: 0 },
+                        { type: 'field_number', name: 'FY', value: -0.01 },
+                        { type: 'field_input', name: 'SPRITE', text: '' }
+                    ],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Apply a force to a sprite',
+                },
+                {
+                    type: 'physics_set_bounce',
+                    message0: 'set bounce to %1',
+                    args0: [{ type: 'field_number', name: 'VALUE', value: 0.5, min: 0, max: 1 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Set bounce (restitution)',
+                },
+                {
+                    type: 'physics_set_mass',
+                    message0: 'set mass to %1',
+                    args0: [{ type: 'field_number', name: 'VALUE', value: 1, min: 0.01 }],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Set mass',
+                },
+                {
+                    type: 'physics_set_static',
+                    message0: 'set sprite %1 static %2',
+                    args0: [
+                        { type: 'field_input', name: 'SPRITE', text: '' },
+                        { type: 'field_dropdown', name: 'VALUE', options: [['yes', 'yes'], ['no', 'no']] }
+                    ],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#E65100',
+                    tooltip: 'Make body static or dynamic',
+                },
+                {
+                    type: 'physics_get_velocity_x',
+                    message0: 'velocity x of sprite %1',
+                    args0: [{ type: 'field_input', name: 'SPRITE', text: '' }],
+                    output: 'Number',
+                    colour: '#BF360C',
+                    tooltip: 'Horizontal velocity',
+                },
+                {
+                    type: 'physics_get_velocity_y',
+                    message0: 'velocity y of sprite %1',
+                    args0: [{ type: 'field_input', name: 'SPRITE', text: '' }],
+                    output: 'Number',
+                    colour: '#BF360C',
+                    tooltip: 'Vertical velocity',
+                },
+                {
+                    type: 'physics_on_collision',
+                    message0: 'when sprite %1 collides with %2',
+                    args0: [
+                        { type: 'field_input', name: 'SPRITE1', text: '' },
+                        { type: 'field_input', name: 'SPRITE2', text: '' }
+                    ],
+                    nextStatement: null,
+                    colour: '#BF360C',
+                    tooltip: 'When two sprites collide',
+                    hat: 'event',
+                },
+            ];
+            const newDefs = phBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+            }
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+
+            jsGen.forBlock['physics_start'] = () =>
+                'if(window.runtime?.physics) window.runtime.physics.start();\n';
+            jsGen.forBlock['physics_stop'] = () =>
+                'if(window.runtime?.physics) window.runtime.physics.stop();\n';
+            jsGen.forBlock['physics_set_gravity'] = (b: any) =>
+                `if(window.runtime?.physics) window.runtime.physics.setGravity(${b.getFieldValue('GX')||0}, ${b.getFieldValue('GY')||1});\n`;
+            jsGen.forBlock['physics_add_body'] = (b: any) =>
+                `if(window.runtime?.physics) window.runtime.physics.addBody('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}');\n`;
+            jsGen.forBlock['physics_add_force'] = (b: any) =>
+                `if(window.runtime?.physics) window.runtime.physics.addForce('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}', ${b.getFieldValue('FX')||0}, ${b.getFieldValue('FY')||-0.01});\n`;
+            jsGen.forBlock['physics_set_bounce'] = (b: any) => {
+                const spr = `(window.__activeSpriteId||'')`;
+                return `if(window.runtime?.physics) window.runtime.physics.setBounce(${spr}, ${b.getFieldValue('VALUE')||0.5});\n`;
+            };
+            jsGen.forBlock['physics_set_mass'] = (b: any) => {
+                const spr = `(window.__activeSpriteId||'')`;
+                return `if(window.runtime?.physics) window.runtime.physics.setMass(${spr}, ${b.getFieldValue('VALUE')||1});\n`;
+            };
+            jsGen.forBlock['physics_set_static'] = (b: any) =>
+                `if(window.runtime?.physics) window.runtime.physics.setStatic('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}', '${b.getFieldValue('VALUE')}'==='yes');\n`;
+            jsGen.forBlock['physics_get_velocity_x'] = (b: any) =>
+                [`window.runtime?.physics?.getVelocityX('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}')||0`, 0];
+            jsGen.forBlock['physics_get_velocity_y'] = (b: any) =>
+                [`window.runtime?.physics?.getVelocityY('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}')||0`, 0];
+            jsGen.forBlock['physics_on_collision'] = () => '';
+        },
+        getToolbox: () => [
+            { kind: 'label', text: 'Simulation' },
+            { kind: 'block', type: 'physics_start' },
+            { kind: 'block', type: 'physics_stop' },
+            { kind: 'block', type: 'physics_set_gravity' },
+            { kind: 'label', text: 'Bodies' },
+            { kind: 'block', type: 'physics_add_body' },
+            { kind: 'block', type: 'physics_add_force' },
+            { kind: 'block', type: 'physics_set_bounce' },
+            { kind: 'block', type: 'physics_set_mass' },
+            { kind: 'block', type: 'physics_set_static' },
+            { kind: 'label', text: 'Sensing' },
+            { kind: 'block', type: 'physics_get_velocity_x' },
+            { kind: 'block', type: 'physics_get_velocity_y' },
+            { kind: 'block', type: 'physics_on_collision' },
+        ]
+    },
+
+    makey_makey: {
+        id: 'makey_makey',
+        name: 'Makey Makey',
+        color: '#00897B',
+        icon: '🔌',
+        registerBlocks: (Blockly: any) => {
+            const mmBlockDefs = [
+                {
+                    type: 'makey_on_key',
+                    message0: 'when makey makey %1 pressed',
+                    args0: [{
+                        type: 'field_dropdown',
+                        name: 'KEY',
+                        options: [
+                            ['up', 'UP'], ['down', 'DOWN'], ['left', 'LEFT'], ['right', 'RIGHT'],
+                            ['space', 'SPACE'], ['click', 'CLICK'],
+                            ['w', 'W'], ['a', 'A'], ['s', 'S'], ['d', 'D'],
+                        ]
+                    }],
+                    nextStatement: null,
+                    colour: '#00897B',
+                    tooltip: 'When a Makey Makey key is pressed',
+                    hat: 'event',
+                },
+                {
+                    type: 'makey_set_key',
+                    message0: 'map makey makey %1 to key %2',
+                    args0: [
+                        {
+                            type: 'field_dropdown',
+                            name: 'SIGNAL',
+                            options: [
+                                ['up', 'UP'], ['down', 'DOWN'], ['left', 'LEFT'], ['right', 'RIGHT'],
+                                ['space', 'SPACE'], ['click', 'CLICK'],
+                                ['w', 'W'], ['a', 'A'], ['s', 'S'], ['d', 'D'],
+                            ]
+                        },
+                        { type: 'field_input', name: 'KEY', text: 'space' }
+                    ],
+                    previousStatement: null,
+                    nextStatement: null,
+                    colour: '#00897B',
+                    tooltip: 'Map a Makey Makey input to a virtual key name',
+                },
+                {
+                    type: 'makey_get_key',
+                    message0: 'makey makey last key',
+                    output: 'String',
+                    colour: '#00695C',
+                    tooltip: 'Last key received from Makey Makey',
+                },
+            ];
+            const newDefs = mmBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+            }
+        },
+        registerGenerators: (_Blockly: any) => {
+            const jsGen = javascriptGenerator;
+            if (!jsGen) return;
+
+            jsGen.forBlock['makey_on_key'] = () => '';
+            jsGen.forBlock['makey_set_key'] = (b: any) =>
+                `if(window.runtime?.makeyMakey) window.runtime.makeyMakey.setKeyMap('${(b.getFieldValue('SIGNAL')||'').replace(/'/g,"\\'")}', '${(b.getFieldValue('KEY')||'').replace(/'/g,"\\'")}');\n`;
+            jsGen.forBlock['makey_get_key'] = () =>
+                ['window.runtime?.makeyMakey?.getLastKey()||""', 0];
+        },
+        getToolbox: () => [
+            { kind: 'label', text: 'Events' },
+            { kind: 'block', type: 'makey_on_key' },
+            { kind: 'label', text: 'Configuration' },
+            { kind: 'block', type: 'makey_set_key' },
+            { kind: 'label', text: 'Sensing' },
+            { kind: 'block', type: 'makey_get_key' },
         ]
     }
 
