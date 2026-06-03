@@ -1552,13 +1552,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Workspace changed, recompiling scripts...');
 
-                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'selectedSpriteId:', selectedSpriteId);
+                // IMPORTANT: use activeSpriteIdRef to avoid stale closures during sprite switches
+                const compileTargetId = activeSpriteIdRef.current;
+
+                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'compileTargetId:', compileTargetId);
 
                 console.log('[APP] Sprites available:', sprites.map(s => ({ id: s.id, name: s.name })));
 
 
 
-                const sprite = sprites.find(s => s.id === selectedSpriteId);
+                const sprite = sprites.find(s => s.id === compileTargetId);
 
                 if (sprite) {
 
@@ -3258,7 +3261,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
             }
 
-            if (!savedJson || Object.keys(savedJson).length === 0) continue;
+            if (!savedJson || Object.keys(savedJson).length === 0) {
+                // Clear any stale scripts on sprites with no workspace code
+                if (typeof s.setScripts === 'function') {
+                    s.setScripts([]);
+                }
+                continue;
+            }
 
             let tempWs: Blockly.Workspace | null = null;
             try {
