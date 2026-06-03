@@ -294,6 +294,10 @@ export class AnimationVM {
     // but we'll keep it as a proxy for the stage's scripts for backward compatibility if needed.
     public stageScripts: CompiledScript[] = [];
 
+    // Greater-than trigger polling
+    private greaterThanPollingId: ReturnType<typeof setInterval> | null = null;
+    private greaterThanFired: Set<string> = new Set(); // Track which hat blocks have already fired
+
     constructor() {
         // Initialize sound manager
         soundManager.init();
@@ -691,6 +695,9 @@ export class AnimationVM {
             }
         }
 
+        // Start polling for greater_than triggers (e.g. "when timer > 5")
+        this.startGreaterThanPolling();
+
         if (flagScripts === 0) {
             this.checkAllFinished();
         }
@@ -782,6 +789,9 @@ export class AnimationVM {
     stopAll(): void {
         vmLog.info('stopAll() called');
         this.setRunning(false);
+
+        // Stop greater_than trigger polling
+        this.stopGreaterThanPolling();
 
         // Resolve any pending pause so aborted scripts can exit cleanly
         if (this.isPaused && this.resolvePause) {
@@ -2764,10 +2774,93 @@ export class AnimationVM {
     // ═══════════════════════════════════════════════════════════════════════
     resetTimer(): void {
         this.timerStart = Date.now();
+        // Reset greater_than fired states so timer-based triggers can fire again
+        this.greaterThanFired.clear();
     }
 
     getTimer(): number {
         return (Date.now() - this.timerStart) / 1000;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // GREATER-THAN TRIGGER POLLING
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Start polling for "when timer/loudness > X" hat blocks.
+     * These triggers need a periodic check since they aren't event-driven.
+     * Uses edge detection: fires once when the condition transitions from false to true.
+     */
+    private startGreaterThanPolling(): void {
+        this.stopGreaterThanPolling();
+        this.greaterThanFired.clear();
+
+        const allSprites = spriteManager.getAllSprites();
+        const allScripts: CompiledScript[] = [];
+
+        for (const sprite of allSprites) {
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                if (script.trigger === 'greater_than') {
+                    allScripts.push(script);
+                }
+            }
+        }
+        // Also check stage scripts
+        for (const script of this.stageScripts) {
+            if (script.trigger === 'greater_than') {
+                allScripts.push(script);
+            }
+        }
+
+        if (allScripts.length === 0) return;
+
+        vmLog.info(`Starting greater_than polling for ${allScripts.length} script(s)`);
+
+        this.greaterThanPollingId = setInterval(() => {
+            if (!this.isRunning) return;
+
+            for (const script of allScripts) {
+                if (!script.triggerKey) continue;
+
+                const [sensor, valueStr] = script.triggerKey.split(':');
+                const threshold = Number(valueStr);
+                if (isNaN(threshold)) continue;
+
+                let currentValue = 0;
+                if (sensor === 'timer') {
+                    currentValue = this.getTimer();
+                } else if (sensor === 'loudness') {
+                    currentValue = this.getLoudness() || 0;
+                } else {
+                    continue;
+                }
+
+                const conditionMet = currentValue > threshold;
+                const hatId = script.hatBlockId || script.triggerKey;
+
+                if (conditionMet && !this.greaterThanFired.has(hatId)) {
+                    // Condition just became true — fire the script (edge trigger)
+                    this.greaterThanFired.add(hatId);
+                    this.setRunning(true);
+                    this.stopScriptByHat(script.spriteId, hatId);
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in greater_than trigger script', err);
+                    });
+                } else if (!conditionMet) {
+                    // Condition no longer met — allow re-firing next time it crosses threshold
+                    this.greaterThanFired.delete(hatId);
+                }
+            }
+        }, 100); // Poll every 100ms (matches Scratch behavior)
+    }
+
+    private stopGreaterThanPolling(): void {
+        if (this.greaterThanPollingId !== null) {
+            clearInterval(this.greaterThanPollingId);
+            this.greaterThanPollingId = null;
+        }
+        this.greaterThanFired.clear();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2799,6 +2892,11 @@ export class AnimationVM {
             this.onBeforeBroadcast(message);
         }
 
+        // Collect scripts to run, then defer execution to break synchronous recursion.
+        // Without deferral, triggerBroadcast → runScript → executeSteps → broadcast step
+        // → triggerBroadcast creates an infinite synchronous call chain that overflows.
+        const scriptsToRun: CompiledScript[] = [];
+
         // 2. Use the cached broadcast listeners for efficiency
         const listeners = this.broadcastListeners.get(normalizedMessage) || [];
 
@@ -2812,39 +2910,46 @@ export class AnimationVM {
                 }
                 const targetSprite = spriteManager.getSprite(script.spriteId);
                 console.log(`[AnimationVM]   -> Triggering receiver on sprite: ${targetSprite?.name || script.spriteId}`);
-                this.runScript(script).catch(err => {
-                    vmLog.error('Error in broadcast receive script', err);
-                });
+                scriptsToRun.push(script);
             }
-            return;
-        }
+        } else {
+            // Fallback: Scan all sprites if the cache is empty or doesn't match
+            // (This handles cases where setScripts wasn't called correctly)
+            let matchedInFallback = 0;
+            const allSprites = spriteManager.getAllSprites();
+            vmLog.info(`TriggerBroadcast Fallback: scanning ${allSprites.length} entities for message: ${message}`);
 
-        // Fallback: Scan all sprites if the cache is empty or doesn't match
-        // (This handles cases where setScripts wasn't called correctly)
-        let matchedInFallback = 0;
-        const allSprites = spriteManager.getAllSprites();
-        vmLog.info(`TriggerBroadcast Fallback: scanning ${allSprites.length} entities for message: ${message}`);
-
-        for (const sprite of allSprites) {
-            const scripts = (sprite.scripts as CompiledScript[]) || [];
-            for (const script of scripts) {
-                if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
-                    matchedInFallback++;
-                    this.setRunning(true);
-                    if (script.hatBlockId) {
-                        this.stopScriptByHat(sprite.id, script.hatBlockId);
+            for (const sprite of allSprites) {
+                const scripts = (sprite.scripts as CompiledScript[]) || [];
+                for (const script of scripts) {
+                    if (script.trigger === 'broadcast_receive' && (script.triggerKey || '').toLowerCase() === normalizedMessage) {
+                        matchedInFallback++;
+                        this.setRunning(true);
+                        if (script.hatBlockId) {
+                            this.stopScriptByHat(sprite.id, script.hatBlockId);
+                        }
+                        console.log(`[AnimationVM]   -> Triggering fallback receiver on sprite: ${sprite.name} (${sprite.id})`);
+                        scriptsToRun.push(script);
                     }
-                    console.log(`[AnimationVM]   -> Triggering fallback receiver on sprite: ${sprite.name} (${sprite.id})`);
-                    this.runScript(script).catch(err => {
-                        vmLog.error('Error in fallback broadcast receive script', err);
-                    });
                 }
             }
+            if (matchedInFallback > 0) {
+                console.log(`[AnimationVM] TriggerBroadcast Fallback: Dispatched "${message}" to ${matchedInFallback} matching script(s) via full scan.`);
+            } else {
+                console.log(`[AnimationVM] TriggerBroadcast: No receivers found for "${message}" across ${allSprites.length} sprites.`);
+            }
         }
-        if (matchedInFallback > 0) {
-            console.log(`[AnimationVM] TriggerBroadcast Fallback: Dispatched "${message}" to ${matchedInFallback} matching script(s) via full scan.`);
-        } else {
-            console.log(`[AnimationVM] TriggerBroadcast: No receivers found for "${message}" across ${allSprites.length} sprites.`);
+
+        // Defer all script execution to the next microtask to prevent stack overflow
+        // from recursive broadcast chains (broadcast triggers script that broadcasts again)
+        if (scriptsToRun.length > 0) {
+            queueMicrotask(() => {
+                for (const script of scriptsToRun) {
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in broadcast receive script', err);
+                    });
+                }
+            });
         }
     }
 
@@ -2883,7 +2988,8 @@ export class AnimationVM {
             this.onBeforeBroadcast(message);
         }
 
-        const promises: Promise<void>[] = [];
+        // Collect scripts to run, then defer execution to break synchronous recursion.
+        const scriptsToRun: CompiledScript[] = [];
 
         // 2. Use cached listeners if available
         const listeners = this.broadcastListeners.get(normalizedMessage) || [];
@@ -2893,7 +2999,7 @@ export class AnimationVM {
                 if (script.hatBlockId) {
                     this.stopScriptByHat(script.spriteId, script.hatBlockId);
                 }
-                promises.push(this.runScript(script));
+                scriptsToRun.push(script);
             }
         } else {
             // Fallback scan
@@ -2906,13 +3012,21 @@ export class AnimationVM {
                         if (script.hatBlockId) {
                             this.stopScriptByHat(sprite.id, script.hatBlockId);
                         }
-                        promises.push(this.runScript(script));
+                        scriptsToRun.push(script);
                     }
                 }
             }
         }
 
-        if (promises.length > 0) {
+        if (scriptsToRun.length > 0) {
+            // Defer script execution to prevent stack overflow from recursive broadcast chains
+            const promises = scriptsToRun.map(script =>
+                new Promise<void>((resolve, reject) => {
+                    queueMicrotask(() => {
+                        this.runScript(script).then(resolve, reject);
+                    });
+                })
+            );
             await Promise.all(promises);
         }
     }

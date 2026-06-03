@@ -437,6 +437,34 @@ interface TableMonitorState {
 
 
 
+/**
+ * Recursively scan workspace JSON blocks for broadcast-related field values
+ * and register them with the AnimationVM. This ensures Blockly dropdown
+ * validation passes when loading workspaces that reference custom broadcast
+ * messages (e.g. "Game Over") that aren't yet in the broadcast registry.
+ */
+function extractBroadcastValues(workspaceJson: { blocks?: { blocks?: any[] } }, vm: typeof animationVM): void {
+    const blocks = workspaceJson?.blocks?.blocks || [];
+    const scanBlock = (block: any): void => {
+        if (!block) return;
+        if (block.fields) {
+            const value = block.fields.BROADCAST_INPUT || block.fields.BROADCAST_OPTION || block.fields.MESSAGE;
+            if (value && value !== 'new') {
+                vm.registerBroadcast(String(value));
+            }
+        }
+        if (block.inputs) {
+            for (const key of Object.keys(block.inputs)) {
+                const input = block.inputs[key];
+                if (input?.block) scanBlock(input.block);
+                if (input?.shadow) scanBlock(input.shadow);
+            }
+        }
+        if (block.next?.block) scanBlock(block.next.block);
+    };
+    blocks.forEach(scanBlock);
+}
+
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds' }> = ({ onBack, onOpenPython, openTab = 'blocks' }) => {
 
     // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
@@ -482,7 +510,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const [isRunning, setIsRunning] = useState(false);
 
-
+    // Keep ref in sync with isRunning state (for use in intervals/callbacks with stale closures)
+    useEffect(() => {
+        isRunningRef.current = isRunning;
+    }, [isRunning]);
 
     useEffect(() => {
 
@@ -523,6 +554,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const isLoadingWorkspaceRef = useRef(false);
 
     const syncAllWorkspacesRef = useRef<(() => CompiledScript[]) | null>(null);
+
+    // Ref to track isRunning for sensing sync (avoids stale closure in setInterval)
+    const isRunningRef = useRef(false);
 
     // Drag-tracking refs for block-to-sprite copying
     const draggedBlockStateRef = useRef<any>(null);
@@ -780,6 +814,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const variableMonitorsRef = useRef(variableMonitors);
     const listMonitorsRef = useRef(listMonitors);
+    const tableMonitorsRef = useRef(tableMonitors);
     const sensingMonitorsRef = useRef(sensingMonitors);
     const syncedVariableMonitorNamesRef = useRef<Set<string>>(new Set());
 
@@ -790,6 +825,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     useEffect(() => {
         listMonitorsRef.current = listMonitors;
     }, [listMonitors]);
+
+    useEffect(() => {
+        tableMonitorsRef.current = tableMonitors;
+    }, [tableMonitors]);
 
     useEffect(() => {
         sensingMonitorsRef.current = sensingMonitors;
@@ -1638,13 +1677,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] Workspace changed, recompiling scripts...');
 
-                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'selectedSpriteId:', selectedSpriteId);
+                // IMPORTANT: use activeSpriteIdRef to avoid stale closures during sprite switches
+                const compileTargetId = activeSpriteIdRef.current;
+
+                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'compileTargetId:', compileTargetId);
 
                 console.log('[APP] Sprites available:', sprites.map(s => ({ id: s.id, name: s.name })));
 
 
 
-                const sprite = sprites.find(s => s.id === selectedSpriteId);
+                const sprite = sprites.find(s => s.id === compileTargetId);
 
                 if (sprite) {
 
@@ -2438,7 +2480,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             }
 
             // Sync global variables found in state to this workspace's variable map
-            // Use refs to avoid stale closures
+            // IMPORTANT: use refs to avoid stale closures during sprite switches
             variableMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
@@ -3219,20 +3261,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     }
                 }
 
-                // 5. Re-register extensions so block definitions exist before workspace restoration
-                if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0) {
-                    for (const extId of data.installedExtensions) {
-                        if (EXTENSIONS[extId]) {
-                            registerExtensions(Blockly, [extId]);
-                            if (!installedExtensionsRef.current.has(extId)) {
-                                installedExtensionsRef.current = new Set([...installedExtensionsRef.current, extId]);
-                            }
-                        }
-                    }
-                    setInstalledExtensions(new Set(installedExtensionsRef.current));
+                // Also scan workspace blocks for any broadcast field values that may not
+                // be in the saved broadcasts list (e.g. projects saved without broadcasts).
+                // This ensures Blockly dropdown validation succeeds on workspace load.
+                for (const [id, workspaceJson] of Object.entries(data.workspaces)) {
+                    extractBroadcastValues(workspaceJson as any, animationVM);
                 }
 
-                // 6. Restore All Workspaces to the Map FIRST
+                // 5. Restore All Workspaces to the Map FIRST
                 // Migrate legacy block formats (input_value -> field_input) before storing
 
                 Object.keys(data.workspaces).forEach(id => {
@@ -3359,7 +3395,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 savedJson = Blockly.serialization.workspaces.save(workspaceRef.current);
             }
 
-            if (!savedJson || Object.keys(savedJson).length === 0) continue;
+            if (!savedJson || Object.keys(savedJson).length === 0) {
+                // Clear any stale scripts on sprites with no workspace code
+                if (typeof s.setScripts === 'function') {
+                    s.setScripts([]);
+                }
+                continue;
+            }
 
             let tempWs: Blockly.Workspace | null = null;
             try {
@@ -3373,6 +3415,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     Blockly.Events.disable();
                     tempWs = new Blockly.Workspace();
                     const migratedSavedJson = migrateWorkspaceBlocks(savedJson);
+                    // Pre-register any broadcast values in the workspace JSON so Blockly
+                    // dropdown validation doesn't silently fall back to a wrong value.
+                    extractBroadcastValues(migratedSavedJson as any, animationVM);
                     Blockly.serialization.workspaces.load(migratedSavedJson, tempWs);
                     Blockly.Events.enable();
                     compileWs = tempWs;
@@ -4179,7 +4224,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         // --- SENSING SYNC ---
         const sensingSyncInterval = setInterval(() => {
-            if (isRunning) {
+            if (isRunningRef.current) {
                 setSensingMonitors(prev => prev.map(m => {
                     if (m.name === 'timer') return { ...m, value: Math.round(animationVM.getTimer() * 10) / 10 };
                     if (m.name === 'answer') return { ...m, value: animationVM.getAnswer() };
@@ -4264,6 +4309,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             console.log('[IntermediateApp] Cleaning up workspace...');
 
+            clearInterval(sensingSyncInterval);
             animationVM.resetState();
             stageManager.reset();
             spriteManager.clear();

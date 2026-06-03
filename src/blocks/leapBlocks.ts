@@ -725,20 +725,6 @@ const leapBlocks = [
         helpUrl: 'https://en.leap-wiki.info/wiki/When_I_Receive_%28block%29'
     },
     {
-        type: 'event_broadcast',
-        message0: 'broadcast %1',
-        args0: [{
-            type: 'field_dropdown',
-            name: 'BROADCAST_INPUT',
-            options: [] // Populated dynamically
-        }],
-        previousStatement: null,
-        nextStatement: 'any',
-        colour: '#FFBF00',
-        tooltip: 'Sends a broadcast message to all sprites.',
-        helpUrl: 'https://en.leap-wiki.info/wiki/Broadcast_%28block%29'
-    },
-    {
         type: 'event_broadcastandwait',
         message0: 'broadcast %1 and wait',
         args0: [{
@@ -1804,20 +1790,6 @@ export const registerleapBlocks = () => {
             }
         };
     }
-    if (!Blockly.Blocks['event_broadcast']) {
-        Blockly.Blocks['event_broadcast'] = {
-            init(this: Blockly.Block) {
-                this.appendDummyInput()
-                    .appendField('📢 broadcast')
-                    .appendField(new Blockly.FieldDropdown(broadcastOptions), 'BROADCAST_INPUT');
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour('#FFBF00');
-                this.setTooltip('Send a message to all sprites');
-            }
-        };
-    }
-
     if (!Blockly.Blocks['event_receive']) {
         Blockly.Blocks['event_receive'] = {
             init(this: Blockly.Block) {
