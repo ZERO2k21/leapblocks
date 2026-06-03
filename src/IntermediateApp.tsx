@@ -834,6 +834,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         sensingMonitorsRef.current = sensingMonitors;
     }, [sensingMonitors]);
 
+    const tableMonitorsRef = useRef(tableMonitors);
+    useEffect(() => {
+        tableMonitorsRef.current = tableMonitors;
+    }, [tableMonitors]);
+
     // Keep window monitors in sync for Blockly toolbox checkboxes
     useEffect(() => {
         (window as any)._monitors_for_sync = {
@@ -864,6 +869,87 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         syncedVariableMonitorNamesRef.current = activeVariableNames;
     }, [variableMonitors]);
+
+    // Sync list monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    // This ensures lists created via React state (e.g., project load) are reflected in Blockly's variable map
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingListNames = new Set(
+            existingVars.filter((v: any) => v.type === 'list').map((v: any) => v.name)
+        );
+
+        let changed = false;
+        // Add lists from monitors that are missing in Blockly's variable map
+        listMonitors.forEach(m => {
+            if (!existingListNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, 'list');
+                    changed = true;
+                } catch (err) {
+                    console.warn('[SyncLists] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+
+        // Only refresh toolbox if new lists were added
+        if (changed && ws.getToolbox()) {
+            setToolboxUpdateKey(k => k + 1);
+        }
+    }, [listMonitors]);
+
+    // Sync variable monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingVarNames = new Set(
+            existingVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String').map((v: any) => v.name)
+        );
+
+        variableMonitors.forEach(m => {
+            if (!existingVarNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, m.type || '');
+                } catch (err) {
+                    console.warn('[SyncVars] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+    }, [variableMonitors]);
+
+    // Sync table monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
+    useEffect(() => {
+        const ws = workspaceRef.current;
+        if (!ws || isLoadingWorkspaceRef.current) return;
+
+        const currentVarMap = ws.getVariableMap();
+        if (!currentVarMap) return;
+
+        const existingVars = currentVarMap.getAllVariables() || [];
+        const existingTableNames = new Set(
+            existingVars.filter((v: any) => v.type === 'table').map((v: any) => v.name)
+        );
+
+        tableMonitors.forEach(m => {
+            if (!existingTableNames.has(m.name)) {
+                try {
+                    currentVarMap.createVariable(m.name, 'table');
+                } catch (err) {
+                    console.warn('[SyncTables] Failed to create variable in Blockly:', m.name, err);
+                }
+            }
+        });
+    }, [tableMonitors]);
 
     const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => {
         if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
@@ -3023,7 +3109,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 variables: variableMonitors,
                 lists: listMonitors,
                 tables: tableMonitors
-            }
+            },
+            installedExtensions: Array.from(installedExtensionsRef.current)
         };
 
 
@@ -3192,7 +3279,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 6. Update UI state (triggers re-render)
+                // 7. Update UI state (triggers re-render)
                 if (data.monitors) {
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
@@ -3219,7 +3306,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 7. Final attempt to load the workspace for the selected sprite
+                // 8. Final attempt to load the workspace for the selected sprite
 
                 if (initialId) {
 
