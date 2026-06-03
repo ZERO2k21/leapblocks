@@ -834,11 +834,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         sensingMonitorsRef.current = sensingMonitors;
     }, [sensingMonitors]);
 
-    const tableMonitorsRef = useRef(tableMonitors);
-    useEffect(() => {
-        tableMonitorsRef.current = tableMonitors;
-    }, [tableMonitors]);
-
     // Keep window monitors in sync for Blockly toolbox checkboxes
     useEffect(() => {
         (window as any)._monitors_for_sync = {
@@ -3268,7 +3263,20 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     extractBroadcastValues(workspaceJson as any, animationVM);
                 }
 
-                // 5. Restore All Workspaces to the Map FIRST
+                // 5. Re-register extensions so block definitions exist before workspace restoration
+                if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0) {
+                    for (const extId of data.installedExtensions) {
+                        if (EXTENSIONS[extId]) {
+                            registerExtensions(Blockly, [extId]);
+                            if (!installedExtensionsRef.current.has(extId)) {
+                                installedExtensionsRef.current = new Set([...installedExtensionsRef.current, extId]);
+                            }
+                        }
+                    }
+                    setInstalledExtensions(new Set(installedExtensionsRef.current));
+                }
+
+                // 6. Restore All Workspaces to the Map FIRST
                 // Migrate legacy block formats (input_value -> field_input) before storing
 
                 Object.keys(data.workspaces).forEach(id => {
@@ -3279,7 +3287,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 7. Update UI state (triggers re-render)
+                // 8. Update UI state (triggers re-render)
                 if (data.monitors) {
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
@@ -3306,7 +3314,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                // 8. Final attempt to load the workspace for the selected sprite
+                // 9. Final attempt to load the workspace for the selected sprite
 
                 if (initialId) {
 
