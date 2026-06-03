@@ -780,6 +780,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const variableMonitorsRef = useRef(variableMonitors);
     const listMonitorsRef = useRef(listMonitors);
+    const tableMonitorsRef = useRef(tableMonitors);
     const sensingMonitorsRef = useRef(sensingMonitors);
     const syncedVariableMonitorNamesRef = useRef<Set<string>>(new Set());
 
@@ -790,6 +791,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     useEffect(() => {
         listMonitorsRef.current = listMonitors;
     }, [listMonitors]);
+
+    useEffect(() => {
+        tableMonitorsRef.current = tableMonitors;
+    }, [tableMonitors]);
 
     useEffect(() => {
         sensingMonitorsRef.current = sensingMonitors;
@@ -2355,21 +2360,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             }
 
             // Sync global variables found in state to this workspace's variable map
-            variableMonitors.forEach(m => {
+            // IMPORTANT: use refs to avoid stale closures during sprite switches
+            variableMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, m.type || '');
                 }
             });
 
-            listMonitors.forEach(m => {
+            listMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, 'list');
                 }
             });
 
-            tableMonitors.forEach(m => {
+            tableMonitorsRef.current.forEach(m => {
                 const existing = ws.getVariableMap().getAllVariables().find((v: any) => v.name === m.name);
                 if (!existing) {
                     ws.getVariableMap().createVariable(m.name, 'table');
