@@ -5763,5 +5763,23 @@ export const leapSprites: any[] = [
       "letters"
     ],
     "category": "leap"
+  },
+  {
+    "id": "leap_moon",
+    "name": "moon",
+    "emoji": "🐾",
+    "image": "assets/sprites/leap/moon_moon.svg",
+    "costumes": [
+      "assets/sprites/leap/moon_moon.svg"
+    ],
+    "tags": [
+      "animals",
+      "paw",
+      "moon",
+      "print",
+      "track",
+      "nature"
+    ],
+    "category": "leap"
   }
 ];
