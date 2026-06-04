@@ -418,9 +418,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
         circuitEngine.pushKeypadKey(id, key);
       });
     };
-    const handleRelease = () => {
+    const handleRelease = (e: Event) => {
+      const key = (e as CustomEvent).detail?.key ?? null;
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushKeypadKey(id, null);
+        circuitEngine.releaseKeypadKey(id, key);
       });
     };
 

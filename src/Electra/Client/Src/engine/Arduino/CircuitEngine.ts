@@ -534,9 +534,6 @@ class CircuitEngine {
         // Find the first registered keypad emulator
         if (keypadEmulators.size > 0) {
           this._emulator = keypadEmulators.values().next().value;
-          console.log(`[KEYPAD] Keypad instance created, emulator found: ${!!this._emulator}`);
-        } else {
-          console.warn(`[KEYPAD] Keypad instance created but no emulator registered yet`);
         }
       }
 
@@ -545,13 +542,13 @@ class CircuitEngine {
         if (!this._emulator && keypadEmulators.size > 0) {
           this._emulator = keypadEmulators.values().next().value;
         }
+
         // Read current pressed key from emulator
         const current = this._emulator?.currentKey ?? null;
         // Edge-triggered: only return key on the transition from null → key
         // This prevents auto-repeat on every loop() frame
         if (current !== null && current !== this._lastKey) {
           this._lastKey = current;
-          console.log(`[KEYPAD] getKey() → '${current}'`);
           return current;
         }
         // Key released: reset so next press is detected
@@ -570,13 +567,15 @@ class CircuitEngine {
       addEventListener(): void { }
     };
 
-    const RealMakeKeymap = function (keymap: any, rowPins?: any, colPins?: any, rows?: number, cols?: number) {
-      return new RealKeypad(keymap, rowPins, colPins, rows, cols);
+    // makeKeymap should just return the keymap array, matching the real Arduino library
+    const RealMakeKeymap = function (keymap: any) {
+      return Array.isArray(keymap) ? keymap : [
+        ['1', '2', '3', 'A'], ['4', '5', '6', 'B'], ['7', '8', '9', 'C'], ['*', '0', '#', 'D']
+      ];
     };
 
     this._pendingLibraryClasses.set('Keypad', RealKeypad);
     this._pendingLibraryClasses.set('makeKeymap', RealMakeKeymap);
-    console.log(`[KEYPAD] RealKeypad + makeKeymap stored in _pendingLibraryClasses`);
 
     // ── ILI9341 TFT emulator class ──────────────────────────────────────────────
     // Captures Adafruit_ILI9341 API calls and renders to a 240×320 RGBA buffer,
@@ -1088,8 +1087,11 @@ class CircuitEngine {
           if (!keypadPin || !boardPin) return;
           const cleanKeypadPin = keypadPin.replace(/__target$/, '');
           
-          // Map board pin to AVR pin name
-          const mapping = simulationRunner.convertArduinoPin(boardPin);
+          // Map board pin to appropriate pin name (AVR or ESP32)
+          const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
+          const otherNode = nodes.find(n => n.id === otherNodeId);
+          const isESP32 = otherNode?.data?.type === 'esp32-c3' || otherNode?.data?.type === 'esp32';
+          const mapping = simulationRunner.convertPin(boardPin, isESP32);
           if (!mapping) return;
           const avrPin = mapping.avrPin;
           
@@ -1106,17 +1108,18 @@ class CircuitEngine {
           }
         });
         
-        console.log(`[KEYPAD] Mapped rows:`, rowPins, `cols:`, colPins);
-        
         const emulator = new KeypadEmulator(
           rowPins, colPins,
           (pin: string, high: boolean) => {
             simulationRunner.setVirtualInput(pin, high);
-          }
+          },
+          (pin: string) => simulationRunner.isPinOutput(pin),
+          (pin: string) => simulationRunner.getPinState(pin),
+          () => simulationRunner.getCycles(),
+          () => simulationRunner.getFrequency()
         );
         emulator.pressKey(null); // Initialize columns to HIGH (pull-up)
         this.keypadEmulators.set(nodeId, emulator);
-        console.log(`[KEYPAD] Registered membrane-keypad emulator: nodeId=${nodeId}`);
       }
 
       // Register rotary-dialer emulator
@@ -1934,14 +1937,10 @@ class CircuitEngine {
 
             // --- Membrane Keypad Emulation ---
             if (peripheralNode.data?.type === 'membrane-keypad') {
-              console.log(`[KEYPAD LISTENER] avrPin=${avrPin} peripheralPinName=${peripheralPinName} state=${state} isHigh=${isHigh}`);
               const emulator = this.keypadEmulators.get(peripheralId);
-              if (emulator && peripheralPinName.startsWith('R')) {
-                // A row pin is only considered active LOW if it is configured as OUTPUT and is LOW.
-                // If it is configured as INPUT (high impedance), we treat it as HIGH (inactive).
+              if (emulator) {
                 const isOutput = simulationRunner.isPinOutput(avrPin);
-                const activeState = isOutput ? isHigh : true;
-                emulator.onRowChange(avrPin, activeState);
+                emulator.onPinChange(avrPin, isHigh, isOutput);
               }
             }
 
@@ -2484,7 +2483,18 @@ class CircuitEngine {
     // Persist pressed key in node data so transpiled sketch can read it
     const { updateNodeData } = useForgeStore.getState();
     updateNodeData(nodeId, { pressedKey: key });
-    console.log(`[FORGE CIRCUIT] Keypad (${nodeId}) key ${key ?? 'released'}`);
+  }
+
+  public releaseKeypadKey(nodeId: string, key: string | null) {
+    const emulator = this.keypadEmulators.get(nodeId);
+    if (emulator) {
+      emulator.releaseKey(key);
+    }
+    const { updateNodeData } = useForgeStore.getState();
+    const currentNode = useForgeStore.getState().nodes.find(n => n.id === nodeId);
+    if (key === null || currentNode?.data?.pressedKey === key) {
+      updateNodeData(nodeId, { pressedKey: null });
+    }
   }
 
   /**

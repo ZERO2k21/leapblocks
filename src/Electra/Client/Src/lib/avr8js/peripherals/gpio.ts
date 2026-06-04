@@ -387,6 +387,15 @@ export class AVRIOPort {
     this.updatePinRegister(ddrMask);
   }
 
+  /**
+   * Public method to force-refresh the PIN register from current pinValue/lastValue/DDR.
+   * Called by readHooks to ensure external inputs (from setPin) are always
+   * reflected in the PIN register before the CPU reads it.
+   */
+  refreshPinRegister() {
+    this.updatePinRegister(this.cpu.data[this.portConfig.DDR]);
+  }
+
   private updatePinRegister(ddr: u8) {
     const newPin = (this.pinValue & ~ddr) | (this.lastValue & ddr);
     this.cpu.data[this.portConfig.PIN] = newPin;

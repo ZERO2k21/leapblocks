@@ -26,6 +26,8 @@ export interface PinMapping {
 
 class SimulationRunner {
   private pinStates: Map<string, PinState> = new Map();
+  private pinOutputs: Map<string, boolean> = new Map();
+  private virtualInputs: Map<string, boolean> = new Map();
   private listeners: Map<string, Set<PinListener>> = new Map();
   private rawPortListeners: Map<string, Set<RawPortListener>> = new Map(); // pin-keyed, fires every edge
 
@@ -101,6 +103,16 @@ class SimulationRunner {
       const port = new AVRIOPort(this.cpu!, portConfig);
       this.ports.set(letter, port);
       port.addListener((state: number) => this.pushPortState(letter, state));
+
+      // Install a readHook on the PIN register to force-refresh from pinValue
+      // before every CPU read. This ensures external inputs (from setVirtualInput /
+      // port.setPin) are always reflected when the AVR code does digitalRead().
+      // Without this, the PIN register can contain stale values if updatePinRegister
+      // hasn't been called since the last setPin.
+      this.cpu!.readHooks[portConfig.PIN] = () => {
+        port.refreshPinRegister();
+        return this.cpu!.data[portConfig.PIN];
+      };
     });
 
     // Attach Dynamic Timers
@@ -280,6 +292,7 @@ class SimulationRunner {
           }
         }
 
+        this.applyVirtualInputs();
         this.esp32c3Runner.run();
         console.log('[FORGE] ESP32-C3 transpiled simulation started');
         return;
@@ -316,6 +329,7 @@ class SimulationRunner {
         }
 
         await this.esp32c3Runner.init(firmwareBin);
+        this.applyVirtualInputs();
         this.esp32c3Runner.run();
         console.log('[FORGE] ESP32-C3 RISC-V runner started, binPath:', this.binPath);
         return;
@@ -333,6 +347,7 @@ class SimulationRunner {
     if (!this.cpu) this.initCPU(); // Auto init if not instantiated
 
     this.isRunning = true;
+    this.applyVirtualInputs();
     this.lastTime = performance.now();
     console.log('[FORGE] AVR Simulator Engine started.');
 
@@ -417,6 +432,8 @@ class SimulationRunner {
       this.setPinState(pinId, 'FLOATING');
     });
     this.scheduledEvents = [];
+    this.pinOutputs.clear();
+    this.virtualInputs.clear();
     console.log('[FORGE] Simulator Engine reset.');
   }
 
@@ -461,9 +478,6 @@ class SimulationRunner {
     try {
       let executedInstructions = 0;
       while (this.cpu.cycles - startCycles < cyclesToRun) {
-        if (this.cpu.cycles % 10000 === 0) {
-          console.log(`[CPU TICK] PC=${this.cpu.pc} cycles=${this.cpu.cycles} SP=${this.cpu.SP}`);
-        }
         avrInstruction(this.cpu);
         this.cpu.tick();
 
@@ -491,15 +505,23 @@ class SimulationRunner {
    */
   setPinState(pinId: string, state: PinState) {
     const currentState = this.pinStates.get(pinId);
-    if (currentState === state) return;
+    const isOutput = this.isPinOutput(pinId);
+    const prevOutput = this.pinOutputs.get(pinId) ?? false;
 
+    if (currentState === state && prevOutput === isOutput) return;
 
+    this.pinOutputs.set(pinId, isOutput);
     this.pinStates.set(pinId, state);
     this.notifyListeners(pinId, state);
   }
 
   getPinState(pinId: string): PinState {
     return this.pinStates.get(pinId) || 'FLOATING';
+  }
+
+  getFrequency(): number {
+    const config = BOARDS[this.selectedBoard] || BOARDS['arduino-uno'];
+    return config.frequency;
   }
 
   /**
@@ -547,11 +569,31 @@ class SimulationRunner {
 
   /**
    * Translates the 8-bit port logic state onto discrete UI pin channels.
+   * For OUTPUT pins, uses the writeGpio-provided state (driven by PORT register).
+   * For INPUT pins, reads the actual PIN register which includes external inputs
+   * injected via setVirtualInput/port.setPin — critical for keypad column scanning.
    */
   private pushPortState(portLetter: string, state: number) {
     const cycles = this.cpu?.cycles ?? 0;
+
+    // Read DDR and PIN registers to distinguish output-driven vs input-sensed values
+    const port = this.ports.get(portLetter);
+    let ddr = 0;
+    let pinReg = 0;
+    if (this.cpu && port) {
+      ddr = this.cpu.data[port.portConfig.DDR];
+      pinReg = this.cpu.data[port.portConfig.PIN];
+    }
+
     for (let bit = 0; bit < 8; bit++) {
-      const isHigh = (state & (1 << bit)) !== 0;
+      const bitMask = 1 << bit;
+      // For OUTPUT pins (DDR bit=1): use the writeGpio output state
+      // For INPUT pins (DDR bit=0): use the PIN register which reflects external inputs
+      const isOutput = (ddr & bitMask) !== 0;
+      const isHigh = isOutput
+        ? (state & bitMask) !== 0
+        : (pinReg & bitMask) !== 0;
+
       const pinId = `P${portLetter}${bit}`;
       // Fire raw listeners on EVERY write (no dedup) — needed for WS2812B timing
       const rawSet = this.rawPortListeners.get(pinId);
@@ -670,12 +712,25 @@ class SimulationRunner {
   }
 
   /**
-   * Helper to check if an AVR pin is configured as an OUTPUT.
-   * Reads the CPU's DDR registers directly.
+   * Helper to check if a pin is configured as an OUTPUT.
+   * Works for both AVR and ESP32.
    */
   isPinOutput(pinId: string): boolean {
+    if (pinId.startsWith('ESP')) {
+      const gpioNum = parseInt(pinId.replace('ESP', ''), 10);
+      if (isNaN(gpioNum)) return false;
+      // 1. Check ArduinoRuntime (transpiled path)
+      if (this.esp32c3Runner?.runtime) {
+        return this.esp32c3Runner.runtime.getPinMode(gpioNum) === 'OUTPUT';
+      }
+      // 2. Check ESP32C3 soft-core platform
+      if (this.esp32c3Runner?.platform_) {
+        return this.esp32c3Runner.platform_.gpio.isOutput(gpioNum);
+      }
+      return false;
+    }
+
     if (!this.cpu) return false;
-    if (pinId.startsWith('ESP')) return false; // Not applicable for AVR
     const portLetter = pinId.charAt(1);
     const bit = parseInt(pinId.charAt(2), 10);
 
@@ -691,13 +746,17 @@ class SimulationRunner {
 
   /**
    * Inject a digital HIGH/LOW into a pin — works for both AVR and ESP32.
-   * For ESP32 pins (ESP{n}), updates the pin state map directly.
+   * For ESP32 pins (ESP{n}), updates the pin state map directly and injects input.
    * For AVR pins (P{L}{n}), drives the hardware port register.
    */
   setVirtualInput(pinId: string, isHigh: boolean) {
+    this.virtualInputs.set(pinId, isHigh);
     if (pinId.startsWith('ESP')) {
-      // ESP32 path — no hardware port, just update state map
+      // ESP32 path — no hardware port, just update state map and inject to runner
       this.setPinState(pinId, isHigh ? 'HIGH' : 'LOW');
+      if (this.esp32c3Runner) {
+        this.esp32c3Runner.injectInput(pinId, isHigh, false);
+      }
       return;
     }
     // AVR path
@@ -707,6 +766,23 @@ class SimulationRunner {
     const port = this.ports.get(portLetter);
     if (port) port.setPin(bit, isHigh);
     this.setPinState(pinId, isHigh ? 'HIGH' : 'LOW');
+  }
+
+  private applyVirtualInputs() {
+    this.virtualInputs.forEach((isHigh, pinId) => {
+      if (pinId.startsWith('ESP')) {
+        if (this.esp32c3Runner) {
+          this.esp32c3Runner.injectInput(pinId, isHigh, false);
+        }
+      } else {
+        if (this.cpu) {
+          const portLetter = pinId.charAt(1);
+          const bit = parseInt(pinId.charAt(2), 10);
+          const port = this.ports.get(portLetter);
+          if (port) port.setPin(bit, isHigh);
+        }
+      }
+    });
   }
 
   /**

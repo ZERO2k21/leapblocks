@@ -63,6 +63,10 @@ export class ESP32C3GPIO implements MemoryRegion {
     this.listeners.push(cb);
   }
 
+  isOutput(pin: number): boolean {
+    return (this.enableReg & (1 << pin)) !== 0;
+  }
+
   private notify(changed: u32): void {
     for (let pin = 0; pin < 26; pin++) {
       if (changed & (1 << pin)) {
