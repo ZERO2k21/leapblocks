@@ -22,11 +22,11 @@ export function registerLeapRenderer(blocklyInstance) {
             super();
 
             // Toy-like overrides (Junior Style)
-            this.CORNER_RADIUS = 8; // Match LeapBlox/leapJr (less round than 24)
+            this.CORNER_RADIUS = 6; // Match LeapBlox/leapJr (less round than 24)
             this.notchOffsetLeft_ = 12; // Standard
-            this.MIN_BLOCK_HEIGHT = 48; // Chunky but not huge (Horizontal layout handles width)
-            this.TOP_ROW_MIN_HEIGHT = 10;
-            this.BOTTOM_ROW_MIN_HEIGHT = 10;
+            this.MIN_BLOCK_HEIGHT = 40; // Chunky but not huge (Horizontal layout handles width)
+            this.TOP_ROW_MIN_HEIGHT = 4;
+            this.BOTTOM_ROW_MIN_HEIGHT = 4;
 
             // Font
             this.FIELD_TEXT_FONTWEIGHT = '700'; // Bold text

@@ -50,6 +50,7 @@ import "./styles/juniorBlocks.css";
 import "./styles/positionPicker.css";
 import "./styles/directionPicker.css";
 import "./styles/juniorLooksBlocks.css";
+import "../../components/workspace/WorkspaceControls.css";
 
 // Robot Assets
 const robotIdle = "assets/sprites/robot/robot_idle.svg";
@@ -194,7 +195,16 @@ export default function JuniorApp({ onBack }) {
                         wave2: robotWave2,
                         talk: robotTalk1
                     },
-                    currentCostume: "default"
+                    currentCostume: "default",
+                    blocks: {
+                        languageVersion: 0,
+                        blocks: [{
+                            type: "event_flag",
+                            id: "block_default_start",
+                            x: 60,
+                            y: 60
+                        }]
+                    }
                 }
             ]
         }
@@ -439,7 +449,8 @@ export default function JuniorApp({ onBack }) {
         setProjectName,
         saveCurrentWorkspace,
         spriteWorkspacesRef,
-        isLoadingWorkspaceRef
+        isLoadingWorkspaceRef,
+        audioEngine
     });
 
     // Wrapper for backward compatibility - delegates to loadSpriteWorkspace
@@ -788,7 +799,7 @@ export default function JuniorApp({ onBack }) {
                     })()}
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
-                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '210px', right: '14px' }} />
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '215px', right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
 
@@ -796,7 +807,7 @@ export default function JuniorApp({ onBack }) {
                         position: "absolute",
                         left: "14px",
                         right: "14px",
-                        bottom: "145px",
+                        bottom: "150px",
                         height: "56px",
                         display: "flex",
                         flexDirection: "row",

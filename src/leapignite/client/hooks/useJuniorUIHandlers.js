@@ -592,6 +592,12 @@ export function useJuniorUIHandlers({
         const name = `Recording ${recordingCount}`;
         setRecordingCount(prev => prev + 1);
         audioEngine.soundBank.assets[name] = audioData.blobUrl;
+        // Store raw data for project save/load
+        if (!audioEngine.soundBank.recordedSounds) audioEngine.soundBank.recordedSounds = {};
+        audioEngine.soundBank.recordedSounds[name] = {
+            samples: Array.from(audioData.samples),
+            sampleRate: audioData.sampleRate
+        };
         alert(`Saved as '${name}'. You can now select it in the 'play sound' block dropdown!`);
     };
 
