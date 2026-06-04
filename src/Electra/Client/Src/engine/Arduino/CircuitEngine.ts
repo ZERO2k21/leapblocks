@@ -181,7 +181,7 @@ class CircuitEngine {
     const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
     const visited = new Set<string>();
 
-    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v'];
+    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v', 'led-bar-graph'];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
@@ -198,7 +198,7 @@ class CircuitEngine {
       if (current.id !== startNodeId && targetTypes.includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
         // Stop tracing "through" simple terminal components
-        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'battery-12v'].includes(nodeType)) {
+        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'battery-12v', 'led-bar-graph'].includes(nodeType)) {
           continue;
         }
       }

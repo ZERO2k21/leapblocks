@@ -158,7 +158,79 @@ export class MakeyMakeyRuntime {
     private startKeyboardFallback() {
         if (this._keyboardHandler) return;
 
+        // Clean up any stale handlers registered from previous hot reloads (HMR leak prevention)
+        if ((window as any).__makeyMakeyHandler) {
+            try {
+                window.removeEventListener('keydown', (window as any).__makeyMakeyHandler);
+            } catch (err) {}
+            (window as any).__makeyMakeyHandler = null;
+        }
+
         this._keyboardHandler = (e: KeyboardEvent) => {
+            // Don't intercept if focus is in an input, textarea, editable element, or Monaco Editor
+            const isEditable = (el: any): boolean => {
+                if (!el) return false;
+                const tag = (el.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+                    return true;
+                }
+                if (el.isContentEditable) {
+                    return true;
+                }
+                
+                // Case-insensitive walk up parent tree for monaco / editor classes
+                let current = el;
+                while (current && current !== document.body) {
+                    if (current.className && typeof current.className === 'string') {
+                        const cls = current.className.toLowerCase();
+                        if (
+                            cls.includes('monaco') ||
+                            cls.includes('inputarea') ||
+                            cls.includes('view-line') ||
+                            cls.includes('view-lines')
+                        ) {
+                            return true;
+                        }
+                    }
+                    current = current.parentElement;
+                }
+
+                if (typeof el.closest === 'function') {
+                    if (
+                        el.closest('.monaco-editor') ||
+                        el.closest('.monaco-editor-container') ||
+                        el.closest('.monaco-mouse-cursor-text') ||
+                        el.closest('.view-lines') ||
+                        el.closest('.view-line') ||
+                        el.closest('[class*="monaco-"]') ||
+                        el.closest('.inputarea')
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            const target = e.target as HTMLElement;
+            const activeEl = document.activeElement;
+
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                console.log('[MakeyMakey Debug] Space key pressed.', {
+                    target: target,
+                    targetTagName: target?.tagName,
+                    targetClassList: target?.classList ? Array.from(target.classList) : [],
+                    activeElement: activeEl,
+                    activeElementTagName: activeEl?.tagName,
+                    activeElementClassList: activeEl?.classList ? Array.from(activeEl.classList) : [],
+                    isTargetEditable: isEditable(target),
+                    isActiveElementEditable: isEditable(activeEl)
+                });
+            }
+
+            if (isEditable(target) || isEditable(activeEl)) {
+                return;
+            }
+
             // Map keyboard keys to Makey Makey signals
             const keyMap: Record<string, string> = {
                 'ArrowUp': 'UP',
@@ -181,12 +253,16 @@ export class MakeyMakeyRuntime {
         };
 
         window.addEventListener('keydown', this._keyboardHandler);
+        (window as any).__makeyMakeyHandler = this._keyboardHandler;
         console.log('[MakeyMakey] Keyboard fallback started');
     }
 
     private stopKeyboardFallback() {
         if (this._keyboardHandler) {
             window.removeEventListener('keydown', this._keyboardHandler);
+            if ((window as any).__makeyMakeyHandler === this._keyboardHandler) {
+                (window as any).__makeyMakeyHandler = null;
+            }
             this._keyboardHandler = null;
             console.log('[MakeyMakey] Keyboard fallback stopped');
         }
