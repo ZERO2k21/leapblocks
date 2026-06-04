@@ -9,15 +9,15 @@
 
 /* Rounded vibrant block body */
 .junior-mode .blocklySvg .blocklyBlockBackground{
-    rx: 22px !important;
-    ry: 22px !important;
+    rx: 12px !important;
+    ry: 12px !important;
     fill: #4C97FF !important;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 /* Block text - exclude fields and icons */
 .junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon){
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     fill: #ffffff !important;
 }
@@ -51,7 +51,7 @@
 .junior-mode g[class*="blocklyEditableText"]>text,
 .junior-mode g[class*="blocklyNonEditableText"]>text{
     fill: #000000 !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     font-family: 'Segoe UI', sans-serif !important;
     transform: translateY(2px);
@@ -75,7 +75,24 @@
 
 /* Vertical spacing between blocks */
 .junior-mode .blocklyBlock{
-    margin-bottom: 10px;
+    margin-bottom: 4px;
+}
+
+/* ============================================
+   ZOOM & SCALE FIXES (prevent scale inheritance)
+   ============================================ */
+
+.junior-mode .blocklyToolboxDiv {
+    transform: scale(1) !important;
+}
+
+.junior-mode .blocklyFlyout {
+    transform-origin: left top !important;
+    z-index: 50 !important;
+}
+
+.junior-mode .blocklyFlyout .blocklyFlyoutBlock {
+    transform: scale(1) !important;
 }
 
 /* ============================================
@@ -84,7 +101,7 @@
 
 /* Icon text in blocks - slightly larger than body text for visibility */
 .junior-mode .blocklySvg .blocklyText:first-child{
-    font-size: 18px !important;
+    font-size: 14px !important;
     fill: white !important;
 }
 
