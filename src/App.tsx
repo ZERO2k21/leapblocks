@@ -50,7 +50,7 @@ const JuniorApp = lazy(() => {
 // @ts-ignore
 const PythonApp = lazy(() => {
     logAppTiming('PythonApp lazy load started');
-    return import('./python/PythonApp').then(module => {
+    return import('./leapcodex/client/CodexApp').then(module => {
         logAppTiming('PythonApp lazy load completed');
         return module;
     });
