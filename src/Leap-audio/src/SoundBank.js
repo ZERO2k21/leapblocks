@@ -20,6 +20,9 @@ export class SoundBank {
             robot: "assets/sounds/robot.mp3.mp3"
         };
 
+        // Raw recorded sounds for project save/load
+        this.recordedSounds = {};
+
         // For music loop tracking
         this.musicSource = null;
         this.musicGain = this.audioContext.createGain();
@@ -32,6 +35,20 @@ export class SoundBank {
     async getSoundBuffer(soundId) {
         if (this.soundBuffers.has(soundId)) {
             return this.soundBuffers.get(soundId);
+        }
+
+        // Check if this is a recorded sound with raw samples
+        if (this.recordedSounds[soundId]) {
+            const { samples, sampleRate } = this.recordedSounds[soundId];
+            const float32 = new Float32Array(samples);
+            const audioBuffer = new AudioBuffer({
+                length: float32.length,
+                numberOfChannels: 1,
+                sampleRate: sampleRate
+            });
+            audioBuffer.getChannelData(0).set(float32);
+            this.soundBuffers.set(soundId, audioBuffer);
+            return audioBuffer;
         }
 
         // Try to load physical file if it exists in assets map
@@ -103,6 +120,58 @@ export class SoundBank {
             try { this.musicSource.stop(); } catch (e) { }
             this.musicSource = null;
         }
+    }
+
+    /**
+     * Restore a recorded sound from raw samples (used during project load).
+     */
+    restoreRecordedSound(name, samples, sampleRate) {
+        this.recordedSounds[name] = { samples, sampleRate };
+        // Create a blob URL for the asset so fetch-based paths work
+        const float32 = new Float32Array(samples);
+        const wavBlob = this._encodeWavBlob(float32, sampleRate);
+        this.assets[name] = URL.createObjectURL(wavBlob);
+    }
+
+    _encodeWavBlob(samples, sampleRate) {
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const bytesPerSample = bitsPerSample / 8;
+        const blockAlign = numChannels * bytesPerSample;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = samples.length * bytesPerSample;
+        const headerSize = 44;
+        const totalSize = headerSize + dataSize;
+
+        const buffer = new ArrayBuffer(totalSize);
+        const view = new DataView(buffer);
+
+        const writeString = (off, str) => {
+            for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i));
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, totalSize - 8, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitsPerSample, true);
+        writeString(36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        let off = 44;
+        for (let i = 0; i < samples.length; i++) {
+            const s = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            off += 2;
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
     }
 
     // --- ENHANCED SYNTHESIS (Offline Rendering) --- //

@@ -302,7 +302,7 @@ export function useJuniorWorkspace({
                 if (initFlyout.getWorkspace()) {
                     initFlyout.getWorkspace().setScale(FIXED_SCALE);
                 }
-                initFlyout.height_ = 140;
+                initFlyout.height_ = 180;
             }
 
             setTimeout(() => {

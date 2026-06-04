@@ -5,12 +5,12 @@
  */
 import React from "react";
 import { useCodex } from "../context/CodexContext";
-import SidePanel from "../../python/panels/SidePanel";
-import EditorPanel from "../../python/panels/EditorPanel";
-import StagePanel from "../../python/panels/StagePanel";
-import TerminalPanel from "../../python/terminal/TerminalPanel";
-import MonacoEditor from "../../python/editor/MonacoEditor";
-import StatusBar from "../../python/editor/StatusBar";
+import SidePanel from "../../../python/panels/SidePanel";
+import EditorPanel from "../../../python/panels/EditorPanel";
+import StagePanel from "../../../python/panels/StagePanel";
+import TerminalPanel from "../../../python/terminal/TerminalPanel";
+import MonacoEditor from "../../../python/editor/MonacoEditor";
+import StatusBar from "../../../python/editor/StatusBar";
 import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";
 

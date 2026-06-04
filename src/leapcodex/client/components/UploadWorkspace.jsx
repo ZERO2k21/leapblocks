@@ -5,12 +5,13 @@
  */
 import React from "react";
 import { useCodex } from "../context/CodexContext";
-import MonacoEditor from "../../python/editor/MonacoEditor";
-import SerialMonitor from "../../components/SerialMonitor";
+import MonacoEditor from "../../../python/editor/MonacoEditor";
+import SerialMonitor from "../../../components/SerialMonitor";
 import { FileText, FileCode2, FileUp, Trash2, Plus, Plug, Cpu, RefreshCw, Upload, Undo, Redo, Loader, CheckCircle, AlertCircle, ClipboardList, TerminalSquare } from "lucide-react";
 import { C } from "../utils/theme";
 import { getFileExtension, BOARD_HEADER_EXTENSIONS, BOARD_SOURCE_EXTENSIONS, isBoardUploadFile, formatPortLabel } from "../utils/boardConfig";
 import { buildBoardTemplate, buildLibraryHeaderTemplate, buildLibraryCppTemplate, getUniqueLibraryBaseName, getLibraryBaseName, normalizeCppInclude, insertIncludeLineIntoSource } from "../utils/boardConfig";
+import { getUniqueFileName } from "../utils/fileUtils";
 
 export default function UploadWorkspace() {
     const ctx = useCodex();
@@ -19,7 +20,6 @@ export default function UploadWorkspace() {
         ctx.openTextPrompt("New MicroPython File", "Enter a file name for the new MicroPython file.", "module.py", (requestedName) => {
             let createdFileName = "";
             ctx.setUploadProjectFiles((prev) => {
-                const { getUniqueFileName } = require("../utils/fileUtils");
                 createdFileName = getUniqueFileName(requestedName, prev);
                 return { ...prev, [createdFileName]: `# ${createdFileName}\n\n` };
             });

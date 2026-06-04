@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { useState, useCallback } from "react";
-import { FULL_CATALOG } from "../../components/SpriteLibrary";
+import { FULL_CATALOG } from "../../../components/SpriteLibrary";
 
 let _SPRITE_LIBRARY;
 function getSpriteLibrary() {

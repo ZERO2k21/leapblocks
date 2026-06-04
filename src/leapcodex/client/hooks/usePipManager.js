@@ -6,7 +6,7 @@
 import { useState, useCallback } from "react";
 import { getPipPackages } from "../data/pipPackages";
 
-export function usePipManager({ addLog }) {
+export function usePipManager({ addLog, setActivePanel }) {
     const [packages, setPackages] = useState(() => getPipPackages());
     const [pipFilter, setPipFilter] = useState("");
 
@@ -67,7 +67,7 @@ export function usePipManager({ addLog }) {
                 addLog(`  → Tip: Connect your hardware device before use`, "info");
             }
         }
-    }, [addLog]);
+    }, [addLog, setActivePanel]);
 
     return {
         packages,
@@ -76,11 +76,6 @@ export function usePipManager({ addLog }) {
         setPipFilter,
         handleInstall,
     };
-}
-
-// This function is needed but was referenced incorrectly
-function setActivePanel() {
-    // This is a placeholder - the actual setActivePanel should come from parent
 }
 
 export default usePipManager;

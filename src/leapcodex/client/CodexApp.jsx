@@ -13,6 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { StageProvider, useStage } from "../../context/StageContext";
+import { CodexProvider } from "./context/CodexContext";
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
 import { useTerminal } from "./hooks/useTerminal";
@@ -26,7 +27,7 @@ import { useSpriteManager } from "./hooks/useSpriteManager";
 import { C } from "./utils/theme";
 import { EXTENSIONS } from "./data/extensions";
 import { BACKDROP_LIBRARY } from "./data/backdrops";
-import { getDefaultSpritePresets, createIntermediateBlocksBridge } from "../python/SpriteBridge";
+import { getDefaultSpritePresets, createIntermediateBlocksBridge } from "../../python/SpriteBridge";
 
 // ─── Sub-Components ────────────────────────────────────────────────────────
 import TopBar from "./components/TopBar";
@@ -67,12 +68,6 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     // ── Upload Mode ─────────────────────────────────────────────────────────
     const upload = useUploadMode({ addLog });
 
-    // ── Pip Manager ─────────────────────────────────────────────────────────
-    const { packages, pipFilter, setPipFilter, handleInstall } = usePipManager({ addLog });
-
-    // ── Sprite Manager ──────────────────────────────────────────────────────
-    const sprite = useSpriteManager({ sprites, setSprites, setSelectedSpriteId, addLog });
-
     // ── UI State ────────────────────────────────────────────────────────────
     const [workflowMode, setWorkflowMode] = useState("ide");
     const [activePanel, setActivePanel] = useState("terminal");
@@ -83,10 +78,18 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
 
+    // ── Pip Manager ─────────────────────────────────────────────────────────
+    const { packages, pipFilter, setPipFilter, handleInstall } = usePipManager({ addLog, setActivePanel });
+
+    // ── Sprite Manager ──────────────────────────────────────────────────────
+    const sprite = useSpriteManager({ sprites, setSprites, setSelectedSpriteId, addLog });
+
     const [modalState, setModalState] = useState({
         isOpen: false, title: "", message: "", defaultValue: "", onSubmit: null,
     });
     const [modalInput, setModalInput] = useState("");
+    const [replInput, setReplInput] = useState("");
+    const replInputRef = useRef(null);
 
     const isPythonBannerText = useCallback((text) => {
         const t = text.trim();
@@ -297,7 +300,7 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
                 addLog(`📁 Files updated: ${Object.keys(files).join(', ')}`, "info");
             }),
         ];
-        return () => cleanups.forEach(fn => fn());
+        return () => cleanups.forEach(fn => fn?.());
     }, [addLog, isPythonBannerText, isRunning, handleStop, setProjectFiles]);
 
     // ── Modal handlers ────────────────────────────────────────────────────
@@ -317,6 +320,24 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         modalState.onSubmit?.(nextValue);
         handleModalCancel();
     }, [handleModalCancel, modalInput, modalState]);
+
+    // ── REPL handlers ──────────────────────────────────────────────────────
+    const handleReplSubmit = useCallback(() => {
+        const line = replInput.trim();
+        if (!line) return;
+        addLog(`>>> ${line}`, "input");
+        if (window.electronAPI?.isElectron) {
+            window.electronAPI.pythonReplSend(line);
+        }
+        setReplInput("");
+    }, [replInput, addLog]);
+
+    const handleReplKey = useCallback((e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleReplSubmit();
+        }
+    }, [handleReplSubmit]);
 
     // ── Workflow mode change ──────────────────────────────────────────────
     const handleWorkflowModeChange = useCallback((nextMode) => {
@@ -351,6 +372,7 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         terminalInputValue, setTerminalInputValue,
         handleTerminalInputSubmit, handleTerminalInputKey,
         terminalInputRef, inputResolverRef,
+        replInput, setReplInput, handleReplSubmit, handleReplKey, replInputRef,
         ...upload, ...sprite,
         BACKDROP_LIBRARY, EXTENSIONS,
         openTextPrompt, modalState, modalInput, setModalInput,
@@ -359,26 +381,27 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     };
 
     return (
-        <div style={{
-            display: "flex", flexDirection: "column",
-            height: "100vh", width: "100vw",
-            background: C.BG, color: C.TEXT, overflow: "hidden",
-            fontFamily: "'Inter', 'Segoe UI', sans-serif",
-        }}>
-            <TopBar />
+        <CodexProvider value={contextValue}>
+            <div style={{
+                display: "flex", flexDirection: "column",
+                height: "100vh", width: "100vw",
+                background: C.BG, color: C.TEXT, overflow: "hidden",
+                fontFamily: "'Inter', 'Segoe UI', sans-serif",
+            }}>
+                <TopBar />
 
-            {workflowMode === "stage" ? (
-                <StageWorkspace />
-            ) : workflowMode === "upload" ? (
-                <UploadWorkspace />
-            ) : (
-                <IdeWorkspace />
-            )}
+                {workflowMode === "stage" ? (
+                    <StageWorkspace />
+                ) : workflowMode === "upload" ? (
+                    <UploadWorkspace />
+                ) : (
+                    <IdeWorkspace />
+                )}
 
-            <PromptModal />
-            <SpriteLibraryModal />
+                <PromptModal />
+                <SpriteLibraryModal />
 
-            <BoardSelectionModal
+                <BoardSelectionModal
                 isOpen={upload.isBoardModalOpen}
                 onClose={() => upload.setIsBoardModalOpen(false)}
                 onSelect={(boardId, boardName) => {
@@ -390,7 +413,8 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
                 }}
                 currentBoard={upload.selectedBoard}
             />
-        </div>
+            </div>
+        </CodexProvider>
     );
 }
 
