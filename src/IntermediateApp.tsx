@@ -834,11 +834,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         sensingMonitorsRef.current = sensingMonitors;
     }, [sensingMonitors]);
 
-    const tableMonitorsRef = useRef(tableMonitors);
-    useEffect(() => {
-        tableMonitorsRef.current = tableMonitors;
-    }, [tableMonitors]);
-
     // Keep window monitors in sync for Blockly toolbox checkboxes
     useEffect(() => {
         (window as any)._monitors_for_sync = {
