@@ -12,24 +12,24 @@ const EXTENSIONS = [
     { id: 'object_detection', name: 'Object Detection', description: 'Identify objects from image using AI vision models.', emoji: '🐱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'ai', iconBg: '#3dba7e', icon: '🔎' },
     { id: 'human_body', name: 'Human Body Detection', description: 'Identify human body parts, poses and hand gestures from image.', emoji: '🤸', color: 'linear-gradient(135deg,#283593,#7986cb)', cat: 'ai', iconBg: '#5c6bc0', icon: '✋' },
     { id: 'ml_environment', name: 'Machine Learning Environment', description: 'Classify Image, Pose, Hand Pose, Text, Number & Object Detection.', emoji: '🧠', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'ai', iconBg: '#43a047', icon: '🤖', requires: '📡 WiFi' },
-    { id: 'teachable_machine', name: 'ML with Teachable Machine', description: "Classify Image & Pose using Google's Teachable Machine.", emoji: '🎓', color: 'linear-gradient(135deg,#880e4f,#f48fb1)', cat: 'ai', iconBg: '#e91e63', icon: '📚', requires: '🖥 📡' },
+    { id: 'teachable_machine', name: 'ML with Teachable Machine', description: "Classify Image & Pose using Google's Teachable Machine.", emoji: '🎓', color: 'linear-gradient(135deg,#880e4f,#f48fb1)', cat: 'ai', iconBg: '#e91e63', icon: '📚', requires: '🖥 📡', comingSoon: true },
     { id: 'computer_vision', name: 'Computer Vision', description: 'Detect Object, Brand, Landmark & Celebrity using cloud AI.', emoji: '👁️', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'ai', iconBg: '#8e24aa', icon: '🔍', requires: '🖥 📡' },
     { id: 'text_recognition', name: 'Text Recognition', description: 'Read printed and handwritten text from images using OCR.', emoji: '📝', color: 'linear-gradient(135deg,#558b2f,#aed581)', cat: 'ai', iconBg: '#7cb342', icon: '📄', requires: '🖥 📡' },
     { id: 'speech_recognition', name: 'Speech Recognition', description: 'Convert speech to text in real-time using microphone input.', emoji: '🎙️', color: 'linear-gradient(135deg,#1e88e5,#42a5f5)', cat: 'ai', iconBg: '#1e88e5', icon: '🔊', requires: '📡', badge: 'New' },
-    { id: 'chatgpt', name: 'ChatGPT (Alpha)', description: 'Gamify your learning with ChatGPT integration.', emoji: '💬', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'ai', iconBg: '#10a37f', icon: '🤖', requires: '🖥 📡' },
+    { id: 'chatgpt', name: 'ChatGPT (Alpha)', description: 'Gamify your learning with ChatGPT integration.', emoji: '💬', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'ai', iconBg: '#10a37f', icon: '🤖', requires: '🖥 📡', comingSoon: true },
 
     // IoT & Connectivity
     { id: 'weather', name: 'Weather Data', description: 'Get real-time weather data by location anywhere on Earth.', emoji: '🌤️', color: 'linear-gradient(135deg,#1e88e5,#42a5f5)', cat: 'iot', iconBg: '#1976d2', icon: '☁️', requires: '📡' },
-    { id: 'ifttt', name: 'IFTTT Webhooks', description: 'Trigger IFTTT Webhooks to automate anything.', emoji: '⚡', color: 'linear-gradient(135deg,#f9a825,#ffe082)', cat: 'iot', iconBg: '#f5c518', icon: '🔗', requires: '📡' },
-    { id: 'iot', name: 'Internet of Things (IoT)', description: 'Connect projects across the globe with IoT sensors!', emoji: '🌐', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'iot', iconBg: '#7b1fa2', icon: '📡', requires: '📡' },
-    { id: 'alexa', name: 'Alexa (Alpha)', description: 'Play with the Alexa skill — voice-enable your projects.', emoji: '🔵', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'iot', iconBg: '#232f3e', icon: '🎵', badge: 'New' },
+    { id: 'ifttt', name: 'IFTTT Webhooks', description: 'Trigger IFTTT Webhooks to automate anything.', emoji: '⚡', color: 'linear-gradient(135deg,#f9a825,#ffe082)', cat: 'iot', iconBg: '#f5c518', icon: '🔗', requires: '📡', comingSoon: true },
+    { id: 'iot', name: 'Internet of Things (IoT)', description: 'Connect projects across the globe with IoT sensors!', emoji: '🌐', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'iot', iconBg: '#7b1fa2', icon: '📡', requires: '📡', comingSoon: true },
+    { id: 'alexa', name: 'Alexa (Alpha)', description: 'Play with the Alexa skill — voice-enable your projects.', emoji: '🔵', color: 'linear-gradient(135deg,#6a1b9a,#ce93d8)', cat: 'iot', iconBg: '#232f3e', icon: '🎵', badge: 'New', comingSoon: true },
 
     // Games & Animation
     { id: 'physics', name: 'Physics Engine', description: 'Add real-world motions, gravity and forces to sprites.', emoji: '🎾', color: 'linear-gradient(135deg,#2e7d32,#66bb6a)', cat: 'games', iconBg: '#388e3c', icon: '⚽' },
     { id: 'pen', name: 'Pen', description: 'Draw trails and patterns with your sprites.', emoji: '✏️', color: 'linear-gradient(135deg,#558b2f,#aed581)', cat: 'games', iconBg: '#558b2f', icon: '🖌️' },
     { id: 'music', name: 'Music', description: 'Play instruments, drums, and compose musical sequences.', emoji: '🎹', color: 'linear-gradient(135deg,#880e4f,#f48fb1)', cat: 'games', iconBg: '#c62828', icon: '🥁' },
     { id: 'video_sensing', name: 'Video Sensing', description: 'Sense motion and movement with the camera.', emoji: '📷', color: 'linear-gradient(135deg,#006064,#4dd0e1)', cat: 'games', iconBg: '#00838f', icon: '🎥' },
-    { id: 'content_creation', name: 'Content Creation (Alpha)', description: 'Create interactive buttons, paragraphs, quizzes & more.', emoji: '✨', color: 'linear-gradient(135deg,#1e88e5,#42a5f5)', cat: 'games', iconBg: '#1565c0', icon: '📝', badge: 'New' },
+    { id: 'content_creation', name: 'Content Creation (Alpha)', description: 'Create interactive buttons, paragraphs, quizzes & more.', emoji: '✨', color: 'linear-gradient(135deg,#1e88e5,#42a5f5)', cat: 'games', iconBg: '#1565c0', icon: '📝', badge: 'New', comingSoon: true },
 
     // Hardware / Utilities
     { id: 'qr_scanner', name: 'QR Code Scanner', description: 'Detect and Identify QR Code using camera.', emoji: '📱', color: 'linear-gradient(135deg,#00796b,#4db6ac)', cat: 'hardware', iconBg: '#00695c', icon: '📷' },
@@ -79,6 +79,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
     }, [onSelectExtension]);
 
     const handleCardClick = useCallback((ext) => {
+        if (ext.comingSoon) return;
         setIframeExtension(ext);
     }, []);
 
@@ -183,12 +184,16 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
                             {section.extensions.map(ext => (
                                 <div
                                     key={ext.id}
-                                    className="jel-card"
+                                    className={`jel-card ${ext.comingSoon ? 'jel-card-coming-soon' : ''}`}
                                     onClick={() => handleCardClick(ext)}
+                                    style={ext.comingSoon ? { cursor: 'not-allowed' } : {}}
                                 >
                                     <div className="jel-card-banner" style={{ background: ext.color }}>
                                         <span className="jel-card-emoji">{ext.emoji}</span>
-                                        {ext.badge && (
+                                        {ext.comingSoon && (
+                                            <span className="jel-card-badge" style={{ backgroundColor: '#9e9e9e', position: 'absolute', top: '8px', left: '8px' }}>Coming Soon</span>
+                                        )}
+                                        {ext.badge && !ext.comingSoon && (
                                             <span className="jel-card-badge">{ext.badge}</span>
                                         )}
                                         {ext.requires && (
