@@ -562,7 +562,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
             const runner = await getSimulationRunner();
             runner.setBoard(board);
             runner.setTranspiledJS(transpileResult.jsCode);
-            startSimulation('__esp32_c3_transpiled__');
+            startSimulation('__esp32_c3_transpiled__', code);
           } else if (transpileResult.error) {
             const { appendSerial } = useForgeStore.getState();
             appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
@@ -586,7 +586,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           libraries: useForgeStore.getState().importedLibraries
         });
         if (result.success && result.hexContent) {
-          startSimulation(result.hexContent);
+          startSimulation(result.hexContent, code);
         } else if (result.error) {
           // Display compilation errors in Serial Monitor
           const { appendSerial } = useForgeStore.getState();

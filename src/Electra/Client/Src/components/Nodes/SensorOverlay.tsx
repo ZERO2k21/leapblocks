@@ -28,8 +28,54 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
 
+  const [localVal, setLocalVal] = React.useState(value);
+  const lastUpdatedRef = React.useRef<number>(0);
+  const timeoutRef = React.useRef<any>(null);
+
+  // Keep local val in sync with props changes (e.g. simulation reset or external changes)
+  React.useEffect(() => {
+    setLocalVal(value);
+  }, [value]);
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const displayColor = isLightTheme ? '#0f172a' : '#f8fafc';
   const labelColor = isLightTheme ? '#475569' : '#94a3b8';
+
+  const sendUpdate = (val: number) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    onChange(val);
+    lastUpdatedRef.current = Date.now();
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setLocalVal(v);
+
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastUpdatedRef.current;
+
+    // Throttle updates: send immediate updates at most every 100ms
+    if (timeSinceLastUpdate >= 100) {
+      sendUpdate(v);
+    } else {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        sendUpdate(v);
+      }, 100 - timeSinceLastUpdate);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', userSelect: 'none' }}>
@@ -41,12 +87,12 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
+        value={localVal}
+        onChange={handleChange}
         style={{ flex: 1, accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px', outline: 'none' }}
       />
       <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace', width: '45px', textAlign: 'right' }}>
-        {value.toFixed(step >= 1 ? 0 : 1)}{unit}
+        {localVal.toFixed(step >= 1 ? 0 : 1)}{unit}
       </span>
     </div>
   );
@@ -105,7 +151,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   const isDHT       = type === 'dht22' || type === 'dht11';
   const isDistance  = type === 'hc-sr04';
-  const isAnalog    = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor'].includes(type);
+  const isAnalog    = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor', 'photoresistor'].includes(type);
   const isNTC       = type === 'ntc-temperature-sensor';
   const isPIR       = type === 'pir-motion-sensor';
   const isMPU6050   = type === 'mpu6050';

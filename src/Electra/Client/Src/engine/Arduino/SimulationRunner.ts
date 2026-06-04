@@ -51,6 +51,7 @@ class SimulationRunner {
   // Transpiled JavaScript code for ArduinoRuntime-based simulation (recommended path)
   private _transpiledJS: string | null = null;
   private _binBase64: string | null = null;
+  private _sourceCode: string = '';
 
   // Track whether ESP32 serial/pin listeners have been wired to avoid duplication on restart
   private _esp32ListenersWired = false;
@@ -111,7 +112,11 @@ class SimulationRunner {
       // hasn't been called since the last setPin.
       this.cpu!.readHooks[portConfig.PIN] = () => {
         port.refreshPinRegister();
-        return this.cpu!.data[portConfig.PIN];
+        const val = this.cpu!.data[portConfig.PIN];
+        if (letter === 'D') {
+          console.log(`[SimulationRunner] Read PIND: 0x${val.toString(16)} (bit 3 DT = ${(val >> 3) & 1}, bit 2 SCK = ${(val >> 2) & 1})`);
+        }
+        return val;
       };
     });
 
@@ -216,6 +221,14 @@ class SimulationRunner {
   setTranspiledJS(jsCode: string): void {
     this._transpiledJS = jsCode;
     console.log(`[SimulationRunner] Transpiled JS stored (${jsCode.length} bytes)`);
+  }
+
+  setSourceCode(code: string): void {
+    this._sourceCode = code || '';
+  }
+
+  getSourceCode(): string {
+    return this._sourceCode;
   }
 
   /**

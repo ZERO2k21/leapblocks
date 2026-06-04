@@ -77,7 +77,7 @@ export interface ForgeState {
 
   // Simulation
   isSimulating: boolean;
-  startSimulation: (hexString: string) => void;
+  startSimulation: (hexString: string, sourceCode?: string) => void;
   stopSimulation: () => void;
   resetSimulation: () => void;
   toggleSimulation: () => void;
@@ -197,7 +197,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   setShowPartPicker: (show) => set({ showPartPicker: show }),
 
-  startSimulation: (hexString) => {
+  startSimulation: (hexString, sourceCode) => {
     const state = useForgeStore.getState();
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
 
@@ -206,6 +206,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
     // Load engines and start simulation asynchronously
     Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
+      if (sourceCode) {
+        runner.setSourceCode(sourceCode);
+      }
       engine.init();
 
       const isESP32Transpiled = hexString === '__esp32_c3_transpiled__';
@@ -294,7 +297,36 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   resetSimulation: () => {
     console.log('[FORGE STORE] resetSimulation triggered (Clear Canvas/States).');
-    set({ isSimulating: false, serialOutput: '' });
+
+    // Properties that are set during simulation and should be cleared on reset
+    const SIMULATION_DATA_KEYS = [
+      'lcdState', 'oledImageData', 'tftImageData', 'tftDisplayOn', 'tftRotation',
+      'pinStates', 'damaged',
+      'angle', 'speed', 'direction',
+      'neopixelPixels', 'segValues',
+      'relayEnergized',
+      'pressedKey',
+      'ena', 'enb', 'in1', 'in2', 'in3', 'in4',
+      'innerHandAngle', 'innerEnergized', 'outerHandAngle', 'outerEnergized',
+      'beatPhase', 'adcValue',
+    ];
+
+    const { nodes } = get();
+    const cleanedNodes = nodes.map(node => {
+      const cleanData = { ...node.data };
+      for (const key of SIMULATION_DATA_KEYS) {
+        delete cleanData[key];
+      }
+      return { ...node, data: cleanData };
+    });
+
+    set({
+      isSimulating: false,
+      serialOutput: '',
+      wifiLog: [],
+      nodes: cleanedNodes,
+    });
+
     getSimulationRunner().then(runner => runner.reset());
   },
 

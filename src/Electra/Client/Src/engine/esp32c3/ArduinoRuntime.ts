@@ -154,11 +154,11 @@ export class ArduinoRuntime {
           return Math.round(4095 * ratio / (1 + ratio));
         }
 
-        if (t === 'potentiometer' || t === 'mq2' || t === 'resistor') {
+        if (t === 'potentiometer' || t === 'slide-potentiometer' || t === 'mq2' || t === 'resistor') {
           return Math.round(((sv.value ?? 0) / 100) * 4095);
         }
 
-        if (t === 'photoresistor-sensor') {
+        if (t === 'photoresistor-sensor' || t === 'photoresistor') {
           const lux = sv.value ?? 500;
           const R_ldr = 500000 / Math.max(1, lux);
           const voltage = 5.0 * 10000 / (R_ldr + 10000);

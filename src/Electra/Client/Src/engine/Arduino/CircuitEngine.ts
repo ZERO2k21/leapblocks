@@ -20,6 +20,7 @@ import { RotaryDialerEmulator } from './RotaryDialerEmulator';
 import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { IRReceiverEmulator } from './IRReceiverEmulator';
+import { HX711Emulator } from './HX711Emulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
@@ -93,6 +94,7 @@ class CircuitEngine {
   private tiltSwitchEmulators = new Map<string, TiltSwitchEmulator>();
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
+  private hx711Emulators = new Map<string, HX711Emulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private stepperIdleRaf: number | null = null;
@@ -991,6 +993,7 @@ class CircuitEngine {
     this.rotaryDialerEmulators.clear();
     this.tiltSwitchEmulators.clear();
     this.rotaryEncoderEmulators.clear();
+    this.hx711Emulators.clear();
     if (this.stepperIdleRaf !== null) {
       cancelAnimationFrame(this.stepperIdleRaf);
       this.stepperIdleRaf = null;
@@ -1219,6 +1222,51 @@ class CircuitEngine {
         const slave = new DS1307Emulator();
         this.i2cBusManager.registerSlave(slave);
         console.log(`[FORGE CIRCUIT] DS1307 (${nodeId}) registered at I2C 0x68`);
+      }
+
+      // Register HX711 Load Cell Emulator
+      if (node.data?.type === 'hx711') {
+        const nodeId = node.id;
+        const sckWire = edges.find(e => {
+          const s = e.source === nodeId && (e.sourceHandle === 'SCK' || e.sourceHandle === 'SCK__target');
+          const t = e.target === nodeId && (e.targetHandle === 'SCK' || e.targetHandle === 'SCK__target');
+          return s || t;
+        });
+        const dtWire = edges.find(e => {
+          const s = e.source === nodeId && (e.sourceHandle === 'DT' || e.sourceHandle === 'DT__target');
+          const t = e.target === nodeId && (e.targetHandle === 'DT' || e.targetHandle === 'DT__target');
+          return s || t;
+        });
+
+        if (sckWire && dtWire) {
+          const sckBoardPin = ((sckWire.source === nodeId ? sckWire.targetHandle : sckWire.sourceHandle) ?? '').replace(/__target$/, '');
+          const dtBoardPin = ((dtWire.source === nodeId ? dtWire.targetHandle : dtWire.sourceHandle) ?? '').replace(/__target$/, '');
+
+          const board = nodes.find(n =>
+            n.data?.type === 'arduino-uno' ||
+            n.data?.type === 'esp32-c3' ||
+            n.data?.type === 'esp32'
+          );
+          const isESP32Board = board?.data?.type === 'esp32-c3' || board?.data?.type === 'esp32';
+
+          const sckMapping = isESP32Board
+            ? simulationRunner.convertESP32Pin(sckBoardPin)
+            : simulationRunner.convertArduinoPin(sckBoardPin);
+          const dtMapping = isESP32Board
+            ? simulationRunner.convertESP32Pin(dtBoardPin)
+            : simulationRunner.convertArduinoPin(dtBoardPin);
+
+          if (sckMapping && dtMapping) {
+            const emulator = new HX711Emulator(
+              sckMapping.avrPin,
+              dtMapping.avrPin,
+              nodeId,
+              (pin: string, high: boolean) => simulationRunner.setVirtualInput(pin, high)
+            );
+            this.hx711Emulators.set(nodeId, emulator);
+            console.log(`[HX711] Registered emulator during syncCircuitGraph: nodeId=${nodeId}, SCK=${sckMapping.avrPin}, DT=${dtMapping.avrPin}`);
+          }
+        }
       }
 
       // Register heart-beat sensor — drives OUT ADC channel with a time-varying pulse voltage
@@ -1614,6 +1662,17 @@ class CircuitEngine {
                 }
                 const emulator = this.dhtEmulators.get(peripheralId)!;
                 emulator.processSignal(state);
+              }
+            }
+
+            // --- HX711 Load Cell Emulation ---
+            // Watches the SCK (clock) pin from the Arduino and responds with data on DT
+            if (peripheralNode.data?.type === 'hx711') {
+              if (peripheralPinName === 'SCK') {
+                const emulator = this.hx711Emulators.get(peripheralId);
+                if (emulator) {
+                  emulator.processSCK(isHigh);
+                }
               }
             }
 
@@ -2436,21 +2495,48 @@ class CircuitEngine {
           if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
         });
 
-        // PIR: inject the initial pin state once after the AVR has had a chance to
-        // run setup() and configure DDR. We defer by one event-loop turn so the
-        // AVR tick loop starts first and the sketch's pinMode() runs before we set
-        // the external pin value.
-        const peripheralNodeForPIR = nodes.find(n => n.id === peripheralId);
-        if (
-          peripheralNodeForPIR?.data?.type === 'pir-motion-sensor' &&
-          peripheralPinName === 'OUT'
-        ) {
-          const initialMotion = peripheralNodeForPIR.data?.sensorValues?.motionDetected ?? false;
-        // Delay 1ms — enough for setup() to run and configure pinMode
-        setTimeout(() => {
-            simulationRunner.setVirtualInput(avrPin, initialMotion);
-            console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
-        }, 1);
+        // Initial state injection for slider-based sensors once after the AVR has had a chance to
+        // run setup() and configure DDR/ADC. We defer by one event-loop turn.
+        const peripheralNode = nodes.find(n => n.id === peripheralId);
+        if (peripheralNode && peripheralNode.data) {
+          const type = peripheralNode.data.type;
+          
+          setTimeout(() => {
+            // PIR motion sensor
+            if (type === 'pir-motion-sensor' && peripheralPinName === 'OUT') {
+              const initialMotion = peripheralNode.data.sensorValues?.motionDetected ?? false;
+              simulationRunner.setVirtualInput(avrPin, initialMotion);
+              console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
+            }
+            // Potentiometer & Slide Potentiometer
+            else if ((type === 'potentiometer' || type === 'slide-potentiometer') && peripheralPinName === 'SIG') {
+              this.pushInputSignal(peripheralId, 'SIG', true);
+            }
+            // MQ2 Gas Sensor
+            else if (type === 'mq2' && (peripheralPinName === 'OUT' || peripheralPinName === 'AOUT')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // NTC Temperature Sensor
+            else if (type === 'ntc-temperature-sensor' && peripheralPinName === 'OUT') {
+              this.pushInputSignal(peripheralId, 'OUT', true);
+            }
+            // Photoresistor (LDR) & Photoresistor Sensor Module
+            else if ((type === 'photoresistor-sensor' || type === 'photoresistor') && (peripheralPinName === 'AO' || peripheralPinName === 'DO')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Flame Sensor
+            else if (type === 'flame-sensor' && (peripheralPinName === 'AOUT' || peripheralPinName === 'DOUT')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Gas Sensor
+            else if (type === 'gas-sensor' && (peripheralPinName === 'AOUT' || peripheralPinName === 'DOUT')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Sound Sensors
+            else if ((type === 'big-sound-sensor' || type === 'small-sound-sensor') && (peripheralPinName === 'AOUT' || peripheralPinName === 'DOUT')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+          }, 1);
         }
       });
     });

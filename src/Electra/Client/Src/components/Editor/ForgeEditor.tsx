@@ -15,7 +15,7 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
 
-    // Ensure space key always inserts a space character regardless of Monaco's internal state
+    // Force space to always route through Monaco's "type" action
     editor.onKeyDown((e: any) => {
       if (
         e.keyCode === monaco.KeyCode.Space &&
@@ -23,17 +23,7 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
       ) {
         e.preventDefault();
         e.stopPropagation();
-        const position = editor.getPosition();
-        if (position) {
-          const range = new monaco.Range(
-            position.lineNumber, position.column,
-            position.lineNumber, position.column
-          );
-          editor.executeEdits('space-input', [
-            { range, text: ' ', forceMoveMarkers: true }
-          ]);
-          editor.pushUndoStop();
-        }
+        editor.trigger('keyboard', 'type', { text: ' ' });
       }
     });
   };
