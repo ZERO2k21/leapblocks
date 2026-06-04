@@ -22,7 +22,8 @@ export function useJuniorProject({
     setProjectName,
     saveCurrentWorkspace,
     spriteWorkspacesRef,
-    isLoadingWorkspaceRef
+    isLoadingWorkspaceRef,
+    audioEngine
 }) {
     const fileInputRef = useRef(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
@@ -49,6 +50,7 @@ export function useJuniorProject({
         }
 
         const id = `robot_default`;
+        const defaultBlockId = 'start_block_1';
         const newSprite = {
             id: id,
             name: "Robot",
@@ -67,7 +69,15 @@ export function useJuniorProject({
                 talk: "assets/sprites/robot/robot_talk1.svg"
             },
             currentCostume: "default",
-            blocks: {}
+            blocks: {
+                languageVersion: 0,
+                blocks: [{
+                    type: "event_flag",
+                    id: defaultBlockId,
+                    x: 60,
+                    y: 60
+                }]
+            }
         };
 
         const defaultScene = {
@@ -93,8 +103,10 @@ export function useJuniorProject({
     const handleSaveProject = (isSilent = false) => {
         saveCurrentWorkspace();
         setTimeout(() => {
+            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
             const payload = {
                 scenes: scenes,
+                recordedSounds: recordedSounds
             };
             fileService.saveProject(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project saved: ${projectName}`);
@@ -104,7 +116,8 @@ export function useJuniorProject({
     const handleShareProject = () => {
         saveCurrentWorkspace();
         setTimeout(() => {
-            const payload = { scenes };
+            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
+            const payload = { scenes, recordedSounds };
             fileService.shareProject(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project shared: ${projectName}`);
         }, 50);
@@ -186,6 +199,14 @@ export function useJuniorProject({
 
             setProjectName(data.projectName || 'My Project');
             setScenes(data.scenes);
+
+            // Restore recorded sounds
+            if (data.recordedSounds && audioEngine?.soundBank) {
+                for (const [name, { samples, sampleRate }] of Object.entries(data.recordedSounds)) {
+                    audioEngine.soundBank.restoreRecordedSound(name, samples, sampleRate);
+                }
+                console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
+            }
 
             const firstScene = data.scenes[0];
             if (firstScene) {
