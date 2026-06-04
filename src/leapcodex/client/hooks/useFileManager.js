@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { useState, useCallback } from "react";
-import { fileService } from "../../Electra/Client/Src/services/FileService";
+import { fileService } from "../../../Electra/Client/Src/services/FileService";
 import { getUniqueFileName, getFallbackActiveFile } from "../utils/fileUtils";
 
 const DEFAULT_ACTIVE_FILE = "main.py";

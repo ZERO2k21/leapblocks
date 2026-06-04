@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { useState, useRef, useCallback, useEffect } from "react";
-import { SkulptEngine } from "../../leapignite/server/engine/SkulptEngine";
+import { SkulptEngine } from "../../../leapignite/server/engine/SkulptEngine";
 import { getFallbackActiveFile } from "../utils/fileUtils";
 
 export function usePythonExecution({ projectFiles, setProjectFiles, addLog }) {

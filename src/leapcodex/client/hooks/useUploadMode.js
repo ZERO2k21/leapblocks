@@ -200,7 +200,7 @@ export function useUploadMode({ addLog }) {
         ];
 
         return () => {
-            cleanups.forEach(fn => fn());
+            cleanups.forEach(fn => fn?.());
         };
     }, [addUploadMessage]);
 

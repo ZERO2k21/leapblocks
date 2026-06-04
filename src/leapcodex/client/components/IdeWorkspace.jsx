@@ -5,10 +5,10 @@
  */
 import React from "react";
 import { useCodex } from "../context/CodexContext";
-import SidePanel from "../../python/panels/SidePanel";
-import MonacoEditor from "../../python/editor/MonacoEditor";
-import StatusBar from "../../python/editor/StatusBar";
-import TerminalPanel from "../../python/terminal/TerminalPanel";
+import SidePanel from "../../../python/panels/SidePanel";
+import MonacoEditor from "../../../python/editor/MonacoEditor";
+import StatusBar from "../../../python/editor/StatusBar";
+import TerminalPanel from "../../../python/terminal/TerminalPanel";
 import { FileCode2, Plus } from "lucide-react";
 import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";

@@ -4,7 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 
-import { getBoards } from "../../leapignite/client/components/BoardSelectionModal";
+import { getBoards } from "../../../leapignite/client/components/BoardSelectionModal";
+
+export const BOARD_HEADER_EXTENSIONS = new Set([".h", ".hpp"]);
+export const BOARD_SOURCE_EXTENSIONS = new Set([".c", ".cc", ".cpp", ".ino"]);
 
 let _BOARD_NAME_BY_ID;
 export function getBoardNameById() {

@@ -4,8 +4,8 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect } from "react";
-import { Home, Play, Square, Undo, Redo, Save, Settings, Upload, Plus, FileCode2, FileText, Share, ChevronDown, FolderOpen } from "lucide-react";
-import Logo, { CreoleapLogo } from "../../components/Logo";
+import { Home, Play, Square, Undo, Redo, Save, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen } from "lucide-react";
+import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useCodex } from "../context/CodexContext";
 
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
