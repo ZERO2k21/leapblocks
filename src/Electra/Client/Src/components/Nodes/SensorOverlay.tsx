@@ -128,8 +128,8 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
         border: `1px solid ${defaultBorder}`,
         borderRadius: '8px',
         padding: '6px 8px',
-        boxShadow: isLightTheme 
-          ? '0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)' 
+        boxShadow: isLightTheme
+          ? '0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)'
           : '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
         zIndex: 9999,
         display: 'flex',
@@ -149,25 +149,25 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
 
-  const isDHT       = type === 'dht22' || type === 'dht11';
-  const isDistance  = type === 'hc-sr04';
-  const isAnalog    = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor', 'photoresistor'].includes(type);
-  const isNTC       = type === 'ntc-temperature-sensor';
-  const isPIR       = type === 'pir-motion-sensor';
-  const isMPU6050   = type === 'mpu6050';
-  const isLDR       = type === 'photoresistor-sensor';
-  const isFlame     = type === 'flame-sensor';
-  const isGas       = type === 'gas-sensor';
+  const isDHT = type === 'dht22' || type === 'dht11';
+  const isDistance = type === 'hc-sr04';
+  const isAnalog = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor', 'photoresistor'].includes(type);
+  const isNTC = type === 'ntc-temperature-sensor';
+  const isPIR = type === 'pir-motion-sensor';
+  const isMPU6050 = type === 'mpu6050';
+  const isLDR = type === 'photoresistor-sensor';
+  const isFlame = type === 'flame-sensor';
+  const isGas = type === 'gas-sensor';
   const isHeartRate = type === 'heart-beat-sensor';
-  const isBigSound  = type === 'big-sound-sensor' || type === 'small-sound-sensor';
-  const isHX711     = type === 'hx711';
+  const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
+  const isHX711 = type === 'hx711';
 
   if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
 
   // ── DHT Sensor ──────────────────────────────────────────────────────────
   if (isDHT) {
-    const temp     = currentValues?.temperature ?? 25;
-    const humidity = currentValues?.humidity    ?? 50;
+    const temp = currentValues?.temperature ?? 25;
+    const humidity = currentValues?.humidity ?? 50;
 
     const update = (key: 'temperature' | 'humidity', val: number) => {
       updateNodeData(nodeId, {
@@ -250,10 +250,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const accelX = sv.accelX ?? 0;
     const accelY = sv.accelY ?? 0;
     const accelZ = sv.accelZ ?? 1;
-    const gyroX  = sv.gyroX  ?? 0;
-    const gyroY  = sv.gyroY  ?? 0;
-    const gyroZ  = sv.gyroZ  ?? 0;
-    const temp   = sv.temp   ?? 25;
+    const gyroX = sv.gyroX ?? 0;
+    const gyroY = sv.gyroY ?? 0;
+    const gyroZ = sv.gyroZ ?? 0;
+    const temp = sv.temp ?? 25;
 
     const update = (key: string, val: number) => {
       const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
@@ -284,7 +284,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const T = tempC + 273.15;
     const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
     const voltage = VCC * R_ntc / (Rs + R_ntc);
-    const adcRaw  = Math.round((voltage / VCC) * 1023);
+    const adcRaw = Math.round((voltage / VCC) * 1023);
 
     const handleChange = (val: number) => {
       updateNodeData(nodeId, { sensorValues: { ...currentValues, value: val } });
@@ -317,14 +317,14 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Photoresistor (LDR) Sensor ──────────────────────────────────────────
   if (isLDR) {
-    const lux       = Number(currentValues?.value     ?? 500);
+    const lux = Number(currentValues?.value ?? 500);
     const threshold = Number(currentValues?.threshold ?? 500);
 
-    const R_ldr    = 500000 / Math.max(1, lux);
+    const R_ldr = 500000 / Math.max(1, lux);
     const R_series = 10000;
-    const voltage  = 5.0 * R_series / (R_ldr + R_series);
-    const adcRaw   = Math.round((voltage / 5.0) * 1023);
-    const doLow    = lux < threshold;
+    const voltage = 5.0 * R_series / (R_ldr + R_series);
+    const adcRaw = Math.round((voltage / 5.0) * 1023);
+    const doLow = lux < threshold;
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -364,10 +364,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Flame Sensor ────────────────────────────────────────────────────────
   if (isFlame) {
-    const intensity = Number(currentValues?.value     ?? 0);
+    const intensity = Number(currentValues?.value ?? 0);
     const threshold = Number(currentValues?.threshold ?? 50);
-    const flameOn   = intensity > threshold;
-    const voltage   = 5.0 * (1 - intensity / 100);
+    const flameOn = intensity > threshold;
+    const voltage = 5.0 * (1 - intensity / 100);
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -405,10 +405,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Gas Sensor ──────────────────────────────────────────────────────────
   if (isGas) {
-    const concentration = Number(currentValues?.value     ?? 0);
-    const threshold     = Number(currentValues?.threshold ?? 50);
-    const gasDetected   = concentration > threshold;
-    const voltage       = 5.0 * concentration / 100;
+    const concentration = Number(currentValues?.value ?? 0);
+    const threshold = Number(currentValues?.threshold ?? 50);
+    const gasDetected = concentration > threshold;
+    const voltage = 5.0 * concentration / 100;
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -470,10 +470,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Sound Sensor ────────────────────────────────────────────────────────
   if (isBigSound) {
-    const level     = Number(currentValues?.value     ?? 0);
+    const level = Number(currentValues?.value ?? 0);
     const threshold = Number(currentValues?.threshold ?? 50);
-    const soundOn   = level > threshold;
-    const voltage   = 5.0 * level / 100;
+    const soundOn = level > threshold;
+    const voltage = 5.0 * level / 100;
 
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
@@ -511,9 +511,9 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── HX711 Load Cell ─────────────────────────────────────────────────────
   if (isHX711) {
-    const weight    = Number(currentValues?.weight    ?? 0);
+    const weight = Number(currentValues?.weight ?? 0);
     const maxWeight = Number(currentValues?.maxWeight ?? 5000);
-    const weightKg  = (weight / 1000).toFixed(2);
+    const weightKg = (weight / 1000).toFixed(2);
 
     const handleWeightChange = (val: number) => {
       updateNodeData(nodeId, { sensorValues: { ...currentValues, weight: val } });
@@ -543,18 +543,18 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Single-value sensors (hc-sr04, resistor, etc.) ──────────────────────
   const config = isDistance
-    ? { label: 'DIST', unit: 'cm',  min: 2,   max: 400,     step: 1,   key: 'distance', color: '#BEF264' }
+    ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 1, key: 'distance', color: '#BEF264' }
     : type === 'potentiometer'
-    ? { label: 'POS',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
-    : type === 'slide-potentiometer'
-    ? { label: 'POS',  unit: '%',   min: 0,   max: 100,     step: 1,   key: 'value',    color: '#BEF264' }
-    : type === 'resistor'
-    ? { label: 'RES',  unit: 'Ω',   min: 0,   max: 1000000, step: 100, key: 'value',    color: '#BEF264' }
-    : type === 'photoresistor'
-    ? { label: 'LIGHT',unit: 'lux', min: 0,   max: 1000,    step: 1,   key: 'value',    color: '#fbbf24' }
-    : type === 'ntc-temperature-sensor'
-    ? { label: 'TEMP', unit: '°C',  min: -40, max: 125,     step: 0.1, key: 'value',    color: '#f97316' }
-    : { label: 'VAL',  unit: '',    min: 0,   max: 1023,    step: 1,   key: 'value',    color: '#BEF264' };
+      ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', color: '#BEF264' }
+      : type === 'slide-potentiometer'
+        ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', color: '#BEF264' }
+        : type === 'resistor'
+          ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', color: '#BEF264' }
+          : type === 'photoresistor'
+            ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', color: '#fbbf24' }
+            : type === 'ntc-temperature-sensor'
+              ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', color: '#f97316' }
+              : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', color: '#BEF264' };
 
   const currentValue = currentValues?.[config.key] ?? config.min;
 
@@ -564,8 +564,8 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     });
     if (isAnalog) {
       const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
-                   : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
-                   : 'OUT';
+        : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
+          : 'OUT';
       import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
         circuitEngine.pushInputSignal(nodeId, outPin, true);
       });

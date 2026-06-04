@@ -566,7 +566,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
                 const stepperCtorPattern = /^([ \t]*Stepper\s+(?:myStepper|stepper)\s*\(\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^,\n]+,\s*[^)\n]+\)\s*;.*)$/m;
                 processedCode = processedCode.replace(
                     stepperCtorPattern,
-                    `// LeapForge: 28BYJ-48 with Stepper.h requires pin order IN1,IN3,IN2,IN4\n// Stepper myStepper(4096, pin1, pin3, pin2, pin4)\n$1`
+                    `// LeapForge: 28BYJ-48 with Stepper.h requires pin order IN1,IN3,IN2,IN4\n// Stepper myStepper(2048, pin1, pin3, pin2, pin4)\n$1`
                 );
             }
             processedCode = processedCode.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, '$1\n  __lf_setup_wifi();');

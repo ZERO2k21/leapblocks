@@ -2012,9 +2012,9 @@ class CircuitEngine {
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
                 let stepsPerRev: number;
-                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
-                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
-                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                const overrideSteps = peripheralNode.data?.stepsPerRev ?? peripheralNode.data?.stepsPerRevolution;
+                if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                  stepsPerRev = Math.round(overrideSteps);
                 } else {
                   stepsPerRev = 200;
                   const parts = gearRatioStr.split(':');
@@ -2027,10 +2027,57 @@ class CircuitEngine {
                   }
                 }
 
+                // Save the visual steps (from gear ratio / UI settings) before auto-detection
+                // Visual: what the user sees (e.g. 0-200 for NEMA 17 with 1:1 gear)
+                // Backend: what the emulator tracks (e.g. 0-2048 for 28BYJ-48)
+                const visualStepsPerRev = stepsPerRev;
+
+                // ── Auto-detect stepsPerRevolution from Arduino source code ──
+                // Parses: Stepper myStepper(stepsPerRevolution, pin1, pin2, pin3, pin4)
+                // or:     Stepper myStepper(2048, 8, 10, 9, 11)
+                // This ensures the emulator's step limit matches the sketch.
+                const sourceCode = simulationRunner.getSourceCode();
+                if (sourceCode) {
+                  // 1. Try literal: Stepper varName(2048, ...)
+                  const literalMatch = sourceCode.match(/Stepper\s+\w+\s*\(\s*(\d+)\s*,/);
+                  if (literalMatch) {
+                    const parsed = parseInt(literalMatch[1], 10);
+                    if (parsed > 0) {
+                      stepsPerRev = parsed;
+                      console.log(`[STEPPER] Auto-detected stepsPerRevolution = ${stepsPerRev} from source code (literal), visual = ${visualStepsPerRev}`);
+                    }
+                  } else {
+                    // 2. Try variable: Stepper varName(varName, ...) → find definition
+                    const varMatch = sourceCode.match(/Stepper\s+\w+\s*\(\s*([a-zA-Z_]\w*)\s*,/);
+                    if (varMatch) {
+                      const varName = varMatch[1];
+                      const defineRe = new RegExp(`#define\\s+${varName}\\s+(\\d+)`);
+                      const constRe = new RegExp(`(?:const\\s+)?(?:int|long|unsigned)\\s+${varName}\\s*=\\s*(\\d+)`);
+                      const dm = sourceCode.match(defineRe) || sourceCode.match(constRe);
+                      if (dm) {
+                        const parsed = parseInt(dm[1], 10);
+                        if (parsed > 0) {
+                          stepsPerRev = parsed;
+                          console.log(`[STEPPER] Auto-detected stepsPerRevolution = ${stepsPerRev} from source code (variable '${varName}'), visual = ${visualStepsPerRev}`);
+                        }
+                      }
+                    }
+                  }
+                }
+
                 this.stepperEmulators.set(peripheralId, new StepperEmulator((state) => {
+                  if (state.isClamped) {
+                    simulationRunner.reportClampedStep();
+                  }
+
+                  // Scale internal steps (0-2048) → visual steps (0-200)
+                  const visualSteps = stepsPerRev !== visualStepsPerRev
+                    ? Math.round((state.stepCount / stepsPerRev) * visualStepsPerRev)
+                    : state.stepCount;
+
                   pendingUpdate = {
                     angle: state.angle,
-                    stepCount: state.stepCount,
+                    stepCount: visualSteps,
                     energized: state.energized,
                   };
                   if (!rafScheduled) {
@@ -2050,7 +2097,7 @@ class CircuitEngine {
                       }
                     });
                   }
-                }, { stepsPerRev, constrainRotation: true }, peripheralId));
+                }, { stepsPerRev, visualStepsPerRev, constrainRotation: true }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
@@ -2111,9 +2158,9 @@ class CircuitEngine {
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
                 let stepsPerRev: number;
-                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
-                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
-                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                const overrideSteps = peripheralNode.data?.stepsPerRev ?? peripheralNode.data?.stepsPerRevolution;
+                if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                  stepsPerRev = Math.round(overrideSteps);
                 } else {
                   stepsPerRev = 200;
                   const parts = gearRatioStr.split(':');
@@ -2150,9 +2197,9 @@ class CircuitEngine {
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
                 let stepsPerRev: number;
-                // Direct override on the component takes priority (e.g. set stepsPerRev=2048 for 28BYJ-48)
-                if (typeof peripheralNode.data?.stepsPerRev === 'number' && peripheralNode.data.stepsPerRev > 0) {
-                  stepsPerRev = Math.round(peripheralNode.data.stepsPerRev);
+                const overrideSteps = peripheralNode.data?.stepsPerRev ?? peripheralNode.data?.stepsPerRevolution;
+                if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                  stepsPerRev = Math.round(overrideSteps);
                 } else {
                   stepsPerRev = 200;
                   const parts = gearRatioStr.split(':');
@@ -2300,14 +2347,19 @@ class CircuitEngine {
                       let rafPending = false;
 
                       const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
-                      const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                      const overrideSteps = motorNode?.data?.stepsPerRev ?? motorNode?.data?.stepsPerRevolution;
                       let stepsPerRev = 200;
-                      const parts = gearRatioStr.split(':');
-                      if (parts.length === 2) {
-                        const num = parseFloat(parts[0]);
-                        const den = parseFloat(parts[1]);
-                        if (!isNaN(num) && !isNaN(den) && den > 0) {
-                          stepsPerRev = Math.round(200 * (num / den));
+                      if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                        stepsPerRev = Math.round(overrideSteps);
+                      } else {
+                        const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                        const parts = gearRatioStr.split(':');
+                        if (parts.length === 2) {
+                          const num = parseFloat(parts[0]);
+                          const den = parseFloat(parts[1]);
+                          if (!isNaN(num) && !isNaN(den) && den > 0) {
+                            stepsPerRev = Math.round(200 * (num / den));
+                          }
                         }
                       }
 
@@ -2349,14 +2401,19 @@ class CircuitEngine {
                       let rafScheduled = false;
 
                       const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
-                      const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                      const overrideSteps = motorNode?.data?.stepsPerRev ?? motorNode?.data?.stepsPerRevolution;
                       let stepsPerRev = 200;
-                      const parts = gearRatioStr.split(':');
-                      if (parts.length === 2) {
-                        const num = parseFloat(parts[0]);
-                        const den = parseFloat(parts[1]);
-                        if (!isNaN(num) && !isNaN(den) && den > 0) {
-                          stepsPerRev = Math.round(200 * (num / den));
+                      if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                        stepsPerRev = Math.round(overrideSteps);
+                      } else {
+                        const gearRatioStr = motorNode?.data?.gearRatio || '1:1';
+                        const parts = gearRatioStr.split(':');
+                        if (parts.length === 2) {
+                          const num = parseFloat(parts[0]);
+                          const den = parseFloat(parts[1]);
+                          if (!isNaN(num) && !isNaN(den) && den > 0) {
+                            stepsPerRev = Math.round(200 * (num / den));
+                          }
                         }
                       }
 

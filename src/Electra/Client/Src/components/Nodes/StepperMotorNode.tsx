@@ -35,7 +35,7 @@ export const StepperMotorNode = memo(({ nodeId, data }: StepperMotorNodeProps) =
   const model: Model = data.model ?? 'bipolar_nema';
   const modelLabel = model === '28byj48' ? '28BYJ-48' : 'NEMA 17';
   const modelInfoLabel = model === '28byj48' ? '28BYJ-48 (ULN2003)' : 'Bipolar NEMA';
-  const stepsPerRevolution = data.stepsPerRevolution ?? (model === '28byj48' ? 4096 : 200);
+  const stepsPerRevolution = data.stepsPerRevolution ?? (model === '28byj48' ? 2048 : 200);
   const degreesPerStep = (360 / stepsPerRevolution).toFixed(4);
   const dirText = direction === 'CW' ? '↻' : direction === 'CCW' ? '↺' : '⏸';
   const dirColor = direction === 'CW' ? '#16a34a' : direction === 'CCW' ? '#2563eb' : '#64748b';

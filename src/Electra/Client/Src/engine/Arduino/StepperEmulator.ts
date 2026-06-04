@@ -18,6 +18,7 @@ export interface StepperConfig {
   acceleration?: number;
   directionCW?: boolean;
   constrainRotation?: boolean; // Enable rotation constraints (0-359°)
+  visualStepsPerRev?: number;  // Target steps per revolution for UI display
 }
 
 export interface StepperState {
@@ -33,6 +34,7 @@ export interface StepperState {
   actualAngle?: number;        // Smooth interpolated angle (0-360 degrees, physics simulation)
   actualAngleUnbounded?: number; // Unbounded smooth angle for CSS transforms
   angularVelocity?: number;    // Current rotation speed (rad/s)
+  isClamped?: boolean;         // Rotation constraint limit reached
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -64,7 +66,7 @@ const HALF_STEP_SEQ: Array<[boolean, boolean, boolean, boolean]> = [
 
 export class StepperEmulator {
   private readonly nodeId: string;
-  private readonly stepsPerRev: number;
+  private stepsPerRev: number;
 
   private steppingMode: SteppingMode;
   private microstepDivisor: number;
@@ -116,6 +118,9 @@ export class StepperEmulator {
   private readonly ANGLE_MAX = 360;  // Maximum angle in degrees (360°)
   private constrainRotation = true;  // Enable rotation constraints (0-359°)
   private anglePosition = 0;         // Current angle position (0-359°)
+  private isClamped = false;         // Rotation constraint limit reached
+  private visualStepsPerRev = 200;   // Target steps per revolution for UI display
+  private maxBackendStep = 200;      // Maximum step in the backend (e.g., 2042 for 28BYJ-48)
 
   constructor(
     onUpdate: (state: StepperState) => void,
@@ -130,10 +135,12 @@ export class StepperEmulator {
     this.acceleration = config.acceleration ?? 200;
     this.dirHigh = config.directionCW ?? true;
     this.constrainRotation = config.constrainRotation ?? true; // Default: constrained
+    this.visualStepsPerRev = config.visualStepsPerRev ?? this.stepsPerRev;
+    this.recalculateMaxBackendStep();
     this.anglePosition = 0; // Start at 0°
     this.onUpdate = onUpdate;
 
-    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-360° (${(360 / this.stepsPerRev).toFixed(2)}° per step, wraps)` : 'unbounded'}`);
+    console.log(`${TAG} [${nodeId}] Created. Initial Dir: ${this.dirHigh ? 'CW' : 'CCW'}, Rotation: ${this.constrainRotation ? `0-360° (${(360 / this.stepsPerRev).toFixed(2)}° per step, wraps)` : 'unbounded'}, maxBackendStep: ${this.maxBackendStep}`);
 
     // Start physics simulation loop for smooth motion
     this.startPhysicsLoop();
@@ -167,6 +174,26 @@ export class StepperEmulator {
   setConstrainRotation(constrain: boolean) {
     this.constrainRotation = constrain;
     console.log(`${TAG} [${this.nodeId}] Rotation constraints ${constrain ? 'enabled (0-359°)' : 'disabled (unbounded)'}`);
+  }
+
+  private recalculateMaxBackendStep() {
+    let maxS = this.stepsPerRev;
+    while (maxS > 0) {
+      const vis = Math.round((maxS / this.stepsPerRev) * this.visualStepsPerRev);
+      if (vis < this.visualStepsPerRev) {
+        break;
+      }
+      maxS--;
+    }
+    this.maxBackendStep = maxS;
+  }
+
+  setStepsPerRev(steps: number) {
+    if (steps > 0) {
+      this.stepsPerRev = steps;
+      this.recalculateMaxBackendStep();
+      console.log(`${TAG} [${this.nodeId}] Updated stepsPerRev = ${steps} (${(360 / steps).toFixed(4)}° per step), maxBackendStep = ${this.maxBackendStep}`);
+    }
   }
 
   setPhysicsEnabled(enabled: boolean) {
@@ -209,9 +236,24 @@ export class StepperEmulator {
     // In full-step mode (Arduino Stepper.h default), only advance on full-step phases.
     // This avoids over-counting transient/intermediate coil states while pins are updated.
     const isHalfMode = this.steppingMode === 'half';
-    const phaseSeq = isHalfMode ? HALF_STEP_SEQ : FULL_STEP_SEQ;
+    let phaseSeq = isHalfMode ? HALF_STEP_SEQ : FULL_STEP_SEQ;
+    let newPhase = phaseSeq.findIndex(s => s.every((v, i) => v === this.coilState[i]));
+
+    // If standard full-step matching fails, try alternative unipolar/ULN2003 sequence
+    if (!isHalfMode && newPhase === -1) {
+      const altSeq: Array<[boolean, boolean, boolean, boolean]> = [
+        [true, true, false, false],  // 1100
+        [false, true, true, false],  // 0110
+        [false, false, true, true],  // 0011
+        [true, false, false, true],  // 1001
+      ];
+      newPhase = altSeq.findIndex(s => s.every((v, i) => v === this.coilState[i]));
+      if (newPhase !== -1) {
+        phaseSeq = altSeq;
+      }
+    }
+
     const wrap = phaseSeq.length;
-    const newPhase = phaseSeq.findIndex(s => s.every((v, i) => v === this.coilState[i]));
 
     if (newPhase === -1) {
       // Invalid or intermediate state. Keep lastPhase intact and wait for the rest of the pins to update.
@@ -243,8 +285,7 @@ export class StepperEmulator {
         if (delta > wrap / 2) delta -= wrap;
       }
 
-      // Positive phase delta (0→1→2→3) = CW = dir +1
-      // Negative phase delta (3→2→1→0) = CCW = dir -1
+      // Standard delta-based direction mapping:
       const dir: 1 | -1 = delta > 0 ? 1 : -1;
       const stepsToApply = Math.abs(delta);
       this.dirHigh = (dir === 1);
@@ -304,17 +345,28 @@ export class StepperEmulator {
 
     // Apply step with proper angle calculation based on stepsPerRev
     if (this.constrainRotation) {
-      this.stepCount += direction;
-      // Phase detection direction is inverted from Arduino conventions
-      // (ALL Arduino "CW" steps are detected as CCW due to pin order vs FULL_STEP_SEQ mapping).
-      // Negate direction so angle visually matches the Arduino's intended rotation.
-      // Wrap (0→360→0) so the AVR's step(2048) loop completes normally and serial
-      // output progresses, instead of hanging with steps rejected at the boundary.
       const degreesPerStep = 360 / this.stepsPerRev;
-      let nextAngle = this.anglePosition + (-direction) * degreesPerStep;
-      if (nextAngle >= 360) nextAngle -= 360;
-      else if (nextAngle < 0) nextAngle += 360;
-      this.anglePosition = nextAngle;
+      const nextStepCount = this.stepCount + direction;
+      const nextAngle = this.anglePosition + direction * degreesPerStep;
+
+      // Clamp step count to [0, maxBackendStep] range
+      // Instead of stalling (which blocks the Arduino CPU), clamp and continue.
+      // The motor visually stops at the limit but the CPU can proceed.
+      if (nextStepCount >= 0 && nextStepCount <= this.maxBackendStep) {
+        this.stepCount = nextStepCount;
+        this.anglePosition = Math.max(0, Math.min(360, nextAngle));
+        this.isClamped = false;
+      } else {
+        // At the boundary — don't stall, just clamp.
+        // This allows the Arduino step() loop to finish so the program
+        // can proceed to the next instruction (e.g. step(-2048)).
+        this.stepCount = Math.max(0, Math.min(this.maxBackendStep, nextStepCount));
+        const limitStep = direction === 1 ? this.maxBackendStep : 0;
+        this.anglePosition = (limitStep * 360) / this.stepsPerRev;
+        this.isClamped = true;
+        // Skip emitting/logging for clamped steps to avoid noise
+        return;
+      }
     } else {
       // Original unbounded behavior
       if (this.steppingMode === 'micro') {
@@ -465,30 +517,21 @@ export class StepperEmulator {
 
     // Apply rotation constraints
     if (this.constrainRotation) {
-      const nextAngleDeg = nextAngle * 180 / Math.PI;
       const minRad = this.ANGLE_MIN * Math.PI / 180;
       const maxRad = this.ANGLE_MAX * Math.PI / 180;
 
-      // Check if next angle would exceed boundaries
-      if (nextAngleDeg > this.ANGLE_MAX) {
+      // Clamp at boundaries without stalling — the motor stops visually
+      // but remains ready to reverse direction immediately.
+      if (nextAngle > maxRad) {
         this.actualAngle = maxRad;
-        this.angularVelocity = 0; // Stop at max boundary
-        this.stalled = true;
-      } else if (nextAngleDeg < this.ANGLE_MIN) {
+        this.angularVelocity = 0;
+      } else if (nextAngle < minRad) {
         this.actualAngle = minRad;
-        this.angularVelocity = 0; // Stop at min boundary
-        this.stalled = true;
+        this.angularVelocity = 0;
       } else {
         this.actualAngle = nextAngle;
-
-        // Check for stall condition
-        if (Math.abs(error) > 0.5 && Math.abs(this.angularVelocity) < 0.01) {
-          // Motor is stuck (large error but no movement)
-          this.stalled = true;
-        } else {
-          this.stalled = false;
-        }
       }
+      this.stalled = false;
     } else {
       this.actualAngle = nextAngle;
 
@@ -544,9 +587,7 @@ export class StepperEmulator {
     const range = this.subStepRange();
     const moving = this.currentSpeed > 0.1 || Math.abs(this.angularVelocity) > 0.05;
     return {
-      stepCount: this.constrainRotation
-        ? Math.min(this.stepsPerRev, Math.max(0, Math.round(this.anglePosition * this.stepsPerRev / 360)))
-        : this.stepCount,
+      stepCount: this.stepCount,
       microPosition: range > 1 ? this.microSubStep / range : 0,
       angle: this.getAngle(),
       currentSpeed: this.currentSpeed,
@@ -558,6 +599,7 @@ export class StepperEmulator {
       actualAngle: this.getSmoothAngle(),
       actualAngleUnbounded: this.getSmoothAngleUnbounded(),
       angularVelocity: this.physicsEnabled ? this.angularVelocity : undefined,
+      isClamped: this.isClamped,
     };
   }
 
@@ -575,6 +617,7 @@ export class StepperEmulator {
     this.targetAngle = 0;
     this.angularVelocity = 0;
     this.anglePosition = 0; // Reset to 0°
+    this.isClamped = false;
     this.emit();
     // Restart physics loop
     this.startPhysicsLoop();

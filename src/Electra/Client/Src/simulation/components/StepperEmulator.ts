@@ -1,6 +1,6 @@
 /**
  * Stepper emulator for two 4-wire models:
- * - 28BYJ-48 (ULN2003): 8-phase half-step sequence, 4096 steps/rev
+ * - 28BYJ-48 (ULN2003): 2048 steps/rev (full-step sequence)
  * - Bipolar NEMA: 4-phase full-step sequence, 200 steps/rev
  * Angle is derived from cumulative steps using:
  * angle = ((stepCount % stepsPerRevolution) / stepsPerRevolution) * 360, wrapped to [0, 360).
@@ -69,7 +69,7 @@ export class StepperEmulator {
   constructor(model: StepperModel) {
     this.model = model;
     this.sequence = model === '28byj48' ? SEQ_28BYJ48 : SEQ_BIPOLAR_NEMA;
-    this.stepsPerRevolution = model === '28byj48' ? 4096 : 200;
+    this.stepsPerRevolution = model === '28byj48' ? 2048 : 200;
   }
 
   onPinChange(in1: boolean, in2: boolean, in3: boolean, in4: boolean): void {

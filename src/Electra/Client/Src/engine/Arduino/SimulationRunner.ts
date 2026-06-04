@@ -71,6 +71,13 @@ class SimulationRunner {
   private tickInterval: number | null = null;
   private lastTime = 0;
   private readonly MHZ = 16e6;
+  private lastClampedStepCycles = 0;
+
+  public reportClampedStep() {
+    if (this.cpu) {
+      this.lastClampedStepCycles = this.cpu.cycles;
+    }
+  }
 
 
   /**
@@ -447,6 +454,7 @@ class SimulationRunner {
     this.scheduledEvents = [];
     this.pinOutputs.clear();
     this.virtualInputs.clear();
+    this.lastClampedStepCycles = 0;
     console.log('[FORGE] Simulator Engine reset.');
   }
 
@@ -485,11 +493,14 @@ class SimulationRunner {
     const elapsedMs = Math.min(deltaMs, 20);
 
     const config = BOARDS[this.selectedBoard] || BOARDS['arduino-uno'];
-    const cyclesToRun = Math.floor(elapsedMs * (config.frequency / 1000));
+    const isBoosted = this.cpu && (this.lastClampedStepCycles > 0) && (this.cpu.cycles - this.lastClampedStepCycles < 50_000);
+    const multiplier = isBoosted ? 50 : 1;
+    const cyclesToRun = Math.floor(elapsedMs * (config.frequency / 1000)) * multiplier;
     const startCycles = this.cpu.cycles;
 
     try {
       let executedInstructions = 0;
+      const maxInstructions = 160_000 * multiplier;
       while (this.cpu.cycles - startCycles < cyclesToRun) {
         avrInstruction(this.cpu);
         this.cpu.tick();
@@ -503,7 +514,7 @@ class SimulationRunner {
         executedInstructions++;
         // Hard cap: keep each rAF handler under ~10ms so React can repaint.
         // 160,000 instructions ≈ 10ms of AVR time at 16MHz.
-        if (executedInstructions >= 160_000) {
+        if (executedInstructions >= maxInstructions) {
           break;
         }
       }
