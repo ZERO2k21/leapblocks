@@ -71,17 +71,17 @@ const AppInventor = lazy(() => {
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
-    return import('./studio').then(module => {
+    return import('./creova').then(module => {
         logAppTiming('AppInventor lazy load completed');
         return module;
     });
 });
 
 // @ts-ignore
-const ElectraStudio = lazy(() => {
-    logAppTiming('ElectraStudio lazy load started');
-    return import('./Electra/Client/Src/ElectraStudio').then(module => {
-        logAppTiming('ElectraStudio lazy load completed');
+const ElectraCreova = lazy(() => {
+    logAppTiming('ElectraCreova lazy load started');
+    return import('./Electra/Client/Src/ElectraCreova').then(module => {
+        logAppTiming('ElectraCreova lazy load completed');
         return module;
     });
 });
@@ -96,7 +96,7 @@ const NeuraApp = lazy(() => {
 
 logAppTiming('All lazy components defined');
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'appinventor' | 'appforge' | 'electra' | 'neura';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'creova' | 'appforge' | 'electra' | 'neura';
 
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -232,9 +232,9 @@ export default function App() {
                     onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
-                {mode === 'appinventor' && <AppInventor {...({ onBack: requestExit } as any)} />}
-                {mode === 'appforge' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
-                {mode === 'electra' && <ElectraStudio onBack={requestExit} onHome={() => handleSetMode('home')} />}
+                {mode === 'creova' && <AppInventor {...({ onBack: requestExit } as any)} />}
+                {mode === 'appforge' && <ElectraCreova onBack={requestExit} onHome={() => handleSetMode('home')} />}
+                {mode === 'electra' && <ElectraCreova onBack={requestExit} onHome={() => handleSetMode('home')} />}
                 {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>

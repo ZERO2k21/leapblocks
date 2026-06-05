@@ -6,8 +6,8 @@ async function buildApk(appState, appRoot, onLog) {
     onLog('Initializing build process...');
 
     const candidates = [
-      path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
-      path.join(appRoot, 'src', 'studio', 'apk', 'buildAPK.js'),
+      path.join(appRoot, 'src', 'creova', 'apk', 'buildAPK.js'),
+      path.join(appRoot, 'src', 'creova', 'apk', 'buildAPK.js'),
       path.join(appRoot, 'src', 'modules', 'AppInventor', 'apk', 'buildAPK.js'),
     ];
     const resolvedBuilder = candidates.find((p) => fs.existsSync(p));

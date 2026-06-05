@@ -9,7 +9,7 @@
  * then ApkInjector to package them into a signed APK.
  *
  * This module can be used standalone (from Node.js) or called by
- * the Electron main process via src/studio/apk/electron-bridge.js.
+ * the Electron main process via src/creova/apk/electron-bridge.js.
  */
 
 const ApkInjector = require('./apkInjector');

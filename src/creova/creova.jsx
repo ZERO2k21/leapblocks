@@ -20,7 +20,7 @@ import BlocksView from './components/BlocksView';
 import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
-import './styles/leap-appinventor.css';
+import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 
 function countVisibleComponents(screens = []) {
@@ -397,10 +397,10 @@ export default function AppInventor({ onBack }) {
         onRedo={handleRedo}
         canUndo={activeTab === 'blocks'}
         canRedo={activeTab === 'blocks'}
-        brandName="APP INVENTOR"
+        brandName="CREOVA"
         rightContent={
-          <div className="flex items-center gap-6 shrink-0 studio-right-gap">
-            <style>{`@media (max-width: 767px){.studio-tab-label{display:none!important}.studio-build-text{display:none!important}.studio-tab-btn{padding:6px 8px!important}.studio-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.studio-right-gap{gap:8px!important}.studio-divider{display:none!important}}`}</style>
+          <div className="flex items-center gap-6 shrink-0 creova-right-gap">
+            <style>{`@media (max-width: 767px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
             <nav style={{
               display: 'flex',
               alignItems: 'center',
@@ -416,7 +416,7 @@ export default function AppInventor({ onBack }) {
                   <button
                     key={tab}
                     id={`tab-${tab.toLowerCase()}`}
-                    className="studio-tab-btn"
+                    className="creova-tab-btn"
                     onClick={() => setActiveTab(tab.toLowerCase())}
                     style={{
                       display: 'flex',
@@ -454,15 +454,15 @@ export default function AppInventor({ onBack }) {
                     ) : (
                       <Puzzle size={13} style={{ transition: 'color 0.2s', color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.45)' }} />
                     )}
-                    <span className="studio-tab-label">{tab}</span>
+                    <span className="creova-tab-label">{tab}</span>
                   </button>
                 );
               })}
             </nav>
-            <div className="studio-divider" style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 8px', flexShrink: 0 }} />
+            <div className="creova-divider" style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 8px', flexShrink: 0 }} />
             <button
               id="btn-build-apk"
-              className="studio-build-btn"
+              className="creova-build-btn"
               onClick={handleBuildApk}
               style={{
                 position: 'relative',
@@ -494,7 +494,7 @@ export default function AppInventor({ onBack }) {
               }}
             >
               <Zap size={13} style={{ fill: '#ffffff', color: '#ffffff' }} />
-              <span className="studio-build-text">BUILD PRODUCTION</span>
+              <span className="creova-build-text">BUILD PRODUCTION</span>
             </button>
           </div>
         }

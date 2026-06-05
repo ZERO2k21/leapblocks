@@ -19,7 +19,7 @@ process.on('message', async (msg) => {
     // both in dev (source tree) and in a packaged app (inside ASAR).
     const bridgePath = path.join(
       msg.appRoot,
-      'src', 'studio', 'apk', 'electron-bridge.js'
+      'src', 'creova', 'apk', 'electron-bridge.js'
     );
     const buildApk = require(bridgePath);
 

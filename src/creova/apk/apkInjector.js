@@ -6,8 +6,8 @@
  * APK Injector — Low-level APKTool operations
  *
  * Provides decode, inject, rebuild, and sign primitives.
- * Used by both src/studio/apk/electron-bridge.js (main build path) and
- * src/studio/apk/buildAPK.js (standalone).
+ * Used by both src/creova/apk/electron-bridge.js (main build path) and
+ * src/creova/apk/buildAPK.js (standalone).
  */
 
 const { spawn } = require('child_process');

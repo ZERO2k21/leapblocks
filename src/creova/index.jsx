@@ -20,7 +20,7 @@ import BlocksView from './components/BlocksView';
 import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
-import './styles/leap-studio.css';
+import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 
 function countVisibleComponents(screens = []) {
@@ -398,7 +398,7 @@ export default function AppInventor({ onBack }) {
         onRedo={handleRedo}
         canUndo={activeTab === 'blocks'}
         canRedo={activeTab === 'blocks'}
-        brandName="STUDIO"
+        brandName="CREOVA"
         rightContent={
           <div className="flex items-center gap-6 shrink-0">
             <nav style={{

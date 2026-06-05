@@ -572,8 +572,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .tc-electra:hover { box-shadow: 0 20px 40px rgba(34,197,94,0.15), 0 0 0 1px rgba(34,197,94,0.1); }
 .landing-page-container .tc-vision3d{ background:linear-gradient(155deg,#ffffff 0%, #e5f6f8 60%,#d2f6fa 100%); border-bottom: 4px solid #06B6D4; }
 .landing-page-container .tc-vision3d:hover { box-shadow: 0 20px 40px rgba(6,182,212,0.15), 0 0 0 1px rgba(6,182,212,0.1); }
-.landing-page-container .tc-studio  { background:linear-gradient(155deg,#ffffff 0%, #fbedf4 60%,#fae1ee 100%); border-bottom: 4px solid #EC4899; }
-.landing-page-container .tc-studio:hover { box-shadow: 0 20px 40px rgba(236,72,153,0.15), 0 0 0 1px rgba(236,72,153,0.1); }
+.landing-page-container .tc-creova  { background:linear-gradient(155deg,#ffffff 0%, #fbedf4 60%,#fae1ee 100%); border-bottom: 4px solid #EC4899; }
+.landing-page-container .tc-creova:hover { box-shadow: 0 20px 40px rgba(236,72,153,0.15), 0 0 0 1px rgba(236,72,153,0.1); }
 .landing-page-container .tc-pulse   { background:linear-gradient(155deg,#ffffff 0%, #eafcf1 60%,#c7fade 100%); border-bottom: 4px solid #10B981; }
 .landing-page-container .tc-pulse:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
 
@@ -786,14 +786,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 </div>
               </div>
 
-              {/* 7 STUDIO */}
-              <div className={`tc tc-studio ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('appinventor'))}>
+              {/* 7 CREOVA */}
+              <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
                 <div className="tc-icon">
-                  <img src="assets/app_game_dev_icon.png" alt="Studio Icon" />
+                  <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
                 </div>
                 <div>
                   <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Studio</div>
+                  <div className="tc-name">Creova</div>
                   <div className="tc-desc">App & Game Development</div>
                 </div>
               </div>

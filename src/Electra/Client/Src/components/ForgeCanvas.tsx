@@ -672,7 +672,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
       </div>
 
-      {/* ComponentSidebar is now docked in ForgeStudio */}
+      {/* ComponentSidebar is now docked in ForgeCreova */}
     </div>
   );
 };

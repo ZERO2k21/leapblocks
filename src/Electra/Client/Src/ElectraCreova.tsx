@@ -5,26 +5,26 @@
  */
 import React, { useState, useEffect } from 'react';
 import { BoardSelectionModal } from './components/BoardSelectionModal';
-import ForgeStudio from './ForgeStudio';
+import ForgeCreova from './ForgeCreova';
 import { useForgeStore } from '../utlis/store/useForgeStore';
 
-interface ElectraStudioProps {
+interface ElectraCreovaProps {
     onBack: () => void;
     onHome: () => void;
 }
 
-export default function ElectraStudio({ onBack, onHome }: ElectraStudioProps) {
+export default function ElectraCreova({ onBack, onHome }: ElectraCreovaProps) {
     const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(null);
 
     // Clear workspace when component mounts
     useEffect(() => {
         const { clearWorkspace } = useForgeStore.getState();
         clearWorkspace();
-        console.log('[ELECTRA STUDIO] Workspace cleared on mount');
+        console.log('[ELECTRA CREOVA] Workspace cleared on mount');
     }, []);
 
     const handleBoardSelect = (board: 'arduino-uno' | 'esp32-c3') => {
-        console.log('[ELECTRA STUDIO] Board selected:', board);
+        console.log('[ELECTRA CREOVA] Board selected:', board);
         setSelectedBoard(board);
     };
 
@@ -32,5 +32,5 @@ export default function ElectraStudio({ onBack, onHome }: ElectraStudioProps) {
         return <BoardSelectionModal onSelect={handleBoardSelect} onClose={onHome} />;
     }
 
-    return <ForgeStudio onBack={onBack} initialBoard={selectedBoard} />;
+    return <ForgeCreova onBack={onBack} initialBoard={selectedBoard} />;
 }

@@ -8,7 +8,7 @@ import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
 import '../utlis/elements/leap-elements';
-import './ForgeStudio.css';
+import './ForgeCreova.css';
 import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
 
 // Lazy load complex inner components
@@ -22,7 +22,7 @@ import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 
-interface ForgeStudioProps {
+interface ForgeCreovaProps {
   onBack: () => void;
   initialBoard?: 'arduino-uno' | 'esp32-c3';
 }
@@ -56,7 +56,7 @@ void loop() {
   delay(1000);
 }`;
 
-export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: ForgeStudioProps) {
+export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: ForgeCreovaProps) {
   const {
     nodes,
     edges,
@@ -117,7 +117,7 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     }
   };
 
-  // Stop simulation when navigating away from ForgeStudio
+  // Stop simulation when navigating away from ForgeCreova
   useEffect(() => {
     return () => {
       if (useForgeStore.getState().isSimulating) {
@@ -163,15 +163,15 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
   // Add the selected board to canvas on mount if no nodes exist
   useEffect(() => {
     const state = useForgeStore.getState();
-    console.log('[FORGE STUDIO] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
+    console.log('[FORGE CREOVA] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
 
     if (state.nodes.length === 0 && initialBoard) {
-      console.log('[FORGE STUDIO] Adding board to canvas:', initialBoard);
+      console.log('[FORGE CREOVA] Adding board to canvas:', initialBoard);
       // Use the store's addNode function to properly add the board
       state.addNode(initialBoard, { x: 400, y: 300 }, {
         label: initialBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
       });
-      console.log('[FORGE STUDIO] Board added. New nodes count:', useForgeStore.getState().nodes.length);
+      console.log('[FORGE CREOVA] Board added. New nodes count:', useForgeStore.getState().nodes.length);
     }
   }, [initialBoard]); // Run when initialBoard changes
 
