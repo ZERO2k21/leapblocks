@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 
@@ -28,13 +28,7 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
     });
   };
 
-  // Restore focus to Monaco editor after any external re-render
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.focus();
-    }
-  });
+
 
   return (
     <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>

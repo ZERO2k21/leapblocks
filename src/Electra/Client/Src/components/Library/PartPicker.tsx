@@ -173,6 +173,42 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
         </button>
       </div>
 
+      {/* Search Bar - outside scrollable area */}
+      <div style={{
+        padding: '12px 16px',
+        background: 'var(--lp-dark-bg)',
+        borderBottom: '1px solid var(--lp-border)',
+        flexShrink: 0
+      }}>
+        <div style={{
+          background: 'var(--lp-zinc-800)',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 10px',
+          border: '1px solid var(--lp-border)',
+          borderRadius: '8px',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+        }}>
+          <Search size={14} color="var(--lp-zinc-600)" style={{ marginRight: '6px' }} />
+          <input
+            type="text"
+            placeholder="Search components..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '8px 0',
+              color: 'var(--lp-text-color)',
+              fontSize: '12px',
+              outline: 'none',
+              width: '100%',
+              fontFamily: 'inherit'
+            }}
+          />
+        </div>
+      </div>
+
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
         {/* Accordion 1: COMPONENT LIBRARY */}
@@ -209,37 +245,6 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
 
           {libraryOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.02)' }}>
-              {/* Search Bar */}
-              <div style={{ padding: '12px 16px 8px 16px' }}>
-                <div style={{
-                  background: 'var(--lp-zinc-800)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 10px',
-                  border: '1px solid var(--lp-border)',
-                  borderRadius: '8px',
-                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
-                }}>
-                  <Search size={14} color="var(--lp-zinc-600)" style={{ marginRight: '6px' }} />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '8px 0',
-                      color: 'var(--lp-text-color)',
-                      fontSize: '12px',
-                      outline: 'none',
-                      width: '100%',
-                      fontFamily: 'inherit'
-                    }}
-                  />
-                </div>
-              </div>
-
               {/* 2-Column Grid */}
               <div style={{
                 display: 'grid',

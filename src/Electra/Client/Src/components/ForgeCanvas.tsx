@@ -113,6 +113,26 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [zoomIn, zoomOut, fitView, setViewport, getViewport, getNodes]);
 
+  // ── Blur editor safely on node/edge selection changes to enable canvas hotkeys without event interruption ──
+  const selectedNodeId = store.selectedNodeId;
+  const selectedEdgeId = store.selectedEdgeId;
+
+  useEffect(() => {
+    if (selectedNodeId || selectedEdgeId) {
+      const active = document.activeElement;
+      if (active && active instanceof HTMLElement) {
+        if (
+          active.closest('.monaco-editor') ||
+          active.classList.contains('monaco-editor') ||
+          active.tagName === 'TEXTAREA' ||
+          active.tagName === 'INPUT'
+        ) {
+          active.blur();
+        }
+      }
+    }
+  }, [selectedNodeId, selectedEdgeId]);
+
   // ── Restore viewport from saved state on mount ────────────────────
   useEffect(() => {
     if (savedViewport.x !== 0 || savedViewport.y !== 0 || savedViewport.zoom !== 1) {

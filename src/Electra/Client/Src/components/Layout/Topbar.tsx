@@ -20,7 +20,8 @@ import {
   Redo,
   Scissors,
   Copy,
-  Clipboard
+  Clipboard,
+  Check
 } from 'lucide-react';
 
 interface IgniteTopbarProps {
@@ -42,6 +43,8 @@ interface IgniteTopbarProps {
   variant?: 'default' | 'electra';
   canUndo?: boolean;
   canRedo?: boolean;
+  onSwitchBoard?: (board: string) => void;
+  currentBoard?: string;
 }
 
 export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
@@ -62,12 +65,16 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   brandName = 'ELECTRA',
   variant = 'default',
   canUndo = false,
-  canRedo = false
+  canRedo = false,
+  onSwitchBoard,
+  currentBoard
 }) => {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const fileMenuRef = useRef<HTMLDivElement>(null);
   const editMenuRef = useRef<HTMLDivElement>(null);
+  const boardMenuRef = useRef<HTMLDivElement>(null);
 
   const isElectra = variant === 'electra';
 
@@ -92,10 +99,13 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false);
       }
+      if (boardMenuRef.current && !boardMenuRef.current.contains(event.target as Node)) {
+        setBoardMenuOpen(false);
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
   }, []);
 
   const isDesktop = windowWidth >= 1024;
@@ -252,6 +262,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 onClick={() => {
                   setFileMenuOpen(!fileMenuOpen);
                   setEditMenuOpen(false);
+                  setBoardMenuOpen(false);
                 }}
                 style={{
                   display: 'flex',
@@ -345,6 +356,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 onClick={() => {
                   setEditMenuOpen(!editMenuOpen);
                   setFileMenuOpen(false);
+                  setBoardMenuOpen(false);
                 }}
                 style={{
                   display: 'flex',
@@ -452,6 +464,97 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               )}
             </div>
 
+            {!isMobile && onSwitchBoard && currentBoard && (
+              <div ref={boardMenuRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => {
+                    setBoardMenuOpen(!boardMenuOpen);
+                    setFileMenuOpen(false);
+                    setEditMenuOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 10px',
+                    border: 'none',
+                    color: isElectra ? ec.text : 'rgb(255, 255, 255)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    fontFamily: '"Segoe UI", Inter, sans-serif',
+                    cursor: 'pointer',
+                    borderRadius: '20px',
+                    transition: '0.2s',
+                    background: boardMenuOpen ? (isElectra ? 'rgba(34, 211, 238, 0.08)' : 'rgba(255, 255, 255, 0.15)') : 'transparent',
+                    letterSpacing: '0.02em'
+                  }}
+                  onMouseEnter={(e) => !boardMenuOpen && (e.currentTarget.style.background = isElectra ? 'rgba(39, 39, 42, 0.6)' : 'rgba(255, 255, 255, 0.08)')}
+                  onMouseLeave={(e) => !boardMenuOpen && (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span style={{ color: isElectra ? ec.text : 'rgb(255, 255, 255)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.02em' }}>
+                    {currentBoard === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
+                  </span>
+                  <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5 }} />
+                </button>
+
+                {boardMenuOpen && (
+                  <div style={dropdownStyle}>
+                    <button
+                      style={{
+                        ...menuItemStyle,
+                        color: currentBoard === 'arduino-uno' ? (isElectra ? ec.accent : '#2563eb') : menuItemStyle.color,
+                        fontWeight: currentBoard === 'arduino-uno' ? 700 : 500
+                      }}
+                      onClick={() => {
+                        if (currentBoard !== 'arduino-uno') {
+                          onSwitchBoard('arduino-uno');
+                        }
+                        setBoardMenuOpen(false);
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: currentBoard === 'arduino-uno' ? '#22d3ee' : isElectra ? 'rgba(161, 161, 170, 0.3)' : 'rgba(148, 163, 184, 0.3)',
+                        flexShrink: 0
+                      }} />
+                      <span>Arduino Uno</span>
+                      {currentBoard === 'arduino-uno' && (
+                        <Check size={14} strokeWidth={2.5} style={{ marginLeft: 'auto', opacity: 0.8 }} />
+                      )}
+                    </button>
+
+                    <button
+                      style={{
+                        ...menuItemStyle,
+                        color: currentBoard === 'esp32-c3' ? (isElectra ? ec.accent : '#2563eb') : menuItemStyle.color,
+                        fontWeight: currentBoard === 'esp32-c3' ? 700 : 500
+                      }}
+                      onClick={() => {
+                        if (currentBoard !== 'esp32-c3') {
+                          onSwitchBoard('esp32-c3');
+                        }
+                        setBoardMenuOpen(false);
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = isElectra ? ec.hover : 'rgba(59, 130, 246, 0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: currentBoard === 'esp32-c3' ? '#22d3ee' : isElectra ? 'rgba(161, 161, 170, 0.3)' : 'rgba(148, 163, 184, 0.3)',
+                        flexShrink: 0
+                      }} />
+                      <span>ESP32-C3</span>
+                      {currentBoard === 'esp32-c3' && (
+                        <Check size={14} strokeWidth={2.5} style={{ marginLeft: 'auto', opacity: 0.8 }} />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {isDesktop && (
               <div style={{ position: 'relative' }}>
                 <button style={{
@@ -479,7 +582,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px', flex: '0 1 auto', minWidth: '0px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px', flex: '0 1 auto', minWidth: '0px', overflow: 'visible' }}>
           {!isMobile && centerContent}
 
           <div style={{
@@ -539,6 +642,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               <Save size={12} strokeWidth={2.5} />
             </button>
           </div>
+
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flex: '1 1 0%', minWidth: '0px' }}>

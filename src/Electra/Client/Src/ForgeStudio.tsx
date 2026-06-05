@@ -611,6 +611,47 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
     }
   };
 
+  const [showBoardConfirm, setShowBoardConfirm] = useState(false);
+  const [pendingBoard, setPendingBoard] = useState<string | null>(null);
+
+  const hasModifications = () => {
+    const defaultCode = board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE;
+    return nodes.length > 1 || edges.length > 0 || code !== defaultCode;
+  };
+
+  const handleSwitchBoard = (targetBoard: string) => {
+    if (targetBoard === board) return;
+
+    if (hasModifications()) {
+      setPendingBoard(targetBoard);
+      setShowBoardConfirm(true);
+      return;
+    }
+
+    executeBoardSwitch(targetBoard);
+  };
+
+  const executeBoardSwitch = (targetBoard: string) => {
+    if (isSimulating) {
+      stopSimulation();
+      setWifiStatus('');
+    }
+
+    setNodes([]);
+    setEdges([]);
+    setCode(targetBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
+    setBoard(targetBoard);
+
+    const state = useForgeStore.getState();
+    state.addNode(targetBoard, { x: 400, y: 300 }, {
+      label: targetBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
+    });
+
+    setHistory([]);
+    setHistoryIndex(-1);
+    saveToHistory();
+  };
+
   const handleBack = () => {
     if (isSimulating) {
       stopSimulation();
@@ -643,6 +684,8 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
         onPaste={handlePaste}
         canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
+        onSwitchBoard={handleSwitchBoard}
+        currentBoard={board}
       />
 
       <main className="forge-main-split">
@@ -833,6 +876,61 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Board Switch Confirmation Modal */}
+      {showBoardConfirm && pendingBoard && (
+        <div className="web-modal-overlay" onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>
+          <div className="web-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="web-modal-header">
+              <h3>Switch Board?</h3>
+              <button onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>×</button>
+            </div>
+            <div className="web-modal-body" style={{ padding: '24px' }}>
+              <p style={{ color: '#a1a1aa', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+                Switching to <strong>{pendingBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'}</strong> will clear the current circuit and code. Make sure to save your work before proceeding.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #27272a',
+                    background: 'transparent',
+                    color: '#a1a1aa',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: '"Segoe UI", Inter, sans-serif'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBoardConfirm(false);
+                    if (pendingBoard) executeBoardSwitch(pendingBoard);
+                    setPendingBoard(null);
+                  }}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                    color: '#09090b',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontFamily: '"Segoe UI", Inter, sans-serif'
+                  }}
+                >
+                  Switch Anyway
+                </button>
+              </div>
             </div>
           </div>
         </div>
