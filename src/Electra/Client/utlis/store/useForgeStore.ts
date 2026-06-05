@@ -196,7 +196,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       source,
       sourceHandle,
       target,
-      targetHandle,
+      targetHandle: `${targetHandle}__target`,
       id: `e-${uuidv4()}`,
       type: 'wire',
       data: { color: '#22c55e', waypoints },

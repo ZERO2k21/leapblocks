@@ -48,7 +48,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     wire: WireEdge,
   }), []);
 
-  const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport, screenToFlowPosition } = useReactFlow();
   const currentViewport = useViewport();
   const store = useForgeStore();
   const {
@@ -212,13 +212,13 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
   const onPaneClick = useCallback((event: React.MouseEvent) => {
     if (wireDraft) {
-      const pos = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
     } else {
       store.setSelectedNode(null);
       store.setSelectedEdge(null);
     }
-  }, [wireDraft, addWireWaypoint, store, reactFlowInstance]);
+  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     store.setSelectedEdge(edge.id);
