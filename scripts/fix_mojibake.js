@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const file = path.join(__dirname, 'src/leapLogix/client/pythonApp.jsx');
+const file = path.join(__dirname, '../src/leaplogix/client/LogixApp.jsx');
 let content = fs.readFileSync(file, 'utf8');
 
 const map = {

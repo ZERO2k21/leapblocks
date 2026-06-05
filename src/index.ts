@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { spawn, fork } from 'child_process';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
-import { PythonManager } from './leapLogix/server/PythonManager';
+import { PythonManager } from './leaplogix/server/PythonManager';
 import { join } from 'path';
 
 // Suppress development security warnings in the console
