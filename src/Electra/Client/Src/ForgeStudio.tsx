@@ -526,6 +526,29 @@ export default function ForgeStudio({ onBack, initialBoard = 'arduino-uno' }: Fo
           }
         }
       }
+      // Delete / Backspace: Remove selected node or edge
+      else if (e.key === 'Delete' || e.key === 'Backspace') {
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.classList.contains('monaco-editor') ||
+          activeElement?.closest('.monaco-editor') ||
+          activeElement?.tagName === 'INPUT' ||
+          activeElement?.tagName === 'TEXTAREA' ||
+          activeElement?.tagName === 'SELECT';
+
+        if (!isInEditor) {
+          const state = useForgeStore.getState();
+          if (state.selectedNodeId) {
+            e.preventDefault();
+            state.removeNode(state.selectedNodeId);
+            state.setSelectedNode(null);
+          } else if (state.selectedEdgeId) {
+            e.preventDefault();
+            state.removeEdge(state.selectedEdgeId);
+            state.setSelectedEdge(null);
+          }
+        }
+      }
+
     };
 
     window.addEventListener('keydown', handleKeyDown);

@@ -7,8 +7,6 @@ import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactFlow, {
   Background,
   MiniMap,
-  Connection,
-  ConnectionMode,
   Edge,
   Node,
   useNodesState,
@@ -25,7 +23,8 @@ import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
-import { PhysicalConnectionLine } from './Edges/PhysicalConnectionLine';
+import { buildOrthogonalPath } from '../lib/orthogonalRouting';
+import { getComponentPins } from '../lib/PinMap';
 import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface ForgeCanvasProps {
@@ -58,13 +57,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     nodes: storeNodes,
     edges: storeEdges,
     addNode,
-    addEdge: addStoreEdge,
     updateNodePosition,
     uiTheme,
     toggleUiTheme,
     viewport: savedViewport,
-    setViewportState
+    setViewportState,
+    wireDraft,
+    addWireWaypoint,
+    cancelWireDraft,
   } = store;
+
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -113,6 +116,59 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [zoomIn, zoomOut, fitView, setViewport, getViewport, getNodes]);
 
+  // ── Escape cancels wire draft ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && wireDraft) {
+        cancelWireDraft();
+        setMousePos(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [wireDraft, cancelWireDraft]);
+
+  // ── Track mouse for draft wire end ──
+  const onContainerMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!wireDraft) return;
+    const bounds = document.querySelector('.forge-canvas-container')?.getBoundingClientRect();
+    if (!bounds) return;
+    const vp = getViewport();
+    setMousePos({
+      x: (event.clientX - bounds.left - vp.x) / vp.zoom,
+      y: (event.clientY - bounds.top - vp.y) / vp.zoom,
+    });
+  }, [wireDraft, getViewport]);
+
+  // ── Compute source pin position in flow coordinates ──
+  const getSourcePinPos = useCallback(() => {
+    if (!wireDraft) return null;
+    const srcNode = storeNodes.find(n => n.id === wireDraft.source);
+    if (!srcNode) return null;
+    const pins = getComponentPins(srcNode.data?.type);
+    const pin = pins.find(p => p.name === wireDraft.sourceHandle);
+    const nw = srcNode.width || 120;
+    const nh = srcNode.height || 120;
+    return {
+      x: srcNode.position.x + (pin ? (pin.x / 100) * nw : nw / 2),
+      y: srcNode.position.y + (pin ? (pin.y / 100) * nh : nh / 2),
+    };
+  }, [wireDraft, storeNodes]);
+
+  // ── Compute draft wire SVG path ──
+  const draftWirePath = useMemo(() => {
+    if (!wireDraft || !mousePos) return '';
+    const vp = getViewport();
+    const srcPinPos = getSourcePinPos();
+    if (!srcPinPos) return '';
+    const allPoints = [srcPinPos, ...wireDraft.waypoints, mousePos];
+    const screenPoints = allPoints.map(p => ({
+      x: p.x * vp.zoom + vp.x,
+      y: p.y * vp.zoom + vp.y,
+    }));
+    return buildOrthogonalPath(screenPoints);
+  }, [wireDraft, mousePos, getViewport, getSourcePinPos]);
+
   // ── Blur editor safely on node/edge selection changes to enable canvas hotkeys without event interruption ──
   const selectedNodeId = store.selectedNodeId;
   const selectedEdgeId = store.selectedEdgeId;
@@ -146,19 +202,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     setViewportState(currentViewport);
   }, [currentViewport.x, currentViewport.y, currentViewport.zoom, setViewportState]);
 
-  // Handle new connections (wiring)
-  const onConnect = useCallback(
-    (params: Connection | Edge) => {
-      const normalized = {
-        ...params,
-        sourceHandle: (params.sourceHandle || '').replace('__target', ''),
-        targetHandle: (params.targetHandle || '').replace('__target', ''),
-      };
-      addStoreEdge(normalized as Edge);
-    },
-    [addStoreEdge]
-  );
-
   const onNodeDragStop = useCallback((_: any, node: Node) => {
     updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
@@ -167,10 +210,15 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     store.setSelectedNode(node.id);
   }, [store]);
 
-  const onPaneClick = useCallback(() => {
-    store.setSelectedNode(null);
-    store.setSelectedEdge(null);
-  }, [store]);
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
+    if (wireDraft) {
+      const pos = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      addWireWaypoint(pos);
+    } else {
+      store.setSelectedNode(null);
+      store.setSelectedEdge(null);
+    }
+  }, [wireDraft, addWireWaypoint, store, reactFlowInstance]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     store.setSelectedEdge(edge.id);
@@ -217,13 +265,13 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       }}
       onDrop={onDrop}
       onDragOver={onDragOver}
+      onMouseMove={onContainerMouseMove}
     >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
@@ -231,11 +279,10 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={{ type: 'wire' }}
+        nodesConnectable={false}
         fitView
         snapToGrid
         snapGrid={[10, 10]}
-        connectionLineComponent={PhysicalConnectionLine}
-        connectionMode={ConnectionMode.Loose}
         minZoom={0.1}
         maxZoom={4}
         zoomOnScroll
@@ -285,6 +332,39 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           </div>
         </Panel>
       </ReactFlow>
+
+      {/* Draft wire overlay (click-to-route) */}
+      {wireDraft && draftWirePath && (
+        <svg
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 1001,
+          }}
+        >
+          <path
+            d={draftWirePath}
+            stroke="#22c55e"
+            strokeWidth={2}
+            fill="none"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ filter: 'drop-shadow(0 0 3px rgba(34, 197, 94, 0.5))' }}
+          />
+          {wireDraft.waypoints.map((pt, i) => {
+            const vp = getViewport();
+            const sx = pt.x * vp.zoom + vp.x;
+            const sy = pt.y * vp.zoom + vp.y;
+            return (
+              <circle key={i} cx={sx} cy={sy} r={3} fill="#22c55e" stroke="#09090b" strokeWidth={1} />
+            );
+          })}
+        </svg>
+      )}
 
       <style>{`
         .react-flow__edges { z-index: 1000 !important; }

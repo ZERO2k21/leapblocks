@@ -50,6 +50,12 @@ async function getCircuitEngine() {
 
 logStoreTiming('Lazy loaders defined');
 
+export interface WireDraft {
+  source: string;
+  sourceHandle: string;
+  waypoints: { x: number; y: number }[];
+}
+
 export interface ForgeState {
   nodes: Node[];
   edges: Edge[];
@@ -74,6 +80,13 @@ export interface ForgeState {
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
   setProjectName: (name: string) => void;
+
+  // Wire Draft (click-to-route)
+  wireDraft: WireDraft | null;
+  startWireDraft: (source: string, sourceHandle: string) => void;
+  addWireWaypoint: (point: { x: number; y: number }) => void;
+  completeWireDraft: (target: string, targetHandle: string) => void;
+  cancelWireDraft: () => void;
 
   // Simulation
   isSimulating: boolean;
@@ -159,10 +172,43 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   showPartPicker: false,
   uiTheme: 'light',
   viewport: { x: 0, y: 0, zoom: 1 },
+  wireDraft: null,
 
   setUiTheme: (theme) => set({ uiTheme: theme }),
   toggleUiTheme: () => set((state) => ({ uiTheme: state.uiTheme === 'light' ? 'dark' : 'light' })),
   setViewportState: (vp) => set({ viewport: vp }),
+
+  startWireDraft: (source, sourceHandle) => {
+    console.log(`[FORGE STORE] Wire draft started: ${source}:${sourceHandle}`);
+    set({ wireDraft: { source, sourceHandle, waypoints: [] } });
+  },
+
+  addWireWaypoint: (point) => set((state) => {
+    if (!state.wireDraft) return state;
+    console.log(`[FORGE STORE] Wire waypoint added: (${point.x.toFixed(0)}, ${point.y.toFixed(0)})`);
+    return { wireDraft: { ...state.wireDraft, waypoints: [...state.wireDraft.waypoints, point] } };
+  }),
+
+  completeWireDraft: (target, targetHandle) => set((state) => {
+    if (!state.wireDraft) return state;
+    const { source, sourceHandle, waypoints } = state.wireDraft;
+    const edge = {
+      source,
+      sourceHandle,
+      target,
+      targetHandle,
+      id: `e-${uuidv4()}`,
+      type: 'wire',
+      data: { color: '#22c55e', waypoints },
+    };
+    console.log(`[FORGE STORE] Wire draft completed: ${source}:${sourceHandle} → ${target}:${targetHandle}`);
+    return { edges: [...state.edges, edge as any], wireDraft: null };
+  }),
+
+  cancelWireDraft: () => {
+    console.log('[FORGE STORE] Wire draft cancelled');
+    set({ wireDraft: null });
+  },
 
   setProjectPath: (path) => {
     console.log(`[FORGE STORE] projectPath updated to: ${path}`);

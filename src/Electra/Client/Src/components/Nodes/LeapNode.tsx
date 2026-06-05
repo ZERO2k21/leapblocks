@@ -18,6 +18,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSimulating = useForgeStore((state) => state.isSimulating);
+  const wireDraft = useForgeStore((state) => state.wireDraft);
+  const startWireDraft = useForgeStore((state) => state.startWireDraft);
+  const completeWireDraft = useForgeStore((state) => state.completeWireDraft);
   const isSelected = selected || selectedNodeId === id;
 
   // Subscribe only to edge count (number) — cheap comparison, no re-render during drag.
@@ -730,8 +733,17 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   borderRadius: '50%',
                   opacity: pinOpacity,
                   boxShadow: pinGlow,
+                  cursor: wireDraft ? 'crosshair' : 'pointer',
                 }}
                 title={`${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  if (wireDraft) {
+                    completeWireDraft(id, pin.name);
+                  } else {
+                    startWireDraft(id, pin.name);
+                  }
+                }}
               />
             </React.Fragment>
           );
@@ -739,12 +751,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       </div>
 
 
-      {/* ── SENSOR OVERLAY (sliders shown below the node) ── */}
-      <SensorOverlay
-        nodeId={id}
-        type={data.type}
-        currentValues={data.sensorValues}
-      />
+      {/* ── SENSOR OVERLAY (sliders shown below the node — only when selected) ── */}
+      {isSelected && (
+        <SensorOverlay
+          nodeId={id}
+          type={data.type}
+          currentValues={data.sensorValues}
+        />
+      )}
     </div>
   );
 });
