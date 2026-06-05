@@ -2007,7 +2007,16 @@ class CircuitEngine {
             if (peripheralNode.data?.type === 'stepper-motor') {
               if (!this.stepperEmulators.has(peripheralId)) {
                 console.log(`[STEPPER] Wiring 4-wire emulator for node ${peripheralId} — pin ${peripheralPinName} ← AVR ${avrPin}`);
-                let pendingUpdate: { angle: number; stepCount: number; energized: boolean; actualAngleUnbounded?: number } | null = null;
+                let pendingUpdate: {
+                  angle: number;
+                  stepCount: number;
+                  energized: boolean;
+                  actualAngleUnbounded?: number;
+                  currentSteps?: number;
+                  currentAngle?: number;
+                  totalDegrees?: number;
+                  stepsPerRevolution?: number;
+                } | null = null;
                 let rafScheduled = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
@@ -2070,22 +2079,30 @@ class CircuitEngine {
                     simulationRunner.reportClampedStep();
                   }
 
+                  const currentStepper = this.stepperEmulators.get(peripheralId);
+                  const activeStepsPerRev = currentStepper ? currentStepper.getStepsPerRev() : stepsPerRev;
+                  const activeVisualStepsPerRev = currentStepper ? currentStepper.getVisualStepsPerRev() : visualStepsPerRev;
+
                   // Scale internal steps (0-2048) → visual steps (0-200)
-                  const visualSteps = stepsPerRev !== visualStepsPerRev
-                    ? Math.round((state.stepCount / stepsPerRev) * visualStepsPerRev)
+                  const visualSteps = activeStepsPerRev !== activeVisualStepsPerRev
+                    ? Math.round((state.stepCount / activeStepsPerRev) * activeVisualStepsPerRev)
                     : state.stepCount;
 
                   pendingUpdate = {
                     angle: state.angle,
                     stepCount: visualSteps,
                     energized: state.energized,
+                    currentSteps: state.currentSteps ?? visualSteps,
+                    currentAngle: state.currentAngle ?? state.angle,
+                    totalDegrees: state.actualAngleUnbounded ?? state.angle,
+                    stepsPerRevolution: activeStepsPerRev,
                   };
                   if (!rafScheduled) {
                     rafScheduled = true;
                     requestAnimationFrame(() => {
                       rafScheduled = false;
                       if (pendingUpdate) {
-                        const { angle: a, stepCount: s, energized: e } = pendingUpdate;
+                        const { angle: a, stepCount: s, energized: e, currentSteps: cs, currentAngle: ca, totalDegrees: td, stepsPerRevolution: spr } = pendingUpdate;
                         pendingUpdate = null;
                         updateNodeData(peripheralId, {
                           angle: a,
@@ -2093,13 +2110,40 @@ class CircuitEngine {
                           energized: e,
                           value: `${a.toFixed(1)}°`,
                           units: `${s > 0 ? '+' : ''}${s} steps`,
+                          currentSteps: cs,
+                          currentAngle: ca,
+                          totalDegrees: td,
+                          stepsPerRevolution: spr,
                         });
                       }
                     });
                   }
-                }, { stepsPerRev, visualStepsPerRev, constrainRotation: true }, peripheralId));
+                }, { stepsPerRev, visualStepsPerRev, constrainRotation: false }, peripheralId));
               }
               const stepper = this.stepperEmulators.get(peripheralId)!;
+
+              // Dynamically sync stepsPerRev if gearRatio or stepsPerRev changed in UI
+              const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
+              const baseSteps = stepper.getBaseStepsPerRev();
+              let expectedSteps = baseSteps;
+              const overrideSteps = peripheralNode.data?.stepsPerRev ?? peripheralNode.data?.stepsPerRevolution;
+              if (typeof overrideSteps === 'number' && overrideSteps > 0) {
+                expectedSteps = Math.round(overrideSteps);
+              } else {
+                const parts = gearRatioStr.split(':');
+                if (parts.length === 2) {
+                  const num = parseFloat(parts[0]);
+                  const den = parseFloat(parts[1]);
+                  if (!isNaN(num) && !isNaN(den) && den > 0) {
+                    expectedSteps = Math.round(baseSteps * (num / den));
+                  }
+                }
+              }
+              const expectedVisual = expectedSteps;
+              if (stepper.getStepsPerRev() !== expectedSteps) {
+                stepper.setStepsPerRev(expectedSteps, expectedVisual);
+              }
+
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
 
@@ -2122,8 +2166,41 @@ class CircuitEngine {
             // --- Unified Stepper Motor Emulation (IN1-IN4, AVR + ESP32) ---
             if (peripheralNode.data?.type === 'stepperMotor') {
               if (!this.unifiedStepperEmulators.has(peripheralId)) {
-                const model = ((peripheralNode.data?.model as StepperModel) ?? 'bipolar_nema');
+                let model = ((peripheralNode.data?.model as StepperModel) ?? 'bipolar_nema');
+
+                // Auto-detect model/steps from source code
+                const sourceCode = simulationRunner.getSourceCode();
+                if (sourceCode) {
+                  const literalMatch = sourceCode.match(/Stepper\s+\w+\s*\(\s*(\d+)\s*,/);
+                  if (literalMatch) {
+                    const parsed = parseInt(literalMatch[1], 10);
+                    if (parsed === 2048) {
+                      model = '28byj48';
+                      console.log(`[STEPPER] Auto-detected 28BYJ-48 unified stepper motor from literal stepsPerRevolution = 2048`);
+                    }
+                  } else {
+                    const varMatch = sourceCode.match(/Stepper\s+\w+\s*\(\s*([a-zA-Z_]\w*)\s*,/);
+                    if (varMatch) {
+                      const varName = varMatch[1];
+                      const defineRe = new RegExp(`#define\\s+${varName}\\s+(\\d+)`);
+                      const constRe = new RegExp(`(?:const\\s+)?(?:int|long|unsigned)\\s+${varName}\\s*=\\s*(\\d+)`);
+                      const dm = sourceCode.match(defineRe) || sourceCode.match(constRe);
+                      if (dm) {
+                        const parsed = parseInt(dm[1], 10);
+                        if (parsed === 2048) {
+                          model = '28byj48';
+                          console.log(`[STEPPER] Auto-detected 28BYJ-48 unified stepper motor from variable ${varName} = 2048`);
+                        }
+                      }
+                    }
+                  }
+                }
+
                 this.unifiedStepperEmulators.set(peripheralId, new UnifiedStepperEmulator(model));
+                updateNodeData(peripheralId, {
+                  model,
+                  stepsPerRevolution: model === '28byj48' ? 2048 : 200,
+                });
               }
 
               const unified = this.unifiedStepperEmulators.get(peripheralId)!;
@@ -2136,7 +2213,12 @@ class CircuitEngine {
                 !!buf['IN3'],
                 !!buf['IN4'],
               );
-              updateNodeData(peripheralId, unified.getState());
+              
+              const currentDisplay = peripheralNode.data?.display ?? 'steps';
+              updateNodeData(peripheralId, {
+                ...unified.getState(),
+                display: currentDisplay,
+              });
             }
 
             // --- Biaxial Stepper Emulation ---

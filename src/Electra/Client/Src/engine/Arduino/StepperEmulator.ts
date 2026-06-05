@@ -23,6 +23,8 @@ export interface StepperConfig {
 
 export interface StepperState {
   stepCount: number;
+  currentSteps?: number;
+  currentAngle?: number;
   microPosition: number;
   angle: number;
   currentSpeed: number;
@@ -67,6 +69,7 @@ const HALF_STEP_SEQ: Array<[boolean, boolean, boolean, boolean]> = [
 export class StepperEmulator {
   private readonly nodeId: string;
   private stepsPerRev: number;
+  private baseStepsPerRev: number;
 
   private steppingMode: SteppingMode;
   private microstepDivisor: number;
@@ -129,6 +132,7 @@ export class StepperEmulator {
   ) {
     this.nodeId = nodeId;
     this.stepsPerRev = config.stepsPerRev ?? 200;
+    this.baseStepsPerRev = this.stepsPerRev;
     this.steppingMode = config.steppingMode ?? 'full';
     this.microstepDivisor = this.clampDivisor(config.microstepDivisor ?? 16);
     this.peakTorque = config.peakTorque ?? 40;
@@ -188,12 +192,27 @@ export class StepperEmulator {
     this.maxBackendStep = maxS;
   }
 
-  setStepsPerRev(steps: number) {
+  setStepsPerRev(steps: number, visualSteps?: number) {
     if (steps > 0) {
       this.stepsPerRev = steps;
+      if (visualSteps !== undefined) {
+        this.visualStepsPerRev = visualSteps;
+      }
       this.recalculateMaxBackendStep();
       console.log(`${TAG} [${this.nodeId}] Updated stepsPerRev = ${steps} (${(360 / steps).toFixed(4)}° per step), maxBackendStep = ${this.maxBackendStep}`);
     }
+  }
+
+  getStepsPerRev(): number {
+    return this.stepsPerRev;
+  }
+
+  getBaseStepsPerRev(): number {
+    return this.baseStepsPerRev;
+  }
+
+  getVisualStepsPerRev(): number {
+    return this.visualStepsPerRev;
   }
 
   setPhysicsEnabled(enabled: boolean) {
@@ -586,8 +605,15 @@ export class StepperEmulator {
   public getState(): StepperState {
     const range = this.subStepRange();
     const moving = this.currentSpeed > 0.1 || Math.abs(this.angularVelocity) > 0.05;
+    const currentSteps = this.stepCount;
+    let currentAngle = (currentSteps % this.stepsPerRev) * 360.0 / this.stepsPerRev;
+    if (currentAngle < 0) {
+      currentAngle += 360.0;
+    }
     return {
       stepCount: this.stepCount,
+      currentSteps,
+      currentAngle,
       microPosition: range > 1 ? this.microSubStep / range : 0,
       angle: this.getAngle(),
       currentSpeed: this.currentSpeed,

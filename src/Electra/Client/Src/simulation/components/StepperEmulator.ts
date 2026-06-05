@@ -15,6 +15,8 @@ export interface StepperState {
   angle: number;
   totalDegrees: number;
   stepCount: number;
+  currentSteps: number;
+  currentAngle: number;
   rpm: number;
   direction: 'CW' | 'CCW' | 'STOP';
   phase: number;
@@ -66,6 +68,13 @@ export class StepperEmulator {
   private stalled = false;
   private stallWarned = false;
 
+  private actualAngle = 0;
+  private angularVelocity = 0;
+  private lastUpdateTime = 0;
+  private readonly INERTIA = 0.01;
+  private readonly DAMPING = 1.0;
+  private readonly SPRING_K = 25.0;
+
   constructor(model: StepperModel) {
     this.model = model;
     this.sequence = model === '28byj48' ? SEQ_28BYJ48 : SEQ_BIPOLAR_NEMA;
@@ -98,7 +107,17 @@ export class StepperEmulator {
 
     const seqLen = this.sequence.length;
     const delta = (matchedPhase - this.currentPhase + seqLen) % seqLen;
-    if (delta !== 1 && delta !== seqLen - 1) {
+
+    let stepAmount = 0;
+    let dir: 'CW' | 'CCW' | 'STOP' = 'STOP';
+
+    if (delta === 1 || (seqLen === 8 && delta === 2)) {
+      stepAmount = 1;
+      dir = 'CW';
+    } else if (delta === seqLen - 1 || (seqLen === 8 && delta === 6)) {
+      stepAmount = -1;
+      dir = 'CCW';
+    } else {
       this.invalidTransitionCount += 1;
       if (this.invalidTransitionCount >= this.STALL_THRESHOLD) {
         this.stalled = true;
@@ -114,13 +133,8 @@ export class StepperEmulator {
     this.stalled = false;
     this.stallWarned = false;
 
-    if (delta === 1) {
-      this.stepCount += 1;
-      this.direction = 'CW';
-    } else {
-      this.stepCount -= 1;
-      this.direction = 'CCW';
-    }
+    this.stepCount += stepAmount;
+    this.direction = dir;
 
     this.currentPhase = matchedPhase;
     this.updateAngle();
@@ -130,6 +144,7 @@ export class StepperEmulator {
     if (this.stepHistory.length > RPM_WINDOW_SIZE) this.stepHistory.shift();
     this.recalculateRpm();
     this.lastStepTime = now;
+    console.log(`[STEPPER TRACE] currentSteps: ${this.stepCount}, totalDegrees: ${this.totalDegrees.toFixed(2)}°, currentAngle: ${this.angle.toFixed(2)}°, direction: ${this.direction}, rpm: ${this.rpm.toFixed(1)}`);
   }
 
   checkIdle(): void {
@@ -141,10 +156,37 @@ export class StepperEmulator {
   }
 
   getState(): StepperState {
+    const now = performance.now();
+    if (this.lastUpdateTime > 0) {
+      const dt = (now - this.lastUpdateTime) / 1000;
+      if (dt > 0 && dt < 0.5) {
+        const targetAngle = (this.stepCount / this.stepsPerRevolution) * 360;
+        const error = targetAngle - this.actualAngle;
+        const springTorque = this.SPRING_K * error;
+        const dampingTorque = -this.DAMPING * this.angularVelocity;
+        const netTorque = springTorque + dampingTorque;
+        const angularAcceleration = netTorque / this.INERTIA;
+        this.angularVelocity += angularAcceleration * dt;
+        const maxSpeed = 7200; // deg/s
+        this.angularVelocity = Math.max(-maxSpeed, Math.min(maxSpeed, this.angularVelocity));
+        this.actualAngle += this.angularVelocity * dt;
+        this.totalDegrees = this.actualAngle;
+      }
+    }
+    this.lastUpdateTime = now;
+
+    const currentSteps = this.stepCount;
+    let currentAngle = (currentSteps % this.stepsPerRevolution) * 360.0 / this.stepsPerRevolution;
+    if (currentAngle < 0) {
+      currentAngle += 360.0;
+    }
+
     return {
-      angle: this.angle,
+      angle: currentAngle,
       totalDegrees: this.totalDegrees,
       stepCount: this.stepCount,
+      currentSteps,
+      currentAngle,
       rpm: this.rpm,
       direction: this.direction,
       phase: this.currentPhase,
@@ -168,6 +210,9 @@ export class StepperEmulator {
     this.stallWarned = false;
     this.lastStepTime = 0;
     this.pinState = [0, 0, 0, 0];
+    this.actualAngle = 0;
+    this.angularVelocity = 0;
+    this.lastUpdateTime = 0;
   }
 
   private findPhase(state: CoilState): number {

@@ -225,7 +225,7 @@ export const SelectionToolbar: React.FC = () => {
   };
 
   const renderStepperControls = () => {
-    if (nodeType !== 'stepper-motor') return null;
+    if (nodeType !== 'stepper-motor' && nodeType !== 'stepperMotor') return null;
 
     const currentSize = selectedNode?.data?.size ?? '23';
     const currentDisplay = selectedNode?.data?.display ?? 'steps';

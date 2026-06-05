@@ -365,7 +365,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.gearRatio = data.gearRatio ?? '1:1';
     el.energized = data.energized ?? false;
     el.stepCount = data.stepCount ?? 0;
-  }, [data.type, data.angle, data.arrow, data.display, data.gearRatio, data.energized, data.stepCount]);
+    el.size = data.size ?? 23;
+  }, [data.type, data.angle, data.arrow, data.display, data.gearRatio, data.energized, data.stepCount, data.size]);
 
   // Imperatively set biaxial-stepper hand angles as DOM properties.
   useEffect(() => {

@@ -9,6 +9,8 @@ interface StepperNodeData {
   angle?: number;
   totalDegrees?: number;
   stepCount?: number;
+  currentSteps?: number;
+  currentAngle?: number;
   rpm?: number;
   direction?: Dir;
   phase?: number;
@@ -16,6 +18,7 @@ interface StepperNodeData {
   stalled?: boolean;
   model?: Model;
   stepsPerRevolution?: number;
+  display?: 'steps' | 'angle' | 'none';
   label?: string;
 }
 
@@ -39,6 +42,11 @@ export const StepperMotorNode = memo(({ nodeId, data }: StepperMotorNodeProps) =
   const degreesPerStep = (360 / stepsPerRevolution).toFixed(4);
   const dirText = direction === 'CW' ? '↻' : direction === 'CCW' ? '↺' : '⏸';
   const dirColor = direction === 'CW' ? '#16a34a' : direction === 'CCW' ? '#2563eb' : '#64748b';
+
+  const display = data.display ?? 'steps';
+  const currentSteps = data.currentSteps ?? stepCount;
+  const currentAngleRaw = (currentSteps % stepsPerRevolution) * 360.0 / stepsPerRevolution;
+  const currentAngle = currentAngleRaw < 0 ? currentAngleRaw + 360.0 : currentAngleRaw;
 
   return (
     <div
@@ -95,8 +103,8 @@ export const StepperMotorNode = memo(({ nodeId, data }: StepperMotorNodeProps) =
         <text x="16" y="104" fill={direction === 'STOP' ? '#94a3b8' : '#f8fafc'} fontSize="12" fontWeight="600">
           {`${direction === 'STOP' ? '0.0' : rpm.toFixed(1)} RPM`}
         </text>
-        <text x="16" y="120" fill="#94a3b8" fontSize="11">{`Steps: ${stepCount}`}</text>
-        <text x="16" y="134" fill="#94a3b8" fontSize="11">{`Total: ${totalDegrees.toFixed(1)}°`}</text>
+        <text x="16" y="120" fill={display === 'steps' ? '#f8fafc' : '#94a3b8'} fontSize={display === 'steps' ? 12 : 11} fontWeight={display === 'steps' ? '700' : '400'}>{`Steps: ${currentSteps}`}</text>
+        <text x="16" y="134" fill={display === 'angle' ? '#f8fafc' : '#94a3b8'} fontSize={display === 'angle' ? 12 : 11} fontWeight={display === 'angle' ? '700' : '400'}>{`Angle: ${currentAngle.toFixed(1)}°`}</text>
 
         <rect x="14" y="144" width="192" height="54" rx="8" fill="#0b1220" stroke="#334155" />
         <text x="20" y="158" fill="#cbd5e1" fontSize="10">{`Steps/rev: ${stepsPerRevolution}`}</text>
