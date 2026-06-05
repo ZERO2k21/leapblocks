@@ -91,7 +91,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                             lineHeight: 1.2,
                             fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                             textShadow: '0 0 20px rgba(255,255,255,0.3)',
-                        }}>CODEX </span>
+                        }}>Logix </span>
                     </div>
                 </div>
                 {/* Blocks/Python Mode Tabs */}

@@ -5,18 +5,18 @@
  */
 import React, { createContext, useContext } from "react";
 
-const CodexContext = createContext(null);
+const LogixContext = createContext(null);
 
-export function CodexProvider({ children, value }) {
+export function LogixProvider({ children, value }) {
     return (
-        <CodexContext.Provider value={value}>
+        <LogixContext.Provider value={value}>
             {children}
-        </CodexContext.Provider>
+        </LogixContext.Provider>
     );
 }
 
-export function useCodex() {
-    return useContext(CodexContext);
+export function useLogix() {
+    return useContext(LogixContext);
 }
 
-export default CodexContext;
+export default LogixContext;

@@ -4,11 +4,11 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from "react";
-import { useCodex } from "../context/CodexContext";
+import { useLogix } from "../context/LogixContext";
 import { C } from "../utils/theme";
 
 export default function PromptModal() {
-    const ctx = useCodex();
+    const ctx = useLogix();
 
     if (!ctx.modalState.isOpen) return null;
 

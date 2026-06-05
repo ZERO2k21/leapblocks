@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from "react";
-import { useCodex } from "../context/CodexContext";
+import { useLogix } from "../context/LogixContext";
 import SidePanel from "../../../python/panels/SidePanel";
 import EditorPanel from "../../../python/panels/EditorPanel";
 import StagePanel from "../../../python/panels/StagePanel";
@@ -15,14 +15,14 @@ import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";
 
 export default function StageWorkspace() {
-    const ctx = useCodex();
+    const ctx = useLogix();
 
     return (
         <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
             <SidePanel
                 sidePanel={ctx.sidePanel} setSidePanel={ctx.setSidePanel}
                 projectFiles={ctx.projectFiles} activeFile={ctx.activeFile} setActiveFile={ctx.setActiveFile}
-                handleAddPythonFiles={() => {}} handleAddImageFiles={() => {}} handleAddTextFiles={() => {}} handleAddCsvFiles={() => {}}
+                handleAddPythonFiles={() => { }} handleAddImageFiles={() => { }} handleAddTextFiles={() => { }} handleAddCsvFiles={() => { }}
                 handleDeleteFile={ctx.handleDeleteFile}
                 onAddNewFile={ctx.handleCreateNewFile} onAddNewTextFile={ctx.handleCreateNewTextFile} onRenameFile={ctx.handleRenameFile}
                 spriteFilter={ctx.spriteFilter} setSpriteFilter={ctx.setSpriteFilter}
@@ -45,8 +45,8 @@ export default function StageWorkspace() {
                 onRun={ctx.handleRun} onStop={ctx.handleStop} onClear={ctx.handleClear}
                 activePanel={ctx.activePanel} setActivePanel={ctx.setActivePanel}
                 terminalOutput={ctx.terminalOutput}
-                replInput={ctx.replInput || ""} setReplInput={ctx.setReplInput || (() => {})}
-                handleReplSubmit={ctx.handleReplSubmit || (() => {})} handleReplKey={ctx.handleReplKey || (() => {})}
+                replInput={ctx.replInput || ""} setReplInput={ctx.setReplInput || (() => { })}
+                handleReplSubmit={ctx.handleReplSubmit || (() => { })} handleReplKey={ctx.handleReplKey || (() => { })}
                 terminalEndRef={ctx.terminalEndRef} replInputRef={ctx.replInputRef || { current: null }}
                 editorRef={ctx.editorRef} monacoRef={ctx.monacoRef} setProjectFiles={ctx.setProjectFiles}
                 onCursorChange={ctx.setCursorEditor || ctx.setEditorCursor}

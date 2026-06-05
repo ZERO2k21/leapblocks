@@ -827,7 +827,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     const _isWebMode = !window.electronAPI?.isElectron;
     const [terminalOutput, setTerminalOutput] = useState([
         { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
-        { text: "║  Leaplab CODEX.v1.0                                          ║", type: "info", ts: new Date() },
+        { text: "║  Leaplab Logix.v1.0                                          ║", type: "info", ts: new Date() },
         { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },
@@ -2971,7 +2971,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={onBack}>
                         <Logo height={50} />
-                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>CODEX</span>
+                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>Logix</span>
                     </div>
                     <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 

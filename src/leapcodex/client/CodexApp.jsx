@@ -5,7 +5,7 @@
  */
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * CodexApp.jsx — Slim entry point for the Codex (Python) IDE
+ * LogixApp.jsx — Slim entry point for the Logix (Python) IDE
  *
  * This component orchestrates all hooks and delegates rendering to
  * dedicated sub-components: TopBar, IdeWorkspace, StageWorkspace,
@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { StageProvider, useStage } from "../../context/StageContext";
-import { CodexProvider } from "./context/CodexContext";
+import { LogixProvider } from "./context/LogixContext";
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
 import { useTerminal } from "./hooks/useTerminal";
@@ -41,7 +41,7 @@ import BoardSelectionModal from "../../leapignite/client/components/BoardSelecti
 // ═══════════════════════════════════════════════════════════════════════════
 // Inner App (must be inside StageProvider)
 // ═══════════════════════════════════════════════════════════════════════════
-function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
+function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCostumes }) {
     const stage = useStage();
     const { sprites, setSprites, selectedSpriteId, setSelectedSpriteId, backdrop, setBackdrop: setBackdropImg, stageSize, stageRef, addSprite, deleteSprite, updateSprite, updateSpriteProperty, resetStage } = stage;
 
@@ -381,7 +381,7 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     };
 
     return (
-        <CodexProvider value={contextValue}>
+        <LogixProvider value={contextValue}>
             <div style={{
                 display: "flex", flexDirection: "column",
                 height: "100vh", width: "100vw",
@@ -402,29 +402,29 @@ function CodexAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
                 <SpriteLibraryModal />
 
                 <BoardSelectionModal
-                isOpen={upload.isBoardModalOpen}
-                onClose={() => upload.setIsBoardModalOpen(false)}
-                onSelect={(boardId, boardName) => {
-                    upload.setSelectedBoard(boardId);
-                    upload.setIsBoardModalOpen(false);
-                    upload.setUploadView("board");
-                    upload.setUploadActiveFile(upload.selectedBoardConfig.fileName);
-                    upload.addUploadMessage(`Selected board: ${boardName}`, "success");
-                }}
-                currentBoard={upload.selectedBoard}
-            />
+                    isOpen={upload.isBoardModalOpen}
+                    onClose={() => upload.setIsBoardModalOpen(false)}
+                    onSelect={(boardId, boardName) => {
+                        upload.setSelectedBoard(boardId);
+                        upload.setIsBoardModalOpen(false);
+                        upload.setUploadView("board");
+                        upload.setUploadActiveFile(upload.selectedBoardConfig.fileName);
+                        upload.addUploadMessage(`Selected board: ${boardName}`, "success");
+                    }}
+                    currentBoard={upload.selectedBoard}
+                />
             </div>
-        </CodexProvider>
+        </LogixProvider>
     );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Exported wrapper with StageProvider
 // ═══════════════════════════════════════════════════════════════════════════
-export default function CodexApp(props) {
+export default function LogixApp(props) {
     return (
         <StageProvider>
-            <CodexAppInner {...props} />
+            <LogixAppInner {...props} />
         </StageProvider>
     );
 }

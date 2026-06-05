@@ -564,8 +564,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
 .landing-page-container .tc-embed   { background:linear-gradient(155deg,#ffffff 0%, #e5f2f5 60%,#d5f2f7 100%); border-bottom: 4px solid #59aaa4ff; }
 .landing-page-container .tc-embed:hover { box-shadow: 0 20px 40px rgba(15, 118, 109, 0.86), 0 0 0 1px rgba(15,118,110,0.1); }
-.landing-page-container .tc-codex   { background:linear-gradient(155deg,#ffffff 0%, #ebf0fd 60%,#ccdafa 100%); border-bottom: 4px solid #3B82F6; }
-.landing-page-container .tc-codex:hover { box-shadow: 0 20px 40px rgba(59,130,246,0.15), 0 0 0 1px rgba(59,130,246,0.1); }
+.landing-page-container .tc-Logix   { background:linear-gradient(155deg,#ffffff 0%, #ebf0fd 60%,#ccdafa 100%); border-bottom: 4px solid #3B82F6; }
+.landing-page-container .tc-Logix:hover { box-shadow: 0 20px 40px rgba(59,130,246,0.15), 0 0 0 1px rgba(59,130,246,0.1); }
 .landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #f4ebfa 60%,#eddef7 100%); border-bottom: 4px solid #A855F7; }
 .landing-page-container .tc-neura:hover { box-shadow: 0 20px 40px rgba(168,85,247,0.15), 0 0 0 1px rgba(168,85,247,0.1); }
 .landing-page-container .tc-electra { background:linear-gradient(155deg,#ffffff 0%, #eaf8ed 60%,#d6f7df 100%); border-bottom: 4px solid #22C55E; }
@@ -738,14 +738,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 </div>
               </div>
 
-              {/* 3 CODEX */}
-              <div className={`tc tc-codex ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
+              {/* 3 Logix */}
+              <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
                 <div className="tc-icon">
-                  <img src="assets/python_icon.png" alt="Codex Icon" />
+                  <img src="assets/python_icon.png" alt="Logix Icon" />
                 </div>
                 <div>
                   <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Codex</div>
+                  <div className="tc-name">Logix</div>
                   <div className="tc-desc">Python Programming</div>
                 </div>
               </div>
