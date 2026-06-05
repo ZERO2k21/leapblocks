@@ -18,22 +18,22 @@ const meta = {
   component: 'leap-biaxial-stepper',
   argTypes: {
     innerHandLength: { control: { type: 'range', min: 20, max: 70 } },
-    innerHandAngle:  { control: { type: 'range', min: 0, max: 360 } },
-    innerHandColor:  { control: { type: 'color' } },
-    innerHandShape:  { options: ['arrow', 'plain', 'ornate'], control: { type: 'select' } },
+    innerHandAngle: { control: { type: 'range', min: 0, max: 360 } },
+    innerHandColor: { control: { type: 'color' } },
+    innerHandShape: { options: ['arrow', 'plain', 'ornate'], control: { type: 'select' } },
     outerHandLength: { control: { type: 'range', min: 20, max: 70 } },
-    outerHandAngle:  { control: { type: 'range', min: 0, max: 360 } },
-    outerHandColor:  { control: { type: 'color' } },
-    outerHandShape:  { options: ['arrow', 'plain', 'ornate'], control: { type: 'select' } },
+    outerHandAngle: { control: { type: 'range', min: 0, max: 360 } },
+    outerHandColor: { control: { type: 'color' } },
+    outerHandShape: { options: ['arrow', 'plain', 'ornate'], control: { type: 'select' } },
   },
   args: {
     outerHandLength: 30,
     outerHandAngle: 0,
-    outerHandColor: 'gold',
+    outerHandColor: 'black',
     outerHandShape: 'plain',
     innerHandLength: 30,
     innerHandAngle: 0,
-    innerHandColor: 'silver',
+    innerHandColor: 'gold',
     innerHandShape: 'plain',
   },
   render: (args: BiaxialStepperArgs) => html`
@@ -54,56 +54,56 @@ type Story = StoryObj<BiaxialStepperArgs>;
 
 export const Default: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'plain', innerHandAngle: 90,
-    outerHandLength: 70, outerHandColor: 'gold',   outerHandShape: 'plain', outerHandAngle: 270,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'plain', innerHandAngle: 90,
+    outerHandLength: 70, outerHandColor: 'black', outerHandShape: 'plain', outerHandAngle: 270,
   },
 };
 
 export const NineOclock: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'plain', innerHandAngle: 0,
-    outerHandLength: 40, outerHandColor: 'gold',   outerHandShape: 'plain', outerHandAngle: 270,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'plain', innerHandAngle: 0,
+    outerHandLength: 40, outerHandColor: 'black', outerHandShape: 'plain', outerHandAngle: 270,
   },
 };
 
 export const SixOclock: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'plain', innerHandAngle: 0,
-    outerHandLength: 40, outerHandColor: 'gold',   outerHandShape: 'plain', outerHandAngle: 180,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'plain', innerHandAngle: 0,
+    outerHandLength: 40, outerHandColor: 'black', outerHandShape: 'plain', outerHandAngle: 180,
   },
 };
 
 export const ThreeOclock: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'plain', innerHandAngle: 0,
-    outerHandLength: 50, outerHandColor: 'gold',   outerHandShape: 'plain', outerHandAngle: 90,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'plain', innerHandAngle: 0,
+    outerHandLength: 50, outerHandColor: 'black', outerHandShape: 'plain', outerHandAngle: 90,
   },
 };
 
 export const TenPastTen: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'plain', innerHandAngle: 60,
-    outerHandLength: 60, outerHandColor: 'gold',   outerHandShape: 'plain', outerHandAngle: 300,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'plain', innerHandAngle: 60,
+    outerHandLength: 60, outerHandColor: 'black', outerHandShape: 'plain', outerHandAngle: 300,
   },
 };
 
 export const SameLength: Story = {
   args: {
-    innerHandLength: 30, innerHandColor: 'blue',  innerHandShape: 'plain', innerHandAngle: 0,
+    innerHandLength: 30, innerHandColor: 'blue', innerHandShape: 'plain', innerHandAngle: 0,
     outerHandLength: 30, outerHandColor: 'green', outerHandShape: 'plain', outerHandAngle: 180,
   },
 };
 
 export const LongArrows: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'blue',  innerHandShape: 'arrow', innerHandAngle: 90,
+    innerHandLength: 70, innerHandColor: 'blue', innerHandShape: 'arrow', innerHandAngle: 90,
     outerHandLength: 70, outerHandColor: 'green', outerHandShape: 'arrow', outerHandAngle: 270,
   },
 };
 
 export const OrnateClock: Story = {
   args: {
-    innerHandLength: 70, innerHandColor: 'silver', innerHandShape: 'ornate', innerHandAngle: 60,
-    outerHandLength: 60, outerHandColor: 'gold',   outerHandShape: 'ornate', outerHandAngle: 300,
+    innerHandLength: 70, innerHandColor: 'gold', innerHandShape: 'ornate', innerHandAngle: 60,
+    outerHandLength: 60, outerHandColor: 'black', outerHandShape: 'ornate', outerHandAngle: 300,
   },
 };

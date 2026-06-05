@@ -1075,21 +1075,21 @@ class CircuitEngine {
       // Register membrane-keypad emulator
       if (node.data?.type === 'membrane-keypad') {
         const nodeId = node.id;
-        
+
         // Find row and column pins from connections
         const keypadEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
-        
+
         const rowPins: string[] = new Array(4).fill('');
         const colPins: string[] = new Array(4).fill('');
-        
+
         keypadEdges.forEach(edge => {
           const isOutput = edge.source === nodeId;
           const keypadPin = isOutput ? edge.sourceHandle : edge.targetHandle;
           const boardPin = (isOutput ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '') ?? '';
-          
+
           if (!keypadPin || !boardPin) return;
           const cleanKeypadPin = keypadPin.replace(/__target$/, '');
-          
+
           // Map board pin to appropriate pin name (AVR or ESP32)
           const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
           const otherNode = nodes.find(n => n.id === otherNodeId);
@@ -1097,7 +1097,7 @@ class CircuitEngine {
           const mapping = simulationRunner.convertPin(boardPin, isESP32);
           if (!mapping) return;
           const avrPin = mapping.avrPin;
-          
+
           if (cleanKeypadPin.startsWith('R')) {
             const rowIdx = parseInt(cleanKeypadPin.replace('R', ''), 10) - 1;
             if (rowIdx >= 0 && rowIdx < 4) {
@@ -1110,7 +1110,7 @@ class CircuitEngine {
             }
           }
         });
-        
+
         const emulator = new KeypadEmulator(
           rowPins, colPins,
           (pin: string, high: boolean) => {
@@ -2213,7 +2213,7 @@ class CircuitEngine {
                 !!buf['IN3'],
                 !!buf['IN4'],
               );
-              
+
               const currentDisplay = peripheralNode.data?.display ?? 'steps';
               updateNodeData(peripheralId, {
                 ...unified.getState(),
@@ -2223,19 +2223,19 @@ class CircuitEngine {
 
             // --- Biaxial Stepper Emulation ---
             // Two independent 4-wire steppers in one body.
-            // Outer shaft: A1+, A1-, B1+, B1-
-            // Inner shaft: A2+, A2-, B2+, B2-
+            // X Axis: A1+, A1-, B1+, B1-
+            // Y Axis: A2+, A2-, B2+, B2-
             if (peripheralNode.data?.type === 'biaxial-stepper') {
               const buf = this.peripheralPinBuffers.get(peripheralId)!;
               buf[peripheralPinName] = isHigh;
 
-              const outerKey = `${peripheralId}__outer`;
-              const innerKey = `${peripheralId}__inner`;
+              const xKey = `${peripheralId}__x`;
+              const yKey = `${peripheralId}__y`;
 
-              // Create outer emulator (motor 1)
-              if (!this.stepperEmulators.has(outerKey)) {
-                console.log(`[BIAXIAL] Wiring outer emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+              // Create X Axis emulator
+              if (!this.stepperEmulators.has(xKey)) {
+                console.log(`[BIAXIAL] Wiring X Axis emulator for node ${peripheralId}`);
+                let pending: any = null;
                 let rafPending = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
@@ -2244,37 +2244,67 @@ class CircuitEngine {
                 if (typeof overrideSteps === 'number' && overrideSteps > 0) {
                   stepsPerRev = Math.round(overrideSteps);
                 } else {
-                  stepsPerRev = 200;
+                  stepsPerRev = 2048; // Default to 2048 for Biaxial
                   const parts = gearRatioStr.split(':');
                   if (parts.length === 2) {
                     const num = parseFloat(parts[0]);
                     const den = parseFloat(parts[1]);
                     if (!isNaN(num) && !isNaN(den) && den > 0) {
-                      stepsPerRev = Math.round(200 * (num / den));
+                      stepsPerRev = Math.round(2048 * (num / den));
                     }
                   }
                 }
 
-                this.stepperEmulators.set(outerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(xKey, new StepperEmulator((state) => {
+                  pending = state;
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const s = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { outerHandAngle: a, outerEnergized: e });
+                        const mmPerStep = peripheralNode.data?.mmPerStep ?? 1.0;
+                        const moving = s.currentSpeed > 0.1;
+                        const dir = moving ? (s.direction === 1 ? 'CW' : 'CCW') : 'STOP';
+                        const rpmVal = (s.currentSpeed * 60) / stepsPerRev;
+
+                        const steps = s.currentSteps ?? s.stepCount;
+                        let angle = (steps % stepsPerRev) * 360.0 / stepsPerRev;
+                        if (angle < 0) {
+                          angle += 360.0;
+                        }
+
+                        const currentData = useForgeStore.getState().nodes.find(n => n.id === peripheralId)?.data || {};
+
+                        updateNodeData(peripheralId, {
+                          xSteps: steps,
+                          xAngle: angle,
+                          xRPM: rpmVal,
+                          xDirection: dir,
+                          xTotalDegrees: s.actualAngleUnbounded ?? s.angle,
+                          xPosition: steps * mmPerStep,
+                          xEnergized: s.energized,
+
+                          // preserve existing Y state
+                          ySteps: currentData.ySteps ?? 0,
+                          yAngle: currentData.yAngle ?? 0,
+                          yRPM: currentData.yRPM ?? 0,
+                          yDirection: currentData.yDirection ?? 'STOP',
+                          yTotalDegrees: currentData.yTotalDegrees ?? 0,
+                          yPosition: currentData.yPosition ?? 0,
+                          yEnergized: currentData.yEnergized ?? false
+                        });
                       }
                     });
                   }
-                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-outer`));
+                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-x`));
               }
 
-              // Create inner emulator (motor 2)
-              if (!this.stepperEmulators.has(innerKey)) {
-                console.log(`[BIAXIAL] Wiring inner emulator for node ${peripheralId}`);
-                let pending: { angle: number; energized: boolean } | null = null;
+              // Create Y Axis emulator
+              if (!this.stepperEmulators.has(yKey)) {
+                console.log(`[BIAXIAL] Wiring Y Axis emulator for node ${peripheralId}`);
+                let pending: any = null;
                 let rafPending = false;
 
                 const gearRatioStr = peripheralNode.data?.gearRatio || '1:1';
@@ -2283,49 +2313,79 @@ class CircuitEngine {
                 if (typeof overrideSteps === 'number' && overrideSteps > 0) {
                   stepsPerRev = Math.round(overrideSteps);
                 } else {
-                  stepsPerRev = 200;
+                  stepsPerRev = 2048; // Default to 2048 for Biaxial
                   const parts = gearRatioStr.split(':');
                   if (parts.length === 2) {
                     const num = parseFloat(parts[0]);
                     const den = parseFloat(parts[1]);
                     if (!isNaN(num) && !isNaN(den) && den > 0) {
-                      stepsPerRev = Math.round(200 * (num / den));
+                      stepsPerRev = Math.round(2048 * (num / den));
                     }
                   }
                 }
 
-                this.stepperEmulators.set(innerKey, new StepperEmulator(({ angle, energized }) => {
-                  pending = { angle, energized };
+                this.stepperEmulators.set(yKey, new StepperEmulator((state) => {
+                  pending = state;
                   if (!rafPending) {
                     rafPending = true;
                     requestAnimationFrame(() => {
                       rafPending = false;
                       if (pending) {
-                        const { angle: a, energized: e } = pending;
+                        const s = pending;
                         pending = null;
-                        updateNodeData(peripheralId, { innerHandAngle: a, innerEnergized: e });
+                        const mmPerStep = peripheralNode.data?.mmPerStep ?? 1.0;
+                        const moving = s.currentSpeed > 0.1;
+                        const dir = moving ? (s.direction === 1 ? 'CW' : 'CCW') : 'STOP';
+                        const rpmVal = (s.currentSpeed * 60) / stepsPerRev;
+
+                        const steps = s.currentSteps ?? s.stepCount;
+                        let angle = (steps % stepsPerRev) * 360.0 / stepsPerRev;
+                        if (angle < 0) {
+                          angle += 360.0;
+                        }
+
+                        const currentData = useForgeStore.getState().nodes.find(n => n.id === peripheralId)?.data || {};
+
+                        updateNodeData(peripheralId, {
+                          // preserve existing X state
+                          xSteps: currentData.xSteps ?? 0,
+                          xAngle: currentData.xAngle ?? 0,
+                          xRPM: currentData.xRPM ?? 0,
+                          xDirection: currentData.xDirection ?? 'STOP',
+                          xTotalDegrees: currentData.xTotalDegrees ?? 0,
+                          xPosition: currentData.xPosition ?? 0,
+                          xEnergized: currentData.xEnergized ?? false,
+
+                          ySteps: steps,
+                          yAngle: angle,
+                          yRPM: rpmVal,
+                          yDirection: dir,
+                          yTotalDegrees: s.actualAngleUnbounded ?? s.angle,
+                          yPosition: steps * mmPerStep,
+                          yEnergized: s.energized
+                        });
                       }
                     });
                   }
-                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-inner`));
+                }, { stepsPerRev, constrainRotation: false }, `${peripheralId}-y`));
               }
 
-              const outerStepper = this.stepperEmulators.get(outerKey)!;
-              const innerStepper = this.stepperEmulators.get(innerKey)!;
+              const xStepper = this.stepperEmulators.get(xKey)!;
+              const yStepper = this.stepperEmulators.get(yKey)!;
 
               // Route pins to the correct emulator
-              // Outer motor coils: A1-, A1+, B1+, B1- (Wokwi physical order)
+              // X Axis coils: A1-, A1+, B1+, B1- (Wokwi physical order)
               if (['A1+', 'A1-', 'B1+', 'B1-'].includes(peripheralPinName)) {
-                outerStepper.processCoils(
+                xStepper.processCoils(
                   !!buf['A1-'],
                   !!buf['A1+'],
                   !!buf['B1+'],
                   !!buf['B1-'],
                 );
               }
-              // Inner motor coils: A2-, A2+, B2+, B2- (Wokwi physical order)
+              // Y Axis coils: A2-, A2+, B2+, B2- (Wokwi physical order)
               if (['A2+', 'A2-', 'B2+', 'B2-'].includes(peripheralPinName)) {
-                innerStepper.processCoils(
+                yStepper.processCoils(
                   !!buf['A2-'],
                   !!buf['A2+'],
                   !!buf['B2+'],
@@ -2419,18 +2479,17 @@ class CircuitEngine {
                     const connectedBiaxialPins = biaxialEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
-                    const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
-                    const shaftLabel = isInner ? 'inner' : 'outer';
+                    const isY = connectedBiaxialPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const shaftKey = isY ? `${motorNodeId}__y` : `${motorNodeId}__x`;
+                    const shaftLabel = isY ? 'y' : 'x';
 
                     if (!this.stepperEmulators.has(shaftKey)) {
                       console.log(`[BIAXIAL] Wiring A4988 STEP/DIR emulator for ${shaftLabel} shaft of node ${motorNodeId}`);
-                      let pending: { angle: number; energized: boolean } | null = null;
+                      let pending: any = null;
                       let rafPending = false;
 
-                      const motorNode = currentStateStore.nodes.find(n => n.id === motorNodeId);
                       const overrideSteps = motorNode?.data?.stepsPerRev ?? motorNode?.data?.stepsPerRevolution;
-                      let stepsPerRev = 200;
+                      let stepsPerRev = 2048; // default to 2048 for Biaxial
                       if (typeof overrideSteps === 'number' && overrideSteps > 0) {
                         stepsPerRev = Math.round(overrideSteps);
                       } else {
@@ -2440,23 +2499,70 @@ class CircuitEngine {
                           const num = parseFloat(parts[0]);
                           const den = parseFloat(parts[1]);
                           if (!isNaN(num) && !isNaN(den) && den > 0) {
-                            stepsPerRev = Math.round(200 * (num / den));
+                            stepsPerRev = Math.round(2048 * (num / den));
                           }
                         }
                       }
 
-                      this.stepperEmulators.set(shaftKey, new StepperEmulator(({ angle, energized }) => {
-                        pending = { angle, energized };
+                      this.stepperEmulators.set(shaftKey, new StepperEmulator((state) => {
+                        pending = state;
                         if (!rafPending) {
                           rafPending = true;
                           requestAnimationFrame(() => {
                             rafPending = false;
                             if (pending) {
-                              const { angle: a, energized: e } = pending;
+                              const s = pending;
                               pending = null;
-                              const prop = isInner ? 'innerHandAngle' : 'outerHandAngle';
-                              const energizedProp = isInner ? 'innerEnergized' : 'outerEnergized';
-                              updateNodeData(motorNodeId, { [prop]: a, [energizedProp]: e });
+                              const mmPerStep = motorNode?.data?.mmPerStep ?? 1.0;
+                              const moving = s.currentSpeed > 0.1;
+                              const dir = moving ? (s.direction === 1 ? 'CW' : 'CCW') : 'STOP';
+                              const rpmVal = (s.currentSpeed * 60) / stepsPerRev;
+
+                              const steps = s.currentSteps ?? s.stepCount;
+                              let angle = (steps % stepsPerRev) * 360.0 / stepsPerRev;
+                              if (angle < 0) {
+                                angle += 360.0;
+                              }
+
+                              const currentData = useForgeStore.getState().nodes.find(n => n.id === motorNodeId)?.data || {};
+
+                              if (isY) {
+                                updateNodeData(motorNodeId, {
+                                  xSteps: currentData.xSteps ?? 0,
+                                  xAngle: currentData.xAngle ?? 0,
+                                  xRPM: currentData.xRPM ?? 0,
+                                  xDirection: currentData.xDirection ?? 'STOP',
+                                  xTotalDegrees: currentData.xTotalDegrees ?? 0,
+                                  xPosition: currentData.xPosition ?? 0,
+                                  xEnergized: currentData.xEnergized ?? false,
+
+                                  ySteps: steps,
+                                  yAngle: angle,
+                                  yRPM: rpmVal,
+                                  yDirection: dir,
+                                  yTotalDegrees: s.actualAngleUnbounded ?? s.angle,
+                                  yPosition: steps * mmPerStep,
+                                  yEnergized: s.energized
+                                });
+                              } else {
+                                updateNodeData(motorNodeId, {
+                                  xSteps: steps,
+                                  xAngle: angle,
+                                  xRPM: rpmVal,
+                                  xDirection: dir,
+                                  xTotalDegrees: s.actualAngleUnbounded ?? s.angle,
+                                  xPosition: steps * mmPerStep,
+                                  xEnergized: s.energized,
+
+                                  ySteps: currentData.ySteps ?? 0,
+                                  yAngle: currentData.yAngle ?? 0,
+                                  yRPM: currentData.yRPM ?? 0,
+                                  yDirection: currentData.yDirection ?? 'STOP',
+                                  yTotalDegrees: currentData.yTotalDegrees ?? 0,
+                                  yPosition: currentData.yPosition ?? 0,
+                                  yEnergized: currentData.yEnergized ?? false
+                                });
+                              }
                             }
                           });
                         }
@@ -2476,7 +2582,7 @@ class CircuitEngine {
                       buf['SLEEP'] === true,
                       buf['DIR'] === true,
                     );
-                    } else {
+                  } else {
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
                       let pendingUpdate: { angle: number; stepCount: number; energized: boolean } | null = null;
@@ -2554,8 +2660,8 @@ class CircuitEngine {
                     const connectedPins = motorEdges.map(e =>
                       e.source === motorNodeId ? e.sourceHandle : e.targetHandle
                     );
-                    const isInner = connectedPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
-                    const shaftKey = isInner ? `${motorNodeId}__inner` : `${motorNodeId}__outer`;
+                    const isY = connectedPins.some(p => p && ['A2+', 'A2-', 'B2+', 'B2-'].includes(p));
+                    const shaftKey = isY ? `${motorNodeId}__y` : `${motorNodeId}__x`;
                     this.stepperEmulators.get(shaftKey)?.setEnergized(enabled);
                   } else {
                     this.stepperEmulators.get(motorNodeId)?.setEnergized(enabled);
@@ -2639,7 +2745,7 @@ class CircuitEngine {
         const peripheralNode = nodes.find(n => n.id === peripheralId);
         if (peripheralNode && peripheralNode.data) {
           const type = peripheralNode.data.type;
-          
+
           setTimeout(() => {
             // PIR motion sensor
             if (type === 'pir-motion-sensor' && peripheralPinName === 'OUT') {

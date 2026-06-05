@@ -120,14 +120,16 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.energized = data.relayEnergized ?? false;
     mappedProps.led = data.relayEnergized ?? false;
   } else if (data.type === 'biaxial-stepper') {
-    mappedProps.outerHandAngle = data.outerHandAngle ?? 0;
-    mappedProps.innerHandAngle = data.innerHandAngle ?? 0;
-    mappedProps.outerHandColor = data.outerHandColor ?? 'gold';
-    mappedProps.innerHandColor = data.innerHandColor ?? 'silver';
-    mappedProps.outerHandShape = data.outerHandShape ?? 'plain';
-    mappedProps.innerHandShape = data.innerHandShape ?? 'plain';
-    mappedProps.outerHandLength = data.outerHandLength ?? 30;
-    mappedProps.innerHandLength = data.innerHandLength ?? 30;
+    mappedProps.outerHandAngle = data.xAngle ?? 0;
+    mappedProps.innerHandAngle = data.yAngle ?? 0;
+    mappedProps.xSteps = data.xSteps ?? 0;
+    mappedProps.ySteps = data.ySteps ?? 0;
+    mappedProps.xRPM = data.xRPM ?? 0;
+    mappedProps.yRPM = data.yRPM ?? 0;
+    mappedProps.xDirection = data.xDirection ?? 'STOP';
+    mappedProps.yDirection = data.yDirection ?? 'STOP';
+    mappedProps.xTotalDegrees = data.xTotalDegrees ?? 0;
+    mappedProps.yTotalDegrees = data.yTotalDegrees ?? 0;
   } else if (['potentiometer', 'slide-potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
@@ -372,9 +374,25 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   useEffect(() => {
     if (!elementRef.current || data.type !== 'biaxial-stepper') return;
     const el = elementRef.current;
-    el.outerHandAngle = data.outerHandAngle ?? 0;
-    el.innerHandAngle = data.innerHandAngle ?? 0;
-  }, [data.type, data.outerHandAngle, data.innerHandAngle]);
+    el.outerHandAngle = data.xAngle ?? 0;
+    el.innerHandAngle = data.yAngle ?? 0;
+    el.xSteps = data.xSteps ?? 0;
+    el.ySteps = data.ySteps ?? 0;
+    el.xRpm = data.xRPM ?? 0;
+    el.yRpm = data.yRPM ?? 0;
+    el.xDirection = data.xDirection ?? 'STOP';
+    el.yDirection = data.yDirection ?? 'STOP';
+  }, [
+    data.type,
+    data.xAngle,
+    data.yAngle,
+    data.xSteps,
+    data.ySteps,
+    data.xRPM,
+    data.yRPM,
+    data.xDirection,
+    data.yDirection,
+  ]);
 
   // Push pixel data to matrix/ring elements via DOM setPixel() method
   useEffect(() => {
