@@ -24,15 +24,18 @@ export function registerLeapRenderer(blocklyInstance) {
             // Toy-like overrides (Junior Style)
             this.CORNER_RADIUS = 6; // Match LeapBlox/leapJr (less round than 24)
             this.notchOffsetLeft_ = 12; // Standard
-            this.MIN_BLOCK_HEIGHT = 40; // Chunky but not huge (Horizontal layout handles width)
-            this.TOP_ROW_MIN_HEIGHT = 4;
-            this.BOTTOM_ROW_MIN_HEIGHT = 4;
+            this.MIN_BLOCK_HEIGHT = 48; // Increased for better text padding
+            this.TOP_ROW_MIN_HEIGHT = 8; // More vertical padding
+            this.BOTTOM_ROW_MIN_HEIGHT = 8; // More vertical padding
+            this.FIELD_Y_OFFSET = 4; // Better vertical centering of text
 
             // Font
             this.FIELD_TEXT_FONTWEIGHT = '700'; // Bold text
             this.FIELD_TEXT_FONTFAMILY = '"Nunito", "Rounded Mplus 1c", sans-serif';
+            this.FIELD_TEXT_FONTSIZE = 12; // Explicit font size
 
             // Checkbox styling (Premium feel)
+            this.CORNER_RADIUS = 6;
             this.CHECKBOX_SIZE = 16;
             this.CHECKBOX_CORNER_RADIUS = 4;
             this.CHECKBOX_X_OFFSET = 8;

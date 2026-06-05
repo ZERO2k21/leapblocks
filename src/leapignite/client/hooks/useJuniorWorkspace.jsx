@@ -89,6 +89,42 @@ const categoryContents = {
     ]
 };
 
+// Block type → category mapping for CSS styling (data-category attribute)
+const BLOCK_TYPE_TO_CATEGORY = {};
+CATEGORIES.forEach(cat => {
+    const blocks = categoryContents[cat.id] || [];
+    blocks.forEach(b => { if (b.kind === 'block') BLOCK_TYPE_TO_CATEGORY[b.type] = cat.id; });
+});
+// Also map blocks from blocks.js / looksBlocks.js / soundBlocks.js that use different naming
+const EXTRA_CATEGORY_MAP = {
+    move_right: 'motion', move_left: 'motion', move_up: 'motion', move_down: 'motion',
+    turn_right: 'motion', turn_left: 'motion', jump: 'motion', run: 'motion', findout: 'motion',
+    go_to_location: 'motion', move_relative: 'motion', go_random: 'motion', change_speed: 'motion',
+    looks_say: 'looks', looks_show: 'looks', looks_hide: 'looks', looks_grow: 'looks',
+    looks_shrink: 'looks', looks_turn_back: 'looks', looks_walk: 'looks', looks_call: 'looks',
+    looks_symmetry: 'looks', looks_change_costume: 'looks', looks_mirror: 'looks',
+    say_text: 'looks', show_sprite: 'looks', hide_sprite: 'looks',
+    junior_change_costume: 'looks', change_size: 'looks', select_sprite: 'looks', switch_scene: 'looks',
+    control_forever: 'control', control_repeat: 'control', control_wait: 'control',
+    control_stop: 'control', control_scene: 'control',
+    event_flag: 'events', event_up: 'events', event_down: 'events', event_press: 'events',
+    broadcast_message: 'events', when_receive_message: 'events',
+    sound_play: 'sound', sound_play_music: 'sound', sound_instrument: 'sound',
+    sound_note: 'sound', sound_stop: 'sound', sound_animal: 'sound',
+    pen_down: 'pen', pen_up: 'pen', pen_set_color: 'pen', pen_set_size: 'pen',
+    pen_stamp: 'pen', pen_eraser: 'pen',
+};
+Object.assign(BLOCK_TYPE_TO_CATEGORY, EXTRA_CATEGORY_MAP);
+
+function tagBlockCategory(block) {
+    try {
+        const category = BLOCK_TYPE_TO_CATEGORY[block.type];
+        if (category && block.svgGroup_) {
+            block.svgGroup_.setAttribute('data-category', category);
+        }
+    } catch (_) { }
+}
+
 export function useJuniorWorkspace({
     workspaceRef,
     blocklyDiv,
@@ -275,7 +311,7 @@ export function useJuniorWorkspace({
                 zoom: {
                     controls: false,
                     wheel: true,
-                    startScale: 0.8,
+                    startScale: 1.0,
                     maxScale: 3,
                     minScale: 0.3,
                     scaleSpeed: 1.2
@@ -470,6 +506,12 @@ export function useJuniorWorkspace({
 
             const handleWorkspaceChange = (e) => {
                 if (e.type === Blockly.Events.UI) return;
+
+                // Tag blocks with data-category for CSS styling on create
+                if (e.type === Blockly.Events.BLOCK_CREATE) {
+                    const block = workspaceRef.current.getBlockById(e.blockId);
+                    if (block) tagBlockCategory(block);
+                }
 
                 // Ignore changes during workspace loading to prevent saving empty/intermediate states
                 if (isLoadingWorkspaceRef && isLoadingWorkspaceRef.current) {

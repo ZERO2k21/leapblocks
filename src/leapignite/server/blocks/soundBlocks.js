@@ -104,7 +104,7 @@ export default function defineSoundBlocks() {
         init: function () {
             const options = [["1", "music_1"], ["2", "music_2"], ["3", "music_3"]];
             this.appendDummyInput()
-                .appendField("🎵 Play Music Music")
+                .appendField("🎵 Play Music")
                 .appendField(new Blockly.FieldDropdown(options), "MUSIC");
 
             this.setPreviousStatement(true);
