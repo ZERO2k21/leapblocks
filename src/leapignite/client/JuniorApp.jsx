@@ -799,7 +799,7 @@ export default function JuniorApp({ onBack }) {
                     })()}
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
-                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '215px', right: '14px' }} />
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '255px', right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
 
@@ -807,7 +807,7 @@ export default function JuniorApp({ onBack }) {
                         position: "absolute",
                         left: "14px",
                         right: "14px",
-                        bottom: "150px",
+                        bottom: "190px",
                         height: "56px",
                         display: "flex",
                         flexDirection: "row",

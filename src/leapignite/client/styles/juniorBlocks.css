@@ -15,8 +15,9 @@
 }
 
 /* Block text - exclude fields and icons */
-.junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon){
-    font-size: 12px;
+.junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon):not(.junior-icon):not(.junior-icon-large){
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 13px;
     font-weight: 700;
     fill: #ffffff !important;
     overflow-wrap: break-word !important;
@@ -45,7 +46,9 @@
 
 /* Icon spacing */
 .junior-mode .blocklySvg image,
-.junior-mode .blocklySvg .blocklyText:first-child{
+.junior-mode .blocklySvg .junior-icon,
+.junior-mode .blocklySvg .junior-icon-large,
+.junior-mode .blocklySvg .junior-block-icon{
     margin-right: 6px;
 }
 
@@ -72,9 +75,9 @@
 .junior-mode g[class*="blocklyEditableText"]>text,
 .junior-mode g[class*="blocklyNonEditableText"]>text{
     fill: #000000 !important;
-    font-size: 12px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
-    font-family: 'Segoe UI', sans-serif !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     transform: translateY(2px);
 }
 
@@ -126,8 +129,18 @@
    ============================================ */
 
 /* Icon text in blocks - slightly larger than body text for visibility */
-.junior-mode .blocklySvg .blocklyText:first-child{
+.junior-mode .blocklySvg .junior-icon,
+.junior-mode .blocklySvg .junior-block-icon{
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI', sans-serif !important;
     font-size: 16px !important;
+    font-weight: 700 !important;
+    fill: white !important;
+}
+
+.junior-mode .blocklySvg .junior-icon-large{
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
     fill: white !important;
 }
 
