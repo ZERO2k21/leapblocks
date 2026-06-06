@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from "react";
-import { useCodex } from "../context/CodexContext";
+import { useLogix } from "../context/LogixContext";
 import MonacoEditor from "../../../python/editor/MonacoEditor";
 import SerialMonitor from "../../../components/SerialMonitor";
 import { FileText, FileCode2, FileUp, Trash2, Plus, Plug, Cpu, RefreshCw, Upload, Undo, Redo, Loader, CheckCircle, AlertCircle, ClipboardList, TerminalSquare } from "lucide-react";
@@ -14,7 +14,7 @@ import { buildBoardTemplate, buildLibraryHeaderTemplate, buildLibraryCppTemplate
 import { getUniqueFileName } from "../utils/fileUtils";
 
 export default function UploadWorkspace() {
-    const ctx = useCodex();
+    const ctx = useLogix();
 
     const handleCreateUploadPythonFile = () => {
         ctx.openTextPrompt("New MicroPython File", "Enter a file name for the new MicroPython file.", "module.py", (requestedName) => {
@@ -52,9 +52,9 @@ export default function UploadWorkspace() {
     };
 
     const boardCppActions = [
-        { label: "Upload a header file", description: "Import .h or .hpp files into the board workspace.", icon: FileText, onClick: () => {} },
-        { label: "Upload a new cpp file", description: "Add .cpp, .cc, .c, or .ino source files.", icon: FileUp, onClick: () => {} },
-        { label: "Import C++ library", description: "Insert a #include statement into the main board file.", icon: FileCode2, onClick: () => {} },
+        { label: "Upload a header file", description: "Import .h or .hpp files into the board workspace.", icon: FileText, onClick: () => { } },
+        { label: "Upload a new cpp file", description: "Add .cpp, .cc, .c, or .ino source files.", icon: FileUp, onClick: () => { } },
+        { label: "Import C++ library", description: "Insert a #include statement into the main board file.", icon: FileCode2, onClick: () => { } },
     ];
 
     const renderUploadOutput = () => {

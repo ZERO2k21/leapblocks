@@ -6,7 +6,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Home, Play, Square, Undo, Redo, Save, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../../components/Logo";
-import { useCodex } from "../context/CodexContext";
+import { useLogix } from "../context/LogixContext";
 
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -70,7 +70,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 }
 
 export default function TopBar() {
-    const ctx = useCodex();
+    const ctx = useLogix();
     const [openMenuId, setOpenMenuId] = useState(null);
 
     return (
@@ -90,7 +90,7 @@ export default function TopBar() {
                 </button>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={ctx.onBack}>
                     <Logo height={50} />
-                    <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>CODEX</span>
+                    <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>Logix</span>
                 </div>
                 <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 

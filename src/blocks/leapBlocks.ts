@@ -1745,9 +1745,10 @@ const leapBlocks = [
 // Register all blocks with Blockly
 
 export const registerleapBlocks = () => {
-    // Step 1: Filter out blocks that use function-based options (can't use defineBlocks JSON path)
-    const jsonSafeBlocks = leapBlocks.filter(b => !Blockly.Blocks[b.type]);
-    Blockly.common.defineBlocks(jsonSafeBlocks);
+    // Step 1: Force-register ALL blocks (overwrite any clobbered definitions from other modes)
+    // Without this, switching from Junior→Intermediate leaves stale Junior block definitions
+    // (e.g. looks_say with dropdown instead of input_value) which causes MissingConnection errors.
+    Blockly.common.defineBlocks(leapBlocks);
 
     // Step 2: Register broadcast blocks imperatively (they need dynamic dropdown + extension)
     const broadcastOptions = () => {

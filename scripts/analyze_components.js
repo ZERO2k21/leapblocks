@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const directories = ['src/leapignite', 'src/leapembed', 'src/codex'];
+const directories = ['src/leapignite', 'src/leapembed', 'src/Logix'];
 
 function analyzeDirectory(dirPath) {
     const stats = {

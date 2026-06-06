@@ -8,7 +8,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 export function useTerminal() {
     const [terminalOutput, setTerminalOutput] = useState([
         { text: "╔══════════════════════════════════════════════════════════════╗", type: "info", ts: new Date() },
-        { text: "║  Leaplab CODEX.v1.0                                          ║", type: "info", ts: new Date() },
+        { text: "║  Leaplab Logix.v1.0                                          ║", type: "info", ts: new Date() },
         { text: "║  ─────────────────────────────────────────────────────────── ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Ctrl+Enter or F5 to run code                       ║", type: "info", ts: new Date() },
         { text: "║  ▶ Press Escape to stop execution                           ║", type: "info", ts: new Date() },

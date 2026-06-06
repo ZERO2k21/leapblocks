@@ -282,7 +282,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     Blockly.Blocks['control_stop'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✋", "junior-icon")).appendField("Stop"); this.setPreviousStatement(true); this.setColour("#FFAB19"); } };
     javascriptGenerator.forBlock['control_stop'] = () => 'if(window.pauseExecution) window.pauseExecution();\nif(window.checkPause) await window.checkPause();\n';
 
-    Blockly.Blocks['control_scene'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🚩", "junior-icon")).appendField("Change Scene"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#FFAB19"); } };
+    Blockly.Blocks['control_scene'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🚩", "junior-icon")).appendField("Scene"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#FFAB19"); } };
     javascriptGenerator.forBlock['control_scene'] = () => `changeScene();\n${wait()}`;
 
 
@@ -338,10 +338,10 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
 
 
     // --- PEN (Green 120 -> #0FBD8C) ---
-    Blockly.Blocks['pen_down'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Writing Down"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
+    Blockly.Blocks['pen_down'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Pen Down"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_down'] = () => `penDown(${getTarget()});\n${wait()}`;
 
-    Blockly.Blocks['pen_up'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✒️", "junior-icon")).appendField("Writing Up"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
+    Blockly.Blocks['pen_up'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✒️", "junior-icon")).appendField("Pen Up"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_up'] = () => `penUp(${getTarget()});\n${wait()}`;
 
     Blockly.Blocks['pen_brush'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Brush"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
@@ -350,18 +350,18 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
     Blockly.Blocks['pen_eraser'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🧹", "junior-icon")).appendField("Eraser"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_eraser'] = () => `if(window.clearPen) window.clearPen();\n${wait()}`;
 
-    Blockly.Blocks['pen_graph'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🧭", "junior-icon")).appendField("Graph Draw"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
+    Blockly.Blocks['pen_graph'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🧭", "junior-icon")).appendField("Graph"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_graph'] = () => `showFeedback("Graph Mode");\n${wait()}`;
 
-    Blockly.Blocks['pen_adjust'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Adjust Pen"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
+    Blockly.Blocks['pen_adjust'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("✏️", "junior-icon")).appendField("Adjust"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#0FBD8C"); } };
     javascriptGenerator.forBlock['pen_adjust'] = () => `showFeedback("Pen Adjusted");\n${wait()}`;
 
 
     // --- SOUND (Pink 330 -> #CF63CF) ---
-    Blockly.Blocks['sound_record'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("📢", "junior-icon")).appendField("Voice Record"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    Blockly.Blocks['sound_record'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("📢", "junior-icon")).appendField("Record"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
     javascriptGenerator.forBlock['sound_record'] = () => `showFeedback("Recording...");\n${wait()}`;
 
-    Blockly.Blocks['sound_vol'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Volume Adjust"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    Blockly.Blocks['sound_vol'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Volume"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
     javascriptGenerator.forBlock['sound_vol'] = () => `showFeedback("Volume Changed");\n${wait()}`;
 
     Blockly.Blocks['sound_animal'] = {
@@ -711,7 +711,7 @@ export default function defineLeapBlocks(Blockly, javascriptGenerator) {
         init: function () {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("\u{1F4E8}", "junior-icon-large"))
-                .appendField("When I Receive")
+                .appendField("On Receive")
                 .appendField(new Blockly.FieldDropdown(MESSAGE_OPTIONS), "MESSAGE");
             this.setNextStatement(true);
             this.setColour("#FFBF00");

@@ -201,13 +201,11 @@ const registerBlocks = () => {
         ...(Array.isArray(hardwareBlocks) ? hardwareBlocks : [])
     ];
 
-    // Filter out blocks that are already registered in Blockly.Blocks
-    const newBlocks = blocksToRegister.filter(block => block && block.type && !Blockly.Blocks[block.type]);
-
-    if (newBlocks.length > 0) {
+    // Force-register all blocks to overwrite any clobbered definitions from other modes
+    if (blocksToRegister.length > 0) {
         try {
-            Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newBlocks));
-            log.app(`Registered ${newBlocks.length} additional blocks (Arduino/ESP32/Hardware).`);
+            Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(blocksToRegister));
+            log.app(`Registered ${blocksToRegister.length} additional blocks (Arduino/ESP32/Hardware).`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
         }
@@ -4317,6 +4315,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         return () => {
 
             console.log('[IntermediateApp] Cleaning up workspace...');
+
+            // Reset block initialization guard so blocks are re-registered on next mount.
+            // Without this, Junior mode's block definitions (e.g. looks_say with dropdown)
+            // persist and clobber Intermediate's definitions (looks_say with MESSAGE input).
+            _blocklyInitialized = false;
 
             clearInterval(sensingSyncInterval);
             animationVM.resetState();

@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from "react";
-import { useCodex } from "../context/CodexContext";
+import { useLogix } from "../context/LogixContext";
 import SidePanel from "../../../python/panels/SidePanel";
 import MonacoEditor from "../../../python/editor/MonacoEditor";
 import StatusBar from "../../../python/editor/StatusBar";
@@ -14,7 +14,7 @@ import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";
 
 export default function IdeWorkspace() {
-    const ctx = useCodex();
+    const ctx = useLogix();
 
     return (
         <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, background: "#1e1e2e" }}>
@@ -22,7 +22,7 @@ export default function IdeWorkspace() {
             <SidePanel
                 sidePanel={ctx.sidePanel} setSidePanel={ctx.setSidePanel}
                 projectFiles={ctx.projectFiles} activeFile={ctx.activeFile} setActiveFile={ctx.setActiveFile}
-                handleAddPythonFiles={() => {}} handleAddImageFiles={() => {}} handleAddTextFiles={() => {}} handleAddCsvFiles={() => {}}
+                handleAddPythonFiles={() => { }} handleAddImageFiles={() => { }} handleAddTextFiles={() => { }} handleAddCsvFiles={() => { }}
                 handleDeleteFile={ctx.handleDeleteFile}
                 onAddNewFile={ctx.handleCreateNewFile} onAddNewTextFile={ctx.handleCreateNewTextFile} onRenameFile={ctx.handleRenameFile}
                 spriteFilter={ctx.spriteFilter} setSpriteFilter={ctx.setSpriteFilter}
@@ -79,8 +79,8 @@ export default function IdeWorkspace() {
                     <TerminalPanel
                         activePanel={ctx.activePanel} setActivePanel={ctx.setActivePanel}
                         terminalOutput={ctx.terminalOutput}
-                        replInput={ctx.replInput || ""} setReplInput={ctx.setReplInput || (() => {})}
-                        handleReplSubmit={ctx.handleReplSubmit || (() => {})} handleReplKey={ctx.handleReplKey || (() => {})}
+                        replInput={ctx.replInput || ""} setReplInput={ctx.setReplInput || (() => { })}
+                        handleReplSubmit={ctx.handleReplSubmit || (() => { })} handleReplKey={ctx.handleReplKey || (() => { })}
                         terminalEndRef={ctx.terminalEndRef} replInputRef={ctx.replInputRef || { current: null }}
                         isRunning={ctx.isRunning} onRun={ctx.handleRun} onStop={ctx.handleStop} onClear={ctx.handleClear}
                         packages={ctx.packages} pipFilter={ctx.pipFilter} setPipFilter={ctx.setPipFilter} handleInstall={ctx.handleInstall}
