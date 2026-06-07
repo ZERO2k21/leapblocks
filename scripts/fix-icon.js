@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const RCEdit = path.join(__dirname, '..', 'node_modules', 'electron-winstaller', 'vendor', 'rcedit.exe');
-const Icon = path.join(__dirname, '..', 'public', 'assets', 'leapblocks.ico');
+const Icon = path.join(__dirname, '..', 'public', 'assets', 'leaplabicon.ico');
 const OutDir = path.join(__dirname, '..', 'out');
 
 // If no custom icon exists, skip patching gracefully

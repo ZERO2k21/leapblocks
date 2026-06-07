@@ -149,8 +149,8 @@ let mainWindow;
 
 function createWindow() {
   const iconPath = isDev
-    ? path.join(APP_ROOT, 'public', 'assets', 'leapblocks.ico')
-    : path.join(process.resourcesPath, 'public', 'assets', 'leapblocks.ico');
+    ? path.join(APP_ROOT, 'public', 'assets', 'leaplabicon.ico')
+    : path.join(process.resourcesPath, 'public', 'assets', 'leaplabicon.ico');
   const resolvedIcon = fs.existsSync(iconPath) ? iconPath : undefined;
 
   mainWindow = new BrowserWindow({
