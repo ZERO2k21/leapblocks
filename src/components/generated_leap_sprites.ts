@@ -5781,5 +5781,62 @@ export const leapSprites: any[] = [
       "nature"
     ],
     "category": "leap"
+  },
+  {
+    "id": "leap_traffic",
+    "name": "Traffic",
+    "emoji": "🚦",
+    "image": "assets/sprites/leap/traffic.svg",
+    "costumes": [
+      "assets/sprites/leap/traffic.svg",
+      "assets/sprites/leap/traffic2.svg",
+      "assets/sprites/leap/traffic3.svg"
+    ],
+    "tags": [
+      "transport",
+      "road",
+      "traffic",
+      "vehicle",
+      "city"
+    ],
+    "category": "leap"
+  },
+  {
+    "id": "leap_traffic2",
+    "name": "Traffic 2",
+    "emoji": "🚧",
+    "image": "assets/sprites/leap/traffic2.svg",
+    "costumes": [
+      "assets/sprites/leap/traffic.svg",
+      "assets/sprites/leap/traffic2.svg",
+      "assets/sprites/leap/traffic3.svg"
+    ],
+    "tags": [
+      "transport",
+      "road",
+      "traffic",
+      "vehicle",
+      "city"
+    ],
+    "category": "leap"
+  },
+  {
+    "id": "leap_traffic3",
+    "name": "Traffic 3",
+    "emoji": "🛣️",
+    "image": "assets/sprites/leap/traffic3.svg",
+    "costumes": [
+      "assets/sprites/leap/traffic.svg",
+      "assets/sprites/leap/traffic2.svg",
+      "assets/sprites/leap/traffic3.svg"
+    ],
+    "tags": [
+      "transport",
+      "road",
+      "traffic",
+      "vehicle",
+      "city"
+    ],
+    "category": "leap"
   }
 ];

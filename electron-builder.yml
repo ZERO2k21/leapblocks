@@ -16,7 +16,7 @@ asarUnpack:
   - node_modules/@serialport/**/*
 npmRebuild: false
 win:
-  icon: public/assets/leapblocks.ico
+  icon: public/assets/leaplabicon.ico
   requestedExecutionLevel: asInvoker
   signAndEditExecutable: false
   target:

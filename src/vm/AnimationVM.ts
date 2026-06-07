@@ -962,12 +962,10 @@ export class AnimationVM {
     }
 
     private async executeSteps(steps: ScriptStep[], ctx: VMContext, signal: AbortSignal): Promise<void> {
-        vmLog.info(`executeSteps: ${steps.length} steps`);
         for (let i = 0; i < steps.length; i++) {
             await this.checkPause();
 
             if (signal.aborted || !this.isRunning) {
-                vmLog.info(`Execution interrupted at step ${i}`);
                 if (this.onHighlightBlock) this.onHighlightBlock(null, ctx.sprite.id);
                 throw new DOMException('Aborted', 'AbortError');
             }
@@ -977,17 +975,14 @@ export class AnimationVM {
                 this.onHighlightBlock(step.blockId, ctx.sprite.id);
             }
 
-            vmLog.step(`[${i + 1}/${steps.length}] ${step.type}`);
             await this.executeStep(step, ctx, signal);
         }
         if (this.onHighlightBlock) this.onHighlightBlock(null, ctx.sprite.id);
-        vmLog.info('All steps completed');
     }
 
 
     private async executeStep(step: ScriptStep, ctx: VMContext, signal: AbortSignal): Promise<void> {
         const { sprite } = ctx;
-        console.log('[AnimationVM] Executing step:', step.type, step);
 
         const evalNum = (val: number | (() => number)) => {
             return typeof val === 'function' ? val() : val;
