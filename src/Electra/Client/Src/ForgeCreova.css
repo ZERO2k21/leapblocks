@@ -1328,3 +1328,8 @@
   color: #ffffff !important;
 }
 
+/* Reduce the edge interaction hit area width so that clicking near a terminal doesn't accidentally select the wire. */
+.react-flow__edge-interaction {
+  stroke-width: 4px !important;
+}
+

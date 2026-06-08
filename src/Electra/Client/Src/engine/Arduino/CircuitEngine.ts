@@ -2571,17 +2571,14 @@ class CircuitEngine {
                     const stepper = this.stepperEmulators.get(shaftKey)!;
                     // Update microstep divisor if changed
                     stepper.setSteppingMode('micro', microstepDivisor);
-                    // 4-wire phase detection: treat RESET/STEP/SLEEP/DIR as a combined
-                    // phase state.  The direction is derived from the phase sequence
-                    // (forward / backward through FULL_STEP_SEQ), NOT from the DIR pin.
-                    // This matches Wokwi's behavior when the Stepper library's 4-wire
-                    // pattern drives an A4988 (DIR is just a mask bit, not a direction signal).
-                    stepper.processCoils(
-                      buf['RESET'] === true,
-                      buf['STEP'] === true,
-                      buf['SLEEP'] === true,
-                      buf['DIR'] === true,
-                    );
+                    // Route STEP rising-edge and DIR level to the stepper emulator.
+                    // This correctly handles AccelStepper DRIVER mode and the 2-wire
+                    // Stepper(steps, stepPin, dirPin) constructor.
+                    if (peripheralPinName === 'STEP') {
+                      stepper.processStep(isHigh);
+                    } else if (peripheralPinName === 'DIR') {
+                      stepper.setDirection(isHigh);
+                    }
                   } else {
                     if (!this.stepperEmulators.has(motorNodeId)) {
                       console.log(`[STEPPER] Wiring A4988 STEP/DIR emulator for motor node ${motorNodeId}`);
@@ -2631,21 +2628,18 @@ class CircuitEngine {
                     const stepper = this.stepperEmulators.get(motorNodeId)!;
                     stepper.setSteppingMode('micro', microstepDivisor);
 
-                    // 4-wire phase detection: treat RESET/STEP/SLEEP/DIR as a combined
-                    // phase state.  Derive direction from phase sequence, not DIR pin.
-                    stepper.processCoils(
-                      buf['RESET'] === true,
-                      buf['STEP'] === true,
-                      buf['SLEEP'] === true,
-                      buf['DIR'] === true,
-                    );
+                    // Route STEP rising-edge and DIR level to the stepper emulator.
+                    if (peripheralPinName === 'STEP') {
+                      stepper.processStep(isHigh);
+                    } else if (peripheralPinName === 'DIR') {
+                      stepper.setDirection(isHigh);
+                    }
                   }
                 }
               }
 
               // For non-STEP/DIR pin changes (ENABLE, RESET, SLEEP, MSx), update
-              // the motor energized state.  Only ENABLE gates the output (RESET and
-              // SLEEP are part of the 4-wire phase pattern and should not de-energize).
+              // the motor energized state.  Only ENABLE gates the output.
               if (peripheralPinName !== 'STEP' && peripheralPinName !== 'DIR') {
                 const motorEdges = currentStateStore.edges.filter(e =>
                   (e.source === peripheralId && ['1A', '1B', '2A', '2B'].includes(e.sourceHandle || '')) ||

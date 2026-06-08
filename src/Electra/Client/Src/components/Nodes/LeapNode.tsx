@@ -40,12 +40,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const isPendingSource = pendingSource?.nodeId === id;
   const pendingSourcePin = isPendingSource ? pendingSource?.pinName : null;
 
-  // useReactFlow gives us screenToFlowPosition so we can capture the EXACT
-  // (sub-pixel accurate) pin location from the handle's DOM rect on mousedown.
-  // Calculating from srcNode.width × pinPercent is unreliable because the
-  // node wrapper applies transform: scale(0.75) (and possibly rotate()),
-  // which the calculated position doesn't account for.
-  const { screenToFlowPosition } = useReactFlow();
+  // useReactFlow gives us getViewport so we can compute exact pin positions
+  // in flow coordinates from the inner container's visual bounds and pin percentages.
+  const { getViewport, screenToFlowPosition } = useReactFlow();
 
   // Subscribe only to edge count (number) — cheap comparison, no re-render during drag.
   // Full edges accessed via getState() inside useMemo.
@@ -152,16 +149,16 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.energized = data.relayEnergized ?? false;
     mappedProps.led = data.relayEnergized ?? false;
   } else if (data.type === 'biaxial-stepper') {
-    mappedProps.outerHandAngle = data.xAngle ?? 0;
-    mappedProps.innerHandAngle = data.yAngle ?? 0;
-    mappedProps.xSteps = data.xSteps ?? 0;
-    mappedProps.ySteps = data.ySteps ?? 0;
-    mappedProps.xRPM = data.xRPM ?? 0;
-    mappedProps.yRPM = data.yRPM ?? 0;
-    mappedProps.xDirection = data.xDirection ?? 'STOP';
-    mappedProps.yDirection = data.yDirection ?? 'STOP';
-    mappedProps.xTotalDegrees = data.xTotalDegrees ?? 0;
-    mappedProps.yTotalDegrees = data.yTotalDegrees ?? 0;
+                mappedProps.outerHandAngle = data.xAngle ?? 0;
+                mappedProps.innerHandAngle = data.yAngle ?? 0;
+                mappedProps.xSteps = data.xSteps ?? 0;
+                mappedProps.ySteps = data.ySteps ?? 0;
+                mappedProps.xRPM = data.xRPM ?? 0;
+                mappedProps.yRPM = data.yRPM ?? 0;
+                mappedProps.xDirection = data.xDirection ?? 'STOP';
+                mappedProps.yDirection = data.yDirection ?? 'STOP';
+                mappedProps.xTotalDegrees = data.xTotalDegrees ?? 0;
+                mappedProps.yTotalDegrees = data.yTotalDegrees ?? 0;
   } else if (['potentiometer', 'slide-potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
     // Analog sensors (and resistors) use the 'value' from sensorValues
     mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
@@ -285,6 +282,40 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
   // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
   const elementRef = useRef<any>(null);
+
+  // Sync wrapper dimensions to match the inner scaled container's visual size.
+  // The inner container has transform: scale(0.75), which doesn't affect the
+  // wrapper's layout box. Without this sync, React Flow would measure the
+  // wrapper at the unscaled size, creating a dead zone around the component
+  // that blocks canvas interactions (wire waypoints, pane clicks, etc.).
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const wrapper = wrapperRef.current;
+    if (!container || !wrapper) return;
+
+    const syncSize = () => {
+      const unscaledWidth = container.offsetWidth;
+      const unscaledHeight = container.offsetHeight;
+      if (unscaledWidth === 0 || unscaledHeight === 0) return;
+      wrapper.style.width = `${unscaledWidth * 0.75}px`;
+      wrapper.style.height = `${unscaledHeight * 0.75}px`;
+    };
+
+    const ro = new ResizeObserver(syncSize);
+    ro.observe(container);
+
+    // Fallback initial sync: the ResizeObserver fires asynchronously,
+    // so use requestAnimationFrame to ensure layout is complete.
+    const raf = requestAnimationFrame(syncSize);
+
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // Push ImageData to ILI9341 / SSD1306 canvas elements via DOM property assignment
   // (React JSX spread doesn't reliably set complex object properties on Web Components)
@@ -681,11 +712,17 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   return (
-    <div style={nodeStyle} className={`leap-node-wrapper${isSelected ? ' is-selected' : ''}`}>
+    <div ref={wrapperRef} style={nodeStyle} className={`leap-node-wrapper${isSelected ? ' is-selected' : ''}`}>
       {/* ── COMPONENT & HANDLES CONTAINER ── */}
       <div
+        ref={containerRef}
         className="leap-node-svg-container"
-        style={{ position: 'relative', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'center center' }}
+        style={{
+          position: 'relative',
+          display: 'inline-block',
+          transform: 'scale(0.75)',
+          transformOrigin: '0 0',
+        }}
       >
         {/* Dynamic Leap Element */}
         <Tag
@@ -791,18 +828,33 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   width: 0,
                   height: 0,
                   zIndex: 10,
-                  pointerEvents: 'all',
+                  pointerEvents: 'none',
                   background: 'transparent',
                   border: 'none',
                 }}
               />
-              {/* Visible handle (source) — click+release to start, drag to draw */}
+              {/* Hidden handle (source) — 0-size at exact pin center for wire connection */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
                 position={Position.Top}
                 style={{
+                  left: `${pin.x}%`,
+                  top: `${pin.y}%`,
+                  width: 0,
+                  height: 0,
+                  zIndex: 10,
+                  pointerEvents: 'none',
+                  background: 'transparent',
+                  border: 'none',
+                }}
+              />
+              {/* Visible interactive pin dot */}
+              <div
+                className="leap-pin-dot react-flow__handle nodrag"
+                style={{
                   ...handleStyle,
+                  position: 'absolute',
                   background: pinColor,
                   border: `1.5px solid ${borderColor}`,
                   borderRadius: '50%',
@@ -816,45 +868,44 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   isDraftTarget
                     ? `Drop to connect to ${pin.name}`
                     : isPendingSourcePin
-                    ? `Release on this pin to start a wire from ${pin.name}, or release on another pin to connect directly`
-                    : isDraftSourcePin
-                    ? `Wire started from ${pin.name} — click another pin to connect, or click empty space to cancel`
-                    : `${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`
+                      ? `Release on this pin to start a wire from ${pin.name}, or release on another pin to connect directly`
+                      : isDraftSourcePin
+                        ? `Wire started from ${pin.name} — click another pin to connect, or click empty space to cancel`
+                        : `${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`
                 }
                 onMouseDown={(e) => {
                   e.stopPropagation();
-                  // Click-and-release rule:
-                  //   - mousedown on a pin ARMS it (sets pendingSource) — the wire is NOT
-                  //     drawn yet, no matter how much the mouse moves while the button is
-                  //     held. This prevents accidental wire creation on stray clicks.
-                  //   - The wire is actually started on mouseup (see onMouseUp below).
-                  //   - Right-click on a pin during an active draft cancels the wire.
-                  if (e.button === 2 && (wireDraft || pendingSource)) {
+                  const state = useForgeStore.getState();
+                  if (e.button === 2 && (state.wireDraft || state.pendingSource)) {
                     e.preventDefault();
                     cancelWireDraft();
                     return;
                   }
-                  if (!wireDraft && !pendingSource) {
-                    // Capture the exact click position (e.clientX/Y) so the wire
-                    // starts from where the user clicked on the terminal,
-                    // regardless of any offset between the handle bounding rect
-                    // center and the actual SVG terminal geometry.
-                    const sourcePos = screenToFlowPosition({
-                      x: e.clientX,
-                      y: e.clientY,
-                    });
-                    setPendingSource({
-                      nodeId: id,
-                      pinName: pin.name,
-                      sourcePosition: sourcePos,
-                    });
+                  if (!state.wireDraft && !state.pendingSource) {
+                    const pinDotEl = e.currentTarget as HTMLElement;
+                    if (pinDotEl) {
+                      const rect = pinDotEl.getBoundingClientRect();
+                      const vp = getViewport();
+                      const canvasContainer = document.querySelector('.forge-canvas-container');
+                      const canvasRect = canvasContainer ? canvasContainer.getBoundingClientRect() : { left: 0, top: 0 };
+                      const sourcePos = {
+                        x: (rect.left + rect.width / 2 - canvasRect.left - vp.x) / vp.zoom,
+                        y: (rect.top + rect.height / 2 - canvasRect.top - vp.y) / vp.zoom,
+                      };
+                      setPendingSource({
+                        nodeId: id,
+                        pinName: pin.name,
+                        sourcePosition: sourcePos,
+                      });
+                    }
                   }
                 }}
                 onMouseUp={(e) => {
                   e.stopPropagation();
+                  const state = useForgeStore.getState();
                   // Case 1: a wire is actively being drawn.
-                  if (wireDraft) {
-                    if (wireDraft.source === id && wireDraft.sourceHandle === pin.name) {
+                  if (state.wireDraft) {
+                    if (state.wireDraft.source === id && state.wireDraft.sourceHandle === pin.name) {
                       // Releasing on the same source pin cancels the draft.
                       cancelWireDraft();
                     } else {
@@ -864,30 +915,31 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                     return;
                   }
                   // Case 2: a pin is armed (pendingSource) but no wire is being drawn yet.
-                  if (pendingSource) {
-                    if (pendingSource.nodeId === id && pendingSource.pinName === pin.name) {
+                  if (state.pendingSource) {
+                    if (state.pendingSource.nodeId === id && state.pendingSource.pinName === pin.name) {
                       // Released on the SAME pin → actually start the wire draft now.
                       startWireDraft(
                         id,
                         pin.name,
-                        pendingSource.sourcePosition,
+                        state.pendingSource.sourcePosition,
                       );
                     } else {
                       // Released on a DIFFERENT pin (drag-release case) → create the
                       // connection A → B in a single motion, without showing a draft.
                       startWireDraft(
-                        pendingSource.nodeId,
-                        pendingSource.pinName,
-                        pendingSource.sourcePosition,
+                        state.pendingSource.nodeId,
+                        state.pendingSource.pinName,
+                        state.pendingSource.sourcePosition,
                       );
                       completeWireDraft(id, pin.name);
                     }
                   }
                 }}
                 onMouseEnter={() => {
+                  const state = useForgeStore.getState();
                   // Only show the red target indicator when a wire is actively being
                   // drawn (not just armed). Avoids showing it prematurely on pending.
-                  if (wireDraft) {
+                  if (state.wireDraft) {
                     setHoveredPinName(pin.name);
                   }
                 }}
@@ -897,8 +949,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   }
                 }}
                 onContextMenu={(e) => {
+                  const state = useForgeStore.getState();
                   // Right-click on a pin during a draft/pending arms cancels the wire
-                  if (wireDraft || pendingSource) {
+                  if (state.wireDraft || state.pendingSource) {
                     e.preventDefault();
                     cancelWireDraft();
                   }

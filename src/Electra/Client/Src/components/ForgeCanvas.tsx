@@ -34,8 +34,8 @@ interface ForgeCanvasProps {
   onToggleEditor?: () => void;
 }
 
-const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({ 
-  onToggleSimulation, 
+const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
+  onToggleSimulation,
   isCompiling,
   showEditor = true,
   onToggleEditor
@@ -67,6 +67,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     addWireWaypoint,
     cancelWireDraft,
     setPendingSource,
+    startWireDraft,
   } = store;
 
   // Ref-style bridge to WireDraftOverlay. The overlay registers its setMousePos
@@ -90,9 +91,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, [storeEdges, setEdges]);
 
   // ── Double-click-drag pan mode ─────────────────────────────────────────
-  // Single left-click on empty canvas: no pan.
+  // Middle-click + drag always pans the viewport.
   // Double-click on empty canvas: toggles "pan-drag mode" — while active,
-  // left-click-hold + drag pans the viewport. Single clicks without drag
+  // left-click-hold + drag also pans the viewport. Single clicks without drag
   // still fire onPaneClick (waypoints/deselect). Escape or double-click
   // again exits pan mode.
   const [panDragEnabled, setPanDragEnabled] = useState(false);
@@ -220,9 +221,34 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   const rafRef = useRef<number | null>(null);
   const latestScreenPosRef = useRef<{ x: number; y: number } | null>(null);
   const onContainerMouseMove = useCallback((event: React.MouseEvent) => {
-    if (!wireDraft) return;
+    const state = useForgeStore.getState();
+    const activeWireDraft = state.wireDraft;
+    const activePendingSource = state.pendingSource;
+
+    if (!activeWireDraft && !activePendingSource) return;
+
     const target = event.currentTarget as HTMLElement | null;
     if (!target) return;
+
+    // Promote pendingSource to wireDraft on drag (> 3px)
+    if (activePendingSource && !activeWireDraft) {
+      const vp = getViewport();
+      const startScreenX = activePendingSource.sourcePosition
+        ? activePendingSource.sourcePosition.x * vp.zoom + vp.x
+        : event.clientX;
+      const startScreenY = activePendingSource.sourcePosition
+        ? activePendingSource.sourcePosition.y * vp.zoom + vp.y
+        : event.clientY;
+
+      const dx = event.clientX - startScreenX;
+      const dy = event.clientY - startScreenY;
+
+      if (Math.hypot(dx, dy) > 3) {
+        startWireDraft(activePendingSource.nodeId, activePendingSource.pinName, activePendingSource.sourcePosition);
+      }
+      return;
+    }
+
     latestScreenPosRef.current = { x: event.clientX, y: event.clientY };
     if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(() => {
@@ -236,7 +262,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         y: (pos.y - bounds.top - vp.y) / vp.zoom,
       });
     });
-  }, [wireDraft, getViewport]);
+  }, [getViewport, startWireDraft]);
 
   // Clean up any pending rAF if the component unmounts mid-draft
   useEffect(() => {
@@ -344,41 +370,20 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     store.setSelectedNode(node.id);
   }, [store]);
 
-  const lastPaneClickTimeRef = useRef(0);
-  const lastPaneClickPosRef = useRef<{ x: number; y: number } | null>(null);
-
   const onPaneClick = useCallback((event: React.MouseEvent) => {
-    const now = performance.now();
-    const clickPos = { x: event.clientX, y: event.clientY };
-    const prevPos = lastPaneClickPosRef.current;
-    const prevTime = lastPaneClickTimeRef.current;
-    const dt = now - prevTime;
-    const dist = prevPos
-      ? Math.hypot(clickPos.x - prevPos.x, clickPos.y - prevPos.y)
-      : Infinity;
-    const isDoubleClick = prevTime > 0 && dt < 350 && dist < 12;
-
-    if (isDoubleClick) {
-      // Toggle pan-drag mode instead of centering the viewport.
+    // Use native click count for reliable double-click detection
+    if (event.detail === 2) {
       setPanDragEnabled(prev => !prev);
-      // Reset the tracker so a third click is treated as a fresh single click.
-      lastPaneClickTimeRef.current = 0;
-      lastPaneClickPosRef.current = null;
       return;
     }
-
-    lastPaneClickTimeRef.current = now;
-    lastPaneClickPosRef.current = clickPos;
 
     if (wireDraft) {
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
     } else if (!panDragEnabled) {
-      // Deselect on single click only when NOT in pan mode.
       store.setSelectedNode(null);
       store.setSelectedEdge(null);
     }
-    // In pan mode, single click does nothing (no deselect).
   }, [wireDraft, addWireWaypoint, store, screenToFlowPosition, panDragEnabled]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
@@ -443,15 +448,16 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         defaultEdgeOptions={{ type: 'wire', updatable: false }}
         nodesConnectable={false}
         nodesDraggable
-        // Double-click-drag pan: panOnDrag is disabled by default. Double-click
-        // on empty canvas toggles pan-drag mode — while active, left-click-hold
-        // + drag pans the viewport. Node drag and pin interactions always take
-        // priority. Right-click reserved for browser context menu.
+        // Double-click-drag pan: Double-click on empty canvas toggles
+        // pan-drag mode — while active, left-click-hold + drag pans the
+        // viewport. Middle-click always pans regardless of mode.
+        // Node drag and pin interactions always take priority.
         //   double-click empty   → toggle pan-drag mode
         //   left-drag (pan mode) → canvas pans
+        //   middle-drag          → canvas pans (always)
         //   drag component       → component moves (with edge auto-scroll)
         //   drag pin             → wire draft
-        panOnDrag={panDragEnabled ? [0] : false}
+        panOnDrag={panDragEnabled ? [0, 1] : [1]}
         selectionOnDrag={false}
         panOnScroll={false}
         fitView
