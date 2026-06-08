@@ -102,6 +102,13 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [assetsOpen, setAssetsOpen] = useState(true);
 
+  const isESP32Board = currentBoard === 'esp32-c3' || currentBoard === 'esp32';
+
+  const shouldHide = (id: string): boolean => {
+    if (id === 'biaxial-stepper' && isESP32Board) return true;
+    return false;
+  };
+
   // Group components based on ID or category
   const isAsset = (id: string, category: string): boolean => {
     return category === 'displays' ||
@@ -115,8 +122,14 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
       id === 'hx711';
   };
 
-  const libraryComponents = COMPONENTS.filter(c => !isAsset(c.id, c.category));
-  const assetComponents = COMPONENTS.filter(c => isAsset(c.id, c.category));
+  let libraryComponents = COMPONENTS.filter(c => !isAsset(c.id, c.category));
+  let assetComponents = COMPONENTS.filter(c => isAsset(c.id, c.category));
+
+  // Apply board-specific hiding
+  if (isESP32Board) {
+    libraryComponents = libraryComponents.filter(c => !shouldHide(c.id));
+    assetComponents = assetComponents.filter(c => !shouldHide(c.id));
+  }
 
   // Filter based on search query
   const filteredLibrary = libraryComponents.filter(c =>

@@ -63,8 +63,13 @@ const COMPONENTS = [
 export default function Sidebar() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const board = useForgeStore((s) => s.board);
+  const isESP32Board = board === 'esp32-c3' || board === 'esp32';
 
   const filteredComponents = COMPONENTS.filter(c => {
+    // Hide components not compatible with current board
+    if (isESP32Board && c.id === 'biaxial-stepper') return false;
+
     const matchesCategory = activeCategory === 'all' || c.category === activeCategory;
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
