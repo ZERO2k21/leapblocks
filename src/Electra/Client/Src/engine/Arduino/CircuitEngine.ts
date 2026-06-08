@@ -3038,13 +3038,16 @@ class CircuitEngine {
       if (analogSensors.includes(pType) && !digitalOnlySensors.includes(pType)) {
         const voltage = this.computeSensorVoltage(pType, sv, 3.3, pinName);
 
-        // ESP32-C3 RISC-V path
-        if (simulationRunner.isESP32C3Board && esp32Mapping.adcChannel !== undefined) {
-          const gpioNum = parseInt(esp32Mapping.avrPin.replace('ESP', ''), 10);
+        // ESP32-C3 transpiled path — ArduinoRuntime.setAnalogInput works for any GPIO
+        if (simulationRunner.isESP32C3Board) {
+          simulationRunner.setESP32C3AnalogInput(gpioNum, voltage);
+        }
+        else if (esp32Mapping.adcChannel !== undefined) {
+          // Real hardware ADC path (native RISC-V firmware)
           simulationRunner.setESP32C3AnalogInput(gpioNum, voltage);
         }
         else {
-          // Non-ESP32-C3 board: update pin state map so listeners fire
+          // No ADC available — digital threshold fallback
           simulationRunner.setVirtualInput(esp32Mapping.avrPin, voltage > 0.1);
         }
         console.log(`[FORGE CIRCUIT] ESP32 Analog: ${esp32Mapping.avrPin} = ${voltage.toFixed(3)}V (${pType})`);
