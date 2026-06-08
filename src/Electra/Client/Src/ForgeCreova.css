@@ -309,14 +309,65 @@
   background-color: transparent !important;
 }
 
+/* ── LeapNode — selection/hover feedback only on the SVG itself, never on the
+       wrapper. This prevents any "surroundings" (drop-shadow, outline) from
+       extending beyond the visible component. ─────────────────────────────── */
 .leap-node-wrapper {
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
-  transition: transform 0.2s ease, filter 0.2s ease;
+  /* No background, no border, no shadow on the outer wrapper — it is invisible
+     by design. Selection/hover feedback lives on the inner SVG container only. */
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  transition: none;
 }
 
 .leap-node-wrapper:hover {
-  filter: drop-shadow(0 8px 24px rgba(34, 211, 238, 0.2));
-  transform: translateY(-2px);
+  /* Intentionally empty — the wrapper must not react to hover. */
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+/* Suppress React Flow's default node container — the rectangular box that
+   React Flow draws around every node. We make it fully transparent so only
+   the SVG silhouette is visible; selection/hover feedback is rendered as a
+   drop-shadow on the inner SVG container (which follows the exact shape). */
+.react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.react-flow__node.selected .leap-node-wrapper,
+.react-flow__node:focus .leap-node-wrapper,
+.react-flow__node:focus-visible .leap-node-wrapper {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* The inner container that holds the SVG. Selection/hover feedback lives here,
+   so the glow hugs the actual component shape rather than a generic box.
+   Blur is kept at 0–0.5px so the drop-shadow renders as a thin outline that
+   traces the exact component silhouette, with no soft glow extending outward. */
+.leap-node-svg-container {
+  transition: filter 0.18s ease;
+  /* No glow by default. */
+  filter: none;
+}
+
+.leap-node-svg-container:hover {
+  filter: drop-shadow(0 0 0.5px rgba(34, 211, 238, 0.7));
+}
+
+.leap-node-wrapper.is-selected .leap-node-svg-container {
+  filter: drop-shadow(0 0 0 rgba(34, 211, 238, 0.95))
+          drop-shadow(0 0 0.5px rgba(34, 211, 238, 0.6));
 }
 
 /* Card class for inner panel blocks */

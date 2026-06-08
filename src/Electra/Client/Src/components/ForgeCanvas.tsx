@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import ReactFlow, {
   Background,
   MiniMap,
@@ -23,7 +23,7 @@ import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
-import { buildOrthogonalPath } from '../lib/orthogonalRouting';
+
 import { getComponentPins } from '../lib/PinMap';
 import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
@@ -63,11 +63,19 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     viewport: savedViewport,
     setViewportState,
     wireDraft,
+    pendingSource,
     addWireWaypoint,
     cancelWireDraft,
+    setPendingSource,
   } = store;
 
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  // Ref-style bridge to WireDraftOverlay. The overlay registers its setMousePos
+  // here on mount; we call it on every throttled mouse move. This keeps the
+  // heavy <ReactFlow> / <MiniMap> subtree from re-rendering on each frame.
+  const wireOverlayUpdateRef = useRef<((pos: { x: number; y: number } | null) => void) | null>(null);
+  const registerWireOverlayUpdate = useCallback((fn: ((pos: { x: number; y: number } | null) => void) | null) => {
+    wireOverlayUpdateRef.current = fn;
+  }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -80,6 +88,24 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   useEffect(() => {
     setEdges(storeEdges);
   }, [storeEdges, setEdges]);
+
+  // ── Double-click-drag pan mode ─────────────────────────────────────────
+  // Single left-click on empty canvas: no pan.
+  // Double-click on empty canvas: toggles "pan-drag mode" — while active,
+  // left-click-hold + drag pans the viewport. Single clicks without drag
+  // still fire onPaneClick (waypoints/deselect). Escape or double-click
+  // again exits pan mode.
+  const [panDragEnabled, setPanDragEnabled] = useState(false);
+
+  // ── Escape exits pan-drag mode ─────────────────────────────────────
+  useEffect(() => {
+    if (!panDragEnabled) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPanDragEnabled(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [panDragEnabled]);
 
   // ── Keyboard zoom shortcuts (Wokwi-style) ──────────────────────────
   useEffect(() => {
@@ -116,58 +142,116 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [zoomIn, zoomOut, fitView, setViewport, getViewport, getNodes]);
 
-  // ── Escape cancels wire draft ──
+  // ── Escape cancels wire draft AND any armed pending pin ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && wireDraft) {
+      if (e.key === 'Escape' && (wireDraft || pendingSource)) {
         cancelWireDraft();
-        setMousePos(null);
+        wireOverlayUpdateRef.current?.(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [wireDraft, cancelWireDraft]);
+  }, [wireDraft, pendingSource, cancelWireDraft]);
+
+  // ── Tinkercad-style drag-release wire cancellation ──
+  // When the user mouse-downs on a pin and releases on empty space (a drag, not a click),
+  // the in-progress wire must be cancelled. A quick mousedown+mouseup on empty space
+  // (a click) is NOT a drag — it should fall through to onPaneClick and add a waypoint.
+  // Also handles the case where a pin is "armed" (pendingSource set) and the user
+  // released on empty space without clicking another pin — clears the armed state.
+  useEffect(() => {
+    if (!wireDraft && !pendingSource) return;
+    let downPos: { x: number; y: number } | null = null;
+
+    const onMouseDown = (e: MouseEvent) => {
+      // Only track button 0 (left click) and only if the press started outside any handle
+      // (the handle's own onMouseDown starts the draft — we just need to detect drags).
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.react-flow__handle')) return;
+      downPos = { x: e.clientX, y: e.clientY };
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      // If the release lands on a pin handle, that handle's onMouseUp will complete the wire.
+      if (target?.closest('.react-flow__handle')) {
+        downPos = null;
+        return;
+      }
+      // Detect drag: moved more than 5px between mousedown and mouseup on empty space.
+      if (downPos) {
+        const dx = e.clientX - downPos.x;
+        const dy = e.clientY - downPos.y;
+        const moved = Math.hypot(dx, dy) > 5;
+        downPos = null;
+        if (moved) {
+          // User dragged from a pin and released on empty canvas — cancel the wire.
+          cancelWireDraft();
+          wireOverlayUpdateRef.current?.(null);
+          return;
+        }
+        // Otherwise: it was a click on the pane — let onPaneClick add the waypoint.
+        // But if a pin is armed (pendingSource) and we didn't move, the user effectively
+        // just clicked on empty space — clear the armed state so the next click is fresh.
+        if (pendingSource) {
+          setPendingSource(null);
+        }
+      } else if (pendingSource && !wireDraft) {
+        // Mouseup outside any tracked press (rare) — clear armed pin.
+        setPendingSource(null);
+      }
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [wireDraft, pendingSource, cancelWireDraft, setPendingSource]);
 
   // ── Track mouse for draft wire end ──
+  // Throttled with requestAnimationFrame so we only commit a state update once
+  // per frame (~60Hz max). We push the latest cursor position to the
+  // WireDraftOverlay via a ref-callback — the parent does NOT keep a
+  // `mousePos` state, so the heavy <ReactFlow> / <MiniMap> subtree is not
+  // forced to reconcile on every frame. Only the small overlay re-renders.
+  const rafRef = useRef<number | null>(null);
+  const latestScreenPosRef = useRef<{ x: number; y: number } | null>(null);
   const onContainerMouseMove = useCallback((event: React.MouseEvent) => {
     if (!wireDraft) return;
-    const bounds = document.querySelector('.forge-canvas-container')?.getBoundingClientRect();
-    if (!bounds) return;
-    const vp = getViewport();
-    setMousePos({
-      x: (event.clientX - bounds.left - vp.x) / vp.zoom,
-      y: (event.clientY - bounds.top - vp.y) / vp.zoom,
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) return;
+    latestScreenPosRef.current = { x: event.clientX, y: event.clientY };
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const pos = latestScreenPosRef.current;
+      if (!pos) return;
+      const bounds = target.getBoundingClientRect();
+      const vp = getViewport();
+      wireOverlayUpdateRef.current?.({
+        x: (pos.x - bounds.left - vp.x) / vp.zoom,
+        y: (pos.y - bounds.top - vp.y) / vp.zoom,
+      });
     });
   }, [wireDraft, getViewport]);
 
-  // ── Compute source pin position in flow coordinates ──
-  const getSourcePinPos = useCallback(() => {
-    if (!wireDraft) return null;
-    const srcNode = storeNodes.find(n => n.id === wireDraft.source);
-    if (!srcNode) return null;
-    const pins = getComponentPins(srcNode.data?.type);
-    const pin = pins.find(p => p.name === wireDraft.sourceHandle);
-    const nw = srcNode.width || 120;
-    const nh = srcNode.height || 120;
-    return {
-      x: srcNode.position.x + (pin ? (pin.x / 100) * nw : nw / 2),
-      y: srcNode.position.y + (pin ? (pin.y / 100) * nh : nh / 2),
+  // Clean up any pending rAF if the component unmounts mid-draft
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-  }, [wireDraft, storeNodes]);
+  }, []);
 
-  // ── Compute draft wire SVG path ──
-  const draftWirePath = useMemo(() => {
-    if (!wireDraft || !mousePos) return '';
-    const vp = getViewport();
-    const srcPinPos = getSourcePinPos();
-    if (!srcPinPos) return '';
-    const allPoints = [srcPinPos, ...wireDraft.waypoints, mousePos];
-    const screenPoints = allPoints.map(p => ({
-      x: p.x * vp.zoom + vp.x,
-      y: p.y * vp.zoom + vp.y,
-    }));
-    return buildOrthogonalPath(screenPoints);
-  }, [wireDraft, mousePos, getViewport, getSourcePinPos]);
+  // Note: draft wire source pin position and SVG path are computed inside
+  // `WireDraftOverlay` (a separate memoized component) so the parent
+  // `ForgeCanvasInner` is not forced to re-render on every mouse move.
+  // See <WireDraftOverlay wireDraft={wireDraft} ... /> below.
 
   // ── Blur editor safely on node/edge selection changes to enable canvas hotkeys without event interruption ──
   const selectedNodeId = store.selectedNodeId;
@@ -206,19 +290,96 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
 
+  // ── Edge auto-scroll while dragging a node ──
+  // When the user drags a component and the cursor approaches the canvas
+  // border (while still INSIDE the canvas), the viewport pans in that
+  // direction at a speed proportional to the cursor's distance from the
+  // edge. The moment the cursor leaves the canvas bounds, panning stops
+  // and the canvas stays static — the user wanted the auto-scroll to be
+  // bounded to the canvas area only, not the surrounding panels / toolbar.
+  const AUTO_SCROLL_EDGE = 60;     // px from the edge where panning starts
+  const AUTO_SCROLL_MAX = 14;      // max viewport delta per drag event
+  const onNodeDrag = useCallback((event: React.MouseEvent, _node: Node) => {
+    const canvas = document.querySelector('.forge-canvas-container') as HTMLElement | null;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = event.clientX;
+    const cy = event.clientY;
+
+    // Only auto-scroll when the cursor is strictly INSIDE the canvas.
+    // If the cursor exits (over toolbar, panels, browser chrome, etc.),
+    // the canvas stays static.
+    if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) {
+      return;
+    }
+
+    let dx = 0;
+    let dy = 0;
+
+    // Horizontal: cursor near left/right edge
+    const distLeft = cx - rect.left;
+    const distRight = rect.right - cx;
+    if (distLeft < AUTO_SCROLL_EDGE) {
+      dx = -AUTO_SCROLL_MAX * (1 - distLeft / AUTO_SCROLL_EDGE);
+    } else if (distRight < AUTO_SCROLL_EDGE) {
+      dx = AUTO_SCROLL_MAX * (1 - distRight / AUTO_SCROLL_EDGE);
+    }
+
+    // Vertical: cursor near top/bottom edge
+    const distTop = cy - rect.top;
+    const distBottom = rect.bottom - cy;
+    if (distTop < AUTO_SCROLL_EDGE) {
+      dy = -AUTO_SCROLL_MAX * (1 - distTop / AUTO_SCROLL_EDGE);
+    } else if (distBottom < AUTO_SCROLL_EDGE) {
+      dy = AUTO_SCROLL_MAX * (1 - distBottom / AUTO_SCROLL_EDGE);
+    }
+
+    if (dx !== 0 || dy !== 0) {
+      const vp = getViewport();
+      setViewport({ x: vp.x + dx, y: vp.y + dy, zoom: vp.zoom });
+    }
+  }, [getViewport, setViewport]);
+
   const onNodeClick = useCallback((_: any, node: Node) => {
     store.setSelectedNode(node.id);
   }, [store]);
 
+  const lastPaneClickTimeRef = useRef(0);
+  const lastPaneClickPosRef = useRef<{ x: number; y: number } | null>(null);
+
   const onPaneClick = useCallback((event: React.MouseEvent) => {
+    const now = performance.now();
+    const clickPos = { x: event.clientX, y: event.clientY };
+    const prevPos = lastPaneClickPosRef.current;
+    const prevTime = lastPaneClickTimeRef.current;
+    const dt = now - prevTime;
+    const dist = prevPos
+      ? Math.hypot(clickPos.x - prevPos.x, clickPos.y - prevPos.y)
+      : Infinity;
+    const isDoubleClick = prevTime > 0 && dt < 350 && dist < 12;
+
+    if (isDoubleClick) {
+      // Toggle pan-drag mode instead of centering the viewport.
+      setPanDragEnabled(prev => !prev);
+      // Reset the tracker so a third click is treated as a fresh single click.
+      lastPaneClickTimeRef.current = 0;
+      lastPaneClickPosRef.current = null;
+      return;
+    }
+
+    lastPaneClickTimeRef.current = now;
+    lastPaneClickPosRef.current = clickPos;
+
     if (wireDraft) {
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
-    } else {
+    } else if (!panDragEnabled) {
+      // Deselect on single click only when NOT in pan mode.
       store.setSelectedNode(null);
       store.setSelectedEdge(null);
     }
-  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition]);
+    // In pan mode, single click does nothing (no deselect).
+  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition, panDragEnabled]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     store.setSelectedEdge(edge.id);
@@ -272,14 +433,27 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        defaultEdgeOptions={{ type: 'wire' }}
+        defaultEdgeOptions={{ type: 'wire', updatable: false }}
         nodesConnectable={false}
+        nodesDraggable
+        // Double-click-drag pan: panOnDrag is disabled by default. Double-click
+        // on empty canvas toggles pan-drag mode — while active, left-click-hold
+        // + drag pans the viewport. Node drag and pin interactions always take
+        // priority. Right-click reserved for browser context menu.
+        //   double-click empty   → toggle pan-drag mode
+        //   left-drag (pan mode) → canvas pans
+        //   drag component       → component moves (with edge auto-scroll)
+        //   drag pin             → wire draft
+        panOnDrag={panDragEnabled ? [0] : false}
+        selectionOnDrag={false}
+        panOnScroll={false}
         fitView
         snapToGrid
         snapGrid={[10, 10]}
@@ -288,7 +462,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         zoomOnScroll
         zoomOnPinch
         zoomOnDoubleClick={false}
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', cursor: panDragEnabled ? 'grab' : undefined }}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -333,37 +507,14 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         </Panel>
       </ReactFlow>
 
-      {/* Draft wire overlay (click-to-route) */}
-      {wireDraft && draftWirePath && (
-        <svg
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 1001,
-          }}
-        >
-          <path
-            d={draftWirePath}
-            stroke="#22c55e"
-            strokeWidth={2}
-            fill="none"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            style={{ filter: 'drop-shadow(0 0 3px rgba(34, 197, 94, 0.5))' }}
-          />
-          {wireDraft.waypoints.map((pt, i) => {
-            const vp = getViewport();
-            const sx = pt.x * vp.zoom + vp.x;
-            const sy = pt.y * vp.zoom + vp.y;
-            return (
-              <circle key={i} cx={sx} cy={sy} r={3} fill="#22c55e" stroke="#09090b" strokeWidth={1} />
-            );
-          })}
-        </svg>
+      {/* Draft wire overlay (click-to-route) — isolated in its own memoized
+          component so the heavy parent (<ReactFlow> + <MiniMap> + toolbar)
+          does not re-render on every mouse move during a wire draft. */}
+      {wireDraft && (
+        <WireDraftOverlay
+          wireDraft={wireDraft}
+          onRequestUpdate={registerWireOverlayUpdate}
+        />
       )}
 
       <style>{`
@@ -683,5 +834,93 @@ const ForgeCanvas: React.FC<ForgeCanvasProps> = (props) => (
     <ForgeCanvasInner {...props} />
   </ReactFlowProvider>
 );
+
+// ── WireDraftOverlay ──────────────────────────────────────────────────────
+// Self-contained SVG overlay that renders the in-progress wire. It manages
+// its own mousePos state so the heavy parent (ForgeCanvas) does NOT re-render
+// on every mouse move — only the overlay does. The parent pushes cursor
+// updates through a ref-style callback (`pushMousePos`), which is also
+// rAF-throttled inside the parent to cap work at ~60Hz.
+interface WireDraftOverlayProps {
+  wireDraft: any;
+  onRequestUpdate: (fn: ((pos: { x: number; y: number } | null) => void) | null) => void;
+}
+const WireDraftOverlayImpl: React.FC<WireDraftOverlayProps> = ({ wireDraft, onRequestUpdate }) => {
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const { getViewport } = useReactFlow();
+
+  // Expose our setMousePos to the parent via a stable callback registration.
+  // The parent calls it on every throttled mouse move. This avoids the parent
+  // re-rendering on every mousemove.
+  useEffect(() => {
+    onRequestUpdate(setMousePos);
+    return () => onRequestUpdate(null);
+  }, [onRequestUpdate]);
+
+  // Compute the source pin position once per draft change. waypoints are
+  // stable per draft; mousePos is the only thing that changes per frame.
+  const srcPinPos = useMemo(() => {
+    if (!wireDraft) return null;
+    if (wireDraft.sourcePosition) return wireDraft.sourcePosition;
+    return null;
+  }, [wireDraft]);
+
+  // Build the SVG path. The screen-coordinate math uses the live viewport
+  // (read once via getViewport()) so we don't allocate a new object on every
+  // frame. Straight line construction is O(n) where n = waypoints + 2.
+  const draftWirePath = useMemo(() => {
+    if (!wireDraft || !mousePos || !srcPinPos) return '';
+    const vp = getViewport();
+    const allPoints = [srcPinPos, ...wireDraft.waypoints, mousePos];
+    const screenPoints = allPoints.map(p => ({
+      x: p.x * vp.zoom + vp.x,
+      y: p.y * vp.zoom + vp.y,
+    }));
+    // Straight line between each consecutive point (no 90° L-bends)
+    return screenPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  }, [wireDraft, mousePos, srcPinPos, getViewport]);
+
+  // Cached viewport for waypoint dot rendering (avoid calling getViewport
+  // inside the map callback, which would re-execute on every frame).
+  const waypointDots = useMemo(() => {
+    if (!wireDraft) return null;
+    const vp = getViewport();
+    return wireDraft.waypoints.map((pt: { x: number; y: number }, i: number) => {
+      const sx = pt.x * vp.zoom + vp.x;
+      const sy = pt.y * vp.zoom + vp.y;
+      return { key: i, sx, sy };
+    });
+  }, [wireDraft, mousePos, getViewport]);
+
+  if (!wireDraft || !draftWirePath) return null;
+
+  return (
+    <svg
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 1001,
+      }}
+    >
+      <path
+        d={draftWirePath}
+        stroke="#22c55e"
+        strokeWidth={5}
+        fill="none"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{ filter: 'drop-shadow(0 0 3px rgba(34, 197, 94, 0.5))' }}
+      />
+      {waypointDots?.map((dot: { key: number; sx: number; sy: number }) => (
+        <circle key={dot.key} cx={dot.sx} cy={dot.sy} r={3} fill="#22c55e" stroke="#09090b" strokeWidth={1} />
+      ))}
+    </svg>
+  );
+};
+const WireDraftOverlay = React.memo(WireDraftOverlayImpl);
 
 export default ForgeCanvas;

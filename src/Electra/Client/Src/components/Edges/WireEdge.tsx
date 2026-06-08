@@ -1,12 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { EdgeProps, useReactFlow } from 'reactflow';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
-import {
-  Point,
-  computeOrthogonalPath,
-  buildOrthogonalPath,
-  getOrthogonalMidpoint,
-} from '../../lib/orthogonalRouting';
+import { type Point } from '../../lib/orthogonalRouting';
 
 // ── Wokwi-style wire color palette ─────────────────────────────────────────
 const WOKWI_WIRE_COLORS: Record<string, string> = {
@@ -44,15 +39,15 @@ export const WireEdge: React.FC<EdgeProps> = ({
   const src = { x: sourceX, y: sourceY };
   const tgt = { x: targetX, y: targetY };
 
-  // Bend points: user-defined or auto-computed
-  const bendPoints: Point[] = hasUserWaypoints
-    ? userWaypoints
-    : computeOrthogonalPath(src, tgt);
+  // Bend points: user-defined, or empty for a straight line
+  const bendPoints: Point[] = hasUserWaypoints ? userWaypoints : [];
 
-  // Full point list for path construction
+  // Full point list for path construction — straight line between each
+  // consecutive point (no 90° orthogonal L-bends).
   const allPoints: Point[] = [src, ...bendPoints, tgt];
-
-  const edgePath = buildOrthogonalPath(allPoints);
+  const edgePath = allPoints.length < 2
+    ? ''
+    : allPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
   // Resolve color name to hex (Wokwi-style)
   const wireColor = WOKWI_WIRE_COLORS[data?.color as keyof typeof WOKWI_WIRE_COLORS] || data?.color || '#22c55e';
@@ -83,7 +78,6 @@ export const WireEdge: React.FC<EdgeProps> = ({
           ? { x: dragStart.current!.wx + dx, y: dragStart.current!.wy + dy }
           : wp
       );
-      // Preserve as user-defined waypoints
       updateEdgeData(id, { waypoints: newBendPoints });
     };
 
@@ -120,9 +114,10 @@ export const WireEdge: React.FC<EdgeProps> = ({
 
   const [isHovered, setIsHovered] = React.useState(false);
 
-  // ── Midpoint add-handles (shown between each orthogonal segment) ────────
+  // ── Midpoint add-handles ────────────────────────────────────────────────
   const midHandles = allPoints.slice(0, -1).map((pt, i) => {
-    const m = getOrthogonalMidpoint(pt, allPoints[i + 1]);
+    const next = allPoints[i + 1];
+    const m = { x: (pt.x + next.x) / 2, y: (pt.y + next.y) / 2 };
     return { m, insertAfterIdx: i };
   });
 
@@ -145,12 +140,12 @@ export const WireEdge: React.FC<EdgeProps> = ({
         />
       )}
 
-      {/* 2. MAIN WIRE — orthogonal Wokwi-style lines */}
+      {/* 2. MAIN WIRE — straight line between consecutive points */}
       <path
         style={{
           ...style,
           stroke: wireColor,
-          strokeWidth: 1,
+          strokeWidth: 2,
           fill: 'none',
           strokeLinejoin: 'round',
           pointerEvents: 'none',
@@ -159,11 +154,13 @@ export const WireEdge: React.FC<EdgeProps> = ({
         d={edgePath}
       />
 
-      {/* 3. INVISIBLE HIT AREA for easier selection */}
+      {/* 3. INVISIBLE HIT AREA for easier selection — strokeLinecap round
+          extends the hit area 10px beyond the endpoints so clicking near a
+          terminal (pin handle) still registers on the wire. */}
       <path
         style={{
           stroke: 'transparent',
-          strokeWidth: 12,
+          strokeWidth: 2.5,
           fill: 'none',
           cursor: 'pointer',
           pointerEvents: 'stroke',
@@ -172,7 +169,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         d={edgePath}
       />
 
-      {/* 4. SOURCE PIN DOT */}
+      {/* 5. SOURCE PIN DOT — visual only */}
       <circle
         cx={sourceX}
         cy={sourceY}
@@ -182,7 +179,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         style={{ pointerEvents: 'none' }}
       />
 
-      {/* 5. TARGET PIN DOT */}
+      {/* 6. TARGET PIN DOT — visual only */}
       <circle
         cx={targetX}
         cy={targetY}
@@ -192,7 +189,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         style={{ pointerEvents: 'none' }}
       />
 
-      {/* 6. BEND-POINT HANDLES — only when selected or hovered */}
+      {/* 6. BEND-POINT HANDLES — drag to reposition, double-click to remove */}
       {(selected || isHovered) && bendPoints.map((wp, i) => (
         <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
           <circle
@@ -209,7 +206,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
         </g>
       ))}
 
-      {/* 7. MID-SEGMENT ADD HANDLES — click to add bend point */}
+      {/* 7. MID-SEGMENT ADD HANDLES — click to add a bend point */}
       {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
         <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
           <circle

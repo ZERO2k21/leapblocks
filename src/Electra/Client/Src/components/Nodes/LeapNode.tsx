@@ -3,8 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { memo, useRef, useEffect, useMemo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { memo, useRef, useEffect, useMemo, useState } from 'react';
+import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
@@ -19,9 +19,33 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const selectedNodeId = useForgeStore((state) => state.selectedNodeId);
   const isSimulating = useForgeStore((state) => state.isSimulating);
   const wireDraft = useForgeStore((state) => state.wireDraft);
+  const pendingSource = useForgeStore((state) => state.pendingSource);
+  const setPendingSource = useForgeStore((state) => state.setPendingSource);
   const startWireDraft = useForgeStore((state) => state.startWireDraft);
   const completeWireDraft = useForgeStore((state) => state.completeWireDraft);
+  const cancelWireDraft = useForgeStore((state) => state.cancelWireDraft);
   const isSelected = selected || selectedNodeId === id;
+
+  // Tinkercad-style: track which pin the cursor is hovering over during a wire draft.
+  // This powers the red-square target indicator shown on valid drop targets.
+  const [hoveredPinName, setHoveredPinName] = useState<string | null>(null);
+
+  // The pin that is currently the source of an in-progress wire (where the drag started)
+  const isDraftSource = wireDraft?.source === id;
+  const draftSourcePin = isDraftSource ? wireDraft?.sourceHandle : null;
+
+  // The pin that the user is currently pressing the mouse down on (not yet released).
+  // While a pin is "armed", the wire is NOT yet being drawn — it only appears after
+  // the user releases the mouse on the pin (the "click and release" requirement).
+  const isPendingSource = pendingSource?.nodeId === id;
+  const pendingSourcePin = isPendingSource ? pendingSource?.pinName : null;
+
+  // useReactFlow gives us screenToFlowPosition so we can capture the EXACT
+  // (sub-pixel accurate) pin location from the handle's DOM rect on mousedown.
+  // Calculating from srcNode.width × pinPercent is unreliable because the
+  // node wrapper applies transform: scale(0.75) (and possibly rotate()),
+  // which the calculated position doesn't account for.
+  const { screenToFlowPosition } = useReactFlow();
 
   // Subscribe only to edge count (number) — cheap comparison, no re-render during drag.
   // Full edges accessed via getState() inside useMemo.
@@ -56,13 +80,18 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   const Tag = `leap-${elementType}` as any;
   const pins = getComponentPins(data.type);
 
-  // Custom styling for the node container
+  // Custom styling for the node container.
+  // The wrapper is intentionally invisible — no border, no border-radius, no
+  // background — so the visible "box" around the component is exactly the SVG
+  // silhouette (via drop-shadow on the inner container), not a generic rectangle.
+  // The scale(0.75) lives on the inner SVG container so React Flow's handle
+  // position calculation (which uses getBoundingClientRect on the wrapper)
+  // matches the actual terminal positions on the SVG component.
   const nodeStyle: React.CSSProperties = {
     padding: 0,
-    borderRadius: '4px',
+    borderRadius: 0,
     background: 'transparent',
-    border: '1px solid transparent',
-    transition: 'border 0.2s ease-out',
+    border: 'none',
     transform: `rotate(${data.rotation || 0}deg)`,
     transformOrigin: 'center center',
     position: 'relative',
@@ -652,9 +681,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   return (
-    <div style={nodeStyle} className="leap-node-wrapper">
+    <div style={nodeStyle} className={`leap-node-wrapper${isSelected ? ' is-selected' : ''}`}>
       {/* ── COMPONENT & HANDLES CONTAINER ── */}
-      <div style={{ position: 'relative', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'center center' }}>
+      <div
+        className="leap-node-svg-container"
+        style={{ position: 'relative', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'center center' }}
+      >
         {/* Dynamic Leap Element */}
         <Tag
           ref={elementRef}
@@ -668,7 +700,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           }}
         />
 
-        {/* ── DYNAMIC PIN HANDLES — Wokwi-style connection indicators with power glow ── */}
+        {/* ── DYNAMIC PIN HANDLES — Tinkercad-style connection indicators ── */}
         {pins.map((pin, idx) => {
           const isConnected = connectedPinColors.has(pin.name);
           const wireColor = connectedPinColors.get(pin.name);
@@ -678,18 +710,61 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           const isPowerPin = ['VCC', '5V', '3V3', '3.3V', 'VIN', 'POWER', 'V+'].includes(pin.name);
           const isGroundPin = ['GND', 'GROUND', 'V-', 'VSS'].includes(pin.name);
 
-          // Pin color matches wire color when connected
+          // Tinkercad-style connection state machine:
+          //  - isPendingSourcePin : user is currently pressing the mouse down on this pin
+          //                         (the wire is NOT yet being drawn — they must release first)
+          //  - isDraftSourcePin   : the wire is actively being drawn from this pin
+          //                         (after click+release on this pin)
+          //  - isDraftTarget      : a wire is being drawn and the cursor is over this pin
+          //  - isDraftActive      : a wire is being drawn somewhere on the canvas
+          const isDraftActive = wireDraft !== null;
+          const isPendingSourcePin = isPendingSource && pendingSourcePin === pin.name;
+          const isDraftSourcePin = isDraftSource && draftSourcePin === pin.name;
+          const isDraftTarget =
+            isDraftActive && !isDraftSourcePin && hoveredPinName === pin.name;
+
+          // Pin color matches wire color when connected; turns red/cyan during a draft
           let pinColor = '#475569';
           let pinOpacity = isSelected ? 0.5 : 0.1;
           let pinGlow = 'none';
+          let borderColor = isConnected ? pinColor : '#334155';
 
           if (isConnected && wireColor) {
             pinColor = wireColor;
             pinOpacity = 1.0;
             pinGlow = `0 0 6px ${wireColor}`;
+            borderColor = wireColor;
           }
 
-          const pinSize = isConnected ? 3 : 2;
+          // Tinkercad-style: red square glow on hovered pin (the signature connection indicator)
+          if (isDraftTarget) {
+            pinColor = '#ef4444';
+            borderColor = '#ef4444';
+            pinOpacity = 1.0;
+            pinGlow = '0 0 8px #ef4444, 0 0 14px rgba(239, 68, 68, 0.55)';
+          }
+
+          // "Armed" pin: mouse pressed down but not yet released — shows a yellow/amber
+          // pulse so the user knows the click has registered and the wire is waiting for release.
+          if (isPendingSourcePin) {
+            pinColor = '#f59e0b';
+            borderColor = '#f59e0b';
+            pinOpacity = 1.0;
+            pinGlow = '0 0 8px #f59e0b, 0 0 14px rgba(245, 158, 11, 0.55)';
+          }
+
+          // The source pin pulses with the wire's own color while the draft is active
+          if (isDraftSourcePin) {
+            pinColor = '#22c55e';
+            borderColor = '#22c55e';
+            pinOpacity = 1.0;
+            pinGlow = '0 0 8px #22c55e, 0 0 14px rgba(34, 197, 94, 0.55)';
+          }
+
+          // Larger hit area + larger visible pin when in a draft, Tinkercad-style
+          const isDraftRelevant =
+            isDraftSourcePin || isDraftTarget || isDraftActive || isPendingSourcePin;
+          const pinSize = isDraftRelevant ? 4 : (isConnected ? 3 : 2);
           const halfSize = pinSize / 2;
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
@@ -700,7 +775,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
             marginTop: `-${halfSize}px`,
             zIndex: 10,
             pointerEvents: 'all',
-            transition: 'all 0.25s ease',
+            transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
           };
 
           return (
@@ -721,7 +796,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   border: 'none',
                 }}
               />
-              {/* Visible handle (source) - visual pin dot centered at pin position */}
+              {/* Visible handle (source) — click+release to start, drag to draw */}
               <Handle
                 id={`${pin.name}`}
                 type="source"
@@ -729,19 +804,103 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                 style={{
                   ...handleStyle,
                   background: pinColor,
-                  border: `1px solid ${isConnected ? pinColor : '#334155'}`,
+                  border: `1.5px solid ${borderColor}`,
                   borderRadius: '50%',
                   opacity: pinOpacity,
                   boxShadow: pinGlow,
                   cursor: wireDraft ? 'crosshair' : 'pointer',
+                  // Enlarge on hover for easier target acquisition (Tinkercad-style)
+                  transform: isDraftTarget ? 'scale(1.4)' : 'scale(1)',
                 }}
-                title={`${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`}
+                title={
+                  isDraftTarget
+                    ? `Drop to connect to ${pin.name}`
+                    : isPendingSourcePin
+                    ? `Release on this pin to start a wire from ${pin.name}, or release on another pin to connect directly`
+                    : isDraftSourcePin
+                    ? `Wire started from ${pin.name} — click another pin to connect, or click empty space to cancel`
+                    : `${pin.name}${isConnected ? ' ✓' : ''}${isPowerPin ? ' (POWER)' : ''}${isGroundPin ? ' (GND)' : ''}`
+                }
                 onMouseDown={(e) => {
                   e.stopPropagation();
+                  // Click-and-release rule:
+                  //   - mousedown on a pin ARMS it (sets pendingSource) — the wire is NOT
+                  //     drawn yet, no matter how much the mouse moves while the button is
+                  //     held. This prevents accidental wire creation on stray clicks.
+                  //   - The wire is actually started on mouseup (see onMouseUp below).
+                  //   - Right-click on a pin during an active draft cancels the wire.
+                  if (e.button === 2 && (wireDraft || pendingSource)) {
+                    e.preventDefault();
+                    cancelWireDraft();
+                    return;
+                  }
+                  if (!wireDraft && !pendingSource) {
+                    // Capture the exact click position (e.clientX/Y) so the wire
+                    // starts from where the user clicked on the terminal,
+                    // regardless of any offset between the handle bounding rect
+                    // center and the actual SVG terminal geometry.
+                    const sourcePos = screenToFlowPosition({
+                      x: e.clientX,
+                      y: e.clientY,
+                    });
+                    setPendingSource({
+                      nodeId: id,
+                      pinName: pin.name,
+                      sourcePosition: sourcePos,
+                    });
+                  }
+                }}
+                onMouseUp={(e) => {
+                  e.stopPropagation();
+                  // Case 1: a wire is actively being drawn.
                   if (wireDraft) {
-                    completeWireDraft(id, pin.name);
-                  } else {
-                    startWireDraft(id, pin.name);
+                    if (wireDraft.source === id && wireDraft.sourceHandle === pin.name) {
+                      // Releasing on the same source pin cancels the draft.
+                      cancelWireDraft();
+                    } else {
+                      // Releasing on a different pin completes the wire.
+                      completeWireDraft(id, pin.name);
+                    }
+                    return;
+                  }
+                  // Case 2: a pin is armed (pendingSource) but no wire is being drawn yet.
+                  if (pendingSource) {
+                    if (pendingSource.nodeId === id && pendingSource.pinName === pin.name) {
+                      // Released on the SAME pin → actually start the wire draft now.
+                      startWireDraft(
+                        id,
+                        pin.name,
+                        pendingSource.sourcePosition,
+                      );
+                    } else {
+                      // Released on a DIFFERENT pin (drag-release case) → create the
+                      // connection A → B in a single motion, without showing a draft.
+                      startWireDraft(
+                        pendingSource.nodeId,
+                        pendingSource.pinName,
+                        pendingSource.sourcePosition,
+                      );
+                      completeWireDraft(id, pin.name);
+                    }
+                  }
+                }}
+                onMouseEnter={() => {
+                  // Only show the red target indicator when a wire is actively being
+                  // drawn (not just armed). Avoids showing it prematurely on pending.
+                  if (wireDraft) {
+                    setHoveredPinName(pin.name);
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (hoveredPinName === pin.name) {
+                    setHoveredPinName(null);
+                  }
+                }}
+                onContextMenu={(e) => {
+                  // Right-click on a pin during a draft/pending arms cancels the wire
+                  if (wireDraft || pendingSource) {
+                    e.preventDefault();
+                    cancelWireDraft();
                   }
                 }}
               />

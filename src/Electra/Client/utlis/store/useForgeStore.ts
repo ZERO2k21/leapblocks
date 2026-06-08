@@ -54,6 +54,13 @@ export interface WireDraft {
   source: string;
   sourceHandle: string;
   waypoints: { x: number; y: number }[];
+  /**
+   * Exact source-pin position in flow coordinates, captured from the handle's
+   * real DOM rect on mousedown. Used to anchor the draft wire precisely at
+   * the visible pin (the node may be scaled/rotated, so a calculated
+   * position from srcNode.width × pinPercent drifts from the actual handle).
+   */
+  sourcePosition?: { x: number; y: number };
 }
 
 export interface ForgeState {
@@ -83,7 +90,21 @@ export interface ForgeState {
 
   // Wire Draft (click-to-route)
   wireDraft: WireDraft | null;
-  startWireDraft: (source: string, sourceHandle: string) => void;
+  /**
+   * Pin that the user is currently pressing the mouse button down on, but
+   * has not yet released. The wire draft is deferred until the user
+   * releases the mouse — i.e. the user must "click and release" a pin
+   * before the rubber-band wire begins following the cursor. Releasing
+   * on the same pin starts the wire; releasing on a different pin
+   * creates the connection directly (drag-release case).
+   */
+  pendingSource: { nodeId: string; pinName: string; sourcePosition?: { x: number; y: number } } | null;
+  setPendingSource: (source: { nodeId: string; pinName: string; sourcePosition?: { x: number; y: number } } | null) => void;
+  startWireDraft: (
+    source: string,
+    sourceHandle: string,
+    sourcePosition?: { x: number; y: number },
+  ) => void;
   addWireWaypoint: (point: { x: number; y: number }) => void;
   completeWireDraft: (target: string, targetHandle: string) => void;
   cancelWireDraft: () => void;
@@ -173,14 +194,38 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   uiTheme: 'light',
   viewport: { x: 0, y: 0, zoom: 1 },
   wireDraft: null,
+  pendingSource: null,
 
   setUiTheme: (theme) => set({ uiTheme: theme }),
   toggleUiTheme: () => set((state) => ({ uiTheme: state.uiTheme === 'light' ? 'dark' : 'light' })),
   setViewportState: (vp) => set({ viewport: vp }),
 
-  startWireDraft: (source, sourceHandle) => {
-    console.log(`[FORGE STORE] Wire draft started: ${source}:${sourceHandle}`);
-    set({ wireDraft: { source, sourceHandle, waypoints: [] } });
+  setPendingSource: (source) => {
+    if (source === null) {
+      set({ pendingSource: null });
+      return;
+    }
+    console.log(`[FORGE STORE] Pending source armed: ${source.nodeId}:${source.pinName}`);
+    set({ pendingSource: source });
+  },
+
+  startWireDraft: (source, sourceHandle, sourcePosition) => {
+    console.log(
+      `[FORGE STORE] Wire draft started: ${source}:${sourceHandle}` +
+      (sourcePosition
+        ? ` @ (${sourcePosition.x.toFixed(1)}, ${sourcePosition.y.toFixed(1)})`
+        : ''),
+    );
+    set({
+      // Clear any pending source — the draft is now active and supersedes it.
+      pendingSource: null,
+      wireDraft: {
+        source,
+        sourceHandle,
+        waypoints: [],
+        sourcePosition,
+      },
+    });
   },
 
   addWireWaypoint: (point) => set((state) => {
@@ -202,12 +247,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       data: { color: '#22c55e', waypoints },
     };
     console.log(`[FORGE STORE] Wire draft completed: ${source}:${sourceHandle} → ${target}:${targetHandle}`);
-    return { edges: [...state.edges, edge as any], wireDraft: null };
+    return { edges: [...state.edges, edge as any], wireDraft: null, pendingSource: null };
   }),
 
   cancelWireDraft: () => {
     console.log('[FORGE STORE] Wire draft cancelled');
-    set({ wireDraft: null });
+    set({ wireDraft: null, pendingSource: null });
   },
 
   setProjectPath: (path) => {
