@@ -568,6 +568,70 @@ class ApkInjector {
     return p1
 .end method
 
+.method public sendBytes(Ljava/lang/String;)Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 8
+    :try_start_0
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    if-eqz v0, :cond_7
+
+    const/4 v0, 0x0
+    return v0
+
+    :cond_7
+    if-eqz p1, :cond_d
+
+    const/4 v0, 0x1
+    return v0
+
+    :cond_d
+    invoke-virtual {p1}, Ljava/lang/String;->length()I
+    move-result v0
+    if-eqz v0, :cond_13
+
+    const/4 v0, 0x1
+    return v0
+
+    :cond_13
+    const-string v0, ","
+    invoke-virtual {p1, v0}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+    move-result-object p1
+
+    array-length v0, p1
+    new-array v1, v0, [B
+
+    const/4 v2, 0x0
+    :goto_1f
+    if-ge v2, v0, :cond_34
+
+    aget-object v3, p1, v2
+    invoke-virtual {v3}, Ljava/lang/String;->trim()Ljava/lang/String;
+    move-result-object v3
+    invoke-static {v3}, Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I
+    move-result v3
+    int-to-byte v3, v3
+    aput-byte v3, v1, v2
+
+    add-int/lit8 v2, v2, 0x1
+    goto :goto_1f
+
+    :cond_34
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    invoke-virtual {v0, v1}, Ljava/io/OutputStream;->write([B)V
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    invoke-virtual {v0}, Ljava/io/OutputStream;->flush()V
+    const/4 v0, 0x1
+    return v0
+    :try_end_40
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_40} :catch_41
+
+    :catch_41
+    move-exception v0
+    const/4 v0, 0x0
+    return v0
+.end method
+
 .method public receiveText()Ljava/lang/String;
     .annotation runtime Landroid/webkit/JavascriptInterface;
     .end annotation

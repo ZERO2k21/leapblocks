@@ -1009,6 +1009,18 @@ function generateAppJs(appState) {
         alert('Bluetooth Error in ' + functionName + ': ' + message);
       }
     },
+    _syncBuffer: function() {
+      if (window.Android && typeof window.Android.receiveText === 'function') {
+        try {
+          var nativeText = window.Android.receiveText();
+          if (nativeText) {
+            for (var i = 0; i < nativeText.length; i++) {
+              this._buffer.push(nativeText.charAt(i));
+            }
+          }
+        } catch(e) {}
+      }
+    },
     get Enabled() { return this._enabled; },
     set Enabled(v) { this._enabled = !!v; },
     get IsConnected() {
@@ -1034,34 +1046,119 @@ function generateAppJs(appState) {
         try { window.Android.disconnect(); } catch(e) {}
       }
       this._isConnected = false;
+      this._buffer = [];
     },
-    BytesAvailableToReceive: function() { return this._buffer.length; },
+    BytesAvailableToReceive: function() {
+      this._syncBuffer();
+      return this._buffer.length;
+    },
     ReceiveText: function(numberOfBytes) {
-      // Try native bridge first
-      if (window.Android && typeof window.Android.receiveText === 'function') {
-        try {
-          var nativeText = window.Android.receiveText();
-          if (nativeText) return nativeText;
-        } catch(e) {}
-      }
+      this._syncBuffer();
       var count = Number(numberOfBytes);
-      if (!Number.isFinite(count) || count < 0) count = this._buffer.length;
-      var chunk = this._buffer.splice(0, count);
-      return chunk.join('');
+      if (count < 0) {
+        // Read until delimiter character
+        var delimChar = String.fromCharCode(this._delimiterByte);
+        var idx = this._buffer.indexOf(delimChar);
+        if (idx !== -1) {
+          var chunk = this._buffer.splice(0, idx + 1);
+          return chunk.join('');
+        }
+        return '';
+      } else {
+        var len = Math.min(count, this._buffer.length);
+        var chunk = this._buffer.splice(0, len);
+        return chunk.join('');
+      }
     },
-    ReceiveSigned1ByteNumber: function() { return 0; },
-    ReceiveSigned2ByteNumber: function() { return 0; },
-    ReceiveSigned4ByteNumber: function() { return 0; },
-    ReceiveUnsigned1ByteNumber: function() { return 0; },
-    ReceiveUnsigned2ByteNumber: function() { return 0; },
-    ReceiveUnsigned4ByteNumber: function() { return 0; },
+    ReceiveSigned1ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 1) return 0;
+      var c = this._buffer.shift().charCodeAt(0);
+      return (c << 24) >> 24;
+    },
+    ReceiveSigned2ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 2) return 0;
+      var b1 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b2 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var val;
+      if (this._highByteFirst) {
+        val = (b1 << 8) | b2;
+      } else {
+        val = (b2 << 8) | b1;
+      }
+      return (val << 16) >> 16;
+    },
+    ReceiveSigned4ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 4) return 0;
+      var b1 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b2 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b3 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b4 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var val;
+      if (this._highByteFirst) {
+        val = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+      } else {
+        val = (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+      }
+      return val | 0;
+    },
+    ReceiveUnsigned1ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 1) return 0;
+      return this._buffer.shift().charCodeAt(0) & 0xFF;
+    },
+    ReceiveUnsigned2ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 2) return 0;
+      var b1 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b2 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      if (this._highByteFirst) {
+        return (b1 << 8) | b2;
+      } else {
+        return (b2 << 8) | b1;
+      }
+    },
+    ReceiveUnsigned4ByteNumber: function() {
+      this._syncBuffer();
+      if (this._buffer.length < 4) return 0;
+      var b1 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b2 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b3 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var b4 = this._buffer.shift().charCodeAt(0) & 0xFF;
+      var val;
+      if (this._highByteFirst) {
+        val = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+      } else {
+        val = (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+      }
+      return val >>> 0;
+    },
     ReceiveSignedBytes: function(numberOfBytes) {
-      var t = this.ReceiveText(numberOfBytes);
-      return t.split('').map(function(c) { return c.charCodeAt(0) | 0; });
+      var count = Number(numberOfBytes);
+      if (count < 0) {
+        var t = this.ReceiveText(count);
+        return t.split('').map(function(c) { return (c.charCodeAt(0) << 24) >> 24; });
+      }
+      this._syncBuffer();
+      var len = Math.min(count, this._buffer.length);
+      var chunk = this._buffer.splice(0, len);
+      return chunk.map(function(c) {
+        var code = c.charCodeAt(0);
+        return (code << 24) >> 24;
+      });
     },
     ReceiveUnsignedBytes: function(numberOfBytes) {
-      var t = this.ReceiveText(numberOfBytes);
-      return t.split('').map(function(c) { return c.charCodeAt(0) & 255; });
+      var count = Number(numberOfBytes);
+      if (count < 0) {
+        var t = this.ReceiveText(count);
+        return t.split('').map(function(c) { return c.charCodeAt(0) & 255; });
+      }
+      this._syncBuffer();
+      var len = Math.min(count, this._buffer.length);
+      var chunk = this._buffer.splice(0, len);
+      return chunk.map(function(c) { return c.charCodeAt(0) & 255; });
     },
     SendText: function(text) {
       // Use native bridge when available
@@ -1071,12 +1168,51 @@ function generateAppJs(appState) {
           return;
         } catch(e) {}
       }
-      if (!this._isConnected) this._emitError('SendText', 'Not connected');
+      if (!this.IsConnected) this._emitError('SendText', 'Not connected');
     },
-    Send1ByteNumber: function(number) { this.SendText(String(number)); },
-    Send2ByteNumber: function(number) { this.SendText(String(number)); },
-    Send4ByteNumber: function(number) { this.SendText(String(number)); },
-    SendBytes: function(list) { this.SendText(Array.isArray(list) ? list.join(',') : String(list)); }
+    SendBytes: function(list) {
+      var arr = Array.isArray(list) ? list : [list];
+      var cleanList = arr.map(function(n) { return Math.round(Number(n)) & 0xFF; });
+      if (window.Android && typeof window.Android.sendBytes === 'function') {
+        try {
+          window.Android.sendBytes(cleanList.join(','));
+          return;
+        } catch(e) {}
+      }
+      if (window.Android && typeof window.Android.sendText === 'function') {
+        try {
+          var text = cleanList.map(function(b) { return String.fromCharCode(b); }).join('');
+          window.Android.sendText(text);
+          return;
+        } catch(e) {}
+      }
+      if (!this.IsConnected) this._emitError('SendBytes', 'Not connected');
+    },
+    Send1ByteNumber: function(number) {
+      this.SendBytes([number]);
+    },
+    Send2ByteNumber: function(number) {
+      var n = Math.round(Number(number));
+      var b1 = (n >> 8) & 0xFF;
+      var b2 = n & 0xFF;
+      if (this._highByteFirst) {
+        this.SendBytes([b1, b2]);
+      } else {
+        this.SendBytes([b2, b1]);
+      }
+    },
+    Send4ByteNumber: function(number) {
+      var n = Math.round(Number(number));
+      var b1 = (n >> 24) & 0xFF;
+      var b2 = (n >> 16) & 0xFF;
+      var b3 = (n >> 8) & 0xFF;
+      var b4 = n & 0xFF;
+      if (this._highByteFirst) {
+        this.SendBytes([b1, b2, b3, b4]);
+      } else {
+        this.SendBytes([b4, b3, b2, b1]);
+      }
+    }
   };
 
   function BluetoothClientShim(id, props) {
