@@ -7,6 +7,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, fork } from 'child_process';
+import * as url from 'url';
 import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './leaplogix/server/PythonManager';
@@ -385,7 +386,103 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
   });
 });
 
+async function renderIconToPng(iconPath: string, size: number): Promise<Buffer> {
+  const tempHtmlPath = path.join(app.getPath('temp'), `temp_icon_${Date.now()}_${size}.html`);
+  const escapedIconPath = url.pathToFileURL(iconPath).href;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: ${size}px;
+    height: ${size}px;
+    overflow: hidden;
+    background: #0f172a; /* Premium dark slate blue background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+  }
+</style>
+</head>
+<body>
+  <img src="${escapedIconPath}" />
+</body>
+</html>
+  `;
+  fs.writeFileSync(tempHtmlPath, htmlContent, 'utf8');
+
+  const win = new BrowserWindow({
+    width: size,
+    height: size,
+    show: false,
+    frame: false,
+    transparent: false,
+    webPreferences: {
+      offscreen: true,
+      webSecurity: false
+    }
+  });
+
+  try {
+    const fileUrl = url.pathToFileURL(tempHtmlPath).href;
+    await win.loadURL(fileUrl);
+    // Wait for rendering
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const image = await win.webContents.capturePage();
+    return image.toPNG();
+  } finally {
+    win.close();
+    try {
+      fs.unlinkSync(tempHtmlPath);
+    } catch (_) {}
+  }
+}
+
 ipcMain.handle('build-apk', async (event, appState) => {
+  // Resolve custom app icon path with Creoleap logo fallback
+  const defaultIconPath = 'D:\\Creoleap Company\\leapblocks\\public\\assets\\Copy of Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg';
+  let iconPath = appState.iconPath || appState.icon || null;
+  if (!iconPath && fs.existsSync(defaultIconPath)) {
+    iconPath = defaultIconPath;
+  }
+
+  let renderedIconsDir: string | null = null;
+  if (iconPath && fs.existsSync(iconPath)) {
+    try {
+      log('APK_BUILD', `Pre-rendering custom launcher icon from: ${iconPath}`);
+      renderedIconsDir = path.join(app.getPath('temp'), `leapblocks_icons_${Date.now()}`);
+      fs.mkdirSync(renderedIconsDir, { recursive: true });
+
+      const densities = [
+        { name: 'mdpi', size: 48 },
+        { name: 'hdpi', size: 72 },
+        { name: 'xhdpi', size: 96 },
+        { name: 'xxhdpi', size: 144 },
+        { name: 'xxxhdpi', size: 192 }
+      ];
+
+      for (const d of densities) {
+        const pngBuffer = await renderIconToPng(iconPath, d.size);
+        fs.writeFileSync(path.join(renderedIconsDir, `${d.name}.png`), pngBuffer);
+      }
+      log('APK_BUILD', 'Icon pre-rendering complete');
+    } catch (err: any) {
+      log('APK_BUILD', `Icon pre-rendering failed: ${err.message}`, err);
+      renderedIconsDir = null;
+    }
+  }
+
+  appState.renderedIconsDir = renderedIconsDir;
+
   // Run the heavy APK build in a forked child process so the main thread
   // (and therefore the renderer) never freezes or shows "Not Responding".
   const workerPath = path.join(
@@ -422,6 +519,12 @@ ipcMain.handle('build-apk', async (event, appState) => {
     });
 
     child.on('exit', (code) => {
+      // Clean up the temporary rendered icons dir
+      if (renderedIconsDir) {
+        try {
+          fs.rmSync(renderedIconsDir, { recursive: true, force: true });
+        } catch (_) {}
+      }
       // If the worker exited without sending 'done' or 'error', treat as failure
       if (code !== 0) {
         resolve({ success: false, error: `Build worker exited with code ${code}` });

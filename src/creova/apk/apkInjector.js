@@ -106,6 +106,8 @@ class ApkInjector {
   async runJava(args, description, onProgress) {
     return new Promise((resolve, reject) => {
       const javaBin = resolveJavaBinary();
+      console.log(`[ApkInjector runJava] Executing: ${javaBin} -jar ${args.join(' ')}`);
+      console.log(`[ApkInjector runJava] Working Dir: ${this.workingDir}`);
       const child = spawn(javaBin, ['-jar', ...args], {
         cwd: this.workingDir,
         shell: false,
@@ -213,7 +215,7 @@ class ApkInjector {
   /**
    * Modify AndroidManifest.xml with app-specific values
    */
-  async modifyManifest(decodedDir, { appName, packageName, permissions = [], screenOrientation = null }, onProgress) {
+  async modifyManifest(decodedDir, { appName, packageName, permissions = [], screenOrientation = null, hasCustomIcon = false }, onProgress) {
     onProgress?.({ stage: 'manifest', progress: 55, message: 'Patching manifest...' });
 
     const manifestPath = path.join(decodedDir, 'AndroidManifest.xml');
@@ -256,6 +258,16 @@ class ApkInjector {
     }
     if (!manifest.includes('hardwareAccelerated')) {
       manifest = manifest.replace('<application', '<application android:hardwareAccelerated="true"');
+    }
+
+    // Ensure icon and roundIcon attributes are in the <application> tag only if we injected custom ones
+    if (hasCustomIcon) {
+      if (!manifest.includes('android:icon=')) {
+        manifest = manifest.replace('<application', '<application android:icon="@mipmap/ic_launcher"');
+      }
+      if (!manifest.includes('android:roundIcon=')) {
+        manifest = manifest.replace('<application', '<application android:roundIcon="@mipmap/ic_launcher_round"');
+      }
     }
 
     if (screenOrientation && !manifest.includes('android:screenOrientation=')) {
@@ -666,7 +678,217 @@ class ApkInjector {
     const-string v0, ""
     return-object v0
 .end method
+
+.method public performWebRequest(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 11
+
+    const/4 v0, 0x0
+    :try_start_0
+    new-instance v1, Ljava/net/URL;
+    invoke-direct {v1, p1}, Ljava/net/URL;-><init>(Ljava/lang/String;)V
+
+    invoke-virtual {v1}, Ljava/net/URL;->openConnection()Ljava/net/URLConnection;
+    move-result-object v1
+    check-cast v1, Ljava/net/HttpURLConnection;
+    move-object v0, v1
+
+    # Set method
+    invoke-virtual {v0, p2}, Ljava/net/HttpURLConnection;->setRequestMethod(Ljava/lang/String;)V
+
+    # Set timeouts (10000ms)
+    const/16 v1, 0x2710
+    invoke-virtual {v0, v1}, Ljava/net/HttpURLConnection;->setConnectTimeout(I)V
+    invoke-virtual {v0, v1}, Ljava/net/HttpURLConnection;->setReadTimeout(I)V
+
+    # Set headers if not null
+    if-eqz p3, :cond_header_end
+    invoke-virtual {p3}, Ljava/lang/String;->length()I
+    move-result v1
+    if-lez v1, :cond_header_end
+
+    :try_start_json
+    new-instance v1, Lorg/json/JSONObject;
+    invoke-direct {v1, p3}, Lorg/json/JSONObject;-><init>(Ljava/lang/String;)V
+
+    invoke-virtual {v1}, Lorg/json/JSONObject;->keys()Ljava/util/Iterator;
+    move-result-object p3
+
+    :goto_keys
+    invoke-interface {p3}, Ljava/util/Iterator;->hasNext()Z
+    move-result v2
+    if-eqz v2, :cond_header_end
+
+    invoke-interface {p3}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    move-result-object v2
+    check-cast v2, Ljava/lang/String;
+
+    const-string v3, ""
+    invoke-virtual {v1, v2, v3}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v3
+
+    invoke-virtual {v0, v2, v3}, Ljava/net/HttpURLConnection;->setRequestProperty(Ljava/lang/String;Ljava/lang/String;)V
+    goto :goto_keys
+    :try_end_json
+    .catch Ljava/lang/Exception; {:try_start_json .. :try_end_json} :catch_json
+
+    :catch_json
+    # ignore
+
+    :cond_header_end
+    # Send body if POST/PUT/PATCH and body is not empty
+    if-eqz p4, :cond_57
+    invoke-virtual {p4}, Ljava/lang/String;->length()I
+    move-result v1
+    if-lez v1, :cond_57
+
+    const-string v1, "POST"
+    invoke-virtual {p2, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v1
+    if-nez v1, :cond_4c
+    const-string v1, "PUT"
+    invoke-virtual {p2, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v1
+    if-nez v1, :cond_4c
+    const-string v1, "PATCH"
+    invoke-virtual {p2, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result p2
+    if-eqz p2, :cond_57
+
+    :cond_4c
+    const/4 p2, 0x1
+    invoke-virtual {v0, p2}, Ljava/net/HttpURLConnection;->setDoOutput(Z)V
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->getOutputStream()Ljava/io/OutputStream;
+    move-result-object p2
+    const-string v1, "UTF-8"
+    invoke-virtual {p4, v1}, Ljava/lang/String;->getBytes(Ljava/lang/String;)[B
+    move-result-object p4
+    invoke-virtual {p2, p4}, Ljava/io/OutputStream;->write([B)V
+    invoke-virtual {p2}, Ljava/io/OutputStream;->flush()V
+    invoke-virtual {p2}, Ljava/io/OutputStream;->close()V
+
+    :cond_57
+    # Get response code
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->getResponseCode()I
+    move-result p2
+
+    # Check input or error stream
+    const/16 p4, 0x190
+    if-ge p2, p4, :cond_6a
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->getInputStream()Ljava/io/InputStream;
+    move-result-object p4
+    goto :goto_6e
+    :cond_6a
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->getErrorStream()Ljava/io/InputStream;
+    move-result-object p4
+
+    :goto_6e
+    if-nez p4, :cond_8b
+    new-instance p4, Ljava/lang/StringBuilder;
+    invoke-direct {p4}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-virtual {p4, p2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string p2, "|text/plain|"
+    invoke-virtual {p4, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {p4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p2
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->disconnect()V
+    return-object p2
+
+    :cond_8b
+    new-instance v1, Ljava/io/ByteArrayOutputStream;
+    invoke-direct {v1}, Ljava/io/ByteArrayOutputStream;-><init>()V
+    const/16 v2, 0x400
+    new-array v2, v2, [B
+
+    :goto_94
+    invoke-virtual {p4, v2}, Ljava/io/InputStream;->read([B)I
+    move-result v3
+    const/4 v4, -0x1
+    if-eq v3, v4, :cond_a1
+    const/4 v4, 0x0
+    invoke-virtual {v1, v2, v4, v3}, Ljava/io/ByteArrayOutputStream;->write([BII)V
+    goto :goto_94
+
+    :cond_a1
+    invoke-virtual {p4}, Ljava/io/InputStream;->close()V
+
+    const-string p4, "UTF-8"
+    invoke-virtual {v1, p4}, Ljava/io/ByteArrayOutputStream;->toString(Ljava/lang/String;)Ljava/lang/String;
+    move-result-object p4
+
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->getContentType()Ljava/lang/String;
+    move-result-object v1
+    if-nez v1, :cond_b2
+    const-string v1, "text/plain"
+
+    :cond_b2
+    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-virtual {v2, p2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string p2, "|"
+    invoke-virtual {v2, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2, p4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p2
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->disconnect()V
+    return-object p2
+    :try_end_cf
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_cf} :catch_d0
+
+    :catch_d0
+    move-exception p2
+    if-nez v0, :cond_d6
+    invoke-virtual {v0}, Ljava/net/HttpURLConnection;->disconnect()V
+    :cond_d6
+    new-instance p4, Ljava/lang/StringBuilder;
+    invoke-direct {p4}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v0, "0|text/plain|"
+    invoke-virtual {p4, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {p2}, Ljava/lang/Exception;->toString()Ljava/lang/String;
+    move-result-object p2
+    invoke-virtual {p4, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {p4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p2
+    return-object p2
+.end method
 `;
+  }
+
+  /**
+   * Inject app icon into the decoded APK mipmap folders at all densities
+   */
+  async injectAppIcon(decodedDir, renderedIconsDir, onProgress) {
+    if (!renderedIconsDir) return;
+    onProgress?.({ stage: 'icon_inject', progress: 72, message: `Injecting pre-rendered custom app icons...` });
+
+    try {
+      // 1. Delete anydpi XMLs if they exist to prevent them overriding PNGs on Android 8.0+
+      const anyDpiDir = path.join(decodedDir, 'res', 'mipmap-anydpi-v26');
+      if (await fs.pathExists(anyDpiDir)) {
+        await fs.remove(anyDpiDir);
+      }
+
+      // 2. Define standard densities
+      const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+
+      for (const d of densities) {
+        const sourcePng = path.join(renderedIconsDir, `${d}.png`);
+        if (await fs.pathExists(sourcePng)) {
+          const mipmapDir = path.join(decodedDir, 'res', `mipmap-${d}`);
+          await fs.ensureDir(mipmapDir);
+
+          await fs.copy(sourcePng, path.join(mipmapDir, 'ic_launcher.png'));
+          await fs.copy(sourcePng, path.join(mipmapDir, 'ic_launcher_round.png'));
+        }
+      }
+
+      onProgress?.({ stage: 'icon_inject_done', progress: 74, message: 'Custom app icons injected successfully' });
+    } catch (err) {
+      onProgress?.({ stage: 'icon_inject_failed', message: `Icon injection failed: ${err.message}. Using default template icon.` });
+    }
   }
 
   /**
@@ -899,14 +1121,17 @@ ${permissionCode}
       mediaAssets = [],
       permissions = [],
       screenOrientation = null,
+      renderedIconsDir = null,
     } = appConfig;
 
     await this.initialize(appName);
 
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
-    await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation }, onProgress);
+    const hasCustomIcon = !!renderedIconsDir;
+    await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation, hasCustomIcon }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
+    await this.injectAppIcon(decodedDir, renderedIconsDir, onProgress);
 
     const unsignedPath = path.join(this.workingDir, 'unsigned.apk');
     await this.rebuildApk(decodedDir, unsignedPath, onProgress);

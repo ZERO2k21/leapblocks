@@ -176,6 +176,7 @@ class ApkBuilder {
             mediaAssets: appState.media || [],
             permissions,
             screenOrientation,
+            renderedIconsDir: appState.renderedIconsDir || null,
           },
           onProgress
         );
@@ -229,6 +230,8 @@ class ApkBuilder {
     <uses-permission android:name="android.permission.VIBRATE" />
     <application
         android:label="${appName}"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true">
         <activity
@@ -296,6 +299,11 @@ versionInfo:
     // Inject WebView activity smali
     onProgress?.({ stage: 'injecting_smali', progress: 50, message: 'Injecting WebView activity...' });
     await this.injector.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
+
+    // Inject custom app icon if pre-rendered
+    if (appState.renderedIconsDir) {
+      await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir, onProgress);
+    }
 
     // Rebuild
     const unsignedPath = path.join(this.injector.workingDir, 'unsigned.apk');

@@ -849,6 +849,32 @@ function generateAppJs(appState) {
     set ResponseFileName(v) { this._responseFileName = String(v || ''); },
     get AllowCookies() { return this._allowCookies; },
     set AllowCookies(v) { this._allowCookies = !!v; },
+    get RequestHeaders() {
+      var list = [];
+      for (var k in this._headers) {
+        if (this._headers.hasOwnProperty(k)) {
+          list.push([k, this._headers[k]]);
+        }
+      }
+      return list;
+    },
+    set RequestHeaders(list) {
+      this._headers = {};
+      if (Array.isArray(list)) {
+        for (var i = 0; i < list.length; i++) {
+          var pair = list[i];
+          if (Array.isArray(pair) && pair.length >= 2) {
+            this._headers[String(pair[0])] = String(pair[1]);
+          }
+        }
+      } else if (list && typeof list === 'object') {
+        for (var k in list) {
+          if (list.hasOwnProperty(k)) {
+            this._headers[k] = String(list[k]);
+          }
+        }
+      }
+    },
     _emitGotText: function(url, status, responseType, content) {
       if (typeof window[this.id + '_GotText'] === 'function') {
         window[this.id + '_GotText'](url, status, responseType || '', content || '');
@@ -866,6 +892,40 @@ function generateAppJs(appState) {
     },
     _request: function(method, body, contentType) {
       var self = this;
+      
+      // Native Web request routing (bypasses WebView CORS)
+      if (window.Android && typeof window.Android.performWebRequest === 'function') {
+        setTimeout(function() {
+          try {
+            var headersCopy = {};
+            for (var k in self._headers) {
+              if (self._headers.hasOwnProperty(k)) headersCopy[k] = self._headers[k];
+            }
+            if (contentType) headersCopy['Content-Type'] = contentType;
+            
+            var headersJson = JSON.stringify(headersCopy);
+            var result = window.Android.performWebRequest(self._url, method || 'GET', headersJson, body || '');
+            
+            var idx1 = result.indexOf('|');
+            var idx2 = result.indexOf('|', idx1 + 1);
+            var status = Number(result.substring(0, idx1));
+            var responseType = result.substring(idx1 + 1, idx2);
+            var content = result.substring(idx2 + 1);
+            
+            if (self._saveResponse) {
+              var fileName = self._responseFileName || ('response_' + Date.now());
+              self._emitGotFile(self._url, status, responseType, fileName);
+            } else {
+              self._emitGotText(self._url, status, responseType, content);
+            }
+          } catch(err) {
+            self._emitGotText(self._url, 0, '', err && err.message ? err.message : String(err));
+          }
+        }, 0);
+        return;
+      }
+
+      // Browser Fallback (CORS restricted)
       var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       var timeoutId = null;
       if (controller && self._timeout > 0) {
@@ -886,7 +946,6 @@ function generateAppJs(appState) {
           if (self._saveResponse) {
             return res.blob().then(function(blob) {
               var fileName = self._responseFileName || ('response_' + Date.now());
-              // Browser/WebView-safe pseudo-file path signal for blocks.
               self._emitGotFile(self._url, res.status, responseType, fileName);
             });
           }
