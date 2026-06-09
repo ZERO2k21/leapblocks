@@ -240,7 +240,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             ...style,
                             minHeight: style.height === 'auto' ? '36px' : undefined,
                             justifyContent: style.textAlign === 'center' ? 'center' :
-                                            style.textAlign === 'right' ? 'flex-end' : 'flex-start',
+                                style.textAlign === 'right' ? 'flex-end' : 'flex-start',
                             backgroundColor: style.backgroundColor || '#E0E0E0',
                             color: style.color || '#000000',
                             borderRadius,
@@ -261,8 +261,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     <div
                         key={comp.id}
                         className={`${baseClasses} text-slate-900`}
-                        style={{ 
-                            ...style, 
+                        style={{
+                            ...style,
                             padding: '2px 0',
                             display: 'inline'
                         }}
@@ -280,10 +280,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         type={comp.type === 'PasswordTextBox' ? 'password' : 'text'}
                         placeholder={comp.props.Hint || ''}
                         className={`${baseClasses} px-2 py-1.5 text-sm border border-slate-400`}
-                        style={{ 
-                            ...style, 
+                        style={{
+                            ...style,
                             minHeight: style.height === 'auto' ? '32px' : undefined,
-                            backgroundColor: '#FFFFFF' 
+                            backgroundColor: '#FFFFFF'
                         }}
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
@@ -417,7 +417,17 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'row', gap: '5px', minHeight: '60px' }}
+                        style={{
+                            ...style,
+                            display: 'flex',
+                            flexDirection: 'row',
+                            gap: '5px',
+                            minHeight: '60px',
+                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
+                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
+                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                        }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -447,7 +457,17 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'flex', flexDirection: 'column', gap: '5px', minHeight: '60px' }}
+                        style={{
+                            ...style,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                            minHeight: '60px',
+                            alignItems: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
+                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
+                            justifyContent: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
+                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                        }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -477,7 +497,17 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 p-4 transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''
                             }`}
-                        style={{ ...style, display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '5px', minHeight: '100px' }}
+                        style={{
+                            ...style,
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(${numCols}, 1fr)`,
+                            gap: '5px',
+                            minHeight: '100px',
+                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
+                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
+                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                        }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => {
@@ -505,7 +535,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     <div
                         key={comp.id}
                         className={`${baseClasses} border-2 border-dashed border-slate-200 relative transition-all duration-200 ${dropTarget === comp.id ? 'border-blue-500 bg-blue-50/50' : ''}`}
-                        style={{ ...style, minHeight: '80px' }}
+                        style={{
+                            ...style,
+                            minHeight: '80px',
+                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
+                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
+                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                        }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTarget(comp.id); }}
@@ -877,10 +914,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                             setActiveScreen(screen.id);
                                             setSelectedId(screen.id);
                                         }}
-                                        style={{ 
-                                            height: '30px', 
-                                            paddingLeft: '16px', 
-                                            paddingRight: screen.id === 'Screen1' ? '16px' : '32px' 
+                                        style={{
+                                            height: '30px',
+                                            paddingLeft: '16px',
+                                            paddingRight: screen.id === 'Screen1' ? '16px' : '32px'
                                         }}
                                         className={`rounded-lg text-[14px] font-bold flex items-center justify-center transition-all ${activeScreen === screen.id
                                             ? 'bg-white text-blue-600 shadow-sm'
@@ -1028,9 +1065,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         )}
 
                         {/* Screen Content */}
-                        <div 
-                            className="overflow-y-auto relative flex flex-col flex-1 w-full" 
-                            style={{ 
+                        <div
+                            className="overflow-y-auto relative flex flex-col flex-1 w-full"
+                            style={{
                                 height: `${displayHeight}px`,
                                 backgroundColor: currentScreen.backgroundColor || '#ffffff',
                                 backgroundImage: (() => {
@@ -1048,20 +1085,20 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                     </div>
                                 </div>
                             ) : (
-                                <div 
+                                <div
                                     className="flex flex-col gap-[5px] p-2 min-h-full w-full"
                                     style={{
                                         alignItems: currentScreen.alignHorizontal === 'Center' ? 'center' :
-                                                    currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
+                                            currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
                                         justifyContent: currentScreen.alignVertical === 'Center' ? 'center' :
-                                                        currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
+                                            currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
                                     }}
                                 >
                                     {components.map(comp => renderComponentPreview(comp))}
                                 </div>
                             )}
                         </div>
-                                       {/* Nav Bar */}
+                        {/* Nav Bar */}
                         {deviceType === 'phone' ? (
                             <div className="h-10 bg-white flex items-center justify-center relative pointer-events-none select-none border-t border-black/[0.015]">
                                 <div className="w-[120px] h-[5px] bg-black rounded-[2.5px] opacity-80" />

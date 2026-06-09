@@ -18,9 +18,6 @@ const getComponentInstances = (typeName, currentValue, block) => {
         .filter(c => c.type === typeName)
         .map(c => [c.name || c.id, c.id || c.name]);
 
-    // Log for debugging if needed (uncomment for verbose logging)
-    // console.log(`[BLOCKS SYNC] Fetching instances for ${typeName}. Found: ${instances.length}. Current: ${val}`);
-
     if (typeName === 'Screen' && window.LeapLab_ActiveScreen) {
         const screenId = window.LeapLab_ActiveScreen.id || window.LeapLab_ActiveScreen.name;
         if (!instances.some(i => i[1] === screenId)) {
@@ -78,6 +75,20 @@ const getComponentProperties = (typeName, currentValue, block) => {
 };
 
 const hasOption = (options, value) => options.some((opt) => opt[1] === value);
+
+// Create a FieldDropdown for INSTANCE that accepts any value during setValue.
+// This is critical because Blockly applies field XML values (fromXml) BEFORE
+// loadExtraState, so the dropdown may not yet have the correct options when
+// the saved value is applied. Without this override, the value is silently
+// dropped, the orphan cleanup later sees empty/falsy value, and deletes the block.
+const createInstanceDropdown = (block, initialOptions, onChangeCallback) => {
+    const dropdown = new Blockly.FieldDropdown(initialOptions, onChangeCallback);
+    dropdown.doClassValidation_ = function (newValue) {
+        if (newValue === null || newValue === undefined) return null;
+        return String(newValue);
+    };
+    return dropdown;
+};
 
 // ============================================================================
 // COLOR BLOCKS
@@ -186,10 +197,31 @@ Blockly.Blocks['component_event'] = {
     },
 
     loadExtraState: function (state) {
+        console.log(`[BLOCK DEBUG] loadExtraState called for ${this.type} state=`, JSON.stringify(state));
+        console.trace(`[BLOCK DEBUG] loadExtraState stack trace`);
         this.typeName = state['component_type'];
         this.eventName = state['event_name'];
         this.instanceName = state['instance_name'];
         this.isGeneric = state['is_generic'];
+        console.log(`[BLOCK DEBUG] loadExtraState about to call updateShape_, isUpdating=${this.isUpdating}`);
+        this.updateShape_();
+        console.log(`[BLOCK DEBUG] loadExtraState after updateShape_`);
+    },
+
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('event_name', this.eventName || '');
+        container.setAttribute('instance_name', this.instanceName || '');
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Button';
+        this.eventName = xmlElement.getAttribute('event_name') || 'Click';
+        this.instanceName = xmlElement.getAttribute('instance_name') || 'Button1';
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
         this.updateShape_();
     },
 
@@ -197,6 +229,8 @@ Blockly.Blocks['component_event'] = {
         if (this.isUpdating) return;
         this.isUpdating = true;
         try {
+            console.log(`[BLOCK DEBUG] updateShape_ for ${this.type || '?'} typeName=${this.typeName} instanceName=${this.instanceName} eventName=${this.eventName} isGeneric=${this.isGeneric}`);
+
             // Clear previous inputs safely
             const toRemove = [];
             for (let i = 0; i < this.inputList.length; i++) {
@@ -214,7 +248,8 @@ Blockly.Blocks['component_event'] = {
             } else {
                 // Pre-populate with valid options to avoid "unavailable option" error
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
-                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
+                console.log(`[BLOCK DEBUG] initialOptions for ${this.typeName}:`, JSON.stringify(initialOptions));
+                const instanceDropdown = createInstanceDropdown(this, initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
                 // Make it dynamic for future clicks
@@ -223,9 +258,8 @@ Blockly.Blocks['component_event'] = {
                     return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
                 };
                 header.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
-                    instanceDropdown.setValue(this.instanceName);
-                }
+                instanceDropdown.setValue(this.instanceName);
+                console.log(`[BLOCK DEBUG] After setValue, fieldValue=`, instanceDropdown.getValue());
             }
             header.appendField('.' + this.eventName);
 
@@ -279,6 +313,7 @@ Blockly.Blocks['component_method'] = {
     },
 
     loadExtraState: function (state) {
+        console.log(`[BLOCK DEBUG] loadExtraState for ${this.type} state=${JSON.stringify(state)}`);
         this.typeName = state['component_type'];
         this.methodName = state['method_name'];
         this.instanceName = state['instance_name'];
@@ -286,10 +321,29 @@ Blockly.Blocks['component_method'] = {
         this.updateShape_();
     },
 
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('method_name', this.methodName || '');
+        container.setAttribute('instance_name', this.instanceName || '');
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Notifier';
+        this.methodName = xmlElement.getAttribute('method_name') || 'ShowAlert';
+        this.instanceName = xmlElement.getAttribute('instance_name') || 'Notifier1';
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
     updateShape_: function () {
         if (this.isUpdating) return;
         this.isUpdating = true;
         try {
+            console.log(`[BLOCK DEBUG] updateShape_ for ${this.type || '?'} typeName=${this.typeName} instanceName=${this.instanceName} methodName=${this.methodName} isGeneric=${this.isGeneric}`);
+
             // Remove old inputs
             while (this.inputList.length > 0) {
                 this.removeInput(this.inputList[0].name);
@@ -304,7 +358,8 @@ Blockly.Blocks['component_method'] = {
                 // No extra space — Leap style: "call [Web1 ▾].MethodName"
                 // Pre-populate with valid options to avoid "unavailable option" error
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
-                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
+                console.log(`[BLOCK DEBUG] initialOptions for ${this.typeName}:`, JSON.stringify(initialOptions));
+                const instanceDropdown = createInstanceDropdown(this, initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
                 // Make it dynamic for future clicks
@@ -313,9 +368,8 @@ Blockly.Blocks['component_method'] = {
                     return getComponentInstances(block?.typeName || 'Notifier', block?.instanceName, block);
                 };
                 header.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
-                    instanceDropdown.setValue(this.instanceName);
-                }
+                instanceDropdown.setValue(this.instanceName);
+                console.log(`[BLOCK DEBUG] After setValue, fieldValue=`, instanceDropdown.getValue());
             }
             header.appendField('.' + this.methodName);
 
@@ -337,25 +391,23 @@ Blockly.Blocks['component_method'] = {
             let returnType = null;
 
             // 1. Check explicit metadata first (most reliable)
-            if (methodDef && methodDef.returns) {
-                hasReturn = true;
+            if (methodDef && methodDef.returns !== undefined) {
+                hasReturn = methodDef.returns && methodDef.returns !== 'Void';
                 returnType = methodDef.returns === 'Any' ? null : methodDef.returns;
-            } else if (methodDef && !methodDef.returns) {
-                // Method exists in metadata without returns → explicitly void
-                hasReturn = false;
             } else {
                 // 2. Fallback: Heuristic based on method name patterns
                 const methodName = this.methodName;
-                if (methodName.match(/^(GetValue|GetTags|GetText|IsConnected|HasAccuracy|ReceiveSigned|ReceiveUnsigned|ReceiveText|BytesAvailable|Calculate|Check|Accept|Format|Split|Replace)/i)) {
+                if (methodName.match(/^(GetValue|GetTags|GetText|IsConnected|IsDevicePaired|HasAccuracy|ReceiveSigned|ReceiveUnsigned|ReceiveText|BytesAvailable|Calculate|Check|Accept|Format|Split|Replace|Connect)/i)) {
                     hasReturn = true;
-                    if (methodName.match(/^(Is|Has|Check|Accept)/i)) returnType = 'Boolean';
+                    if (methodName.match(/^(Is|Has|Check|Accept|Connect)/i)) returnType = 'Boolean';
+                    else if (methodName.match(/^(ReceiveSignedBytes|ReceiveUnsignedBytes)/i)) returnType = 'List';
                     else if (methodName.match(/^(ReceiveSigned|ReceiveUnsigned|BytesAvailable|Length)/i)) returnType = 'Number';
                     else if (methodName.match(/^(ReceiveText|Format|Replace|Trim|GetText)/i)) returnType = 'String';
                     else if (methodName.match(/^(GetTags|Split)/i)) returnType = 'List';
                 }
 
                 // Explicitly void methods override
-                if (methodName.match(/^(Send|Disconnect|Show|Hide|Clear|Add|Remove|Delete|Set|Play|Stop|Pause|Vibrate|Save|Write|Move|ConnectWithUUID|Get$|Post|Put|Patch)/i)) {
+                if (methodName.match(/^(Send|Disconnect|Show|Hide|Clear|Add|Remove|Delete|Set|Play|Stop|Pause|Vibrate|Save|Write|Move|Get$|Post|Put|Patch)/i)) {
                     hasReturn = false;
                 }
             }
@@ -402,6 +454,7 @@ Blockly.Blocks['component_get_property'] = {
     },
 
     loadExtraState: function (state) {
+        console.log(`[BLOCK DEBUG] loadExtraState for ${this.type} state=${JSON.stringify(state)}`);
         this.typeName = state['component_type'];
         this.propertyName = state['property_name'];
         this.instanceName = state['instance_name'];
@@ -409,17 +462,37 @@ Blockly.Blocks['component_get_property'] = {
         this.updateShape_();
     },
 
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('property_name', this.propertyName || '');
+        container.setAttribute('instance_name', this.instanceName || '');
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Button';
+        this.propertyName = xmlElement.getAttribute('property_name') || 'Text';
+        this.instanceName = xmlElement.getAttribute('instance_name') || 'Button1';
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
     updateShape_: function () {
         if (this.isUpdating) return;
         this.isUpdating = true;
         try {
+            console.log(`[BLOCK DEBUG] updateShape_ for ${this.type || '?'} typeName=${this.typeName} instanceName=${this.instanceName} propertyName=${this.propertyName} isGeneric=${this.isGeneric}`);
+
             while (this.inputList.length > 0) this.removeInput(this.inputList[0].name);
             const input = this.appendDummyInput('MAIN');
             if (this.isGeneric) {
                 input.appendField('any ' + this.typeName);
             } else {
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
-                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
+                console.log(`[BLOCK DEBUG] initialOptions for ${this.typeName}:`, JSON.stringify(initialOptions));
+                const instanceDropdown = createInstanceDropdown(this, initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
                 instanceDropdown.menuGenerator_ = function () {
@@ -427,12 +500,12 @@ Blockly.Blocks['component_get_property'] = {
                     return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
                 };
                 input.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
-                    instanceDropdown.setValue(this.instanceName);
-                }
+                instanceDropdown.setValue(this.instanceName);
+                console.log(`[BLOCK DEBUG] After setValue, fieldValue=`, instanceDropdown.getValue());
             }
 
             const initialPropertyOptions = getComponentProperties(this.typeName, this.propertyName, this);
+            console.log(`[BLOCK DEBUG] propertyOptions for ${this.typeName}:`, JSON.stringify(initialPropertyOptions));
             const propertyDropdown = new Blockly.FieldDropdown(initialPropertyOptions, (newValue) => {
                 if (this.propertyName !== newValue) {
                     this.propertyName = newValue;
@@ -447,6 +520,7 @@ Blockly.Blocks['component_get_property'] = {
             input.appendField(propertyDropdown, 'PROPERTY');
             if (this.propertyName && hasOption(initialPropertyOptions, this.propertyName)) {
                 propertyDropdown.setValue(this.propertyName);
+                console.log(`[BLOCK DEBUG] PROPERTY setValue to`, this.propertyName);
             }
 
             // Set output type based on property
@@ -488,6 +562,7 @@ Blockly.Blocks['component_set_property'] = {
     },
 
     loadExtraState: function (state) {
+        console.log(`[BLOCK DEBUG] loadExtraState for ${this.type} state=${JSON.stringify(state)}`);
         this.typeName = state['component_type'];
         this.propertyName = state['property_name'];
         this.instanceName = state['instance_name'];
@@ -495,10 +570,29 @@ Blockly.Blocks['component_set_property'] = {
         this.updateShape_();
     },
 
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('property_name', this.propertyName || '');
+        container.setAttribute('instance_name', this.instanceName || '');
+        container.setAttribute('is_generic', this.isGeneric ? 'true' : 'false');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Button';
+        this.propertyName = xmlElement.getAttribute('property_name') || 'Text';
+        this.instanceName = xmlElement.getAttribute('instance_name') || 'Button1';
+        this.isGeneric = xmlElement.getAttribute('is_generic') === 'true';
+        this.updateShape_();
+    },
+
     updateShape_: function () {
         if (this.isUpdating) return;
         this.isUpdating = true;
         try {
+            console.log(`[BLOCK DEBUG] updateShape_ for ${this.type || '?'} typeName=${this.typeName} instanceName=${this.instanceName} propertyName=${this.propertyName} isGeneric=${this.isGeneric}`);
+
             if (this.inputList.length > 0) this.removeInput('VALUE');
             const input = this.appendValueInput('VALUE').appendField('set ');
             if (this.isGeneric) {
@@ -506,7 +600,8 @@ Blockly.Blocks['component_set_property'] = {
             } else {
                 // Pre-populate with valid options to avoid "unavailable option" error
                 const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
-                const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
+                console.log(`[BLOCK DEBUG] initialOptions for ${this.typeName}:`, JSON.stringify(initialOptions));
+                const instanceDropdown = createInstanceDropdown(this, initialOptions, (newValue) => {
                     this.instanceName = newValue;
                 });
                 // Make it dynamic for future clicks
@@ -515,12 +610,12 @@ Blockly.Blocks['component_set_property'] = {
                     return getComponentInstances(block?.typeName || 'Button', block?.instanceName, block);
                 };
                 input.appendField(instanceDropdown, 'INSTANCE');
-                if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
-                    instanceDropdown.setValue(this.instanceName);
-                }
+                instanceDropdown.setValue(this.instanceName);
+                console.log(`[BLOCK DEBUG] After setValue, fieldValue=`, instanceDropdown.getValue());
             }
 
             const initialPropOptions = getComponentProperties(this.typeName, this.propertyName, this);
+            console.log(`[BLOCK DEBUG] propertyOptions for ${this.typeName}:`, JSON.stringify(initialPropOptions));
             const propertyDropdown = new Blockly.FieldDropdown(initialPropOptions, (newValue) => {
                 if (this.propertyName !== newValue) {
                     this.propertyName = newValue;
@@ -572,8 +667,22 @@ Blockly.Blocks['component_component_block'] = {
     },
 
     loadExtraState: function (state) {
+        console.log(`[BLOCK DEBUG] loadExtraState for ${this.type} state=${JSON.stringify(state)}`);
         this.typeName = state['component_type'];
         this.instanceName = state['instance_name'];
+        this.updateShape_();
+    },
+
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('instance_name', this.instanceName || '');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Button';
+        this.instanceName = xmlElement.getAttribute('instance_name') || 'Button1';
         this.updateShape_();
     },
 
@@ -581,11 +690,14 @@ Blockly.Blocks['component_component_block'] = {
         if (this.isUpdating) return;
         this.isUpdating = true;
         try {
+            console.log(`[BLOCK DEBUG] updateShape_ for ${this.type || '?'} typeName=${this.typeName} instanceName=${this.instanceName}`);
+
             while (this.inputList.length > 0) this.removeInput(this.inputList[0].name);
             const input = this.appendDummyInput('MAIN');
 
             const initialOptions = getComponentInstances(this.typeName, this.instanceName, this);
-            const instanceDropdown = new Blockly.FieldDropdown(initialOptions, (newValue) => {
+            console.log(`[BLOCK DEBUG] initialOptions for ${this.typeName}:`, JSON.stringify(initialOptions));
+            const instanceDropdown = createInstanceDropdown(this, initialOptions, (newValue) => {
                 this.instanceName = newValue;
             });
             instanceDropdown.menuGenerator_ = function () {
@@ -594,9 +706,8 @@ Blockly.Blocks['component_component_block'] = {
             };
 
             input.appendField(instanceDropdown, 'INSTANCE');
-            if (this.instanceName && hasOption(initialOptions, this.instanceName)) {
-                instanceDropdown.setValue(this.instanceName);
-            }
+            instanceDropdown.setValue(this.instanceName);
+            console.log(`[BLOCK DEBUG] After setValue, fieldValue=`, instanceDropdown.getValue());
             this.setOutput(true, 'Component');
         } finally {
             this.isUpdating = false;
@@ -617,6 +728,8 @@ Blockly.Blocks['any_component_event'] = {
     },
     saveExtraState: Blockly.Blocks['component_event'].saveExtraState,
     loadExtraState: Blockly.Blocks['component_event'].loadExtraState,
+    mutationToDom: Blockly.Blocks['component_event'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_event'].domToMutation,
     updateShape_: Blockly.Blocks['component_event'].updateShape_
 };
 
@@ -635,6 +748,8 @@ Blockly.Blocks['any_component_method'] = {
     },
     saveExtraState: Blockly.Blocks['component_method'].saveExtraState,
     loadExtraState: Blockly.Blocks['component_method'].loadExtraState,
+    mutationToDom: Blockly.Blocks['component_method'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_method'].domToMutation,
     updateShape_: function () {
         Blockly.Blocks['component_method'].updateShape_.call(this);
         // Special case for generic method: add a 'component' input if not present
@@ -661,6 +776,8 @@ Blockly.Blocks['any_component_get_property'] = {
     },
     saveExtraState: Blockly.Blocks['component_get_property'].saveExtraState,
     loadExtraState: Blockly.Blocks['component_get_property'].loadExtraState,
+    mutationToDom: Blockly.Blocks['component_get_property'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_get_property'].domToMutation,
     updateShape_: function () {
         Blockly.Blocks['component_get_property'].updateShape_.call(this);
         if (!this.getInput('COMPONENT')) {
@@ -687,6 +804,8 @@ Blockly.Blocks['any_component_set_property'] = {
     },
     saveExtraState: Blockly.Blocks['component_set_property'].saveExtraState,
     loadExtraState: Blockly.Blocks['component_set_property'].loadExtraState,
+    mutationToDom: Blockly.Blocks['component_set_property'].mutationToDom,
+    domToMutation: Blockly.Blocks['component_set_property'].domToMutation,
     updateShape_: function () {
         Blockly.Blocks['component_set_property'].updateShape_.call(this);
         // Move the 'to' value input after the 'for component' input
@@ -726,6 +845,21 @@ Blockly.Blocks['component_choice'] = {
         this.typeName = state['component_type'];
         this.propertyName = state['property_name'];
         this.choiceValue = state['choice_value'];
+        this.updateShape_();
+    },
+
+    mutationToDom: function () {
+        const container = Blockly.utils.xml.createElement('mutation');
+        container.setAttribute('component_type', this.typeName || '');
+        container.setAttribute('property_name', this.propertyName || '');
+        container.setAttribute('choice_value', this.choiceValue || '');
+        return container;
+    },
+
+    domToMutation: function (xmlElement) {
+        this.typeName = xmlElement.getAttribute('component_type') || 'Screen';
+        this.propertyName = xmlElement.getAttribute('property_name') || 'ScreenOrientation';
+        this.choiceValue = xmlElement.getAttribute('choice_value') || '';
         this.updateShape_();
     },
 

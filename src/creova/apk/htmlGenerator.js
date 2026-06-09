@@ -972,6 +972,25 @@ function generateAppJs(appState) {
     }
   };
 
+  function extractMacAddress(address) {
+    if (!address) return '';
+    address = String(address).trim();
+    if (address.includes('\\n')) {
+      var parts = address.split('\\n');
+      return parts[parts.length - 1].trim();
+    }
+    if (address.includes(' ')) {
+      var parts = address.split(' ');
+      for (var i = parts.length - 1; i >= 0; i--) {
+        var p = parts[i].trim();
+        if (p.includes(':') && p.length >= 12) {
+          return p;
+        }
+      }
+    }
+    return address;
+  }
+
   function BluetoothConnectionBaseShim(id, props) {
     this.id = id;
     this._enabled = props.Enabled !== undefined ? !!props.Enabled : true;
@@ -986,11 +1005,20 @@ function generateAppJs(appState) {
     _emitError: function(functionName, message) {
       if (typeof window[this.id + '_BluetoothError'] === 'function') {
         window[this.id + '_BluetoothError'](functionName, message);
+      } else {
+        alert('Bluetooth Error in ' + functionName + ': ' + message);
       }
     },
     get Enabled() { return this._enabled; },
     set Enabled(v) { this._enabled = !!v; },
-    get IsConnected() { return this._isConnected; },
+    get IsConnected() {
+      // Use native bridge status when available
+      if (window.Android && typeof window.Android.isConnected === 'function') {
+        try { return window.Android.isConnected(); } catch(e) {}
+      }
+      return this._isConnected;
+    },
+    set IsConnected(v) { this._isConnected = !!v; },
     get Available() { return (typeof navigator !== 'undefined' && !!navigator.bluetooth) || !!window.Android; },
     get Secure() { return this._secure; },
     set Secure(v) { this._secure = !!v; },
@@ -1000,9 +1028,22 @@ function generateAppJs(appState) {
     set CharacterEncoding(v) { this._characterEncoding = String(v || 'utf-8'); },
     get HighByteFirst() { return this._highByteFirst; },
     set HighByteFirst(v) { this._highByteFirst = !!v; },
-    Disconnect: function() { this._isConnected = false; },
+    Disconnect: function() {
+      // Use native bridge disconnect when available
+      if (window.Android && typeof window.Android.disconnect === 'function') {
+        try { window.Android.disconnect(); } catch(e) {}
+      }
+      this._isConnected = false;
+    },
     BytesAvailableToReceive: function() { return this._buffer.length; },
     ReceiveText: function(numberOfBytes) {
+      // Try native bridge first
+      if (window.Android && typeof window.Android.receiveText === 'function') {
+        try {
+          var nativeText = window.Android.receiveText();
+          if (nativeText) return nativeText;
+        } catch(e) {}
+      }
       var count = Number(numberOfBytes);
       if (!Number.isFinite(count) || count < 0) count = this._buffer.length;
       var chunk = this._buffer.splice(0, count);
@@ -1023,6 +1064,13 @@ function generateAppJs(appState) {
       return t.split('').map(function(c) { return c.charCodeAt(0) & 255; });
     },
     SendText: function(text) {
+      // Use native bridge when available
+      if (window.Android && typeof window.Android.sendText === 'function') {
+        try {
+          window.Android.sendText(String(text));
+          return;
+        } catch(e) {}
+      }
       if (!this._isConnected) this._emitError('SendText', 'Not connected');
     },
     Send1ByteNumber: function(number) { this.SendText(String(number)); },
@@ -1040,7 +1088,19 @@ function generateAppJs(appState) {
   }
   BluetoothClientShim.prototype = Object.create(BluetoothConnectionBaseShim.prototype);
   BluetoothClientShim.prototype.constructor = BluetoothClientShim;
-  Object.defineProperty(BluetoothClientShim.prototype, 'AddressesAndNames', { get: function() { return this._addressesAndNames; } });
+  Object.defineProperty(BluetoothClientShim.prototype, 'AddressesAndNames', {
+    get: function() {
+      // If native Android bridge is available, fetch paired devices
+      if (window.Android && typeof window.Android.getPairedDevices === 'function') {
+        try {
+          var json = window.Android.getPairedDevices();
+          var devices = JSON.parse(json);
+          this._addressesAndNames = devices.map(function(d) { return d.name + '\\n' + d.address; });
+        } catch(e) {}
+      }
+      return this._addressesAndNames;
+    }
+  });
   Object.defineProperty(BluetoothClientShim.prototype, 'DisconnectOnError', {
     get: function() { return this._disconnectOnError; },
     set: function(v) { this._disconnectOnError = !!v; }
@@ -1056,6 +1116,23 @@ function generateAppJs(appState) {
   BluetoothClientShim.prototype.Connect = function(address) {
     var self = this;
     if (!this._enabled) { this._emitError('Connect', 'Bluetooth is disabled'); return false; }
+    address = extractMacAddress(address);
+    // Try native Android bridge first (available in APK WebView)
+    if (window.Android && typeof window.Android.connect === 'function') {
+      try {
+        var result = window.Android.connect(address);
+        if (result === 'SUCCESS') {
+          self._isConnected = true;
+          return true;
+        }
+        this._emitError('Connect', 'Connection failed: ' + result);
+        return false;
+      } catch(err) {
+        this._emitError('Connect', 'Native Bluetooth error: ' + (err.message || String(err)));
+        return false;
+      }
+    }
+    // Fallback: Web Bluetooth API (works in Chrome, not in standard WebView)
     if (typeof navigator === 'undefined' || !navigator.bluetooth || !navigator.bluetooth.requestDevice) {
       this._emitError('Connect', 'Bluetooth API not available in this WebView');
       return false;
@@ -1079,7 +1156,17 @@ function generateAppJs(appState) {
     return this.Connect(address);
   };
   BluetoothClientShim.prototype.IsDevicePaired = function(address) {
-    // Browser Bluetooth API does not expose pair list.
+    address = extractMacAddress(address);
+    // Native Android bridge: check paired devices list
+    if (window.Android && typeof window.Android.getPairedDevices === 'function') {
+      try {
+        var json = window.Android.getPairedDevices();
+        var devices = JSON.parse(json);
+        for (var i = 0; i < devices.length; i++) {
+          if (devices[i].address === address) return true;
+        }
+      } catch(e) {}
+    }
     return false;
   };
 
@@ -1559,6 +1646,19 @@ function generateComponentCss(comp) {
   rules += `  padding: ${padding};\n`;
   if (typeMinHeight) rules += `  min-height: ${typeMinHeight};\n`;
   if (typeBorder) rules += `  border: ${typeBorder};\n`;
+  if (['HorizontalArrangement', 'HorizontalScrollArrangement', 'VerticalArrangement', 'VerticalScrollArrangement', 'TableArrangement', 'AbsoluteArrangement'].includes(type)) {
+    const alignH = props.AlignHorizontal || 'Left';
+    const alignV = props.AlignVertical || 'Top';
+    const haMap = { 'Left': 'flex-start', 'Center': 'center', 'Right': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+    const vaMap = { 'Top': 'flex-start', 'Center': 'center', 'Bottom': 'flex-end', '1': 'flex-start', '2': 'center', '3': 'flex-end' };
+    if (type.startsWith('Horizontal') || type.startsWith('Table') || type.startsWith('Absolute')) {
+      rules += `  justify-content: ${haMap[String(alignH)] || 'flex-start'};\n`;
+      rules += `  align-items: ${vaMap[String(alignV)] || 'flex-start'};\n`;
+    } else {
+      rules += `  align-items: ${haMap[String(alignH)] || 'flex-start'};\n`;
+      rules += `  justify-content: ${vaMap[String(alignV)] || 'flex-start'};\n`;
+    }
+  }
   if (borderRadius != null) {
     if (typeof borderRadius === 'number') {
       rules += `  border-radius: ${borderRadius}px;\n`;
@@ -1739,7 +1839,8 @@ function generateComponentCreation(comp, parentVar, parentType) {
 
       js += `    ${varName}.addEventListener('click', function() {\n`;
       js += `      if (typeof window['${id}_BeforePicking'] === 'function') window['${id}_BeforePicking']();\n`;
-      js += `      NativeBridge.showListPickerModal(${varName}._elements, function(index, item) {\n`;
+      js += `      var _pickElements = ${varName}._elements || [];\n`;
+      js += `      NativeBridge.showListPickerModal(_pickElements, function(index, item) {\n`;
       js += `        ${varName}._selection = item;\n`;
       js += `        ${varName}._selectionIndex = index + 1;\n`; // 1-based index for App Inventor
       js += `        if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking']();\n`;
@@ -2130,7 +2231,7 @@ function generateComponentProxy(comp) {
   }
 
   const propNames = Object.keys(props);
-  if (propNames.length === 0 && type !== 'Button' && type !== 'Label') return '';
+  if (propNames.length === 0 && !['Button', 'Label', 'ListPicker', 'DatePicker', 'TimePicker', 'ImagePicker', 'FilePicker', 'ContactPicker', 'PhoneNumberPicker', 'EmailPicker', 'Spinner', 'CheckBox', 'Switch', 'Slider', 'ListView', 'TextBox', 'PasswordTextBox', 'Image', 'Canvas', 'WebViewer', 'VideoPlayer'].includes(type)) return '';
 
   // Standard property list based on component type
   const allProps = new Set([

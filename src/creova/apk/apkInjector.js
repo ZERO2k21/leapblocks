@@ -270,9 +270,296 @@ class ApkInjector {
   }
 
   /**
-   * Inject WebView-based MainActivity.smali
+   * Generate BluetoothBridge.smali — native Android Bluetooth API exposed
+   * as a JavaScriptInterface object (window.Android) in the WebView.
    */
-  async injectWebViewActivity(decodedDir, packageName, onProgress) {
+  generateBluetoothBridgeSmali(pkgPath) {
+    return `.class public L${pkgPath}/BluetoothBridge;
+.super Ljava/lang/Object;
+.source "BluetoothBridge.java"
+
+.field private adapter:Landroid/bluetooth/BluetoothAdapter;
+.field private btSocket:Landroid/bluetooth/BluetoothSocket;
+.field private outStream:Ljava/io/OutputStream;
+.field private inStream:Ljava/io/InputStream;
+
+.method public constructor <init>()V
+    .registers 2
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+    invoke-static {}, Landroid/bluetooth/BluetoothAdapter;->getDefaultAdapter()Landroid/bluetooth/BluetoothAdapter;
+    move-result-object v0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    return-void
+.end method
+
+# virtual methods
+.method public isAvailable()Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 2
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    if-eqz v0, :cond_4
+    const/4 v0, 0x1
+    return v0
+    :cond_4
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public isEnabled()Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 2
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    if-eqz v0, :cond_a
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothAdapter;->isEnabled()Z
+    move-result v0
+    return v0
+    :cond_a
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public enable()Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 3
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    if-eqz v0, :cond_c
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothAdapter;->enable()Z
+    move-result v0
+    return v0
+    :cond_c
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public getPairedDevices()Ljava/lang/String;
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 7
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    if-nez v0, :cond_7
+    const-string v0, "[]"
+    return-object v0
+    :cond_7
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothAdapter;->getBondedDevices()Ljava/util/Set;
+    move-result-object v0
+    if-eqz v0, :cond_11
+    invoke-interface {v0}, Ljava/util/Set;->isEmpty()Z
+    move-result v1
+    if-eqz v1, :cond_14
+    :cond_11
+    const-string v0, "[]"
+    return-object v0
+    :cond_14
+    new-instance v1, Lorg/json/JSONArray;
+    invoke-direct {v1}, Lorg/json/JSONArray;-><init>()V
+    invoke-interface {v0}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+    move-result-object v0
+    :cond_1c
+    :goto_1c
+    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
+    move-result v2
+    if-eqz v2, :cond_46
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    move-result-object v2
+    check-cast v2, Landroid/bluetooth/BluetoothDevice;
+    new-instance v3, Lorg/json/JSONObject;
+    invoke-direct {v3}, Lorg/json/JSONObject;-><init>()V
+    :try_start_2a
+    const-string v4, "name"
+    invoke-virtual {v2}, Landroid/bluetooth/BluetoothDevice;->getName()Ljava/lang/String;
+    move-result-object v5
+    if-eqz v5, :cond_34
+    move-object v5, v5
+    goto :goto_36
+    :cond_34
+    const-string v5, "Unknown"
+    :goto_36
+    invoke-virtual {v3, v4, v5}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+    const-string v4, "address"
+    invoke-virtual {v2}, Landroid/bluetooth/BluetoothDevice;->getAddress()Ljava/lang/String;
+    move-result-object v2
+    invoke-virtual {v3, v4, v2}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+    invoke-virtual {v1, v3}, Lorg/json/JSONArray;->put(Ljava/lang/Object;)Lorg/json/JSONArray;
+    :try_end_44
+    .catch Lorg/json/JSONException; {:try_start_2a .. :try_end_44} :catch_45
+    goto :goto_1c
+    :catch_45
+    move-exception v4
+    goto :goto_1c
+    :cond_46
+    invoke-virtual {v1}, Lorg/json/JSONArray;->toString()Ljava/lang/String;
+    move-result-object v0
+    return-object v0
+.end method
+
+.method public connect(Ljava/lang/String;)Ljava/lang/String;
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 6
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    if-nez v0, :cond_7
+    const-string v0, "Bluetooth Adapter not available"
+    return-object v0
+    :cond_7
+    :try_start_7
+    invoke-virtual {v0, p1}, Landroid/bluetooth/BluetoothAdapter;->getRemoteDevice(Ljava/lang/String;)Landroid/bluetooth/BluetoothDevice;
+    move-result-object p1
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    if-eqz v0, :cond_14
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->close()V
+    const/4 v0, 0x0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    :cond_14
+    const-string v0, "00001101-0000-1000-8000-00805F9B34FB"
+    invoke-static {v0}, Ljava/util/UUID;->fromString(Ljava/lang/String;)Ljava/util/UUID;
+    move-result-object v0
+    invoke-virtual {p1, v0}, Landroid/bluetooth/BluetoothDevice;->createRfcommSocketToServiceRecord(Ljava/util/UUID;)Landroid/bluetooth/BluetoothSocket;
+    move-result-object p1
+    iput-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    iget-object p1, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    invoke-virtual {p1}, Landroid/bluetooth/BluetoothAdapter;->cancelDiscovery()V
+    iget-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    invoke-virtual {p1}, Landroid/bluetooth/BluetoothSocket;->connect()V
+    iget-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    invoke-virtual {p1}, Landroid/bluetooth/BluetoothSocket;->getOutputStream()Ljava/io/OutputStream;
+    move-result-object p1
+    iput-object p1, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    iget-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    invoke-virtual {p1}, Landroid/bluetooth/BluetoothSocket;->getInputStream()Ljava/io/InputStream;
+    move-result-object p1
+    iput-object p1, p0, L${pkgPath}/BluetoothBridge;->inStream:Ljava/io/InputStream;
+    const-string p1, "SUCCESS"
+    return-object p1
+    :try_end_3c
+    .catch Ljava/lang/Exception; {:try_start_7 .. :try_end_3c} :catch_3d
+    :catch_3d
+    move-exception v0
+    invoke-virtual {p0}, L${pkgPath}/BluetoothBridge;->disconnect()V
+    invoke-virtual {v0}, Ljava/lang/Exception;->toString()Ljava/lang/String;
+    move-result-object v0
+    return-object v0
+.end method
+
+.method public disconnect()V
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 3
+    :try_start_0
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->inStream:Ljava/io/InputStream;
+    if-eqz v0, :cond_9
+    invoke-virtual {v0}, Ljava/io/InputStream;->close()V
+    const/4 v0, 0x0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->inStream:Ljava/io/InputStream;
+    :cond_9
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    if-eqz v0, :cond_12
+    invoke-virtual {v0}, Ljava/io/OutputStream;->close()V
+    const/4 v0, 0x0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    :cond_12
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    if-eqz v0, :cond_1b
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->close()V
+    const/4 v0, 0x0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    :cond_1b
+    :goto_1b
+    return-void
+    :catch_1c
+    move-exception v0
+    goto :goto_1b
+    :try_end_1d
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_1d} :catch_1c
+.end method
+
+.method public isConnected()Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 2
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    if-eqz v0, :cond_a
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->isConnected()Z
+    move-result v0
+    return v0
+    :cond_a
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public sendText(Ljava/lang/String;)Z
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 3
+    :try_start_0
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    if-nez v0, :cond_6
+    const/4 p1, 0x0
+    return p1
+    :cond_6
+    invoke-virtual {p1}, Ljava/lang/String;->getBytes()[B
+    move-result-object p1
+    invoke-virtual {v0, p1}, Ljava/io/OutputStream;->write([B)V
+    iget-object p1, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
+    invoke-virtual {p1}, Ljava/io/OutputStream;->flush()V
+    const/4 p1, 0x1
+    return p1
+    :try_end_12
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_12} :catch_13
+    :catch_13
+    move-exception v0
+    const/4 p1, 0x0
+    return p1
+.end method
+
+.method public receiveText()Ljava/lang/String;
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    .registers 5
+    :try_start_0
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->inStream:Ljava/io/InputStream;
+    if-nez v0, :cond_7
+    const-string v0, ""
+    return-object v0
+    :cond_7
+    invoke-virtual {v0}, Ljava/io/InputStream;->available()I
+    move-result v1
+    if-gtz v1, :cond_10
+    const-string v0, ""
+    return-object v0
+    :cond_10
+    new-array v2, v1, [B
+    invoke-virtual {v0, v2}, Ljava/io/InputStream;->read([B)I
+    move-result v0
+    if-lez v0, :cond_1e
+    new-instance v1, Ljava/lang/String;
+    const/4 v3, 0x0
+    invoke-direct {v1, v2, v3, v0}, Ljava/lang/String;-><init>([BII)V
+    return-object v1
+    :cond_1e
+    const-string v0, ""
+    return-object v0
+    :try_end_21
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_21} :catch_22
+    :catch_22
+    move-exception v0
+    const-string v0, ""
+    return-object v0
+.end method
+`;
+  }
+
+  /**
+   * Inject WebView-based MainActivity.smali and native Bluetooth bridge
+   */
+  async injectWebViewActivity(decodedDir, packageName, permissions = [], onProgress) {
+    if (typeof permissions === 'function') {
+      onProgress = permissions;
+      permissions = [];
+    }
+
     onProgress?.({ stage: 'smali', progress: 65, message: 'Injecting WebView activity...' });
 
     const pkgPath = packageName.replace(/\./g, '/');
@@ -281,6 +568,87 @@ class ApkInjector {
 
     const smaliPkg = 'L' + pkgPath + '/';
 
+    // ── Write BluetoothBridge.smali ──────────────────────────────────────
+    await fs.writeFile(
+      path.join(smaliDir, 'BluetoothBridge.smali'),
+      this.generateBluetoothBridgeSmali(pkgPath)
+    );
+
+    // Filter dynamic runtime permissions
+    const runtimePerms23 = [
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      'android.permission.CAMERA',
+      'android.permission.RECORD_AUDIO',
+      'android.permission.SEND_SMS',
+      'android.permission.CALL_PHONE',
+      'android.permission.READ_CONTACTS',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE'
+    ];
+
+    const runtimePerms31 = [
+      'android.permission.BLUETOOTH_CONNECT',
+      'android.permission.BLUETOOTH_SCAN',
+      'android.permission.BLUETOOTH_ADVERTISE'
+    ];
+
+    const needed23 = permissions.filter(p => runtimePerms23.includes(p));
+    const needed31 = permissions.filter(p => runtimePerms31.includes(p));
+
+    let permissionCode = '';
+    if (needed23.length > 0 || needed31.length > 0) {
+      permissionCode += `
+    # Check SDK version
+    sget v0, Landroid/os/Build$VERSION;->SDK_INT:I
+    const/16 v1, 0x17 # 23
+    if-lt v0, v1, :cond_no_perms
+`;
+
+      if (needed31.length > 0) {
+        permissionCode += `
+    const/16 v1, 0x1f # 31
+    if-lt v0, v1, :cond_api_23_30
+
+    # API 31+ permissions (both API 31 and API 23 permissions)
+    const/4 v1, ${needed31.length + needed23.length}
+    new-array v1, v1, [Ljava/lang/String;
+`;
+        let idx = 0;
+        for (const p of [...needed31, ...needed23]) {
+          permissionCode += `    const/4 v2, ${idx}\n    const-string v3, "${p}"\n    aput-object v3, v1, v2\n`;
+          idx++;
+        }
+        permissionCode += `    const/16 v2, 0x65
+    invoke-virtual {p0, v1, v2}, Landroid/app/Activity;->requestPermissions([Ljava/lang/String;I)V
+    goto :cond_no_perms
+
+    :cond_api_23_30
+`;
+      }
+
+      if (needed23.length > 0) {
+        permissionCode += `
+    # API 23-30 permissions
+    const/4 v1, ${needed23.length}
+    new-array v1, v1, [Ljava/lang/String;
+`;
+        let idx = 0;
+        for (const p of needed23) {
+          permissionCode += `    const/4 v2, ${idx}\n    const-string v3, "${p}"\n    aput-object v3, v1, v2\n`;
+          idx++;
+        }
+        permissionCode += `    const/16 v2, 0x65
+    invoke-virtual {p0, v1, v2}, Landroid/app/Activity;->requestPermissions([Ljava/lang/String;I)V
+`;
+      }
+
+      permissionCode += `
+    :cond_no_perms
+`;
+    }
+
+    // ── Write MainActivity.smali with JavaScriptInterface for Bluetooth ───
     const smali = `.class public ${smaliPkg}MainActivity;
 .super Landroid/app/Activity;
 .source "MainActivity.java"
@@ -294,9 +662,9 @@ class ApkInjector {
 .end method
 
 .method protected onCreate(Landroid/os/Bundle;)V
-    .registers 5
+    .registers 8
     invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
-
+${permissionCode}
     const/4 v2, 0x1
     invoke-static {v2}, Landroid/webkit/WebView;->setWebContentsDebuggingEnabled(Z)V
 
@@ -321,6 +689,12 @@ class ApkInjector {
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccess(Z)V
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccessFromFileURLs(Z)V
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowUniversalAccessFromFileURLs(Z)V
+
+    # Register native Bluetooth bridge as window.Android
+    new-instance v3, L${pkgPath}/BluetoothBridge;
+    invoke-direct {v3}, L${pkgPath}/BluetoothBridge;-><init>()V
+    const-string v4, "Android"
+    invoke-virtual {v0, v3, v4}, Landroid/webkit/WebView;->addJavascriptInterface(Ljava/lang/Object;Ljava/lang/String;)V
 
     invoke-virtual {p0, v0}, Landroid/app/Activity;->setContentView(Landroid/view/View;)V
 
@@ -355,7 +729,7 @@ class ApkInjector {
 `;
 
     await fs.writeFile(path.join(smaliDir, 'MainActivity.smali'), smali);
-    onProgress?.({ stage: 'smali_done', progress: 70, message: 'WebView activity injected' });
+    onProgress?.({ stage: 'smali_done', progress: 70, message: 'WebView activity and Bluetooth bridge injected' });
   }
 
   /**
@@ -414,7 +788,7 @@ class ApkInjector {
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
     await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation }, onProgress);
-    await this.injectWebViewActivity(decodedDir, packageName, onProgress);
+    await this.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
 
     const unsignedPath = path.join(this.workingDir, 'unsigned.apk');
     await this.rebuildApk(decodedDir, unsignedPath, onProgress);

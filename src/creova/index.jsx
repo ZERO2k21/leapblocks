@@ -299,6 +299,29 @@ export default function AppInventor({ onBack }) {
           try {
             const xml = Blockly.utils.xml.textToDom(payload.blockLogic);
             Blockly.Xml.domToWorkspace(xml, tempWorkspace);
+
+            // Clean up orphaned blocks before code generation
+            if (currentScreen) {
+              const flattenVisible = (list = []) => list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
+              const allComps = [
+                ...flattenVisible(currentScreen.components || []),
+                ...(currentScreen.nonVisibleComponents || [])
+              ];
+              const validNames = new Set([
+                currentScreen.id,
+                ...allComps.map(c => c.id)
+              ]);
+              const allBlocks = tempWorkspace.getAllBlocks(false);
+              allBlocks.forEach(block => {
+                if (block.getField('INSTANCE')) {
+                  const instanceName = block.getFieldValue('INSTANCE');
+                  if (!instanceName || !validNames.has(instanceName)) {
+                    block.dispose(false);
+                  }
+                }
+              });
+            }
+
             const generatedJs = javascriptGenerator.workspaceToCode(tempWorkspace);
             if (generatedJs && generatedJs.trim()) {
               payload.blockLogic = generatedJs;

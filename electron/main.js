@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const buildApk = require(path.join(__dirname, '..', 'src', 'studio', 'apk', 'electron-bridge.js'));
+const buildApk = require(path.join(__dirname, '..', 'src', 'creova', 'apk', 'electron-bridge.js'));
 const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
 // qemuManager removed — ESP32-C3 uses custom RISC-V emulator in renderer
 const qemuManager = {

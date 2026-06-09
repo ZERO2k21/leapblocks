@@ -2,15 +2,20 @@
   "name": "leapblocks",
   "productName": "leapblocks",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "LeapBlocks monorepo — block-based coding, App Inventor, Arduino/ESP32, ML",
   "main": "dist/main/index.js",
+  "workspaces": [
+    "server",
+    "src/Electra/server",
+    "neura-ml"
+  ],
   "scripts": {
     "start": "npm run dev:full",
     "dev": "electron-vite dev",
-    "dev:web": "concurrently \"npm run dev:server\" \"npm run proxy\" \"vite --config vite.web.config.ts\"",
-    "dev:server": "cd server && node server.js",
+    "dev:web": "concurrently -n app,server,proxy \"npm run dev:server\" \"npm run proxy\" \"vite --config vite.web.config.ts\"",
+    "dev:server": "npm run start -w leapblocks-server",
     "dev:full": "npm run dev:web",
-    "proxy": "cd src/Electra/server && npm run start:proxy",
+    "proxy": "npm run start:proxy -w electra-compiler-server",
     "build:web": "node --max-old-space-size=4096 node_modules/vite/bin/vite.js build --config vite.web.config.ts",
     "build:electron": "node --max-old-space-size=4096 ./node_modules/electron-vite/bin/electron-vite.js build",
     "dist": "npm run build:electron && node --max-old-space-size=4096 ./node_modules/electron-builder/cli.js",
@@ -24,7 +29,10 @@
     "download-qemu": "node scripts/download-qemu.js",
     "postinstall": "node scripts/download-qemu.js",
     "sync:pinharness": "node src/Electra/scripts/sync-pinharness.js",
-    "watch:pinharness": "node src/Electra/scripts/watch-pinharness.js"
+    "watch:pinharness": "node src/Electra/scripts/watch-pinharness.js",
+    "ws:install": "npm install",
+    "ws:build:server": "npm run build -w leapblocks-server 2>/dev/null || true",
+    "ws:build:electra": "npm run build -w electra-compiler-server 2>/dev/null || true"
   },
   "keywords": [],
   "author": {

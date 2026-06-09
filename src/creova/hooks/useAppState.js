@@ -224,7 +224,6 @@ export function useAppState() {
       return next;
     }));
 
-    setBlockLogic(prev => (prev || '').replace(new RegExp(id, 'g'), ''));
     if (selectedId === id) setSelectedId(null);
   };
 

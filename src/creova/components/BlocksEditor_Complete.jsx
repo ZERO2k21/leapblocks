@@ -18,6 +18,21 @@ import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 import 'blockly/blocks';
 
+// ── OVERRIDE: Allow all blocks to connect to each other ─────────────────────
+if (typeof Blockly !== 'undefined') {
+    if (Blockly.ConnectionChecker && Blockly.ConnectionChecker.prototype) {
+        Blockly.ConnectionChecker.prototype.doTypeChecks = function() {
+            return true;
+        };
+    }
+    if (Blockly.Connection && Blockly.Connection.prototype) {
+        Blockly.Connection.prototype.checkType_ = function() {
+            return true;
+        };
+    }
+}
+
+
 // Import our custom blocks
 import { initializeAllBlocks, createComponentBlocks } from '../blocks/definitions/index';
 import { BLOCK_COLORS } from '../blocks/utils/blockColors';
@@ -367,8 +382,45 @@ export default function BlocksEditorComplete({ appState }) {
                 logSession('LOADING_SAVED_BLOCKS');
                 const xml = Blockly.utils.xml.textToDom(savedBlocks);
                 Blockly.Xml.domToWorkspace(xml, workspace);
-                // Keep a live snapshot available for immediate APK builds.
-                window.__LEAP_BLOCK_XML__ = savedBlocks;
+
+                // Clean up orphaned blocks immediately on load
+                const currentScreen = appState.screens?.find(s => s.id === appState.activeScreen) || appState.screens?.[0];
+                if (currentScreen) {
+                    const flattenVisible = (list = []) => list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
+                    const allComps = [
+                        ...flattenVisible(currentScreen.components || []),
+                        ...(currentScreen.nonVisibleComponents || [])
+                    ];
+                    const validNames = new Set([
+                        currentScreen.id,
+                        ...allComps.map(c => c.id)
+                    ]);
+                    const allBlocks = workspace.getAllBlocks(false);
+                    let deletedAny = false;
+                    allBlocks.forEach(block => {
+                        if (block.getField('INSTANCE')) {
+                            const instanceName = block.getFieldValue('INSTANCE');
+                            console.log(`[BLOCK DEBUG] Orphan check: block=${block.type} id=${block.id} INSTANCE=${instanceName} validNames=${JSON.stringify([...validNames])}`);
+                            if (!instanceName || !validNames.has(instanceName)) {
+                                block.dispose(false);
+                                deletedAny = true;
+                            }
+                        }
+                    });
+                    if (deletedAny) {
+                        const cleanXml = Blockly.Xml.workspaceToDom(workspace);
+                        const cleanXmlText = Blockly.Xml.domToText(cleanXml);
+                        window.__LEAP_BLOCK_XML__ = cleanXmlText;
+                        if (appState.setBlockLogic) {
+                            appState.setBlockLogic(cleanXmlText);
+                        }
+                    } else {
+                        window.__LEAP_BLOCK_XML__ = savedBlocks;
+                    }
+                } else {
+                    window.__LEAP_BLOCK_XML__ = savedBlocks;
+                }
+
                 logSession('BLOCKS_LOADED_SUCCESSFULLY');
             } catch (e) {
                 logSession('ERROR_LOADING_BLOCKS', { error: e.message });
@@ -410,6 +462,21 @@ export default function BlocksEditorComplete({ appState }) {
             window.removeEventListener('resize', debouncedResize);
             window.removeEventListener('orientationchange', handleResize);
             if (workspaceRef.current) {
+                // Save block XML immediately before disposing the workspace.
+                // The debounced persister may not have fired yet, so we save
+                // explicitly here to prevent loss when switching tabs.
+                try {
+                    const xml = Blockly.Xml.workspaceToDom(workspaceRef.current);
+                    const xmlText = Blockly.Xml.domToText(xml);
+                    if (xmlText) {
+                        window.__LEAP_BLOCK_XML__ = xmlText;
+                        if (appState.setBlockLogic) {
+                            appState.setBlockLogic(xmlText);
+                        }
+                    }
+                } catch (e) {
+                    logSession('ERROR_SAVING_BLOCKS_ON_CLEANUP', { error: e.message });
+                }
                 logSession('DISPOSING_BLOCKLY_WORKSPACE');
                 workspaceRef.current.dispose();
                 workspaceRef.current = null;
@@ -417,14 +484,73 @@ export default function BlocksEditorComplete({ appState }) {
         };
     }, [appState.activeScreen]); // Only re-inject if the screen changes
 
-    // Update toolbox when components change
+    // Track component state to detect changes
+    const prevComponentsSnapshotRef = useRef(null);
+
+    // Update toolbox when components change (skip initial mount — toolbox was already set by Blockly.inject)
     useEffect(() => {
         if (workspaceRef.current && appState.screens) {
+            const currentScreen = appState.screens?.find(s => s.id === appState.activeScreen) || appState.screens?.[0];
+            const flattenVisible = (list = []) => list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
+            const allComps = [
+                ...flattenVisible(currentScreen?.components || []),
+                ...(currentScreen?.nonVisibleComponents || [])
+            ];
+            const snapshot = JSON.stringify(allComps.map(c => c.id).sort());
+
+            // First mount of this workspace instance — toolbox was set during Blockly.inject
+            if (prevComponentsSnapshotRef.current === null) {
+                prevComponentsSnapshotRef.current = snapshot;
+                return;
+            }
+
+            // No actual component changes — skip
+            if (snapshot === prevComponentsSnapshotRef.current) {
+                return;
+            }
+            prevComponentsSnapshotRef.current = snapshot;
+
             logSession('COMPONENTS_CHANGED_SYNCING_TOOLBOX');
             let cancelled = false;
             const run = async () => {
                 await new Promise((resolve) => requestAnimationFrame(resolve));
                 if (cancelled || !workspaceRef.current) return;
+
+                // Clean up orphaned blocks if any components were deleted
+                if (currentScreen) {
+                    const validNames = new Set([
+                        currentScreen.id,
+                        ...allComps.map(c => c.id)
+                    ]);
+                    const allBlocks = workspaceRef.current.getAllBlocks(false);
+                    let deletedAny = false;
+
+                    Blockly.Events.disable();
+                    try {
+                        allBlocks.forEach(block => {
+                            if (block.getField('INSTANCE')) {
+                                const instanceName = block.getFieldValue('INSTANCE');
+                                if (!instanceName || !validNames.has(instanceName)) {
+                                    block.dispose(false);
+                                    deletedAny = true;
+                                }
+                            }
+                        });
+                    } finally {
+                        Blockly.Events.enable();
+                    }
+
+                    if (deletedAny) {
+                        logSession('CLEANED_UP_ORPHANED_BLOCKS');
+                        const xml = Blockly.Xml.workspaceToDom(workspaceRef.current);
+                        const xmlText = Blockly.Xml.domToText(xml);
+                        window.__LEAP_BLOCK_XML__ = xmlText;
+                        if (appState.setBlockLogic) {
+                            appState.setBlockLogic(xmlText);
+                        }
+                    }
+                }
+
                 const toolbox = createToolbox(appState);
                 workspaceRef.current.updateToolbox(toolbox);
                 logSession('TOOLBOX_UPDATED');

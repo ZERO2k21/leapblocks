@@ -56,8 +56,8 @@ const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
 
 // Permissions required by specific component types
 const COMPONENT_PERMISSIONS = {
-  BluetoothClient: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
-  BluetoothServer: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN'],
+  BluetoothClient: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN', 'android.permission.BLUETOOTH_SCAN', 'android.permission.BLUETOOTH_CONNECT', 'android.permission.BLUETOOTH_ADVERTISE'],
+  BluetoothServer: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN', 'android.permission.BLUETOOTH_SCAN', 'android.permission.BLUETOOTH_CONNECT', 'android.permission.BLUETOOTH_ADVERTISE'],
   LocationSensor: ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
   Camera: ['android.permission.CAMERA'],
   Texting: ['android.permission.SEND_SMS'],
@@ -295,7 +295,7 @@ versionInfo:
 
     // Inject WebView activity smali
     onProgress?.({ stage: 'injecting_smali', progress: 50, message: 'Injecting WebView activity...' });
-    await this.injector.injectWebViewActivity(decodedDir, packageName, onProgress);
+    await this.injector.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
 
     // Rebuild
     const unsignedPath = path.join(this.injector.workingDir, 'unsigned.apk');
