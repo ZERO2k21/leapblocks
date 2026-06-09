@@ -75,7 +75,7 @@ export default function AppInventor({ onBack }) {
     }
     try {
       const result = await window.electronAPI.openProject();
-      if (result && result.success && result.data) {
+      if (result && result.data) {
         appState.loadProject(result.data);
         setProjectPath(result.projectPath);
 

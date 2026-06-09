@@ -390,7 +390,7 @@ ipcMain.handle('build-apk', async (event, appState) => {
   // (and therefore the renderer) never freezes or shows "Not Responding".
   const workerPath = path.join(
     app.getAppPath(),
-    'src', 'studio', 'apk', 'build-worker.js'
+    'src', 'creova', 'apk', 'build-worker.js'
   );
 
   return new Promise((resolve) => {
