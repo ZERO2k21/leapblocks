@@ -1334,38 +1334,38 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "VCC",
-        "x": 12.7,
-        "y": 73.5
+        "x": 12.4,
+        "y": 73.7
       },
       {
         "name": "GND",
-        "x": 15.3,
-        "y": 73.4
+        "x": 15,
+        "y": 73.7
       },
       {
         "name": "CS",
-        "x": 18,
-        "y": 73.5
+        "x": 17.5,
+        "y": 73.7
       },
       {
         "name": "RST",
-        "x": 20.5,
-        "y": 73.5
+        "x": 20,
+        "y": 73.7
       },
       {
         "name": "D/C",
-        "x": 23,
-        "y": 73.5
+        "x": 22.3,
+        "y": 73.7
       },
       {
         "name": "MOSI",
-        "x": 25.5,
-        "y": 73.5
+        "x": 25,
+        "y": 73.7
       },
       {
         "name": "SCK",
         "x": 28.2,
-        "y": 73.5
+        "y": 73.7
       },
       {
         "name": "LED",
@@ -1374,7 +1374,7 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       },
       {
         "name": "MISO",
-        "x": 33.5,
+        "x": 33,
         "y": 73.5
       }
     ]
@@ -1513,28 +1513,28 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "CLK",
-        "x": 435,
-        "y": 21
+        "x": 115,
+        "y": 6
       },
       {
         "name": "DT",
-        "x": 435,
-        "y": 53
+        "x": 115,
+        "y": 15
       },
       {
         "name": "SW",
-        "x": 435,
-        "y": 88
+        "x": 115,
+        "y": 24
       },
       {
         "name": "VCC",
-        "x": 435,
-        "y": 119
+        "x": 114,
+        "y": 32
       },
       {
         "name": "GND",
-        "x": 435,
-        "y": 150
+        "x": 115,
+        "y": 41
       }
     ]
   },
@@ -2633,18 +2633,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "GND",
-        "x": 122,
-        "y": 286
+        "x": 121,
+        "y": 279
       },
       {
         "name": "DIAL",
-        "x": 131.6,
-        "y": 286
+        "x": 130,
+        "y": 279
       },
       {
         "name": "PULSE",
-        "x": 141.2,
-        "y": 286
+        "x": 140,
+        "y": 279
       }
     ]
   },
