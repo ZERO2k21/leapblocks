@@ -407,22 +407,75 @@ class ApkInjector {
     :try_start_7
     invoke-virtual {v0, p1}, Landroid/bluetooth/BluetoothAdapter;->getRemoteDevice(Ljava/lang/String;)Landroid/bluetooth/BluetoothDevice;
     move-result-object p1
+
+    # Standard connection attempt
+    :try_start_c
     iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
-    if-eqz v0, :cond_14
+    if-eqz v0, :cond_19
     invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->close()V
     const/4 v0, 0x0
     iput-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
-    :cond_14
+    :cond_19
     const-string v0, "00001101-0000-1000-8000-00805F9B34FB"
     invoke-static {v0}, Ljava/util/UUID;->fromString(Ljava/lang/String;)Ljava/util/UUID;
     move-result-object v0
     invoke-virtual {p1, v0}, Landroid/bluetooth/BluetoothDevice;->createRfcommSocketToServiceRecord(Ljava/util/UUID;)Landroid/bluetooth/BluetoothSocket;
+    move-result-object v0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothAdapter;->cancelDiscovery()Z
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->connect()V
+    :try_end_35
+    .catch Ljava/io/IOException; {:try_start_c .. :try_end_35} :catch_36
+    goto :goto_78
+
+    :catch_36
+    # Standard connection failed, try reflection fallback on channel 1
+    move-exception v0
+    :try_start_38
+    iget-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    if-eqz v0, :cond_45
+    invoke-virtual {v0}, Landroid/bluetooth/BluetoothSocket;->close()V
+    const/4 v0, 0x0
+    iput-object v0, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
+    :cond_45
+    invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+    move-result-object v0
+    const/4 v1, 0x1
+    new-array v1, v1, [Ljava/lang/Class;
+    const/4 v2, 0x0
+    sget-object v3, Ljava/lang/Integer;->TYPE:Ljava/lang/Class;
+    aput-object v3, v1, v2
+    const-string v2, "createRfcommSocket"
+    invoke-virtual {v0, v2, v1}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+    move-result-object v0
+    const/4 v1, 0x1
+    new-array v1, v1, [Ljava/lang/Object;
+    const/4 v2, 0x1
+    invoke-static {v2}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+    move-result-object v2
+    const/4 v3, 0x0
+    aput-object v2, v1, v3
+    invoke-virtual {v0, p1, v1}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
     move-result-object p1
+    check-cast p1, Landroid/bluetooth/BluetoothSocket;
     iput-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
     iget-object p1, p0, L${pkgPath}/BluetoothBridge;->adapter:Landroid/bluetooth/BluetoothAdapter;
-    invoke-virtual {p1}, Landroid/bluetooth/BluetoothAdapter;->cancelDiscovery()V
+    invoke-virtual {p1}, Landroid/bluetooth/BluetoothAdapter;->cancelDiscovery()Z
     iget-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
     invoke-virtual {p1}, Landroid/bluetooth/BluetoothSocket;->connect()V
+    :try_end_75
+    .catch Ljava/lang/Exception; {:try_start_38 .. :try_end_75} :catch_76
+
+    goto :goto_78
+
+    :catch_76
+    move-exception p1
+    throw p1
+
+    :goto_78
+    # Successfully connected, get streams
     iget-object p1, p0, L${pkgPath}/BluetoothBridge;->btSocket:Landroid/bluetooth/BluetoothSocket;
     invoke-virtual {p1}, Landroid/bluetooth/BluetoothSocket;->getOutputStream()Ljava/io/OutputStream;
     move-result-object p1
@@ -433,12 +486,13 @@ class ApkInjector {
     iput-object p1, p0, L${pkgPath}/BluetoothBridge;->inStream:Ljava/io/InputStream;
     const-string p1, "SUCCESS"
     return-object p1
-    :try_end_3c
-    .catch Ljava/lang/Exception; {:try_start_7 .. :try_end_3c} :catch_3d
-    :catch_3d
+    :try_end_8e
+    .catch Ljava/lang/Throwable; {:try_start_7 .. :try_end_8e} :catch_8f
+
+    :catch_8f
     move-exception v0
     invoke-virtual {p0}, L${pkgPath}/BluetoothBridge;->disconnect()V
-    invoke-virtual {v0}, Ljava/lang/Exception;->toString()Ljava/lang/String;
+    invoke-virtual {v0}, Ljava/lang/Throwable;->toString()Ljava/lang/String;
     move-result-object v0
     return-object v0
 .end method
