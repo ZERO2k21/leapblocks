@@ -213,10 +213,29 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         window.penUp = (tid) => dispatch('penUp', tid);
         window.jiggle = (tid) => dispatch('jiggle', tid);
 
+        // Register pen drawing callback for useSpriteSystem movement
+        // This ensures pen lines are drawn when sprites move via moveRelative/goToGrid
+        if (!window._spritePenCallbacks) window._spritePenCallbacks = {};
+        window._spritePenCallbacks[id] = (spriteId, oldX, oldY, newX, newY) => {
+            if (spriteId !== id) return;
+            if (!penRef.current || !window.drawSegment) return;
+
+            const currentAngle = angleRef.current;
+            const currentSize = sizeRef.current;
+            const oldTip = getPencilTip(oldX, oldY, currentAngle, currentSize);
+            const newTip = getPencilTip(newX, newY, currentAngle, currentSize);
+            const activeColor = window.penColor || '#FF0000';
+            const activeSize = window.penSize || 4;
+            window.drawSegment(oldTip.x, oldTip.y, newTip.x, newTip.y, activeColor, activeSize);
+        };
+
         // Cleanup: unregister this sprite when it unmounts
         return () => {
             if (window._spriteActions) {
                 delete window._spriteActions[id];
+            }
+            if (window._spritePenCallbacks) {
+                delete window._spritePenCallbacks[id];
             }
         };
     }, [id]); // Re-bind only if ID changes (refs handle state access)
