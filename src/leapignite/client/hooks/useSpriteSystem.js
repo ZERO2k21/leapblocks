@@ -115,13 +115,17 @@ export function useSpriteSystem(initialScenes) {
             updateSprite(spriteId, (prev) => {
                 let { x, y } = prev;
                 const distance = CELL_SIZE * Math.max(1, Number(steps) || 1);
+                let newX = x, newY = y;
                 switch (direction) {
-                    case "UP": y -= distance; break;
-                    case "DOWN": y += distance; break;
-                    case "LEFT": x -= distance; break;
-                    case "RIGHT": x += distance; break;
+                    case "UP": newY = y - distance; break;
+                    case "DOWN": newY = y + distance; break;
+                    case "LEFT": newX = x - distance; break;
+                    case "RIGHT": newX = x + distance; break;
                 }
-                return { x, y };
+                if (window._spritePenCallbacks?.[spriteId]) {
+                    window._spritePenCallbacks[spriteId](spriteId, x, y, newX, newY);
+                }
+                return { x: newX, y: newY };
             });
         },
 
@@ -131,7 +135,12 @@ export function useSpriteSystem(initialScenes) {
             const safeY = Math.max(-1, Math.min(20, Number(gridY) || 0));
             const px = (safeX - 1) * CELL_SIZE;
             const py = STAGE_HEIGHT - (safeY * CELL_SIZE); // Junior Y=1 is Bottom
-            updateSprite(spriteId, { x: px, y: py });
+            updateSprite(spriteId, (prev) => {
+                if (window._spritePenCallbacks?.[spriteId]) {
+                    window._spritePenCallbacks[spriteId](spriteId, prev.x, prev.y, px, py);
+                }
+                return { x: px, y: py };
+            });
         },
 
         nextCostume: (spriteId) => {
@@ -165,13 +174,12 @@ export function useSpriteSystem(initialScenes) {
                     sprites: scene.sprites.map(sprite => ({
                         ...sprite,
                         angle: 0,
-                        size: 100,
                         visible: true,
                         currentCostume: "default",
                         speech: null,
                         mirrored: false,
                         textColor: sprite.textColor || "#FF8C1A",
-                        // x, y are PRESERVED — sprites stay where user placed them
+                        // x, y, size are PRESERVED — sprites keep user-set values
                     }))
                 };
             }));
