@@ -4,10 +4,10 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus, Minus } from 'lucide-react';
 
-export default function SpriteCard({ 
-    sprite, active, onClick, onDelete, onEdit, 
+export default function SpriteCard({
+    sprite, active, onClick, onDelete, onEdit,
     isDraggingBlock, onBlocksDropped,
     isSuccess
 }) {
@@ -21,6 +21,17 @@ export default function SpriteCard({
         setIsHoveredWhileDragging(false);
     };
     const label = sprite.name;
+
+    const handleSizeChange = (e, delta) => {
+        e.stopPropagation();
+        const currentSize = sprite.size || 100;
+        const newSize = Math.max(10, Math.min(300, currentSize + delta));
+        if (window.changeSize) {
+            window.changeSize(sprite.id, delta);
+        } else if (window.updateSprite) {
+            window.updateSprite(sprite.id, { size: newSize });
+        }
+    };
 
     // Use actual sprite image if available, otherwise emoji
     const spriteImage = sprite.costumes?.[sprite.currentCostume] || null;
@@ -39,18 +50,18 @@ export default function SpriteCard({
                 background: isHoveredWhileDragging ? "rgba(255, 191, 0, 0.1)" : "rgba(255, 255, 255, 0.7)",
                 backdropFilter: "blur(8px)",
                 borderRadius: "10px",
-                border: isHoveredWhileDragging 
-                    ? "3px solid #FFBF00" 
+                border: isHoveredWhileDragging
+                    ? "3px solid #FFBF00"
                     : (active ? "3px solid #7B4FC4" : "2px solid rgba(224, 224, 224, 0.5)"),
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
                 overflow: "hidden",
-                boxShadow: isSuccess 
+                boxShadow: isSuccess
                     ? "0 0 25px #22c55e"
-                    : (isHoveredWhileDragging 
-                        ? "0 4px 15px rgba(255, 191, 0, 0.4)" 
+                    : (isHoveredWhileDragging
+                        ? "0 4px 15px rgba(255, 191, 0, 0.4)"
                         : (active ? "0 3px 12px rgba(123, 79, 196, 0.3)" : "0 1px 4px rgba(0,0,0,0.06)")),
                 transition: "all 0.2s ease",
                 flexShrink: 0,
@@ -134,7 +145,7 @@ export default function SpriteCard({
                 >
                     <Trash2 size={11} color="white" />
                 </div>
-                
+
                 {/* Sprite Image */}
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
                     <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: "76px", maxHeight: "76px", objectFit: "contain" }} />
@@ -171,6 +182,66 @@ export default function SpriteCard({
                 letterSpacing: "0.3px",
             }}>
                 {label}
+            </div>
+
+            {/* Size +/- Buttons */}
+            <div style={{
+                position: "absolute",
+                bottom: "0",
+                left: 0,
+                right: 0,
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "0 3px 3px 3px",
+                pointerEvents: "none",
+            }}>
+                {/* Plus Button (bottom-left) */}
+                <div
+                    onClick={(e) => handleSizeChange(e, 10)}
+                    style={{
+                        width: "20px",
+                        height: "20px",
+                        background: "#7B4FC4",
+                        borderRadius: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+                        transition: "transform 0.15s",
+                        pointerEvents: "auto",
+                    }}
+                    title="Increase Size"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                    <Plus size={10} color="white" strokeWidth={2.5} />
+                </div>
+
+                {/* Minus Button (bottom-right) */}
+                <div
+                    onClick={(e) => handleSizeChange(e, -10)}
+                    style={{
+                        width: "20px",
+                        height: "20px",
+                        background: "#7B4FC4",
+                        borderRadius: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                        boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+                        transition: "transform 0.15s",
+                        pointerEvents: "auto",
+                    }}
+                    title="Decrease Size"
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                    <Minus size={10} color="white" strokeWidth={2.5} />
+                </div>
             </div>
         </div>
     );

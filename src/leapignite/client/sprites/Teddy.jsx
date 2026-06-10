@@ -496,8 +496,9 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 {speech && (
                     <div style={{
                         position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
-                        background: 'white', border: '2px solid #333', borderRadius: '10px', padding: '5px 10px',
-                        marginBottom: '10px', whiteSpace: 'nowrap', zIndex: 10
+                        background: 'white', border: '2px solid #333', borderRadius: '8px', padding: '3px 8px',
+                        marginBottom: '6px', whiteSpace: 'nowrap', zIndex: 10,
+                        fontSize: '13px', fontWeight: '600', color: '#333',
                     }}>
                         {speech}
                     </div>

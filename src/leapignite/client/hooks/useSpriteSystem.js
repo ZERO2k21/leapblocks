@@ -174,13 +174,12 @@ export function useSpriteSystem(initialScenes) {
                     sprites: scene.sprites.map(sprite => ({
                         ...sprite,
                         angle: 0,
-                        size: 100,
                         visible: true,
                         currentCostume: "default",
                         speech: null,
                         mirrored: false,
                         textColor: sprite.textColor || "#FF8C1A",
-                        // x, y are PRESERVED — sprites stay where user placed them
+                        // x, y, size are PRESERVED — sprites keep user-set values
                     }))
                 };
             }));
