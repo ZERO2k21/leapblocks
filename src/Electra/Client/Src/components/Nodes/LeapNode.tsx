@@ -583,6 +583,41 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
   }, [data.type, id, data.value]);
 
+  // Wire potentiometer / slide-potentiometer DOM input events into the store and circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || !['potentiometer', 'slide-potentiometer'].includes(data.type)) return;
+
+    const handleInput = (e: Event) => {
+      const value = (e as CustomEvent).detail ?? (el as any).value ?? 0;
+      const currentValues = useForgeStore.getState().nodes.find(n => n.id === id)?.data?.sensorValues || {};
+      useForgeStore.getState().updateNodeData(id, {
+        sensorValues: { ...currentValues, value: value },
+      });
+
+      const outPin = data.type === 'potentiometer' || data.type === 'slide-potentiometer' ? 'SIG' : 'OUT';
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.pushInputSignal(id, outPin, true);
+      });
+    };
+
+    el.addEventListener('input', handleInput);
+    return () => {
+      el.removeEventListener('input', handleInput);
+    };
+  }, [data.type, id]);
+
+  // Imperatively set potentiometer / slide-potentiometer value as DOM property
+  useEffect(() => {
+    const isPot = data.type === 'potentiometer' || data.type === 'slide-potentiometer';
+    if (!elementRef.current || !isPot) return;
+    const el = elementRef.current;
+    const val = data.sensorValues?.value ?? 0;
+    if (el.value !== val) {
+      el.value = val;
+    }
+  }, [data.type, data.sensorValues?.value]);
+
   // Wire KY-040 rotary encoder DOM events into the circuit engine
   useEffect(() => {
     const el = elementRef.current;

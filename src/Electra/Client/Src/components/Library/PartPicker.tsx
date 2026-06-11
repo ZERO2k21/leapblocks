@@ -99,7 +99,7 @@ const getComponentScale = (id: string, defaultScale: number): number => {
 interface PartPickerProps {
   onSelect: (type: string) => void;
   onClose: () => void;
-  currentBoard?: 'arduino-uno' | 'esp32-c3';
+  currentBoard?: 'arduino-uno' | 'esp32-c3' | 'esp32';
 }
 
 export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, currentBoard = 'arduino-uno' }) => {

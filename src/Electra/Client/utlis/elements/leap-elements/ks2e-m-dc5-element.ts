@@ -75,8 +75,8 @@ export class KS2EMDC5Element extends LitElement {
               style="transition: all 60ms linear;" />
 
         <!-- Label -->
-        <text fill="#4a3510" font-family="sans-serif" font-size="2.8222px">
-          <tspan x="1.07" y="6.03">KS2E-M-DC5</tspan>
+        <text fill="#4a3510" font-family="sans-serif" font-size="2.3px">
+          <tspan x="0.8" y="6.0">KS2E-M-DC5</tspan>
         </text>
 
         <!-- Active contact indicator -->
