@@ -3,7 +3,7 @@
  * Enhanced Phone Canvas - Matches Leap App Inventor Viewer functionality
  */
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft } from 'lucide-react';
+import { Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft, RotateCw, ChevronDown } from 'lucide-react';
 import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
@@ -84,6 +84,40 @@ export default function PhoneCanvasEnhanced({ appState }) {
             setOrientation(designViewport.orientation);
         }
     }, [designViewport?.deviceType, designViewport?.orientation]);
+
+    useEffect(() => {
+        if (!designViewport) return;
+        const { width, height, deviceType: dvType } = designViewport;
+        const defaults = {
+            phone: { width: 412, height: 915 },
+            tablet7: { width: 600, height: 960 },
+            tablet10: { width: 800, height: 1280 },
+            monitor: { width: 800, height: 1280 }
+        };
+        const activePreset = defaults[dvType || 'phone'];
+        if (activePreset) {
+            const isDefault = (width === activePreset.width && height === activePreset.height) || 
+                              (width === activePreset.height && height === activePreset.width);
+            if (!isDefault && width && height) {
+                const isLandscape = width > height;
+                const baseW = isLandscape ? height : width;
+                const baseH = isLandscape ? width : height;
+                setCustomPhoneDimensions({ width: baseW, height: baseH, label: 'Custom' });
+            }
+        }
+    }, [designViewport]);
+
+    useEffect(() => {
+        const screenOri = currentScreen?.screenOrientation;
+        if (!screenOri) return;
+        
+        const lowerOri = screenOri.toLowerCase();
+        if (lowerOri.includes('portrait')) {
+            setOrientation('portrait');
+        } else if (lowerOri.includes('landscape')) {
+            setOrientation('landscape');
+        }
+    }, [currentScreen?.screenOrientation]);
 
     useEffect(() => {
         if (!setDesignViewport) return;
@@ -303,6 +337,22 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
     const toggleOrientation = () => {
         setOrientation(prev => prev === 'portrait' ? 'landscape' : 'portrait');
+    };
+
+    const handleSaveDimensions = () => {
+        const w = parseInt(editWidth, 10);
+        const h = parseInt(editHeight, 10);
+        if (w >= 100 && w <= 3000 && h >= 100 && h <= 3000) {
+            if (orientation === 'landscape') {
+                setCustomPhoneDimensions({ width: h, height: w, label: 'Custom' });
+            } else {
+                setCustomPhoneDimensions({ width: w, height: h, label: 'Custom' });
+            }
+            setDeviceType('phone');
+            setIsEditingDimensions(false);
+        } else {
+            alert('Please enter valid dimensions between 100 and 3000 px.');
+        }
     };
 
     const renderComponentPreview = (comp) => {
@@ -1130,6 +1180,115 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Viewport Toolbar controls */}
+                <div className="flex items-center gap-3 shrink-0 select-none font-sans">
+                    <style>{`
+                        .viewport-select:hover + .viewport-chevron {
+                            color: #2563eb;
+                        }
+                    `}</style>
+                    
+                    {/* Device Selector */}
+                    <div className="relative flex items-center">
+                        <select
+                            value={deviceType}
+                            onChange={(e) => {
+                                const newType = e.target.value;
+                                setDeviceType(newType);
+                                if (newType !== 'custom') {
+                                    setCustomPhoneDimensions(null);
+                                }
+                            }}
+                            style={{
+                                height: '34px',
+                                paddingLeft: '12px',
+                                paddingRight: '32px',
+                                borderRadius: '10px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}
+                            className="viewport-select bg-slate-100 hover:bg-slate-200/60 text-slate-800 outline-none appearance-none cursor-pointer border border-slate-200/80 transition-all"
+                        >
+                            <option value="phone">Phone (412×915)</option>
+                            <option value="tablet7">Tablet 7" (600×960)</option>
+                            <option value="tablet10">Tablet 10" (800×1280)</option>
+                            <option value="monitor">Monitor (1280×800)</option>
+                            {customPhoneDimensions && <option value="custom">Custom</option>}
+                        </select>
+                        <ChevronDown className="viewport-chevron absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-colors" />
+                    </div>
+
+                    {/* Orientation Toggle */}
+                    <button
+                        onClick={toggleOrientation}
+                        style={{ height: '34px', width: '34px', borderRadius: '10px' }}
+                        className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/60 text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer"
+                        title={`Switch to ${orientation === 'portrait' ? 'Landscape' : 'Portrait'}`}
+                    >
+                        <RotateCw className="w-4 h-4" />
+                    </button>
+
+                    {/* Dimensions / Inline Editor */}
+                    {isEditingDimensions ? (
+                        <div style={{ height: '34px', borderRadius: '10px' }} className="flex items-center gap-1 bg-white border border-blue-400 px-2 shadow-sm">
+                            <input
+                                type="number"
+                                placeholder="W"
+                                style={{ width: '46px', fontSize: '12px' }}
+                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                value={editWidth}
+                                onChange={(e) => setEditWidth(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSaveDimensions()}
+                                min="100"
+                                max="3000"
+                            />
+                            <span className="text-slate-400 text-[10px] font-bold select-none">×</span>
+                            <input
+                                type="number"
+                                placeholder="H"
+                                style={{ width: '46px', fontSize: '12px' }}
+                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                value={editHeight}
+                                onChange={(e) => setEditHeight(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSaveDimensions()}
+                                min="100"
+                                max="3000"
+                            />
+                            <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5 ml-0.5">
+                                <button
+                                    onClick={handleSaveDimensions}
+                                    className="text-green-600 hover:bg-green-50 p-0.5 rounded transition-colors flex items-center justify-center cursor-pointer"
+                                    title="Save"
+                                >
+                                    <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                </button>
+                                <button
+                                    onClick={() => setIsEditingDimensions(false)}
+                                    className="text-red-600 hover:bg-red-50 p-0.5 rounded transition-colors flex items-center justify-center cursor-pointer"
+                                    title="Cancel"
+                                >
+                                    <XIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => {
+                                setEditWidth(String(displayWidth));
+                                setEditHeight(String(displayHeight));
+                                setIsEditingDimensions(true);
+                            }}
+                            style={{ height: '34px', borderRadius: '10px' }}
+                            className="px-3.5 bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+                            title="Edit Canvas Dimensions"
+                        >
+                            <span>{displayWidth} × {displayHeight} px</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

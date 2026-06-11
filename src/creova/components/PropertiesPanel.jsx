@@ -141,7 +141,7 @@ export default function PropertiesPanel({ appState }) {
     Shape: ['default', 'rounded', 'rectangular', 'oval'],
     AlignHorizontal: ['Left', 'Center', 'Right'],
     AlignVertical: ['Top', 'Center', 'Bottom'],
-    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User'],
+    ScreenOrientation: ['Unspecified', 'Portrait', 'Landscape', 'Sensor', 'User', 'Behind', 'NoSensor', 'FullSensor', 'ReversePortrait', 'ReverseLandscape', 'SensorPortrait', 'SensorLandscape'],
     HorizontalAlignment: ['Left', 'Center', 'Right']
   };
 
