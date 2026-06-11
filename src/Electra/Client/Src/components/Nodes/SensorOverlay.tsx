@@ -91,7 +91,7 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         onChange={handleChange}
         style={{ flex: 1, accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px', outline: 'none' }}
       />
-      <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace', width: '45px', textAlign: 'right' }}>
+      <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace', minWidth: '48px', textAlign: 'right', whiteSpace: 'nowrap' }}>
         {localVal.toFixed(step >= 1 ? 0 : 1)}{unit}
       </span>
     </div>
@@ -122,12 +122,12 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
         bottom: 'calc(100% + 6px)',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '170px',
+        width: '220px',
         background: isLightTheme ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.92)',
         backdropFilter: 'blur(8px)',
         border: `1px solid ${defaultBorder}`,
         borderRadius: '8px',
-        padding: '6px 8px',
+        padding: '6px 14px',
         boxShadow: isLightTheme
           ? '0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)'
           : '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
@@ -543,20 +543,20 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   // ── Single-value sensors (hc-sr04, resistor, etc.) ──────────────────────
   const config = isDistance
-    ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 1, key: 'distance', color: '#BEF264' }
+    ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 0.1, key: 'distance', default: 100, color: '#BEF264' }
     : type === 'potentiometer'
-      ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', color: '#BEF264' }
+      ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', default: 0, color: '#BEF264' }
       : type === 'slide-potentiometer'
-        ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', color: '#BEF264' }
+        ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', default: 0, color: '#BEF264' }
         : type === 'resistor'
-          ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', color: '#BEF264' }
+          ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', default: 1000, color: '#BEF264' }
           : type === 'photoresistor'
-            ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', color: '#fbbf24' }
+            ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', default: 500, color: '#fbbf24' }
             : type === 'ntc-temperature-sensor'
-              ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', color: '#f97316' }
-              : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', color: '#BEF264' };
+              ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', default: 25, color: '#f97316' }
+              : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 512, color: '#BEF264' };
 
-  const currentValue = currentValues?.[config.key] ?? config.min;
+  const currentValue = currentValues?.[config.key] ?? config.default ?? config.min;
 
   const handleChange = (val: number) => {
     updateNodeData(nodeId, {

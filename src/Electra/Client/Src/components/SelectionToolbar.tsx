@@ -53,24 +53,24 @@ export const SelectionToolbar: React.FC = () => {
 
     let config: any;
     if (isDistanceSensor) {
-      config = { label: 'Distance', unit: 'cm', min: 2, max: 400, key: 'distance' };
+      config = { label: 'Distance', unit: 'cm', min: 2, max: 400, step: 0.1, default: 100, key: 'distance' };
     } else if (nodeType === 'potentiometer') {
-      config = { label: 'Resistance', unit: '%', min: 0, max: 100, key: 'value' };
+      config = { label: 'Resistance', unit: '%', min: 0, max: 100, step: 1, default: 0, key: 'value' };
     } else if (nodeType === 'resistor') {
-      config = { label: 'Resistance', unit: 'Ω', min: 0, max: 10000, key: 'value' };
+      config = { label: 'Resistance', unit: 'Ω', min: 0, max: 1000000, step: 100, default: 1000, key: 'value' };
     } else if (nodeType === 'photoresistor') {
-      config = { label: 'Light', unit: 'lux', min: 0, max: 1000, key: 'value' };
+      config = { label: 'Light', unit: 'lux', min: 0, max: 1000, step: 1, default: 500, key: 'value' };
     } else if (nodeType === 'ntc-temperature-sensor') {
-      config = { label: 'Temp', unit: '°C', min: -40, max: 125, key: 'value' };
+      config = { label: 'Temp', unit: '°C', min: -40, max: 125, step: 0.5, default: 25, key: 'value' };
     } else if (isBuzzer) {
-      config = { label: 'Volume', unit: '', min: 0.01, max: 1.0, key: 'volume', isTopLevel: true };
+      config = { label: 'Volume', unit: '', min: 0.01, max: 1.0, step: 0.01, default: 1.0, key: 'volume', isTopLevel: true };
     } else {
-      config = { label: 'Value', unit: '', min: 0, max: 1023, key: 'value' };
+      config = { label: 'Value', unit: '', min: 0, max: 1023, step: 1, default: 512, key: 'value' };
     }
 
     const currentValue = config.isTopLevel
-      ? (selectedNode?.data?.[config.key] ?? config.min)
-      : (currentValues?.[config.key] ?? config.min);
+      ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min)
+      : (currentValues?.[config.key] ?? config.default ?? config.min);
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = parseFloat(e.target.value);
@@ -98,13 +98,13 @@ export const SelectionToolbar: React.FC = () => {
           type="range"
           min={config.min}
           max={config.max}
-          step={config.min < 1 ? 0.01 : 1}
+          step={config.step ?? (config.min < 1 ? 0.01 : 1)}
           value={currentValue}
           onChange={handleSliderChange}
           style={{ width: '100px', accentColor: 'var(--lp-accent-primary)' }}
         />
-        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', fontFamily: "'Space Mono', monospace", minWidth: '40px' }}>
-          {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)}k` : currentValue.toString().slice(0, 5)} {config.unit}
+        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', fontFamily: "'Space Mono', monospace", minWidth: '48px', whiteSpace: 'nowrap' }}>
+          {currentValue >= 1000 ? `${(currentValue / 1000).toFixed(1)}k` : currentValue.toFixed(config.step < 1 ? (config.step < 0.1 ? 2 : 1) : 0)} {config.unit}
         </span>
       </div>
     );

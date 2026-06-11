@@ -1560,13 +1560,48 @@ class CircuitEngine {
                   if (sourceCode.includes('NewPing') || sourceCode.includes('<NewPing.h>')) {
                     divisor = 57.0;
                   } else {
-                    const match = sourceCode.match(/pulseIn(?:Long)?\s*\([^)]+\)\s*\/\s*([\d.]+)/);
-                    if (match) {
-                      divisor = parseFloat(match[1]);
+                    // 1. Direct division on pulseIn: pulseIn(...) / 58.2
+                    const matchDiv = sourceCode.match(/pulseIn(?:Long)?\s*\([^)]+\)\s*\/\s*([\d.]+)/);
+                    if (matchDiv) {
+                      const val = parseFloat(matchDiv[1]);
+                      if (!isNaN(val)) divisor = val;
+                    } else {
+                      // 2. Multiplication followed by division: e.g. * 0.0343 / 2
+                      const matchMulDiv = sourceCode.match(/\*\s*(0\.0\d+)\s*\/\s*([\d.]+)/);
+                      if (matchMulDiv) {
+                        const multiplier = parseFloat(matchMulDiv[1]);
+                        const divVal = parseFloat(matchMulDiv[2]);
+                        if (multiplier > 0 && !isNaN(multiplier) && !isNaN(divVal)) {
+                          divisor = divVal / multiplier;
+                        }
+                      } else {
+                        // 3. Single multiplier: e.g. * 0.01715 or * 0.017
+                        const matchMul = sourceCode.match(/\*\s*(0\.017\d*|0\.034\d*)/);
+                        if (matchMul) {
+                          const val = parseFloat(matchMul[1]);
+                          if (!isNaN(val) && val > 0) {
+                            divisor = val > 0.03 ? 2 / val : 1 / val;
+                          }
+                        } else {
+                          // 4. Division: e.g. / 58.2 or / 58
+                          const matchGenericDiv = sourceCode.match(/\/\s*(58\.\d+|58|29\.\d+|29)/);
+                          if (matchGenericDiv) {
+                            const val = parseFloat(matchGenericDiv[1]);
+                            if (!isNaN(val)) {
+                              divisor = val < 40 ? val * 2 : val;
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
-                const echoPulseUs = distParam * divisor;
+                let echoPulseUs = distParam * divisor;
+                if (!isESP32Board) {
+                  // Calibrate AVR8js pulseIn loop overhead (16.091 cycles/loop instead of 16)
+                  // and subtract the 1us offset built into pulseIn.
+                  echoPulseUs = (echoPulseUs * 1.0057) - 1;
+                }
 
                 const echoWire = currentStateStore.edges.find(e =>
                   (e.source === peripheralId && (e.sourceHandle === 'ECHO' || e.sourceHandle === 'ECHO__target')) ||
