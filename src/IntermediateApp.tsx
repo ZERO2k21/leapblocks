@@ -78,6 +78,8 @@ import WorkspaceControls from './components/WorkspaceControls';
 import WorkspaceTrash from './components/WorkspaceTrash';
 
 import UnsavedWarningModal from './leapignite/client/components/UnsavedWarningModal';
+import GoalPopup from './leapignite/client/components/GoalPopup';
+import { getLessonConfig } from './leapignite/server/engine/LessonConfig';
 import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
 
 
@@ -1092,6 +1094,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+    // Goal Popup State
+    const [showGoalPopup, setShowGoalPopup] = useState(false);
+    const [goalPopupText, setGoalPopupText] = useState('');
+
+    // Show goal popup when lesson has a goal description
+    useEffect(() => {
+        const config = getLessonConfig();
+        if (config.goal && config.goal.description) {
+            setGoalPopupText(config.goal.description);
+            setShowGoalPopup(true);
+        }
+    }, []);
 
 
 
@@ -5906,6 +5921,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 }}
 
+            />
+
+            <GoalPopup
+                isOpen={showGoalPopup}
+                goalText={goalPopupText}
+                onClose={() => setShowGoalPopup(false)}
             />
 
 

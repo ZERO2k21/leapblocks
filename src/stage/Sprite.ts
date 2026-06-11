@@ -438,8 +438,10 @@ export class Sprite {
     async addCostume(name: string, src: string): Promise<void> {
         return new Promise((resolve) => {
             const img = new Image();
-            // Allow pixel-level access for autoDetectPenTip (needed for SVG assets)
-            img.crossOrigin = 'anonymous';
+            // Only set crossOrigin for remote URLs; local assets don't need CORS
+            if (src.startsWith('http')) {
+                img.crossOrigin = 'anonymous';
+            }
             img.onload = () => {
                 const maxDim = Math.max(img.width, img.height) || 100;
                 const logicalBase = 150;

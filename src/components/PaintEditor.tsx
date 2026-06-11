@@ -110,7 +110,7 @@ function PaintEditor({
                 if (result.success && (result as any).base64) {
                     canvas.clear();
 
-                    fabric.Image.fromURL((result as any).base64, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
+                    fabric.Image.fromURL((result as any).base64, {}).then((img: fabric.FabricImage) => {
                         img.set({
                             left: canvas.width! / 2,
                             top: canvas.height! / 2,
@@ -214,7 +214,8 @@ function PaintEditor({
                 if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage).then(handleLoadedSVG);
                 else fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
             } else {
-                fabric.Image.fromURL(currentImage, { crossOrigin: 'anonymous' }).then((img: fabric.FabricImage) => {
+                const imgOpts = currentImage.startsWith('http') ? { crossOrigin: 'anonymous' as const } : {};
+                fabric.Image.fromURL(currentImage, imgOpts).then((img: fabric.FabricImage) => {
                     if (!isActive) return;
                     img.set({
                         left: canvas.width! / 2,

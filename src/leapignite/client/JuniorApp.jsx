@@ -18,6 +18,7 @@ import PaintEditor from "../../components/PaintEditor";
 import { SpriteLibrary } from "../../components/SpriteLibrary";
 import WorkspaceControls from "../../components/WorkspaceControls";
 import WorkspaceTrash from "../../components/WorkspaceTrash";
+import GoalPopup from "./components/GoalPopup";
 import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
@@ -161,6 +162,8 @@ export default function JuniorApp({ onBack }) {
     const [isBackdropChooserOpen, setIsBackdropChooserOpen] = useState(false);
     const [backdropEditSceneId, setBackdropEditSceneId] = useState(null);
     const [currentTutorialId, setCurrentTutorialId] = useState(null);
+    const [isGoalOpen, setIsGoalOpen] = useState(false);
+    const [goalDescription, setGoalDescription] = useState('');
 
     const handleTutorialStart = (tutorialId) => setCurrentTutorialId(tutorialId);
     const handleTutorialClose = () => setCurrentTutorialId(null);
@@ -570,6 +573,15 @@ export default function JuniorApp({ onBack }) {
             }
         }
     }, [sprites, activeSpriteId, winMessage]);
+
+    // Show goal popup when lesson starts (if goal has description)
+    useEffect(() => {
+        const config = getLessonConfig();
+        if (config.goal && config.goal.description) {
+            setGoalDescription(config.goal.description);
+            setIsGoalOpen(true);
+        }
+    }, []);
 
     // Initial workspace load effect - only runs once on mount
     useEffect(() => {
@@ -1034,6 +1046,12 @@ export default function JuniorApp({ onBack }) {
                     project.setShowUnsavedModal(false);
                     project.setPendingAction(null);
                 }}
+            />
+
+            <GoalPopup
+                isOpen={isGoalOpen}
+                goalText={goalDescription}
+                onClose={() => setIsGoalOpen(false)}
             />
         </div>
     );

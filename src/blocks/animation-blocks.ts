@@ -109,7 +109,7 @@ export const animationBlocks = [
     // ═══════════════════════════════════════════════════════════════════════════
     {
         type: 'motion_move_steps',
-        message0: '➡️ move %1 steps',
+        message0: '➡️ move right %1 steps',
         args0: [{ type: 'input_value', name: 'STEPS' }],
         previousStatement: null,
         nextStatement: null,
