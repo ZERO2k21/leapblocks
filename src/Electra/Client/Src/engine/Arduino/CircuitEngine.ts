@@ -1554,7 +1554,19 @@ class CircuitEngine {
               } else {
                 const distStr = peripheralNode.data?.sensorValues?.distance;
                 const distParam = distStr !== undefined ? parseFloat(distStr) : 100;
-                const echoPulseUs = distParam * 58.2;
+                let divisor = 58.2;
+                const sourceCode = simulationRunner.getSourceCode();
+                if (sourceCode) {
+                  if (sourceCode.includes('NewPing') || sourceCode.includes('<NewPing.h>')) {
+                    divisor = 57.0;
+                  } else {
+                    const match = sourceCode.match(/pulseIn(?:Long)?\s*\([^)]+\)\s*\/\s*([\d.]+)/);
+                    if (match) {
+                      divisor = parseFloat(match[1]);
+                    }
+                  }
+                }
+                const echoPulseUs = distParam * divisor;
 
                 const echoWire = currentStateStore.edges.find(e =>
                   (e.source === peripheralId && (e.sourceHandle === 'ECHO' || e.sourceHandle === 'ECHO__target')) ||

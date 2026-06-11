@@ -240,11 +240,22 @@ export class ArduinoRuntime {
 
   public pulseIn(pin: number, state: number, timeout?: number): number {
     try {
-      const { nodes } = useForgeStore.getState();
+      const { nodes, sourceCode } = useForgeStore.getState();
       for (const n of nodes) {
         if (n.data?.type === 'hc-sr04' || n.data?.type === 'ultrasonic') {
           const distanceCm = n.data?.distance ?? n.data?.sensorValues?.distance ?? 6;
-          return distanceCm * 58.2;
+          let divisor = 58.2;
+          if (sourceCode) {
+            if (sourceCode.includes('NewPing') || sourceCode.includes('<NewPing.h>')) {
+              divisor = 57.0;
+            } else {
+              const match = sourceCode.match(/pulseIn(?:Long)?\s*\([^)]+\)\s*\/\s*([\d.]+)/);
+              if (match) {
+                divisor = parseFloat(match[1]);
+              }
+            }
+          }
+          return distanceCm * divisor;
         }
       }
     } catch (e) { /* store not available */ }
@@ -694,6 +705,7 @@ export class ArduinoRuntime {
       // ── Constants ──────────────────────────────────────────
       HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN,
       LED_BUILTIN,
+      CM: 1, INC: 0, INCH: 0,
       A0: 0, A1: 1, A2: 2, A3: 3, A4: 4, A5: 5,
       // ESP32-C3 specific
       D0: 0, D1: 1, D2: 2, D3: 3, D4: 4, D5: 5, D6: 6, D7: 7, D8: 8, D9: 9, D10: 10,

@@ -891,7 +891,7 @@ export function createUltrasonicClass(runtime: any) {
             console.log(`[Ultrasonic] Initialized: TRIG=${trigPin}, ECHO=${echoPin}`);
         }
 
-        read(unit = 'CM'): number {
+        read(unit: string | number = 'CM'): number {
             // Send 10µs trigger pulse
             runtime.digitalWrite(this.trigPin, 0);
             runtime.__delayMicroseconds(2);
@@ -902,12 +902,24 @@ export function createUltrasonicClass(runtime: any) {
             // Read distance directly from store (avoids floating-point round-trip via pulseIn)
             const distanceCm = runtime.getUltrasonicDistanceCm();
 
-            if (unit === 'CM') {
+            if (unit === 'CM' || unit === 1) {
                 return distanceCm;
-            } else if (unit === 'IN') {
+            } else if (unit === 'IN' || unit === 'INC' || unit === 'INCH' || unit === 0) {
                 return distanceCm / 2.54;
             }
-            return distanceCm * 58.2;
+
+            let divisor = 58.2;
+            try {
+                const { sourceCode } = useForgeStore.getState();
+                if (sourceCode) {
+                    const match = sourceCode.match(/pulseIn(?:Long)?\s*\([^)]+\)\s*\/\s*([\d.]+)/);
+                    if (match) {
+                        divisor = parseFloat(match[1]);
+                    }
+                }
+            } catch (e) { }
+
+            return distanceCm * divisor;
         }
 
         distanceRead(unit = 'CM'): number {

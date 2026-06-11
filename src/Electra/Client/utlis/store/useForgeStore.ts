@@ -154,6 +154,7 @@ export interface ForgeState {
   // Viewport (zoom/pan persistence)
   viewport: { x: number; y: number; zoom: number };
   setViewportState: (vp: { x: number; y: number; zoom: number }) => void;
+  sourceCode: string;
 }
 
 /** Map canvas node data.type → store board ID */
@@ -182,6 +183,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   selectedNodeId: null,
   selectedEdgeId: null,
   projectName: 'Untitled Project',
+  sourceCode: '',
   isSimulating: false,
   serialOutput: '',
   wifiLog: [],
@@ -293,7 +295,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     console.log('[FORGE STORE] startSimulation triggered. Hex length:', hexString.length);
 
     // Set simulating immediately for UI feedback
-    set({ isSimulating: true, serialOutput: '', wifiLog: [] });
+    set({ isSimulating: true, serialOutput: '', wifiLog: [], sourceCode: sourceCode || '' });
 
     // Load engines and start simulation asynchronously
     Promise.all([getCircuitEngine(), getSimulationRunner()]).then(([engine, runner]) => {
