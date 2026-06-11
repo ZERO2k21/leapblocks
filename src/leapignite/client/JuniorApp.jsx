@@ -807,7 +807,7 @@ export default function JuniorApp({ onBack }) {
                         position: "absolute",
                         left: "14px",
                         right: "14px",
-                        bottom: "190px",
+                        bottom: "150px",
                         height: "56px",
                         display: "flex",
                         flexDirection: "row",
