@@ -24,17 +24,21 @@ interface SliderRowProps {
   onChange: (v: number) => void;
 }
 
+const clamp = (min: number, max: number, value: number) => Math.max(min, Math.min(max, value));
+
 const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, value, color = '#BEF264', onChange }) => {
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
 
-  const [localVal, setLocalVal] = React.useState(value);
+  const [inputVal, setInputVal] = React.useState(value.toString());
   const lastUpdatedRef = React.useRef<number>(0);
   const timeoutRef = React.useRef<any>(null);
 
-  // Keep local val in sync with props changes (e.g. simulation reset or external changes)
+  // Keep input val in sync with props changes
   React.useEffect(() => {
-    setLocalVal(value);
+    if (parseFloat(inputVal) !== value) {
+      setInputVal(value.toString());
+    }
   }, [value]);
 
   React.useEffect(() => {
@@ -59,7 +63,7 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
-    setLocalVal(v);
+    setInputVal(v.toString());
 
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdatedRef.current;
@@ -77,6 +81,24 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
     }
   };
 
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const clean = raw.replace(/[^0-9.]/g, '');
+    setInputVal(clean);
+    
+    const v = parseFloat(clean);
+    if (!isNaN(v)) {
+      sendUpdate(v);
+    }
+  };
+
+  const handleBlur = () => {
+    const v = clamp(min, max, parseFloat(inputVal) || 0);
+    const rounded = step >= 1 ? Math.round(v) : parseFloat(v.toFixed(1));
+    setInputVal(rounded.toString());
+    sendUpdate(rounded);
+  };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', userSelect: 'none' }}>
       <span style={{ fontSize: '9px', color: labelColor, fontWeight: 700, width: '45px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -87,13 +109,30 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         min={min}
         max={max}
         step={step}
-        value={localVal}
+        value={parseFloat(inputVal) || 0}
         onChange={handleChange}
         style={{ flex: 1, accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px', outline: 'none' }}
       />
-      <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace', minWidth: '48px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-        {localVal.toFixed(step >= 1 ? 0 : 1)}{unit}
-      </span>
+      <input
+        type="text"
+        value={inputVal}
+        onChange={handleTextChange}
+        onBlur={handleBlur}
+        style={{
+          width: '65px',
+          background: isLightTheme ? '#f1f5f9' : '#1e293b',
+          border: `1px solid ${isLightTheme ? '#cbd5e1' : '#334155'}`,
+          borderRadius: '4px',
+          padding: '2px 4px',
+          fontSize: '10px',
+          color: displayColor,
+          fontWeight: 800,
+          fontFamily: 'monospace',
+          textAlign: 'right',
+          outline: 'none',
+        }}
+      />
+      {unit && <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace' }}>{unit}</span>}
     </div>
   );
 };
@@ -122,7 +161,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
         bottom: 'calc(100% + 6px)',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '220px',
+        width: '250px',
         background: isLightTheme ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.92)',
         backdropFilter: 'blur(8px)',
         border: `1px solid ${defaultBorder}`,
@@ -545,9 +584,9 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const config = isDistance
     ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 0.1, key: 'distance', default: 100, color: '#BEF264' }
     : type === 'potentiometer'
-      ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', default: 0, color: '#BEF264' }
+      ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
       : type === 'slide-potentiometer'
-        ? { label: 'POS', unit: '%', min: 0, max: 100, step: 1, key: 'value', default: 0, color: '#BEF264' }
+        ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
         : type === 'resistor'
           ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', default: 1000, color: '#BEF264' }
           : type === 'photoresistor'

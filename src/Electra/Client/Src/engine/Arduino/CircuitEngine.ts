@@ -3191,10 +3191,10 @@ class CircuitEngine {
     switch (pType) {
       case 'potentiometer':
       case 'slide-potentiometer': {
-        // Potentiometer value is 0-100 (percentage)
+        // Potentiometer value is 0-1023 (raw ADC)
         // Map to 0..VCC voltage
-        const percentage = sv?.value ?? 0;
-        return (percentage / 100) * vcc;
+        const rawValue = sv?.value ?? 0;
+        return (rawValue / 1023) * vcc;
       }
       case 'mq2': {
         // MQ2 gas sensor value is 0-1023 (raw ADC)

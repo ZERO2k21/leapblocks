@@ -10,8 +10,8 @@ export class SlidePotentiometerElement extends LitElement {
   @property({ type: Number }) travelLength = 30;
   @property({ type: Number }) value = 0;
   @property({ type: Number }) min = 0;
-  @property({ type: Number }) max = 100;
-  @property({ type: Number }) step = 2;
+  @property({ type: Number }) max = 1023;
+  @property({ type: Number }) step = 1;
 
   get pinInfo(): ElementPin[] {
     return [
