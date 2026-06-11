@@ -78,10 +78,10 @@ const AppInventor = lazy(() => {
 });
 
 // @ts-ignore
-const ElectraCreova = lazy(() => {
-    logAppTiming('ElectraCreova lazy load started');
-    return import('./Electra/Client/Src/ElectraCreova').then(module => {
-        logAppTiming('ElectraCreova lazy load completed');
+const ElectraWorkspace = lazy(() => {
+    logAppTiming('ElectraWorkspace lazy load started');
+    return import('./Electra/Client/Src/ElectraWorkspace').then(module => {
+        logAppTiming('ElectraWorkspace lazy load completed');
         return module;
     });
 });
@@ -188,6 +188,27 @@ export default function App() {
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
     const [switchPrompt, setSwitchPrompt] = useState<null | { from: AppMode; to: AppMode; tab?: 'blocks' | 'python' | 'costumes' | 'sounds' }>(null);
 
+    const [redirectProjectData, setRedirectProjectData] = useState<{
+        type: 'electra' | 'creova';
+        data: unknown;
+        projectName?: string | null;
+        projectPath?: string | null;
+    } | null>(null);
+
+    const handleRedirectToElectra = useCallback((data: unknown, projectName?: string | null, projectPath?: string | null) => {
+        setRedirectProjectData({ type: 'electra', data, projectName, projectPath });
+        handleSetMode('electra');
+    }, [handleSetMode]);
+
+    const handleRedirectToCreova = useCallback((data: unknown, projectName?: string | null, projectPath?: string | null) => {
+        setRedirectProjectData({ type: 'creova', data, projectName, projectPath });
+        handleSetMode('creova');
+    }, [handleSetMode]);
+
+    const clearRedirectProjectData = useCallback(() => {
+        setRedirectProjectData(null);
+    }, []);
+
     const requestSwitch = (from: AppMode, to: AppMode, tab?: 'blocks' | 'python' | 'costumes' | 'sounds') => {
         setSwitchPrompt({ from, to, tab });
     };
@@ -232,9 +253,26 @@ export default function App() {
                     onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                 />}
                 {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
-                {mode === 'creova' && <AppInventor {...({ onBack: requestExit } as any)} />}
-                {mode === 'appforge' && <ElectraCreova onBack={requestExit} onHome={() => handleSetMode('home')} />}
-                {mode === 'electra' && <ElectraCreova onBack={requestExit} onHome={() => handleSetMode('home')} />}
+                {mode === 'creova' && <AppInventor
+                    onBack={requestExit}
+                    onRedirectToElectra={handleRedirectToElectra}
+                    redirectProjectData={redirectProjectData?.type === 'creova' ? redirectProjectData : null}
+                    clearRedirectProjectData={clearRedirectProjectData}
+                />}
+                {mode === 'appforge' && <ElectraWorkspace
+                    onBack={requestExit}
+                    onHome={() => handleSetMode('home')}
+                    onRedirectToCreova={handleRedirectToCreova}
+                    redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
+                    clearRedirectProjectData={clearRedirectProjectData}
+                />}
+                {mode === 'electra' && <ElectraWorkspace
+                    onBack={requestExit}
+                    onHome={() => handleSetMode('home')}
+                    onRedirectToCreova={handleRedirectToCreova}
+                    redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
+                    clearRedirectProjectData={clearRedirectProjectData}
+                />}
                 {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>

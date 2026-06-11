@@ -556,36 +556,22 @@ ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
 
   if (!targetPath) {
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save LeapBlocks Project Folder',
-      defaultPath: 'MyLeapProject',
-      buttonLabel: 'Create Project Folder'
+      title: 'Save LeapBlocks Project File',
+      defaultPath: 'project.lbp',
+      buttonLabel: 'Save Project',
+      filters: [
+        { name: 'LeapBlocks Project', extensions: ['lbp'] }
+      ]
     });
     if (!filePath) return { success: false };
     targetPath = filePath;
   }
 
   const fsMod = require('fs');
-  const pathMod = require('path');
 
   try {
-    if (!fsMod.existsSync(targetPath)) {
-      log('PROJECT', `Creating project directory: ${targetPath}`);
-      fsMod.mkdirSync(targetPath, { recursive: true });
-    }
-
-    // Save the .lbp file inside the folder
-    const projectName = pathMod.basename(targetPath);
-    const lbpPath = pathMod.join(targetPath, `${projectName}.lbp`);
-    log('PROJECT', `Saving project file: ${lbpPath}`);
-    fsMod.writeFileSync(lbpPath, JSON.stringify(data, null, 2));
-
-    // Ensure libs folder exists
-    const libsDir = pathMod.join(targetPath, 'libs');
-    if (!fsMod.existsSync(libsDir)) {
-      log('PROJECT', `Ensuring libraries folder exists: ${libsDir}`);
-      fsMod.mkdirSync(libsDir, { recursive: true });
-    }
-
+    log('PROJECT', `Saving project file: ${targetPath}`);
+    fsMod.writeFileSync(targetPath, JSON.stringify(data, null, 2));
     log('PROJECT', `Project successfully saved to: ${targetPath}`);
     return { success: true, projectPath: targetPath };
   } catch (err: any) {
@@ -597,30 +583,25 @@ ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
 ipcMain.handle('open-project', async () => {
   if (!mainWindow) return null;
 
-  // Choose Folder Mode
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select LeapBlocks Project Folder',
-    properties: ['openDirectory']
+    title: 'Open LeapBlocks Project File',
+    properties: ['openFile'],
+    filters: [
+      { name: 'LeapBlocks Project', extensions: ['lbp'] }
+    ]
   });
 
   if (filePaths && filePaths.length > 0) {
     const projectPath = filePaths[0];
     const fsMod = require('fs');
-    const pathMod = require('path');
 
-    // Look for any .lbp file in the root
-    const files = fsMod.readdirSync(projectPath);
-    const lbpFile = files.find((f: string) => f.endsWith('.lbp'));
-
-    if (lbpFile) {
-      const content = fsMod.readFileSync(pathMod.join(projectPath, lbpFile), 'utf-8');
-      try {
-        const data = JSON.parse(content);
-        return { data, projectPath };
-      } catch (e) {
-        console.error("Invalid project file", e);
-        return null;
-      }
+    try {
+      const content = fsMod.readFileSync(projectPath, 'utf-8');
+      const data = JSON.parse(content);
+      return { data, projectPath };
+    } catch (e) {
+      console.error("Invalid project file", e);
+      return null;
     }
   }
   return null;

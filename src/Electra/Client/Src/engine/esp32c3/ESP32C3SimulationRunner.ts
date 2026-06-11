@@ -9,7 +9,7 @@
  * ┌─────────────────────────────────────────────────────────────┐
  * │               ESP32-C3 Simulation Stack (v2)                 │
  * ├─────────────────────────────────────────────────────────────┤
- * │  ForgeCreova.tsx                                            │
+ * │  ForgeElectra.tsx                                            │
  * │    ↓ compile(sketch) → .bin or .elf                         │
  * │  ESP32C3SimulationRunner.init(bin)                          │
  * │    ├─ FirmwareLoader: parse ELF/BIN → load IRAM/DRAM        │
@@ -377,7 +377,7 @@ export class ESP32C3SimulationRunner {
      */
     run(): void {
         // SimulationOrchestrator handles priority order: Velxio → TranspiledJS → RISC-V.
-        // Call orchestrator.run(code, board) from ForgeCreova to use the full chain.
+        // Call orchestrator.run(code, board) from ForgeElectra to use the full chain.
         // Fall through to existing paths below if orchestrator is not being used.
         console.info(`[ESP32-C3] Engine chain: ${this.orchestrator.getEngineStatus().map(e => `${e.name}(p${e.priority})`).join(' → ')}`);
 

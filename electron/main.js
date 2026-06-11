@@ -276,25 +276,34 @@ ipcMain.handle('show-in-folder', (_, filePath) => {
   shell.showItemInFolder(filePath);
 });
 
-ipcMain.handle('save-project', async (_, data) => {
-  const { filePath } = await dialog.showSaveDialog(mainWindow, {
-    title: 'Save LeapBlocks Project',
-    defaultPath: 'project.lbp',
-    filters: [
-      { name: 'LeapBlocks Project', extensions: ['lbp'] }
-    ]
-  });
+ipcMain.handle('save-project', async (_, data, existingPath) => {
+  let targetPath = existingPath;
 
-  if (filePath) {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    return true;
+  if (!targetPath) {
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save LeapBlocks Project File',
+      defaultPath: 'project.lbp',
+      buttonLabel: 'Save Project',
+      filters: [
+        { name: 'LeapBlocks Project', extensions: ['lbp'] }
+      ]
+    });
+    if (!filePath) return { success: false };
+    targetPath = filePath;
   }
-  return false;
+
+  try {
+    fs.writeFileSync(targetPath, JSON.stringify(data, null, 2));
+    return { success: true, projectPath: targetPath };
+  } catch (err) {
+    console.error("Failed to save project:", err);
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('open-project', async () => {
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Open LeapBlocks Project',
+    title: 'Open LeapBlocks Project File',
     properties: ['openFile'],
     filters: [
       { name: 'LeapBlocks Project', extensions: ['lbp'] }
@@ -302,9 +311,11 @@ ipcMain.handle('open-project', async () => {
   });
 
   if (filePaths && filePaths.length > 0) {
-    const content = fs.readFileSync(filePaths[0], 'utf-8');
+    const projectPath = filePaths[0];
     try {
-      return JSON.parse(content);
+      const content = fs.readFileSync(projectPath, 'utf-8');
+      const data = JSON.parse(content);
+      return { data, projectPath };
     } catch (e) {
       console.error("Invalid project file", e);
       return null;

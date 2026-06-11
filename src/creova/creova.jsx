@@ -82,7 +82,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
       } else if (result && result.error) {
         alert(`Failed to open project: ${result.error}`);
@@ -153,7 +153,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -183,7 +183,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {

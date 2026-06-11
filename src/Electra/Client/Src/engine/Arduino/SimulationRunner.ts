@@ -44,7 +44,7 @@ class SimulationRunner {
 
   // ── ESP32-C3 RISC-V runner (FQBN-based boards: esp32:esp32:esp32c3) ──
   private esp32c3Runner: ESP32C3SimulationRunner | null = null;
-  // binPath is set by setBoard(boardId, binPath) when ForgeCreova receives the
+  // binPath is set by setBoard(boardId, binPath) when ForgeElectra receives the
   // compiled .bin from the main process.  It is consumed by start() to launch the simulation.
   private binPath: string | null = null;
 

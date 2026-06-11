@@ -47,11 +47,29 @@ function buildBlocklyContextFromPayload(payload) {
   return { currentScreen, components };
 }
 
-export default function AppInventor({ onBack }) {
+export default function AppInventor({ onBack, onRedirectToElectra, redirectProjectData, clearRedirectProjectData }) {
   const appState = useAppState();
   const [activeTab, setActiveTab] = useState('designer');
   const [projectPath, setProjectPath] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Process redirect project data
+  useEffect(() => {
+    if (redirectProjectData && clearRedirectProjectData) {
+      console.log('[AppInventor] Processing redirect project data:', redirectProjectData);
+      appState.loadProject(redirectProjectData.data);
+      if (redirectProjectData.projectPath) {
+        setProjectPath(redirectProjectData.projectPath);
+        const pathParts = redirectProjectData.projectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        if (folderName) appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+      } else if (redirectProjectData.projectName) {
+        appState.setAppName(redirectProjectData.projectName);
+        setProjectPath(null);
+      }
+      clearRedirectProjectData();
+    }
+  }, [redirectProjectData, appState, clearRedirectProjectData]);
 
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [buildState, setBuildState] = useState('idle');
@@ -76,13 +94,22 @@ export default function AppInventor({ onBack }) {
     try {
       const result = await window.electronAPI.openProject();
       if (result && result.data) {
+        // Check if it's actually an Electra project
+        if (result.data.nodes || result.data.edges || result.data.circuit) {
+          console.log('[Creova/AppInventor] Detected Electra project file, redirecting...');
+          if (onRedirectToElectra) {
+            onRedirectToElectra(result.data, null, result.projectPath);
+            return;
+          }
+        }
+
         appState.loadProject(result.data);
         setProjectPath(result.projectPath);
 
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
       } else if (result && result.error) {
         alert(`Failed to open project: ${result.error}`);
@@ -101,6 +128,17 @@ export default function AppInventor({ onBack }) {
       try {
         const content = event.target.result;
         const projectData = JSON.parse(content);
+
+        // Check if it's actually an Electra project
+        if (projectData.nodes || projectData.edges || projectData.circuit) {
+          console.log('[Creova/AppInventor] Detected Electra project file, redirecting...');
+          if (onRedirectToElectra) {
+            const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+            onRedirectToElectra(projectData, nameWithoutExt, null);
+            return;
+          }
+        }
+
         appState.loadProject(projectData);
 
         const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
@@ -153,7 +191,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -183,7 +221,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName);
+          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {

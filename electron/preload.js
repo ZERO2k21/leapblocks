@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onBuildLog: (cb) => ipcRenderer.on("build-log", (_, m) => cb(m)),
   removeBuildLogListener: () => ipcRenderer.removeAllListeners("build-log"),
   showInFolder: (p) => ipcRenderer.invoke("show-in-folder", p),
-  saveProject: (d) => ipcRenderer.invoke("save-project", d),
+  saveProject: (d, path) => ipcRenderer.invoke("save-project", d, path),
   openProject: () => ipcRenderer.invoke("open-project"),
   compileArduino: (code) => ipcRenderer.invoke("compile-arduino", code),
   // forge-lib

@@ -4,11 +4,12 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
+import { Node, Edge } from 'reactflow';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
 import '../utlis/elements/leap-elements';
-import './ForgeCreova.css';
+import './ForgeElectra.css';
 import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
 
 // Lazy load complex inner components
@@ -21,10 +22,14 @@ import { compileCode } from './services/CompilerService';
 import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
+import * as LibraryService from './services/LibraryService';
 
-interface ForgeCreovaProps {
+interface ForgeElectraProps {
   onBack: () => void;
   initialBoard?: 'arduino-uno' | 'esp32-c3';
+  onRedirectToCreova?: (data: unknown, projectName?: string | null, projectPath?: string | null) => void;
+  redirectProjectData?: unknown;
+  clearRedirectProjectData?: () => void;
 }
 
 const ESP32_DEFAULT_CODE = `// ESP32-C3 Project
@@ -56,7 +61,13 @@ void loop() {
   delay(1000);
 }`;
 
-export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: ForgeCreovaProps) {
+export default function ForgeElectra({
+  onBack,
+  initialBoard = 'arduino-uno',
+  onRedirectToCreova,
+  redirectProjectData,
+  clearRedirectProjectData
+}: ForgeElectraProps) {
   const {
     nodes,
     edges,
@@ -76,6 +87,8 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
     board,
     setBoard,
     uiTheme,
+    importedLibraries,
+    setImportedLibraries,
   } = useForgeStore();
 
   // Undo/Redo History Management
@@ -83,6 +96,52 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [code, setCode] = useState(initialBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const autoInstallLibraries = async (libs: string[]) => {
+    if (!libs || libs.length === 0) return;
+    try {
+      console.log('[FORGE ELECTRA] Checking libraries for auto-installation:', libs);
+      const installed = await LibraryService.getLibraries();
+      const installedNames = new Set(installed.map((l: any) => l.name.toLowerCase()));
+      
+      for (const libName of libs) {
+        if (!installedNames.has(libName.toLowerCase())) {
+          console.log(`[FORGE ELECTRA] Auto-installing missing library: ${libName}`);
+          
+          let libToInstall: LibraryService.Library = {
+            name: libName,
+            author: '',
+            description: '',
+            version: '1.0.0',
+          };
+          
+          try {
+            const indexMatches = await LibraryService.searchLibraries(libName);
+            const exactMatch = indexMatches.find(l => l.name.toLowerCase() === libName.toLowerCase());
+            if (exactMatch) {
+              libToInstall = exactMatch;
+              console.log(`[FORGE ELECTRA] Found library metadata in index for ${libName}:`, exactMatch);
+            } else {
+              console.warn(`[FORGE ELECTRA] No exact match in index for ${libName}. Using fallback metadata.`);
+            }
+          } catch (searchErr) {
+            console.warn(`[FORGE ELECTRA] Error searching library index for ${libName}:`, searchErr);
+          }
+
+          const result = await LibraryService.installLibrary(libToInstall);
+          if (result.success) {
+            console.log(`[FORGE ELECTRA] Successfully auto-installed: ${libName}`);
+          } else {
+            console.error(`[FORGE ELECTRA] Failed to auto-install: ${libName}. Error:`, result.error);
+          }
+        } else {
+          console.log(`[FORGE ELECTRA] Library already installed: ${libName}`);
+        }
+      }
+    } catch (err) {
+      console.error('[FORGE ELECTRA] Error in autoInstallLibraries:', err);
+    }
+  };
 
   // Save current state to history
   const saveToHistory = () => {
@@ -117,7 +176,7 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
     }
   };
 
-  // Stop simulation when navigating away from ForgeCreova
+  // Stop simulation when navigating away from ForgeElectra
   useEffect(() => {
     return () => {
       if (useForgeStore.getState().isSimulating) {
@@ -152,6 +211,62 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
     return () => clearTimeout(timer);
   }, [nodes, edges, code]);
 
+  // Process redirect project data
+  useEffect(() => {
+    if (redirectProjectData && clearRedirectProjectData) {
+      console.log('[FORGE ELECTRA] Processing redirect project data:', redirectProjectData);
+      
+      const projectObj = redirectProjectData as {
+        data: {
+          nodes?: unknown[];
+          edges?: unknown[];
+          circuit?: { nodes?: unknown[]; edges?: unknown[] };
+          code?: string;
+          board?: string;
+          libraries?: string[];
+        };
+        projectName?: string | null;
+        projectPath?: string | null;
+      };
+
+      const { data, projectName: rProjectName, projectPath: rProjectPath } = projectObj;
+      
+      const loadedNodes = (data.nodes || data.circuit?.nodes || []) as Node[];
+      const loadedEdges = (data.edges || data.circuit?.edges || []) as Edge[];
+      const loadedCode = data.code || '';
+      const loadedLibs = data.libraries || [];
+      
+      setNodes(loadedNodes);
+      setEdges(loadedEdges);
+      setCode(loadedCode);
+      setImportedLibraries(loadedLibs);
+      autoInstallLibraries(loadedLibs);
+      
+      if (data.board) {
+        setBoard(data.board);
+      }
+      
+      if (rProjectPath) {
+        setProjectPath(rProjectPath);
+        const pathParts = rProjectPath.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1];
+        const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : 'Loaded Project';
+        setProjectName(cleanName);
+      } else if (rProjectName) {
+        setProjectName(rProjectName);
+        setProjectPath(null);
+      }
+      
+      setHistory([]);
+      setHistoryIndex(-1);
+      setTimeout(() => {
+        saveToHistory();
+      }, 0);
+      
+      clearRedirectProjectData();
+    }
+  }, [redirectProjectData, clearRedirectProjectData]);
+
   // Initialize board from prop on mount (does not re-fire on internal board changes)
   useEffect(() => {
     if (initialBoard && board !== initialBoard) {
@@ -163,21 +278,21 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
   // Add the selected board to canvas on mount if no nodes exist
   useEffect(() => {
     const state = useForgeStore.getState();
-    console.log('[FORGE CREOVA] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
+    console.log('[FORGE ELECTRA] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
 
     if (state.nodes.length === 0 && initialBoard) {
-      console.log('[FORGE CREOVA] Adding board to canvas:', initialBoard);
+      console.log('[FORGE ELECTRA] Adding board to canvas:', initialBoard);
       // Use the store's addNode function to properly add the board
       state.addNode(initialBoard, { x: 400, y: 300 }, {
         label: initialBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
       });
-      console.log('[FORGE CREOVA] Board added. New nodes count:', useForgeStore.getState().nodes.length);
+      console.log('[FORGE ELECTRA] Board added. New nodes count:', useForgeStore.getState().nodes.length);
     }
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
   const [showEditor, setShowEditor] = useState(true);
-  const { showPartPicker, setShowPartPicker, importedLibraries, rotateNode } = useForgeStore();
+  const { showPartPicker, setShowPartPicker, rotateNode } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
   const [showWebOpenModal, setShowWebOpenModal] = useState(false);
   const [recentProjects, setRecentProjects] = useState<ProjectService.LeapProject[]>([]);
@@ -223,15 +338,27 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
       try {
         const result = await (window as any).electronAPI.openProject();
         if (result && result.data) {
-          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode } = result.data;
+          // Check if it's actually a Creova project (contains screens or schemaVersion)
+          if (result.data.screens || result.data.schemaVersion) {
+            console.log('[Electra/ForgeElectra] Detected Creova project file, redirecting...');
+            if (onRedirectToCreova) {
+              onRedirectToCreova(result.data, null, result.projectPath);
+              return;
+            }
+          }
+
+          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs } = result.data;
           setNodes(loadedNodes || []);
           setEdges(loadedEdges || []);
           setCode(loadedCode || '');
+          setImportedLibraries(loadedLibs || []);
+          autoInstallLibraries(loadedLibs || []);
           setProjectPath(result.projectPath);
 
           const pathParts = result.projectPath.split(/[\\/]/);
           const folderName = pathParts[pathParts.length - 1];
-          setProjectName(folderName || 'Loaded Project');
+          const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : 'Loaded Project';
+          setProjectName(cleanName);
 
           setHistory([]);
           setHistoryIndex(-1);
@@ -254,10 +381,23 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
       try {
         const content = event.target?.result as string;
         const projectData = JSON.parse(content);
+
+        // Check if it's actually a Creova project (contains screens or schemaVersion)
+        if (projectData.screens || projectData.schemaVersion) {
+          console.log('[Electra/ForgeElectra] Detected Creova project file, redirecting...');
+          if (onRedirectToCreova) {
+            const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+            onRedirectToCreova(projectData, nameWithoutExt, null);
+            return;
+          }
+        }
+
         if (projectData.nodes && projectData.edges) {
           setNodes(projectData.nodes || []);
           setEdges(projectData.edges || []);
           setCode(projectData.code || '');
+          setImportedLibraries(projectData.libraries || []);
+          autoInstallLibraries(projectData.libraries || []);
           if (projectData.board) setBoard(projectData.board);
 
           const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
@@ -284,6 +424,8 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
     setNodes(project.circuit.nodes || []);
     setEdges(project.circuit.edges || []);
     setCode(project.code || '');
+    setImportedLibraries(project.libraries || []);
+    autoInstallLibraries(project.libraries || []);
     setProjectPath(project.id);
     setProjectName(project.name);
     setHistory([]);
@@ -300,6 +442,7 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
           edges,
           code,
           board,
+          libraries: importedLibraries,
           version: '1.0.0',
           timestamp: new Date().toISOString()
         };
@@ -308,7 +451,8 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
           setProjectPath(result.projectPath);
           const pathParts = result.projectPath.split(/[\\/]/);
           const folderName = pathParts[pathParts.length - 1];
-          setProjectName(folderName || projectName);
+          const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : projectName;
+          setProjectName(cleanName);
         }
       } else {
         const projectData = {
@@ -316,6 +460,7 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
           edges,
           code,
           board,
+          libraries: importedLibraries,
           version: '1.0.0',
           timestamp: new Date().toISOString()
         };
@@ -358,6 +503,7 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
         edges,
         code,
         board,
+        libraries: importedLibraries,
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
@@ -366,7 +512,8 @@ export default function ForgeCreova({ onBack, initialBoard = 'arduino-uno' }: Fo
         setProjectPath(result.projectPath);
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
-        setProjectName(folderName || projectName);
+        const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : projectName;
+        setProjectName(cleanName);
       }
     } catch (err) {
       console.error('[FORGE] Failed to save project as:', err);
