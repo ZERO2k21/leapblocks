@@ -271,6 +271,23 @@ var HTTPClient = (typeof HTTPClient !== 'undefined' && HTTPClient) || class {
   getSize(){ return 0; }
   end(){}
 };
+var ThingSpeakClass = class {
+  constructor() { this._fields = {}; this._status = ''; }
+  begin(client) { return true; }
+  setField(field, value) { this._fields[field] = value; return true; }
+  setStatus(status) { this._status = status; return true; }
+  async writeFields(channelNumber, writeAPIKey) {
+    console.log('[ThingSpeak] writeFields', channelNumber, this._fields);
+    this._fields = {};
+    this._status = '';
+    return 200;
+  }
+  async writeField(channelNumber, field, value, writeAPIKey) {
+    this.setField(field, value);
+    return await this.writeFields(channelNumber, writeAPIKey);
+  }
+};
+var ThingSpeak = (typeof ThingSpeak !== 'undefined' && ThingSpeak) || new ThingSpeakClass();
 var MPU6050_RANGE_2_G   = (typeof MPU6050_RANGE_2_G   !== 'undefined') ? MPU6050_RANGE_2_G   : 0;
 var MPU6050_RANGE_4_G   = (typeof MPU6050_RANGE_4_G   !== 'undefined') ? MPU6050_RANGE_4_G   : 1;
 var MPU6050_RANGE_8_G   = (typeof MPU6050_RANGE_8_G   !== 'undefined') ? MPU6050_RANGE_8_G   : 2;
@@ -313,6 +330,10 @@ var WL_CONNECTED        = (typeof WL_CONNECTED        !== 'undefined') ? WL_CONN
 var WL_CONNECT_FAILED   = (typeof WL_CONNECT_FAILED   !== 'undefined') ? WL_CONNECT_FAILED   : 4;
 var WL_CONNECTION_LOST  = (typeof WL_CONNECTION_LOST  !== 'undefined') ? WL_CONNECTION_LOST  : 5;
 var WL_DISCONNECTED     = (typeof WL_DISCONNECTED     !== 'undefined') ? WL_DISCONNECTED     : 6;
+var WIFI_OFF            = (typeof WIFI_OFF            !== 'undefined') ? WIFI_OFF            : 0;
+var WIFI_STA            = (typeof WIFI_STA            !== 'undefined') ? WIFI_STA            : 1;
+var WIFI_AP             = (typeof WIFI_AP             !== 'undefined') ? WIFI_AP             : 2;
+var WIFI_AP_STA         = (typeof WIFI_AP_STA         !== 'undefined') ? WIFI_AP_STA         : 3;
 var DEC     = (typeof DEC     !== 'undefined') ? DEC     : 10;
 var HEX     = (typeof HEX     !== 'undefined') ? HEX     : 16;
 var OCT     = (typeof OCT     !== 'undefined') ? OCT     : 8;
@@ -515,6 +536,8 @@ function clientSideTranspile(code: string): TranspileResult {
     // HTTPClient async methods → await (GET/POST/PUT/DELETE/PATCH return Promise<number>)
     // e.g.  int code = http.GET();  →  let code = await http.GET();
     js = js.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
+    // ThingSpeak async methods → await
+    js = js.replace(/(\w+)\.(writeFields|writeField|readFloatField|readLongField|readStringField|readIntField)\s*\(/g, 'await $1.$2(');
     // Prepend await to user-defined function calls (excluding declarations)
     userFunctions.forEach((funcName) => {
       const callRegex = new RegExp(`\\b(async\\s+)?(function\\s+)?(${funcName})\\s*\\(`, 'g');

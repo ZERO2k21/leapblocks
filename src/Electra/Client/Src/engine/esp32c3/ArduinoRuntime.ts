@@ -808,6 +808,10 @@ export class ArduinoRuntime {
       // ── Constants ──────────────────────────────────────────
       HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN,
       LED_BUILTIN,
+      WIFI_OFF: 0,
+      WIFI_STA: 1,
+      WIFI_AP: 2,
+      WIFI_AP_STA: 3,
       CM: 1, INC: 0, INCH: 0,
       A0: 0, A1: 1, A2: 2, A3: 3, A4: 4, A5: 5,
       // ESP32-C3 specific
@@ -1592,6 +1596,52 @@ export class ArduinoRuntime {
         getStatus(): number { return 0; }
         getStatusString(): string { return 'OK'; }
       },
+
+      ThingSpeak: new (class ThingSpeakClass {
+        private _fields: Record<number, any> = {};
+        private _status = "";
+        begin(_client: any): boolean {
+          console.log('[ThingSpeak] begin() initialized with client');
+          return true;
+        }
+        setField(field: number, value: any): boolean {
+          this._fields[field] = value;
+          console.log(`[ThingSpeak] setField(${field}, ${value})`);
+          return true;
+        }
+        setStatus(status: string): boolean {
+          this._status = status;
+          console.log(`[ThingSpeak] setStatus("${status}")`);
+          return true;
+        }
+        async writeFields(channelNumber: number, writeAPIKey: string): Promise<number> {
+          console.log(`[ThingSpeak] Writing fields to channel ${channelNumber} using key ${writeAPIKey}:`, this._fields);
+          const params = new URLSearchParams();
+          params.append('api_key', writeAPIKey);
+          if (this._status) params.append('status', this._status);
+          for (const [f, v] of Object.entries(this._fields)) {
+            params.append(`field${f}`, String(v));
+          }
+          try {
+            const url = `https://api.thingspeak.com/update?${params.toString()}`;
+            console.log(`[ThingSpeak] Fetching URL: ${url}`);
+            const response = await fetch(url);
+            const data = await response.text();
+            const statusCode = parseInt(data, 10);
+            console.log(`[ThingSpeak] Response status code: \${statusCode}`);
+            this._fields = {};
+            this._status = "";
+            return statusCode > 0 ? 200 : 400;
+          } catch (e) {
+            console.error('[ThingSpeak] Error writing fields:', e);
+            return -304;
+          }
+        }
+        async writeField(channelNumber: number, field: number, value: any, writeAPIKey: string): Promise<number> {
+          this.setField(field, value);
+          return await this.writeFields(channelNumber, writeAPIKey);
+        }
+      })(),
 
       // ── MPU6050 sensor class (read live from store) ─────────
       Adafruit_MPU6050: class {

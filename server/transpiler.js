@@ -103,7 +103,7 @@ export function transpileArduinoToJS(arduinoCode) {
   code = code.replace(/sizeof\s*\(([^)]+)\)/g, '($1.length || 1)');
 
   code = code.replace(/(\w+)\.(GET|POST|PUT|DELETE|PATCH)\s*\(/g, 'await $1.$2(');
-  code = code.replace(/(\w+)\.(writeFields|writeField|readFloatField|readLongField)\s*\(/g, 'await $1.$2(');
+  code = code.replace(/(\w+)\.(writeFields|writeField|readFloatField|readLongField|readStringField|readIntField)\s*\(/g, 'await $1.$2(');
   code = code.replace(/(\w+)\.(getString)\s*\(/g, 'await $1.$2(');
 
   userFunctions.forEach((funcName) => {
@@ -135,6 +135,7 @@ if (typeof Servo === 'undefined') Servo = class { constructor() { this._pin = 0;
 if (typeof NeoPixel === 'undefined') NeoPixel = class { constructor(n, pin) { this._n = n; this._pin = pin; this._pixels = new Uint32Array(n); } begin() {} show() {} setPixelColor(i, r, g, b) { if (i < this._n) this._pixels[i] = (r << 16) | (g << 8) | b; } Color(r, g, b) { return (r << 16) | (g << 8) | b; } clear() { this._pixels.fill(0); } };
 if (typeof Adafruit_NeoPixel === 'undefined') Adafruit_NeoPixel = NeoPixel;
 if (typeof WiFiClient === 'undefined') WiFiClient = class { constructor() { this._connected = false; } connect() { this._connected = true; return true; } connected() { return this._connected; } available() { return 0; } read() { return -1; } write() { return 0; } print(v) { console.log('[WiFiClient]', v); } println(v) { console.log('[WiFiClient]', v); } stop() { this._connected = false; } flush() {} };
+if (typeof ThingSpeak === 'undefined') ThingSpeak = new (class { constructor() { this._fields = {}; this._status = ''; } begin(client) { return true; } setField(field, value) { this._fields[field] = value; return true; } setStatus(status) { this._status = status; return true; } async writeFields(channelNumber, writeAPIKey) { console.log('[ThingSpeak] writeFields', channelNumber, this._fields); this._fields = {}; this._status = ''; return 200; } async writeField(channelNumber, field, value, writeAPIKey) { this.setField(field, value); return await this.writeFields(channelNumber, writeAPIKey); } })();
 if (typeof DHTesp === 'undefined') DHTesp = class { constructor() { this.DHT22 = 22; this.DHT11 = 11; } setup() {} getTempAndHumidity() { return { temperature: 25.0, humidity: 50.0 }; } getTemperature() { return 25.0; } getHumidity() { return 50.0; } };
 if (typeof isnan === 'undefined') isnan = (v) => isNaN(v);
 if (typeof isinf === 'undefined') isinf = (v) => !isFinite(v);
