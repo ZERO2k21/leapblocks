@@ -65,6 +65,20 @@ const findNodeById = (list, id) => {
   return null;
 };
 
+const findNodeAndParent = (list, id, parent = null) => {
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i];
+    if (item.id === id) {
+      return { node: item, parent, list, index: i };
+    }
+    if (item.children?.length) {
+      const found = findNodeAndParent(item.children, id, item);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
 const walkTree = (list, visitor) => {
   for (const item of list) {
     visitor(item);
@@ -227,6 +241,58 @@ export function useAppState() {
     if (selectedId === id) setSelectedId(null);
   };
 
+  const moveComponent = (draggedId, targetId, position = 'after') => {
+    if (draggedId === targetId) return;
+
+    setScreens(prevScreens => prevScreens.map(screen => {
+      if (screen.id !== activeScreen) return screen;
+      const nextScreen = deepClone(screen);
+
+      // 1. Find the dragged node and its parent list
+      const draggedInfo = findNodeAndParent(nextScreen.components, draggedId);
+      if (!draggedInfo) return screen; // Dragged node not found in visible components
+
+      const draggedNode = draggedInfo.node;
+
+      // Prevent dragging a component into its own children
+      if (draggedNode.children && isInTree(draggedNode.children, targetId)) {
+        return screen;
+      }
+
+      // 2. Remove dragged node from its current list
+      draggedInfo.list.splice(draggedInfo.index, 1);
+
+      // 3. If targetId is the Screen itself, drop it at the end of the Screen's root level
+      if (targetId === screen.id) {
+        nextScreen.components.push(draggedNode);
+        return nextScreen;
+      }
+
+      // 4. Find the target node in the modified tree
+      const targetInfo = findNodeAndParent(nextScreen.components, targetId);
+      if (!targetInfo) {
+        // Target not found (might have been deleted or invalid), put it back at root of screen
+        nextScreen.components.push(draggedNode);
+        return nextScreen;
+      }
+
+      const { list: targetList, index: targetIndex } = targetInfo;
+
+      if (position === 'inside' && ARRANGEMENT_TYPES.has(targetInfo.node.type)) {
+        if (!targetInfo.node.children) {
+          targetInfo.node.children = [];
+        }
+        targetInfo.node.children.push(draggedNode);
+      } else if (position === 'before') {
+        targetList.splice(targetIndex, 0, draggedNode);
+      } else {
+        targetList.splice(targetIndex + 1, 0, draggedNode);
+      }
+
+      return nextScreen;
+    }));
+  };
+
   const addScreen = (name) => {
     const trimmed = name?.trim();
     if (!trimmed) return;
@@ -381,6 +447,7 @@ export function useAppState() {
     getNextComponentName,
     loadProject,
     newProject,
+    moveComponent,
     isArrangementType: (type) => ARRANGEMENT_TYPES.has(type),
     getComponentVisibility: (type) => (COMPONENT_META.get(type)?.visible ?? true)
   }), [
@@ -393,6 +460,7 @@ export function useAppState() {
     media,
     designViewport,
     currentScreen,
-    selectedComponent
+    selectedComponent,
+    moveComponent
   ]);
 }

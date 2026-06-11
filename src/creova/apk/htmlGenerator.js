@@ -831,7 +831,8 @@ function generateAppJs(appState) {
 
   function WebShim(id, props) {
     this.id = id;
-    this._url = props.Url || props.url || '';
+    var rawUrl = props.Url || props.url || '';
+    this._url = typeof rawUrl === 'string' ? rawUrl.trim() : rawUrl;
     this._timeout = props.Timeout !== undefined ? Number(props.Timeout) : 0;
     this._saveResponse = !!props.SaveResponse;
     this._responseFileName = props.ResponseFileName || '';
@@ -840,7 +841,7 @@ function generateAppJs(appState) {
   }
   WebShim.prototype = {
     get Url() { return this._url; },
-    set Url(v) { this._url = v; },
+    set Url(v) { this._url = typeof v === 'string' ? v.trim() : v; },
     get Timeout() { return this._timeout; },
     set Timeout(v) { this._timeout = Number(v) || 0; },
     get SaveResponse() { return this._saveResponse; },
@@ -892,6 +893,8 @@ function generateAppJs(appState) {
     },
     _request: function(method, body, contentType) {
       var self = this;
+      var rawUrl = self._url;
+      var requestUrl = typeof rawUrl === 'string' ? rawUrl.trim() : String(rawUrl || '');
       
       // Native Web request routing (bypasses WebView CORS)
       if (window.Android && typeof window.Android.performWebRequest === 'function') {
@@ -904,7 +907,7 @@ function generateAppJs(appState) {
             if (contentType) headersCopy['Content-Type'] = contentType;
             
             var headersJson = JSON.stringify(headersCopy);
-            var result = window.Android.performWebRequest(self._url, method || 'GET', headersJson, body || '');
+            var result = window.Android.performWebRequest(requestUrl, method || 'GET', headersJson, body || '');
             
             var idx1 = result.indexOf('|');
             var idx2 = result.indexOf('|', idx1 + 1);
@@ -914,12 +917,12 @@ function generateAppJs(appState) {
             
             if (self._saveResponse) {
               var fileName = self._responseFileName || ('response_' + Date.now());
-              self._emitGotFile(self._url, status, responseType, fileName);
+              self._emitGotFile(requestUrl, status, responseType, fileName);
             } else {
-              self._emitGotText(self._url, status, responseType, content);
+              self._emitGotText(requestUrl, status, responseType, content);
             }
           } catch(err) {
-            self._emitGotText(self._url, 0, '', err && err.message ? err.message : String(err));
+            self._emitGotText(requestUrl, 0, '', err && err.message ? err.message : String(err));
           }
         }, 0);
         return;
@@ -931,36 +934,95 @@ function generateAppJs(appState) {
       if (controller && self._timeout > 0) {
         timeoutId = setTimeout(function() { controller.abort(); }, self._timeout);
       }
-      var options = {
-        method: method || 'GET',
-        body: body,
-        headers: {}
-      };
-      if (contentType) options.headers['Content-Type'] = contentType;
-      if (controller) options.signal = controller.signal;
 
-      fetch(this._url, options)
-        .then(function(res) {
-          if (timeoutId) clearTimeout(timeoutId);
-          var responseType = res.headers.get('content-type') || '';
-          if (self._saveResponse) {
-            return res.blob().then(function(blob) {
-              var fileName = self._responseFileName || ('response_' + Date.now());
-              self._emitGotFile(self._url, res.status, responseType, fileName);
-            });
-          }
-          return res.text().then(function(text) {
-            self._emitGotText(self._url, res.status, responseType, text);
-          });
+      // Detect if target is a local/private network IP
+      var isLocal = false;
+      var hostMatch = requestUrl.match(/^(?:https?:\\/\\/)?([^:\\/\\s]+)/);
+      if (hostMatch) {
+        var host = hostMatch[1];
+        if (host === 'localhost' || host === '127.0.0.1' || /^192\\.168\\./.test(host) || /^10\\./.test(host) || /^172\\.(1[6-9]|2[0-9]|3[0-1])\\./.test(host)) {
+          isLocal = true;
+        }
+      }
+
+      if (isLocal) {
+        // Route through server-side relay to bypass CORS and Mixed Content
+        var relayUrl = 'http://localhost:3001/relay';
+        var relayHeaders = {};
+        for (var k in self._headers) {
+          if (self._headers.hasOwnProperty(k)) relayHeaders[k] = self._headers[k];
+        }
+        if (contentType) relayHeaders['Content-Type'] = contentType;
+
+        fetch(relayUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: requestUrl,
+            method: method || 'GET',
+            headers: relayHeaders,
+            body: body || undefined
+          }),
+          signal: controller ? controller.signal : undefined
         })
-        .catch(function(err) {
-          if (timeoutId) clearTimeout(timeoutId);
-          if (err && err.name === 'AbortError') {
-            self._emitTimedOut(self._url);
-          } else {
-            self._emitGotText(self._url, 0, '', err && err.message ? err.message : String(err));
-          }
-        });
+          .then(function(res) {
+            if (timeoutId) clearTimeout(timeoutId);
+            return res.json();
+          })
+          .then(function(data) {
+            if (data.success) {
+              var responseType = (data.headers && data.headers['content-type']) || 'text/plain';
+              self._emitGotText(requestUrl, data.status || 200, responseType, data.body || '');
+            } else {
+              self._emitGotText(requestUrl, 0, '', data.error || 'Relay request failed');
+            }
+          })
+          .catch(function(err) {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (err && err.name === 'AbortError') {
+              self._emitTimedOut(requestUrl);
+            } else {
+              self._emitGotText(requestUrl, 0, '', err && err.message ? err.message : String(err));
+            }
+          });
+      } else {
+        // Public URL — use CORS proxy
+        var options = {
+          method: method || 'GET',
+          body: body,
+          headers: {}
+        };
+        if (contentType) options.headers['Content-Type'] = contentType;
+        if (controller) options.signal = controller.signal;
+
+        var finalUrl = requestUrl;
+        if (requestUrl.indexOf('http://') === 0 || requestUrl.indexOf('https://') === 0) {
+          finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(requestUrl);
+        }
+
+        fetch(finalUrl, options)
+          .then(function(res) {
+            if (timeoutId) clearTimeout(timeoutId);
+            var responseType = res.headers.get('content-type') || '';
+            if (self._saveResponse) {
+              return res.blob().then(function(blob) {
+                var fileName = self._responseFileName || ('response_' + Date.now());
+                self._emitGotFile(requestUrl, res.status, responseType, fileName);
+              });
+            }
+            return res.text().then(function(text) {
+              self._emitGotText(requestUrl, res.status, responseType, text);
+            });
+          })
+          .catch(function(err) {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (err && err.name === 'AbortError') {
+              self._emitTimedOut(requestUrl);
+            } else {
+              self._emitGotText(requestUrl, 0, '', err && err.message ? err.message : String(err));
+            }
+          });
+      }
     },
     Get: function() {
       this._request('GET');

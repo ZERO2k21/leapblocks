@@ -12,6 +12,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const [orientation, setOrientation] = useState(designViewport?.orientation || 'portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
     const [dropTarget, setDropTarget] = useState(null); // Track which container is being dragged over
+    const [draggedComponentId, setDraggedComponentId] = useState(null);
+    const [dropTargetComponent, setDropTargetComponent] = useState(null); // { id: string, position: 'before' | 'after' | 'inside' }
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
 
@@ -112,6 +114,116 @@ export default function PhoneCanvasEnhanced({ appState }) {
         return null;
     };
 
+    const handleComponentDragStart = (e, compId) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('draggedComponentId', compId);
+        e.dataTransfer.effectAllowed = 'move';
+        setDraggedComponentId(compId);
+    };
+
+    const handleComponentDragEnd = (e) => {
+        setDraggedComponentId(null);
+        setDropTargetComponent(null);
+        setDropTarget(null);
+    };
+
+    const handleComponentDragOver = (e, targetId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const activeDraggedId = e.dataTransfer.types.includes('draggedcomponentid') 
+            ? (e.dataTransfer.getData('draggedComponentId') || draggedComponentId)
+            : draggedComponentId;
+
+        if (!activeDraggedId || activeDraggedId === targetId) return;
+
+        const targetNode = findComponentById(targetId, components);
+        if (!targetNode) return;
+
+        // Prevent dropping inside self/descendants
+        if (targetNode.children && findComponentById(activeDraggedId, targetNode.children)) {
+            return;
+        }
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isArrangement = ['HorizontalArrangement', 'HorizontalScrollArrangement', 'VerticalArrangement', 'VerticalScrollArrangement', 'TableArrangement', 'AbsoluteArrangement', 'Map'].includes(targetNode.type);
+        
+        const relativeY = e.clientY - rect.top;
+
+        let position = 'after';
+        if (isArrangement) {
+            const edgeThresholdY = Math.min(12, rect.height * 0.2);
+            if (relativeY < edgeThresholdY) {
+                position = 'before';
+            } else if (relativeY > rect.height - edgeThresholdY) {
+                position = 'after';
+            } else {
+                position = 'inside';
+            }
+        } else {
+            const isTopHalf = relativeY < rect.height / 2;
+            position = isTopHalf ? 'before' : 'after';
+        }
+
+        setDropTargetComponent({ id: targetId, position });
+        if (position === 'inside') {
+            setDropTarget(targetId);
+        } else {
+            setDropTarget(null);
+        }
+    };
+
+    const handleComponentDragLeave = (e) => {
+        e.stopPropagation();
+        setDropTargetComponent(null);
+        setDropTarget(null);
+    };
+
+    const handleDropOnComponent = (e, targetId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+        setDropTargetComponent(null);
+        setDropTarget(null);
+
+        if (!draggedId || draggedId === targetId) return;
+
+        // Check cycle
+        const draggedNode = findComponentById(draggedId, components);
+        if (draggedNode && draggedNode.children && findComponentById(targetId, draggedNode.children)) {
+            return;
+        }
+
+        // Determine drop position
+        const targetNode = findComponentById(targetId, components);
+        if (!targetNode) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isArrangement = ['HorizontalArrangement', 'HorizontalScrollArrangement', 'VerticalArrangement', 'VerticalScrollArrangement', 'TableArrangement', 'AbsoluteArrangement', 'Map'].includes(targetNode.type);
+        
+        const relativeY = e.clientY - rect.top;
+        let position = 'after';
+        
+        if (isArrangement) {
+            const edgeThresholdY = Math.min(12, rect.height * 0.2);
+            if (relativeY < edgeThresholdY) {
+                position = 'before';
+            } else if (relativeY > rect.height - edgeThresholdY) {
+                position = 'after';
+            } else {
+                position = 'inside';
+            }
+        } else {
+            const isTopHalf = relativeY < rect.height / 2;
+            position = isTopHalf ? 'before' : 'after';
+        }
+
+        if (appState.moveComponent) {
+            appState.moveComponent(draggedId, targetId, position);
+        }
+    };
+
     const handleDrop = (e, targetContainerId = null) => {
         e.preventDefault();
         e.stopPropagation();
@@ -120,6 +232,18 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         const type = e.dataTransfer.getData('componentType');
         const componentData = e.dataTransfer.getData('componentData');
+        const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+
+        if (draggedId) {
+            const targetId = targetContainerId || currentScreen.id;
+            if (draggedId !== targetId) {
+                const position = targetContainerId ? 'inside' : 'after';
+                if (appState.moveComponent) {
+                    appState.moveComponent(draggedId, targetId, position);
+                }
+            }
+            return;
+        }
 
         if (!type) return;
 
@@ -441,7 +565,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         }}
                     >
                         {comp.children && comp.children.length > 0 ? (
-                            comp.children.map(child => renderComponentPreview(child))
+                            comp.children.map(child => renderDraggableComponentPreview(child))
                         ) : (
                             <div className="text-slate-900 text-sm italic font-medium flex items-center justify-center flex-1">
                                 Drop components here (Horizontal)
@@ -481,7 +605,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         }}
                     >
                         {comp.children && comp.children.length > 0 ? (
-                            comp.children.map(child => renderComponentPreview(child))
+                            comp.children.map(child => renderDraggableComponentPreview(child))
                         ) : (
                             <div className="text-slate-900 text-sm italic font-medium flex items-center justify-center flex-1">
                                 Drop components here (Vertical)
@@ -490,7 +614,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
-            case 'TableArrangement':
+            case 'TableArrangement': {
                 const numCols = comp.props.Columns || 2;
                 return (
                     <div
@@ -521,7 +645,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         }}
                     >
                         {comp.children && comp.children.length > 0 ? (
-                            comp.children.map(child => renderComponentPreview(child))
+                            comp.children.map(child => renderDraggableComponentPreview(child))
                         ) : (
                             <div className="text-slate-900 text-sm italic font-medium col-span-2 flex items-center justify-center">
                                 Drop components here (Table)
@@ -529,6 +653,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         )}
                     </div>
                 );
+            }
 
             case 'AbsoluteArrangement':
                 return (
@@ -561,7 +686,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                     }}
                                     onClick={(e) => { e.stopPropagation(); setSelectedId(child.id); }}
                                 >
-                                    {renderComponentPreview(child)}
+                                    {renderDraggableComponentPreview(child)}
                                 </div>
                             ))
                         ) : (
@@ -655,7 +780,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     >
                         {comp.children && comp.children.length > 0 ? (
                             <div className="flex flex-col gap-1 p-2">
-                                {comp.children.map(child => renderComponentPreview(child))}
+                                {comp.children.map(child => renderDraggableComponentPreview(child))}
                             </div>
                         ) : (
                             <div className="flex items-center justify-center min-h-[120px] text-sky-700 text-sm font-semibold gap-2">
@@ -790,7 +915,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         </div>
                         {comp.children && comp.children.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                                {comp.children.map(child => renderComponentPreview(child))}
+                                {comp.children.map(child => renderDraggableComponentPreview(child))}
                             </div>
                         )}
                     </div>
@@ -885,6 +1010,38 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
         }
+    };
+
+    const renderDraggableComponentPreview = (comp) => {
+        const childElement = renderComponentPreview(comp);
+        if (!childElement) return null;
+
+        const isDropTarget = dropTargetComponent && dropTargetComponent.id === comp.id;
+        const dropIndicatorStyle = isDropTarget
+            ? (dropTargetComponent.position === 'before'
+                ? { borderTop: '3px solid #3b82f6', borderTopLeftRadius: '0px', borderTopRightRadius: '0px' }
+                : dropTargetComponent.position === 'after'
+                ? { borderBottom: '3px solid #3b82f6', borderBottomLeftRadius: '0px', borderBottomRightRadius: '0px' }
+                : { outline: '2px solid #3b82f6', outlineOffset: '-2px' })
+            : {};
+
+        const isDragged = draggedComponentId === comp.id;
+        const dragOpacity = isDragged ? { opacity: 0.4 } : {};
+
+        return React.cloneElement(childElement, {
+            draggable: true,
+            onDragStart: (e) => handleComponentDragStart(e, comp.id),
+            onDragEnd: handleComponentDragEnd,
+            onDragOver: (e) => handleComponentDragOver(e, comp.id),
+            onDragLeave: handleComponentDragLeave,
+            onDrop: (e) => handleDropOnComponent(e, comp.id),
+            style: {
+                ...(childElement.props.style || {}),
+                ...dropIndicatorStyle,
+                ...dragOpacity,
+                cursor: 'grab'
+            }
+        });
     };
 
     const phoneHeaderFooter = (currentScreen.showStatusBar !== false ? 48 : 0) + (currentScreen.titleVisible !== false ? 56 : 0) + 40; // status + title + nav
@@ -1094,7 +1251,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                             currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
                                     }}
                                 >
-                                    {components.map(comp => renderComponentPreview(comp))}
+                                    {components.map(comp => renderDraggableComponentPreview(comp))}
                                 </div>
                             )}
                         </div>

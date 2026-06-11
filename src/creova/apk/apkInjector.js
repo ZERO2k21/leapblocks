@@ -686,6 +686,8 @@ class ApkInjector {
 
     const/4 v0, 0x0
     :try_start_0
+    invoke-virtual {p1}, Ljava/lang/String;->trim()Ljava/lang/String;
+    move-result-object p1
     new-instance v1, Ljava/net/URL;
     invoke-direct {v1, p1}, Ljava/net/URL;-><init>(Ljava/lang/String;)V
 
@@ -840,7 +842,7 @@ class ApkInjector {
 
     :catch_d0
     move-exception p2
-    if-nez v0, :cond_d6
+    if-eqz v0, :cond_d6
     invoke-virtual {v0}, Ljava/net/HttpURLConnection;->disconnect()V
     :cond_d6
     new-instance p4, Ljava/lang/StringBuilder;

@@ -15,6 +15,79 @@
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
 import { injectAllLibraries } from './ArduinoLibraries';
 import { FreeRTOS } from './FreeRTOS';
+import { CLOUD_COMPILER_URL } from '../../../../../config/platform';
+
+/**
+ * Check if a hostname is a private/local network address.
+ * These addresses cannot be reached by public CORS proxies and
+ * will be blocked by browser Mixed Content / CORS policies.
+ */
+function _isPrivateHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    /^192\.168\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+  );
+}
+
+/**
+ * Relay-aware fetch: routes requests to local/private IPs through the
+ * compiler server's /relay endpoint to bypass CORS and Mixed Content.
+ * Falls back to direct fetch for public URLs.
+ */
+async function _relayFetch(
+  url: string,
+  options: { method?: string; headers?: Record<string, string>; body?: string }
+): Promise<{ status: number; statusText: string; headers: Record<string, string>; bodyText: string }> {
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch { /* invalid URL, try direct fetch */ }
+
+  if (host && _isPrivateHost(host)) {
+    // Route through server-side relay
+    const relayUrl = `${CLOUD_COMPILER_URL}/relay`;
+    console.log(`[WiFi] Relaying ${options.method || 'GET'} ${url} via ${relayUrl}`);
+    const res = await fetch(relayUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: options.body,
+      }),
+    });
+    const data = await res.json();
+    if (!data.success && data.error) {
+      throw new Error(data.error);
+    }
+    return {
+      status: data.status || 0,
+      statusText: data.statusText || '',
+      headers: data.headers || {},
+      bodyText: data.body || '',
+    };
+  }
+
+  // Direct fetch for public URLs
+  const response = await fetch(url, {
+    method: options.method,
+    headers: options.headers,
+    body: (options.method !== 'GET' && options.method !== 'HEAD') ? options.body : undefined,
+  });
+  const hdrs: Record<string, string> = {};
+  response.headers.forEach((v, k) => { hdrs[k] = v; });
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    headers: hdrs,
+    bodyText: await response.text(),
+  };
+}
 
 export type PinMode = 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP' | 'INPUT_PULLDOWN';
 export type PinValue = 0 | 1;
@@ -1242,7 +1315,7 @@ export class ArduinoRuntime {
 
             self.onSerial?.(`__LF_WIFI:http_request:${method} ${url}\n`);
 
-            const response = await fetch(url, {
+            const response = await _relayFetch(url, {
               method,
               headers,
               body: (method !== 'GET' && method !== 'HEAD') ? body : undefined,
@@ -1250,11 +1323,11 @@ export class ArduinoRuntime {
 
             // Build HTTP response string for sketch to read
             let responseText = `HTTP/1.1 ${response.status} ${response.statusText}\r\n`;
-            response.headers.forEach((value, key) => {
+            for (const [key, value] of Object.entries(response.headers)) {
               responseText += `${key}: ${value}\r\n`;
-            });
+            }
             responseText += '\r\n';
-            responseText += await response.text();
+            responseText += response.bodyText;
 
             this._responseBuffer = responseText;
             self.onSerial?.(`__LF_WIFI:http_response:${response.status}\n`);
@@ -1327,17 +1400,16 @@ export class ArduinoRuntime {
 
             self.onSerial?.(`__LF_WIFI:http_request:${method} ${this._url}\n`);
 
-            const response = await fetch(this._url, {
+            const response = await _relayFetch(this._url, {
               method,
               headers,
               body: body,
-              signal: controller.signal,
             });
 
             clearTimeout(timeoutId);
 
             this._responseCode = response.status;
-            this._responseBody = await response.text();
+            this._responseBody = response.bodyText;
 
             self.onSerial?.(`__LF_WIFI:http_response:${this._responseCode}\n`);
 

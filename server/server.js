@@ -875,6 +875,95 @@ app.get('/logs', (req, res) => {
   }
 });
 
+// ─── POST /relay — HTTP relay for CORS-restricted local requests ──
+// Forwards HTTP requests server-side to bypass browser CORS / Mixed Content
+// restrictions. Used by the Electra ESP32 simulator and Creova Web component
+// to reach local network devices (e.g. ESP32 at 192.168.x.x).
+app.post('/relay', async (req, res) => {
+  const { url: targetUrl, method = 'GET', headers: reqHeaders = {}, body: reqBody } = req.body;
+  if (!targetUrl) {
+    return res.status(400).json({ success: false, error: 'No target URL provided' });
+  }
+
+  // Security: only allow HTTP/HTTPS URLs to private/local IPs
+  let parsed;
+  try {
+    parsed = new URL(targetUrl);
+  } catch {
+    return res.status(400).json({ success: false, error: 'Invalid URL' });
+  }
+
+  const host = parsed.hostname;
+  const isPrivate = (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    /^192\.168\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+  );
+
+  if (!isPrivate) {
+    return res.status(403).json({ success: false, error: 'Relay only allowed for private/local network addresses' });
+  }
+
+  console.log(`[RELAY] ${method} ${targetUrl}`);
+
+  try {
+    const httpModule = parsed.protocol === 'https:' ? await import('https') : await import('http');
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: method.toUpperCase(),
+      headers: { ...reqHeaders },
+      timeout: 10000,
+    };
+
+    // Remove host header if present (Node sets it automatically)
+    delete options.headers['Host'];
+    delete options.headers['host'];
+
+    const proxyRes = await new Promise((resolve, reject) => {
+      const r = httpModule.default.request(options, (response) => {
+        let data = '';
+        response.on('data', chunk => { data += chunk; });
+        response.on('end', () => {
+          resolve({
+            status: response.statusCode,
+            statusText: response.statusMessage,
+            headers: response.headers,
+            body: data,
+          });
+        });
+      });
+      r.on('error', reject);
+      r.on('timeout', () => { r.destroy(); reject(new Error('Request timed out')); });
+
+      if (reqBody && method !== 'GET' && method !== 'HEAD') {
+        r.write(typeof reqBody === 'string' ? reqBody : JSON.stringify(reqBody));
+      }
+      r.end();
+    });
+
+    // Return the proxied response
+    res.json({
+      success: true,
+      status: proxyRes.status,
+      statusText: proxyRes.statusText,
+      headers: proxyRes.headers,
+      body: proxyRes.body,
+    });
+  } catch (err) {
+    console.error(`[RELAY] Error: ${err.message}`);
+    res.json({
+      success: false,
+      status: 0,
+      error: err.message,
+    });
+  }
+});
+
 // ─── GET /health ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   let cliVersion = 'unknown';
@@ -901,7 +990,7 @@ app.get('/health', async (req, res) => {
     toolsExist,
     buildPath,
     dirname: __dirname,
-    endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/logs', '/health'],
+    endpoints: ['/compile', '/compile/esp32', '/transpile', '/build-apk', '/build', '/status/:jobId', '/download/:jobId', '/firmware/:id', '/libraries/search', '/libraries/installed', '/libraries/install', '/libraries/remove', '/job/:jobId', '/relay', '/logs', '/health'],
   });
 });
 
