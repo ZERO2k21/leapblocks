@@ -24,6 +24,13 @@
     word-break: break-word !important;
 }
 
+/* Dropdown text - force consistent 13px font size */
+.junior-mode .blocklyDropdownText{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+}
+
 /* Ensure blocks have enough minimum width for text */
 .junior-mode .blocklyBlock {
     min-width: 100px;
