@@ -8,6 +8,7 @@ import SpriteCard from './SpriteCard';
 import SceneCard from './SceneCard';
 import { Flag, RotateCw, Camera, CameraOff, Grid3X3, Maximize, Minimize, Square, Circle, ScanFace, Image as ImageIcon, MicOff, Shrink } from 'lucide-react';
 import Logo from '../../../components/Logo';
+import { showToast } from './Toast';
 
 export default function RightPanel({
     children,
@@ -131,10 +132,10 @@ export default function RightPanel({
 
                                 {/* Right Section: Record, Face, Image, Mic, Timer */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <ActionIcon icon={<Circle size={22} fill="#c9c9c9ff" color="#c9c9c9ff" />} label="Record" onClick={() => alert('Record feature coming soon')} outlineColor="transparent" size={42} />
-                                    <ActionIcon icon={<ScanFace size={22} color="#c9c9c9ff" />} label="Face Tracking" onClick={() => alert('Face tracking coming soon')} outlineColor="#c9c9c9ff" size={42} />
-                                    <ActionIcon icon={<ImageIcon size={22} color="#c9c9c9ff" />} label="Add Image/Backdrop" onClick={() => alert('Images coming soon')} outlineColor="#c9c9c9ff" size={42} />
-                                    <ActionIcon icon={<MicOff size={20} color="#c9c9c9ff" strokeWidth={2.5} />} label="Mic Off" onClick={() => alert('Mic toggle coming soon')} outlineColor="transparent" size={42} />
+                                    <ActionIcon icon={<Circle size={22} fill="#c9c9c9ff" color="#c9c9c9ff" />} label="Record" onClick={() => showToast('Record feature coming soon', 'info')} outlineColor="transparent" size={42} />
+                                    <ActionIcon icon={<ScanFace size={22} color="#c9c9c9ff" />} label="Face Tracking" onClick={() => showToast('Face tracking coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
+                                    <ActionIcon icon={<ImageIcon size={22} color="#c9c9c9ff" />} label="Add Image/Backdrop" onClick={() => showToast('Images coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
+                                    <ActionIcon icon={<MicOff size={20} color="#c9c9c9ff" strokeWidth={2.5} />} label="Mic Off" onClick={() => showToast('Mic toggle coming soon', 'info')} outlineColor="transparent" size={42} />
                                     <div style={{ background: '#c9c9c9ff', color: 'white', fontWeight: 600, fontSize: '15px', padding: '6px 18px', borderRadius: '25px', letterSpacing: '1px', marginLeft: '4px' }}>
                                         0 : 00
                                     </div>

@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AudioRecorder from '../../../Leap-audio/src/audio/audio-recorder';
 import { Play, X, RotateCcw, ChevronLeft } from 'lucide-react';
+import { showToast } from './Toast';
 
 // --- SUB-COMPONENTS ---
 
@@ -203,7 +204,7 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
                     setAnalyser(recorderRef.current.getAnalyser());
                     setIsReady(true);
                 } else {
-                    alert("Microphone access is required.");
+                    showToast("Microphone access is required.", 'error');
                     onClose();
                 }
             });

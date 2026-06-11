@@ -12,6 +12,7 @@ import defineSoundBlocks from "../../server/blocks/soundBlocks";
 import { registerLeapRenderer } from "../../server/blocks/LeapRenderer";
 import { getLessonConfig } from "../../server/engine/LessonConfig";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
+import { showToast } from "../components/Toast";
 import { previewActions } from "../../server/engine/previewActions";
 import { looksPreview } from "../../server/engine/looksPreview";
 import { EXTENSIONS, registerExtensions } from "../../../extensions/extensionDefinitions";
@@ -527,7 +528,7 @@ export function useJuniorWorkspace({
 
                     const blocks = workspaceRef.current.getAllBlocks(false);
                     if (blocks.length > MAX_BLOCKS) {
-                        alert(`Lesson Limit: You can only use ${MAX_BLOCKS} blocks!`);
+                        showToast(`Lesson Limit: You can only use ${MAX_BLOCKS} blocks!`, 'warning');
                         setTimeout(() => workspaceRef.current.undo(false), 0);
                         return;
                     }
@@ -535,7 +536,7 @@ export function useJuniorWorkspace({
                     const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current);
                     if (!validation.isValid) {
                         if (!validation.error.includes("connected to a Start") && !validation.error.includes("Start block")) {
-                            alert(validation.error);
+                            showToast(validation.error, 'error');
                             if (validation.victim) {
                                 setTimeout(() => validation.victim.dispose(), 0);
                             }

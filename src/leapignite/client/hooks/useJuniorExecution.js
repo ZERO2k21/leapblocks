@@ -9,6 +9,7 @@ import { javascriptGenerator } from "@blockly-runtime";
 import { Interpreter as LeapInterpreter, ExecutionStop } from "../../server/engine/Interpreter";
 import { executionEngine } from "../../../engine/ExecutionEngine";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
+import { showToast } from "../components/Toast";
 
 export function useJuniorExecution({
     workspaceRef,
@@ -65,7 +66,7 @@ export function useJuniorExecution({
         const validation = WorkspaceValidator.validateWorkspace(workspaceRef.current);
         if (!validation.isValid) {
             if (!validation.error.includes("connected to a Start") && !validation.error.includes("Start block")) {
-                alert(`Oops! ${validation.error}`);
+                showToast(`Oops! ${validation.error}`, 'error');
                 return;
             }
         }

@@ -39,6 +39,7 @@ import { gettingStartedTutorial } from "./tutorials/gettingStarted";
 import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
 import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
+import { ToastProvider, useToast } from "./components/Toast";
 
 const TUTORIALS = {
     'getting_started': gettingStartedTutorial,
@@ -80,11 +81,20 @@ function ensureBlocksRegistered() {
 const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
 export default function JuniorApp({ onBack }) {
+    return (
+        <ToastProvider>
+            <JuniorAppInner onBack={onBack} />
+        </ToastProvider>
+    );
+}
+
+function JuniorAppInner({ onBack }) {
     // Ensure blocks are registered on first render
     ensureBlocksRegistered();
 
     // Get lazily-initialized singletons
     const audioEngine = getAudioEngine();
+    const toast = useToast();
 
     // Initialize modular runtime on mount
     useEffect(() => {
@@ -1003,7 +1013,7 @@ export default function JuniorApp({ onBack }) {
                     onRestart={() => window.resetBear()}
                     onNext={() => {
                         window.resetBear();
-                        alert("Next lesson coming soon!");
+                        toast("Next lesson coming soon!");
                     }}
                 />
             )}
@@ -1017,7 +1027,7 @@ export default function JuniorApp({ onBack }) {
                     }}
                     onPaintSprite={() => {
                         setIsSpriteModalOpen(false);
-                        alert('Paint editor - select a sprite first, then edit its costume');
+                        toast('Paint editor - select a sprite first, then edit its costume');
                     }}
                 />
             )}

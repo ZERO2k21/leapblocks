@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import Blockly from "@blockly-runtime";
+import { showToast } from "../components/Toast";
 
 const normalizeJuniorSpriteType = (rawType) => {
     const normalized = String(rawType || "").trim().toLowerCase();
@@ -172,7 +173,7 @@ export function useJuniorUIHandlers({
 
         const costumeKeys = Object.keys(sprite.costumes);
         if (costumeKeys.length <= 1) {
-            alert("Cannot delete the last costume!");
+            showToast("Cannot delete the last costume!", 'warning');
             return;
         }
 
@@ -491,7 +492,7 @@ export function useJuniorUIHandlers({
 
     const deleteSprite = (spriteId) => {
         if (sprites.length <= 1) {
-            alert("Cannot delete the last sprite!");
+            showToast("Cannot delete the last sprite!", 'warning');
             return;
         }
         if (!confirm(`Delete sprite?`)) return;
@@ -549,7 +550,7 @@ export function useJuniorUIHandlers({
 
     const deleteScene = (sceneId) => {
         if (scenes.length <= 1) {
-            alert("Cannot delete the last scene!");
+            showToast("Cannot delete the last scene!", 'warning');
             return;
         }
         if (!confirm(`Delete scene?`)) return;
@@ -583,7 +584,7 @@ export function useJuniorUIHandlers({
                 setIsCameraOn(true);
             } catch (err) {
                 console.error('Camera error:', err);
-                alert('Could not access camera. Please allow camera permissions.');
+                showToast('Could not access camera. Please allow camera permissions.', 'error');
             }
         }
     };
@@ -598,7 +599,7 @@ export function useJuniorUIHandlers({
             samples: Array.from(audioData.samples),
             sampleRate: audioData.sampleRate
         };
-        alert(`Saved as '${name}'. You can now select it in the 'play sound' block dropdown!`);
+        showToast(`Saved as '${name}'. You can now select it in the 'play sound' block dropdown!`, 'success');
     };
 
     const toggleFullscreen = () => {
@@ -619,12 +620,12 @@ export function useJuniorUIHandlers({
         if (action === "share to") project.handleShareProject();
 
         if (["qr", "examples", "guide", "record"].includes(action)) {
-            alert(`Feature '${action}' coming soon!`);
+            showToast(`Feature '${action}' coming soon!`, 'info');
         }
     };
 
     const handleEditMenu = (action) => {
-        if (action === "restore") alert("Restore workspace feature coming soon!");
+        if (action === "restore") showToast("Restore workspace feature coming soon!", 'info');
         if (action === "undo") workspaceRef.current?.undo(false);
         if (action === "redo") workspaceRef.current?.undo(true);
     };

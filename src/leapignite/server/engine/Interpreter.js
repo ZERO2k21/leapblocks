@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { WorkspaceValidator } from "./WorkspaceValidator";
+import { showToast } from "../../client/components/Toast";
 
 /**
  * Custom error class to signal execution stop
@@ -167,7 +168,7 @@ export class Interpreter {
             const check = WorkspaceValidator.validateStack(block);
             if (!check.isValid) {
                 console.warn(`Validation Error on stack starting with ${block.type}: ${check.error}`);
-                alert(`⚠️ Oops! ${check.error}`);
+                showToast(`Oops! ${check.error}`, 'error');
                 return Promise.resolve(); // Resolves safely for invalid stacked code
             }
 
@@ -385,7 +386,7 @@ export class Interpreter {
             console.warn("Interpreter Safety:", e.message);
             // If timeout or error, force stop
             this.stopAll();
-            alert(`⚠️ Script stopped: ${e.message}`);
+            showToast(`Script stopped: ${e.message}`, 'error');
         }
     }
 }

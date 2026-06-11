@@ -6,6 +6,7 @@
 import { useState, useRef } from "react";
 import Blockly from "@blockly-runtime";
 import { fileService } from "../../../Electra/Client/Src/services/FileService";
+import { showToast } from "../components/Toast";
 
 const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
@@ -160,7 +161,7 @@ export function useJuniorProject({
             const validation = fileService.validateProject(data, 'junior');
 
             if (!validation.isValid) {
-                alert(validation.error);
+                showToast(validation.error, 'error');
                 return;
             }
 
@@ -248,7 +249,7 @@ export function useJuniorProject({
             console.log('[JuniorApp] Project loaded successfully');
         } catch (err) {
             console.error('Failed to load project:', err);
-            alert('Failed to load project file: ' + err.message);
+            showToast('Failed to load project file: ' + err.message, 'error');
         } finally {
             e.target.value = "";
         }
