@@ -556,11 +556,11 @@ ipcMain.handle('save-project', async (_, data, existingPath?: string) => {
 
   if (!targetPath) {
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save LeapBlocks Project File',
+      title: 'Save LeapLab Project File',
       defaultPath: 'project.leap',
       buttonLabel: 'Save Project',
       filters: [
-        { name: 'LeapBlocks Project', extensions: ['leap'] }
+        { name: 'LeapLab Project', extensions: ['leap'] }
       ]
     });
     if (!filePath) return { success: false };
@@ -584,10 +584,10 @@ ipcMain.handle('open-project', async () => {
   if (!mainWindow) return null;
 
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Open LeapBlocks Project File',
+    title: 'Open LeapLab Project File',
     properties: ['openFile'],
     filters: [
-      { name: 'LeapBlocks Project', extensions: ['leap', 'lbp'] }
+      { name: 'LeapLab Project', extensions: ['leap', 'lbp'] }
     ]
   });
 
