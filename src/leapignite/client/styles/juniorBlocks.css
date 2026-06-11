@@ -259,6 +259,29 @@
     scrollbar-width: none;
 }
 
+/* Slim scrollbar utility */
+.junior-mode .slim-scrollbar::-webkit-scrollbar{
+    height: 4px;
+}
+
+.junior-mode .slim-scrollbar::-webkit-scrollbar-track{
+    background: transparent;
+}
+
+.junior-mode .slim-scrollbar::-webkit-scrollbar-thumb{
+    background: #c4c4c4;
+    border-radius: 4px;
+}
+
+.junior-mode .slim-scrollbar::-webkit-scrollbar-thumb:hover{
+    background: #a0a0a0;
+}
+
+.junior-mode .slim-scrollbar{
+    scrollbar-width: thin;
+    scrollbar-color: #c4c4c4 transparent;
+}
+
 /* ============================================
    JUNIOR SOUND RECORDER STYLES (Mockup Match)
    ============================================ */

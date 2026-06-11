@@ -45,7 +45,6 @@ export function useJuniorWindowActions({
         };
 
         window.stopAll = () => {
-            window.showFeedback?.("STOPPED");
         };
 
         window.stopExecution = () => {

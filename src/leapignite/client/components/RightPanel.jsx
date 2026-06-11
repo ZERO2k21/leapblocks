@@ -228,7 +228,7 @@ export default function RightPanel({
                 gap: "10px",
                 overflowX: "auto",
                 minHeight: "100px",
-            }} className='no-scrollbar'>
+            }} className='slim-scrollbar'>
                 {/* Add Sprite Button */}
                 <div
                     onClick={onAddSprite}
@@ -287,7 +287,7 @@ export default function RightPanel({
                 gap: "10px",
                 overflowX: "auto",
                 minHeight: "100px",
-            }} className='no-scrollbar'>
+            }} className='slim-scrollbar'>
                 {/* Add Scene Button */}
                 <div
                     onClick={onAddScene}
