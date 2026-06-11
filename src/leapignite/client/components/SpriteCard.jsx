@@ -174,6 +174,7 @@ export default function SpriteCard({
             <div style={{
                 width: "100%",
                 fontSize: "10px",
+
                 fontWeight: "700",
                 color: "white",
                 background: "#7B4FC4",

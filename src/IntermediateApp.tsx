@@ -655,9 +655,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleFullscreen = () => {
         if (!isFullscreen) {
             setIsFullscreen(true);
-            // Calculate initial scale
-            const scaleX = window.innerWidth / 480;
-            const scaleY = (window.innerHeight - 54) / 360; // 54px toolbar
+            // Calculate initial scale (account for 240px sprite panel and 48px toolbar)
+            const scaleX = (window.innerWidth - 240) / 480;
+            const scaleY = (window.innerHeight - 48) / 310;
             setFullscreenScale(Math.min(scaleX, scaleY));
         } else {
             setIsFullscreen(false);
@@ -671,9 +671,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         const updateScale = () => {
             if (isFullscreen) {
-                // Scale stage canvas (480×360) to fill viewport minus toolbar (54px)
-                const scaleX = window.innerWidth / 480;
-                const scaleY = (window.innerHeight - 54) / 360;
+                // Scale stage canvas (480x310) to fill viewport minus toolbar (48px) and sprite panel (240px)
+                const scaleX = (window.innerWidth - 240) / 480;
+                const scaleY = (window.innerHeight - 48) / 310;
                 setFullscreenScale(Math.min(scaleX, scaleY));
             } else {
                 setFullscreenScale(1);
@@ -6093,7 +6093,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Stage Container */}
                     <div ref={stageContainerRef} className="stage-container-responsive" style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? '100vw' : '100%',
+                        width: isFullscreen ? 'calc(100vw - 240px)' : '100%',
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
@@ -6202,13 +6202,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         {/* --- STAGE RENDERING --- */}
                         {(() => {
                             const CANVAS_WIDTH = 480;
-                            const CANVAS_HEIGHT = 360;
+                            const CANVAS_HEIGHT = 310;
 
-                            // Fullscreen: scale canvas to fill viewport minus 48px toolbar
+                            // Fullscreen: scale canvas to fill viewport minus 48px toolbar and 240px sprite panel
                             const TOOLBAR_H = 48;
+                            const SPRITE_PANEL_W = 240;
                             const fsScale = isFullscreen
                                 ? Math.min(
-                                    window.innerWidth / CANVAS_WIDTH,
+                                    (window.innerWidth - SPRITE_PANEL_W) / CANVAS_WIDTH,
                                     (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
                                 )
                                 : 1;
@@ -6227,22 +6228,34 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     overflow: 'visible',
                                     height: isFullscreen ? `calc(100vh - ${TOOLBAR_H}px)` : 'auto',
                                 }}>
-                                    {/* Stage canvas */}
+                                    {/* Stage canvas - display container */}
                                     <div style={{
-                                        width: `${displayW}px`,
-                                        height: `${displayH}px`,
+                                        width: isFullscreen ? `${displayW}px` : '100%',
+                                        height: isFullscreen ? `${displayH}px` : 'auto',
                                         background: 'white',
                                         boxShadow: isFullscreen ? '0 4px 32px rgba(0,0,0,0.18)' : 'none',
                                         borderRadius: isFullscreen ? '4px' : '0',
                                         overflow: 'hidden',
                                         position: 'relative',
                                         flex: '0 0 auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}>
+                                        {/* Scaling wrapper - preserves internal resolution at 480x310 */}
+                                        <div style={{
+                                            width: `${CANVAS_WIDTH}px`,
+                                            height: `${CANVAS_HEIGHT}px`,
+                                            transform: isFullscreen ? `scale(${fsScale})` : 'none',
+                                            transformOrigin: 'center center',
+                                            flex: '0 0 auto',
+                                            overflow: 'visible',
+                                        }}>
                                         <Stage
 
-                                            width={displayW}
+                                            width={CANVAS_WIDTH}
 
-                                            height={displayH}
+                                            height={CANVAS_HEIGHT}
 
                                             sprites={sprites}
 
@@ -6290,20 +6303,30 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                 <AskBar question={askState.question} onSubmit={handleAskSubmit} />
                                             </div>
                                         )}
+                                        </div>
                                     </div>
 
-                                    {/* Sprite & Stage Panel Unit — hidden in fullscreen */}
-                                    {editorMode === 'stage' && !isFullscreen && (
+                                    {/* Sprite & Stage Panel Unit — visible in fullscreen on right side */}
+                                    {editorMode === 'stage' && (
                                         <div style={{
                                             ...styles.assetsContainer,
-                                            width: '100%',
-                                            flex: '1 1 auto',
+                                            width: isFullscreen ? '240px' : '100%',
+                                            flex: isFullscreen ? 'none' : '1 1 auto',
                                             minHeight: 0,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             justifyContent: 'flex-start',
                                             alignItems: 'stretch',
                                             overflow: 'visible',
+                                            ...(isFullscreen ? {
+                                                position: 'fixed' as const,
+                                                right: 0,
+                                                top: '48px',
+                                                height: 'calc(100vh - 48px)',
+                                                zIndex: 10000,
+                                                background: '#f5f5f5',
+                                                borderLeft: '1px solid #d9d9d9',
+                                            } : {}),
                                         }}>
                                             <SpritePanel
                                                 sprites={sprites}
