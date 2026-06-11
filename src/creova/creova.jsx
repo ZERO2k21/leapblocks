@@ -82,7 +82,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
       } else if (result && result.error) {
         alert(`Failed to open project: ${result.error}`);
@@ -103,7 +103,7 @@ export default function AppInventor({ onBack }) {
         const projectData = JSON.parse(content);
         appState.loadProject(projectData);
 
-        const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+        const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
         appState.setAppName(nameWithoutExt);
         setProjectPath(null);
         alert('Project imported successfully!');
@@ -129,7 +129,7 @@ export default function AppInventor({ onBack }) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${appState.appName || 'project'}.lbp`;
+        a.download = `${appState.appName || 'project'}.leap`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -153,7 +153,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -183,7 +183,7 @@ export default function AppInventor({ onBack }) {
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -405,7 +405,7 @@ export default function AppInventor({ onBack }) {
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept=".lbp,.json"
+        accept=".leap,.lbp,.json"
         onChange={handleWebImport}
       />
       <IgniteTopbar

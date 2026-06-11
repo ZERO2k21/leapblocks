@@ -31,7 +31,7 @@ export interface LeapProject {
   name: string;
   circuit: any;
   code: string;
-  libraries: string[];
+  libraries?: string[];
   updatedAt: string;
 }
 

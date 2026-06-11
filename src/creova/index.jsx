@@ -62,7 +62,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         setProjectPath(redirectProjectData.projectPath);
         const pathParts = redirectProjectData.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
-        if (folderName) appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+        if (folderName) appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
       } else if (redirectProjectData.projectName) {
         appState.setAppName(redirectProjectData.projectName);
         setProjectPath(null);
@@ -109,7 +109,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
       } else if (result && result.error) {
         alert(`Failed to open project: ${result.error}`);
@@ -133,7 +133,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         if (projectData.nodes || projectData.edges || projectData.circuit) {
           console.log('[Creova/AppInventor] Detected Electra project file, redirecting...');
           if (onRedirectToElectra) {
-            const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+            const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
             onRedirectToElectra(projectData, nameWithoutExt, null);
             return;
           }
@@ -141,7 +141,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
 
         appState.loadProject(projectData);
 
-        const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+        const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
         appState.setAppName(nameWithoutExt);
         setProjectPath(null);
         alert('Project imported successfully!');
@@ -167,7 +167,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${appState.appName || 'project'}.lbp`;
+        a.download = `${appState.appName || 'project'}.leap`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -191,7 +191,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -221,7 +221,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
         if (folderName) {
-          appState.setAppName(folderName.replace(/\.lbp$/i, ''));
+          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
         }
         alert("Project saved successfully!");
       } else if (result.error) {
@@ -444,7 +444,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept=".lbp,.json"
+        accept=".leap,.lbp,.json"
         onChange={handleWebImport}
       />
       <IgniteTopbar

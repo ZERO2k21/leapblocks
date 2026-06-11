@@ -35,14 +35,14 @@ interface ForgeElectraProps {
 const ESP32_DEFAULT_CODE = `// ESP32-C3 Project
 void setup() {
   Serial.begin(115200);
-  pinMode(8, OUTPUT);
+  pinMode(13, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(8, HIGH);
+  digitalWrite(13, HIGH);
   Serial.println("LED ON");
   delay(1000);
-  digitalWrite(8, LOW);
+  digitalWrite(13, LOW);
   Serial.println("LED OFF");
   delay(1000);
 }`;
@@ -250,7 +250,7 @@ export default function ForgeElectra({
         setProjectPath(rProjectPath);
         const pathParts = rProjectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
-        const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : 'Loaded Project';
+        const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : 'Loaded Project';
         setProjectName(cleanName);
       } else if (rProjectName) {
         setProjectName(rProjectName);
@@ -357,7 +357,7 @@ export default function ForgeElectra({
 
           const pathParts = result.projectPath.split(/[\\/]/);
           const folderName = pathParts[pathParts.length - 1];
-          const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : 'Loaded Project';
+          const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : 'Loaded Project';
           setProjectName(cleanName);
 
           setHistory([]);
@@ -386,7 +386,7 @@ export default function ForgeElectra({
         if (projectData.screens || projectData.schemaVersion) {
           console.log('[Electra/ForgeElectra] Detected Creova project file, redirecting...');
           if (onRedirectToCreova) {
-            const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+            const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
             onRedirectToCreova(projectData, nameWithoutExt, null);
             return;
           }
@@ -400,7 +400,7 @@ export default function ForgeElectra({
           autoInstallLibraries(projectData.libraries || []);
           if (projectData.board) setBoard(projectData.board);
 
-          const nameWithoutExt = file.name.replace(/\.lbp$|\.json$/i, '');
+          const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
           setProjectName(nameWithoutExt);
           setProjectPath(null);
 
@@ -442,7 +442,6 @@ export default function ForgeElectra({
           edges,
           code,
           board,
-          libraries: importedLibraries,
           version: '1.0.0',
           timestamp: new Date().toISOString()
         };
@@ -451,7 +450,7 @@ export default function ForgeElectra({
           setProjectPath(result.projectPath);
           const pathParts = result.projectPath.split(/[\\/]/);
           const folderName = pathParts[pathParts.length - 1];
-          const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : projectName;
+          const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : projectName;
           setProjectName(cleanName);
         }
       } else {
@@ -460,7 +459,6 @@ export default function ForgeElectra({
           edges,
           code,
           board,
-          libraries: importedLibraries,
           version: '1.0.0',
           timestamp: new Date().toISOString()
         };
@@ -468,7 +466,7 @@ export default function ForgeElectra({
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${projectName || 'project'}.lbp`;
+        a.download = `${projectName || 'project'}.leap`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -480,7 +478,6 @@ export default function ForgeElectra({
           name: projectName,
           circuit: { nodes, edges },
           code,
-          libraries: importedLibraries,
           updatedAt: new Date().toISOString()
         });
         setProjectPath(id);
@@ -503,7 +500,6 @@ export default function ForgeElectra({
         edges,
         code,
         board,
-        libraries: importedLibraries,
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
@@ -512,7 +508,7 @@ export default function ForgeElectra({
         setProjectPath(result.projectPath);
         const pathParts = result.projectPath.split(/[\\/]/);
         const folderName = pathParts[pathParts.length - 1];
-        const cleanName = folderName ? folderName.replace(/\.lbp$/i, '') : projectName;
+        const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : projectName;
         setProjectName(cleanName);
       }
     } catch (err) {
@@ -836,7 +832,7 @@ export default function ForgeElectra({
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept=".lbp,.json"
+        accept=".leap,.lbp,.json"
         onChange={handleWebImport}
       />
       <IgniteTopbar
