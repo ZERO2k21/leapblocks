@@ -141,6 +141,26 @@ export default function TopBar() {
                     ))}
                 </div>
 
+                {ctx.isRunning ? (
+                    <button onClick={ctx.handleStop} title="Stop (Escape)" style={{
+                        display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+                        background: "#EF4444", color: "#fff", border: "none", borderRadius: 4,
+                        cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        boxShadow: "0 2px 4px rgba(239, 68, 68, 0.3)",
+                    }}>
+                        <Square size={13} fill="#fff" /> Stop
+                    </button>
+                ) : (
+                    <button onClick={ctx.handleRun} title="Run Code (Ctrl+Enter or F5)" style={{
+                        display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+                        background: "#10B981", color: "#fff", border: "none", borderRadius: 4,
+                        cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        boxShadow: "0 2px 4px rgba(16, 185, 129, 0.3)",
+                    }}>
+                        <Play size={13} fill="#fff" /> Run
+                    </button>
+                )}
+
                 <button onClick={() => { if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload"); else ctx.handleUploadFirmware(); }}
                     style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500 }}>
                     <Upload size={15} /> {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}

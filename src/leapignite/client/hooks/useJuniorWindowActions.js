@@ -65,9 +65,9 @@ export function useJuniorWindowActions({
         };
         window.getAnimationDelay = () => window.animationSpeed || 0.5;
 
-        window.penColor = "#FF0000";
+        if (!window.penColor) window.penColor = "#FF0000";
         window.setPenColor = (color) => { window.penColor = color; };
-        window.penSize = 5;
+        if (!window.penSize) window.penSize = 5;
         window.setPenSize = (size) => { window.penSize = parseInt(size); };
 
         window.stopAllSounds = () => {

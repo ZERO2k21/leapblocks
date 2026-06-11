@@ -249,6 +249,9 @@ export class Interpreter {
                         continue;
                     }
 
+                    // Initialize generator for this workspace (required before blockToCode)
+                    this.generator.init(tempWs);
+
                     // Log block execution for debugging
                     console.log(`[Interpreter] [${spriteId}] Executing block: ${block.type}`);
 
