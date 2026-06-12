@@ -31,6 +31,8 @@ export const WireEdge: React.FC<EdgeProps> = ({
 }) => {
   const { getZoom } = useReactFlow();
   const updateEdgeData = useForgeStore(s => s.updateEdgeData);
+  const isDraggingWaypoint = useForgeStore(s => s.isDraggingWaypoint);
+  const setIsDraggingWaypoint = useForgeStore(s => s.setIsDraggingWaypoint);
 
   const userWaypoints: Point[] = data?.waypoints ?? [];
   const hasUserWaypoints = userWaypoints.length > 0;
@@ -59,6 +61,7 @@ export const WireEdge: React.FC<EdgeProps> = ({
   const onWaypointMouseDown = useCallback((e: React.MouseEvent, idx: number) => {
     e.stopPropagation();
     e.preventDefault();
+    setIsDraggingWaypoint(true);
     draggingIdx.current = idx;
     dragStart.current = {
       mx: e.clientX,
@@ -84,13 +87,14 @@ export const WireEdge: React.FC<EdgeProps> = ({
     const onUp = () => {
       draggingIdx.current = null;
       dragStart.current = null;
+      setIsDraggingWaypoint(false);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [id, bendPoints, getZoom, updateEdgeData]);
+  }, [id, bendPoints, getZoom, updateEdgeData, setIsDraggingWaypoint]);
 
   // ── Add waypoint on midpoint click ───────────────────────────────────────
   const addWaypoint = useCallback((e: React.MouseEvent, insertAfterIdx: number, pt: Point) => {
@@ -124,8 +128,14 @@ export const WireEdge: React.FC<EdgeProps> = ({
   return (
     <g
       className="wire-edge-group"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        if (isDraggingWaypoint) return;
+        setIsHovered(true);
+      }}
       onMouseLeave={() => setIsHovered(false)}
+      style={{
+        pointerEvents: (isDraggingWaypoint && !selected) ? 'none' : 'auto'
+      }}
     >
       {/* 1. SELECTION HIGHLIGHT — flat, no blur */}
       {(selected || isHovered) && (

@@ -43,6 +43,7 @@ export class ILI9341TouchElement extends LitElement {
   @property({ type: Boolean }) flipHorizontal = false;
   @property({ type: Boolean }) flipVertical    = false;
   @property({ type: Number }) rotation         = 0;
+  @property({ type: Boolean, reflect: true }) simulating = false;
 
   /** Rendered element width in CSS pixels */
   readonly width  = PX_W;
@@ -51,25 +52,30 @@ export class ILI9341TouchElement extends LitElement {
 
   private _canvas: HTMLCanvasElement | null | undefined = undefined;
   private _ctx: CanvasCtx = null;
+  private _isTouched = false;
 
   // 11-pin layout: 9 display SPI + 2 touch I2C (2.54mm pitch)
   readonly pinInfo: ElementPin[] = [
-    { name: 'VCC',  x: Math.round(14.34 * SCALE), y: Math.round(75.5 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
-    { name: 'GND',  x: Math.round(16.88 * SCALE), y: Math.round(75.5 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
-    { name: 'CS',   x: Math.round(19.42 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('SS')] },
-    { name: 'RST',  x: Math.round(21.96 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'D/C',  x: Math.round(24.50 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'MOSI', x: Math.round(27.04 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('MOSI')] },
-    { name: 'SCK',  x: Math.round(29.58 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('SCK')] },
-    { name: 'LED',  x: Math.round(32.12 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'MISO', x: Math.round(34.66 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('MISO')] },
-    { name: 'SDA',  x: Math.round(37.20 * SCALE), y: Math.round(75.5 * SCALE), signals: [i2c('SDA')] },
-    { name: 'SCL',  x: Math.round(39.74 * SCALE), y: Math.round(75.5 * SCALE), signals: [i2c('SCL')] },
+    { name: 'VCC',  x: Math.round(14.34 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
+    { name: 'GND',  x: Math.round(16.88 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
+    { name: 'CS',   x: Math.round(19.42 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SS')] },
+    { name: 'RST',  x: Math.round(21.96 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'D/C',  x: Math.round(24.50 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MOSI', x: Math.round(27.04 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MOSI')] },
+    { name: 'SCK',  x: Math.round(29.58 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SCK')] },
+    { name: 'LED',  x: Math.round(32.12 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MISO', x: Math.round(34.66 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MISO')] },
+    { name: 'SDA',  x: Math.round(37.20 * SCALE), y: Math.round(76.0 * SCALE), signals: [i2c('SDA')] },
+    { name: 'SCL',  x: Math.round(39.74 * SCALE), y: Math.round(76.0 * SCALE), signals: [i2c('SCL')] },
   ];
 
   static get styles() {
     return css`
-      :host { display: inline-block; }
+      :host { display: block; }
+
+      :host(:not([simulating])) canvas {
+        pointer-events: none;
+      }
 
       .tft-wrap {
         position: relative;
@@ -143,18 +149,23 @@ export class ILI9341TouchElement extends LitElement {
 
   private _onPointerDown(e: PointerEvent): void {
     e.preventDefault();
+    e.stopPropagation();
+    this._isTouched = true;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     this._handlePointerEvent(e, true);
   }
 
   private _onPointerMove(e: PointerEvent): void {
-    if ((e.target as HTMLElement).hasPointerCapture(e.pointerId)) {
+    e.stopPropagation();
+    if (this._isTouched) {
       this._handlePointerEvent(e, true);
     }
   }
 
   private _onPointerUp(e: PointerEvent): void {
     e.preventDefault();
+    e.stopPropagation();
+    this._isTouched = false;
     if ((e.target as HTMLElement).hasPointerCapture(e.pointerId)) {
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     }

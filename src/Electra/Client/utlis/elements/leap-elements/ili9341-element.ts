@@ -60,20 +60,20 @@ export class ILI9341Element extends LitElement {
   // SPI pin layout — 9 pins at the bottom of the board (2.54mm pitch)
   // SVG coordinates match the pin circles in renderSVG()
   readonly pinInfo: ElementPin[] = [
-    { name: 'VCC',  x: Math.round(11.8  * SCALE), y: Math.round(75.5 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
-    { name: 'GND',  x: Math.round(14.34 * SCALE), y: Math.round(75.5 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
-    { name: 'CS',   x: Math.round(16.88 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('SS')] },
-    { name: 'RST',  x: Math.round(19.42 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'D/C',  x: Math.round(21.96 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'MOSI', x: Math.round(24.5  * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('MOSI')] },
-    { name: 'SCK',  x: Math.round(27.04 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('SCK')] },
-    { name: 'LED',  x: Math.round(29.58 * SCALE), y: Math.round(75.5 * SCALE), signals: [] },
-    { name: 'MISO', x: Math.round(32.12 * SCALE), y: Math.round(75.5 * SCALE), signals: [spi('MISO')] },
+    { name: 'VCC',  x: Math.round(11.8  * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
+    { name: 'GND',  x: Math.round(14.34 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
+    { name: 'CS',   x: Math.round(16.88 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SS')] },
+    { name: 'RST',  x: Math.round(19.42 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'D/C',  x: Math.round(21.96 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MOSI', x: Math.round(24.5  * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MOSI')] },
+    { name: 'SCK',  x: Math.round(27.04 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SCK')] },
+    { name: 'LED',  x: Math.round(29.58 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MISO', x: Math.round(32.12 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MISO')] },
   ];
 
   static get styles() {
     return css`
-      :host { display: inline-block; }
+      :host { display: block; }
 
       .tft-wrap {
         position: relative;

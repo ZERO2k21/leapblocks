@@ -210,6 +210,15 @@ var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9
   drawTriangle(){} fillTriangle(){} drawRoundRect(){} fillRoundRect(){}
   width(){return 320;} height(){return 240;} invertDisplay(){}
 };
+var TFT_eSPI = (typeof TFT_eSPI !== 'undefined' && TFT_eSPI) || class {
+  constructor(){} begin(){} init(){} setRotation(){} fillScreen(){} setCursor(){}
+  setTextColor(){} setTextSize(){} print(){} println(){} drawPixel(){}
+  drawLine(){} drawRect(){} fillRect(){} drawCircle(){} fillCircle(){}
+  drawTriangle(){} fillTriangle(){} drawRoundRect(){} fillRoundRect(){}
+  width(){return 320;} height(){return 240;} invertDisplay(){}
+  drawString(){} drawCentreString(){} drawRightString(){} drawNumber(){} drawFloat(){}
+};
+
 var TS_Point = (typeof TS_Point !== 'undefined' && TS_Point) || class {
   constructor(x, y, z) {
     this.x = x || 0;
@@ -377,6 +386,26 @@ if (typeof ILI9341_WHITE === 'undefined')       ILI9341_WHITE       = 0xFFFF;
 if (typeof ILI9341_ORANGE === 'undefined')      ILI9341_ORANGE      = 0xFD20;
 if (typeof ILI9341_GREENYELLOW === 'undefined') ILI9341_GREENYELLOW = 0xAFE5;
 if (typeof ILI9341_PINK === 'undefined')        ILI9341_PINK        = 0xFC18;
+if (typeof TFT_BLACK === 'undefined')       TFT_BLACK       = 0x0000;
+if (typeof TFT_NAVY === 'undefined')        TFT_NAVY        = 0x000F;
+if (typeof TFT_DARKGREEN === 'undefined')   TFT_DARKGREEN   = 0x03E0;
+if (typeof TFT_DARKCYAN === 'undefined')    TFT_DARKCYAN    = 0x03EF;
+if (typeof TFT_MAROON === 'undefined')      TFT_MAROON      = 0x7800;
+if (typeof TFT_PURPLE === 'undefined')      TFT_PURPLE      = 0x780F;
+if (typeof TFT_OLIVE === 'undefined')       TFT_OLIVE       = 0x7BE0;
+if (typeof TFT_LIGHTGREY === 'undefined')   TFT_LIGHTGREY   = 0xC618;
+if (typeof TFT_DARKGREY === 'undefined')    TFT_DARKGREY    = 0x7BEF;
+if (typeof TFT_BLUE === 'undefined')        TFT_BLUE        = 0x001F;
+if (typeof TFT_GREEN === 'undefined')       TFT_GREEN       = 0x07E0;
+if (typeof TFT_CYAN === 'undefined')        TFT_CYAN        = 0x07FF;
+if (typeof TFT_RED === 'undefined')         TFT_RED         = 0xF800;
+if (typeof TFT_MAGENTA === 'undefined')     TFT_MAGENTA     = 0xF81F;
+if (typeof TFT_YELLOW === 'undefined')      TFT_YELLOW      = 0xFFE0;
+if (typeof TFT_WHITE === 'undefined')       TFT_WHITE       = 0xFFFF;
+if (typeof TFT_ORANGE === 'undefined')      TFT_ORANGE      = 0xFD20;
+if (typeof TFT_GREENYELLOW === 'undefined') TFT_GREENYELLOW = 0xAFE5;
+if (typeof TFT_PINK === 'undefined')        TFT_PINK        = 0xFC18;
+
 // ── FreeRTOS constants (provided by runtime) ─────────────────────────────────
 if (typeof pdTRUE === 'undefined')  pdTRUE = 1;
 if (typeof pdFALSE === 'undefined') pdFALSE = 0;

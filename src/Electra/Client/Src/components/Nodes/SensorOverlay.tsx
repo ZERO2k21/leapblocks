@@ -4,7 +4,18 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
+
+const withEngine = (cb: (engine: any) => void) => {
+  const engine = getCircuitEngineSync();
+  if (engine) {
+    cb(engine);
+  } else {
+    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+      cb(circuitEngine);
+    });
+  }
+};
 
 interface SensorOverlayProps {
   nodeId: string;
@@ -251,9 +262,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       updateNodeData(nodeId, {
         sensorValues: { ...currentValues, motionDetected: next },
       });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'OUT', next);
-      });
+      withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', next));
     };
 
     return (
@@ -297,9 +306,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const update = (key: string, val: number) => {
       const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushMPU6050Values(nodeId, next);
-      });
+      withEngine(engine => engine.pushMPU6050Values(nodeId, next));
     };
 
     return (
@@ -327,9 +334,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
     const handleChange = (val: number) => {
       updateNodeData(nodeId, { sensorValues: { ...currentValues, value: val } });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'OUT', true);
-      });
+      withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', true));
     };
 
     return (
@@ -368,10 +373,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'AO', true);
+      withEngine(engine => {
+        engine.pushInputSignal(nodeId, 'AO', true);
         const doIsLow = (key === 'value' ? val : lux) < (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DO', !doIsLow);
+        engine.pushInputSignal(nodeId, 'DO', !doIsLow);
       });
     };
 
@@ -411,10 +416,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
+      withEngine(engine => {
+        engine.pushInputSignal(nodeId, 'AOUT', true);
         const nowFlame = (key === 'value' ? val : intensity) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowFlame);
+        engine.pushInputSignal(nodeId, 'DOUT', !nowFlame);
       });
     };
 
@@ -452,10 +457,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
+      withEngine(engine => {
+        engine.pushInputSignal(nodeId, 'AOUT', true);
         const nowGas = (key === 'value' ? val : concentration) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', !nowGas);
+        engine.pushInputSignal(nodeId, 'DOUT', !nowGas);
       });
     };
 
@@ -517,10 +522,10 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const handleChange = (key: 'value' | 'threshold', val: number) => {
       const next = { ...currentValues, [key]: val };
       updateNodeData(nodeId, { sensorValues: next });
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, 'AOUT', true);
+      withEngine(engine => {
+        engine.pushInputSignal(nodeId, 'AOUT', true);
         const nowSound = (key === 'value' ? val : level) > (key === 'threshold' ? val : threshold);
-        circuitEngine.pushInputSignal(nodeId, 'DOUT', nowSound);
+        engine.pushInputSignal(nodeId, 'DOUT', nowSound);
       });
     };
 
@@ -605,9 +610,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
         : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
           : 'OUT';
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(nodeId, outPin, true);
-      });
+      withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
     }
   };
 

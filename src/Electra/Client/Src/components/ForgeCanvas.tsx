@@ -79,7 +79,18 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, defaultOnEdgesChange] = useEdgesState([]);
+
+  // Wrap edge-change handler: block selection changes while dragging a waypoint
+  const onEdgesChange = useCallback(
+    (changes: any[]) => {
+      if (store.isDraggingWaypoint) {
+        changes = changes.filter((c: any) => c.type !== 'select');
+      }
+      defaultOnEdgesChange(changes);
+    },
+    [store, defaultOnEdgesChange]
+  );
 
   // Sync store -> local React Flow state
   useEffect(() => {
@@ -387,6 +398,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, [wireDraft, addWireWaypoint, store, screenToFlowPosition, panDragEnabled]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
+    // Block edge selection while a waypoint drag is active on another wire
+    if (store.isDraggingWaypoint) return;
     store.setSelectedEdge(edge.id);
   }, [store]);
 
