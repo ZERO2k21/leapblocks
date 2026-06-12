@@ -681,9 +681,14 @@ export default function ForgeElectra({
         if (!isInEditor) {
           const state = useForgeStore.getState();
           if (state.selectedNodeId) {
-            e.preventDefault();
-            state.removeNode(state.selectedNodeId);
-            state.setSelectedNode(null);
+            // Prevent deleting board elements (ESP32, Arduino)
+            const node = state.nodes.find(n => n.id === state.selectedNodeId);
+            const isBoardNode = node && ['esp32-c3', 'esp32', 'arduino-uno'].includes(node.data?.type);
+            if (!isBoardNode) {
+              e.preventDefault();
+              state.removeNode(state.selectedNodeId);
+              state.setSelectedNode(null);
+            }
           } else if (state.selectedEdgeId) {
             e.preventDefault();
             state.removeEdge(state.selectedEdgeId);

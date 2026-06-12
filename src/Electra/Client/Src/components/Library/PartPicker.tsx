@@ -30,7 +30,6 @@ const COMPONENTS = [
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
   { id: 'l298n', name: 'L298N Driver', category: 'outputs', desc: 'Dual DC motor driver' },
   { id: 'dc-motor', name: 'DC Motor', category: 'outputs', desc: 'Simple DC motor' },
-  { id: 'ks2e-m-dc5', name: 'Relay', category: 'outputs', desc: '5V Relay' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
 
   // DISPLAYS
@@ -83,6 +82,21 @@ const getComponentScale = (id: string, defaultScale: number): number => {
   if (id === 'membrane-keypad') return 0.2;
   if (id === 'analog-joystick') return 0.55;
   if (id === 'hc-sr04') return 0.4;
+  if (id === 'led-bar-graph') return 0.8;
+  if (id === 'l298n') return 0.4;
+  if (id === 'a4988') return 0.4;
+  if (id === 'ds1307') return 0.8;
+  if (id === 'microsd-card') return 0.8;
+  if (id === 'hx711') return 0.4;
+  if (id === '7segment') return 0.6;
+  if (id === 'lcd1602') return 0.25;
+  if (id === 'lcd1602-i2c') return 0.25;
+  if (id === 'lcd2004') return 0.25;
+  if (id === 'lcd2004-i2c') return 0.25;
+  if (id === 'ssd1306') return 0.8;
+  if (id === 'ili9341') return 0.4;
+  if (id === 'ili9341-touch') return 0.4;
+  if (id == 'neopixel-matrix') return 0.4;
   const pinData = LEAP_PINS[id];
   if (!pinData || !pinData.viewBox) {
     return defaultScale; // Fallback to default scale
