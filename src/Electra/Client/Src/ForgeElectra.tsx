@@ -861,7 +861,19 @@ export default function ForgeElectra({
             <ComponentSidebar
               onSelect={(type) => {
                 const state = useForgeStore.getState();
-                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+                // Place part at the center of the currently visible viewport
+                const container = document.querySelector('.forge-canvas-container');
+                const vp = state.viewport;
+                let pos = { x: 400, y: 300 };
+                if (container) {
+                  const rect = container.getBoundingClientRect();
+                  // Convert screen center to flow coordinates
+                  pos = {
+                    x: (rect.width / 2 - vp.x) / vp.zoom,
+                    y: (rect.height / 2 - vp.y) / vp.zoom,
+                  };
+                }
+                state.addNode(type, pos, { label: type.toUpperCase() });
               }}
               onClose={() => setShowPartPicker(false)}
               currentBoard={board as any}

@@ -115,7 +115,7 @@ const Loader: React.FC = () => (
                         <div className="crystal" />
                         <div className="crystal" />
                     </div>
-                    <div className="leapblocks-loader-text">Loading LeapBlocks...</div>
+                    <div className="leapblocks-loader-text">Loading LeapLab...</div>
                 </div>
             </div>
         </div>

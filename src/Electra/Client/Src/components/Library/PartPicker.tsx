@@ -76,11 +76,13 @@ const COMPONENTS = [
 ];
 
 const getComponentScale = (id: string, defaultScale: number): number => {
-  // Custom manual scale overrides for very small components
+  // Custom manual scale overrides for components that need specific sizing
   if (id === 'neopixel') return 2.3;
   if (id === 'led' || id === 'rgb-led') return 1.0;
   if (id === 'resistor') return 1.3;
-
+  if (id === 'membrane-keypad') return 0.2;
+  if (id === 'analog-joystick') return 0.55;
+  if (id === 'hc-sr04') return 0.4;
   const pinData = LEAP_PINS[id];
   if (!pinData || !pinData.viewBox) {
     return defaultScale; // Fallback to default scale
