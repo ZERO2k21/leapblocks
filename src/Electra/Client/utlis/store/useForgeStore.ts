@@ -571,7 +571,20 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   setSelectedNode: (id) => set({ selectedNodeId: id, selectedEdgeId: null }),
   setSelectedEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
 
-  clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
+  clearWorkspace: () => {
+    const { isSimulating, stopSimulation } = get();
+    if (isSimulating) {
+      stopSimulation();
+    }
+    set({
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      serialOutput: '',
+      wifiLog: []
+    });
+  },
 
   setNodes: (nodes) => {
     const state = useForgeStore.getState();

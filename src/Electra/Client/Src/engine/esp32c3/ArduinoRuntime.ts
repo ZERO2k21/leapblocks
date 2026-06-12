@@ -449,6 +449,9 @@ export class ArduinoRuntime {
 
     // Evaluate the transpiled code in a sandbox with Arduino APIs available
     try {
+      // Clean up any remaining void parameters in function definitions (e.g. async function __setup(void))
+      jsCode = jsCode.replace(/\b(async\s+)?function\s+(\w+)\s*\(\s*void\s*\)/g, '$1function $2()');
+
       const fn = new Function(...Object.keys(context), jsCode);
       fn(...Object.values(context));
       console.log(`[ARDUINO RUNTIME] ✓ Code evaluated. setup=${!!exports.setup}, loop=${!!exports.loop}`);

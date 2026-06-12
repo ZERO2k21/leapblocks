@@ -316,6 +316,12 @@ export default function ForgeElectra({
   // File Operations
   const handleNewProject = () => {
     if (confirm('Create a new project? Unsaved changes will be lost.')) {
+      if (isSimulating) {
+        stopSimulation();
+      } else {
+        clearSerial();
+        clearWiFiLog();
+      }
       setNodes([]);
       setEdges([]);
       setCode(board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
@@ -345,6 +351,13 @@ export default function ForgeElectra({
               onRedirectToCreova(result.data, null, result.projectPath);
               return;
             }
+          }
+
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
           }
 
           const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs } = result.data;
@@ -393,6 +406,13 @@ export default function ForgeElectra({
         }
 
         if (projectData.nodes && projectData.edges) {
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
+          }
+
           setNodes(projectData.nodes || []);
           setEdges(projectData.edges || []);
           setCode(projectData.code || '');
