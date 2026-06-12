@@ -13,6 +13,7 @@ import { StepperEmulator } from './StepperEmulator';
 import { StepperEmulator as UnifiedStepperEmulator, type StepperModel } from '../../simulation/components/StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
+import { FT6206I2CSlave } from './FT6206I2CSlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
 import { DS1307Emulator } from './DS1307Emulator';
 import { KeypadEmulator } from './KeypadEmulator';
@@ -87,6 +88,7 @@ class CircuitEngine {
   private stepperEmulators = new Map<string, StepperEmulator>();
   private unifiedStepperEmulators = new Map<string, UnifiedStepperEmulator>();
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
+  private ft6206Slaves = new Map<string, FT6206I2CSlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private ssd1306Slaves = new Map<string, SSD1306I2CSlave>();
   private keypadEmulators = new Map<string, KeypadEmulator>();
@@ -635,7 +637,7 @@ class CircuitEngine {
         try {
           const { nodes } = useForgeStore.getState();
           for (const n of nodes) {
-            if (n.data?.type === 'ili9341') {
+            if (n.data?.type === 'ili9341' || n.data?.type === 'ili9341-touch') {
               this._nodeId = n.id;
               console.log(`[TFT] constructor: found ILI9341 node ${this._nodeId}`);
               break;
@@ -783,8 +785,78 @@ class CircuitEngine {
       }
     };
 
+    const RealTS_Point = class {
+      x: number;
+      y: number;
+      z: number;
+      constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+      }
+    };
+
+    const RealAdafruit_FT6206 = class {
+      private _nodeId: string | null = null;
+      private _threshold = 128;
+
+      constructor() {
+        try {
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'ili9341-touch') {
+              this._nodeId = n.id;
+              console.log(`[FT6206] constructor: found touch display node ${this._nodeId}`);
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      begin(thresh = 128) {
+        this._threshold = thresh;
+        console.log(`[FT6206] begin(threshold=${this._threshold})`);
+        return true;
+      }
+
+      touched(): number {
+        if (!this._nodeId) return 0;
+        try {
+          const { nodes } = useForgeStore.getState();
+          const node = nodes.find(n => n.id === this._nodeId);
+          return node?.data?.sensorValues?.touched ? 1 : 0;
+        } catch (e) {
+          return 0;
+        }
+      }
+
+      getPoint() {
+        if (!this._nodeId) return new RealTS_Point(0, 0, 0);
+        try {
+          const { nodes } = useForgeStore.getState();
+          const node = nodes.find(n => n.id === this._nodeId);
+          if (!node || !node.data?.sensorValues?.touched) {
+            return new RealTS_Point(0, 0, 0);
+          }
+
+          const tx = node.data.sensorValues.touchX ?? 0;
+          const ty = node.data.sensorValues.touchY ?? 0;
+
+          // Map raw coordinates to bottom-right origin (0-239, 0-319)
+          const rawX = 239 - tx;
+          const rawY = 319 - ty;
+
+          return new RealTS_Point(rawX, rawY, 1);
+        } catch (e) {
+          return new RealTS_Point(0, 0, 0);
+        }
+      }
+    };
+
     this._pendingLibraryClasses.set('Adafruit_ILI9341', RealAdafruitILI9341);
-    console.log(`[TFT BRIDGE] RealAdafruitILI9341 stored in _pendingLibraryClasses`);
+    this._pendingLibraryClasses.set('Adafruit_FT6206', RealAdafruit_FT6206);
+    this._pendingLibraryClasses.set('TS_Point', RealTS_Point);
+    console.log(`[TFT BRIDGE] RealAdafruitILI9341 + FT6206 stored in _pendingLibraryClasses`);
 
     // ── LiquidCrystal_I2C ────────────────────────────────────────────────────────
     // IMPORTANT: We write directly to the HD44780 emulator's internal fields
@@ -921,8 +993,10 @@ class CircuitEngine {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
       esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
       esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
+      esp32Runtime.injectLibraryClass('Adafruit_FT6206', RealAdafruit_FT6206);
+      esp32Runtime.injectLibraryClass('TS_Point', RealTS_Point);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + Touch + LCD_I2C + wired I2C bus');
     } else {
       console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
     }
@@ -987,6 +1061,7 @@ class CircuitEngine {
     this.unifiedStepperEmulators.clear();
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
+    this.ft6206Slaves.clear();
     this.mpu6050Slaves.clear();
     this.ssd1306Slaves.clear();
     this.keypadEmulators.clear();
@@ -1189,6 +1264,30 @@ class CircuitEngine {
         } else {
           console.warn(`[FORGE CIRCUIT] ILI9341 (${nodeId}): SPI bus not available on this board`);
         }
+      }
+
+      // Register ILI9341 TFT + FT6206 Touch display SPI part
+      if (node.data?.type === 'ili9341-touch') {
+        const nodeId = node.id;
+        const spi = simulationRunner.SPI;
+        if (spi) {
+          const slave = new ILI9341SPISlave(spi, (pixels, displayOn) => {
+            const imageData = new ImageData(new Uint8ClampedArray(pixels), 240, 320);
+            updateNodeData(nodeId, { tftImageData: imageData, tftDisplayOn: displayOn });
+          });
+          slave.attach();
+          this.ili9341Slaves.set(nodeId, slave);
+          console.log(`[FORGE CIRCUIT] ILI9341-touch display (${nodeId}) registered on SPI bus`);
+        } else {
+          console.warn(`[FORGE CIRCUIT] ILI9341-touch (${nodeId}): SPI bus not available on this board`);
+        }
+
+        // Register FT6206 touch controller on I2C bus (address 0x38)
+        const i2cAddr = 0x38;
+        const touchSlave = new FT6206I2CSlave(i2cAddr, nodeId);
+        this.i2cBusManager.registerSlave(touchSlave);
+        this.ft6206Slaves.set(nodeId, touchSlave);
+        console.log(`[FORGE CIRCUIT] FT6206 Touch (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
       }
 
       // Register MPU6050 as I2C slave (default address 0x68, AD0=LOW)
@@ -1737,7 +1836,7 @@ class CircuitEngine {
 
             // --- ILI9341 TFT SPI Display Emulation ---
             // D/C pin controls command vs data mode; CS pin enables/disables the chip.
-            if (peripheralNode.data?.type === 'ili9341') {
+            if (peripheralNode.data?.type === 'ili9341' || peripheralNode.data?.type === 'ili9341-touch') {
               const slave = this.ili9341Slaves.get(peripheralId);
               if (slave) {
                 if (peripheralPinName === 'D/C') {
@@ -2918,6 +3017,29 @@ class CircuitEngine {
     this.pushInputSignal(nodeId, 'OUT', isHigh);
 
     console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
+  }
+
+  /**
+   * Update the touchscreen state (coordinates and touched status).
+   * Called by LeapNode when canvas touch/pointer events fire.
+   */
+  public setTouchState(nodeId: string, touched: boolean, x: number, y: number) {
+    const { updateNodeData, nodes } = useForgeStore.getState();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Persist values in the store
+    const currentValues = node.data?.sensorValues || {};
+    updateNodeData(nodeId, {
+      sensorValues: {
+        ...currentValues,
+        touched,
+        touchX: x,
+        touchY: y
+      }
+    });
+
+    console.log(`[FORGE CIRCUIT] Touch Screen (${nodeId}) touched: ${touched}, x: ${x}, y: ${y}`);
   }
 
   /**

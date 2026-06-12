@@ -246,7 +246,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     if (data.oledImageData) {
       mappedProps.imageData = data.oledImageData;
     }
-  } else if (data.type === 'ili9341') {
+  } else if (data.type === 'ili9341' || data.type === 'ili9341-touch') {
     // ILI9341 TFT: pass RGBA ImageData decoded by CircuitEngine from the SPI pixel stream
     if (data.tftImageData) {
       mappedProps.imageData = data.tftImageData;
@@ -321,7 +321,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   // (React JSX spread doesn't reliably set complex object properties on Web Components)
   useEffect(() => {
     if (!elementRef.current) return;
-    if (data.type === 'ili9341' && data.tftImageData) {
+    if ((data.type === 'ili9341' || data.type === 'ili9341-touch') && data.tftImageData) {
       elementRef.current.imageData = data.tftImageData;
     } else if (data.type === 'ssd1306' && data.oledImageData) {
       console.log(`[LEAP NODE OLED] useEffect: setting imageData on element. ref=${!!elementRef.current}, imageData=${data.oledImageData?.width}×${data.oledImageData?.height}`);
@@ -488,6 +488,24 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       if (typeof el.requestUpdate === 'function') el.requestUpdate();
     }
   }, [data.neopixelPixels, data.type, data.cols]);
+
+  // Wire ili9341-touch canvas events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'ili9341-touch') return;
+
+    const handleTouchChange = (e: Event) => {
+      const { touched, x, y } = (e as CustomEvent).detail ?? { touched: false, x: 0, y: 0 };
+      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        circuitEngine.setTouchState(id, touched, x, y);
+      });
+    };
+
+    el.addEventListener('touch-change', handleTouchChange);
+    return () => {
+      el.removeEventListener('touch-change', handleTouchChange);
+    };
+  }, [data.type, id]);
 
   // Wire membrane-keypad DOM button-press/release events into the circuit engine
   useEffect(() => {

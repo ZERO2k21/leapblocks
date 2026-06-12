@@ -1379,6 +1379,71 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
+  "ili9341-touch": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 46.5,
+      "height": 77.6
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "x": 14.34,
+        "y": 75.5
+      },
+      {
+        "name": "GND",
+        "x": 16.88,
+        "y": 75.5
+      },
+      {
+        "name": "CS",
+        "x": 19.42,
+        "y": 75.5
+      },
+      {
+        "name": "RST",
+        "x": 21.96,
+        "y": 75.5
+      },
+      {
+        "name": "D/C",
+        "x": 24.5,
+        "y": 75.5
+      },
+      {
+        "name": "MOSI",
+        "x": 27.04,
+        "y": 75.5
+      },
+      {
+        "name": "SCK",
+        "x": 29.58,
+        "y": 75.5
+      },
+      {
+        "name": "LED",
+        "x": 32.12,
+        "y": 75.5
+      },
+      {
+        "name": "MISO",
+        "x": 34.66,
+        "y": 75.5
+      },
+      {
+        "name": "SDA",
+        "x": 37.2,
+        "y": 75.5
+      },
+      {
+        "name": "SCL",
+        "x": 39.74,
+        "y": 75.5
+      }
+    ]
+  },
   "ir-receiver": {
     "viewBox": {
       "minX": 0,

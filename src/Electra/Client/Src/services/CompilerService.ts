@@ -210,6 +210,19 @@ var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9
   drawTriangle(){} fillTriangle(){} drawRoundRect(){} fillRoundRect(){}
   width(){return 320;} height(){return 240;} invertDisplay(){}
 };
+var TS_Point = (typeof TS_Point !== 'undefined' && TS_Point) || class {
+  constructor(x, y, z) {
+    this.x = x || 0;
+    this.y = y || 0;
+    this.z = z || 0;
+  }
+};
+var Adafruit_FT6206 = (typeof Adafruit_FT6206 !== 'undefined' && Adafruit_FT6206) || class {
+  constructor() {}
+  begin(threshold) { return true; }
+  touched() { return 0; }
+  getPoint() { return new TS_Point(0, 0, 0); }
+};
 var IPAddress = (typeof IPAddress !== 'undefined' && IPAddress) || class {
   constructor(a,b,c,d){ this._a=a||0; this._b=b||0; this._c=c||0; this._d=d||0; }
   toString(){ return this._a+'.'+this._b+'.'+this._c+'.'+this._d; }

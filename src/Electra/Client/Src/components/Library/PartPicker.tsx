@@ -41,6 +41,7 @@ const COMPONENTS = [
   { id: '7segment', name: '7-Segment', category: 'displays', desc: 'Numeric display' },
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
   { id: 'ili9341', name: 'ILI9341 TFT', category: 'displays', desc: '2.8" SPI TFT' },
+  { id: 'ili9341-touch', name: 'ILI9341 TFT + FT6206 Touch', category: 'displays', desc: '2.8" SPI TFT + I2C Touch' },
 
   // SENSORS
   { id: 'dht22', name: 'DHT22', category: 'sensors', desc: 'Temp & Humidity' },

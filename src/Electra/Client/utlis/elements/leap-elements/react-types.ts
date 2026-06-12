@@ -48,6 +48,7 @@ import { KY040Element } from './ky-040-element';
 import { PhotoresistorSensorElement } from './photoresistor-sensor-element';
 import { RGBLedElement } from './rgb-led-element';
 import { ILI9341Element } from './ili9341-element';
+import { ILI9341TouchElement } from './ili9341-touch-element'; // touch screen option
 import { LedBarGraphElement } from './led-bar-graph-element';
 import { MicrosdCardElement } from './microsd-card-element';
 import { StepperMotorElement } from './stepper-motor-element';
@@ -109,6 +110,7 @@ declare global {
       'leap-photoresistor-sensor': LeapElement<PhotoresistorSensorElement>;
       'leap-rgb-led': LeapElement<RGBLedElement>;
       'leap-ili9341': LeapElement<ILI9341Element>;
+      'leap-ili9341-touch': LeapElement<ILI9341TouchElement>;
       'leap-led-bar-graph': LeapElement<LedBarGraphElement>;
       'leap-microsd-card': LeapElement<MicrosdCardElement>;
       'leap-stepper-motor': LeapElement<StepperMotorElement>;
