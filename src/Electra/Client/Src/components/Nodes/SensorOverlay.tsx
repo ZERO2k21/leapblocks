@@ -21,6 +21,7 @@ interface SensorOverlayProps {
   nodeId: string;
   type: string;
   currentValues: any;
+  rotation?: number;
 }
 
 // ── Single-value slider row (Horizontal and Compact) ─────────────────────────
@@ -148,6 +149,9 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   );
 };
 
+// Create context for unrotating sensor overlay cards
+export const RotationContext = React.createContext<number>(0);
+
 // ── Compact theme-aware Card Wrapper sitting right above the component ──────
 interface CompactCardProps {
   borderColor?: string;
@@ -157,21 +161,80 @@ interface CompactCardProps {
 const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
+  const rotation = React.useContext(RotationContext);
 
   const defaultBorder = isLightTheme ? '#cbd5e1' : (borderColor || 'rgba(255, 255, 255, 0.08)');
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const [positionStyle, setPositionStyle] = React.useState<React.CSSProperties>({
+    position: 'absolute',
+    bottom: 'calc(100% + 6px)',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    transformOrigin: 'bottom center',
+  });
+
+  React.useLayoutEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const wrapper = card.closest('.leap-node-wrapper') as HTMLElement;
+    if (!wrapper) return;
+
+    const updatePosition = () => {
+      const nodeWidth = wrapper.offsetWidth;
+      const nodeHeight = wrapper.offsetHeight;
+      const R = rotation;
+
+      if (R === 0) {
+        setPositionStyle({
+          position: 'absolute',
+          bottom: 'calc(100% + 6px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          transformOrigin: 'bottom center',
+        });
+        return;
+      }
+
+      const R_rad = (R * Math.PI) / 180;
+      const Y_offset = - (nodeHeight / 2 + 6);
+
+      const x_local_from_center = Y_offset * Math.sin(R_rad);
+      const y_local_from_center = Y_offset * Math.cos(R_rad);
+
+      const left_px = nodeWidth / 2 + x_local_from_center;
+      const top_px = nodeHeight / 2 + y_local_from_center;
+
+      setPositionStyle({
+        position: 'absolute',
+        left: `${left_px}px`,
+        top: `${top_px}px`,
+        transform: `translate(-50%, -100%) rotate(${-R}deg)`,
+        transformOrigin: 'bottom center',
+        margin: 0,
+      });
+    };
+
+    updatePosition();
+
+    // Observe changes to wrapper or card size
+    const ro = new ResizeObserver(updatePosition);
+    ro.observe(wrapper);
+    ro.observe(card);
+
+    return () => ro.disconnect();
+  }, [rotation]);
 
   return (
     <div
+      ref={cardRef}
       onPointerDown={e => e.stopPropagation()}
       onPointerUp={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
       className="nodrag nopan"
       style={{
-        position: 'absolute',
-        bottom: 'calc(100% + 6px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        ...positionStyle,
         width: '250px',
         background: isLightTheme ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.92)',
         backdropFilter: 'blur(8px)',
@@ -194,7 +257,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
 };
 
 // ── Main overlay ──────────────────────────────────────────────────────────────
-export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues }) => {
+export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues, rotation = 0 }) => {
   const updateNodeData = useForgeStore(state => state.updateNodeData);
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
@@ -214,418 +277,429 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
   if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
 
-  // ── DHT Sensor ──────────────────────────────────────────────────────────
-  if (isDHT) {
-    const temp = currentValues?.temperature ?? 25;
-    const humidity = currentValues?.humidity ?? 50;
+  const renderContent = () => {
+    // ── DHT Sensor ──────────────────────────────────────────────────────────
+    if (isDHT) {
+      const temp = currentValues?.temperature ?? 25;
+      const humidity = currentValues?.humidity ?? 50;
 
-    const update = (key: 'temperature' | 'humidity', val: number) => {
-      updateNodeData(nodeId, {
-        sensorValues: { ...currentValues, [key]: val },
-      });
-    };
+      const update = (key: 'temperature' | 'humidity', val: number) => {
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, [key]: val },
+        });
+      };
 
-    return (
-      <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
-        <SliderRow
-          label="TEMP"
-          unit="°C"
-          min={type === 'dht11' ? 0 : -40}
-          max={type === 'dht11' ? 50 : 80}
-          step={0.1}
-          value={temp}
-          color="#f97316"
-          onChange={v => update('temperature', v)}
-        />
-        <SliderRow
-          label="HUMIDITY"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={humidity}
-          color="#38bdf8"
-          onChange={v => update('humidity', v)}
-        />
-      </CompactCard>
-    );
-  }
-
-  // ── PIR Motion Sensor ───────────────────────────────────────────────────
-  if (isPIR) {
-    const motionDetected = currentValues?.motionDetected ?? false;
-
-    const toggle = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const next = !motionDetected;
-      updateNodeData(nodeId, {
-        sensorValues: { ...currentValues, motionDetected: next },
-      });
-      withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', next));
-    };
-
-    return (
-      <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'}>
-        <button
-          onClick={toggle}
-          style={{
-            width: '100%',
-            padding: '4px 0',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 800,
-            fontSize: '9px',
-            fontFamily: 'monospace',
-            letterSpacing: '0.05em',
-            background: motionDetected
-              ? 'rgba(74, 222, 128, 0.9)'
-              : (isLightTheme ? '#e2e8f0' : 'rgba(51, 65, 85, 0.9)'),
-            color: motionDetected ? '#0f172a' : (isLightTheme ? '#334155' : '#94a3b8'),
-            boxShadow: motionDetected ? '0 0 6px rgba(74,222,128,0.3)' : 'none',
-          }}
-        >
-          {motionDetected ? '● MOTION DETECTED' : '○ TRIGGER MOTION'}
-        </button>
-      </CompactCard>
-    );
-  }
-
-  // ── MPU6050 3D IMU ──────────────────────────────────────────────────────
-  if (isMPU6050) {
-    const sv = currentValues ?? {};
-    const accelX = sv.accelX ?? 0;
-    const accelY = sv.accelY ?? 0;
-    const accelZ = sv.accelZ ?? 1;
-    const gyroX = sv.gyroX ?? 0;
-    const gyroY = sv.gyroY ?? 0;
-    const gyroZ = sv.gyroZ ?? 0;
-    const temp = sv.temp ?? 25;
-
-    const update = (key: string, val: number) => {
-      const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
-      updateNodeData(nodeId, { sensorValues: next });
-      withEngine(engine => engine.pushMPU6050Values(nodeId, next));
-    };
-
-    return (
-      <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
-        <SliderRow label="ACCEL X" unit="g" min={-2} max={2} step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
-        <SliderRow label="ACCEL Y" unit="g" min={-2} max={2} step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
-        <SliderRow label="ACCEL Z" unit="g" min={-2} max={2} step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
-        <SliderRow label="GYRO X" unit="°" min={-250} max={250} step={1} value={gyroX} color="#a78bfa" onChange={v => update('gyroX', v)} />
-        <SliderRow label="GYRO Y" unit="°" min={-250} max={250} step={1} value={gyroY} color="#a78bfa" onChange={v => update('gyroY', v)} />
-        <SliderRow label="GYRO Z" unit="°" min={-250} max={250} step={1} value={gyroZ} color="#a78bfa" onChange={v => update('gyroZ', v)} />
-        <SliderRow label="TEMP" unit="°C" min={-40} max={85} step={0.1} value={temp} color="#f97316" onChange={v => update('temp', v)} />
-      </CompactCard>
-    );
-  }
-
-  // ── NTC Temperature Sensor ───────────────────────────────────────────────
-  if (isNTC) {
-    const tempC = currentValues?.value ?? 25;
-
-    const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
-    const T = tempC + 273.15;
-    const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
-    const voltage = VCC * R_ntc / (Rs + R_ntc);
-    const adcRaw = Math.round((voltage / VCC) * 1023);
-
-    const handleChange = (val: number) => {
-      updateNodeData(nodeId, { sensorValues: { ...currentValues, value: val } });
-      withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', true));
-    };
-
-    return (
-      <CompactCard borderColor="rgba(249,115,22,0.3)">
-        <SliderRow
-          label="TEMP"
-          unit="°C"
-          min={-40}
-          max={125}
-          step={0.5}
-          value={tempC}
-          color="#f97316"
-          onChange={handleChange}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>Vout</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
-          <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>ADC</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── Photoresistor (LDR) Sensor ──────────────────────────────────────────
-  if (isLDR) {
-    const lux = Number(currentValues?.value ?? 500);
-    const threshold = Number(currentValues?.threshold ?? 500);
-
-    const R_ldr = 500000 / Math.max(1, lux);
-    const R_series = 10000;
-    const voltage = 5.0 * R_series / (R_ldr + R_series);
-    const adcRaw = Math.round((voltage / 5.0) * 1023);
-    const doLow = lux < threshold;
-
-    const handleChange = (key: 'value' | 'threshold', val: number) => {
-      const next = { ...currentValues, [key]: val };
-      updateNodeData(nodeId, { sensorValues: next });
-      withEngine(engine => {
-        engine.pushInputSignal(nodeId, 'AO', true);
-        const doIsLow = (key === 'value' ? val : lux) < (key === 'threshold' ? val : threshold);
-        engine.pushInputSignal(nodeId, 'DO', !doIsLow);
-      });
-    };
-
-    return (
-      <CompactCard borderColor="rgba(251,191,36,0.3)">
-        <SliderRow
-          label="LIGHT"
-          unit="lx"
-          min={0}
-          max={1000}
-          step={1}
-          value={lux}
-          color="#fbbf24"
-          onChange={v => handleChange('value', v)}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: '#64748b' }}>Vout</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(1)}V</span>
-          <span style={{ color: '#64748b' }}>ADC</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
-          <span style={{ color: '#64748b' }}>DO</span>
-          <span style={{ color: doLow ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {doLow ? 'LOW' : 'HIGH'}
-          </span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── Flame Sensor ────────────────────────────────────────────────────────
-  if (isFlame) {
-    const intensity = Number(currentValues?.value ?? 0);
-    const threshold = Number(currentValues?.threshold ?? 50);
-    const flameOn = intensity > threshold;
-    const voltage = 5.0 * (1 - intensity / 100);
-
-    const handleChange = (key: 'value' | 'threshold', val: number) => {
-      const next = { ...currentValues, [key]: val };
-      updateNodeData(nodeId, { sensorValues: next });
-      withEngine(engine => {
-        engine.pushInputSignal(nodeId, 'AOUT', true);
-        const nowFlame = (key === 'value' ? val : intensity) > (key === 'threshold' ? val : threshold);
-        engine.pushInputSignal(nodeId, 'DOUT', !nowFlame);
-      });
-    };
-
-    return (
-      <CompactCard borderColor={flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(186,242,100,0.2)'}>
-        <SliderRow
-          label="FLAME"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={intensity}
-          color="#f97316"
-          onChange={v => handleChange('value', v)}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: '#64748b' }}>State</span>
-          <span style={{ color: flameOn ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {flameOn ? 'ACTIVE' : 'SAFE'}
-          </span>
-          <span style={{ color: '#64748b' }}>Vout</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── Gas Sensor ──────────────────────────────────────────────────────────
-  if (isGas) {
-    const concentration = Number(currentValues?.value ?? 0);
-    const threshold = Number(currentValues?.threshold ?? 50);
-    const gasDetected = concentration > threshold;
-    const voltage = 5.0 * concentration / 100;
-
-    const handleChange = (key: 'value' | 'threshold', val: number) => {
-      const next = { ...currentValues, [key]: val };
-      updateNodeData(nodeId, { sensorValues: next });
-      withEngine(engine => {
-        engine.pushInputSignal(nodeId, 'AOUT', true);
-        const nowGas = (key === 'value' ? val : concentration) > (key === 'threshold' ? val : threshold);
-        engine.pushInputSignal(nodeId, 'DOUT', !nowGas);
-      });
-    };
-
-    return (
-      <CompactCard borderColor={gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
-        <SliderRow
-          label="GAS"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={concentration}
-          color="#fb923c"
-          onChange={v => handleChange('value', v)}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: '#64748b' }}>Air</span>
-          <span style={{ color: gasDetected ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
-            {gasDetected ? 'SMOKE' : 'CLEAN'}
-          </span>
-          <span style={{ color: '#64748b' }}>Vout</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── Heart Rate Sensor ────────────────────────────────────────────────────
-  if (isHeartRate) {
-    const bpm = Number(currentValues?.bpm ?? 72);
-
-    const handleChange = (val: number) => {
-      updateNodeData(nodeId, { sensorValues: { ...currentValues, bpm: val } });
-    };
-
-    return (
-      <CompactCard borderColor="rgba(239,68,68,0.3)">
-        <SliderRow
-          label="PULSE"
-          unit="bpm"
-          min={20}
-          max={200}
-          step={1}
-          value={bpm}
-          color="#ef4444"
-          onChange={handleChange}
-        />
-      </CompactCard>
-    );
-  }
-
-  // ── Sound Sensor ────────────────────────────────────────────────────────
-  if (isBigSound) {
-    const level = Number(currentValues?.value ?? 0);
-    const threshold = Number(currentValues?.threshold ?? 50);
-    const soundOn = level > threshold;
-    const voltage = 5.0 * level / 100;
-
-    const handleChange = (key: 'value' | 'threshold', val: number) => {
-      const next = { ...currentValues, [key]: val };
-      updateNodeData(nodeId, { sensorValues: next });
-      withEngine(engine => {
-        engine.pushInputSignal(nodeId, 'AOUT', true);
-        const nowSound = (key === 'value' ? val : level) > (key === 'threshold' ? val : threshold);
-        engine.pushInputSignal(nodeId, 'DOUT', nowSound);
-      });
-    };
-
-    return (
-      <CompactCard borderColor={soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
-        <SliderRow
-          label="SOUND"
-          unit="%"
-          min={0}
-          max={100}
-          step={1}
-          value={level}
-          color="#fb923c"
-          onChange={v => handleChange('value', v)}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: '#64748b' }}>Mic</span>
-          <span style={{ color: soundOn ? '#fb923c' : '#64748b', fontWeight: 900 }}>
-            {soundOn ? 'LOUD' : 'QUIET'}
-          </span>
-          <span style={{ color: '#64748b' }}>Vout</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── HX711 Load Cell ─────────────────────────────────────────────────────
-  if (isHX711) {
-    const weight = Number(currentValues?.weight ?? 0);
-    const maxWeight = Number(currentValues?.maxWeight ?? 5000);
-    const weightKg = (weight / 1000).toFixed(2);
-
-    const handleWeightChange = (val: number) => {
-      updateNodeData(nodeId, { sensorValues: { ...currentValues, weight: val } });
-    };
-
-    return (
-      <CompactCard borderColor="rgba(186,242,100,0.2)">
-        <SliderRow
-          label="WEIGHT"
-          unit="g"
-          min={0}
-          max={maxWeight}
-          step={1}
-          value={weight}
-          color="#bef264"
-          onChange={handleWeightChange}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-          <span style={{ color: '#64748b' }}>Mass</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{weightKg} kg</span>
-          <span style={{ color: '#64748b' }}>Max</span>
-          <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{maxWeight}g</span>
-        </div>
-      </CompactCard>
-    );
-  }
-
-  // ── Single-value sensors (hc-sr04, resistor, etc.) ──────────────────────
-  const config = isDistance
-    ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 0.1, key: 'distance', default: 100, color: '#BEF264' }
-    : type === 'potentiometer'
-      ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
-      : type === 'slide-potentiometer'
-        ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
-        : type === 'resistor'
-          ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', default: 1000, color: '#BEF264' }
-          : type === 'photoresistor'
-            ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', default: 500, color: '#fbbf24' }
-            : type === 'ntc-temperature-sensor'
-              ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', default: 25, color: '#f97316' }
-              : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 512, color: '#BEF264' };
-
-  const currentValue = currentValues?.[config.key] ?? config.default ?? config.min;
-
-  const handleChange = (val: number) => {
-    updateNodeData(nodeId, {
-      sensorValues: { ...currentValues, [config.key]: val },
-    });
-    if (isAnalog) {
-      const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
-        : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
-          : 'OUT';
-      withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
+      return (
+        <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
+          <SliderRow
+            label="TEMP"
+            unit="°C"
+            min={type === 'dht11' ? 0 : -40}
+            max={type === 'dht11' ? 50 : 80}
+            step={0.1}
+            value={temp}
+            color="#f97316"
+            onChange={v => update('temperature', v)}
+          />
+          <SliderRow
+            label="HUMIDITY"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={humidity}
+            color="#38bdf8"
+            onChange={v => update('humidity', v)}
+          />
+        </CompactCard>
+      );
     }
+
+    // ── PIR Motion Sensor ───────────────────────────────────────────────────
+    if (isPIR) {
+      const motionDetected = currentValues?.motionDetected ?? false;
+
+      const toggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const next = !motionDetected;
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, motionDetected: next },
+        });
+        withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', next));
+      };
+
+      return (
+        <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <button
+            onClick={toggle}
+            style={{
+              width: '100%',
+              padding: '4px 0',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '9px',
+              fontFamily: 'monospace',
+              letterSpacing: '0.05em',
+              background: motionDetected
+                ? 'rgba(74, 222, 128, 0.9)'
+                : (isLightTheme ? '#e2e8f0' : 'rgba(51, 65, 85, 0.9)'),
+              color: motionDetected ? '#0f172a' : (isLightTheme ? '#334155' : '#94a3b8'),
+              boxShadow: motionDetected ? '0 0 6px rgba(74,222,128,0.3)' : 'none',
+            }}
+          >
+            {motionDetected ? '● MOTION DETECTED' : '○ TRIGGER MOTION'}
+          </button>
+        </CompactCard>
+      );
+    }
+
+    // ── MPU6050 3D IMU ──────────────────────────────────────────────────────
+    if (isMPU6050) {
+      const sv = currentValues ?? {};
+      const accelX = sv.accelX ?? 0;
+      const accelY = sv.accelY ?? 0;
+      const accelZ = sv.accelZ ?? 1;
+      const gyroX = sv.gyroX ?? 0;
+      const gyroY = sv.gyroY ?? 0;
+      const gyroZ = sv.gyroZ ?? 0;
+      const temp = sv.temp ?? 25;
+
+      const update = (key: string, val: number) => {
+        const next = { accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => engine.pushMPU6050Values(nodeId, next));
+      };
+
+      return (
+        <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
+          <SliderRow label="ACCEL X" unit="g" min={-2} max={2} step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
+          <SliderRow label="ACCEL Y" unit="g" min={-2} max={2} step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
+          <SliderRow label="ACCEL Z" unit="g" min={-2} max={2} step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
+          <SliderRow label="GYRO X" unit="°" min={-250} max={250} step={1} value={gyroX} color="#a78bfa" onChange={v => update('gyroX', v)} />
+          <SliderRow label="GYRO Y" unit="°" min={-250} max={250} step={1} value={gyroY} color="#a78bfa" onChange={v => update('gyroY', v)} />
+          <SliderRow label="GYRO Z" unit="°" min={-250} max={250} step={1} value={gyroZ} color="#a78bfa" onChange={v => update('gyroZ', v)} />
+          <SliderRow label="TEMP" unit="°C" min={-40} max={85} step={0.1} value={temp} color="#f97316" onChange={v => update('temp', v)} />
+        </CompactCard>
+      );
+    }
+
+    // ── NTC Temperature Sensor ───────────────────────────────────────────────
+    if (isNTC) {
+      const tempC = currentValues?.value ?? 25;
+
+      const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000, VCC = 5.0;
+      const T = tempC + 273.15;
+      const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
+      const voltage = VCC * R_ntc / (Rs + R_ntc);
+      const adcRaw = Math.round((voltage / VCC) * 1023);
+
+      const handleChange = (val: number) => {
+        updateNodeData(nodeId, { sensorValues: { ...currentValues, value: val } });
+        withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', true));
+      };
+
+      return (
+        <CompactCard borderColor="rgba(249,115,22,0.3)">
+          <SliderRow
+            label="TEMP"
+            unit="°C"
+            min={-40}
+            max={125}
+            step={0.5}
+            value={tempC}
+            color="#f97316"
+            onChange={handleChange}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>Vout</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+            <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>ADC</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Photoresistor (LDR) Sensor ──────────────────────────────────────────
+    if (isLDR) {
+      const lux = Number(currentValues?.value ?? 500);
+      const threshold = Number(currentValues?.threshold ?? 500);
+
+      const R_ldr = 500000 / Math.max(1, lux);
+      const R_series = 10000;
+      const voltage = 5.0 * R_series / (R_ldr + R_series);
+      const adcRaw = Math.round((voltage / 5.0) * 1023);
+      const doLow = lux < threshold;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AO', true);
+          const doIsLow = (key === 'value' ? val : lux) < (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DO', !doIsLow);
+        });
+      };
+
+      return (
+        <CompactCard borderColor="rgba(251,191,36,0.3)">
+          <SliderRow
+            label="LIGHT"
+            unit="lx"
+            min={0}
+            max={1000}
+            step={1}
+            value={lux}
+            color="#fbbf24"
+            onChange={v => handleChange('value', v)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: '#64748b' }}>Vout</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(1)}V</span>
+            <span style={{ color: '#64748b' }}>ADC</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
+            <span style={{ color: '#64748b' }}>DO</span>
+            <span style={{ color: doLow ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+              {doLow ? 'LOW' : 'HIGH'}
+            </span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Flame Sensor ────────────────────────────────────────────────────────
+    if (isFlame) {
+      const intensity = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const flameOn = intensity > threshold;
+      const voltage = 5.0 * (1 - intensity / 100);
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AOUT', true);
+          const nowFlame = (key === 'value' ? val : intensity) > (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DOUT', !nowFlame);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <SliderRow
+            label="FLAME"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={intensity}
+            color="#f97316"
+            onChange={v => handleChange('value', v)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: '#64748b' }}>State</span>
+            <span style={{ color: flameOn ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+              {flameOn ? 'ACTIVE' : 'SAFE'}
+            </span>
+            <span style={{ color: '#64748b' }}>Vout</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Gas Sensor ──────────────────────────────────────────────────────────
+    if (isGas) {
+      const concentration = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const gasDetected = concentration > threshold;
+      const voltage = 5.0 * concentration / 100;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AOUT', true);
+          const nowGas = (key === 'value' ? val : concentration) > (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DOUT', !nowGas);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <SliderRow
+            label="GAS"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={concentration}
+            color="#fb923c"
+            onChange={v => handleChange('value', v)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: '#64748b' }}>Air</span>
+            <span style={{ color: gasDetected ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+              {gasDetected ? 'SMOKE' : 'CLEAN'}
+            </span>
+            <span style={{ color: '#64748b' }}>Vout</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Heart Rate Sensor ────────────────────────────────────────────────────
+    if (isHeartRate) {
+      const bpm = Number(currentValues?.bpm ?? 72);
+
+      const handleChange = (val: number) => {
+        updateNodeData(nodeId, { sensorValues: { ...currentValues, bpm: val } });
+      };
+
+      return (
+        <CompactCard borderColor="rgba(239,68,68,0.3)">
+          <SliderRow
+            label="PULSE"
+            unit="bpm"
+            min={20}
+            max={200}
+            step={1}
+            value={bpm}
+            color="#ef4444"
+            onChange={handleChange}
+          />
+        </CompactCard>
+      );
+    }
+
+    // ── Sound Sensor ────────────────────────────────────────────────────────
+    if (isBigSound) {
+      const level = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const soundOn = level > threshold;
+      const voltage = 5.0 * level / 100;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AOUT', true);
+          const nowSound = (key === 'value' ? val : level) > (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DOUT', nowSound);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <SliderRow
+            label="SOUND"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={level}
+            color="#fb923c"
+            onChange={v => handleChange('value', v)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: '#64748b' }}>Mic</span>
+            <span style={{ color: soundOn ? '#fb923c' : '#64748b', fontWeight: 900 }}>
+              {soundOn ? 'LOUD' : 'QUIET'}
+            </span>
+            <span style={{ color: '#64748b' }}>Vout</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── HX711 Load Cell ─────────────────────────────────────────────────────
+    if (isHX711) {
+      const weight = Number(currentValues?.weight ?? 0);
+      const maxWeight = Number(currentValues?.maxWeight ?? 5000);
+      const weightKg = (weight / 1000).toFixed(2);
+
+      const handleWeightChange = (val: number) => {
+        updateNodeData(nodeId, { sensorValues: { ...currentValues, weight: val } });
+      };
+
+      return (
+        <CompactCard borderColor="rgba(186,242,100,0.2)">
+          <SliderRow
+            label="WEIGHT"
+            unit="g"
+            min={0}
+            max={maxWeight}
+            step={1}
+            value={weight}
+            color="#bef264"
+            onChange={handleWeightChange}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
+            <span style={{ color: '#64748b' }}>Mass</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{weightKg} kg</span>
+            <span style={{ color: '#64748b' }}>Max</span>
+            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{maxWeight}g</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Single-value sensors (hc-sr04, resistor, etc.) ──────────────────────
+    const config = isDistance
+      ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 0.1, key: 'distance', default: 100, color: '#BEF264' }
+      : type === 'potentiometer'
+        ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
+        : type === 'slide-potentiometer'
+          ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
+          : type === 'resistor'
+            ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', default: 1000, color: '#BEF264' }
+            : type === 'photoresistor'
+              ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', default: 500, color: '#fbbf24' }
+              : type === 'ntc-temperature-sensor'
+                ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', default: 25, color: '#f97316' }
+                : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 512, color: '#BEF264' };
+
+    const currentValue = currentValues?.[config.key] ?? config.default ?? config.min;
+
+    const handleChange = (val: number) => {
+      updateNodeData(nodeId, {
+        sensorValues: { ...currentValues, [config.key]: val },
+      });
+      if (isAnalog) {
+        const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
+          : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
+            : 'OUT';
+        withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
+      }
+    };
+
+    return (
+      <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
+        <SliderRow
+          label={config.label}
+          unit={config.unit}
+          min={config.min}
+          max={config.max}
+          step={config.step}
+          value={currentValue}
+          color={config.color}
+          onChange={handleChange}
+        />
+      </CompactCard>
+    );
   };
 
+  const cardContent = renderContent();
+  if (!cardContent) return null;
+
   return (
-    <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
-      <SliderRow
-        label={config.label}
-        unit={config.unit}
-        min={config.min}
-        max={config.max}
-        step={config.step}
-        value={currentValue}
-        color={config.color}
-        onChange={handleChange}
-      />
-    </CompactCard>
+    <RotationContext.Provider value={rotation}>
+      {cardContent}
+    </RotationContext.Provider>
   );
 };

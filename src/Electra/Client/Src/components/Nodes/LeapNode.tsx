@@ -1011,6 +1011,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           nodeId={id}
           type={data.type}
           currentValues={data.sensorValues}
+          rotation={data.rotation || 0}
         />
       )}
     </div>
