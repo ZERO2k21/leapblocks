@@ -198,7 +198,7 @@ html, body {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px;
+  padding: 8px 8px 52px 8px;
   gap: 5px;
 }
 
@@ -381,6 +381,22 @@ html, body {
 @keyframes toast-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+.app-watermark {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  border-top: 1px solid #f1f5f9;
+  z-index: 100;
+  user-select: none;
+  pointer-events: none;
 }
 `;
 
@@ -1958,6 +1974,12 @@ function generateScreenRenderer(screen) {
   components.forEach(comp => {
     js += generateComponentCreation(comp, 'inner');
   });
+  js += `    var watermark = document.createElement('div');\n`;
+  js += `    watermark.className = 'app-watermark';\n`;
+  js += `    watermark.textContent = 'Created by Creoleap Technologies';\n`;
+  js += `    watermark.style.backgroundColor = ${JSON.stringify(screen.backgroundColor || '#ffffff')};\n`;
+  js += `    watermark.style.borderColor = ${JSON.stringify(screen.backgroundColor === '#ffffff' || !screen.backgroundColor ? '#f1f5f9' : 'rgba(0,0,0,0.05)')};\n`;
+  js += `    viewport.appendChild(watermark);\n`;
   js += `    document.getElementById('app-root').appendChild(container);\n`;
   js += `  }\n\n`;
 

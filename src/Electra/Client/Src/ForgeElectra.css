@@ -353,21 +353,21 @@
 
 /* The inner container that holds the SVG. Selection/hover feedback lives here,
    so the glow hugs the actual component shape rather than a generic box.
-   Blur is kept at 0–0.5px so the drop-shadow renders as a thin outline that
-   traces the exact component silhouette, with no soft glow extending outward. */
+   Uses drop-shadow to trace the exact SVG silhouette — this only renders
+   along non-transparent pixel edges, unlike box-shadow which uses the
+   bounding rectangle. */
 .leap-node-svg-container {
   transition: filter 0.18s ease;
-  /* No glow by default. */
   filter: none;
 }
 
 .leap-node-svg-container:hover {
-  filter: drop-shadow(0 0 0.5px rgba(34, 211, 238, 0.7));
+  filter: drop-shadow(0 0 1.5px rgba(34, 211, 238, 0.5));
 }
 
 .leap-node-wrapper.is-selected .leap-node-svg-container {
-  filter: drop-shadow(0 0 0 rgba(34, 211, 238, 0.95))
-          drop-shadow(0 0 0.5px rgba(34, 211, 238, 0.6));
+  filter: drop-shadow(0 0 1px rgba(34, 211, 238, 0.9))
+          drop-shadow(0 0 3px rgba(34, 211, 238, 0.4));
 }
 
 /* Card class for inner panel blocks */

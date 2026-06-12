@@ -19,6 +19,7 @@ export { HCSR04Element } from './hc-sr04-element';
 export { HeartBeatSensorElement } from './heart-beat-sensor-element';
 export { HX711Element } from './hx711-element';
 export { ILI9341Element } from './ili9341-element';
+export { ILI9341TouchElement } from './ili9341-touch-element'; // touch screen option
 export { IRReceiverElement } from './ir-receiver-element';
 export { IRRemoteElement } from './ir-remote-element';
 export { KS2EMDC5Element } from './ks2e-m-dc5-element';

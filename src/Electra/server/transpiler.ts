@@ -238,7 +238,9 @@ function convertParams(params: string): string {
   return params.split(',').map(p => {
     const parts = p.trim().split(/\s+/);
     return parts[parts.length - 1].replace(/[*&]/g, ''); // Take last word (param name)
-  }).join(', ');
+  })
+  .filter(p => p && p !== 'void')
+  .join(', ');
 }
 
 function convertValue(value: string): string {

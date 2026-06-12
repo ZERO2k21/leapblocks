@@ -127,6 +127,15 @@ export class ArduinoRuntime {
   private onPinChange: PinChangeCallback | null = null;
   private onSerial: SerialCallback | null = null;
 
+  // ── Serial buffering for performance ──────────────────────────
+  private pendingSerialOutput: string = '';
+  private flushSerial(): void {
+    if (this.pendingSerialOutput && this.onSerial) {
+      this.onSerial(this.pendingSerialOutput);
+      this.pendingSerialOutput = '';
+    }
+  }
+
   // ── Lifecycle functions (from transpiled code) ───────────────
   private setupFn: (() => Promise<void>) | null = null;
   private loopFn: (() => Promise<void>) | null = null;
@@ -440,6 +449,9 @@ export class ArduinoRuntime {
 
     // Evaluate the transpiled code in a sandbox with Arduino APIs available
     try {
+      // Clean up any remaining void parameters in function definitions (e.g. async function __setup(void))
+      jsCode = jsCode.replace(/\b(async\s+)?function\s+(\w+)\s*\(\s*void\s*\)/g, '$1function $2()');
+
       const fn = new Function(...Object.keys(context), jsCode);
       fn(...Object.values(context));
       console.log(`[ARDUINO RUNTIME] ✓ Code evaluated. setup=${!!exports.setup}, loop=${!!exports.loop}`);
@@ -502,6 +514,7 @@ export class ArduinoRuntime {
     this.analogInputs.clear();
     this.serialBaud = 0;
     this.serialBuffer = '';
+    this.pendingSerialOutput = ''; // Reset buffer on stop
     this.interruptHandlers.clear();
     this._lastMicrosValue = 0;
     // Cleanup FreeRTOS scheduler and all tasks/timers
@@ -535,6 +548,7 @@ export class ArduinoRuntime {
       // If loop() calls delay(), it awaits a setTimeout internally, which
       // naturally yields — so we don't need extra rAF in that case.
       const BATCH_SIZE = 60; // Max iterations before yielding to rAF
+      let lastYieldTime = performance.now();
 
       for (let i = 0; i < BATCH_SIZE && this.running; i++) {
         this._loopCalledDelay = false;
@@ -561,8 +575,22 @@ export class ArduinoRuntime {
 
         // If loop() called delay(), the await already yielded to the browser.
         // No need to continue batching — the delay handled the timing.
-        if (this._loopCalledDelay) break;
+        if (this._loopCalledDelay) {
+          this.flushSerial();
+          break;
+        }
+
+        // Yield to the event loop if the synchronous execution has taken more than 10ms.
+        // This keeps the UI responsive (e.g. mouse release and stop click registers instantly)
+        // while avoiding frequent setTimeout scheduling overhead (which is throttled to 4ms in browsers).
+        if (performance.now() - lastYieldTime > 10) {
+          this.flushSerial(); // Flush serial prints before yielding
+          await new Promise<void>(resolve => setTimeout(resolve, 0));
+          lastYieldTime = performance.now();
+        }
       }
+
+      this.flushSerial(); // Flush remaining serial outputs
 
       if (this.running) {
         // Schedule next batch on the next animation frame for UI responsiveness
@@ -1017,17 +1045,17 @@ export class ArduinoRuntime {
         print(val: any): void {
           const text = String(val);
           self.serialBuffer += text;
-          self.onSerial?.(text);
+          self.pendingSerialOutput += text;
         },
         println(val: any = ''): void {
           const text = String(val) + '\n';
           self.serialBuffer += text;
-          self.onSerial?.(text);
+          self.pendingSerialOutput += text;
         },
         write(val: any): void {
           const text = typeof val === 'number' ? String.fromCharCode(val) : String(val);
           self.serialBuffer += text;
-          self.onSerial?.(text);
+          self.pendingSerialOutput += text;
         },
         available(): number {
           return self.serialInputBuffer.length;

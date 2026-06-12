@@ -13,6 +13,7 @@ import { StepperEmulator } from './StepperEmulator';
 import { StepperEmulator as UnifiedStepperEmulator, type StepperModel } from '../../simulation/components/StepperEmulator';
 import { SSD1306I2CSlave } from './SSD1306I2CSlave';
 import { ILI9341SPISlave } from './ILI9341SPISlave';
+import { FT6206I2CSlave } from './FT6206I2CSlave';
 import { MPU6050I2CSlave } from './MPU6050I2CSlave';
 import { DS1307Emulator } from './DS1307Emulator';
 import { KeypadEmulator } from './KeypadEmulator';
@@ -87,6 +88,7 @@ class CircuitEngine {
   private stepperEmulators = new Map<string, StepperEmulator>();
   private unifiedStepperEmulators = new Map<string, UnifiedStepperEmulator>();
   private ili9341Slaves = new Map<string, ILI9341SPISlave>();
+  private ft6206Slaves = new Map<string, FT6206I2CSlave>();
   private mpu6050Slaves = new Map<string, MPU6050I2CSlave>();
   private ssd1306Slaves = new Map<string, SSD1306I2CSlave>();
   private keypadEmulators = new Map<string, KeypadEmulator>();
@@ -96,9 +98,11 @@ class CircuitEngine {
   private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private hx711Emulators = new Map<string, HX711Emulator>();
   private _pendingLibraryClasses = new Map<string, any>();
+  public _displayElements = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
   private stepperIdleRaf: number | null = null;
   private isInitialized = false;
+  private touchQueues = new Map<string, Array<{ touched: boolean, x: number, y: number }>>();
 
   /**
    * Validates if a component has proper GND connection.
@@ -592,6 +596,8 @@ class CircuitEngine {
       private _textsize = 1;
       private _textcolor = 0xFFFF; // white RGB565
       private _nodeId: string | null = null;
+      private _pendingFlushFrame: number | null = null;
+
 
       private static readonly FONT5X7: number[][] = [
         [0x00, 0x00, 0x00, 0x00, 0x00], [0x00, 0x00, 0x5F, 0x00, 0x00], [0x00, 0x07, 0x00, 0x07, 0x00], [0x14, 0x7F, 0x14, 0x7F, 0x14],
@@ -635,7 +641,7 @@ class CircuitEngine {
         try {
           const { nodes } = useForgeStore.getState();
           for (const n of nodes) {
-            if (n.data?.type === 'ili9341') {
+            if (n.data?.type === 'ili9341' || n.data?.type === 'ili9341-touch') {
               this._nodeId = n.id;
               console.log(`[TFT] constructor: found ILI9341 node ${this._nodeId}`);
               break;
@@ -773,18 +779,198 @@ class CircuitEngine {
 
       private _flush() {
         if (!this._nodeId) return;
+
+        // Try direct DOM rendering to completely bypass React Flow & Zustand state updates
+        const directEl = (circuitEngine as any)._displayElements?.get(this._nodeId);
+        if (directEl) {
+          try {
+            if (directEl.imageData) {
+              // Write raw pixel buffer directly into the Web Component's canvas image buffer in place
+              const targetData = directEl.imageData.data;
+              targetData.set(this._pixels);
+              directEl.redraw();
+            } else {
+              directEl.imageData = new ImageData(new Uint8ClampedArray(this._pixels), 240, 320);
+            }
+          } catch (e) {
+            console.warn('[TFT] direct draw failed:', e);
+          }
+          return;
+        }
+
+        if (this._pendingFlushFrame !== null) return;
+        this._pendingFlushFrame = requestAnimationFrame(() => {
+          this._pendingFlushFrame = null;
+          try {
+            const imageData = new ImageData(new Uint8ClampedArray(this._pixels), 240, 320);
+            const { updateNodeData } = useForgeStore.getState();
+            updateNodeData(this._nodeId!, { tftImageData: imageData, tftRotation: this._rotation });
+          } catch (e) {
+            console.warn('[TFT] _flush failed:', e);
+          }
+        });
+      }
+
+
+    };
+
+    const RealTS_Point = class {
+      x: number;
+      y: number;
+      z: number;
+      constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+      }
+    };
+
+    const RealAdafruit_FT6206 = class {
+      private _nodeId: string | null = null;
+      private _threshold = 128;
+      private _lastPoint: any = null;
+
+      constructor() {
+        this._lastPoint = new RealTS_Point(0, 0, 0);
+        this._ensureNodeId();
+      }
+
+      private _ensureNodeId() {
+        if (this._nodeId) return;
         try {
-          const imageData = new ImageData(new Uint8ClampedArray(this._pixels), 240, 320);
-          const { updateNodeData } = useForgeStore.getState();
-          updateNodeData(this._nodeId, { tftImageData: imageData, tftRotation: this._rotation });
+          const { nodes } = useForgeStore.getState();
+          for (const n of nodes) {
+            if (n.data?.type === 'ili9341-touch') {
+              this._nodeId = n.id;
+              console.log(`[FT6206] constructor/lazy: found touch display node ${this._nodeId}`);
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      begin(thresh = 128) {
+        this._ensureNodeId();
+        this._threshold = thresh;
+        console.log(`[FT6206] begin(threshold=${this._threshold}) nodeId=${this._nodeId}`);
+        return true;
+      }
+
+      touched(): number {
+        this._ensureNodeId();
+        if (!this._nodeId) return 0;
+        
+        // Check if there are points in the queue
+        const queue = (circuitEngine as any).touchQueues?.get(this._nodeId);
+        if (queue && queue.length > 0) {
+          if (!queue[0].touched) {
+            queue.shift(); // Remove release event so subsequent touch drags can be processed
+            return 0;
+          }
+          return 1;
+        }
+
+        try {
+          const { nodes } = useForgeStore.getState();
+          const node = nodes.find(n => n.id === this._nodeId);
+          return node?.data?.sensorValues?.touched ? 1 : 0;
         } catch (e) {
-          console.warn('[TFT] _flush failed:', e);
+          return 0;
+        }
+      }
+
+      getPoint() {
+        this._ensureNodeId();
+        if (!this._nodeId) return new RealTS_Point(0, 0, 0);
+
+        // Consume from the queue if available
+        const queue = (circuitEngine as any).touchQueues?.get(this._nodeId);
+        if (queue && queue.length > 0) {
+          const pt = queue.shift()!;
+          if (!pt.touched) {
+            return new RealTS_Point(0, 0, 0);
+          }
+          const rawX = 239 - pt.x;
+          const rawY = 319 - pt.y;
+          this._lastPoint = new RealTS_Point(rawX, rawY, 1);
+          return this._lastPoint;
+        }
+
+        try {
+          const { nodes } = useForgeStore.getState();
+          const node = nodes.find(n => n.id === this._nodeId);
+          if (!node || !node.data?.sensorValues?.touched) {
+            return new RealTS_Point(0, 0, 0);
+          }
+
+          const tx = node.data.sensorValues.touchX ?? 0;
+          const ty = node.data.sensorValues.touchY ?? 0;
+
+          // Map raw coordinates to bottom-right origin (0-239, 0-319)
+          const rawX = 239 - tx;
+          const rawY = 319 - ty;
+
+          this._lastPoint = new RealTS_Point(rawX, rawY, 1);
+          return this._lastPoint;
+        } catch (e) {
+          return new RealTS_Point(0, 0, 0);
         }
       }
     };
 
+    const RealTFT_eSPI = class extends RealAdafruitILI9341 {
+      init() {
+        this.begin();
+      }
+
+      drawString(str: any, x: number, y: number, font?: number) {
+        const prevX = (this as any)._cursor_x;
+        const prevY = (this as any)._cursor_y;
+        const prevSize = (this as any)._textsize;
+
+        (this as any)._cursor_x = x | 0;
+        (this as any)._cursor_y = y | 0;
+        if (font !== undefined) {
+          (this as any)._textsize = Math.max(1, font | 0);
+        }
+
+        (this as any)._writeStr(String(str));
+        (this as any)._flush();
+
+        (this as any)._cursor_x = prevX;
+        (this as any)._cursor_y = prevY;
+        (this as any)._textsize = prevSize;
+      }
+
+      drawCentreString(str: any, x: number, y: number, font?: number) {
+        const s = String(str);
+        const size = font !== undefined ? Math.max(1, font | 0) : (this as any)._textsize;
+        const w = s.length * 6 * size;
+        this.drawString(s, x - (w / 2), y, font);
+      }
+
+      drawRightString(str: any, x: number, y: number, font?: number) {
+        const s = String(str);
+        const size = font !== undefined ? Math.max(1, font | 0) : (this as any)._textsize;
+        const w = s.length * 6 * size;
+        this.drawString(s, x - w, y, font);
+      }
+
+      drawNumber(num: number, x: number, y: number, font?: number) {
+        this.drawString(String(num), x, y, font);
+      }
+
+      drawFloat(val: number, decimal: number, x: number, y: number, font?: number) {
+        this.drawString(val.toFixed(decimal), x, y, font);
+      }
+    };
+
     this._pendingLibraryClasses.set('Adafruit_ILI9341', RealAdafruitILI9341);
-    console.log(`[TFT BRIDGE] RealAdafruitILI9341 stored in _pendingLibraryClasses`);
+    this._pendingLibraryClasses.set('TFT_eSPI', RealTFT_eSPI);
+    this._pendingLibraryClasses.set('Adafruit_FT6206', RealAdafruit_FT6206);
+    this._pendingLibraryClasses.set('TS_Point', RealTS_Point);
+    console.log(`[TFT BRIDGE] RealAdafruitILI9341 + RealTFT_eSPI + FT6206 stored in _pendingLibraryClasses`);
+
 
     // ── LiquidCrystal_I2C ────────────────────────────────────────────────────────
     // IMPORTANT: We write directly to the HD44780 emulator's internal fields
@@ -920,9 +1106,13 @@ class CircuitEngine {
     if (esp32Runtime) {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
       esp32Runtime.injectLibraryClass('Adafruit_ILI9341', RealAdafruitILI9341);
+      esp32Runtime.injectLibraryClass('TFT_eSPI', RealTFT_eSPI);
       esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
+      esp32Runtime.injectLibraryClass('Adafruit_FT6206', RealAdafruit_FT6206);
+      esp32Runtime.injectLibraryClass('TS_Point', RealTS_Point);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + LCD_I2C + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + wired I2C bus');
+
     } else {
       console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
     }
@@ -987,6 +1177,7 @@ class CircuitEngine {
     this.unifiedStepperEmulators.clear();
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
+    this.ft6206Slaves.clear();
     this.mpu6050Slaves.clear();
     this.ssd1306Slaves.clear();
     this.keypadEmulators.clear();
@@ -994,6 +1185,7 @@ class CircuitEngine {
     this.tiltSwitchEmulators.clear();
     this.rotaryEncoderEmulators.clear();
     this.hx711Emulators.clear();
+    this.touchQueues.clear();
     if (this.stepperIdleRaf !== null) {
       cancelAnimationFrame(this.stepperIdleRaf);
       this.stepperIdleRaf = null;
@@ -1189,6 +1381,30 @@ class CircuitEngine {
         } else {
           console.warn(`[FORGE CIRCUIT] ILI9341 (${nodeId}): SPI bus not available on this board`);
         }
+      }
+
+      // Register ILI9341 TFT + FT6206 Touch display SPI part
+      if (node.data?.type === 'ili9341-touch') {
+        const nodeId = node.id;
+        const spi = simulationRunner.SPI;
+        if (spi) {
+          const slave = new ILI9341SPISlave(spi, (pixels, displayOn) => {
+            const imageData = new ImageData(new Uint8ClampedArray(pixels), 240, 320);
+            updateNodeData(nodeId, { tftImageData: imageData, tftDisplayOn: displayOn });
+          });
+          slave.attach();
+          this.ili9341Slaves.set(nodeId, slave);
+          console.log(`[FORGE CIRCUIT] ILI9341-touch display (${nodeId}) registered on SPI bus`);
+        } else {
+          console.warn(`[FORGE CIRCUIT] ILI9341-touch (${nodeId}): SPI bus not available on this board`);
+        }
+
+        // Register FT6206 touch controller on I2C bus (address 0x38)
+        const i2cAddr = 0x38;
+        const touchSlave = new FT6206I2CSlave(i2cAddr, nodeId);
+        this.i2cBusManager.registerSlave(touchSlave);
+        this.ft6206Slaves.set(nodeId, touchSlave);
+        console.log(`[FORGE CIRCUIT] FT6206 Touch (${nodeId}) registered at I2C 0x${i2cAddr.toString(16)}`);
       }
 
       // Register MPU6050 as I2C slave (default address 0x68, AD0=LOW)
@@ -1737,7 +1953,7 @@ class CircuitEngine {
 
             // --- ILI9341 TFT SPI Display Emulation ---
             // D/C pin controls command vs data mode; CS pin enables/disables the chip.
-            if (peripheralNode.data?.type === 'ili9341') {
+            if (peripheralNode.data?.type === 'ili9341' || peripheralNode.data?.type === 'ili9341-touch') {
               const slave = this.ili9341Slaves.get(peripheralId);
               if (slave) {
                 if (peripheralPinName === 'D/C') {
@@ -2919,6 +3135,77 @@ class CircuitEngine {
 
     console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
   }
+
+  /**
+   * Update the touchscreen state (coordinates and touched status).
+   * Called by LeapNode when canvas touch/pointer events fire.
+   */
+  public setTouchState(nodeId: string, touched: boolean, x: number, y: number) {
+    const { updateNodeData, nodes } = useForgeStore.getState();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Log transitions to avoid flooding the developer console on every pixel move
+    const wasTouched = node.data?.sensorValues?.touched ?? false;
+    if (wasTouched !== touched) {
+      console.log(`[FORGE CIRCUIT] Touch Screen (${nodeId}) touched state: ${touched}`);
+    }
+
+    // Persist values in the store
+    const currentValues = node.data?.sensorValues || {};
+    updateNodeData(nodeId, {
+      sensorValues: {
+        ...currentValues,
+        touched,
+        touchX: x,
+        touchY: y
+      }
+    });
+
+    // Queue the touch event so the simulation can consume it coordinate-by-coordinate
+    if (!this.touchQueues.has(nodeId)) {
+      this.touchQueues.set(nodeId, []);
+    }
+    const queue = this.touchQueues.get(nodeId)!;
+
+    // Linearly interpolate points between the last queued point and the new point
+    // to fill in coordinates when dragging the mouse/finger quickly.
+    if (touched && queue.length > 0) {
+      const lastPt = queue[queue.length - 1];
+      if (lastPt.touched) {
+        const dx = x - lastPt.x;
+        const dy = y - lastPt.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Interpolate every 4 pixels (since drawing diameter is ~6px) to keep dragging smooth and responsive
+        if (dist > 5) {
+          const steps = Math.floor(dist / 4);
+          for (let s = 1; s < steps; s++) {
+            const ix = Math.round(lastPt.x + (dx * s) / steps);
+            const iy = Math.round(lastPt.y + (dy * s) / steps);
+            if (queue.length < 200) {
+              queue.push({ touched: true, x: ix, y: iy });
+            }
+          }
+        }
+      }
+    }
+
+    if (queue.length < 200) { // Keep queue size bounded
+      queue.push({ touched, x, y });
+    }
+  }
+
+  public registerDisplayElement(nodeId: string, el: any) {
+    this._displayElements.set(nodeId, el);
+    console.log(`[TFT BRIDGE] Registered display element for node ${nodeId}`);
+  }
+
+  public unregisterDisplayElement(nodeId: string) {
+    this._displayElements.delete(nodeId);
+    console.log(`[TFT BRIDGE] Unregistered display element for node ${nodeId}`);
+  }
+
 
   /**
    * Rotate the KY-040 encoder clockwise.

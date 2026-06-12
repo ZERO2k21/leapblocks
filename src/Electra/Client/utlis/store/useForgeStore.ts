@@ -48,6 +48,10 @@ async function getCircuitEngine() {
   return circuitEngine;
 }
 
+export function getCircuitEngineSync() {
+  return circuitEngine;
+}
+
 logStoreTiming('Lazy loaders defined');
 
 export interface WireDraft {
@@ -154,6 +158,10 @@ export interface ForgeState {
   // Viewport (zoom/pan persistence)
   viewport: { x: number; y: number; zoom: number };
   setViewportState: (vp: { x: number; y: number; zoom: number }) => void;
+
+  // Waypoint Dragging
+  isDraggingWaypoint: boolean;
+  setIsDraggingWaypoint: (isDragging: boolean) => void;
   sourceCode: string;
 }
 
@@ -197,10 +205,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   viewport: { x: 0, y: 0, zoom: 1 },
   wireDraft: null,
   pendingSource: null,
+  isDraggingWaypoint: false,
 
   setUiTheme: (theme) => set({ uiTheme: theme }),
   toggleUiTheme: () => set((state) => ({ uiTheme: state.uiTheme === 'light' ? 'dark' : 'light' })),
   setViewportState: (vp) => set({ viewport: vp }),
+  setIsDraggingWaypoint: (isDragging) => set({ isDraggingWaypoint: isDragging }),
 
   setPendingSource: (source) => {
     if (source === null) {
@@ -384,7 +394,25 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   stopSimulation: () => {
     console.log('[FORGE STORE] stopSimulation triggered.');
-    set({ isSimulating: false });
+    const { nodes } = get();
+    const cleanedNodes = nodes.map(node => {
+      if (node.data?.sensorValues?.touched) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            sensorValues: {
+              ...node.data.sensorValues,
+              touched: false,
+              touchX: 0,
+              touchY: 0,
+            }
+          }
+        };
+      }
+      return node;
+    });
+    set({ isSimulating: false, nodes: cleanedNodes });
     getSimulationRunner().then(runner => runner.stop());
   },
 
@@ -401,7 +429,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       'pressedKey',
       'ena', 'enb', 'in1', 'in2', 'in3', 'in4',
       'innerHandAngle', 'innerEnergized', 'outerHandAngle', 'outerEnergized',
-      'beatPhase', 'adcValue',
+      'beatPhase', 'adcValue', 'sensorValues',
     ];
 
     const { nodes } = get();
@@ -543,7 +571,20 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   setSelectedNode: (id) => set({ selectedNodeId: id, selectedEdgeId: null }),
   setSelectedEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
 
-  clearWorkspace: () => set({ nodes: [], edges: [], selectedNodeId: null, selectedEdgeId: null }),
+  clearWorkspace: () => {
+    const { isSimulating, stopSimulation } = get();
+    if (isSimulating) {
+      stopSimulation();
+    }
+    set({
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      serialOutput: '',
+      wifiLog: []
+    });
+  },
 
   setNodes: (nodes) => {
     const state = useForgeStore.getState();

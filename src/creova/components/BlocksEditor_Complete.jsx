@@ -1164,12 +1164,24 @@ export default function BlocksEditorComplete({ appState }) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 bg-[#dfe6ee] border-b border-[#c6cfda] gap-2 sm:gap-0">
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {/* Search */}
-                    <div className="relative flex-1 sm:flex-initial min-w-[200px]">
-                        <Search className="absolute left-2 top-2 h-4 w-4 text-slate-900 pointer-events-none" />
+                    <div className="relative flex-1 sm:flex-initial min-w-[200px] flex items-center">
+                        <Search 
+                            style={{ 
+                                position: 'absolute', 
+                                left: '10px', 
+                                top: '50%', 
+                                transform: 'translateY(-50%)', 
+                                width: '16px', 
+                                height: '16px',
+                                color: '#0f172a'
+                            }} 
+                            className="pointer-events-none" 
+                        />
                         <input
                             type="text"
                             placeholder="Search blocks..."
-                            className="w-full pl-8 pr-3 py-1.5 text-sm border border-[#b7c4d4] rounded focus:outline-none focus:ring-2 focus:ring-[#4a90e2] transition-all"
+                            style={{ paddingLeft: '34px' }}
+                            className="w-full pr-3 py-1.5 text-sm border border-[#b7c4d4] rounded focus:outline-none focus:ring-2 focus:ring-[#4a90e2] transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />

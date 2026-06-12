@@ -1,14 +1,10 @@
 /**
- * ILI9341 2.8" SPI TFT Display — 240×320 color (RGB565)
- * Simulation element for Electra.
- *
- * SVG board: 46.5mm × 77.6mm
- * Screen area (SVG units): x≈1.62 y≈6.79 w≈43.3 h≈61.9
- * Pins (bottom row, SVG units): y≈75, x starts at ≈11.8 with 2.54mm pitch
+ * ILI9341 2.8" SPI TFT Display + FT6206 I2C capacitive touchscreen.
+ * Simulation element for Electra (Wokwi-compatible approach).
  */
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ElementPin, spi } from './pin';
+import { ElementPin, spi, i2c } from './pin';
 
 // SVG viewBox dimensions (mm)
 const SVG_W = 46.5;
@@ -32,8 +28,8 @@ const NATIVE_H = 320;
 
 type CanvasCtx = CanvasRenderingContext2D | null | undefined;
 
-@customElement('leap-ili9341')
-export class ILI9341Element extends LitElement {
+@customElement('leap-ili9341-touch')
+export class ILI9341TouchElement extends LitElement {
   /** Native screen width (pixels) */
   readonly screenWidth  = NATIVE_W;
   /** Native screen height (pixels) */
@@ -41,13 +37,13 @@ export class ILI9341Element extends LitElement {
 
   /**
    * RGBA pixel buffer (240×320×4 bytes).
-   * Set this property and call redraw() to update the display.
-   * Alternatively, assign a new ImageData reference to trigger an automatic redraw.
    */
   @property({ attribute: false, hasChanged: () => true }) imageData: ImageData | null = null;
 
   @property({ type: Boolean }) flipHorizontal = false;
   @property({ type: Boolean }) flipVertical    = false;
+  @property({ type: Number }) rotation         = 0;
+  @property({ type: Boolean, reflect: true }) simulating = false;
 
   /** Rendered element width in CSS pixels */
   readonly width  = PX_W;
@@ -56,24 +52,30 @@ export class ILI9341Element extends LitElement {
 
   private _canvas: HTMLCanvasElement | null | undefined = undefined;
   private _ctx: CanvasCtx = null;
+  private _isTouched = false;
 
-  // SPI pin layout — 9 pins at the bottom of the board (2.54mm pitch)
-  // SVG coordinates match the pin circles in renderSVG()
+  // 11-pin layout: 9 display SPI + 2 touch I2C (2.54mm pitch)
   readonly pinInfo: ElementPin[] = [
-    { name: 'VCC',  x: Math.round(11.8  * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
-    { name: 'GND',  x: Math.round(14.34 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
-    { name: 'CS',   x: Math.round(16.88 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SS')] },
-    { name: 'RST',  x: Math.round(19.42 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
-    { name: 'D/C',  x: Math.round(21.96 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
-    { name: 'MOSI', x: Math.round(24.5  * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MOSI')] },
-    { name: 'SCK',  x: Math.round(27.04 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SCK')] },
-    { name: 'LED',  x: Math.round(29.58 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
-    { name: 'MISO', x: Math.round(32.12 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MISO')] },
+    { name: 'VCC',  x: Math.round(14.34 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'VCC' }] },
+    { name: 'GND',  x: Math.round(16.88 * SCALE), y: Math.round(76.0 * SCALE), signals: [{ type: 'power', signal: 'GND' }] },
+    { name: 'CS',   x: Math.round(19.42 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SS')] },
+    { name: 'RST',  x: Math.round(21.96 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'D/C',  x: Math.round(24.50 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MOSI', x: Math.round(27.04 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MOSI')] },
+    { name: 'SCK',  x: Math.round(29.58 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('SCK')] },
+    { name: 'LED',  x: Math.round(32.12 * SCALE), y: Math.round(76.0 * SCALE), signals: [] },
+    { name: 'MISO', x: Math.round(34.66 * SCALE), y: Math.round(76.0 * SCALE), signals: [spi('MISO')] },
+    { name: 'SDA',  x: Math.round(37.20 * SCALE), y: Math.round(76.0 * SCALE), signals: [i2c('SDA')] },
+    { name: 'SCL',  x: Math.round(39.74 * SCALE), y: Math.round(76.0 * SCALE), signals: [i2c('SCL')] },
   ];
 
   static get styles() {
     return css`
       :host { display: block; }
+
+      :host(:not([simulating])) canvas {
+        pointer-events: none;
+      }
 
       .tft-wrap {
         position: relative;
@@ -96,6 +98,8 @@ export class ILI9341Element extends LitElement {
         image-rendering: crisp-edges;
         image-rendering: pixelated;
         background: #000;
+        cursor: crosshair;
+        touch-action: none;
       }
     `;
   }
@@ -104,13 +108,11 @@ export class ILI9341Element extends LitElement {
     super();
     // Default blank (black) frame
     this.imageData = new ImageData(NATIVE_W, NATIVE_H);
-    // Fill alpha channel so the canvas isn't transparent
     for (let i = 3; i < this.imageData.data.length; i += 4) {
       this.imageData.data[i] = 255;
     }
   }
 
-  /** Push the current imageData to the canvas. */
   public redraw(): void {
     if (this._ctx && this.imageData) {
       this._ctx.putImageData(this.imageData, 0, 0);
@@ -125,7 +127,6 @@ export class ILI9341Element extends LitElement {
   override firstUpdated(): void {
     this._initContext();
     this.redraw();
-    // Notify external code (e.g. CircuitEngine) that the canvas is ready
     this.dispatchEvent(new CustomEvent('canvas-ready', { bubbles: true, composed: true }));
   }
 
@@ -144,6 +145,59 @@ export class ILI9341Element extends LitElement {
     const sx = this.flipHorizontal ? -1 : 1;
     const sy = this.flipVertical   ? -1 : 1;
     this._canvas.style.transform = (sx !== 1 || sy !== 1) ? `scale(${sx}, ${sy})` : '';
+  }
+
+  private _onPointerDown(e: PointerEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this._isTouched = true;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    this._handlePointerEvent(e, true);
+  }
+
+  private _onPointerMove(e: PointerEvent): void {
+    e.stopPropagation();
+    if (this._isTouched) {
+      this._handlePointerEvent(e, true);
+    }
+  }
+
+  private _onPointerUp(e: PointerEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this._isTouched = false;
+    if ((e.target as HTMLElement).hasPointerCapture(e.pointerId)) {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    }
+    this._handlePointerEvent(e, false);
+  }
+
+  private _handlePointerEvent(e: PointerEvent, isTouched: boolean): void {
+    if (!isTouched) {
+      this.dispatchEvent(new CustomEvent('touch-change', {
+        detail: { touched: false, x: 0, y: 0 },
+        bubbles: true,
+        composed: true
+      }));
+      return;
+    }
+
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    // Scale coordinates — FT6206 origin is at bottom-right (Wokwi convention)
+    let nativeX = (offsetX / rect.width) * NATIVE_W;
+    let nativeY = (offsetY / rect.height) * NATIVE_H;
+
+    nativeX = Math.max(0, Math.min(NATIVE_W - 1, Math.floor(nativeX)));
+    nativeY = Math.max(0, Math.min(NATIVE_H - 1, Math.floor(nativeY)));
+
+    this.dispatchEvent(new CustomEvent('touch-change', {
+      detail: { touched: true, x: nativeX, y: nativeY },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   private renderSVG() {
@@ -167,18 +221,18 @@ export class ILI9341Element extends LitElement {
       <!-- Backlight strip -->
       <rect x="11.2" y="66.7" width="24.2" height="6.24" rx="1" ry="1" fill="#bdab16" opacity=".4" />
 
-      <!-- Active screen area (black — canvas overlays this) -->
+      <!-- Active screen area (canvas overlays this) -->
       <rect x="1.62" y="6.79" width="43.3" height="61.9" fill="#000" />
 
-      <!-- Pin header outline -->
-      <rect x="10.8" y="74.6" width="24.2" height="2.83" fill="none" stroke="#fff" stroke-width=".27" />
+      <!-- Pin header outline (11 pins width = ~27.9) -->
+      <rect x="13.3" y="74.6" width="27.9" height="2.83" fill="none" stroke="#fff" stroke-width=".27" />
 
       <!-- Pin circles -->
       <g fill="#ccc">
-        <path d="m11.8 75v1.99h1.98v-1.99zm0.988 0.397a0.6 0.6 0 0 1 0.0041 0 0.6 0.6 0 0 1 0.6 0.6 0.6 0.6 0 0 1-0.6 0.6 0.6 0.6 0 0 1-0.6-0.6 0.6 0.6 0 0 1 0.596-0.6z" />
+        <path d="m14.34 75v1.99h1.98v-1.99zm0.988 0.397a0.6 0.6 0 0 1 0.0041 0 0.6 0.6 0 0 1 0.6 0.6 0.6 0.6 0 0 1-0.6 0.6 0.6 0.6 0 0 1-0.6-0.6 0.6 0.6 0 0 1 0.596-0.6z" />
         <path
           id="ili-pin"
-          d="m15.3 75a1 1 0 0 0-0.987 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1 1 1 0 0 0-0.0134 0zm0.0093 0.4a0.6 0.6 0 0 1 0.0041 0 0.6 0.6 0 0 1 0.6 0.6 0.6 0.6 0 0 1-0.6 0.6 0.6 0.6 0 0 1-0.6-0.6 0.6 0.6 0 0 1 0.596-0.6z"
+          d="m17.88 75a1 1 0 0 0-0.987 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1 1 1 0 0 0-0.0134 0zm0.0093 0.4a0.6 0.6 0 0 1 0.0041 0 0.6 0.6 0 0 1 0.6 0.6 0.6 0.6 0 0 1-0.6 0.6 0.6 0.6 0 0 1-0.6-0.6 0.6 0.6 0 0 1 0.596-0.6z"
         />
         <use xlink:href="#ili-pin" x="2.54" />
         <use xlink:href="#ili-pin" x="5.08" />
@@ -187,13 +241,15 @@ export class ILI9341Element extends LitElement {
         <use xlink:href="#ili-pin" x="12.7" />
         <use xlink:href="#ili-pin" x="15.24" />
         <use xlink:href="#ili-pin" x="17.78" />
+        <use xlink:href="#ili-pin" x="20.32" />
+        <use xlink:href="#ili-pin" x="22.86" />
       </g>
 
       <!-- Labels -->
       <text font-family="monospace" font-size="3.5px" fill="#fff">
-        <tspan x="8.2"  y="76.9">1</tspan>
-        <tspan x="35.6" y="76.9">9</tspan>
-        <tspan x="14.2" y="4.3" font-size="4.6px">ILI9341</tspan>
+        <tspan x="10.8" y="76.9">1</tspan>
+        <tspan x="40.2" y="76.9">11</tspan>
+        <tspan x="11.2" y="4.3" font-size="4.0px">ILI9341+Touch</tspan>
       </text>
     </svg>`;
   }
@@ -205,6 +261,10 @@ export class ILI9341Element extends LitElement {
         <canvas
           width="${NATIVE_W}"
           height="${NATIVE_H}"
+          @pointerdown=${this._onPointerDown}
+          @pointermove=${this._onPointerMove}
+          @pointerup=${this._onPointerUp}
+          @pointerleave=${this._onPointerUp}
         ></canvas>
       </div>
     `;

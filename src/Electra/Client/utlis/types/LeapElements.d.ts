@@ -33,6 +33,12 @@ declare global {
         cols?: number;
         data?: string;
       };
+      'leap-ili9341-touch': HTMLAttributes<HTMLElement> & {
+        imageData?: ImageData | null;
+        flipHorizontal?: boolean;
+        flipVertical?: boolean;
+        rotation?: number;
+      };
       // Add all other Leap/Leap elements as needed
       [elemName: string]: any;
     }

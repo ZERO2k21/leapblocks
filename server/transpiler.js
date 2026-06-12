@@ -41,7 +41,7 @@ export function transpileArduinoToJS(arduinoCode) {
     (_m, name, params) => {
       const jsParams = params.split(',')
         .map(p => p.trim().split(/\s+/).pop())
-        .filter(Boolean).join(', ');
+        .filter(p => p && p !== 'void').join(', ');
       const isLifecycle = name === 'setup' || name === 'loop';
       const prefix = isLifecycle ? 'async ' : '';
       const jsName = name === 'setup' ? '__setup' : name === 'loop' ? '__loop' : name;

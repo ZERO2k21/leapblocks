@@ -6,9 +6,20 @@
 import React, { memo, useRef, useEffect, useMemo, useState } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
 import { StepperMotorNode } from './StepperMotorNode';
+
+const withEngine = (cb: (engine: any) => void) => {
+  const engine = getCircuitEngineSync();
+  if (engine) {
+    cb(engine);
+  } else {
+    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+      cb(circuitEngine);
+    });
+  }
+};
 
 // This is a generic wrapper for our internalized Leap elements (rebranded Leap)
 export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
@@ -246,7 +257,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     if (data.oledImageData) {
       mappedProps.imageData = data.oledImageData;
     }
-  } else if (data.type === 'ili9341') {
+  } else if (data.type === 'ili9341' || data.type === 'ili9341-touch') {
     // ILI9341 TFT: pass RGBA ImageData decoded by CircuitEngine from the SPI pixel stream
     if (data.tftImageData) {
       mappedProps.imageData = data.tftImageData;
@@ -321,7 +332,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   // (React JSX spread doesn't reliably set complex object properties on Web Components)
   useEffect(() => {
     if (!elementRef.current) return;
-    if (data.type === 'ili9341' && data.tftImageData) {
+    if ((data.type === 'ili9341' || data.type === 'ili9341-touch') && data.tftImageData) {
       elementRef.current.imageData = data.tftImageData;
     } else if (data.type === 'ssd1306' && data.oledImageData) {
       console.log(`[LEAP NODE OLED] useEffect: setting imageData on element. ref=${!!elementRef.current}, imageData=${data.oledImageData?.width}×${data.oledImageData?.height}`);
@@ -329,6 +340,18 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       console.log(`[LEAP NODE OLED] imageData set ✓`);
     }
   }, [data.tftImageData, data.oledImageData, data.type]);
+
+  // Direct display registration with the simulation engine to bypass React/Zustand render lag
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || !['ili9341', 'ili9341-touch'].includes(data.type)) return;
+
+    withEngine(engine => engine.registerDisplayElement(id, el));
+
+    return () => {
+      withEngine(engine => engine.unregisterDisplayElement(id));
+    };
+  }, [id, data.type]);
 
   // Imperatively set LCD characters as DOM property.
   // Uint8Array / array props must be set directly — JSX spread stringifies them.
@@ -489,6 +512,22 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [data.neopixelPixels, data.type, data.cols]);
 
+  // Wire ili9341-touch canvas events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || data.type !== 'ili9341-touch') return;
+
+    const handleTouchChange = (e: Event) => {
+      const { touched, x, y } = (e as CustomEvent).detail ?? { touched: false, x: 0, y: 0 };
+      withEngine(engine => engine.setTouchState(id, touched, x, y));
+    };
+
+    el.addEventListener('touch-change', handleTouchChange);
+    return () => {
+      el.removeEventListener('touch-change', handleTouchChange);
+    };
+  }, [data.type, id]);
+
   // Wire membrane-keypad DOM button-press/release events into the circuit engine
   useEffect(() => {
     const el = elementRef.current;
@@ -496,15 +535,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     const handlePress = (e: Event) => {
       const key = (e as CustomEvent).detail?.key ?? null;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushKeypadKey(id, key);
-      });
+      withEngine(engine => engine.pushKeypadKey(id, key));
     };
     const handleRelease = (e: Event) => {
       const key = (e as CustomEvent).detail?.key ?? null;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.releaseKeypadKey(id, key);
-      });
+      withEngine(engine => engine.releaseKeypadKey(id, key));
     };
 
     el.addEventListener('button-press', handlePress);
@@ -522,9 +557,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     const handleDialStart = (e: Event) => {
       const digit = (e as CustomEvent).detail?.digit ?? 0;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushRotaryDialerDigit(id, digit);
-      });
+      withEngine(engine => engine.pushRotaryDialerDigit(id, digit));
     };
 
     el.addEventListener('dial-start', handleDialStart);
@@ -540,18 +573,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     const handleTiltToggle = (e: Event) => {
       const tilted = (e as CustomEvent).detail?.tilted ?? false;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushTiltSwitchState(id, tilted);
-      });
+      withEngine(engine => engine.pushTiltSwitchState(id, tilted));
     };
 
     el.addEventListener('tilt-toggle', handleTiltToggle);
 
     // Set initial state on mount
     const initialTilted = data.sensorValues?.tilted ?? false;
-    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-      circuitEngine.pushTiltSwitchState(id, initialTilted);
-    });
+    withEngine(engine => engine.pushTiltSwitchState(id, initialTilted));
 
     return () => {
       el.removeEventListener('tilt-toggle', handleTiltToggle);
@@ -565,18 +594,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     const handleInput = (e: Event) => {
       const value = (e as CustomEvent).detail ?? (el as any).value ?? 0;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushSlideSwitchState(id, value);
-      });
+      withEngine(engine => engine.pushSlideSwitchState(id, value));
     };
 
     el.addEventListener('input', handleInput);
 
     // Set initial state on mount
     const initialValue = data.value ?? 0;
-    import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-      circuitEngine.pushSlideSwitchState(id, initialValue);
-    });
+    withEngine(engine => engine.pushSlideSwitchState(id, initialValue));
 
     return () => {
       el.removeEventListener('input', handleInput);
@@ -596,9 +621,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       });
 
       const outPin = data.type === 'potentiometer' || data.type === 'slide-potentiometer' ? 'SIG' : 'OUT';
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, outPin, true);
-      });
+      withEngine(engine => engine.pushInputSignal(id, outPin, true));
     };
 
     el.addEventListener('input', handleInput);
@@ -637,15 +660,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     // SW button is handled by standard button-press/button-release events
     const handlePress = () => {
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, 'SW', false); // Active LOW
-      });
+      withEngine(engine => engine.pushInputSignal(id, 'SW', false)); // Active LOW
     };
 
     const handleRelease = () => {
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, 'SW', true); // Pull-up HIGH
-      });
+      withEngine(engine => engine.pushInputSignal(id, 'SW', true)); // Pull-up HIGH
     };
 
     el.addEventListener('rotate-cw', handleRotateCW);
@@ -656,10 +675,10 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     // Set initial state (idle: CLK and DT HIGH with pull-ups, SW HIGH)
     // Use setTimeout to ensure this happens after component is fully mounted
     const initTimer = setTimeout(() => {
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, 'CLK', true);
-        circuitEngine.pushInputSignal(id, 'DT', true);
-        circuitEngine.pushInputSignal(id, 'SW', true);  // SW must start HIGH (pull-up)
+      withEngine(engine => {
+        engine.pushInputSignal(id, 'CLK', true);
+        engine.pushInputSignal(id, 'DT', true);
+        engine.pushInputSignal(id, 'SW', true);  // SW must start HIGH (pull-up)
         console.log(`[KY-040] Initial state set: CLK=HIGH, DT=HIGH, SW=HIGH for node ${id}`);
       });
     }, 100);
@@ -680,16 +699,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     const handlePress = (e: Event) => {
       const irCode = (e as CustomEvent).detail?.irCode ?? 0;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushIRRemoteButton(id, irCode, true);
-      });
+      withEngine(engine => engine.pushIRRemoteButton(id, irCode, true));
     };
 
     const handleRelease = (e: Event) => {
       const irCode = (e as CustomEvent).detail?.irCode ?? 0;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushIRRemoteButton(id, irCode, false);
-      });
+      withEngine(engine => engine.pushIRRemoteButton(id, irCode, false));
     };
 
     el.addEventListener('button-press', handlePress);
@@ -709,21 +724,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     const handleInput = () => {
       const x = el.xValue ?? 0;
       const y = el.yValue ?? 0;
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushJoystickAnalog(id, x, y);
-      });
+      withEngine(engine => engine.pushJoystickAnalog(id, x, y));
     };
 
     // Joystick SEL button is typically pulled HIGH externally/internally, goes LOW on press
     const handlePress = () => {
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, 'SEL', false);
-      });
+      withEngine(engine => engine.pushInputSignal(id, 'SEL', false));
     };
     const handleRelease = () => {
-      import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-        circuitEngine.pushInputSignal(id, 'SEL', true);
-      });
+      withEngine(engine => engine.pushInputSignal(id, 'SEL', true));
     };
 
     el.addEventListener('input', handleInput);
@@ -762,13 +771,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
         {/* Dynamic Leap Element */}
         <Tag
           ref={elementRef}
+          simulating={isSimulating}
           {...mappedProps}
           onPinStateChange={(pinName: string, state: boolean) => {
             console.log(`[LEAP NODE] Interaction event fired on Node ${data.id}, pin ${pinName} = ${state}`);
-            // Lazy load to prevent circular dependencies in React mapping
-            import('../../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-              circuitEngine.pushInputSignal(data.id || '', pinName, state);
-            });
+            withEngine(engine => engine.pushInputSignal(data.id || '', pinName, state));
           }}
         />
 
@@ -1004,6 +1011,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           nodeId={id}
           type={data.type}
           currentValues={data.sensorValues}
+          rotation={data.rotation || 0}
         />
       )}
     </div>

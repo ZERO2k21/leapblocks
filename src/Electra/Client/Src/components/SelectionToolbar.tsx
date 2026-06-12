@@ -392,29 +392,32 @@ export const SelectionToolbar: React.FC = () => {
         </>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--lp-border)' }}>
-        <button
-          onClick={handleDelete}
-          title="REMOVE_ELEMENT"
-          style={{
-            background: 'rgba(244, 63, 94, 0.1)',
-            border: '1px solid var(--lp-rose)',
-            color: 'var(--lp-rose)',
-            padding: '4px 8px',
-                    borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '9px',
-            fontWeight: 900,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Trash2 size={12} />
-          DELETE
-        </button>
-      </div>
+      {/* Hide delete for board elements — they are essential */}
+      {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
+        <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--lp-border)' }}>
+          <button
+            onClick={handleDelete}
+            title="REMOVE_ELEMENT"
+            style={{
+              background: 'rgba(244, 63, 94, 0.1)',
+              border: '1px solid var(--lp-rose)',
+              color: 'var(--lp-rose)',
+              padding: '4px 8px',
+                      borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '9px',
+              fontWeight: 900,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Trash2 size={12} />
+            DELETE
+          </button>
+        </div>
+      )}
     </div>
   );
 };

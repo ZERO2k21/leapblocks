@@ -6,8 +6,8 @@
 import React from 'react';
 
 const Loader: React.FC = () => (
-    <>
-        <style>{`
+  <>
+    <style>{`
       .leaplab-loader-root {
         position: fixed;
         top: 0;
@@ -110,22 +110,22 @@ const Loader: React.FC = () => (
       }
     `}</style>
 
-        <div className="leaplab-loader-root">
-            <div className="leaplab-loader-wrapper">
-                <div className="leaplab-loader-spinner">
-                    <div className="leaplab-loader-ring" />
-                    <div className="leaplab-loader-ring" />
-                    <div className="leaplab-loader-ring" />
-                </div>
-                <div className="leaplab-loader-text">Loading LeapLab</div>
-                <div className="leaplab-loader-dots">
-                    <div className="leaplab-loader-dot" />
-                    <div className="leaplab-loader-dot" />
-                    <div className="leaplab-loader-dot" />
-                </div>
-            </div>
+    <div className="leaplab-loader-root">
+      <div className="leaplab-loader-wrapper">
+        <div className="leaplab-loader-spinner">
+          <div className="leaplab-loader-ring" />
+          <div className="leaplab-loader-ring" />
+          <div className="leaplab-loader-ring" />
         </div>
-    </>
+        <div className="leaplab-loader-text">Loading LeapLab</div>
+        <div className="leaplab-loader-dots">
+          <div className="leaplab-loader-dot" />
+          <div className="leaplab-loader-dot" />
+          <div className="leaplab-loader-dot" />
+        </div>
+      </div>
+    </div>
+  </>
 );
 
 export default Loader;

@@ -25,7 +25,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 
 import { getComponentPins } from '../lib/PinMap';
-import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize, Hand } from 'lucide-react';
 
 interface ForgeCanvasProps {
   onToggleSimulation?: () => void;
@@ -79,7 +79,18 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, defaultOnEdgesChange] = useEdgesState([]);
+
+  // Wrap edge-change handler: block selection changes while dragging a waypoint
+  const onEdgesChange = useCallback(
+    (changes: any[]) => {
+      if (store.isDraggingWaypoint) {
+        changes = changes.filter((c: any) => c.type !== 'select');
+      }
+      defaultOnEdgesChange(changes);
+    },
+    [store, defaultOnEdgesChange]
+  );
 
   // Sync store -> local React Flow state
   useEffect(() => {
@@ -370,13 +381,27 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     store.setSelectedNode(node.id);
   }, [store]);
 
-  const onPaneClick = useCallback((event: React.MouseEvent) => {
-    // Use native click count for reliable double-click detection
-    if (event.detail === 2) {
-      setPanDragEnabled(prev => !prev);
-      return;
-    }
+  // ── Double-click on empty canvas toggles pan-drag mode ───────────────
+  const onContainerDoubleClick = useCallback((event: React.MouseEvent) => {
+    // Ignore double-clicks on nodes, edges, handles, or UI controls
+    const target = event.target as HTMLElement;
+    if (
+      target.closest('.react-flow__node') ||
+      target.closest('.react-flow__edge') ||
+      target.closest('.react-flow__handle') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('.glass-minimap') ||
+      target.closest('.canvas-action-panel')
+    ) return;
+    setPanDragEnabled(prev => {
+      const next = !prev;
+      console.log(`[FORGE] Pan-drag mode: ${next ? 'ON' : 'OFF'}`);
+      return next;
+    });
+  }, []);
 
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
     if (wireDraft) {
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
@@ -387,6 +412,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, [wireDraft, addWireWaypoint, store, screenToFlowPosition, panDragEnabled]);
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
+    // Block edge selection while a waypoint drag is active on another wire
+    if (store.isDraggingWaypoint) return;
     store.setSelectedEdge(edge.id);
   }, [store]);
 
@@ -400,20 +427,30 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       event.preventDefault();
       const type = event.dataTransfer.getData('application/forge-component');
       if (!type) return;
-      const reactFlowBounds = document.querySelector('.forge-canvas-container')?.getBoundingClientRect();
-      if (!reactFlowBounds) return;
-      const position = {
-        x: event.clientX - reactFlowBounds.left - 50,
-        y: event.clientY - reactFlowBounds.top - 50,
-      };
+      // Convert drop screen coordinates to flow coordinates (zoom/pan aware)
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
       addNode(type, position, { label: `${type.toUpperCase()}` });
     },
-    [addNode]
+    [addNode, screenToFlowPosition]
   );
 
   const handleAddPart = (type: string) => {
-    const center = { x: 400, y: 300 };
-    addNode(type, center, { label: `${type.toUpperCase()}` });
+    // Place the new part at the center of the currently visible viewport
+    const container = document.querySelector('.forge-canvas-container');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const center = screenToFlowPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+      addNode(type, center, { label: `${type.toUpperCase()}` });
+    } else {
+      // Fallback if container not found
+      addNode(type, { x: 400, y: 300 }, { label: `${type.toUpperCase()}` });
+    }
   };
 
   return (
@@ -432,6 +469,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       onDrop={onDrop}
       onDragOver={onDragOver}
       onMouseMove={onContainerMouseMove}
+      onDoubleClick={onContainerDoubleClick}
     >
       <ReactFlow
         nodes={nodes}
@@ -511,6 +549,28 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             {Math.round(currentViewport.zoom * 100)}%
           </div>
         </Panel>
+
+        {/* ── Pan-drag mode indicator ── */}
+        {panDragEnabled && (
+          <Panel position="bottom-center" style={{ marginBottom: 12 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'var(--lp-accent-primary, #3b82f6)',
+              color: '#fff',
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+              animation: 'fadeIn 0.2s ease',
+            }}>
+              <Hand size={14} />
+              <span>Pan Mode — drag to move canvas · double-click or Esc to exit</span>
+            </div>
+          </Panel>
+        )}
       </ReactFlow>
 
       {/* Draft wire overlay (click-to-route) — isolated in its own memoized

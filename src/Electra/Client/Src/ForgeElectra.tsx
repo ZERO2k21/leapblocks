@@ -318,6 +318,12 @@ export default function ForgeElectra({
   // File Operations
   const handleNewProject = () => {
     if (confirm('Create a new project? Unsaved changes will be lost.')) {
+      if (isSimulating) {
+        stopSimulation();
+      } else {
+        clearSerial();
+        clearWiFiLog();
+      }
       setNodes([]);
       setEdges([]);
       setCode(board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
@@ -347,6 +353,13 @@ export default function ForgeElectra({
               onRedirectToCreova(result.data, null, result.projectPath);
               return;
             }
+          }
+
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
           }
 
           const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs } = result.data;
@@ -395,6 +408,13 @@ export default function ForgeElectra({
         }
 
         if (projectData.nodes && projectData.edges) {
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
+          }
+
           setNodes(projectData.nodes || []);
           setEdges(projectData.edges || []);
           setCode(projectData.code || '');
@@ -683,9 +703,14 @@ export default function ForgeElectra({
         if (!isInEditor) {
           const state = useForgeStore.getState();
           if (state.selectedNodeId) {
-            e.preventDefault();
-            state.removeNode(state.selectedNodeId);
-            state.setSelectedNode(null);
+            // Prevent deleting board elements (ESP32, Arduino)
+            const node = state.nodes.find(n => n.id === state.selectedNodeId);
+            const isBoardNode = node && ['esp32-c3', 'esp32', 'arduino-uno'].includes(node.data?.type);
+            if (!isBoardNode) {
+              e.preventDefault();
+              state.removeNode(state.selectedNodeId);
+              state.setSelectedNode(null);
+            }
           } else if (state.selectedEdgeId) {
             e.preventDefault();
             state.removeEdge(state.selectedEdgeId);
@@ -863,7 +888,19 @@ export default function ForgeElectra({
             <ComponentSidebar
               onSelect={(type) => {
                 const state = useForgeStore.getState();
-                state.addNode(type, { x: 400, y: 300 }, { label: type.toUpperCase() });
+                // Place part at the center of the currently visible viewport
+                const container = document.querySelector('.forge-canvas-container');
+                const vp = state.viewport;
+                let pos = { x: 400, y: 300 };
+                if (container) {
+                  const rect = container.getBoundingClientRect();
+                  // Convert screen center to flow coordinates
+                  pos = {
+                    x: (rect.width / 2 - vp.x) / vp.zoom,
+                    y: (rect.height / 2 - vp.y) / vp.zoom,
+                  };
+                }
+                state.addNode(type, pos, { label: type.toUpperCase() });
               }}
               onClose={() => setShowPartPicker(false)}
               currentBoard={board as any}

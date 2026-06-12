@@ -130,7 +130,7 @@ export class PotentiometerElement extends LitElement {
         <ellipse cx="10.22" cy="18" rx=".61" ry=".63" />
         <ellipse cx="12.76" cy="18" rx=".61" ry=".63" />
       </g>
-      <ellipse cx="9.95" cy="8.06" rx="6.60" ry="6.58" fill="#c3c2c3" stroke-width=".15" />
+      <ellipse id="knob-cap" cx="9.95" cy="8.06" rx="6.60" ry="6.58" fill="#c3c2c3" stroke-width=".15" />
       <rect id="rotating" x="10" y="2" width=".42" height="3.1" stroke-width=".15" />
       <rect x="0" y="9.5" width="1" height="1" fill="none" id="firefox-workaround" />
     </svg>`;
@@ -166,6 +166,13 @@ export class PotentiometerElement extends LitElement {
   }
 
   private down(event: MouseEvent) {
+    const target = event.target as SVGElement | null;
+    const isKnob = target && (target.id === 'knob' || target.id === 'knob-cap' || target.id === 'rotating');
+
+    if (!isKnob) {
+      return;
+    }
+
     if (event.button === 0 || window.navigator.maxTouchPoints) {
       this.pressed = true;
 
