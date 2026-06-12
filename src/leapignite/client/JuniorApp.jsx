@@ -22,7 +22,7 @@ import GoalPopup from "./components/GoalPopup";
 import SuccessModal from "./components/SuccessModal";
 import UnsavedWarningModal from "./components/UnsavedWarningModal";
 import JuniorSoundRecorder from "./components/JuniorSoundRecorder";
-import JuniorExtensionLibrary from "./components/JuniorExtensionLibrary";
+import IgniteExtensionLibrary from "./components/IgniteExtensionLibrary";
 import { getJuniorBlocks, getJuniorToolbox } from "../../blocks/junior-blocks";
 import { useSpriteSystem } from "./hooks/useSpriteSystem";
 import { useJuniorWorkspace } from "./hooks/useJuniorWorkspace";
@@ -721,7 +721,7 @@ function JuniorAppInner({ onBack }) {
             />
 
             {wp.isExtensionLibraryOpen && (
-                <JuniorExtensionLibrary
+                <IgniteExtensionLibrary
                     onClose={() => wp.setIsExtensionLibraryOpen(false)}
                     onSelectExtension={wp.handleAddExtension}
                 />

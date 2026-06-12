@@ -18,6 +18,8 @@ const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 import { LibraryManager } from './components/Library/LibraryManager';
 import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
+
+import Loader from '../../../components/Loader';
 import { compileCode } from './services/CompilerService';
 import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
@@ -872,7 +874,7 @@ export default function ForgeElectra({
         {/* Middle: Simulation Canvas (takes flex: 1) */}
         <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
-            <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
+            <Suspense fallback={<Loader />}>
               <ForgeCanvas 
                 onToggleSimulation={handleToggleSimulation} 
                 isCompiling={isCompiling} 
@@ -939,7 +941,7 @@ export default function ForgeElectra({
                 {activeTab === 'libraries' ? (
                   <LibraryManager />
                 ) : (
-                  <Suspense fallback={<div className="forge-loader"><div className="spinner" />Loading Editor...</div>}>
+                  <Suspense fallback={<Loader />}>
                     <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
                   </Suspense>
                 )}
