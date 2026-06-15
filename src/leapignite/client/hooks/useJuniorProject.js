@@ -152,101 +152,104 @@ export function useJuniorProject({
         }
     };
 
+    const loadProjectData = async (data) => {
+        const validation = fileService.validateProject(data, 'junior');
+
+        if (!validation.isValid) {
+            showToast(validation.error, 'error');
+            return false;
+        }
+
+        if (!data.scenes) throw new Error('Invalid Junior project file (missing scenes array)');
+
+        console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
+
+        if (stopBlocks) stopBlocks();
+
+        // Clear per-sprite workspaces and initialize from loaded project
+        if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
+            spriteWorkspacesRef.current.clear();
+            data.scenes.forEach(scene => {
+                scene.sprites.forEach(sprite => {
+                    if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
+                        spriteWorkspacesRef.current.set(sprite.id, cloneWorkspaceData(sprite.blocks));
+                        console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
+                    }
+                });
+            });
+        }
+
+        if (workspaceRef.current) {
+            isLoadingWorkspaceRef.current = true;
+            Blockly.Events.disable();
+            try {
+                workspaceRef.current.clear();
+            } finally {
+                Blockly.Events.enable();
+                setTimeout(() => {
+                    isLoadingWorkspaceRef.current = false;
+                }, 50);
+            }
+        }
+
+        setProjectName(data.projectName || 'My Project');
+        setScenes(data.scenes);
+
+        // Restore recorded sounds
+        if (data.recordedSounds && audioEngine?.soundBank) {
+            for (const [name, { samples, sampleRate }] of Object.entries(data.recordedSounds)) {
+                audioEngine.soundBank.restoreRecordedSound(name, samples, sampleRate);
+            }
+            console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
+        }
+
+        const firstScene = data.scenes[0];
+        if (firstScene) {
+            setCurrentSceneId(firstScene.id);
+            const firstSprite = firstScene.sprites[0];
+            if (firstSprite) {
+                const newId = firstSprite.id;
+                setActiveSpriteId(newId);
+                activeSpriteIdRef.current = newId;
+
+                setTimeout(() => {
+                    if (workspaceRef.current) {
+                        isLoadingWorkspaceRef.current = true;
+                        Blockly.Events.disable();
+                        try {
+                            const json = spriteWorkspacesRef?.current?.get(newId) || cloneWorkspaceData(firstSprite.blocks);
+                            if (json && Object.keys(json).length > 0) {
+                                Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
+                                console.log(`[JuniorProject] Loaded workspace for first sprite: ${newId}`);
+                            }
+                        } catch (err) {
+                            console.error('[JuniorProject] Error loading workspace:', err);
+                        } finally {
+                            Blockly.Events.enable();
+                            setTimeout(() => {
+                                isLoadingWorkspaceRef.current = false;
+                            }, 50);
+                        }
+                    }
+                }, 100);
+            } else {
+                setActiveSpriteId(null);
+                activeSpriteIdRef.current = null;
+                if (workspaceRef.current) workspaceRef.current.clear();
+            }
+        }
+
+        console.log('[JuniorApp] Project loaded successfully');
+        return true;
+    };
+
     const handleFileLoad = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         try {
             const data = await fileService.loadProject(file);
-            const validation = fileService.validateProject(data, 'junior');
-
-            if (!validation.isValid) {
-                showToast(validation.error, 'error');
-                return;
-            }
-
-            if (!data.scenes) throw new Error('Invalid Junior project file (missing scenes array)');
-
-            console.log(`[JuniorApp] Loading project: ${data.projectName || 'Untitled'}`);
-
-            if (stopBlocks) stopBlocks();
-
-            // Clear per-sprite workspaces and initialize from loaded project
-            if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
-                spriteWorkspacesRef.current.clear();
-                // Pre-populate sprite workspaces from loaded data
-                data.scenes.forEach(scene => {
-                    scene.sprites.forEach(sprite => {
-                        if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
-                            spriteWorkspacesRef.current.set(sprite.id, cloneWorkspaceData(sprite.blocks));
-                            console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
-                        }
-                    });
-                });
-            }
-
-            if (workspaceRef.current) {
-                isLoadingWorkspaceRef.current = true;
-                Blockly.Events.disable();
-                try {
-                    workspaceRef.current.clear();
-                } finally {
-                    Blockly.Events.enable();
-                    setTimeout(() => {
-                        isLoadingWorkspaceRef.current = false;
-                    }, 50);
-                }
-            }
-
-            setProjectName(data.projectName || 'My Project');
-            setScenes(data.scenes);
-
-            // Restore recorded sounds
-            if (data.recordedSounds && audioEngine?.soundBank) {
-                for (const [name, { samples, sampleRate }] of Object.entries(data.recordedSounds)) {
-                    audioEngine.soundBank.restoreRecordedSound(name, samples, sampleRate);
-                }
-                console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
-            }
-
-            const firstScene = data.scenes[0];
-            if (firstScene) {
-                setCurrentSceneId(firstScene.id);
-                const firstSprite = firstScene.sprites[0];
-                if (firstSprite) {
-                    const newId = firstSprite.id;
-                    setActiveSpriteId(newId);
-                    activeSpriteIdRef.current = newId;
-
-                    // Load workspace for first sprite
-                    setTimeout(() => {
-                        if (workspaceRef.current) {
-                            isLoadingWorkspaceRef.current = true;
-                            Blockly.Events.disable();
-                            try {
-                                const json = spriteWorkspacesRef?.current?.get(newId) || cloneWorkspaceData(firstSprite.blocks);
-                                if (json && Object.keys(json).length > 0) {
-                                    Blockly.serialization.workspaces.load(cloneWorkspaceData(json), workspaceRef.current);
-                                    console.log(`[JuniorProject] Loaded workspace for first sprite: ${newId}`);
-                                }
-                            } catch (err) {
-                                console.error('[JuniorProject] Error loading workspace:', err);
-                            } finally {
-                                Blockly.Events.enable();
-                                setTimeout(() => {
-                                    isLoadingWorkspaceRef.current = false;
-                                }, 50);
-                            }
-                        }
-                    }, 100);
-                } else {
-                    setActiveSpriteId(null);
-                    activeSpriteIdRef.current = null;
-                    if (workspaceRef.current) workspaceRef.current.clear();
-                }
-            }
-
-            console.log('[JuniorApp] Project loaded successfully');
+            await loadProjectData(data);
         } catch (err) {
             console.error('Failed to load project:', err);
             showToast('Failed to load project file: ' + err.message, 'error');
@@ -265,6 +268,7 @@ export function useJuniorProject({
         handleOpenProject,
         confirmUnsavedAction,
         handleFileLoad,
+        loadProjectData,
         pendingAction,
         setPendingAction
     };

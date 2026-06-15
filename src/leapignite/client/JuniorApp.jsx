@@ -80,15 +80,15 @@ function ensureBlocksRegistered() {
 
 const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
 
-export default function JuniorApp({ onBack }) {
+export default function JuniorApp({ onBack, projectUrl }) {
     return (
         <ToastProvider>
-            <JuniorAppInner onBack={onBack} />
+            <JuniorAppInner onBack={onBack} projectUrl={projectUrl} />
         </ToastProvider>
     );
 }
 
-function JuniorAppInner({ onBack }) {
+function JuniorAppInner({ onBack, projectUrl }) {
     // Ensure blocks are registered on first render
     ensureBlocksRegistered();
 
@@ -465,6 +465,30 @@ function JuniorAppInner({ onBack }) {
         isLoadingWorkspaceRef,
         audioEngine
     });
+
+    // Auto-load project from URL parameter (?project=<url>)
+    useEffect(() => {
+        if (!projectUrl) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                console.log('[JuniorApp] Loading project from URL...');
+                const resp = await fetch(projectUrl);
+                if (!resp.ok) throw new Error(`Failed to fetch project: ${resp.status}`);
+                const data = await resp.json();
+
+                if (cancelled) return;
+
+                await project.loadProjectData(data);
+            } catch (err) {
+                console.error('Failed to load project from URL:', err);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [projectUrl]);
 
     // Wrapper for backward compatibility - delegates to loadSpriteWorkspace
     const loadWorkspace = (sprite) => {

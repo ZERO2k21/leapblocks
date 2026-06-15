@@ -126,8 +126,40 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 export default function App() {
     logAppTiming('App component function called');
+
+    // Check for ?project=<url> query param — auto-open in correct mode
+    const params = new URLSearchParams(window.location.search);
+    const projectUrl = params.get('project') || params.get('projectUrl') || null;
+
     const [mode, setMode] = useState<AppMode>('home');
+    const [projectUrlReady, setProjectUrlReady] = useState(false);
+    const [resolvedProjectUrl, setResolvedProjectUrl] = useState<string | null>(projectUrl);
     const [juniorKey, setJuniorKey] = useState(0);
+
+    // When projectUrl is present, fetch JSON to detect mode before routing
+    React.useEffect(() => {
+        if (!projectUrl) {
+            setProjectUrlReady(true);
+            return;
+        }
+
+        (async () => {
+            try {
+                const resp = await fetch(projectUrl);
+                if (!resp.ok) throw new Error(`Failed to fetch project: ${resp.status}`);
+                const data = await resp.json();
+                const detectedMode: AppMode = data.mode === 'junior' ? 'junior' : 'intermediate';
+                logAppTiming(`Project mode detected: ${detectedMode}`);
+                setMode(detectedMode);
+            } catch (err) {
+                console.error('Failed to detect project mode:', err);
+                // Default to intermediate on error
+                setMode('intermediate');
+            } finally {
+                setProjectUrlReady(true);
+            }
+        })();
+    }, [projectUrl]);
 
     const cleanBlocklyStyles = useCallback(() => {
         // Only remove floating Blockly DOM elements that are appended to document.body
@@ -240,12 +272,14 @@ export default function App() {
     return (
         <ErrorBoundary key={mode}>
             <Suspense fallback={<Loader />}>
-                {mode === 'intermediate' && <IntermediateApp
+                {!projectUrlReady && projectUrl && <Loader />}
+                {projectUrlReady && mode === 'intermediate' && <IntermediateApp
                     onBack={requestExit}
                     onOpenPython={() => requestSwitch('intermediate', 'python')}
                     openTab={intermediateOpenTab}
+                    projectUrl={resolvedProjectUrl}
                 />}
-                {mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} />}
+                {projectUrlReady && mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} projectUrl={resolvedProjectUrl} />}
                 {mode === 'python' && <PythonApp
                     onBack={requestExit}
                     onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
