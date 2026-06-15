@@ -265,19 +265,7 @@ export default function ProjectHeader({
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                 >
-                    <div style={{
-                        width: '28px',
-                        height: '28px',
-                        background: 'linear-gradient(135deg, rgb(255, 209, 102), rgb(245, 158, 11))',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid rgba(255, 255, 255, 0.25)',
-                        boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
-                    }}>
-                        <span style={{ color: 'rgb(90, 45, 130)', fontWeight: 900, fontSize: '11px' }}>LB</span>
-                    </div>
+                    <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
                     Sign In
                 </button>
 
