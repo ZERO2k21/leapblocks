@@ -124,8 +124,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.ledBlue = data.pinStates?.pin_B === true ? (data.intensity_B ?? 1.0) : 0;
     mappedProps.damaged = false;
   } else if (data.type === 'buzzer') {
-    // Buzzers use Pin 2 as Positive (Red) signal pin as per spec
-    if (data.pinStates?.pin_PIEZO === true || data.pinStates?.pin_1 === true || data.pinStates?.pin_2 === true || data.pinStates?.pin_SIG === true) {
+    // Buzzers use Pin 2 as Positive (Red) signal pin as per spec, or VCC as per PinHarness definitions
+    if (
+      data.pinStates?.pin_PIEZO === true ||
+      data.pinStates?.pin_1 === true ||
+      data.pinStates?.pin_2 === true ||
+      data.pinStates?.pin_SIG === true ||
+      data.pinStates?.pin_VCC === true ||
+      data.hasSignal === true
+    ) {
       mappedProps.hasSignal = true;
       mappedProps.intensity = data.intensity ?? 1.0;
       mappedProps.damaged = false;
@@ -584,6 +591,31 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
     return () => {
       el.removeEventListener('tilt-toggle', handleTiltToggle);
+    };
+  }, [data.type, id]);
+
+  // Wire pushbutton / pushbutton-6mm DOM press/release events into the circuit engine
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el || !['pushbutton', 'pushbutton-6mm'].includes(data.type)) return;
+
+    const handlePress = () => {
+      withEngine(engine => engine.pushPushbuttonState(id, true));
+    };
+
+    const handleRelease = () => {
+      withEngine(engine => engine.pushPushbuttonState(id, false));
+    };
+
+    el.addEventListener('button-press', handlePress);
+    el.addEventListener('button-release', handleRelease);
+
+    // Initial state (released)
+    withEngine(engine => engine.pushPushbuttonState(id, false));
+
+    return () => {
+      el.removeEventListener('button-press', handlePress);
+      el.removeEventListener('button-release', handleRelease);
     };
   }, [data.type, id]);
 

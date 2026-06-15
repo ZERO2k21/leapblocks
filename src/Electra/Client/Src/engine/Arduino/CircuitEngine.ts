@@ -846,7 +846,7 @@ class CircuitEngine {
               break;
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       begin(thresh = 128) {
@@ -859,7 +859,7 @@ class CircuitEngine {
       touched(): number {
         this._ensureNodeId();
         if (!this._nodeId) return 0;
-        
+
         // Check if there are points in the queue
         const queue = (circuitEngine as any).touchQueues?.get(this._nodeId);
         if (queue && queue.length > 0) {
@@ -1639,6 +1639,7 @@ class CircuitEngine {
 
         // Create a dedicated listener that pushes the HIGH/LOW state across the wire to the target node
         const listener = (state: PinState) => {
+          const buf = this.peripheralPinBuffers.get(peripheralId)!;
           // ESP32 transpiled path sends numeric states for analog/PWM (0-255) and servo (0-180)
           const isAnalogState = typeof state === 'number';
           const analogValue = isAnalogState ? (state as number) : 0;
@@ -1684,14 +1685,27 @@ class CircuitEngine {
               const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
               if (!targetNode) return;
 
-              // Validate GND connection — all components require ground to function
-              const requiresGround = true;
-              const hasGround = this.hasGroundConnection(target.nodeId);
-              const hasPower = this.hasPowerConnection(target.nodeId);
+              // Validate GND/VCC connection — components require completing the circuit to function
+              let hasConnection = false;
+              let isCommonAnode = false;
 
-              if (requiresGround && !hasGround) {
-                console.warn(`[CIRCUIT] ⚠ Component ${target.nodeId} (${target.type}) missing GND connection - simulation disabled`);
-                // Mark component as damaged/non-functional without GND
+              if (target.type === 'rgb-led') {
+                const comConnections = this.traceNet(target.nodeId, 'COM');
+                isCommonAnode = comConnections.some(conn => {
+                  const connNode = currentStateStore.nodes.find(n => n.id === conn.nodeId);
+                  if (connNode && (connNode.data?.type === 'arduino-uno' || connNode.data?.type === 'esp32-c3' || connNode.data?.type === 'esp32')) {
+                    return ['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(conn.pinName);
+                  }
+                  return false;
+                });
+                hasConnection = isCommonAnode || this.hasGroundConnection(target.nodeId);
+              } else {
+                hasConnection = this.hasGroundConnection(target.nodeId);
+              }
+
+              if (!hasConnection) {
+                console.warn(`[CIRCUIT] ⚠ Component ${target.nodeId} (${target.type}) missing power/GND reference - simulation disabled`);
+                // Mark component as damaged/non-functional without connection
                 updateNodeData(target.nodeId, {
                   damaged: true,
                   value: false,
@@ -1705,31 +1719,172 @@ class CircuitEngine {
               const currentPinStates = targetNode.data?.pinStates || {};
               const pinKey = `pin_${target.pinName}`;
 
-              console.log(`[CIRCUIT LED] Updating ${target.nodeId} pin ${pinKey} to ${isHigh ? 'HIGH' : 'LOW'}`);
+              // PWM smoothing / duty cycle analyzer for AVR path (where isAnalogState is false)
+              let intensity = 0.0;
+              let pinStateValue = isHigh;
+              let isPWMMode = false;
 
-              if (currentPinStates[pinKey] !== isHigh || isAnalogState) {
+              // Base intensity calculation
+              if (target.type === 'rgb-led' && isCommonAnode) {
+                intensity = isHigh ? (1.0 - pwmIntensity) : 1.0;
+                pinStateValue = !isHigh;
+              } else {
+                intensity = isHigh ? pwmIntensity : 0.0;
+                pinStateValue = isHigh;
+              }
+
+              if (!isAnalogState && ['led', 'rgb-led', 'buzzer'].includes(target.type)) {
+                const pinName = `${target.nodeId}_${target.pinName}`;
+                const currentCycles = simulationRunner.getCycles();
+                const lastCycles = buf[`_lastCycles_${pinName}`] ?? currentCycles;
+                const diffCycles = currentCycles - lastCycles;
+
+                // Accumulate cycles spent in the previous state
+                const elapsed = currentCycles - lastCycles;
+                buf[`_totalCycles_${pinName}`] = (buf[`_totalCycles_${pinName}`] ?? 0) + elapsed;
+                if (buf[`_lastState_${pinName}`] === true) {
+                  buf[`_highCycles_${pinName}`] = (buf[`_highCycles_${pinName}`] ?? 0) + elapsed;
+                }
+
+                buf[`_lastCycles_${pinName}`] = currentCycles;
+                buf[`_lastState_${pinName}`] = isHigh;
+
+                // Clear any pending timeout
+                if (buf[`_timer_${pinName}`]) {
+                  clearTimeout(buf[`_timer_${pinName}`]);
+                  buf[`_timer_${pinName}`] = null;
+                }
+
+                // Check if toggling is high-frequency (PWM mode)
+                // 100,000 cycles = ~6.25ms at 16MHz (approx. frequencies >= 160Hz)
+                if (diffCycles < 100000) {
+                  buf[`_isPWM_${pinName}`] = true;
+                } else if (diffCycles >= 300000) {
+                  // Long interval indicates a slow toggle (digital write)
+                  buf[`_isPWM_${pinName}`] = false;
+                }
+
+                const isPWM = !!buf[`_isPWM_${pinName}`];
+
+                if (isPWM) {
+                  isPWMMode = true;
+                  // In PWM mode, throttle updates to the store
+                  // Flush when we have accumulated at least 400,000 cycles (~25ms of simulation time)
+                  if ((buf[`_totalCycles_${pinName}`] ?? 0) >= 400000) {
+                    const total = buf[`_totalCycles_${pinName}`] || 1;
+                    const high = buf[`_highCycles_${pinName}`] ?? 0;
+                    const duty = high / total;
+
+                    // Reset accumulators
+                    buf[`_totalCycles_${pinName}`] = 0;
+                    buf[`_highCycles_${pinName}`] = 0;
+
+                    if (target.type === 'rgb-led' && isCommonAnode) {
+                      intensity = 1.0 - duty;
+                    } else {
+                      intensity = duty;
+                    }
+                    pinStateValue = intensity > 0.01;
+                  } else {
+                    // Not enough cycles accumulated yet; set up a timeout in case toggling stops,
+                    // but do not update the store right now to prevent UI lag.
+                    buf[`_timer_${pinName}`] = setTimeout(() => {
+                      const latestIsHigh = buf[`_lastState_${pinName}`];
+                      let finalIntensity = 0.0;
+                      let finalPinState = false;
+
+                      if (target.type === 'rgb-led' && isCommonAnode) {
+                        finalIntensity = latestIsHigh ? 0.0 : 1.0;
+                        finalPinState = !latestIsHigh;
+                      } else {
+                        finalIntensity = latestIsHigh ? 1.0 : 0.0;
+                        finalPinState = latestIsHigh;
+                      }
+
+                      buf[`_isPWM_${pinName}`] = false;
+                      buf[`_totalCycles_${pinName}`] = 0;
+                      buf[`_highCycles_${pinName}`] = 0;
+
+                      const updates: any = {
+                        pinStates: { ...targetNode.data?.pinStates || {}, [pinKey]: finalPinState }
+                      };
+                      if (target.type === 'led') {
+                        updates.brightness = finalIntensity;
+                        updates.value = finalPinState;
+                      } else if (target.type === 'rgb-led') {
+                        updates[`intensity_${target.pinName}`] = finalIntensity;
+                      } else if (target.type === 'buzzer') {
+                        updates.intensity = finalIntensity;
+                        updates.hasSignal = finalPinState;
+                      }
+                      updates.damaged = false;
+                      updateNodeData(target.nodeId, updates);
+                    }, 50);
+
+                    return; // Suppress high-frequency update
+                  }
+                } else {
+                  // Digital mode: update immediately
+                  buf[`_totalCycles_${pinName}`] = 0;
+                  buf[`_highCycles_${pinName}`] = 0;
+                }
+
+                // Set up a safety timeout in case the PWM stops toggling
+                buf[`_timer_${pinName}`] = setTimeout(() => {
+                  const latestIsHigh = buf[`_lastState_${pinName}`];
+                  let finalIntensity = 0.0;
+                  let finalPinState = false;
+
+                  if (target.type === 'rgb-led' && isCommonAnode) {
+                    finalIntensity = latestIsHigh ? 0.0 : 1.0;
+                    finalPinState = !latestIsHigh;
+                  } else {
+                    finalIntensity = latestIsHigh ? 1.0 : 0.0;
+                    finalPinState = latestIsHigh;
+                  }
+
+                  buf[`_isPWM_${pinName}`] = false;
+                  buf[`_totalCycles_${pinName}`] = 0;
+                  buf[`_highCycles_${pinName}`] = 0;
+
+                  const updates: any = {
+                    pinStates: { ...targetNode.data?.pinStates || {}, [pinKey]: finalPinState }
+                  };
+                  if (target.type === 'led') {
+                    updates.brightness = finalIntensity;
+                    updates.value = finalPinState;
+                  } else if (target.type === 'rgb-led') {
+                    updates[`intensity_${target.pinName}`] = finalIntensity;
+                  } else if (target.type === 'buzzer') {
+                    updates.intensity = finalIntensity;
+                    updates.hasSignal = finalPinState;
+                  }
+                  updates.damaged = false;
+                  updateNodeData(target.nodeId, updates);
+                }, 50);
+              }
+
+              console.log(`[CIRCUIT LED] Updating ${target.nodeId} pin ${pinKey} to ${pinStateValue ? 'HIGH' : 'LOW'}, intensity: ${intensity}`);
+
+              if (currentPinStates[pinKey] !== pinStateValue || isAnalogState || isPWMMode) {
                 const updates: any = {
-                  pinStates: { ...currentPinStates, [pinKey]: isHigh }
+                  pinStates: { ...currentPinStates, [pinKey]: pinStateValue }
                 };
-
-                // Only allow component to work if it has proper GND connection
-                // Use pwmIntensity for ESP32 analog/PWM graduated brightness
-                const intensity = (isHigh && hasGround) ? pwmIntensity : 0.0;
 
                 if (target.type === 'led') {
                   updates.brightness = intensity;
-                  updates.value = isHigh && hasGround;  // LED requires both power AND ground
-                  console.log(`[CIRCUIT LED] Setting LED brightness to ${intensity}, value to ${isHigh && hasGround}, hasGround=${hasGround}`);
+                  updates.value = pinStateValue;  // LED requires both power AND ground (validated by hasConnection above)
+                  console.log(`[CIRCUIT LED] Setting LED brightness to ${intensity}, value to ${pinStateValue}`);
                 }
                 else if (target.type === 'rgb-led') updates[`intensity_${target.pinName}`] = intensity;
                 else if (target.type === 'buzzer') {
                   updates.intensity = intensity;
-                  updates.hasSignal = isHigh && hasGround;
+                  updates.hasSignal = pinStateValue;
                 }
                 else if (target.type === 'dc-motor') {
                   // DC Motor logic: calculate speed and direction based on POS and NEG pins
-                  const pos = target.pinName === 'POS' ? isHigh : !!currentPinStates['pin_POS'];
-                  const neg = target.pinName === 'NEG' ? isHigh : !!currentPinStates['pin_NEG'];
+                  const pos = target.pinName === 'POS' ? pinStateValue : !!currentPinStates['pin_POS'];
+                  const neg = target.pinName === 'NEG' ? pinStateValue : !!currentPinStates['pin_NEG'];
                   let speed = 0;
                   let direction = 'cw';
 
@@ -1743,10 +1898,9 @@ class CircuitEngine {
 
                   updates.speed = speed;
                   updates.direction = direction;
-                  // console.log(`[CIRCUIT MOTOR] Setting DC motor speed to ${speed}, direction to ${direction}, pos=${pos}, neg=${neg}`);
                 }
 
-                updates.damaged = !hasGround; // Mark as damaged if no ground
+                updates.damaged = false;
                 console.log(`[CIRCUIT LED] Calling updateNodeData for ${target.nodeId}:`, updates);
                 updateNodeData(target.nodeId, updates);
               } else {
@@ -2931,14 +3085,18 @@ class CircuitEngine {
             // Update the target peripheral's UI state so standard Leap Elements react
             // Skip for complex peripherals that manage their own state
             if (!isComplexPeripheral) {
-              const currentPinStates = peripheralNode.data?.pinStates || {};
-              if (currentPinStates[`pin_${peripheralPinName}`] !== isHigh) {
-                updateNodeData(peripheralId, {
-                  pinStates: {
-                    ...currentPinStates,
-                    [`pin_${peripheralPinName}`]: isHigh
-                  }
-                });
+              const pinName = `${peripheralId}_${peripheralPinName}`;
+              const isPWM = !!buf[`_isPWM_${pinName}`];
+              if (!isPWM) {
+                const currentPinStates = peripheralNode.data?.pinStates || {};
+                if (currentPinStates[`pin_${peripheralPinName}`] !== isHigh) {
+                  updateNodeData(peripheralId, {
+                    pinStates: {
+                      ...currentPinStates,
+                      [`pin_${peripheralPinName}`]: isHigh
+                    }
+                  });
+                }
               }
             }
           }
@@ -2995,6 +3153,16 @@ class CircuitEngine {
           simulationRunner.removeListener(avrPin, listener);
 
           if (neoRawListener) simulationRunner.removeRawListener(avrPin, neoRawListener);
+
+          // Clean up any pending PWM timeouts
+          const buf = this.peripheralPinBuffers.get(peripheralId);
+          if (buf) {
+            const pinName = `${peripheralId}_${peripheralPinName}`;
+            if (buf[`_timer_${pinName}`]) {
+              clearTimeout(buf[`_timer_${pinName}`]);
+              buf[`_timer_${pinName}`] = null;
+            }
+          }
         });
 
         // Initial state injection for slider-based sensors once after the AVR has had a chance to
@@ -3134,6 +3302,88 @@ class CircuitEngine {
     this.pushInputSignal(nodeId, 'OUT', isHigh);
 
     console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
+  }
+
+  /**
+   * Update the pushbutton state (pressed or released).
+   * Traces whether the button is wired to GND (active-LOW) or VCC (active-HIGH)
+   * to push the correct digital signal to the connected board pin(s).
+   */
+  public pushPushbuttonState(nodeId: string, pressed: boolean) {
+    const { nodes, edges } = useForgeStore.getState();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Persist pressed state in node data for UI representation
+    const { updateNodeData } = useForgeStore.getState();
+    updateNodeData(nodeId, {
+      sensorValues: { pressed }
+    });
+
+    // Find all connected edges
+    const connectedEdges = edges.filter(e => e.source === nodeId || e.target === nodeId);
+    
+    let hasGndConnection = false;
+    let hasVccConnection = false;
+    const boardPins: { pinName: string }[] = [];
+
+    for (const edge of connectedEdges) {
+      const buttonPin = (edge.source === nodeId ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '') || '';
+      const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
+      const otherPinName = (edge.source === nodeId ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '') || '';
+      const otherNode = nodes.find(n => n.id === otherNodeId);
+      
+      if (otherNode) {
+        const isBoard = otherNode.data?.type === 'arduino-uno' || otherNode.data?.type === 'esp32-c3' || otherNode.data?.type === 'esp32';
+        if (isBoard) {
+          const isPower = ['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(otherPinName);
+          const isGnd = ['GND', 'GND.1', 'GND.2', 'GND.3', 'GROUND'].includes(otherPinName);
+          if (isPower) {
+            hasVccConnection = true;
+          } else if (isGnd) {
+            hasGndConnection = true;
+          } else {
+            boardPins.push({ pinName: buttonPin });
+          }
+        } else {
+          // Trace this pin to see if it reaches board GND or VCC
+          const targets = this.traceNet(nodeId, buttonPin);
+          for (const t of targets) {
+            const tNode = nodes.find(n => n.id === t.nodeId);
+            if (tNode && (tNode.data?.type === 'arduino-uno' || tNode.data?.type === 'esp32-c3' || tNode.data?.type === 'esp32')) {
+              if (['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(t.pinName)) {
+                hasVccConnection = true;
+              } else if (['GND', 'GND.1', 'GND.2', 'GND.3', 'GROUND'].includes(t.pinName)) {
+                hasGndConnection = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Determine the signal level to push
+    let signalToPush = true; // default released is HIGH (pull-up)
+    if (pressed) {
+      if (hasVccConnection && !hasGndConnection) {
+        signalToPush = true;
+      } else {
+        signalToPush = false; // pulled to GND or default pressed is LOW
+      }
+    } else {
+      if (hasVccConnection && !hasGndConnection) {
+        signalToPush = false; // pulled to GND when released (assuming pull-down)
+      } else {
+        signalToPush = true; // pulled to VCC or default released is HIGH (pull-up)
+      }
+    }
+
+    // Push the signal to all connected board pins
+    for (const bp of boardPins) {
+      this.pushInputSignal(nodeId, bp.pinName, signalToPush);
+    }
+    
+    console.log(`[FORGE CIRCUIT] Pushbutton (${nodeId}) pressed=${pressed}, GND=${hasGndConnection}, VCC=${hasVccConnection}, pushing ${signalToPush ? 'HIGH' : 'LOW'} to pins:`, boardPins);
   }
 
   /**
@@ -3363,7 +3613,7 @@ class CircuitEngine {
 
       // Digital-only sensors that should never use analog path
       const digitalOnlySensors = [
-        'tilt-switch', 'push-button', 'pushbutton-6mm', 'slide-switch',
+        'tilt-switch', 'pushbutton', 'pushbutton-6mm', 'slide-switch',
         'dip-switch-8', 'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
         'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
       ];

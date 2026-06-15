@@ -119,11 +119,7 @@ class SimulationRunner {
       // hasn't been called since the last setPin.
       this.cpu!.readHooks[portConfig.PIN] = () => {
         port.refreshPinRegister();
-        const val = this.cpu!.data[portConfig.PIN];
-        if (letter === 'D') {
-          console.log(`[SimulationRunner] Read PIND: 0x${val.toString(16)} (bit 3 DT = ${(val >> 3) & 1}, bit 2 SCK = ${(val >> 2) & 1})`);
-        }
-        return val;
+        return this.cpu!.data[portConfig.PIN];
       };
     });
 
