@@ -18,6 +18,8 @@ const ForgeEditor = lazy(() => import('./components/Editor/ForgeEditor'));
 import { LibraryManager } from './components/Library/LibraryManager';
 import { PartPicker as ComponentSidebar } from './components/Library/PartPicker';
 import { IgniteTopbar } from './components/Layout/Topbar';
+
+import Loader from '../../../components/Loader';
 import { compileCode } from './services/CompilerService';
 import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
@@ -316,6 +318,12 @@ export default function ForgeElectra({
   // File Operations
   const handleNewProject = () => {
     if (confirm('Create a new project? Unsaved changes will be lost.')) {
+      if (isSimulating) {
+        stopSimulation();
+      } else {
+        clearSerial();
+        clearWiFiLog();
+      }
       setNodes([]);
       setEdges([]);
       setCode(board === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
@@ -345,6 +353,13 @@ export default function ForgeElectra({
               onRedirectToCreova(result.data, null, result.projectPath);
               return;
             }
+          }
+
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
           }
 
           const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs } = result.data;
@@ -393,6 +408,13 @@ export default function ForgeElectra({
         }
 
         if (projectData.nodes && projectData.edges) {
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            clearSerial();
+            clearWiFiLog();
+          }
+
           setNodes(projectData.nodes || []);
           setEdges(projectData.edges || []);
           setCode(projectData.code || '');
@@ -889,7 +911,7 @@ export default function ForgeElectra({
         {/* Middle: Simulation Canvas (takes flex: 1) */}
         <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
-            <Suspense fallback={<div className="forge-loader"><div className="spinner" />Initializing Physics...</div>}>
+            <Suspense fallback={<Loader />}>
               <ForgeCanvas 
                 onToggleSimulation={handleToggleSimulation} 
                 isCompiling={isCompiling} 
@@ -956,7 +978,7 @@ export default function ForgeElectra({
                 {activeTab === 'libraries' ? (
                   <LibraryManager />
                 ) : (
-                  <Suspense fallback={<div className="forge-loader"><div className="spinner" />Loading Editor...</div>}>
+                  <Suspense fallback={<Loader />}>
                     <ForgeEditor code={code} onChange={(val) => setCode(val || '')} />
                   </Suspense>
                 )}

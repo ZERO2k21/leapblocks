@@ -90,6 +90,8 @@ import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, L
 
 import { registerLeapBloxCategory } from './custom-toolbox';
 
+import Loader from './components/Loader';
+
 // Import dialog components
 import MakeVariableDialog from './components/MakeVariableDialog';
 import MakeListDialog from './components/MakeListDialog';
@@ -6080,7 +6082,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Sprite Library Modal */}
             {showSpriteLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                <React.Suspense fallback={<Loader />}>
                     <SpriteLibrary
                         isOpen={showSpriteLibrary}
                         onClose={() => setShowSpriteLibrary(false)}
@@ -6093,7 +6095,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             )}
 
             {showBackdropLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                <React.Suspense fallback={<Loader />}>
                     <BackdropLibrary
                         isOpen={showBackdropLibrary}
                         onClose={() => setShowBackdropLibrary(false)}
@@ -6200,7 +6202,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
 
                         <div style={styles.costumesEditor}>
-                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Paint Editor...</div>}>
+                            <React.Suspense fallback={<Loader />}>
                                 <CostumesTab
 
                                     selectedSpriteId={selectedSpriteId}
@@ -6224,7 +6226,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
 
                         <div style={styles.soundsEditor}>
-                            <React.Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading Sound Editor...</div>}>
+                            <React.Suspense fallback={<Loader />}>
                                 <SoundsTab
 
                                     selectedSpriteId={selectedSpriteId}
@@ -6935,7 +6937,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Sprite Library Modal */}
             {showSpriteLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                <React.Suspense fallback={<Loader />}>
                     <SpriteLibrary
                         isOpen={showSpriteLibrary}
                         onClose={() => setShowSpriteLibrary(false)}
@@ -7180,7 +7182,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Extension Library Modal */}
             {showExtensionLibrary && (
-                <React.Suspense fallback={<div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px', color: '#855CD6' }}>Loading...</div>}>
+                <React.Suspense fallback={<Loader />}>
                     <JuniorExtensionLibrary
                         onClose={() => setShowExtensionLibrary(false)}
                         onSelectExtension={(id: string) => {

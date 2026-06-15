@@ -240,7 +240,7 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
                             className="jel-iframe"
                             src={getIframeUrl(iframeExtension)}
                             title={iframeExtension.name}
-                            sandbox="allow-scripts allow-same-origin allow-modals allow-popups"
+                            sandbox="allow-scripts allow-popups"
                         />
                     </div>
                 </div>

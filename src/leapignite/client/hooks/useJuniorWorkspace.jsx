@@ -189,15 +189,16 @@ export function useJuniorWorkspace({
         }
     };
 
-    const handleCategoryClick = (catId) => {
+    const handleCategoryClick = (catId, overrideBlocks) => {
         setActiveCategory(catId);
         if (workspaceRef.current) {
-            const toolboxXml = getToolboxXml(catId, categoryBlocks);
+            const blocks = overrideBlocks || categoryBlocks;
+            const toolboxXml = getToolboxXml(catId, blocks);
             workspaceRef.current.updateToolbox(toolboxXml);
 
             // Store toolbox contents for flyout restoration after workspace switches
             if (currentToolboxContentsRef) {
-                currentToolboxContentsRef.current = categoryBlocks[catId] || [];
+                currentToolboxContentsRef.current = blocks[catId] || [];
             }
 
             resetFlyoutScale();
@@ -231,14 +232,15 @@ export function useJuniorWorkspace({
             };
 
             const nextCategories = [...categories, newCategory];
-            const nextCategoryBlocks = { ...categoryBlocks, [id]: ext.getToolbox() };
+            const extBlocks = ext.getToolbox();
+            const nextCategoryBlocks = { ...categoryBlocks, [id]: extBlocks };
 
             setCategories(nextCategories);
             setCategoryBlocks(nextCategoryBlocks);
 
-            // 3. Switch to it
+            // 3. Switch to it — pass new blocks directly to avoid stale closure
             setTimeout(() => {
-                handleCategoryClick(id);
+                handleCategoryClick(id, nextCategoryBlocks);
             }, 50);
         } else {
             console.warn(`[JuniorWorkspace] Unknown extension ID: ${extId}`);

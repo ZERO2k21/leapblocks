@@ -6,120 +6,126 @@
 import React from 'react';
 
 const Loader: React.FC = () => (
-    <>
-        <style>{`
-      .leapblocks-loader-root {
-        min-height: 100vh;
+  <>
+    <style>{`
+      .leaplab-loader-root {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
-        background: #f8fafc;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        z-index: 9999;
       }
 
-      .leapblocks-loader-container {
+      .leaplab-loader-wrapper {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
+        gap: 32px;
       }
 
-      .leapblocks-loader {
+      .leaplab-loader-spinner {
         position: relative;
-        width: 200px;
-        height: 200px;
-        perspective: 800px;
+        width: 80px;
+        height: 80px;
       }
 
-      .leapblocks-loader .crystal {
+      .leaplab-loader-ring {
         position: absolute;
-        top: 50%;
-        left: 50%;
+        width: 100%;
+        height: 100%;
+        border: 3px solid transparent;
+        border-radius: 50%;
+        animation: leaplab-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      }
+
+      .leaplab-loader-ring:nth-child(1) {
+        border-top-color: #0a015a;
+        animation-delay: -0.45s;
+      }
+
+      .leaplab-loader-ring:nth-child(2) {
         width: 60px;
         height: 60px;
-        opacity: 0;
-        transform-origin: bottom center;
-        transform: translate(-50%, -50%) rotateX(45deg) rotateZ(0deg);
-        animation: leapblocks-spin 4s linear infinite, leapblocks-emerge 2s ease-in-out infinite alternate, leapblocks-fadeIn 0.3s ease-out forwards;
-        border-radius: 10px;
-        visibility: hidden;
+        top: 10px;
+        left: 10px;
+        border-top-color: #6366f1;
+        animation-delay: -0.3s;
       }
 
-      @keyframes leapblocks-spin {
-        from { transform: translate(-50%, -50%) rotateX(45deg) rotateZ(0deg); }
-        to { transform: translate(-50%, -50%) rotateX(45deg) rotateZ(360deg); }
+      .leaplab-loader-ring:nth-child(3) {
+        width: 40px;
+        height: 40px;
+        top: 20px;
+        left: 20px;
+        border-top-color: #a855f7;
+        animation-delay: -0.15s;
       }
 
-      @keyframes leapblocks-emerge {
-        0%, 100% {
-          transform: translate(-50%, -50%) scale(0.5);
-          opacity: 0;
-        }
-        50% {
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 1;
-        }
+      @keyframes leaplab-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
 
-      @keyframes leapblocks-fadeIn {
-        to {
-          visibility: visible;
-          opacity: 0.8;
-        }
-      }
-
-      .leapblocks-loader .crystal:nth-child(1) {
-        background: linear-gradient(45deg, #003366, #336699);
-        animation-delay: 0s;
-      }
-      .leapblocks-loader .crystal:nth-child(2) {
-        background: linear-gradient(45deg, #003399, #3366cc);
-        animation-delay: 0.3s;
-      }
-      .leapblocks-loader .crystal:nth-child(3) {
-        background: linear-gradient(45deg, #0066cc, #3399ff);
-        animation-delay: 0.6s;
-      }
-      .leapblocks-loader .crystal:nth-child(4) {
-        background: linear-gradient(45deg, #0099ff, #66ccff);
-        animation-delay: 0.9s;
-      }
-      .leapblocks-loader .crystal:nth-child(5) {
-        background: linear-gradient(45deg, #33ccff, #99ccff);
-        animation-delay: 1.2s;
-      }
-      .leapblocks-loader .crystal:nth-child(6) {
-        background: linear-gradient(45deg, #66ffff, #ccffff);
-        animation-delay: 1.5s;
-      }
-
-      .leapblocks-loader-text {
-        margin-top: 24px;
-        text-align: center;
-        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-        color: #1e293b;
+      .leaplab-loader-text {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-size: 1.1rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        font-size: 0.95rem;
+        background: linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .leaplab-loader-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .leaplab-loader-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #6366f1;
+        animation: leaplab-pulse 1.4s ease-in-out infinite;
+      }
+
+      .leaplab-loader-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .leaplab-loader-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes leaplab-pulse {
+        0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+        40% { transform: scale(1); opacity: 1; }
       }
     `}</style>
 
-        <div className="leapblocks-loader-root">
-            <div className="leapblocks-loader-container">
-                <div>
-                    <div className="leapblocks-loader">
-                        <div className="crystal" />
-                        <div className="crystal" />
-                        <div className="crystal" />
-                        <div className="crystal" />
-                        <div className="crystal" />
-                        <div className="crystal" />
-                    </div>
-                    <div className="leapblocks-loader-text">Loading LeapLab...</div>
-                </div>
-            </div>
+    <div className="leaplab-loader-root">
+      <div className="leaplab-loader-wrapper">
+        <div className="leaplab-loader-spinner">
+          <div className="leaplab-loader-ring" />
+          <div className="leaplab-loader-ring" />
+          <div className="leaplab-loader-ring" />
         </div>
-    </>
+        <div className="leaplab-loader-text">Loading LeapLab</div>
+        <div className="leaplab-loader-dots">
+          <div className="leaplab-loader-dot" />
+          <div className="leaplab-loader-dot" />
+          <div className="leaplab-loader-dot" />
+        </div>
+      </div>
+    </div>
+  </>
 );
 
 export default Loader;

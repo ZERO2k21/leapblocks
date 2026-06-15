@@ -1382,7 +1382,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
                         {/* Screen Content */}
                         <div
-                            className="overflow-y-auto relative flex flex-col flex-1 w-full"
+                            className="overflow-y-auto relative flex flex-col flex-1 w-full pb-16"
                             style={{
                                 height: `${displayHeight}px`,
                                 backgroundColor: currentScreen.backgroundColor || '#ffffff',
@@ -1394,25 +1394,36 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 backgroundPosition: 'center'
                             }}
                         >
-                            {components.length === 0 ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                                    <div className="text-slate-900 text-[15px] font-bold leading-relaxed">
-                                        Drag components from the<br />palette to build your app.
+                            <div
+                                className="flex flex-col gap-[5px] p-2 min-h-full w-full relative flex-grow"
+                                style={{
+                                    alignItems: currentScreen.alignHorizontal === 'Center' ? 'center' :
+                                        currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
+                                    justifyContent: currentScreen.alignVertical === 'Center' ? 'center' :
+                                        currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
+                                }}
+                            >
+                                {components.length === 0 ? (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 pointer-events-none">
+                                        <div className="text-slate-900 text-[15px] font-bold leading-relaxed">
+                                            Drag components from the<br />palette to build your app.
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div
-                                    className="flex flex-col gap-[5px] p-2 min-h-full w-full"
-                                    style={{
-                                        alignItems: currentScreen.alignHorizontal === 'Center' ? 'center' :
-                                            currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
-                                        justifyContent: currentScreen.alignVertical === 'Center' ? 'center' :
-                                            currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
-                                    }}
-                                >
-                                    {components.map(comp => renderDraggableComponentPreview(comp))}
-                                </div>
-                            )}
+                                ) : (
+                                    components.map(comp => renderDraggableComponentPreview(comp))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Watermark Statement */}
+                        <div
+                            className="w-full text-center py-2.5 text-xs text-slate-400 font-medium border-t select-none pointer-events-none z-20 shrink-0"
+                            style={{
+                                backgroundColor: currentScreen.backgroundColor || '#ffffff',
+                                borderColor: currentScreen.backgroundColor === '#ffffff' || !currentScreen.backgroundColor ? '#f1f5f9' : 'rgba(0,0,0,0.05)'
+                            }}
+                        >
+                            Created by Creoleap Technologies
                         </div>
                         {/* Nav Bar */}
                         {deviceType === 'phone' ? (

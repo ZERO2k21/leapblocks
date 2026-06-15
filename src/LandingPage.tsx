@@ -314,7 +314,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: var(--text-main);
   height: 100dvh; 
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
@@ -357,10 +357,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── PAGE CONTENT ─── */
 .landing-page-container .page {
-  position:relative; z-index:1; padding-top: 1vh;
+  position:relative; z-index:1; padding-top: 1vh; padding-bottom: 48px;
   display: flex; flex-direction: column; justify-content: space-between;
-  height: 92vh; transition: all 0.3s ease;
-  overflow: hidden; scroll-behavior: smooth;
+  flex: 1; min-height: 0; transition: all 0.3s ease;
+  overflow: visible; scroll-behavior: smooth;
 }
 
 /* ─── HERO ─── */
@@ -815,6 +815,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
           {/* FOOTER */}
           <footer style={{
+            position: 'sticky',
+            bottom: 0,
+            left: 0,
+            right: 0,
             textAlign: 'center',
             padding: '12px 24px',
             display: 'flex',
@@ -822,8 +826,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             justifyContent: 'center',
             gap: '8px',
             flexShrink: 0,
-            background: 'linear-gradient(90deg, rgba(10,1,90,0.04) 0%, rgba(99,102,241,0.07) 50%, rgba(10,1,90,0.04) 100%)',
-            borderTop: '1px solid rgba(99,102,241,0.12)',
+            zIndex: 10,
           }}>
             {/* Ambient glow dot */}
             <span style={{
