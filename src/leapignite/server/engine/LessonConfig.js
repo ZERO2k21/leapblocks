@@ -24,7 +24,8 @@ export const DefaultLesson = {
         constraints: {
             allowSpriteAdd: true,
             allowSceneChange: true
-        }
+        },
+        goal: null
     }
 };
 
