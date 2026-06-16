@@ -111,6 +111,11 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
   const [searchQuery, setSearchQuery] = useState('');
   const [libraryOpen, setLibraryOpen] = useState(true);
 
+  const handleDragStart = (event: React.DragEvent, componentType: string) => {
+    event.dataTransfer.setData('application/forge-component', componentType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
   const isESP32Board = currentBoard === 'esp32-c3' || currentBoard === 'esp32';
 
   const shouldHide = (id: string): boolean => {
@@ -263,6 +268,8 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                   <div key={comp.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', minWidth: 0 }}>
                     <div
                       onClick={() => onSelect(comp.id)}
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, comp.id)}
                       className="component-card"
                       title={comp.name}
                       style={{
@@ -270,7 +277,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                         border: '1px solid var(--lp-border)',
                         width: '100%',
                         aspectRatio: '1/1',
-                        cursor: 'pointer',
+                        cursor: 'grab',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
