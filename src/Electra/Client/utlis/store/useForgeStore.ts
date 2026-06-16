@@ -137,8 +137,6 @@ export interface ForgeState {
   // Project Configuration
   projectPath: string | null;
   setProjectPath: (path: string | null) => void;
-  sharedProjectId: string | null;
-  setSharedProjectId: (id: string | null) => void;
 
   // Libraries
   importedLibraries: string[];
@@ -199,7 +197,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   wifiLog: [],
   board: 'arduino-uno',
   projectPath: null,
-  sharedProjectId: null,
+
   importedLibraries: [],
   librarySearchQuery: '',
   librarySearchResults: [],
@@ -274,10 +272,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     console.log(`[FORGE STORE] projectPath updated to: ${path}`);
     set({ projectPath: path });
   },
-  setSharedProjectId: (id) => {
-    console.log(`[FORGE STORE] sharedProjectId updated to: ${id}`);
-    set({ sharedProjectId: id });
-  },
+
   setImportedLibraries: (libs) => {
     console.log(`[FORGE STORE] importedLibraries list updated (${libs.length} items)`);
     set({ importedLibraries: libs });
@@ -589,8 +584,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       serialOutput: '',
-      wifiLog: [],
-      sharedProjectId: null
+      wifiLog: []
     });
   },
 

@@ -50,7 +50,6 @@ RUN cd /tmp/server && npm install --production && \
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY tools/ ./tools/
-RUN cd /app/server && npx prisma generate
 
 EXPOSE 3001
 EXPOSE 3002
