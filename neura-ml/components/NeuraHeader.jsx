@@ -231,7 +231,7 @@ export default function NeuraHeader({ onBack, onSave, projectName, onProjectName
                         border: '2px solid rgba(255, 255, 255, 0.25)',
                         boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
                     }}>
-                        <span style={{ color: 'rgb(90, 45, 130)', fontWeight: 900, fontSize: '11px' }}>LB</span>
+                        <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
                     </div>
                     Sign In
                 </button>

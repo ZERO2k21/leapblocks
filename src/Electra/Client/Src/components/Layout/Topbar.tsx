@@ -725,19 +725,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
               flexShrink: 0
             }}>
-              <div style={{
-                width: '22px',
-                height: '22px',
-                background: isElectra ? 'linear-gradient(135deg, #22d3ee, #06b6d4)' : 'linear-gradient(135deg, rgb(96, 165, 250), rgb(29, 78, 216))',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid rgba(255, 255, 255, 0.25)',
-                boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
-              }}>
-                <span style={{ color: isElectra ? '#09090b' : 'rgb(224, 242, 254)', fontWeight: 900, fontSize: '9px' }}>EL</span>
-              </div>
+              <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '22px', height: '22px', borderRadius: '5px' }} />
               Sign In
             </button>
           )}

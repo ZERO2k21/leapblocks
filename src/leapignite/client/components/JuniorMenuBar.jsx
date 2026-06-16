@@ -427,19 +427,7 @@ export default function JuniorMenuBar({
                         e.currentTarget.style.transform = 'scale(1)';
                     }}
                 >
-                    <div style={{
-                        width: 28,
-                        height: 28,
-                        background: 'linear-gradient(135deg, #FFD166, #F59E0B)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid rgba(255,255,255,0.25)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                    }}>
-                        <span style={{ color: '#5A2D82', fontWeight: 900, fontSize: 11 }}>LB</span>
-                    </div>
+                    <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: 28, height: 28, borderRadius: 6 }} />
                     Sign In
                 </button>
 
