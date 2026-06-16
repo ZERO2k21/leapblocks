@@ -25,6 +25,7 @@ import { IS_ELECTRON, BACKEND_API_URL } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 import * as LibraryService from './services/LibraryService';
+import { pack, unpack, isPacked } from '../utlis/compress';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -124,13 +125,15 @@ export default function ForgeElectra({
     setShowShareModal(true);
 
     try {
+      const circuitPacked = pack({ nodes, edges });
       const payload = {
         id: updateExisting ? sharedProjectId : undefined,
         name: projectName,
         board,
         code,
-        circuit: { nodes, edges },
-        libraries: importedLibraries
+        circuit: circuitPacked,
+        libraries: importedLibraries,
+        _circuitPacked: true
       };
 
       const response = await fetch(`${BACKEND_API_URL}/api/projects/share`, {
@@ -288,8 +291,22 @@ export default function ForgeElectra({
         const sharedProject = data.project;
         console.log('[FORGE ELECTRA] Shared project fetched successfully:', sharedProject);
 
-        setNodes(sharedProject.nodes || []);
-        setEdges(sharedProject.edges || []);
+        let loadedNodes = sharedProject.nodes || [];
+        let loadedEdges = sharedProject.edges || [];
+
+        if (typeof loadedNodes === 'string') {
+          try {
+            const decompressed = unpack<{ nodes: any[]; edges: any[] }>(loadedNodes);
+            loadedNodes = decompressed.nodes || [];
+            loadedEdges = decompressed.edges || [];
+            console.log('[FORGE ELECTRA] Decompressed packed circuit from share');
+          } catch (e) {
+            console.error('[FORGE ELECTRA] Failed to decompress packed circuit:', e);
+          }
+        }
+
+        setNodes(loadedNodes);
+        setEdges(loadedEdges);
         setCode(sharedProject.code || '');
         setImportedLibraries(sharedProject.libraries || []);
         autoInstallLibraries(sharedProject.libraries || []);
@@ -524,7 +541,7 @@ export default function ForgeElectra({
     reader.onload = async (event) => {
       try {
         const content = event.target?.result as string;
-        const projectData = JSON.parse(content);
+        const projectData = isPacked(content) ? unpack<any>(content) : JSON.parse(content);
 
         // Check if it's actually a Creova project (contains screens or schemaVersion)
         if (projectData.screens || projectData.schemaVersion) {
@@ -613,7 +630,8 @@ export default function ForgeElectra({
           version: '1.0.0',
           timestamp: new Date().toISOString()
         };
-        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const compressed = pack(projectData);
+        const blob = new Blob([compressed], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

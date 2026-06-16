@@ -975,35 +975,29 @@ app.post('/relay', async (req, res) => {
 
 // POST /api/projects/share - Save or update a shared project state
 app.post('/api/projects/share', async (req, res) => {
-  const { id, name, board, code, circuit, libraries } = req.body;
+  const { id, name, board, code, circuit, libraries, _circuitPacked } = req.body;
   try {
+    const data = {
+      name: name || "Shared Project",
+      board,
+      code,
+      libraries: JSON.stringify(libraries || [])
+    };
+
+    if (_circuitPacked) {
+      data.nodes = JSON.stringify(circuit);
+      data.edges = '[]';
+    } else {
+      data.nodes = JSON.stringify(circuit?.nodes || []);
+      data.edges = JSON.stringify(circuit?.edges || []);
+    }
+
     if (id) {
-      // Update existing shared project
-      const updated = await prisma.sharedProject.update({
-        where: { id },
-        data: {
-          name: name || "Shared Project",
-          board,
-          code,
-          nodes: JSON.stringify(circuit.nodes),
-          edges: JSON.stringify(circuit.edges),
-          libraries: JSON.stringify(libraries || [])
-        }
-      });
+      const updated = await prisma.sharedProject.update({ where: { id }, data });
       console.log(`[SHARE] Updated project: ${updated.id} (${updated.name})`);
       return res.json({ success: true, shareId: updated.id });
     } else {
-      // Create new shared project
-      const created = await prisma.sharedProject.create({
-        data: {
-          name: name || "Shared Project",
-          board,
-          code,
-          nodes: JSON.stringify(circuit.nodes),
-          edges: JSON.stringify(circuit.edges),
-          libraries: JSON.stringify(libraries || [])
-        }
-      });
+      const created = await prisma.sharedProject.create({ data });
       console.log(`[SHARE] Created new project: ${created.id} (${created.name})`);
       return res.json({ success: true, shareId: created.id });
     }
