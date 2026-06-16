@@ -326,7 +326,7 @@ app.post('/build-apk', async (req, res) => {
   }
 
   try {
-    const buildPath = path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK.js');
+    const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
     console.log(`[APK] buildPath: ${buildPath}`);
     console.log(`[APK] buildPath exists: ${fs.existsSync(buildPath)}`);
     console.log(`[APK] __dirname: ${__dirname}`);
@@ -339,7 +339,7 @@ app.post('/build-apk', async (req, res) => {
     } else {
       console.log(`[APK] buildAPK.js NOT FOUND at ${buildPath}`);
       console.log(`[APK] Checking alternatives...`);
-      const alt1 = path.join(__dirname, '..', '..', 'src', 'studio', 'apk', 'buildAPK.js');
+      const alt1 = path.join(__dirname, '..', '..', 'src', 'creova', 'apk', 'buildAPK.js');
       const alt2 = path.join(__dirname, 'apk', 'buildAPK.js');
       console.log(`[APK] alt1: ${alt1} exists: ${fs.existsSync(alt1)}`);
       console.log(`[APK] alt2: ${alt2} exists: ${fs.existsSync(alt2)}`);
@@ -1050,7 +1050,7 @@ app.get('/health', async (req, res) => {
     cliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
   } catch {}
 
-  const buildPath = path.join(__dirname, '..', 'src', 'studio', 'apk', 'buildAPK.js');
+  const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
   const apkBuilderExists = fs.existsSync(buildPath);
   const toolsDir = path.join(__dirname, '..', 'tools');
   const toolsExist = fs.existsSync(toolsDir);

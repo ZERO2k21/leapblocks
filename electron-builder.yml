@@ -8,7 +8,7 @@ files:
   - dist/**/*
   - package.json
   - node_modules/**/*
-  - src/studio/apk/**/*
+  - src/creova/apk/**/*
   - tools/**/*
 asar: true
 asarUnpack:

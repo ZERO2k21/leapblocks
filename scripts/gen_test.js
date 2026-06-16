@@ -1,4 +1,4 @@
-﻿const { generateWebApp } = require('./src/studio/apk/htmlGenerator.js');
+const { generateWebApp } = require('./src/creova/apk/htmlGenerator.js');
 const app = {
   appName:'TestAlign',
   screens:[{

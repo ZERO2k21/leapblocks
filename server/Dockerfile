@@ -48,7 +48,7 @@ RUN cd /tmp/server && npm install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
 COPY server/ ./server/
-COPY src/studio/apk/ ./src/studio/apk/
+COPY src/creova/apk/ ./src/creova/apk/
 COPY tools/ ./tools/
 
 EXPOSE 3001
