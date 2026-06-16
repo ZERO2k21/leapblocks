@@ -21,7 +21,8 @@ import {
   Scissors,
   Copy,
   Clipboard,
-  Check
+  Check,
+  Share2
 } from 'lucide-react';
 
 interface IgniteTopbarProps {
@@ -45,6 +46,7 @@ interface IgniteTopbarProps {
   canRedo?: boolean;
   onSwitchBoard?: (board: string) => void;
   currentBoard?: string;
+  onShare?: () => void;
 }
 
 export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
@@ -67,7 +69,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   canUndo = false,
   canRedo = false,
   onSwitchBoard,
-  currentBoard
+  currentBoard,
+  onShare
 }) => {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
@@ -643,6 +646,45 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             </button>
           </div>
 
+          {onShare && (
+            <button
+              title="Share Project"
+              onClick={onShare}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '32px',
+                padding: '0 14px',
+                background: isElectra ? 'rgba(34, 211, 238, 0.1)' : 'rgba(96, 165, 250, 0.15)',
+                border: isElectra ? '1px solid #22d3ee' : '1px solid rgba(96, 165, 250, 0.4)',
+                borderRadius: '20px',
+                color: isElectra ? '#22d3ee' : '#60a5fa',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 700,
+                fontFamily: '"Segoe UI", Inter, sans-serif',
+                transition: 'all 0.2s',
+                gap: '6px',
+                boxShadow: isElectra ? '0 0 10px rgba(34, 211, 238, 0.1)' : 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isElectra ? '#22d3ee' : '#60a5fa';
+                e.currentTarget.style.color = isElectra ? '#09090b' : '#ffffff';
+                e.currentTarget.style.boxShadow = isElectra ? '0 0 16px rgba(34, 211, 238, 0.35)' : 'none';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isElectra ? 'rgba(34, 211, 238, 0.1)' : 'rgba(96, 165, 250, 0.15)';
+                e.currentTarget.style.color = isElectra ? '#22d3ee' : '#60a5fa';
+                e.currentTarget.style.boxShadow = isElectra ? '0 0 10px rgba(34, 211, 238, 0.1)' : 'none';
+              }}
+            >
+              <Share2 size={13} strokeWidth={2.5} />
+              <span>Share</span>
+            </button>
+          )}
+
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flex: '1 1 0%', minWidth: '0px' }}>
@@ -722,12 +764,12 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   filter: isElectra
                     ? 'brightness(1.14) contrast(1.05)'
                     : [
-                        'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                        'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                        'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                        'brightness(1.14)',
-                        'contrast(1.05)',
-                      ].join(' '),
+                      'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                      'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                      'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                      'brightness(1.14)',
+                      'contrast(1.05)',
+                    ].join(' '),
                 }}
               />
             </div>

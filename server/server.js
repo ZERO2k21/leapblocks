@@ -9,11 +9,18 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { v4 as uuidv4 } from 'uuid';
 import { transpileArduinoToJS } from './transpiler.js';
+import { PrismaClient } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import Database from 'better-sqlite3';
 
 const _require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const dbPath = path.join(__dirname, 'prisma', 'dev.db');
+const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
+const prisma = new PrismaClient({ adapter });
 
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3001;
@@ -961,6 +968,76 @@ app.post('/relay', async (req, res) => {
       status: 0,
       error: err.message,
     });
+  }
+});
+
+// ─── Project Sharing Routes (Method B) ───────────────────────────
+
+// POST /api/projects/share - Save or update a shared project state
+app.post('/api/projects/share', async (req, res) => {
+  const { id, name, board, code, circuit, libraries } = req.body;
+  try {
+    if (id) {
+      // Update existing shared project
+      const updated = await prisma.sharedProject.update({
+        where: { id },
+        data: {
+          name: name || "Shared Project",
+          board,
+          code,
+          nodes: JSON.stringify(circuit.nodes),
+          edges: JSON.stringify(circuit.edges),
+          libraries: JSON.stringify(libraries || [])
+        }
+      });
+      console.log(`[SHARE] Updated project: ${updated.id} (${updated.name})`);
+      return res.json({ success: true, shareId: updated.id });
+    } else {
+      // Create new shared project
+      const created = await prisma.sharedProject.create({
+        data: {
+          name: name || "Shared Project",
+          board,
+          code,
+          nodes: JSON.stringify(circuit.nodes),
+          edges: JSON.stringify(circuit.edges),
+          libraries: JSON.stringify(libraries || [])
+        }
+      });
+      console.log(`[SHARE] Created new project: ${created.id} (${created.name})`);
+      return res.json({ success: true, shareId: created.id });
+    }
+  } catch (error) {
+    console.error('[SHARE ERROR] Failed to save/update project:', error);
+    res.status(500).json({ success: false, error: 'Database transaction failed: ' + error.message });
+  }
+});
+
+// GET /api/projects/share/:projectId - Retrieve a shared project state
+app.get('/api/projects/share/:projectId', async (req, res) => {
+  const { projectId } = req.params;
+  try {
+    const project = await prisma.sharedProject.findUnique({
+      where: { id: projectId }
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+    return res.json({
+      success: true,
+      project: {
+        id: project.id,
+        name: project.name,
+        board: project.board,
+        code: project.code,
+        nodes: JSON.parse(project.nodes),
+        edges: JSON.parse(project.edges),
+        libraries: JSON.parse(project.libraries)
+      }
+    });
+  } catch (error) {
+    console.error('[SHARE ERROR] Failed to fetch project:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch project from database' });
   }
 });
 

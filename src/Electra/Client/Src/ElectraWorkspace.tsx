@@ -23,7 +23,11 @@ export default function ElectraWorkspace({
     redirectProjectData,
     clearRedirectProjectData
 }: ElectraWorkspaceProps) {
-    const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(null);
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const hasShareParam = params.has('share') || params.has('shareId');
+    const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(
+        hasShareParam ? 'arduino-uno' : null
+    );
 
     // Clear workspace when component mounts
     useEffect(() => {

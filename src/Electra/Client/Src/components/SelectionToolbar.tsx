@@ -85,7 +85,11 @@ export const SelectionToolbar: React.FC = () => {
       // Proactively notify engine if it's an analog input
       if (isAnalogSensor && selectedNode?.id) {
         import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
-          circuitEngine.pushInputSignal(selectedNode.id, 'SIG', true);
+          const pinName = nodeType === 'ntc-temperature-sensor' ? 'OUT'
+            : (nodeType === 'photoresistor' || nodeType === 'photoresistor-sensor') ? 'AO'
+              : (nodeType === 'potentiometer' || nodeType === 'slide-potentiometer') ? 'SIG'
+                : 'OUT';
+          circuitEngine.pushInputSignal(selectedNode.id, pinName, true);
         });
       }
     };

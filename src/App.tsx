@@ -130,8 +130,9 @@ export default function App() {
     // Check for ?project=<url> query param — auto-open in correct mode
     const params = new URLSearchParams(window.location.search);
     const projectUrl = params.get('project') || params.get('projectUrl') || null;
+    const isElectraMode = params.get('mode') === 'electra' || params.has('share') || params.has('shareId');
 
-    const [mode, setMode] = useState<AppMode>('home');
+    const [mode, setMode] = useState<AppMode>(isElectraMode ? 'electra' : 'home');
     const [projectUrlReady, setProjectUrlReady] = useState(false);
     const [resolvedProjectUrl, setResolvedProjectUrl] = useState<string | null>(projectUrl);
     const [juniorKey, setJuniorKey] = useState(0);

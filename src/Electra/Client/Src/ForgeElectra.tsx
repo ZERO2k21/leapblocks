@@ -6,7 +6,7 @@
 import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import { Node, Edge } from 'reactflow';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
-import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
+import { Play, Square, Code, Terminal, Wifi, Library as LibraryIcon, Share2, Check, Copy } from 'lucide-react';
 // Register official leap elements
 import '../utlis/elements/leap-elements';
 import './ForgeElectra.css';
@@ -21,7 +21,7 @@ import { IgniteTopbar } from './components/Layout/Topbar';
 
 import Loader from '../../../components/Loader';
 import { compileCode } from './services/CompilerService';
-import { IS_ELECTRON } from '../../../config/platform';
+import { IS_ELECTRON, BACKEND_API_URL } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 import * as LibraryService from './services/LibraryService';
@@ -91,6 +91,8 @@ export default function ForgeElectra({
     uiTheme,
     importedLibraries,
     setImportedLibraries,
+    sharedProjectId,
+    setSharedProjectId,
   } = useForgeStore();
 
   // Undo/Redo History Management
@@ -99,24 +101,93 @@ export default function ForgeElectra({
   const [code, setCode] = useState(initialBoard === 'esp32-c3' ? ESP32_DEFAULT_CODE : ARDUINO_DEFAULT_CODE);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sharing System State
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [shareStep, setShareStep] = useState<'choice' | 'loading' | 'success'>('choice');
+
+  const handleShareClick = () => {
+    setCopiedLink(false);
+    if (sharedProjectId) {
+      setShareStep('choice');
+      setShowShareModal(true);
+    } else {
+      executeShare(false);
+    }
+  };
+
+  const executeShare = async (updateExisting: boolean) => {
+    setShareStep('loading');
+    setSharingLoading(true);
+    setShowShareModal(true);
+
+    try {
+      const payload = {
+        id: updateExisting ? sharedProjectId : undefined,
+        name: projectName,
+        board,
+        code,
+        circuit: { nodes, edges },
+        libraries: importedLibraries
+      };
+
+      const response = await fetch(`${BACKEND_API_URL}/api/projects/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.shareId) {
+        const generatedUrl = `${window.location.origin}${window.location.pathname}?mode=electra&share=${data.shareId}`;
+        setShareUrl(generatedUrl);
+        setSharedProjectId(data.shareId);
+        setShareStep('success');
+
+        // Update URL query parameters silently
+        window.history.pushState({ path: generatedUrl }, '', generatedUrl);
+      } else {
+        throw new Error(data.error || 'Failed to generate sharing ID');
+      }
+    } catch (err: any) {
+      console.error('[FORGE SHARE] Error during share operation:', err);
+      alert('Failed to share project: ' + err.message);
+      setShowShareModal(false);
+    } finally {
+      setSharingLoading(false);
+    }
+  };
+
+  const handleCopyShareLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
   const autoInstallLibraries = async (libs: string[]) => {
     if (!libs || libs.length === 0) return;
     try {
       console.log('[FORGE ELECTRA] Checking libraries for auto-installation:', libs);
       const installed = await LibraryService.getLibraries();
       const installedNames = new Set(installed.map((l: any) => l.name.toLowerCase()));
-      
+
       for (const libName of libs) {
         if (!installedNames.has(libName.toLowerCase())) {
           console.log(`[FORGE ELECTRA] Auto-installing missing library: ${libName}`);
-          
+
           let libToInstall: LibraryService.Library = {
             name: libName,
             author: '',
             description: '',
             version: '1.0.0',
           };
-          
+
           try {
             const indexMatches = await LibraryService.searchLibraries(libName);
             const exactMatch = indexMatches.find(l => l.name.toLowerCase() === libName.toLowerCase());
@@ -194,6 +265,59 @@ export default function ForgeElectra({
     }
   }, []);
 
+  // Load shared project if share/shareId query param is present
+  const [loadingShare, setLoadingShare] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share') || params.get('shareId');
+    if (!shareId) return;
+
+    const fetchSharedProject = async () => {
+      setLoadingShare(true);
+      try {
+        console.log(`[FORGE ELECTRA] Fetching shared project ID: ${shareId}`);
+        const response = await fetch(`${BACKEND_API_URL}/api/projects/share/${shareId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch project: ${response.status}`);
+        }
+        const data = await response.json();
+        if (!data.success || !data.project) {
+          throw new Error('Invalid project response format');
+        }
+        const sharedProject = data.project;
+        console.log('[FORGE ELECTRA] Shared project fetched successfully:', sharedProject);
+
+        setNodes(sharedProject.nodes || []);
+        setEdges(sharedProject.edges || []);
+        setCode(sharedProject.code || '');
+        setImportedLibraries(sharedProject.libraries || []);
+        autoInstallLibraries(sharedProject.libraries || []);
+        setProjectName(sharedProject.name || 'Shared Project');
+        setSharedProjectId(shareId);
+        
+        if (sharedProject.board) {
+          setBoard(sharedProject.board);
+        }
+
+        // Reset history for the newly loaded project
+        setHistory([]);
+        setHistoryIndex(-1);
+        setTimeout(() => {
+          saveToHistory();
+        }, 0);
+
+      } catch (err) {
+        console.error('[FORGE ELECTRA] Failed to load shared project:', err);
+        alert('Could not load the shared project. It might have been deleted or the link is invalid.');
+      } finally {
+        setLoadingShare(false);
+      }
+    };
+
+    fetchSharedProject();
+  }, [setNodes, setEdges, setBoard, setImportedLibraries, setProjectName, setSharedProjectId]);
+
   // Save to history when nodes, edges, or code changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -217,7 +341,7 @@ export default function ForgeElectra({
   useEffect(() => {
     if (redirectProjectData && clearRedirectProjectData) {
       console.log('[FORGE ELECTRA] Processing redirect project data:', redirectProjectData);
-      
+
       const projectObj = redirectProjectData as {
         data: {
           nodes?: unknown[];
@@ -232,22 +356,22 @@ export default function ForgeElectra({
       };
 
       const { data, projectName: rProjectName, projectPath: rProjectPath } = projectObj;
-      
+
       const loadedNodes = (data.nodes || data.circuit?.nodes || []) as Node[];
       const loadedEdges = (data.edges || data.circuit?.edges || []) as Edge[];
       const loadedCode = data.code || '';
       const loadedLibs = data.libraries || [];
-      
+
       setNodes(loadedNodes);
       setEdges(loadedEdges);
       setCode(loadedCode);
       setImportedLibraries(loadedLibs);
       autoInstallLibraries(loadedLibs);
-      
+
       if (data.board) {
         setBoard(data.board);
       }
-      
+
       if (rProjectPath) {
         setProjectPath(rProjectPath);
         const pathParts = rProjectPath.split(/[\\/]/);
@@ -258,31 +382,36 @@ export default function ForgeElectra({
         setProjectName(rProjectName);
         setProjectPath(null);
       }
-      
+
       setHistory([]);
       setHistoryIndex(-1);
       setTimeout(() => {
         saveToHistory();
       }, 0);
-      
+
       clearRedirectProjectData();
     }
   }, [redirectProjectData, clearRedirectProjectData]);
 
   // Initialize board from prop on mount (does not re-fire on internal board changes)
   useEffect(() => {
-    if (initialBoard && board !== initialBoard) {
+    const params = new URLSearchParams(window.location.search);
+    const hasShareParam = params.has('share') || params.has('shareId');
+    if (initialBoard && board !== initialBoard && !hasShareParam) {
       setBoard(initialBoard);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialBoard, setBoard]);
 
-  // Add the selected board to canvas on mount if no nodes exist
+  // Add the selected board to canvas on mount if no nodes exist and not loading a shared project
   useEffect(() => {
     const state = useForgeStore.getState();
     console.log('[FORGE ELECTRA] Checking if board needs to be added. Current nodes:', state.nodes.length, 'Initial board:', initialBoard);
 
-    if (state.nodes.length === 0 && initialBoard) {
+    const params = new URLSearchParams(window.location.search);
+    const hasShareParam = params.has('share') || params.has('shareId');
+
+    if (state.nodes.length === 0 && initialBoard && !hasShareParam) {
       console.log('[FORGE ELECTRA] Adding board to canvas:', initialBoard);
       // Use the store's addNode function to properly add the board
       state.addNode(initialBoard, { x: 400, y: 300 }, {
@@ -853,6 +982,10 @@ export default function ForgeElectra({
     onBack();
   };
 
+  if (loadingShare) {
+    return <Loader />;
+  }
+
   return (
     <div className={`forge-root board-${board} theme-${uiTheme}`}>
       <input
@@ -879,6 +1012,7 @@ export default function ForgeElectra({
         canRedo={historyIndex < history.length - 1}
         onSwitchBoard={handleSwitchBoard}
         currentBoard={board}
+        onShare={handleShareClick}
       />
 
       <main className="forge-main-split">
@@ -912,9 +1046,9 @@ export default function ForgeElectra({
         <div className="canvas-pane">
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
             <Suspense fallback={<Loader />}>
-              <ForgeCanvas 
-                onToggleSimulation={handleToggleSimulation} 
-                isCompiling={isCompiling} 
+              <ForgeCanvas
+                onToggleSimulation={handleToggleSimulation}
+                isCompiling={isCompiling}
                 showEditor={showEditor}
                 onToggleEditor={() => {
                   if (!showEditor && window.innerWidth <= 1024 && showPartPicker) {
@@ -1136,6 +1270,187 @@ export default function ForgeElectra({
                   Switch Anyway
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Premium Sharing Modal */}
+      {showShareModal && (
+        <div className="web-modal-overlay" onClick={() => !sharingLoading && setShowShareModal(false)}>
+          <div className="web-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', background: '#09090b', borderColor: '#27272a', borderStyle: 'solid', borderWidth: '1px' }}>
+            <div className="web-modal-header" style={{ borderBottom: '1px solid #1f1f22', paddingBottom: '12px' }}>
+              <h3 style={{ color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontFamily: '"Segoe UI", Inter, sans-serif', fontSize: '18px', fontWeight: 700 }}>
+                <Share2 size={18} strokeWidth={2.5} />
+                Share Project
+              </h3>
+              {!sharingLoading && <button onClick={() => setShowShareModal(false)} style={{ background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '20px', cursor: 'pointer' }}>×</button>}
+            </div>
+            
+            <div className="web-modal-body" style={{ padding: '24px 0 12px 0' }}>
+              {shareStep === 'choice' && (
+                <div>
+                  <p style={{ color: '#a1a1aa', fontSize: '13.5px', lineHeight: '1.6', marginBottom: '24px', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                    This project was loaded from a shared link. Would you like to update the existing link or create a new shareable copy?
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button
+                      onClick={() => executeShare(true)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(34, 211, 238, 0.25)',
+                        background: 'rgba(34, 211, 238, 0.04)',
+                        color: '#22d3ee',
+                        fontSize: '13.5px',
+                        fontWeight: 700,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontFamily: '"Segoe UI", Inter, sans-serif',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(34, 211, 238, 0.08)';
+                        e.currentTarget.style.borderColor = '#22d3ee';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(34, 211, 238, 0.04)';
+                        e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.25)';
+                      }}
+                    >
+                      <span style={{ fontSize: '14px' }}>Update Existing Link</span>
+                      <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 500 }}>Overwrite the project at the current link. Anyone visiting it will see your updates.</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => executeShare(false)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        border: '1px solid #27272a',
+                        background: 'rgba(39, 39, 42, 0.2)',
+                        color: '#f4f4f5',
+                        fontSize: '13.5px',
+                        fontWeight: 700,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontFamily: '"Segoe UI", Inter, sans-serif',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(39, 39, 42, 0.4)';
+                        e.currentTarget.style.borderColor = '#3f3f46';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(39, 39, 42, 0.2)';
+                        e.currentTarget.style.borderColor = '#27272a';
+                      }}
+                    >
+                      <span style={{ fontSize: '14px' }}>Create New Link</span>
+                      <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 500 }}>Create a new standalone link. The current link will remain unchanged.</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {shareStep === 'loading' && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '16px' }}>
+                  <div className="spinner" style={{ width: '32px', height: '32px', border: '3px solid rgba(34, 211, 238, 0.1)', borderTopColor: '#22d3ee', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <style>{`
+                    @keyframes spin {
+                      to { transform: rotate(360deg); }
+                    }
+                  `}</style>
+                  <p style={{ color: '#a1a1aa', fontSize: '14px', margin: 0, fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                    Generating shareable link...
+                  </p>
+                </div>
+              )}
+
+              {shareStep === 'success' && (
+                <div>
+                  <p style={{ color: '#a1a1aa', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                    Your project has been successfully uploaded! Anyone with this link can view and edit the circuit.
+                  </p>
+                  
+                  <div style={{
+                    display: 'flex',
+                    background: '#18181b',
+                    border: '1px solid #27272a',
+                    borderRadius: '10px',
+                    padding: '6px 6px 6px 12px',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '20px'
+                  }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#e4e4e7',
+                        fontSize: '13px',
+                        outline: 'none',
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: '"JetBrains Mono", monospace'
+                      }}
+                    />
+                    <button
+                      onClick={handleCopyShareLink}
+                      style={{
+                        padding: '8px 16px',
+                        background: copiedLink ? '#10b981' : '#22d3ee',
+                        color: '#09090b',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontFamily: '"Segoe UI", Inter, sans-serif',
+                        flexShrink: 0
+                      }}
+                    >
+                      {copiedLink ? <Check size={14} strokeWidth={3} /> : <Copy size={14} strokeWidth={2.5} />}
+                      <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => setShowShareModal(false)}
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: 'rgba(39, 39, 42, 0.6)',
+                        color: '#f4f4f5',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontFamily: '"Segoe UI", Inter, sans-serif'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(39, 39, 42, 0.8)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(39, 39, 42, 0.6)'}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

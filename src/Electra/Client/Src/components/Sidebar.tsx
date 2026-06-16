@@ -52,6 +52,7 @@ const COMPONENTS = [
   { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors', desc: 'Ultrasonic distance' },
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
   { id: 'mpu6050', name: 'MPU6050', category: 'sensors', desc: 'Accelerometer & Gyro' },
+  { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
 
   // INPUTS
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },

@@ -91,22 +91,22 @@ let compileServerProcess = null;
 
 function startCompileServer() {
   const serverPath = isDev
-    ? path.join(__dirname, '..', 'compiler-server', 'server.js')
-    : path.join(process.resourcesPath, 'compiler-server', 'server.js');
+    ? path.join(__dirname, '..', 'server', 'server.js')
+    : path.join(process.resourcesPath, 'server', 'server.js');
 
   if (!fs.existsSync(serverPath)) {
     console.log('[COMPILE-SERVER] Server file not found at:', serverPath);
-    console.log('[COMPILE-SERVER] Run: cd compiler-server && npm install');
+    console.log('[COMPILE-SERVER] Run: cd server && npm install');
     return;
   }
 
   // Check node_modules exist for the compiler-server
   const nmPath = isDev
-    ? path.join(__dirname, '..', 'compiler-server', 'node_modules')
-    : path.join(process.resourcesPath, 'compiler-server', 'node_modules');
+    ? path.join(__dirname, '..', 'server', 'node_modules')
+    : path.join(process.resourcesPath, 'server', 'node_modules');
 
   if (!fs.existsSync(nmPath)) {
-    console.log('[COMPILE-SERVER] node_modules missing — run: cd compiler-server && npm install');
+    console.log('[COMPILE-SERVER] node_modules missing — run: cd server && npm install');
     return;
   }
 

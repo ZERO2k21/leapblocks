@@ -6,3 +6,5 @@ workspace/
 output/
 arduino-cli/
 forge-lib/
+
+/src/generated/prisma

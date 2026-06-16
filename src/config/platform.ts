@@ -63,6 +63,9 @@ export let CLOUD_COMPILER_URL: string = (() => {
   return getFallbackUrl();
 })();
 
+// Dedicated backend database and sharing API URL
+export const BACKEND_API_URL = isLocal ? 'http://localhost:3001' : getFallbackUrl();
+
 const detectCompilerServer = async () => {
   if (!isLocal) {
     return;

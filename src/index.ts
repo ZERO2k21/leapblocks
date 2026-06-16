@@ -12,6 +12,7 @@ import { SerialManager } from './serial/SerialManager';
 import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './leaplogix/server/PythonManager';
 import { join } from 'path';
+import { getBundledArduinoCliPath } from './utils/ensureArduinoCli';
 
 // Suppress development security warnings in the console
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -26,6 +27,7 @@ let pythonManager: PythonManager;
 
 // ESP32-C3 related globals
 let lastESP32BinTempDir: string | null = null;
+let compileServerProcess: any = null;
 
 function getCleanupESP32Build() {
   return (tempDir: string) => {
@@ -44,6 +46,66 @@ const log = (category: string, msg: string, data?: any) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [MAIN:${category}] ${msg}`, data ?? '');
 };
+
+function startCompileServer() {
+  const isDev = !app.isPackaged;
+  const serverPath = isDev
+    ? path.join(app.getAppPath(), 'server', 'server.js')
+    : path.join(process.resourcesPath, 'server', 'server.js');
+
+  log('COMPILE-SERVER', `Attempting to start compile server from: ${serverPath}`);
+
+  if (!fs.existsSync(serverPath)) {
+    log('COMPILE-SERVER', `Server file not found at: ${serverPath}`);
+    return;
+  }
+
+  // Check node_modules exist for the server
+  const nmPath = isDev
+    ? path.join(app.getAppPath(), 'server', 'node_modules')
+    : path.join(process.resourcesPath, 'server', 'node_modules');
+
+  if (!fs.existsSync(nmPath)) {
+    log('COMPILE-SERVER', `node_modules missing at: ${nmPath} — run: cd server && npm install`);
+    return;
+  }
+
+  const arduinoCliPath = getBundledArduinoCliPath();
+
+  compileServerProcess = spawn('node', [serverPath], {
+    env: {
+      ...process.env,
+      PORT: '3001',
+      ARDUINO_CLI_PATH: arduinoCliPath,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+
+  compileServerProcess.stdout.on('data', (data: Buffer) => {
+    console.log(`[COMPILE-SERVER] ${data.toString().trim()}`);
+  });
+
+  compileServerProcess.stderr.on('data', (data: Buffer) => {
+    console.error(`[COMPILE-SERVER ERROR] ${data.toString().trim()}`);
+  });
+
+  compileServerProcess.on('close', (code: number) => {
+    log('COMPILE-SERVER', `Exited with code ${code}`);
+    compileServerProcess = null;
+  });
+
+  log('COMPILE-SERVER', 'Started on http://localhost:3001');
+}
+
+function stopCompileServer() {
+  if (compileServerProcess) {
+    log('COMPILE-SERVER', 'Stopping compile server...');
+    compileServerProcess.kill();
+    compileServerProcess = null;
+    log('COMPILE-SERVER', 'Stopped');
+  }
+}
 
 console.log('[MAIN] Starting LeapBlocks main process...');
 const STARTUP_TIME = Date.now();
@@ -156,6 +218,7 @@ const createWindow = (): void => {
 app.on('ready', () => {
   logTiming('Electron app ready event fired');
   createWindow();
+  startCompileServer();
   logTiming('createWindow() completed');
   // ESP32 core check removed from startup — now runs on-demand during first ESP32 compile
   // This prevents blocking the app startup with a 7+ second installation
@@ -163,6 +226,7 @@ app.on('ready', () => {
 
 app.on('window-all-closed', () => {
   logTiming('All windows closed');
+  stopCompileServer();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -177,6 +241,7 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   logTiming('App before-quit event');
+  stopCompileServer();
   if (serialManager) {
     serialManager.disconnect();
   }
