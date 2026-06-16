@@ -1103,7 +1103,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Show goal popup when lesson has a goal description
     useEffect(() => {
-        const config = getLessonConfig();
+        const config = getLessonConfig() as ReturnType<typeof getLessonConfig> & { goal?: { type: string; target: { x: number; y: number; tolerance: number }; description: string } | null };
         if (config.goal && config.goal.description) {
             setGoalPopupText(config.goal.description);
             setShowGoalPopup(true);
@@ -4634,7 +4634,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
 
-                        zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+                        zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
 
                         trashcan: true,
 
