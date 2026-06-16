@@ -787,9 +787,8 @@ export const animationBlocks = [
         args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }],
         message1: '%1',
         args1: [{ type: 'input_statement', name: 'DO' }],
-        message2: 'else',
-        message3: '%1',
-        args3: [{ type: 'input_statement', name: 'ELSE' }],
+        message2: 'else %1',
+        args2: [{ type: 'input_statement', name: 'ELSE' }],
         previousStatement: null,
         nextStatement: null,
         colour: COLORS.control,
@@ -2128,7 +2127,7 @@ export const animationToolbox = {
                         MESSAGE: {
                             shadow: {
                                 type: 'text',
-                                fields: { TEXT: 'Hello!' }
+                                fields: { TEXT: 'Hi!' }
                             }
                         },
                         SECS: {
@@ -2146,7 +2145,7 @@ export const animationToolbox = {
                         MESSAGE: {
                             shadow: {
                                 type: 'text',
-                                fields: { TEXT: 'Hello!' }
+                                fields: { TEXT: 'Hi!' }
                             }
                         }
                     }
@@ -2158,7 +2157,7 @@ export const animationToolbox = {
                         MESSAGE: {
                             shadow: {
                                 type: 'text',
-                                fields: { TEXT: 'Hmm...' }
+                                fields: { TEXT: 'Hm...' }
                             }
                         },
                         SECS: {
@@ -2176,7 +2175,7 @@ export const animationToolbox = {
                         MESSAGE: {
                             shadow: {
                                 type: 'text',
-                                fields: { TEXT: 'Hmm...' }
+                                fields: { TEXT: 'Hm...' }
                             }
                         }
                     }
@@ -2319,24 +2318,24 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_gt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_lt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_equals',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
                     },
                 },
                 { kind: 'label', text: '── Logic ──' },
@@ -2348,8 +2347,8 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_join',
                     inputs: {
-                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'apple ' } } },
-                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'banana' } } },
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
                     },
                 },
                 {
@@ -2357,22 +2356,22 @@ export const animationToolbox = {
                     type: 'operator_letter_of',
                     inputs: {
                         LETTER: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                        STRING: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_length',
                     inputs: {
-                        STRING: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_contains',
                     inputs: {
-                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'apple' } } },
-                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
                     },
                 },
                 { kind: 'label', text: '── Math ──' },

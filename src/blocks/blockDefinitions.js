@@ -111,16 +111,17 @@ const convertToBlocklyFormat = (def, opcode) => {
 
         blocklyDef.args0 = args0;
 
-        // Add second message and inputs for c-blocks with else
-        if (hasCBlockMouth) {
-            blocklyDef.message1 = def.message2;
-            blocklyDef.args1 = [{ type: 'input_statement', name: 'ELSE' }];
-        }
-
         // Add substack input for c-blocks
         if (def.shape === 'c-block') {
             // Add the DO input after condition
+            blocklyDef.message1 = '%1';
             blocklyDef.args1 = [{ type: 'input_statement', name: 'DO' }];
+        }
+
+        // Add else message and ELSE input for c-blocks with else
+        if (hasCBlockMouth) {
+            blocklyDef.message2 = 'else %1';
+            blocklyDef.args2 = [{ type: 'input_statement', name: 'ELSE' }];
         }
     }
 

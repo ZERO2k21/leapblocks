@@ -5,21 +5,30 @@
  */
 /* Leaplab-style Blocks CSS */
 
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL BLOCK SCALE — single parameter to resize ALL block text
+   1.0 = default, 0.85 = 15% smaller, 1.15 = 15% larger
+   Must match BLOCK_SCALE in LeapRenderer.js
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --block-scale: 1;
+}
+
 /* Main block styling */
 .blocklyBlockCanvas .blocklyDraggable {
     border-radius: 8px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: none !important;
     transition: box-shadow 0.2s ease !important;
 }
 
 .blocklyBlockCanvas .blocklyDraggable:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: none !important;
 }
 
 /* Block text styling */
 .blocklyText {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 12px !important;
+    font-size: calc(12px * var(--block-scale)) !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;
 }
@@ -184,7 +193,7 @@
 
 /* Enhanced block shadows for depth */
 .blocklyBlockCanvas .blocklyDraggable {
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.12)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.24)) !important;
+    filter: none !important;
 }
 
 /* Active block highlighting */
@@ -459,7 +468,7 @@
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
   fill: #575E75 !important;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 13px !important;
+  font-size: calc(12px * var(--block-scale)) !important;
   font-weight: 700 !important;
 }
 
@@ -558,6 +567,12 @@
 .blocklyShadow .blocklyText {
   fill: #575E75 !important;
   font-weight: 700 !important;
+}
+
+/* Shadow field inputs - tighter pill shape for compact nested blocks */
+.blocklyShadow .blocklyFieldRect {
+  rx: 10px !important;
+  ry: 10px !important;
 }
 
 /* Selected state */
@@ -694,6 +709,7 @@
 .blocklyFlyout {
   background-color: rgba(249, 249, 249, 0.8) !important;
   backdrop-filter: blur(8px) !important;
+  min-width: 280px !important;
 }
 
 .blocklyFlyoutBackground {
@@ -770,7 +786,7 @@
 
 .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.blocklyShadow .blocklyText) {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 13px !important;
+  font-size: calc(12px * var(--block-scale)) !important;
   font-weight: 600 !important;
   fill: rgb(255, 255, 255) !important;
 }
@@ -778,7 +794,7 @@
 
 
 .blocklyPath {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) !important;
+  filter: none !important;
 }
 
 /* 3D Depth effect for Zelos blocks */
