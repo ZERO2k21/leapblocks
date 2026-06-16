@@ -130,3 +130,8 @@ forge-lib/
 temp_decoded_template/
 temp_extracted_apk/
 temp_unsigned.apk
+
+# Prisma
+server/prisma/dev.db
+server/prisma/dev.db-journal
+

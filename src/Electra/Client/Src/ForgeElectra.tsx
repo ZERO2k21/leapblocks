@@ -1304,7 +1304,7 @@ export default function ForgeElectra({
               {!sharingLoading && <button onClick={() => setShowShareModal(false)} style={{ background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '20px', cursor: 'pointer' }}>×</button>}
             </div>
             
-            <div className="web-modal-body" style={{ padding: '24px 0 12px 0' }}>
+            <div className="web-modal-body" style={{ padding: '24px 20px 12px 20px' }}>
               {shareStep === 'choice' && (
                 <div>
                   <p style={{ color: '#a1a1aa', fontSize: '13.5px', lineHeight: '1.6', marginBottom: '24px', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
