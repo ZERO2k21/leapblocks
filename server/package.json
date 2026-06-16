@@ -23,7 +23,8 @@
     "fs-extra": "^11.3.4",
     "pako": "^2.1.0",
     "uuid": "^9.0.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "prisma": "^7.8.0"
   },
   "keywords": [
     "arduino",
@@ -36,7 +37,6 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@types/pako": "^2.0.4",
-    "prisma": "^7.8.0"
+    "@types/pako": "^2.0.4"
   }
 }
