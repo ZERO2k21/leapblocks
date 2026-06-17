@@ -80,6 +80,18 @@ export default function defineLooksBlocks(Blockly, javascriptGenerator) {
         return `changeSize(${getTarget()}, ${amt});\n${wait()}`;
     };
 
+    /* ===== SET SIZE (Number Input: Absolute Size) ===== */
+    Blockly.Blocks["set_size"] = {
+        init: function () {
+            const sizeInput = new Blockly.FieldNumber(100, 1, 500, 1);
+            juniorLooksBase(this, "📏", sizeInput, "SIZE");
+        },
+    };
+    javascriptGenerator.forBlock["set_size"] = function (block) {
+        const size = block.getFieldValue("SIZE");
+        return `setSize(${getTarget()}, ${size});\n${wait()}`;
+    };
+
     /* ===== SELECT SPRITE (Dropdown) ===== */
     Blockly.Blocks["select_sprite"] = {
         init: function () {

@@ -25,6 +25,7 @@ export const ValidBlocks = {
     'show_sprite': { type: "looks", shape: "stack" },
     'hide_sprite': { type: "looks", shape: "stack" },
     'change_size': { type: "looks", shape: "stack" },
+    'set_size': { type: "looks", shape: "stack" },
     'run': { type: "looks", shape: "stack" },
     'looks_grow': { type: "looks", shape: "stack" },
     'looks_shrink': { type: "looks", shape: "stack" },
