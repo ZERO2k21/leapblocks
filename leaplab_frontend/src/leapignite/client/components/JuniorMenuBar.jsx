@@ -11,7 +11,7 @@ import {
     Share
 } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../../components/Logo';
-import LeapLabAuthButton from '../../../../auth/LeapLabAuthButton';
+import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
