@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
+import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 
 interface ProjectHeaderProps {
     icon?: string;
@@ -243,18 +244,28 @@ export default function ProjectHeader({
                     </button>
                 </div>
 
+                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '8px', boxSizing: 'border-box' }} />
 
                 <div style={{
                     marginLeft: '14px',
                     display: 'flex',
                     alignItems: 'center',
                     flexShrink: 0,
+                    height: '44px',
+                    overflow: 'hidden',
                     filter: 'drop-shadow(rgba(255, 255, 255, 0.15) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
                 }}>
                     <img
                         alt="Leap into the AI Future"
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.2) contrast(1.1) drop-shadow(rgba(255, 255, 255, 0.2) 0px 0px 2px)' }}
+                        style={{
+                            width: '95px',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            display: 'block',
+                            flexShrink: 0,
+                            filter: 'brightness(1.2) contrast(1.1) drop-shadow(rgba(255, 255, 255, 0.2) 0px 0px 2px)'
+                        }}
                     />
                 </div>
             </div>

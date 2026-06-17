@@ -13,9 +13,11 @@ interface LeapLabAuthButtonProps {
     variant?: 'dark' | 'light';
     /** Button size */
     size?: 'sm' | 'md';
+    /** Custom inline style overrides */
+    style?: React.CSSProperties;
 }
 
-export default function LeapLabAuthButton({ variant = 'light', size = 'md' }: LeapLabAuthButtonProps) {
+export default function LeapLabAuthButton({ variant = 'light', size = 'md', style }: LeapLabAuthButtonProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { isAuthenticated, username, institutionName, signOut } = useLeapLabAuthStore();
@@ -52,6 +54,7 @@ export default function LeapLabAuthButton({ variant = 'light', size = 'md' }: Le
                         boxShadow: isDark
                             ? '0 2px 8px rgba(0,0,0,0.3)'
                             : '0 2px 8px rgba(16,0,81,0.08)',
+                        ...style,
                     }}
                     onMouseEnter={e => {
                         (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
@@ -212,6 +215,7 @@ export default function LeapLabAuthButton({ variant = 'light', size = 'md' }: Le
                         ? '0 2px 8px rgba(0,0,0,0.3)'
                         : '3px 3px 0px #100051',
                     letterSpacing: '0.02em',
+                    ...style,
                 }}
                 onMouseEnter={e => {
                     const el = e.currentTarget as HTMLElement;

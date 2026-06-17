@@ -11,6 +11,7 @@ import {
     Share
 } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../../components/Logo';
+import LeapLabAuthButton from '../../../../auth/LeapLabAuthButton';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
@@ -397,6 +398,7 @@ export default function JuniorMenuBar({
                     ))}
                 </div>
 
+                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box' }} />
 
                 {/* CREOLEAP Right Logo — Premium Fit */}
                 <div style={{
@@ -404,9 +406,22 @@ export default function JuniorMenuBar({
                     display: 'flex',
                     alignItems: 'center',
                     flexShrink: 0,
+                    height: '44px',
+                    overflow: 'hidden',
                     filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={160} />
+                    <img
+                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                        alt="CREOLEAP"
+                        style={{
+                            width: '95px',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            display: 'block',
+                            flexShrink: 0,
+                            filter: 'brightness(1.2) contrast(1.06)',
+                        }}
+                    />
                 </div>
             </div>
         </div>

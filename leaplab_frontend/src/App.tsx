@@ -4,7 +4,6 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, lazy, Suspense, useCallback } from 'react';
-import LeapLabAuthButton from './auth/LeapLabAuthButton';
 
 const APP_LOAD_START = performance.now();
 const logAppTiming = (label: string) => {
@@ -313,17 +312,6 @@ export default function App() {
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>
 
-            {/* Floating Sign-In button for workspace screens (home has its own in the nav) */}
-            {mode !== 'home' && (
-                <div style={{
-                    position: 'fixed',
-                    top: '8px',
-                    right: '16px',
-                    zIndex: 9990,
-                }}>
-                    <LeapLabAuthButton variant="dark" size="sm" />
-                </div>
-            )}
 
             {switchPrompt && (
                 <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

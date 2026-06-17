@@ -6,6 +6,7 @@
 import React from "react";
 import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
+import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 
 // ─── Theme (LeapBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -284,15 +285,30 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 </div>
 
 
+                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
+
                 {/* CREOLEAP Right Logo */}
                 <div style={{
                     marginLeft: 12,
                     display: 'flex',
                     alignItems: 'center',
                     flexShrink: 0,
+                    height: '40px',
+                    overflow: 'hidden',
                     filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                 }}>
-                    <CreoleapLogo height={150} />
+                    <img
+                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                        alt="CREOLEAP"
+                        style={{
+                            width: '88px',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            display: 'block',
+                            flexShrink: 0,
+                            filter: 'brightness(1.2) contrast(1.06)',
+                        }}
+                    />
                 </div>
             </div>
         </header>

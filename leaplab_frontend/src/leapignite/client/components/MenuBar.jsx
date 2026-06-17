@@ -9,6 +9,7 @@ import {
     Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
+import LeapLabAuthButton from '../../../../auth/LeapLabAuthButton';
 
 // ─── Dropdown ────────────────────────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
@@ -569,6 +570,8 @@ export default function MenuBar({
 
                 {/* Divider */}
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
+                <LeapLabAuthButton variant="dark" size="sm" />
 
                 {/* CREOLEAP SVG — full H vector + text, premium premium */}
                 <div style={{

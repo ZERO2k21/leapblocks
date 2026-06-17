@@ -23,6 +23,7 @@ import {
   Clipboard,
   Check
 } from 'lucide-react';
+import LeapLabAuthButton from '../../../../../auth/LeapLabAuthButton';
 
 interface IgniteTopbarProps {
   onBack: () => void;
@@ -666,6 +667,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           )}
 
           {rightContent}
+
+          <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box' }} />
 
           {isLargeDesktop && (
             <div style={{
