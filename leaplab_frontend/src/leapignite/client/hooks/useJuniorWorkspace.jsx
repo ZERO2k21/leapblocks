@@ -147,6 +147,7 @@ export function useJuniorWorkspace({
     const [categoryBlocks, setCategoryBlocks] = useState(categoryContents);
     const [isExtensionLibraryOpen, setIsExtensionLibraryOpen] = useState(false);
     const [flyoutHeight, setFlyoutHeight] = useState(100);
+    const installedExtensionsRef = useRef(new Set());
 
     // Pickers UI State
     const [showPicker, setShowPicker] = useState(false);
@@ -234,6 +235,9 @@ export function useJuniorWorkspace({
 
             // 1. Register blocks and generators (if not already done)
             registerExtensions(Blockly, [id]);
+
+            // Track installed extension
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, id]);
 
             // 2. Add to categories and toolbox state
             const newCategory = {
