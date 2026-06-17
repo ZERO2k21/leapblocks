@@ -52,6 +52,7 @@ const categoryContents = {
         { kind: "block", type: "hide_sprite" },
         { kind: "block", type: "junior_change_costume" },
         { kind: "block", type: "change_size" },
+        { kind: "block", type: "set_size" },
         { kind: "block", type: "looks_change_costume" },
         { kind: "block", type: "looks_mirror" },
         { kind: "block", type: "select_sprite" },
@@ -105,7 +106,7 @@ const EXTRA_CATEGORY_MAP = {
     looks_shrink: 'looks', looks_turn_back: 'looks', looks_walk: 'looks', looks_call: 'looks',
     looks_symmetry: 'looks', looks_change_costume: 'looks', looks_mirror: 'looks',
     say_text: 'looks', show_sprite: 'looks', hide_sprite: 'looks',
-    junior_change_costume: 'looks', change_size: 'looks', select_sprite: 'looks', switch_scene: 'looks',
+    junior_change_costume: 'looks', change_size: 'looks', set_size: 'looks', select_sprite: 'looks', switch_scene: 'looks',
     control_forever: 'control', control_repeat: 'control', control_wait: 'control',
     control_stop: 'control', control_scene: 'control',
     event_flag: 'events', event_up: 'events', event_down: 'events', event_press: 'events',
@@ -145,6 +146,7 @@ export function useJuniorWorkspace({
     const [categories, setCategories] = useState(CATEGORIES);
     const [categoryBlocks, setCategoryBlocks] = useState(categoryContents);
     const [isExtensionLibraryOpen, setIsExtensionLibraryOpen] = useState(false);
+    const [flyoutHeight, setFlyoutHeight] = useState(100);
 
     // Pickers UI State
     const [showPicker, setShowPicker] = useState(false);
@@ -202,7 +204,17 @@ export function useJuniorWorkspace({
             }
 
             resetFlyoutScale();
-            setTimeout(() => workspaceRef.current?.resize(), 50);
+            setTimeout(() => {
+                workspaceRef.current?.resize();
+                // Sync flyout height after reflow completes
+                try {
+                    const flyout = workspaceRef.current?.getFlyout();
+                    if (flyout) {
+                        const h = flyout.getHeight();
+                        if (h > 0) setFlyoutHeight(h);
+                    }
+                } catch (_) {}
+            }, 80);
         }
     };
 
@@ -341,7 +353,28 @@ export function useJuniorWorkspace({
                 if (initFlyout.getWorkspace()) {
                     initFlyout.getWorkspace().setScale(FIXED_SCALE);
                 }
-                initFlyout.height_ = 180;
+
+                // Track flyout height dynamically via SVG attribute observer
+                const syncFlyoutHeight = () => {
+                    try {
+                        const h = initFlyout.getHeight();
+                        if (h > 0) setFlyoutHeight(h);
+                    } catch (_) {}
+                };
+
+                // Observe the flyout SVG group's height attribute
+                if (initFlyout.svgGroup_) {
+                    const observer = new MutationObserver(syncFlyoutHeight);
+                    observer.observe(initFlyout.svgGroup_, { attributes: true, attributeFilter: ['height'] });
+                }
+
+                // Also sync after initial layout
+                setTimeout(syncFlyoutHeight, 200);
+            }
+
+            // Initialize toolbox contents for flyout restoration on first load
+            if (currentToolboxContentsRef && (!currentToolboxContentsRef.current || currentToolboxContentsRef.current.length === 0)) {
+                currentToolboxContentsRef.current = categoryContents["events"] || [];
             }
 
             setTimeout(() => {
@@ -610,6 +643,7 @@ export function useJuniorWorkspace({
     return {
         activeCategory,
         categories,
+        flyoutHeight,
         handleCategoryClick,
         resetFlyoutScale,
         isExtensionLibraryOpen,

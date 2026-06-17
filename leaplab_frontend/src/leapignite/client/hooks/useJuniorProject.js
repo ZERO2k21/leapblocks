@@ -51,7 +51,6 @@ export function useJuniorProject({
         }
 
         const id = `robot_default`;
-        const defaultBlockId = 'start_block_1';
         const newSprite = {
             id: id,
             name: "Robot",
@@ -71,13 +70,10 @@ export function useJuniorProject({
             },
             currentCostume: "default",
             blocks: {
-                languageVersion: 0,
-                blocks: [{
-                    type: "event_flag",
-                    id: defaultBlockId,
-                    x: 60,
-                    y: 60
-                }]
+                blocks: {
+                    languageVersion: 0,
+                    blocks: []
+                }
             }
         };
 

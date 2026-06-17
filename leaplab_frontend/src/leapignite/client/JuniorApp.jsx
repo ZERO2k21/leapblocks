@@ -210,13 +210,10 @@ function JuniorAppInner({ onBack, projectUrl }) {
                     },
                     currentCostume: "default",
                     blocks: {
-                        languageVersion: 0,
-                        blocks: [{
-                            type: "event_flag",
-                            id: "block_default_start",
-                            x: 60,
-                            y: 60
-                        }]
+                        blocks: {
+                            languageVersion: 0,
+                            blocks: []
+                        }
                     }
                 }
             ]
@@ -411,6 +408,20 @@ function JuniorAppInner({ onBack, projectUrl }) {
                     console.log('[JuniorApp] Restoring flyout after workspace load');
                     flyout.show(contents);
                     if (flyout.reflowInternal_) flyout.reflowInternal_();
+                } else {
+                    // Safety fallback: use events blocks so flyout is never empty on first load
+                    console.log('[JuniorApp] Using fallback events blocks for flyout');
+                    const fallbackBlocks = [
+                        { kind: "block", type: "event_flag" },
+                        { kind: "block", type: "event_up" },
+                        { kind: "block", type: "event_down" },
+                        { kind: "block", type: "event_press" },
+                        { kind: "block", type: "broadcast_message" },
+                        { kind: "block", type: "when_receive_message" }
+                    ];
+                    flyout.show(fallbackBlocks);
+                    if (flyout.reflowInternal_) flyout.reflowInternal_();
+                    currentToolboxContentsRef.current = fallbackBlocks;
                 }
             }
 
@@ -845,7 +856,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                     })()}
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
-                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: '255px', right: '14px' }} />
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: `${wp.flyoutHeight + 105}px`, right: '14px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
 
@@ -853,7 +864,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                         position: "absolute",
                         left: "14px",
                         right: "14px",
-                        bottom: "150px",
+                        bottom: `${wp.flyoutHeight}px`,
                         height: "56px",
                         display: "flex",
                         flexDirection: "row",
