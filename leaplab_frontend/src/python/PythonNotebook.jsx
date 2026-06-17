@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import Logo, { CreoleapLogo } from "../components/Logo";
-
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
     PURPLE: "#210d4fff",
@@ -522,10 +521,6 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     </button>
                     <Bell size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
                     <Settings size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                        <User size={16} />
-                    </div>
-
                     {/* CREOLEAP Right Logo */}
                     <div style={{
                         marginLeft: 12,

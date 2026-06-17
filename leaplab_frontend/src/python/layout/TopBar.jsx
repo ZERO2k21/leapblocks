@@ -283,6 +283,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     </div>
                 </div>
 
+
                 {/* CREOLEAP Right Logo */}
                 <div style={{
                     marginLeft: 12,

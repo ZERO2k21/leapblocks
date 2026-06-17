@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
+import LeapLabAuthButton from '@/auth/LeapLabAuthButton';
 
 export default function NeuraHeader({ onBack, onSave, projectName, onProjectNameChange, showProjectInput = false }) {
     return (
@@ -198,43 +199,7 @@ export default function NeuraHeader({ onBack, onSave, projectName, onProjectName
                     </button>
                 </div>
 
-                <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: '38px',
-                    gap: '10px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    color: 'rgb(255, 255, 255)',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    fontFamily: '"Segoe UI", Inter, sans-serif',
-                    paddingLeft: '5px',
-                    paddingRight: '18px',
-                    transition: '0.2s',
-                    boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
-                    flexShrink: 0
-                }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-                >
-                    <div style={{
-                        width: '28px',
-                        height: '28px',
-                        background: 'linear-gradient(135deg, rgb(255, 209, 102), rgb(245, 158, 11))',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid rgba(255, 255, 255, 0.25)',
-                        boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 4px'
-                    }}>
-                        <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-                    </div>
-                    Sign In
-                </button>
+                <LeapLabAuthButton variant="dark" />
 
                 <div style={{
                     marginLeft: '14px',

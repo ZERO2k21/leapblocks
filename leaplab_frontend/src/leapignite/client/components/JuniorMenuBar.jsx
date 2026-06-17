@@ -397,39 +397,6 @@ export default function JuniorMenuBar({
                     ))}
                 </div>
 
-                {/* Sign In Button */}
-                <button
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        height: 38,
-                        gap: 10,
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 20,
-                        cursor: 'pointer',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        paddingLeft: 5,
-                        paddingRight: 18,
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                >
-                    <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: 28, height: 28, borderRadius: 6 }} />
-                    Sign In
-                </button>
 
                 {/* CREOLEAP Right Logo — Premium Fit */}
                 <div style={{

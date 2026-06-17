@@ -665,30 +665,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             </div>
           )}
 
-          {rightContent ? rightContent : (
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              height: '30px',
-              gap: '6px',
-              background: isElectra ? 'rgba(39, 39, 42, 0.5)' : 'rgba(148, 197, 255, 0.18)',
-              border: isElectra ? '1px solid #27272a' : '1px solid rgba(191, 219, 254, 0.25)',
-              borderRadius: '20px',
-              cursor: 'pointer',
-              color: isElectra ? ec.text : 'rgb(255, 255, 255)',
-              fontWeight: 700,
-              fontSize: '11px',
-              fontFamily: '"Segoe UI", Inter, sans-serif',
-              paddingLeft: '4px',
-              paddingRight: '12px',
-              transition: '0.2s',
-              boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
-              flexShrink: 0
-            }}>
-              <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '22px', height: '22px', borderRadius: '5px' }} />
-              Sign In
-            </button>
-          )}
+          {rightContent}
 
           {isLargeDesktop && (
             <div style={{

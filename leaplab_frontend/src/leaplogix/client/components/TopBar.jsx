@@ -167,6 +167,7 @@ export default function TopBar() {
                 </button>
             </div>
 
+
             <div style={{ marginLeft: 12, display: 'flex', alignItems: 'center', flexShrink: 0, pointerEvents: 'none' }}>
                 <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
             </div>

@@ -3099,9 +3099,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <Settings size={15} />
                         </div>
                     </div>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
-                        👤
-                    </div>
                 </div>
 
                 {/* CREOLEAP Right Logo */}

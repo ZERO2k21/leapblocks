@@ -566,6 +566,7 @@ export default function MenuBar({
                     </button>
                 )}
 
+
                 {/* Divider */}
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 

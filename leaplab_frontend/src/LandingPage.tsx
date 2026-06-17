@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useEffect, useRef, useState } from 'react';
+import LeapLabAuthButton from './auth/LeapLabAuthButton';
 // JSZip lazy-loaded only when Lottie animation needs to be parsed
 
 interface LandingPageProps {
@@ -661,7 +662,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Explore</a>
             </div>
           </div>
-          <div className="nav-actions">
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <LeapLabAuthButton variant="light" size="md" />
             <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
 

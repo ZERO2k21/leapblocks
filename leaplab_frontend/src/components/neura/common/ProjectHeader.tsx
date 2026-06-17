@@ -243,31 +243,6 @@ export default function ProjectHeader({
                     </button>
                 </div>
 
-                <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: '38px',
-                    gap: '10px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    color: 'rgb(255, 255, 255)',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    fontFamily: '"Segoe UI", Inter, sans-serif',
-                    paddingLeft: '5px',
-                    paddingRight: '18px',
-                    transition: '0.2s',
-                    boxShadow: 'rgba(0, 0, 0, 0.15) 0px 2px 8px',
-                    flexShrink: 0
-                }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-                >
-                    <img src="/assets/leaplabicon.ico" alt="LeapLab" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
-                    Sign In
-                </button>
 
                 <div style={{
                     marginLeft: '14px',
