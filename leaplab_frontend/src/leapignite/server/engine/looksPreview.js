@@ -35,6 +35,11 @@ export const looksPreview = {
         if (window.changeSize) window.changeSize(window.activeSpriteId || "robot_default", amt);
     },
 
+    set_size: (block) => {
+        const size = Number(block.getFieldValue("SIZE")) || 100;
+        if (window.setSize) window.setSize(window.activeSpriteId || "robot_default", size);
+    },
+
     junior_change_costume: () => {
         if (window.nextCostume) window.nextCostume();
     },

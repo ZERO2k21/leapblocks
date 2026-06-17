@@ -95,6 +95,7 @@ export function useJuniorWindowActions({
             "moveRelative",
             "goToLocation",
             "changeSize",
+            "setSize",
             "getCurrentSceneId",
             "getActiveSpriteId",
             "switchScene",
@@ -167,6 +168,10 @@ export function useJuniorWindowActions({
             spriteActions.update(id || getCurrentID(), {
                 size: (prev) => prev + delta
             });
+        };
+
+        window.setSize = (id, size) => {
+            spriteActions.update(id || getCurrentID(), { size: size });
         };
 
         window.getCurrentSceneId = () => currentSceneId;
