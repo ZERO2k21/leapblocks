@@ -18,9 +18,9 @@ export class SlideSwitchElement extends LitElement {
   @property() value = 0;
 
   readonly pinInfo: ElementPin[] = [
-    { name: '1', number: 1, y: 34, x: 6.5, signals: [], description: 'Common (Pole)' },
-    { name: '2', number: 2, y: 34, x: 16, signals: [], description: 'NO (Normally Open)' },
-    { name: '3', number: 3, y: 34, x: 25.5, signals: [], description: 'NC (Normally Closed)' },
+    { name: '1', number: 1, y: 34, x: 16, signals: [], description: 'Common (Pole)' },
+    { name: '2', number: 2, y: 34, x: 25.5, signals: [], description: 'NO (Normally Open)' },
+    { name: '3', number: 3, y: 34, x: 6.5, signals: [], description: 'NC (Normally Closed)' },
   ];
 
   static get styles() {
