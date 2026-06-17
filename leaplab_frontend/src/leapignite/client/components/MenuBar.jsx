@@ -9,7 +9,7 @@ import {
     Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
-import LeapLabAuthButton from '../../../../auth/LeapLabAuthButton';
+import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 
 // ─── Dropdown ────────────────────────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
