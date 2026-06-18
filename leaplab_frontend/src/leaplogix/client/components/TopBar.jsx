@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect } from "react";
-import { Home, Play, Square, Undo, Redo, Save, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen } from "lucide-react";
+import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
@@ -112,6 +112,7 @@ export default function TopBar() {
                         { label: 'Open Python File', icon: FileCode2, onClick: ctx.handleOpenPythonFile },
                         { divider: true },
                         { label: 'Save to your computer', icon: Save, onClick: ctx.handleSaveProject, shortcut: 'Ctrl+S' },
+                        { label: 'Download .leap file', icon: Download, onClick: ctx.handleDownloadProject },
                         { divider: true },
                         { label: 'Share', icon: Share, onClick: ctx.handleShareProject }
                     ]} />

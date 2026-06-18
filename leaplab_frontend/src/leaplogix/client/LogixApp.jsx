@@ -52,7 +52,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     const {
         projectName, setProjectName, activeFile, setActiveFile,
         projectFiles, setProjectFiles,
-        handleNewProject, handleSaveProject, handleOpenProject, handleShareProject,
+        handleNewProject, handleSaveProject, handleDownloadProject, handleOpenProject, handleShareProject,
         handleDeleteFile, handleCreateNewFile, handleCreateNewTextFile,
         handleRenameFile, handleOpenPythonFile,
     } = useFileManager({ addLog, setSprites, setSelectedSpriteId, setBackdropImg, resetStage });
@@ -362,7 +362,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         packages, pipFilter, setPipFilter, handleInstall,
         terminalOutput, setTerminalOutput, terminalEndRef, addLog, clearTerminal,
         handleRun: handleRunWithReset, handleStop, handleClear: clearTerminal,
-        handleNewProject, handleSaveProject, handleOpenProject, handleShareProject,
+        handleNewProject, handleSaveProject, handleDownloadProject, handleOpenProject, handleShareProject,
         handleDeleteFile, handleCreateNewFile, handleCreateNewTextFile,
         handleRenameFile, handleOpenPythonFile,
         sprites, setSprites, selectedSpriteId, setSelectedSpriteId,

@@ -9,6 +9,7 @@ import {
   ChevronDown,
   BookOpen,
   Save,
+  Download,
   MessageSquareWarning,
   Trophy,
   Settings,
@@ -31,6 +32,7 @@ interface IgniteTopbarProps {
   onBack: () => void;
   onSave: () => void;
   onSaveAs?: () => void;
+  onDownload?: () => void;
   onNew?: () => void;
   onOpen?: () => void;
   onUndo?: () => void;
@@ -54,6 +56,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   onBack,
   onSave,
   onSaveAs,
+  onDownload,
   onNew,
   onOpen,
   onUndo,
@@ -315,6 +318,36 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                     </div>
                     <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+S</span>
                   </button>
+
+                  {onDownload && (
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '7px 14px',
+                        border: 'none',
+                        background: 'transparent',
+                        fontSize: '12px',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        fontWeight: 500,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.12s ease'
+                      }}
+                      className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+                      onClick={() => {
+                        onDownload();
+                        setFileMenuOpen(false);
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Download size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                        <span>Download .leap</span>
+                      </div>
+                    </button>
+                  )}
 
                   <button
                     style={{

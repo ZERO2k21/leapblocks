@@ -3030,85 +3030,46 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    const handleSaveProject = useCallback(async (isSilent = false) => {
-
+    const buildProjectPayload = useCallback(() => {
         // 1. Force save of current workspace if it's active
-
         const activeId = activeSpriteIdRef.current;
-
         if (workspaceRef.current && activeId) {
-
             const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-
             spriteWorkspacesRef.current.set(activeId, json);
-
             console.log('[APP] Force-saved current workspace before project export');
-
         }
 
-
-
         // 2. Prepare sprite metadata
-
         const spritesData = sprites.map(s => ({
-
             id: s.id,
-
             name: s.name,
-
             spriteType: s.spriteType,
-
             x: s.x,
-
             y: s.y,
-
             direction: s.direction,
-
             size: s.size,
-
             visible: s.visible,
-
             volume: s.volume,
-
             soundEffects: { ...s.soundEffects },
-
             sounds: (s.id === 'stage' ? stageManager.getAllSounds() : s.sounds).map(sound => ({
-
                 name: sound.name,
-
                 src: normalizeAssetPath(sound.src)
-
             })),
-
             costumes: s.costumes.map(c => ({
-
                 name: c.name,
-
                 src: normalizeAssetPath(c.image.src)
-
             }))
-
         }));
 
-
-
         // 3. Prepare workspace data (convert Map to plain object for JSON)
-
         const workspacesData: Record<string, any> = {};
-
         spriteWorkspacesRef.current.forEach((val, key) => {
-
             if (val && Object.keys(val).length > 0) {
-
                 workspacesData[key] = val;
-
             }
-
         });
 
-
-
-        const payload = {
+        return {
             sprites: spritesData,
             workspaces: workspacesData,
             backdrops: stageManager.getAllBackdrops().map(b => ({
@@ -3124,9 +3085,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             },
             installedExtensions: Array.from(installedExtensionsRef.current)
         };
+    }, [sprites, variableMonitors, listMonitors, tableMonitors]);
 
-
-
+    const handleSaveProject = useCallback(async (isSilent = false) => {
+        const payload = buildProjectPayload();
         try {
             await fileService.saveProject(projectName, 'intermediate', payload);
             addLog(`Project saved: ${projectName}`);
@@ -3134,8 +3096,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             console.error('[IntermediateApp] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
         }
+    }, [projectName, buildProjectPayload, addLog]);
 
-    }, [projectName, sprites, variableMonitors, listMonitors, tableMonitors, addLog]);
+    const handleDownloadProject = useCallback(() => {
+        const payload = buildProjectPayload();
+        fileService.saveProjectLocally(projectName, 'intermediate', payload);
+    }, [projectName, buildProjectPayload]);
 
 
 
@@ -5917,6 +5883,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     if (action === 'open') handleOpenProject();
 
                 }}
+
+                onDownload={handleDownloadProject}
 
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
 

@@ -13,6 +13,7 @@ import {
     Undo,
     Redo,
     Save,
+    Download,
     Settings,
     Trash2,
     Maximize,
@@ -760,6 +761,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             console.error('[PythonApp] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
         }
+    };
+
+    const handleDownloadProject = () => {
+        const payload = {
+            projectFiles,
+            activeFile,
+            sprites,
+            backdrop,
+        };
+        fileService.saveProjectLocally(projectName, "python", payload);
     };
 
     const handleOpenProject = () => {
@@ -2991,6 +3002,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
                             { divider: true },
                             { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
+                            { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
                             { divider: true },
                             { label: 'Share', icon: Share, onClick: handleShareProject }
                         ]}

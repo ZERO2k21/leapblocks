@@ -39,6 +39,14 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         }
     }, [projectName, projectFiles, activeFile]);
 
+    const handleDownloadProject = useCallback(() => {
+        const payload = {
+            projectFiles,
+            activeFile,
+        };
+        fileService.saveProjectLocally(projectName, "python", payload);
+    }, [projectName, projectFiles, activeFile]);
+
     const loadProjectData = useCallback((data) => {
         try {
             const validation = fileService.validateProject(data, "python");
@@ -213,6 +221,7 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         setProjectFiles,
         handleNewProject,
         handleSaveProject,
+        handleDownloadProject,
         handleOpenProject,
         handleShareProject,
         handleDeleteFile,

@@ -170,6 +170,7 @@ export default function JuniorMenuBar({
     onEditAction,
     onTutorialStart,
     onBack,
+    onDownload,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
 
@@ -184,6 +185,8 @@ export default function JuniorMenuBar({
         { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
         { divider: true },
         { label: 'Save', icon: Save, onClick: () => onFileAction?.('save') },
+        { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
+        { divider: true },
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
     ];
 
@@ -351,6 +354,7 @@ export default function JuniorMenuBar({
                     >
                         <Save size={15} strokeWidth={2.8} />
                     </button>
+
                 </div>
             </div>
 

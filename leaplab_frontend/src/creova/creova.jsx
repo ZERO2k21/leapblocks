@@ -158,6 +158,15 @@ export default function AppInventor({ onBack }) {
     }
   };
 
+  const handleDownloadProject = () => {
+    const payload = appState.getSerializedState();
+    const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+    if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+      payload.blockLogic = liveBlockXml;
+    }
+    fileService.saveProjectLocally(appState.appName || 'project', 'creova', payload);
+  };
+
   const handleSaveAsProject = async () => {
     await handleSaveProject();
   };
@@ -381,6 +390,7 @@ export default function AppInventor({ onBack }) {
         onBack={onBack}
         onSave={handleSaveProject}
         onSaveAs={handleSaveAsProject}
+        onDownload={handleDownloadProject}
         onNew={handleNewProject}
         onOpen={handleOpenProject}
         onUndo={handleUndo}

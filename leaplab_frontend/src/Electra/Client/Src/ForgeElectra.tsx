@@ -231,7 +231,7 @@ export default function ForgeElectra({
     setImportedLibraries(loadedLibs);
     autoInstallLibraries(loadedLibs);
 
-    if (data.board) {
+    if (data.board === 'arduino-uno' || data.board === 'esp32-c3') {
       setBoard(data.board);
     }
 
@@ -394,12 +394,15 @@ export default function ForgeElectra({
             clearWiFiLog();
           }
 
-          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs } = result.data;
+          const { nodes: loadedNodes, edges: loadedEdges, code: loadedCode, libraries: loadedLibs, board: loadedBoard } = result.data;
           setNodes(loadedNodes || []);
           setEdges(loadedEdges || []);
           setCode(loadedCode || '');
           setImportedLibraries(loadedLibs || []);
           autoInstallLibraries(loadedLibs || []);
+          if (loadedBoard === 'arduino-uno' || loadedBoard === 'esp32-c3') {
+            setBoard(loadedBoard);
+          }
           setProjectPath(result.projectPath);
 
           const pathParts = result.projectPath.split(/[\\/]/);
@@ -480,6 +483,9 @@ export default function ForgeElectra({
     setCode(project.code || '');
     setImportedLibraries(project.libraries || []);
     autoInstallLibraries(project.libraries || []);
+    if (project.board === 'arduino-uno' || project.board === 'esp32-c3') {
+      setBoard(project.board);
+    }
     setProjectPath(project.id);
     setProjectName(project.name);
     setHistory([]);
@@ -506,6 +512,18 @@ export default function ForgeElectra({
       console.error('[FORGE] Failed to save project:', err);
       alert(err?.message || 'Failed to save project.');
     }
+  };
+
+  const handleDownloadProject = () => {
+    const projectData = {
+      nodes,
+      edges,
+      code,
+      board,
+      version: '1.0.0',
+      timestamp: new Date().toISOString()
+    };
+    fileService.saveProjectLocally(projectName || 'project', 'electra', projectData);
   };
 
   const handleSaveAsProject = async () => {
@@ -843,6 +861,7 @@ export default function ForgeElectra({
         onBack={handleBack}
         onSave={handleSaveProject}
         onSaveAs={handleSaveAsProject}
+        onDownload={handleDownloadProject}
         onNew={handleNewProject}
         onOpen={handleOpenProject}
         onUndo={handleUndo}
