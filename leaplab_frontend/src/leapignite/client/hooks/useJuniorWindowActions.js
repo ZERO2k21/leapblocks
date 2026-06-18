@@ -305,6 +305,13 @@ export function useJuniorWindowActions({
             }
         };
 
+        // --- Camera functions for extensions (hand_pose, face_detection, etc.) ---
+        window.__setCameraOn = async (on) => {
+            if (window.setCameraOn) window.setCameraOn(on);
+        };
+        window.hpCameraToggle = window.__setCameraOn;
+        window.fdCameraToggle = window.__setCameraOn;
+
         return () => {
             contextKeys.forEach(key => delete window[key]);
         };
