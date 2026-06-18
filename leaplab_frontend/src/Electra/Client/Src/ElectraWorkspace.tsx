@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BoardSelectionModal } from './components/BoardSelectionModal';
 import ForgeElectra from './ForgeElectra';
 import { useForgeStore } from '../utlis/store/useForgeStore';
@@ -43,13 +43,27 @@ export default function ElectraWorkspace({
         return detectBoardFromPendingProject();
     });
 
-    // Clear workspace when component mounts
+    // Capture any pending cloud/shared project at render time so we can decide
+    // whether to clear the workspace after child effects have finished loading.
+    const pendingProjectRef = useRef(useCloudProjectStore.getState().pendingProject);
+
+    // Clear workspace when component mounts only if we are not about to load a
+    // shared/cloud project. Otherwise the clear would wipe the loaded nodes.
     useEffect(() => {
-        if (!redirectProjectData) {
-            const { clearWorkspace } = useForgeStore.getState();
-            clearWorkspace();
-            console.log('[ELECTRA WORKSPACE] Workspace cleared on mount');
+        if (redirectProjectData) return;
+
+        const params = new URLSearchParams(window.location.search);
+        const hasExternalProject = params.has('share') || params.has('project') || params.has('projectUrl');
+        const hasPendingProject = !!pendingProjectRef.current;
+
+        if (hasExternalProject || hasPendingProject) {
+            console.log('[ELECTRA WORKSPACE] Skipping workspace clear — project load in progress');
+            return;
         }
+
+        const { clearWorkspace } = useForgeStore.getState();
+        clearWorkspace();
+        console.log('[ELECTRA WORKSPACE] Workspace cleared on mount');
     }, [redirectProjectData]);
 
     // Detect board from redirect data
