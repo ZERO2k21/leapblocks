@@ -15,7 +15,7 @@ import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { showToast } from "../components/Toast";
 import { previewActions } from "../../server/engine/previewActions";
 import { looksPreview } from "../../server/engine/looksPreview";
-import { EXTENSIONS, registerExtensions } from "../../../extensions/extensionDefinitions";
+import { EXTENSIONS, registerExtensions, getIgniteExtension } from "../../../extensions/extensionDefinitions";
 
 // Robot Assets
 const robotIdle = "assets/sprites/robot/robot_idle.svg";
@@ -174,6 +174,10 @@ export function useJuniorWorkspace({
         blocks.forEach(b => {
             if (b.kind === "button") {
                 xml += `<button text="${b.text}" callbackKey="${b.callbackKey}"></button>`;
+            } else if (b.kind === "label") {
+                xml += `<label text="${b.text}"></label>`;
+            } else if (b.kind === "sep") {
+                xml += `<sep></sep>`;
             } else {
                 xml += `<block type="${b.type}">`;
                 if (b.type === 'looks_call') xml += `<field name="NAME">Tobi</field>`;
@@ -224,7 +228,7 @@ export function useJuniorWorkspace({
 
         // Normalize ID (face-detection -> face_detection)
         const id = extId.replace(/-/g, '_');
-        const ext = EXTENSIONS[id];
+        const ext = getIgniteExtension(id) || EXTENSIONS[id];
 
         if (ext) {
             // Already added? Just switch category
@@ -235,6 +239,10 @@ export function useJuniorWorkspace({
 
             // 1. Register blocks and generators (if not already done)
             registerExtensions(Blockly, [id]);
+            // Register Ignite-specific block definitions
+            if (EXTENSIONS[id]?.registerIgniteBlocks) {
+                EXTENSIONS[id].registerIgniteBlocks(Blockly);
+            }
 
             // Track installed extension
             installedExtensionsRef.current = new Set([...installedExtensionsRef.current, id]);

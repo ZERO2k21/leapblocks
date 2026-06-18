@@ -849,8 +849,10 @@ class MLRuntime {
         return (window as any).tf.tidy(() => {
             const tf = (window as any).tf;
             const imgTensor = tf.browser.fromPixels(canvas).toFloat().div(127.5).sub(1).expandDims(0);
-            const { values } = this.mobileNet.infer(imgTensor, true);
-            return values.squeeze();
+            const result = this.mobileNet.infer(imgTensor, true);
+            const embedding = result?.embedding ?? result;
+            if (!embedding) return null;
+            return embedding.squeeze();
         });
     }
 

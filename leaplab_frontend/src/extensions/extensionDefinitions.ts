@@ -8,6 +8,8 @@ export interface ExtensionDef {
     registerBlocks: (Blockly: any) => void;
     registerGenerators: (Blockly: any) => void;
     getToolbox: () => any[];
+    registerIgniteBlocks?: (Blockly: any) => void;
+    getIgniteToolbox?: () => any[];
 }
 
 export const EXTENSIONS: Record<string, ExtensionDef> = {
@@ -326,7 +328,107 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             { kind: 'block', type: 'fd_do_face_matching' },
             { kind: 'block', type: 'fd_is_class_detected' },
             { kind: 'block', type: 'fd_get_class_detected' },
-        ]
+        ],
+        registerIgniteBlocks: (Blockly: any) => {
+            const getTarget = () => 'window.activeSpriteId || "robot_default"';
+            const igniteBlockDefs = [
+                {
+                    type: 'fd_analyse_image',
+                    message0: 'analyse image from %1',
+                    args0: [{ type: 'field_dropdown', name: 'SOURCE', options: [['camera', 'camera'], ['image', 'image']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                { type: 'fd_face_count', message0: 'face count', output: 'Number', colour: '#b71c1c' },
+                { type: 'fd_emotion', message0: 'emotion', output: 'String', colour: '#b71c1c' },
+                {
+                    type: 'fd_is_expression',
+                    message0: 'is expression of face %1 %2',
+                    args0: [
+                        { type: 'field_number', name: 'N', value: 1, min: 1 },
+                        { type: 'field_dropdown', name: 'EXPRESSION', options: [['happy', 'happy'], ['sad', 'sad'], ['angry', 'angry'], ['surprised', 'surprised'], ['neutral', 'neutral']] }
+                    ],
+                    output: 'Boolean', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_face_x',
+                    message0: 'face %1 x position',
+                    args0: [{ type: 'field_number', name: 'N', value: 1 }],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_face_y',
+                    message0: 'face %1 y position',
+                    args0: [{ type: 'field_number', name: 'N', value: 1 }],
+                    output: 'Number', colour: '#b71c1c'
+                },
+                {
+                    type: 'fd_camera',
+                    message0: 'camera %1',
+                    args0: [{ type: 'field_dropdown', name: 'ACTION', options: [['on', 'on'], ['off', 'off'], ['flip', 'flip']] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                // Bridge blocks — accept reporter inputs so face detection combines with other blocks
+                {
+                    type: 'fd_say_expression',
+                    message0: '💬 say %1',
+                    args0: [{ type: 'input_value', name: 'EXPRESSION', check: ['String', 'Number'] }],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_go_to_face',
+                    message0: 'go to x %1 y %2',
+                    args0: [
+                        { type: 'input_value', name: 'X', check: 'Number' },
+                        { type: 'input_value', name: 'Y', check: 'Number' }
+                    ],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+                {
+                    type: 'fd_if_expression',
+                    message0: 'if %1 then %2',
+                    args0: [
+                        { type: 'input_value', name: 'CONDITION', check: 'Boolean' },
+                        { type: 'input_statement', name: 'DO' }
+                    ],
+                    previousStatement: null, nextStatement: null, colour: '#D43D41'
+                },
+            ];
+            const newDefs = igniteBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
+            if (newDefs.length > 0) {
+                Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
+            }
+
+            // Register generators for bridge blocks (Ignite-only)
+            const jsGen = javascriptGenerator;
+            if (jsGen) {
+                jsGen.forBlock['fd_say_expression'] = (b: any) => {
+                    const expr = javascriptGenerator.valueToCode(b, 'EXPRESSION', 0) || "''";
+                    return `say(${getTarget()}, String(${expr}));\nawait window.wait(window.getAnimationDelay ? window.getAnimationDelay() : 0.5);\n`;
+                };
+                jsGen.forBlock['fd_go_to_face'] = (b: any) => {
+                    const x = javascriptGenerator.valueToCode(b, 'X', 0) || '0';
+                    const y = javascriptGenerator.valueToCode(b, 'Y', 0) || '0';
+                    return `goToLocation(${getTarget()}, ${x}, ${y});\nawait window.wait(window.getAnimationDelay ? window.getAnimationDelay() : 0.5);\n`;
+                };
+                jsGen.forBlock['fd_if_expression'] = (b: any) => {
+                    const cond = javascriptGenerator.valueToCode(b, 'CONDITION', 0) || 'false';
+                    const body = javascriptGenerator.statementToCode(b, 'DO');
+                    return `if (${cond}) {\n${body}\n}\n`;
+                };
+            }
+        },
+        getIgniteToolbox: () => [
+            { kind: 'block', type: 'fd_analyse_image' },
+            { kind: 'block', type: 'fd_camera' },
+            { kind: 'block', type: 'fd_face_count' },
+            { kind: 'block', type: 'fd_emotion' },
+            { kind: 'block', type: 'fd_is_expression' },
+            { kind: 'block', type: 'fd_face_x' },
+            { kind: 'block', type: 'fd_face_y' },
+            { kind: 'block', type: 'fd_say_expression' },
+            { kind: 'block', type: 'fd_go_to_face' },
+            { kind: 'block', type: 'fd_if_expression' },
+        ],
     },
     object_detection: {
         id: 'object_detection',
@@ -474,8 +576,15 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
 
-            jsGen.forBlock['hp_camera'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.analyse('${b.getFieldValue("ACTION")}');\n`;
-            jsGen.forBlock['hp_analyze'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.analyse('${b.getFieldValue("ACTION")}');\n`;
+            jsGen.forBlock['hp_camera'] = (b: any) => {
+                const action = b.getFieldValue('ACTION');
+                return `if(window.__setCameraOn) window.__setCameraOn(${action === 'on'});\nif(window.runtime?.handPose) window.runtime.handPose.analyse('${action}');\n`;
+            };
+            jsGen.forBlock['hp_analyze'] = (b: any) => {
+                const action = b.getFieldValue('ACTION');
+                const needsCamera = action === 'analyze';
+                return `${needsCamera ? 'if(window.__setCameraOn) window.__setCameraOn(true);\n' : ''}if(window.runtime?.handPose) window.runtime.handPose.analyse('${action}');\n`;
+            };
             jsGen.forBlock['hp_move_with'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.moveSpriteToFinger('${b.getFieldValue("FINGER")}');\n`;
             jsGen.forBlock['hp_guess_sign'] = () => `if(window.runtime?.handPose){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Sign: "+window.runtime.handPose.getSign());}\n`;
             jsGen.forBlock['hp_when_sign'] = () => '// On Hand Sign\n';
@@ -1833,4 +1942,16 @@ export function registerExtensions(Blockly: any, extensionIds: string[]) {
             ext.registerGenerators(Blockly);
         }
     });
+}
+
+export function getIgniteExtension(id: string) {
+    const ext = EXTENSIONS[id];
+    if (ext && ext.registerIgniteBlocks && ext.getIgniteToolbox) {
+        return {
+            ...ext,
+            registerBlocks: ext.registerIgniteBlocks,
+            getToolbox: ext.getIgniteToolbox,
+        };
+    }
+    return ext;
 }
