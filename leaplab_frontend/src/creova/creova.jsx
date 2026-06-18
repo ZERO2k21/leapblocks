@@ -390,7 +390,7 @@ export default function AppInventor({ onBack }) {
         brandName="CREOVA"
         rightContent={
           <div className="flex items-center gap-6 shrink-0 creova-right-gap">
-            <style>{`@media (max-width: 1439px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
+            <style>{`@media (max-width: 1499px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
             <nav style={{
               display: 'flex',
               alignItems: 'center',

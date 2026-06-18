@@ -152,13 +152,13 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         }
       `}</style>
 
-      <div className={`flex items-center justify-between h-12 px-[18px] z-[100] select-none min-w-0 border-b ${
+      <div className={`flex items-center justify-between h-12 px-[18px] z-[100] select-none min-w-0 border-b gap-4 ${
         isElectra
           ? 'bg-gradient-to-br from-[#09090b] to-[#18181b] border-[#27272a] shadow-[0_2px_12px_rgba(0,0,0,0.4)]'
           : 'bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]'
       }`}>
         {/* Left section */}
-        <div className="flex items-center gap-2.5 flex-1 min-w-0 h-full">
+        <div className="flex items-center gap-2.5 flex-auto min-w-0 h-full">
           <button
             title="Back to Home"
             onClick={onBack}
@@ -666,7 +666,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
 
         {/* Center section */}
-        <div className="flex items-center justify-center gap-4 px-4 flex-0-auto min-w-0 overflow-visible">
+        <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
           <div className="hidden md:flex items-center gap-4">{centerContent}</div>
 
           <div 
@@ -701,7 +701,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
 
         {/* Right section */}
-        <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
+        <div className="flex items-center justify-end gap-2 flex-auto min-w-0">
           {/* Quick actions - Desktop only */}
           <div className={`hidden xl:flex items-center gap-2 pr-2 border-r h-5 shrink-0 ${
             isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
