@@ -84,6 +84,7 @@ import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinition
 
 
 import { fileService } from './Electra/Client/Src/services/FileService';
+import { useCloudProjectStore } from './store/cloudProjectStore';
 import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
@@ -3029,7 +3030,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    const handleSaveProject = useCallback((isSilent = false) => {
+    const handleSaveProject = useCallback(async (isSilent = false) => {
 
         // 1. Force save of current workspace if it's active
 
@@ -3126,9 +3127,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-        fileService.saveProject(projectName, 'intermediate', payload);
-
-        addLog(`Project saved: ${projectName}`);
+        try {
+            await fileService.saveProject(projectName, 'intermediate', payload);
+            addLog(`Project saved: ${projectName}`);
+        } catch (err: any) {
+            console.error('[IntermediateApp] Failed to save project:', err);
+            alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+        }
 
     }, [projectName, sprites, variableMonitors, listMonitors, tableMonitors, addLog]);
 
@@ -3364,6 +3369,137 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         input.click();
     }, [triggerUpdate, sprites, loadSpriteWorkspace, addLog]);
 
+    const loadProjectFromData = useCallback(async (data: any, source: string) => {
+        try {
+            const validation = fileService.validateProject(data, 'intermediate');
+            if (!validation.isValid) {
+                addLog(`Invalid project: ${validation.error}`);
+                return;
+            }
+
+            if (!data.sprites || !data.workspaces) {
+                throw new Error('Invalid project file (missing sprites or workspaces)');
+            }
+
+            addLog(`Loading project: ${data.projectName || 'Untitled'}`);
+
+            // Full Reset before loading
+            sprites.forEach(s => animationVM.unregisterSprite(s.id));
+            spriteWorkspacesRef.current.clear();
+            if (workspaceRef.current) workspaceRef.current.clear();
+
+            setProjectName(data.projectName || 'My Project');
+
+            const newSprites: Sprite[] = [];
+            stageManager.clearSounds();
+            stageManager.clearBackdrops();
+
+            for (const sData of data.sprites) {
+                const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
+                s.setX(sData.x);
+                s.setY(sData.y);
+                s.pointInDirection(sData.direction);
+                s.setSize(sData.size);
+                if (sData.visible) s.show(); else s.hide();
+                if (typeof sData.volume === 'number') s.setVolume(sData.volume);
+                if (sData.soundEffects) {
+                    if (typeof sData.soundEffects.pitch === 'number') s.setSoundEffect('pitch', sData.soundEffects.pitch);
+                    if (typeof sData.soundEffects.pan === 'number') s.setSoundEffect('pan', sData.soundEffects.pan);
+                }
+                for (const cData of sData.costumes) {
+                    const resolvedSrc = resolveAssetPath(cData.src);
+                    await s.addCostume(cData.name, resolvedSrc);
+                }
+                if (Array.isArray(sData.sounds)) {
+                    if (sData.id === 'stage') {
+                        for (const soundData of sData.sounds)
+                            await stageManager.addSound(soundData.name, resolveAssetPath(soundData.src));
+                    } else {
+                        for (const soundData of sData.sounds)
+                            await s.addSound(soundData.name, resolveAssetPath(soundData.src));
+                    }
+                }
+                newSprites.push(s);
+                animationVM.registerSprite(s);
+            }
+
+            if (Array.isArray(data.backdrops)) {
+                for (const bData of data.backdrops)
+                    await stageManager.addBackdrop(bData.name, resolveAssetPath(bData.src));
+                if (typeof data.currentBackdropIndex === 'number' && data.currentBackdropIndex >= 0)
+                    stageManager.setBackdrop(data.currentBackdropIndex);
+            }
+
+            if (Array.isArray(data.broadcasts)) {
+                for (const msg of data.broadcasts)
+                    animationVM.registerBroadcast(msg);
+            }
+
+            for (const [id, workspaceJson] of Object.entries(data.workspaces))
+                extractBroadcastValues(workspaceJson as any, animationVM);
+
+            if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0) {
+                for (const extId of data.installedExtensions) {
+                    if (EXTENSIONS[extId]) {
+                        registerExtensions(Blockly, [extId]);
+                        if (!installedExtensionsRef.current.has(extId))
+                            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, extId]);
+                    }
+                }
+                setInstalledExtensions(new Set(installedExtensionsRef.current));
+            }
+
+            Object.keys(data.workspaces).forEach(id => {
+                spriteWorkspacesRef.current.set(id, migrateWorkspaceBlocks(data.workspaces[id]));
+            });
+
+            if (data.monitors) {
+                setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
+                setListMonitors(data.monitors.lists || []);
+                setTableMonitors(data.monitors.tables || []);
+            } else {
+                setVariableMonitors([]);
+                setListMonitors([]);
+                setTableMonitors([]);
+            }
+
+            setSprites(newSprites);
+
+            const initialTarget = newSprites.find(s => s.id !== 'stage' && !s.id.includes('_clone_'))
+                || newSprites.find(s => s.id !== 'stage')
+                || newSprites[0]
+                || null;
+            const initialId = initialTarget ? initialTarget.id : null;
+
+            activeSpriteIdRef.current = initialId;
+            setSelectedSpriteId(initialId);
+            if (initialId) setActiveSpriteId(initialId);
+
+            if (initialId) {
+                let attempts = 0;
+                const tryLoad = () => {
+                    if (workspaceRef.current) {
+                        loadSpriteWorkspace(initialId);
+                        triggerUpdate();
+                        addLog('Project loaded successfully');
+                    } else if (attempts < 10) {
+                        attempts++;
+                        setTimeout(tryLoad, 200);
+                    } else {
+                        addLog('Project loaded (Workspace loading delayed)');
+                    }
+                };
+                tryLoad();
+            } else {
+                triggerUpdate();
+                addLog('Project loaded successfully (Empty)');
+            }
+        } catch (err: any) {
+            console.error(`Failed to load project from ${source}:`, err);
+            addLog(`Failed to load project: ${err.message}`);
+        }
+    }, [sprites, addLog, setProjectName, setSprites, setSelectedSpriteId, setActiveSpriteId, setVariableMonitors, setListMonitors, setTableMonitors, setInstalledExtensions, loadSpriteWorkspace, triggerUpdate]);
+
     // Auto-load project from URL parameter (?project=<url>)
     useEffect(() => {
         if (!projectUrl) return;
@@ -3379,129 +3515,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 if (cancelled) return;
 
-                const validation = fileService.validateProject(data, 'intermediate');
-                if (!validation.isValid) {
-                    addLog(`Invalid project: ${validation.error}`);
-                    return;
-                }
-
-                if (!data.sprites || !data.workspaces) {
-                    throw new Error('Invalid project file (missing sprites or workspaces)');
-                }
-
-                addLog(`Loading project: ${data.projectName || 'Untitled'}`);
-
-                // Full Reset before loading
-                sprites.forEach(s => animationVM.unregisterSprite(s.id));
-                spriteWorkspacesRef.current.clear();
-                if (workspaceRef.current) workspaceRef.current.clear();
-
-                setProjectName(data.projectName || 'My Project');
-
-                const newSprites: Sprite[] = [];
-                stageManager.clearSounds();
-                stageManager.clearBackdrops();
-
-                for (const sData of data.sprites) {
-                    const s = new Sprite(sData.id, sData.name, triggerUpdate, sData.spriteType || 'cat');
-                    s.setX(sData.x);
-                    s.setY(sData.y);
-                    s.pointInDirection(sData.direction);
-                    s.setSize(sData.size);
-                    if (sData.visible) s.show(); else s.hide();
-                    if (typeof sData.volume === 'number') s.setVolume(sData.volume);
-                    if (sData.soundEffects) {
-                        if (typeof sData.soundEffects.pitch === 'number') s.setSoundEffect('pitch', sData.soundEffects.pitch);
-                        if (typeof sData.soundEffects.pan === 'number') s.setSoundEffect('pan', sData.soundEffects.pan);
-                    }
-                    for (const cData of sData.costumes) {
-                        const resolvedSrc = resolveAssetPath(cData.src);
-                        await s.addCostume(cData.name, resolvedSrc);
-                    }
-                    if (Array.isArray(sData.sounds)) {
-                        if (sData.id === 'stage') {
-                            for (const soundData of sData.sounds)
-                                await stageManager.addSound(soundData.name, resolveAssetPath(soundData.src));
-                        } else {
-                            for (const soundData of sData.sounds)
-                                await s.addSound(soundData.name, resolveAssetPath(soundData.src));
-                        }
-                    }
-                    newSprites.push(s);
-                    animationVM.registerSprite(s);
-                }
-
-                if (Array.isArray(data.backdrops)) {
-                    for (const bData of data.backdrops)
-                        await stageManager.addBackdrop(bData.name, resolveAssetPath(bData.src));
-                    if (typeof data.currentBackdropIndex === 'number' && data.currentBackdropIndex >= 0)
-                        stageManager.setBackdrop(data.currentBackdropIndex);
-                }
-
-                if (Array.isArray(data.broadcasts)) {
-                    for (const msg of data.broadcasts)
-                        animationVM.registerBroadcast(msg);
-                }
-
-                for (const [id, workspaceJson] of Object.entries(data.workspaces))
-                    extractBroadcastValues(workspaceJson as any, animationVM);
-
-                if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0) {
-                    for (const extId of data.installedExtensions) {
-                        if (EXTENSIONS[extId]) {
-                            registerExtensions(Blockly, [extId]);
-                            if (!installedExtensionsRef.current.has(extId))
-                                installedExtensionsRef.current = new Set([...installedExtensionsRef.current, extId]);
-                        }
-                    }
-                    setInstalledExtensions(new Set(installedExtensionsRef.current));
-                }
-
-                Object.keys(data.workspaces).forEach(id => {
-                    spriteWorkspacesRef.current.set(id, migrateWorkspaceBlocks(data.workspaces[id]));
-                });
-
-                if (data.monitors) {
-                    setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
-                    setListMonitors(data.monitors.lists || []);
-                    setTableMonitors(data.monitors.tables || []);
-                } else {
-                    setVariableMonitors([]);
-                    setListMonitors([]);
-                    setTableMonitors([]);
-                }
-
-                setSprites(newSprites);
-
-                const initialTarget = newSprites.find(s => s.id !== 'stage' && !s.id.includes('_clone_'))
-                    || newSprites.find(s => s.id !== 'stage')
-                    || newSprites[0]
-                    || null;
-                const initialId = initialTarget ? initialTarget.id : null;
-
-                activeSpriteIdRef.current = initialId;
-                setSelectedSpriteId(initialId);
-                if (initialId) setActiveSpriteId(initialId);
-
-                if (initialId) {
-                    let attempts = 0;
-                    const tryLoad = () => {
-                        if (workspaceRef.current) {
-                            loadSpriteWorkspace(initialId);
-                            triggerUpdate();
-                            addLog('Project loaded successfully');
-                        } else if (attempts < 10) {
-                            attempts++;
-                            setTimeout(tryLoad, 200);
-                        } else {
-                            addLog('Project loaded (Workspace loading delayed)');
-                        }
-                    };
-                    tryLoad();
-                } else {
-                    triggerUpdate();
-                    addLog('Project loaded successfully (Empty)');
-                }
+                await loadProjectFromData(data, 'URL');
             } catch (err: any) {
                 console.error('Failed to load project from URL:', err);
                 addLog(`Failed to load project: ${err.message}`);
@@ -3509,22 +3523,40 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         })();
 
         return () => { cancelled = true; };
-    }, [projectUrl]);
+    }, [projectUrl, loadProjectFromData]);
+
+    // Auto-load project from cloud storage (My Projects)
+    useEffect(() => {
+        const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+        if (!pendingProject || pendingProject.mode !== 'intermediate') return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                if (cancelled) return;
+                await loadProjectFromData(pendingProject.data, 'cloud');
+                clearPendingProject();
+            } catch (err: any) {
+                console.error('Failed to load project from cloud:', err);
+                addLog(`Failed to load project: ${err.message}`);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [loadProjectFromData, addLog]);
 
     const handleOpenProject = useCallback(() => {
         setPendingAction('open');
         setShowUnsavedModal(true);
     }, []);
 
-    const confirmUnsavedAction = useCallback((saveFirst: boolean) => {
+    const confirmUnsavedAction = useCallback(async (saveFirst: boolean) => {
         setShowUnsavedModal(false);
         if (saveFirst) {
-            handleSaveProject(true);
-            setTimeout(() => {
-                if (pendingAction === 'new') executeNewProject();
-                if (pendingAction === 'open') executeOpenProject();
-                setPendingAction(null);
-            }, 500);
+            await handleSaveProject(true);
+            if (pendingAction === 'new') executeNewProject();
+            if (pendingAction === 'open') executeOpenProject();
+            setPendingAction(null);
         } else {
             if (pendingAction === 'new') executeNewProject();
             if (pendingAction === 'open') executeOpenProject();

@@ -747,14 +747,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         resetStage();
     };
 
-    const handleSaveProject = () => {
+    const handleSaveProject = async () => {
         const payload = {
             projectFiles,
             activeFile,
             sprites,
             backdrop,
         };
-        fileService.saveProject(projectName, "python", payload);
+        try {
+            await fileService.saveProject(projectName, "python", payload);
+        } catch (err) {
+            console.error('[PythonApp] Failed to save project:', err);
+            alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+        }
     };
 
     const handleOpenProject = () => {

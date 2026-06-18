@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
+import React, { useState, lazy, Suspense, useEffect, useRef, useCallback } from 'react';
 import { Node, Edge } from 'reactflow';
 import { SerialMonitor } from './components/Editor/SerialMonitor';
 import { Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
@@ -26,6 +26,8 @@ import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 import * as LibraryService from './services/LibraryService';
 import { pack, unpack, isPacked } from '../utlis/compress';
+import { fileService } from './services/FileService';
+import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -217,6 +219,40 @@ export default function ForgeElectra({
     return () => clearTimeout(timer);
   }, [nodes, edges, code]);
 
+  const loadProjectData = useCallback((data: any, rProjectName?: string | null, rProjectPath?: string | null) => {
+    const loadedNodes = (data.nodes || data.circuit?.nodes || []) as Node[];
+    const loadedEdges = (data.edges || data.circuit?.edges || []) as Edge[];
+    const loadedCode = data.code || '';
+    const loadedLibs = data.libraries || [];
+
+    setNodes(loadedNodes);
+    setEdges(loadedEdges);
+    setCode(loadedCode);
+    setImportedLibraries(loadedLibs);
+    autoInstallLibraries(loadedLibs);
+
+    if (data.board) {
+      setBoard(data.board);
+    }
+
+    if (rProjectPath) {
+      setProjectPath(rProjectPath);
+      const pathParts = rProjectPath.split(/[\\/]/);
+      const folderName = pathParts[pathParts.length - 1];
+      const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : 'Loaded Project';
+      setProjectName(cleanName);
+    } else if (rProjectName) {
+      setProjectName(rProjectName);
+      setProjectPath(null);
+    }
+
+    setHistory([]);
+    setHistoryIndex(-1);
+    setTimeout(() => {
+      saveToHistory();
+    }, 0);
+  }, []);
+
   // Process redirect project data
   useEffect(() => {
     if (redirectProjectData && clearRedirectProjectData) {
@@ -235,43 +271,30 @@ export default function ForgeElectra({
         projectPath?: string | null;
       };
 
-      const { data, projectName: rProjectName, projectPath: rProjectPath } = projectObj;
-
-      const loadedNodes = (data.nodes || data.circuit?.nodes || []) as Node[];
-      const loadedEdges = (data.edges || data.circuit?.edges || []) as Edge[];
-      const loadedCode = data.code || '';
-      const loadedLibs = data.libraries || [];
-
-      setNodes(loadedNodes);
-      setEdges(loadedEdges);
-      setCode(loadedCode);
-      setImportedLibraries(loadedLibs);
-      autoInstallLibraries(loadedLibs);
-
-      if (data.board) {
-        setBoard(data.board);
-      }
-
-      if (rProjectPath) {
-        setProjectPath(rProjectPath);
-        const pathParts = rProjectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : 'Loaded Project';
-        setProjectName(cleanName);
-      } else if (rProjectName) {
-        setProjectName(rProjectName);
-        setProjectPath(null);
-      }
-
-      setHistory([]);
-      setHistoryIndex(-1);
-      setTimeout(() => {
-        saveToHistory();
-      }, 0);
-
+      loadProjectData(projectObj.data, projectObj.projectName, projectObj.projectPath);
       clearRedirectProjectData();
     }
-  }, [redirectProjectData, clearRedirectProjectData]);
+  }, [redirectProjectData, clearRedirectProjectData, loadProjectData]);
+
+  // Auto-load project from cloud storage (My Projects)
+  useEffect(() => {
+    const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+    if (!pendingProject || pendingProject.mode !== 'electra') return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (cancelled) return;
+        console.log('[FORGE ELECTRA] Loading project from cloud...');
+        loadProjectData(pendingProject.data, pendingProject.projectName);
+        clearPendingProject();
+      } catch (err) {
+        console.error('[FORGE ELECTRA] Failed to load project from cloud:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [loadProjectData]);
 
   // Initialize board from prop on mount (does not re-fire on internal board changes)
   useEffect(() => {
@@ -467,66 +490,6 @@ export default function ForgeElectra({
 
   const handleSaveProject = async () => {
     try {
-      if (IS_ELECTRON) {
-        const projectData = {
-          nodes,
-          edges,
-          code,
-          board,
-          version: '1.0.0',
-          timestamp: new Date().toISOString()
-        };
-        const result = await (window as any).electronAPI.saveProject(projectData, projectPath ?? undefined);
-        if (result.success && result.projectPath) {
-          setProjectPath(result.projectPath);
-          const pathParts = result.projectPath.split(/[\\/]/);
-          const folderName = pathParts[pathParts.length - 1];
-          const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : projectName;
-          setProjectName(cleanName);
-        }
-      } else {
-        const projectData = {
-          nodes,
-          edges,
-          code,
-          board,
-          version: '1.0.0',
-          timestamp: new Date().toISOString()
-        };
-        const compressed = pack(projectData);
-        const blob = new Blob([compressed], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${projectName || 'project'}.leap`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        const id = projectPath || uuidv4();
-        await ProjectService.saveProject({
-          id,
-          name: projectName,
-          circuit: { nodes, edges },
-          code,
-          updatedAt: new Date().toISOString()
-        });
-        setProjectPath(id);
-      }
-    } catch (err) {
-      console.error('[FORGE] Failed to save project:', err);
-      alert('Failed to save project.');
-    }
-  };
-
-  const handleSaveAsProject = async () => {
-    if (!IS_ELECTRON) {
-      // In web mode, Save As behaves the same as Save (downloads the project file)
-      handleSaveProject();
-      return;
-    }
-    try {
       const projectData = {
         nodes,
         edges,
@@ -535,18 +498,18 @@ export default function ForgeElectra({
         version: '1.0.0',
         timestamp: new Date().toISOString()
       };
-      const result = await (window as any).electronAPI.saveProject(projectData, undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        const cleanName = folderName ? folderName.replace(/\.(leap|lbp)$/i, '') : projectName;
-        setProjectName(cleanName);
+      await fileService.saveProject(projectName || 'project', 'electra', projectData);
+      if (!projectPath) {
+        setProjectPath(uuidv4());
       }
-    } catch (err) {
-      console.error('[FORGE] Failed to save project as:', err);
-      alert('Failed to save project.');
+    } catch (err: any) {
+      console.error('[FORGE] Failed to save project:', err);
+      alert(err?.message || 'Failed to save project.');
     }
+  };
+
+  const handleSaveAsProject = async () => {
+    await handleSaveProject();
   };
 
   // Edit Operations

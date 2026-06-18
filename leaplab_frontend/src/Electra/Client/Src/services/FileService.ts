@@ -3,7 +3,10 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-export type SessionMode = 'junior' | 'intermediate' | 'python' | 'advanced_blocks' | 'creocad' | 'app_game_dev';
+import { saveProjectToCloud } from '../../../../services/cloudProjectApi';
+import { useLeapLabAuthStore } from '../../../../auth/leaplabAuthStore';
+
+export type SessionMode = 'junior' | 'intermediate' | 'python' | 'advanced_blocks' | 'creocad' | 'app_game_dev' | 'neura' | 'electra' | 'creova';
 
 export interface ProjectData {
     version: string;
@@ -14,16 +17,33 @@ export interface ProjectData {
 }
 
 const MODE_NAMES: Record<SessionMode, string> = {
-    junior: 'Junior Blocks',
-    intermediate: 'Intermediate Blocks',
-    python: 'Python IDE',
+    junior: 'Ignite / Junior Blocks',
+    intermediate: 'Embed / Intermediate Blocks',
+    python: 'Logix / Python IDE',
     advanced_blocks: 'Advanced Blocks',
     creocad: 'CreoCAD',
-    app_game_dev: 'App & Game Development'
+    app_game_dev: 'App & Game Development',
+    neura: 'Neura / AI',
+    electra: 'Electra / Circuits',
+    creova: 'Creova / App Builder'
 };
 
 class FileService {
-    saveProject(projectName: string, mode: SessionMode, payload: any): void {
+    async saveProject(projectName: string, mode: SessionMode, payload: any): Promise<void> {
+        const authState = useLeapLabAuthStore.getState();
+
+        if (!authState.isAuthenticated || !authState.token) {
+            throw new Error('Please sign in to save projects to the cloud.');
+        }
+
+        await saveProjectToCloud({
+            projectName,
+            mode,
+            payload,
+        });
+    }
+
+    saveProjectLocally(projectName: string, mode: SessionMode, payload: any): void {
         const projectData: ProjectData = {
             version: '1.0',
             projectName,
@@ -66,13 +86,23 @@ class FileService {
                 console.log('[FileService] Project shared successfully');
             } catch (err: any) {
                 if (err.name !== 'AbortError') {
-                    console.warn('[FileService] Share failed, falling back to download:', err);
-                    this.saveProject(projectName, mode, payload);
+                    console.warn('[FileService] Share failed, falling back to cloud save:', err);
+                    try {
+                        await this.saveProject(projectName, mode, payload);
+                    } catch (saveErr: any) {
+                        console.error('[FileService] Cloud save fallback failed:', saveErr);
+                        throw saveErr;
+                    }
                 }
             }
         } else {
-            console.log('[FileService] Web Share API not supported, falling back to download');
-            this.saveProject(projectName, mode, payload);
+            console.log('[FileService] Web Share API not supported, falling back to cloud save');
+            try {
+                await this.saveProject(projectName, mode, payload);
+            } catch (saveErr: any) {
+                console.error('[FileService] Cloud save fallback failed:', saveErr);
+                throw saveErr;
+            }
         }
     }
 

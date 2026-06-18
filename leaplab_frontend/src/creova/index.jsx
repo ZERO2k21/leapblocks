@@ -22,6 +22,8 @@ import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
 import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
+import { fileService } from '../Electra/Client/Src/services/FileService';
+import { useCloudProjectStore } from '../store/cloudProjectStore';
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -70,6 +72,30 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
       clearRedirectProjectData();
     }
   }, [redirectProjectData, appState, clearRedirectProjectData]);
+
+  // Auto-load project from cloud storage (My Projects)
+  useEffect(() => {
+    const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+    if (!pendingProject || pendingProject.mode !== 'creova') return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (cancelled) return;
+        console.log('[AppInventor] Loading project from cloud...');
+        appState.loadProject(pendingProject.data);
+        if (pendingProject.projectName) {
+          appState.setAppName(pendingProject.projectName);
+        }
+        setProjectPath(null);
+        clearPendingProject();
+      } catch (err) {
+        console.error('[AppInventor] Failed to load project from cloud:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [appState]);
 
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [buildState, setBuildState] = useState('idle');
@@ -155,29 +181,6 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
   };
 
   const handleSaveProject = async () => {
-    if (!window.electronAPI || !window.electronAPI.saveProject) {
-      try {
-        const payload = appState.getSerializedState();
-        const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
-        if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
-          payload.blockLogic = liveBlockXml;
-        }
-
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${appState.appName || 'project'}.leap`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error("Failed to save project locally:", err);
-        alert(`Failed to save project: ${err.message}`);
-      }
-      return;
-    }
     try {
       const payload = appState.getSerializedState();
       const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
@@ -185,18 +188,8 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
         payload.blockLogic = liveBlockXml;
       }
 
-      const result = await window.electronAPI.saveProject(payload, projectPath || undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        if (folderName) {
-          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
-        }
-        alert("Project saved successfully!");
-      } else if (result.error) {
-        alert(`Failed to save project: ${result.error}`);
-      }
+      await fileService.saveProject(appState.appName || 'project', 'creova', payload);
+      alert("Project saved successfully!");
     } catch (err) {
       console.error("Failed to save project:", err);
       alert(`Failed to save project: ${err.message}`);
@@ -204,33 +197,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
   };
 
   const handleSaveAsProject = async () => {
-    if (!window.electronAPI || !window.electronAPI.saveProject) {
-      handleSaveProject();
-      return;
-    }
-    try {
-      const payload = appState.getSerializedState();
-      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
-      if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
-        payload.blockLogic = liveBlockXml;
-      }
-
-      const result = await window.electronAPI.saveProject(payload, undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        if (folderName) {
-          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
-        }
-        alert("Project saved successfully!");
-      } else if (result.error) {
-        alert(`Failed to save project: ${result.error}`);
-      }
-    } catch (err) {
-      console.error("Failed to save project as:", err);
-      alert(`Failed to save project: ${err.message}`);
-    }
+    await handleSaveProject();
   };
 
   const handleUndo = () => {
