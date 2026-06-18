@@ -5,9 +5,11 @@
 
 import React, { useState } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
-import MyProjectsHeader from './components/neura/dashboard/MyProjectsHeader';
-import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
+import WelcomeHero from './components/neura/dashboard/WelcomeHero';
+import TemplateGrid from './components/neura/dashboard/TemplateGrid';
 import ProjectCard from './components/neura/dashboard/ProjectCard';
+import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
+
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
 import ImageClassifier from './components/neura/project-types/image-classifier/ImageClassifier';
 import ObjectDetection from './components/neura/project-types/object-detection/ObjectDetection';
@@ -52,7 +54,6 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
         setView('project');
     };
 
-    // Render project component based on type
     const renderProjectComponent = () => {
         switch (currentProjectType) {
             case 'image-classifier':
@@ -93,32 +94,55 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 
     return (
         <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-            {/* Unified Topbar shared across all views */}
             <ProjectHeader {...getHeaderProps()} />
 
             <div className="flex-1 overflow-y-auto relative">
-                {/* Dashboard view */}
                 {view === 'dashboard' && (
-                    <div className="p-8">
-                        <MyProjectsHeader onCreateNew={handleCreateNew} />
+                    <div className="p-6">
+                        <WelcomeHero
+                            onCreateNew={handleCreateNew}
+                            onImportDataset={() => console.log('Import dataset')}
+                            onTutorials={() => console.log('Open tutorials')}
+                        />
 
-                        {projects.length === 0 ? (
+                        {projects.length > 0 && (
+                            <>
+                                <div className="flex items-center justify-between mb-5">
+                                    <div>
+                                        <h2 className="text-lg font-bold text-[#0a015a] tracking-tight flex items-center gap-2">
+                                            <span className="text-base">&#x1F4C2;</span>
+                                            Recent Projects
+                                        </h2>
+                                        <p className="text-xs text-gray-400 mt-0.5">All your machine learning projects in one place.</p>
+                                    </div>
+                                    <button className="flex items-center gap-1 text-xs font-semibold text-[#0a015a] hover:text-[#15027a] transition-colors">
+                                        View All Projects
+                                        <span className="text-sm leading-none">&rsaquo;</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {projects.map((project) => (
+                                        <ProjectCard
+                                            key={project.id}
+                                            project={project}
+                                            onClick={() => handleOpenProject(project)}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        <TemplateGrid
+                            onSelectTemplate={(typeId) => handleSelectType(typeId)}
+                            onViewAll={() => console.log('View all templates')}
+                        />
+
+                        {projects.length === 0 && (
                             <EmptyStateIllustration onCreateNew={handleCreateNew} />
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {projects.map((project) => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                        onClick={() => handleOpenProject(project)}
-                                    />
-                                ))}
-                            </div>
                         )}
                     </div>
                 )}
 
-                {/* Create project modal (now rendered full screen inside flex-1) */}
                 {view === 'create' && (
                     <CreateProjectModal
                         onClose={handleBackToDashboard}
@@ -126,7 +150,6 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                     />
                 )}
 
-                {/* Project view */}
                 {view === 'project' && renderProjectComponent()}
             </div>
         </div>
