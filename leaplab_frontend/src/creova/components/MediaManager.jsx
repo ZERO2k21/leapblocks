@@ -134,13 +134,13 @@ export default function MediaManager({ appState }) {
         <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
             <div 
-                style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
-                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
+                style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
+                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
             >
-                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Media</span>
+                <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Media</span>
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
+                    className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
                     title="Upload Media"
                 >
                     <Upload className="h-4 w-4" />
@@ -201,7 +201,7 @@ export default function MediaManager({ appState }) {
                 {/* View Mode Toggle */}
                 <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
                     <div 
-                        style={{ fontSize: '11px', fontWeight: '900' }} 
+                        style={{ fontSize: '11px', fontWeight: '900', paddingLeft: '8px' }} 
                         className="text-slate-900 uppercase tracking-[0.1em]"
                     >
                         {filteredMedia.length} {filteredMedia.length === 1 ? 'Asset' : 'Assets'}

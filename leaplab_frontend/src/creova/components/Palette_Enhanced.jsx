@@ -88,7 +88,7 @@ export default function PaletteEnhanced() {
                                     </div>
                                     <span className="tracking-[0.05em] font-extrabold">{category}</span>
                                 </span>
-                                <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">{filteredItems.length}</span>
+                                <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">&nbsp;{filteredItems.length}&nbsp;</span>
                             </button>
 
                             {/* Category Items */}
