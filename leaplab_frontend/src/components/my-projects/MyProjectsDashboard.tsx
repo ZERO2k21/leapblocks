@@ -10,6 +10,7 @@ import {
     deleteCloudProject,
     CloudProject,
 } from '../../services/cloudProjectApi';
+import ShareProjectModal from './ShareProjectModal';
 import { useLeapLabAuthStore } from '../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../store/cloudProjectStore';
 
@@ -70,6 +71,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const [error, setError] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [openingId, setOpeningId] = useState<string | null>(null);
+    const [sharingProject, setSharingProject] = useState<CloudProject | null>(null);
     const [selectedMode, setSelectedMode] = useState<string | null>(null);
     const { setPendingProject } = useCloudProjectStore();
 
@@ -117,6 +119,8 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                 projectName: project.name,
             });
 
+            useCloudProjectStore.getState().clearSharedProjectInfo();
+
             onOpenProject(project.mode);
         } catch (err: any) {
             console.error('[MyProjectsDashboard] Failed to open project:', err);
@@ -140,6 +144,27 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
             setDeletingId(null);
         }
     };
+
+    const handleShareProject = (e: React.MouseEvent, project: CloudProject) => {
+        e.stopPropagation();
+        setSharingProject(project);
+    };
+
+    const handleShareUpdate = (updatedProject: CloudProject) => {
+        setProjects((prev) =>
+            prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+        );
+    };
+
+    const renderShareButton = (project: CloudProject) => (
+        <button
+            className="my-project-share-btn"
+            onClick={(e) => handleShareProject(e, project)}
+            title={project.isShared === 1 ? 'Manage share link' : 'Share project'}
+        >
+            {project.isShared === 1 ? '🔗' : '⤴️'}
+        </button>
+    );
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'Unknown date';
@@ -295,14 +320,17 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                 alt=""
                                 className="my-project-card-icon-img"
                             />
-                            <button
-                                className="my-project-delete-btn"
-                                onClick={(e) => handleDeleteProject(e, project)}
-                                disabled={deletingId === project.id}
-                                title="Delete project"
-                            >
-                                {deletingId === project.id ? '...' : '🗑️'}
-                            </button>
+                            <div className="my-project-card-actions">
+                                {renderShareButton(project)}
+                                <button
+                                    className="my-project-delete-btn"
+                                    onClick={(e) => handleDeleteProject(e, project)}
+                                    disabled={deletingId === project.id}
+                                    title="Delete project"
+                                >
+                                    {deletingId === project.id ? '...' : '🗑️'}
+                                </button>
+                            </div>
                         </div>
                         <h4 className="my-project-card-name">{project.name}</h4>
                         <p className="my-project-card-date">{formatDate(project.updatedAt)}</p>
@@ -312,6 +340,14 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                     </div>
                 ))}
             </div>
+
+            {sharingProject && (
+                <ShareProjectModal
+                    project={sharingProject}
+                    onClose={() => setSharingProject(null)}
+                    onUpdate={handleShareUpdate}
+                />
+            )}
         </div>
     );
 }

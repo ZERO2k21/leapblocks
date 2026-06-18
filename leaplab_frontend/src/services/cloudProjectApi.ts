@@ -20,6 +20,9 @@ export interface CloudProject {
     fileKey: string | null;
     thumbnailKey: string | null;
     metadata: string | null;
+    isShared: number;
+    shareId: string | null;
+    sharePermission: 'viewer' | 'editor' | null;
     isActive: number;
     isDeleted: number;
     createdAt: string | null;
@@ -192,4 +195,78 @@ export async function deleteCloudProject(projectId: string): Promise<void> {
     });
 
     await handleResponse<{ success: boolean; message?: string }>(response);
+}
+
+export async function shareCloudProject(
+    projectId: string,
+    permission: 'viewer' | 'editor',
+): Promise<CloudProject> {
+    const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}/share`, {
+        method: 'POST',
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permission }),
+    });
+
+    const result = await handleResponse<CloudProjectResponse>(response);
+    return result.data;
+}
+
+export async function revokeCloudProjectShare(projectId: string): Promise<CloudProject> {
+    const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}/share`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+
+    const result = await handleResponse<CloudProjectResponse>(response);
+    return result.data;
+}
+
+export async function getSharedProject(shareId: string): Promise<CloudProject> {
+    const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
+        method: 'GET',
+    });
+
+    const result = await handleResponse<CloudProjectResponse>(response);
+    return result.data;
+}
+
+export function getShareUrl(shareId: string): string {
+    const baseUrl =
+        (import.meta.env.VITE_APP_URL as string | undefined) ||
+        'https://leaplab.creoleap.com';
+    return `${baseUrl.replace(/\/$/, '')}/?share=${encodeURIComponent(shareId)}`;
+}
+
+export async function updateSharedProject(
+    shareId: string,
+    payload: SaveProjectPayload,
+): Promise<CloudProject> {
+    const projectData = {
+        version: '1.0',
+        projectName: payload.projectName,
+        mode: payload.mode,
+        timestamp: Date.now(),
+        ...payload.payload,
+    };
+
+    const file = new File(
+        [JSON.stringify(projectData, null, 2)],
+        `${payload.projectName.replace(/\s+/g, '_')}.leap`,
+        { type: 'application/json' },
+    );
+
+    const formData = new FormData();
+    formData.append('name', payload.projectName);
+    formData.append('file', file);
+
+    const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
+        method: 'PATCH',
+        body: formData,
+    });
+
+    const result = await handleResponse<CloudProjectResponse>(response);
+    return result.data;
 }

@@ -3,8 +3,9 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { saveProjectToCloud } from '../../../../services/cloudProjectApi';
+import { saveProjectToCloud, updateSharedProject } from '../../../../services/cloudProjectApi';
 import { useLeapLabAuthStore } from '../../../../auth/leaplabAuthStore';
+import { useCloudProjectStore } from '../../../../store/cloudProjectStore';
 
 export type SessionMode = 'junior' | 'intermediate' | 'python' | 'advanced_blocks' | 'creocad' | 'app_game_dev' | 'neura' | 'electra' | 'creova';
 
@@ -30,6 +31,19 @@ const MODE_NAMES: Record<SessionMode, string> = {
 
 class FileService {
     async saveProject(projectName: string, mode: SessionMode, payload: any): Promise<void> {
+        const sharedInfo = useCloudProjectStore.getState().sharedProjectInfo;
+
+        // If this project was opened via a shared link with editor permission,
+        // save changes back to the shared project (no auth required).
+        if (sharedInfo?.permission === 'editor') {
+            await updateSharedProject(sharedInfo.shareId, {
+                projectName,
+                mode,
+                payload,
+            });
+            return;
+        }
+
         const authState = useLeapLabAuthStore.getState();
 
         if (!authState.isAuthenticated || !authState.token) {
