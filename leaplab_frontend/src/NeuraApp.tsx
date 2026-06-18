@@ -127,13 +127,14 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                                         <span className="text-sm leading-none">&rsaquo;</span>
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="flex gap-4 overflow-x-auto pb-2 scroll-smooth">
                                     {projects.map((project) => (
-                                        <ProjectCard
-                                            key={project.id}
-                                            project={project}
-                                            onClick={() => handleOpenProject(project)}
-                                        />
+                                        <div key={project.id} className="flex-shrink-0 w-64">
+                                            <ProjectCard
+                                                project={project}
+                                                onClick={() => handleOpenProject(project)}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             </>

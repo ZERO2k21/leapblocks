@@ -42,12 +42,19 @@
 }
 
 .my-projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
 }
 
 .my-project-card {
+    flex: 0 0 260px;
+    min-width: 260px;
+    max-width: 260px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
