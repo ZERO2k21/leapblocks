@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { BoardSelectionModal } from './components/BoardSelectionModal';
 import ForgeElectra from './ForgeElectra';
 import { useForgeStore } from '../utlis/store/useForgeStore';
+import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 
 interface ElectraWorkspaceProps {
     onBack: () => void;
@@ -16,6 +17,18 @@ interface ElectraWorkspaceProps {
     clearRedirectProjectData?: () => void;
 }
 
+function detectBoardFromPendingProject(): 'arduino-uno' | 'esp32-c3' | null {
+    const { pendingProject } = useCloudProjectStore.getState();
+    if (pendingProject?.mode === 'electra') {
+        const board = pendingProject.data?.board;
+        if (board === 'arduino-uno' || board === 'esp32-c3') {
+            console.log('[ELECTRA WORKSPACE] Board auto-detected from pending project:', board);
+            return board;
+        }
+    }
+    return null;
+}
+
 export default function ElectraWorkspace({
     onBack,
     onHome,
@@ -23,11 +36,12 @@ export default function ElectraWorkspace({
     redirectProjectData,
     clearRedirectProjectData
 }: ElectraWorkspaceProps) {
-    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    const hasShareParam = params.has('share') || params.has('shareId');
-    const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(
-        hasShareParam ? 'arduino-uno' : null
-    );
+    // Auto-detect board from saved/shared projects so the user never has to
+    // re-pick the board for a project that already knows what it is.
+    const [selectedBoard, setSelectedBoard] = useState<'arduino-uno' | 'esp32-c3' | null>(() => {
+        if (redirectProjectData) return null; // handled by redirect effect below
+        return detectBoardFromPendingProject();
+    });
 
     // Clear workspace when component mounts
     useEffect(() => {
