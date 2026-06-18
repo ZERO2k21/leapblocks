@@ -19,6 +19,7 @@ export class HandPoseRuntime {
     private _stream: MediaStream | null = null;
     private _video: HTMLVideoElement | null = null;
     private _analyzing = false;
+    private _loopRunning = false;
     private _landmarks: any[] = [];
     private _hands: any = null;
     private _camera: any = null;
@@ -36,6 +37,11 @@ export class HandPoseRuntime {
         'base': 0,
     };
 
+    setVideoElement(video: HTMLVideoElement | null) {
+        this._video = video;
+        if (video && this._analyzing && !this._loopRunning) this._startDetectLoop();
+    }
+
     async analyse(action: string): Promise<void> {
         if (action === 'on' || action === 'analyze') {
             await this.startDetection();
@@ -48,6 +54,7 @@ export class HandPoseRuntime {
 
     private async startDetection(): Promise<void> {
         if (this._analyzing) return;
+        this._analyzing = true; // Set immediately to prevent duplicate instances from forever loops
 
         try {
             // Load MediaPipe Hands
@@ -69,7 +76,33 @@ export class HandPoseRuntime {
                 });
             }
 
-            // Get camera stream
+            // If a shared video element was provided (via setVideoElement from RuntimeBridge),
+            // use it instead of opening a new camera stream.
+            if (this._video) {
+                this._startDetectLoop();
+                console.log('[HandPose] Detection started (shared video)');
+                return;
+            }
+
+            // Wait briefly for a shared video element to arrive (from __setCameraOn async flow)
+            const waitForVideo = await new Promise<boolean>((resolve) => {
+                let waited = 0;
+                const check = setInterval(() => {
+                    if (this._video || waited >= 2000) {
+                        clearInterval(check);
+                        resolve(!!this._video);
+                    }
+                    waited += 50;
+                }, 50);
+            });
+
+            if (waitForVideo && this._video) {
+                this._startDetectLoop();
+                console.log('[HandPose] Detection started (shared video, awaited)');
+                return;
+            }
+
+            // No shared video — open our own camera stream
             this._stream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 640, height: 480 }
             });
@@ -79,26 +112,46 @@ export class HandPoseRuntime {
             this._video.autoplay = true;
             await this._video.play();
 
-            this._analyzing = true;
-            this.detectLoop();
+            this._startDetectLoop();
             console.log('[HandPose] Detection started');
         } catch (err: any) {
+            this._analyzing = false; // Reset on failure so retry is possible
             console.error('[HandPose] Failed to start detection:', err.message);
         }
     }
 
-    private detectLoop(): void {
-        if (!this._analyzing || !this._video || !this._hands) return;
-
-        const results = this._hands.detectForVideo(this._video, performance.now());
-        
-        if (results.landmarks && results.landmarks.length > 0) {
-            this._landmarks = results.landmarks;
-            this.processLandmarks();
-        }
-
-        requestAnimationFrame(() => this.detectLoop());
+    private _startDetectLoop() {
+        if (this._loopRunning) return;
+        this._loopRunning = true;
+        let lastDetectTime = 0;
+        let lastTimestamp = 0;
+        const FRAME_INTERVAL = 100; // ~10fps to avoid lag when BodyDetection also runs
+        const loop = (now: number) => {
+            if (!this._analyzing || !this._video || !this._hands) {
+                this._loopRunning = false;
+                return;
+            }
+            if (this._video.readyState >= 2 && (now - lastDetectTime) >= FRAME_INTERVAL) {
+                lastDetectTime = now;
+                // Ensure strictly increasing timestamps for MediaPipe
+                const ts = Math.max(now, lastTimestamp + 1);
+                lastTimestamp = ts;
+                try {
+                    const results = this._hands.detectForVideo(this._video, ts);
+                    if (results.landmarks && results.landmarks.length > 0) {
+                        this._landmarks = results.landmarks;
+                        this.processLandmarks();
+                    }
+                } catch (_e) {
+                    // Ignore MediaPipe timestamp/processing errors — retry next frame
+                }
+            }
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
     }
+
+
 
     private processLandmarks(): void {
         if (this._landmarks.length === 0) return;
@@ -165,6 +218,8 @@ export class HandPoseRuntime {
 
     stopDetection(): void {
         this._analyzing = false;
+        this._loopRunning = false;
+        // Only close the stream if we opened it ourselves (not shared from RuntimeBridge)
         if (this._stream) {
             this._stream.getTracks().forEach(track => track.stop());
             this._stream = null;
@@ -174,22 +229,69 @@ export class HandPoseRuntime {
         console.log('[HandPose] Detection stopped');
     }
 
-    moveSpriteToFinger(finger: string): void {
-        const spriteId = (window as any).__activeSpriteId;
-        if (!spriteId || !(window as any).spriteManager) return;
+    private getStageCoords(landmark: { x: number; y: number }): { sx: number; sy: number } {
+        const video = this._video;
+        let vw = 640, vh = 480;
+        if (video && video.videoWidth && video.videoHeight) {
+            vw = video.videoWidth;
+            vh = video.videoHeight;
+        }
+        const stageEl = document.querySelector('.stage') as HTMLElement | null;
+        const sw = stageEl ? stageEl.offsetWidth : 480;
+        const sh = stageEl ? stageEl.offsetHeight : 360;
 
-        const sprite = (window as any).spriteManager.getSprite(spriteId);
-        if (!sprite) return;
+        const scale = Math.max(sw / vw, sh / vh);
+        const renderW = vw * scale;
+        const renderH = vh * scale;
+        const offsetX = (renderW - sw) / (2 * renderW);
+        const offsetY = (renderH - sh) / (2 * renderH);
+
+        const visStartX = offsetX;
+        const visEndX = 1 - offsetX;
+        const visStartY = offsetY;
+        const visEndY = 1 - offsetY;
+
+        let normX = (landmark.x - visStartX) / (visEndX - visStartX);
+        let normY = (landmark.y - visStartY) / (visEndY - visStartY);
+        normX = Math.max(0, Math.min(1, normX));
+        normY = Math.max(0, Math.min(1, normY));
+
+        return { sx: normX * sw, sy: normY * sh };
+    }
+
+    moveSpriteToFinger(finger: string): void {
+        const spriteId = (window as any).__activeSpriteId || (window as any).activeSpriteId;
+        if (!spriteId) return;
 
         const tipIdx = (HandPoseRuntime.FINGER_TIPS as Record<string, number>)[finger];
         if (tipIdx !== undefined && this._landmarks.length > 0) {
             const hand = this._landmarks[0];
             const landmark = hand[tipIdx];
             if (landmark) {
-                // Convert normalized coordinates to stage coordinates
-                const x = (landmark.x - 0.5) * 480;
-                const y = (0.5 - landmark.y) * 360;
-                sprite.setXY(x, y);
+                const { sx, sy } = this.getStageCoords(landmark);
+
+                // Embed path: spriteManager (RuntimeBridge) with Sprite objects
+                // Embed uses center-origin: (0,0) at center
+                if ((window as any).spriteManager) {
+                    const sprite = (window as any).spriteManager.getSprite(spriteId);
+                    if (sprite) {
+                        sprite.setX(sx - 240);
+                        sprite.setY(180 - sy);
+                        return;
+                    }
+                }
+
+                // Ignite path: React state via updateSprite
+                // Ignite uses top-left origin: (0,0) at top-left
+                // Video has CSS scaleX(-1) mirror — flip x so sprite follows mirrored view
+                if ((window as any).updateSprite) {
+                    const stageEl = document.querySelector('.stage') as HTMLElement | null;
+                    const sw = stageEl ? stageEl.offsetWidth : 480;
+                    const SPRITE_HALF = 40;
+                    const x = Math.round(sw - sx - SPRITE_HALF);
+                    const y = Math.round(sy - SPRITE_HALF);
+                    (window as any).updateSprite(spriteId, { x, y });
+                }
             }
         }
     }
@@ -202,7 +304,10 @@ export class HandPoseRuntime {
         const tipIdx = (HandPoseRuntime.FINGER_TIPS as Record<string, number>)[finger];
         if (tipIdx !== undefined && this._landmarks.length > 0) {
             const landmark = this._landmarks[0][tipIdx];
-            return landmark ? (landmark.x - 0.5) * 480 : 0;
+            if (landmark) {
+                const { sx } = this.getStageCoords(landmark);
+                return Math.round(sx - 240);
+            }
         }
         return 0;
     }
@@ -211,7 +316,10 @@ export class HandPoseRuntime {
         const tipIdx = (HandPoseRuntime.FINGER_TIPS as Record<string, number>)[finger];
         if (tipIdx !== undefined && this._landmarks.length > 0) {
             const landmark = this._landmarks[0][tipIdx];
-            return landmark ? (0.5 - landmark.y) * 360 : 0;
+            if (landmark) {
+                const { sy } = this.getStageCoords(landmark);
+                return Math.round(180 - sy);
+            }
         }
         return 0;
     }

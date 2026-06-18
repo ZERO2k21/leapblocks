@@ -586,7 +586,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 return `${needsCamera ? 'if(window.__setCameraOn) window.__setCameraOn(true);\n' : ''}if(window.runtime?.handPose) window.runtime.handPose.analyse('${action}');\n`;
             };
             jsGen.forBlock['hp_move_with'] = (b: any) => `if(window.runtime?.handPose) window.runtime.handPose.moveSpriteToFinger('${b.getFieldValue("FINGER")}');\n`;
-            jsGen.forBlock['hp_guess_sign'] = () => `if(window.runtime?.handPose){const s=window.__activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Sign: "+window.runtime.handPose.getSign());}\n`;
+            jsGen.forBlock['hp_guess_sign'] = () => `if(window.runtime?.handPose){const s=window.__activeSpriteId||window.activeSpriteId;if(s&&window.spriteManager)window.spriteManager.getSprite(s)?.say("Sign: "+window.runtime.handPose.getSign());}\n`;
             jsGen.forBlock['hp_when_sign'] = () => '// On Hand Sign\n';
             jsGen.forBlock['hp_finger_x'] = (b: any) => [`window.runtime?.handPose?.getLandmarkX('${b.getFieldValue("FINGER")}')||0`, 0];
             jsGen.forBlock['hp_finger_y'] = (b: any) => [`window.runtime?.handPose?.getLandmarkY('${b.getFieldValue("FINGER")}')||0`, 0];
