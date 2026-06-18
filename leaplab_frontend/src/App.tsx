@@ -320,6 +320,14 @@ export default function App() {
     };
 
     const confirmExit = () => {
+        // Clear shared-link URL parameters and cloud state when returning home
+        if (window.location.search) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        useCloudProjectStore.getState().clearPendingProject();
+        useCloudProjectStore.getState().clearSharedProjectInfo();
+        setResolvedProjectUrl(null);
+        setProjectUrlReady(true);
         handleSetMode('home');
         setExitPrompt(false);
     };
