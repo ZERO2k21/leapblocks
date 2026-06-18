@@ -117,6 +117,39 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             transform: translateY(0);
           }
         }
+        /* Mobile Drawer Specific UI/UX Overrides */
+        .mobile-drawer-footer .creova-right-gap {
+          flex-direction: column !important;
+          width: 100% !important;
+          gap: 14px !important;
+          align-items: stretch !important;
+        }
+        .mobile-drawer-footer .creova-right-gap nav {
+          width: 100% !important;
+          display: flex !important;
+          box-sizing: border-box !important;
+        }
+        .mobile-drawer-footer .creova-right-gap nav button {
+          flex: 1 !important;
+          justify-content: center !important;
+          padding: 8px 12px !important;
+          height: 38px !important;
+        }
+        .mobile-drawer-footer .creova-right-gap .creova-tab-label {
+          display: inline-block !important;
+        }
+        .mobile-drawer-footer .creova-right-gap .creova-build-text {
+          display: inline-block !important;
+        }
+        .mobile-drawer-footer .creova-right-gap .creova-divider {
+          display: none !important;
+        }
+        .mobile-drawer-footer .creova-right-gap button.creova-build-btn {
+          width: 100% !important;
+          justify-content: center !important;
+          padding: 10px 20px !important;
+          height: 40px !important;
+        }
       `}</style>
 
       <div className={`flex items-center justify-between h-12 px-[18px] z-[100] select-none min-w-0 border-b ${
@@ -148,7 +181,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               src="assets/leaplab_logo_transparent.png"
               className="h-9 object-contain"
             />
-            <div className="hidden sm:flex flex-col justify-center ml-2.5 leading-none">
+            <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none">
               <span className={`text-[7px] font-black uppercase tracking-[0.18em] font-sans ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]'}`}>
                 LEAPLAB
               </span>
@@ -159,119 +192,217 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           </div>
 
           {/* Desktop dropdown menus */}
-          <div className="hidden lg:flex items-center gap-0.5 h-full">
+          <div className="hidden xl:flex items-center gap-3 h-full">
             {/* File Menu */}
-            <div ref={fileMenuRef} className="relative h-full flex items-center">
+            <div ref={fileMenuRef} className="relative">
               <button
                 onClick={() => {
                   setFileMenuOpen(!fileMenuOpen);
                   setEditMenuOpen(false);
                   setBoardMenuOpen(false);
                 }}
-                className={`flex items-center gap-1.25 px-2.5 py-1 text-xs font-semibold font-sans cursor-pointer rounded-full transition-colors duration-200 tracking-wide ${
+                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${
                   isElectra ? 'text-[#f4f4f5]' : 'text-white'
-                } ${fileMenuOpen ? (isElectra ? 'bg-[#22d3ee]/8' : 'bg-white/15') : 'bg-transparent'} hover:bg-white/8`}
+                } ${fileMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
               >
                 File
-                <ChevronDown size={12} strokeWidth={2.5} className="opacity-50" />
+                <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${fileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {fileMenuOpen && (
-                <div className={`absolute top-full left-0 mt-0 rounded-xl min-w-[220px] p-1.5 z-[1000] animate-[slideDown_0.15s_ease-out] border ${
-                  isElectra
-                    ? 'bg-[#18181b] border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(39,39,42,1)]'
-                    : 'bg-white border-[rgba(148,163,184,0.2)] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)]'
-                }`}>
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    borderRadius: '8px',
+                    minWidth: '240px',
+                    padding: '4px 0',
+                    zIndex: 1000,
+                    overflow: 'hidden'
+                  }}
+                  className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+                    isElectra
+                      ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+                      : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+                  }`}
+                >
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onNew?.();
                       setFileMenuOpen(false);
                     }}
                   >
-                    <FilePlus size={16} strokeWidth={2} />
-                    <span>New Project</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+N</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <FilePlus size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>New Project</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+N</span>
                   </button>
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onOpen?.();
                       setFileMenuOpen(false);
                     }}
                   >
-                    <FolderOpen size={16} strokeWidth={2} />
-                    <span>Open Project</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+O</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <FolderOpen size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Open Project</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+O</span>
                   </button>
 
-                  <div className={`h-px my-1.5 ${isElectra ? 'bg-[#27272a]/60' : 'bg-[rgba(148,163,184,0.2)]'}`} />
+                  <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onSave();
                       setFileMenuOpen(false);
                     }}
                   >
-                    <Save size={16} strokeWidth={2} />
-                    <span>Save</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+S</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Save size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Save</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+S</span>
                   </button>
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onSaveAs?.();
                       setFileMenuOpen(false);
                     }}
                   >
-                    <FileText size={16} strokeWidth={2} />
-                    <span>Save As...</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+Shift+S</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <FileText size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Save As...</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Shift+S</span>
                   </button>
                 </div>
               )}
             </div>
 
             {/* Edit Menu */}
-            <div ref={editMenuRef} className="relative h-full flex items-center">
+            <div ref={editMenuRef} className="relative">
               <button
                 onClick={() => {
                   setEditMenuOpen(!editMenuOpen);
                   setFileMenuOpen(false);
                   setBoardMenuOpen(false);
                 }}
-                className={`flex items-center gap-1.25 px-2.5 py-1 text-xs font-semibold font-sans cursor-pointer rounded-full transition-colors duration-200 tracking-wide ${
+                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${
                   isElectra ? 'text-[#f4f4f5]' : 'text-white'
-                } ${editMenuOpen ? (isElectra ? 'bg-[#22d3ee]/8' : 'bg-white/15') : 'bg-transparent'} hover:bg-white/8`}
+                } ${editMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
               >
                 Edit
-                <ChevronDown size={12} strokeWidth={2.5} className="opacity-50" />
+                <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${editMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {editMenuOpen && (
-                <div className={`absolute top-full left-0 mt-0 rounded-xl min-w-[220px] p-1.5 z-[1000] animate-[slideDown_0.15s_ease-out] border ${
-                  isElectra
-                    ? 'bg-[#18181b] border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(39,39,42,1)]'
-                    : 'bg-white border-[rgba(148,163,184,0.2)] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)]'
-                }`}>
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    borderRadius: '8px',
+                    minWidth: '240px',
+                    padding: '4px 0',
+                    zIndex: 1000,
+                    overflow: 'hidden'
+                  }}
+                  className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+                    isElectra
+                      ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+                      : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+                  }`}
+                >
                   <button
                     disabled={!canUndo}
-                    className={`flex items-center gap-3 px-4 py-2.5 border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      !canUndo
-                        ? `opacity-40 cursor-not-allowed ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#1e293b]/40'}`
-                        : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8 cursor-pointer' : 'text-[#1e293b] hover:bg-[#3b82f6]/8 cursor-pointer'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: !canUndo ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={!canUndo
+                      ? `opacity-40 ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#374151]/40'}`
+                      : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'
+                    }
                     onClick={() => {
                       if (canUndo) {
                         onUndo?.();
@@ -279,18 +410,34 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       }
                     }}
                   >
-                    <Undo size={16} strokeWidth={2} />
-                    <span>Undo</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+Z</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Undo size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Undo</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Z</span>
                   </button>
 
                   <button
                     disabled={!canRedo}
-                    className={`flex items-center gap-3 px-4 py-2.5 border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      !canRedo
-                        ? `opacity-40 cursor-not-allowed ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#1e293b]/40'}`
-                        : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8 cursor-pointer' : 'text-[#1e293b] hover:bg-[#3b82f6]/8 cursor-pointer'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: !canRedo ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={!canRedo
+                      ? `opacity-40 ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#374151]/40'}`
+                      : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'
+                    }
                     onClick={() => {
                       if (canRedo) {
                         onRedo?.();
@@ -298,53 +445,100 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       }
                     }}
                   >
-                    <Redo size={16} strokeWidth={2} />
-                    <span>Redo</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+Y</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Redo size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Redo</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Y</span>
                   </button>
 
-                  <div className={`h-px my-1.5 ${isElectra ? 'bg-[#27272a]/60' : 'bg-[rgba(148,163,184,0.2)]'}`} />
+                  <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onCut?.();
                       setEditMenuOpen(false);
                     }}
                   >
-                    <Scissors size={16} strokeWidth={2} />
-                    <span>Cut</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+X</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Scissors size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Cut</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+X</span>
                   </button>
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onCopy?.();
                       setEditMenuOpen(false);
                     }}
                   >
-                    <Copy size={16} strokeWidth={2} />
-                    <span>Copy</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+C</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Copy size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Copy</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+C</span>
                   </button>
 
                   <button
-                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                      isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#1e293b] hover:bg-[#3b82f6]/8'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
                     onClick={() => {
                       onPaste?.();
                       setEditMenuOpen(false);
                     }}
                   >
-                    <Clipboard size={16} strokeWidth={2} />
-                    <span>Paste</span>
-                    <span className="ml-auto text-[11px] opacity-50">Ctrl+V</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Clipboard size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>Paste</span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+V</span>
                   </button>
                 </div>
               )}
@@ -352,33 +546,59 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
             {/* Board Switcher */}
             {onSwitchBoard && currentBoard && (
-              <div ref={boardMenuRef} className="relative h-full flex items-center">
+              <div ref={boardMenuRef} className="relative">
                 <button
                   onClick={() => {
                     setBoardMenuOpen(!boardMenuOpen);
                     setFileMenuOpen(false);
                     setEditMenuOpen(false);
                   }}
-                  className={`flex items-center gap-1.25 px-2.5 py-1 text-xs font-semibold font-sans cursor-pointer rounded-full transition-colors duration-200 tracking-wide ${
+                  className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${
                     isElectra ? 'text-[#f4f4f5]' : 'text-white'
-                  } ${boardMenuOpen ? (isElectra ? 'bg-[#22d3ee]/8' : 'bg-white/15') : 'bg-transparent'} hover:bg-white/8`}
+                  } ${boardMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
                 >
                   <span>{currentBoard === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}</span>
-                  <ChevronDown size={12} strokeWidth={2.5} className="opacity-50" />
+                  <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${boardMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {boardMenuOpen && (
-                  <div className={`absolute top-full left-0 mt-0 rounded-xl min-w-[220px] p-1.5 z-[1000] animate-[slideDown_0.15s_ease-out] border ${
-                    isElectra
-                      ? 'bg-[#18181b] border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(39,39,42,1)]'
-                      : 'bg-white border-[rgba(148,163,184,0.2)] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)]'
-                  }`}>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      left: 0,
+                      borderRadius: '8px',
+                      minWidth: '240px',
+                      padding: '4px 0',
+                      zIndex: 1000,
+                      overflow: 'hidden'
+                    }}
+                    className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+                      isElectra
+                        ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+                        : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+                    }`}
+                  >
                     <button
-                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                        currentBoard === 'arduino-uno'
-                          ? isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold'
-                          : isElectra ? 'text-[#f4f4f5]' : 'text-[#1e293b]'
-                      } ${isElectra ? 'hover:bg-[#22d3ee]/8' : 'hover:bg-[#3b82f6]/8'}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '7px 14px',
+                        border: 'none',
+                        background: 'transparent',
+                        fontSize: '12px',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        fontWeight: 500,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.12s ease'
+                      }}
+                      className={currentBoard === 'arduino-uno'
+                        ? (isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold')
+                        : (isElectra ? 'text-[#f4f4f5]' : 'text-[#374151]')
+                      }
                       onClick={() => {
                         if (currentBoard !== 'arduino-uno') {
                           onSwitchBoard('arduino-uno');
@@ -386,21 +606,35 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                         setBoardMenuOpen(false);
                       }}
                     >
-                      <span className={`w-2 h-2 rounded-full ${
-                        currentBoard === 'arduino-uno' ? 'bg-[#22d3ee]' : 'bg-zinc-600'
-                      }`} />
-                      <span>Arduino Uno</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className={`w-2 h-2 rounded-full ${currentBoard === 'arduino-uno' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+                        <span>Arduino Uno</span>
+                      </div>
                       {currentBoard === 'arduino-uno' && (
-                        <Check size={14} strokeWidth={2.5} className="ml-auto opacity-80" />
+                        <Check size={14} strokeWidth={2.5} className={isElectra ? 'text-[#22d3ee]' : 'text-[#7C3AED]'} />
                       )}
                     </button>
 
                     <button
-                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all bg-transparent border-0 w-full text-left text-[13px] font-medium rounded-lg font-sans ${
-                        currentBoard === 'esp32-c3'
-                          ? isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold'
-                          : isElectra ? 'text-[#f4f4f5]' : 'text-[#1e293b]'
-                      } ${isElectra ? 'hover:bg-[#22d3ee]/8' : 'hover:bg-[#3b82f6]/8'}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '7px 14px',
+                        border: 'none',
+                        background: 'transparent',
+                        fontSize: '12px',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        fontWeight: 500,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.12s ease'
+                      }}
+                      className={currentBoard === 'esp32-c3'
+                        ? (isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold')
+                        : (isElectra ? 'text-[#f4f4f5]' : 'text-[#374151]')
+                      }
                       onClick={() => {
                         if (currentBoard !== 'esp32-c3') {
                           onSwitchBoard('esp32-c3');
@@ -408,12 +642,12 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                         setBoardMenuOpen(false);
                       }}
                     >
-                      <span className={`w-2 h-2 rounded-full ${
-                        currentBoard === 'esp32-c3' ? 'bg-[#22d3ee]' : 'bg-zinc-600'
-                      }`} />
-                      <span>ESP32-C3</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className={`w-2 h-2 rounded-full ${currentBoard === 'esp32-c3' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+                        <span>ESP32-C3</span>
+                      </div>
                       {currentBoard === 'esp32-c3' && (
-                        <Check size={14} strokeWidth={2.5} className="ml-auto opacity-80" />
+                        <Check size={14} strokeWidth={2.5} className={isElectra ? 'text-[#22d3ee]' : 'text-[#7C3AED]'} />
                       )}
                     </button>
                   </div>
@@ -421,9 +655,9 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               </div>
             )}
 
-            <button className={`flex items-center gap-1.25 px-2.5 py-1 text-xs font-semibold font-sans cursor-pointer rounded-full transition-colors duration-200 tracking-wide bg-transparent border-0 ${
+            <button className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide bg-transparent border-0 ${
               isElectra ? 'text-[#f4f4f5]' : 'text-white'
-            } hover:bg-white/8`}>
+            } ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}>
               <BookOpen size={14} strokeWidth={2.2} className={isElectra ? 'opacity-70' : 'opacity-90'} />
               Tutorials
               <ChevronDown size={12} strokeWidth={2.5} className="opacity-50" />
@@ -435,10 +669,12 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         <div className="flex items-center justify-center gap-4 px-4 flex-0-auto min-w-0 overflow-visible">
           <div className="hidden md:flex items-center gap-4">{centerContent}</div>
 
-          <div className={`flex items-center h-8 rounded-full pl-3 pr-[3px] border gap-1.5 transition-all duration-200 ${
+          <div 
+            style={{ paddingLeft: '24px' }}
+            className={`flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 ${
             isElectra ? 'bg-[#27272a]/50 border-[#27272a]' : 'bg-[#08143a]/55 border-[#93c5fd]/20'
           }`}>
-            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden md:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
+            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden xl:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
               Folder
             </span>
             <input
@@ -467,7 +703,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         {/* Right section */}
         <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
           {/* Quick actions - Desktop only */}
-          <div className={`hidden lg:flex items-center gap-2 pr-2 border-r h-5 shrink-0 ${
+          <div className={`hidden xl:flex items-center gap-2 pr-2 border-r h-5 shrink-0 ${
             isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
           }`}>
             <button title="Feedback" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
@@ -476,13 +712,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             <button title="Help" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><CircleHelp size={16} strokeWidth={2.2} /></button>
           </div>
 
-          <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0">
-            {rightContent}
+          {rightContent && (
+            <div className="flex items-center shrink-0">
+              {rightContent}
+            </div>
+          )}
+          <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
             <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box' }} />
           </div>
 
           {/* Creoleap brand logo (large desktop only) */}
-          <div className={`hidden min-[1400px]:flex ml-2 items-center shrink-0 h-11 overflow-hidden ${
+          <div className={`hidden min-[1500px]:flex ml-2 items-center shrink-0 h-11 overflow-hidden ${
             isElectra ? '' : 'filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]'
           }`}>
             <img
@@ -498,7 +738,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
-            className={`lg:hidden flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
+            className={`xl:hidden flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
                 : 'bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24'
@@ -527,196 +767,202 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         } ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
       >
         {/* Drawer Header */}
-        <div className="flex items-center justify-between border-b pb-4 border-zinc-800">
-          <div className="flex items-center gap-2">
-            <img src="/assets/leaplabicon.ico" alt="LeapLab" className="w-6 h-6 rounded" />
-            <span className="font-sans font-black text-sm tracking-wide">Menu</span>
+        <div className={`flex items-center justify-between border-b pb-4 ${
+          isElectra ? 'border-zinc-800' : 'border-white/10'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <img src="/assets/leaplabicon.ico" alt="LeapLab" className="w-6 h-6 rounded object-contain" />
+            <span className="font-sans font-bold text-[18px] tracking-wide">Menu</span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className={`w-7 h-7 flex items-center justify-center rounded-full border transition-colors ${
+            className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
                 : 'bg-[#94c5ff]/10 border-[#94c5ff]/20 text-white hover:bg-white/10'
             }`}
           >
-            <X size={16} strokeWidth={2.2} />
+            <X size={18} strokeWidth={2.2} />
           </button>
         </div>
 
         {/* Drawer Body (Scrollable container) */}
-        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-6">
           {/* File Operations */}
-          <div className="flex flex-col gap-1.5">
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]/70'}`}>
+          <div className="flex flex-col gap-0.5">
+            <span className={`text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 ${isElectra ? 'text-[#a1a1aa] opacity-60' : 'text-[#93c5fd]/80'}`}>
               File
             </span>
             <button
               onClick={() => { onNew?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <FilePlus size={15} />
+              <FilePlus size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>New Project</span>
             </button>
             <button
               onClick={() => { onOpen?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <FolderOpen size={15} />
+              <FolderOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Open Project</span>
             </button>
             <button
               onClick={() => { onSave(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <Save size={15} />
+              <Save size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Save</span>
             </button>
             <button
               onClick={() => { onSaveAs?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <FileText size={15} />
+              <FileText size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Save As...</span>
             </button>
           </div>
 
           {/* Edit Operations */}
-          <div className="flex flex-col gap-1.5">
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]/70'}`}>
+          <div className="flex flex-col gap-0.5">
+            <span className={`text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 ${isElectra ? 'text-[#a1a1aa] opacity-60' : 'text-[#93c5fd]/80'}`}>
               Edit
             </span>
             <button
               disabled={!canUndo}
               onClick={() => { if (canUndo) { onUndo?.(); setMobileMenuOpen(false); } }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 ${
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${
                 !canUndo
-                  ? 'opacity-40 cursor-not-allowed text-inherit'
-                  : isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] cursor-pointer' : 'hover:bg-white/8 text-white cursor-pointer'
+                  ? 'opacity-35 cursor-not-allowed text-inherit'
+                  : isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee] cursor-pointer' : 'hover:bg-white/8 text-white/90 hover:text-white cursor-pointer'
               }`}
             >
-              <Undo size={15} />
+              <Undo size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Undo</span>
             </button>
             <button
               disabled={!canRedo}
               onClick={() => { if (canRedo) { onRedo?.(); setMobileMenuOpen(false); } }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 ${
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${
                 !canRedo
-                  ? 'opacity-40 cursor-not-allowed text-inherit'
-                  : isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] cursor-pointer' : 'hover:bg-white/8 text-white cursor-pointer'
+                  ? 'opacity-35 cursor-not-allowed text-inherit'
+                  : isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee] cursor-pointer' : 'hover:bg-white/8 text-white/90 hover:text-white cursor-pointer'
               }`}
             >
-              <Redo size={15} />
+              <Redo size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Redo</span>
             </button>
             <button
               onClick={() => { onCut?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <Scissors size={15} />
+              <Scissors size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Cut</span>
             </button>
             <button
               onClick={() => { onCopy?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <Copy size={15} />
+              <Copy size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Copy</span>
             </button>
             <button
               onClick={() => { onPaste?.(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <Clipboard size={15} />
+              <Clipboard size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Paste</span>
             </button>
           </div>
 
           {/* Board Selector */}
           {onSwitchBoard && currentBoard && (
-            <div className="flex flex-col gap-1.5">
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]/70'}`}>
+            <div className="flex flex-col gap-0.5">
+              <span className={`text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 ${isElectra ? 'text-[#a1a1aa] opacity-60' : 'text-[#93c5fd]/80'}`}>
                 Switch Board
               </span>
               <button
                 onClick={() => { if (currentBoard !== 'arduino-uno') onSwitchBoard('arduino-uno'); setMobileMenuOpen(false); }}
-                className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors border-0 cursor-pointer ${
+                className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors border-0 cursor-pointer ${
                   currentBoard === 'arduino-uno'
                     ? isElectra ? 'text-[#22d3ee] bg-[#22d3ee]/8' : 'text-[#93c5fd] bg-white/8'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/4'
+                    : isElectra ? 'text-zinc-400 hover:text-white hover:bg-white/4' : 'text-slate-300 hover:text-white hover:bg-white/8'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${currentBoard === 'arduino-uno' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${currentBoard === 'arduino-uno' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
                 <span>Arduino Uno</span>
               </button>
               <button
                 onClick={() => { if (currentBoard !== 'esp32-c3') onSwitchBoard('esp32-c3'); setMobileMenuOpen(false); }}
-                className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors border-0 cursor-pointer ${
+                className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors border-0 cursor-pointer ${
                   currentBoard === 'esp32-c3'
                     ? isElectra ? 'text-[#22d3ee] bg-[#22d3ee]/8' : 'text-[#93c5fd] bg-white/8'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/4'
+                    : isElectra ? 'text-zinc-400 hover:text-white hover:bg-white/4' : 'text-slate-300 hover:text-white hover:bg-white/8'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${currentBoard === 'esp32-c3' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${currentBoard === 'esp32-c3' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
                 <span>ESP32-C3</span>
               </button>
             </div>
           )}
 
           {/* Additional controls */}
-          <div className="flex flex-col gap-1.5 border-t border-zinc-800 pt-4">
-            <button className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+          <div className={`flex flex-col gap-0.5 border-t pt-4 ${
+            isElectra ? 'border-zinc-805' : 'border-white/10'
+          }`}>
+            <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>
-              <BookOpen size={15} />
+              <BookOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Tutorials</span>
             </button>
-            <button className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+            <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>
-              <MessageSquareWarning size={15} />
+              <MessageSquareWarning size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Feedback</span>
             </button>
-            <button className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+            <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>
-              <Trophy size={15} />
+              <Trophy size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Achievements</span>
             </button>
-            <button className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+            <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>
-              <Settings size={15} />
+              <Settings size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Settings</span>
             </button>
-            <button className={`flex items-center gap-3 w-full py-2 px-3 text-xs font-semibold rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
-              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5]' : 'hover:bg-white/8 text-white'
+            <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>
-              <CircleHelp size={15} />
+              <CircleHelp size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Help</span>
             </button>
           </div>
         </div>
 
         {/* Drawer Footer */}
-        <div className="border-t border-zinc-800 pt-4 flex flex-col gap-2">
+        <div className={`border-t pt-5 flex flex-col gap-4.5 mobile-drawer-footer ${
+          isElectra ? 'border-zinc-800' : 'border-white/10'
+        }`}>
           {rightContent}
-          <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box', width: '100%' }} />
+          <LeapLabAuthButton variant="dark" size="sm" style={{ height: '40px', borderRadius: '8px', boxSizing: 'border-box', width: '100%', fontSize: '16px', fontWeight: 600 }} />
         </div>
       </div>
     </>

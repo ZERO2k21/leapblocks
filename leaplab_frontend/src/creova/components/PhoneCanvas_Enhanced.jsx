@@ -96,8 +96,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
         };
         const activePreset = defaults[dvType || 'phone'];
         if (activePreset) {
-            const isDefault = (width === activePreset.width && height === activePreset.height) || 
-                              (width === activePreset.height && height === activePreset.width);
+            const isDefault = (width === activePreset.width && height === activePreset.height) ||
+                (width === activePreset.height && height === activePreset.width);
             if (!isDefault && width && height) {
                 const isLandscape = width > height;
                 const baseW = isLandscape ? height : width;
@@ -110,7 +110,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
     useEffect(() => {
         const screenOri = currentScreen?.screenOrientation;
         if (!screenOri) return;
-        
+
         const lowerOri = screenOri.toLowerCase();
         if (lowerOri.includes('portrait')) {
             setOrientation('portrait');
@@ -165,7 +165,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
         e.preventDefault();
         e.stopPropagation();
 
-        const activeDraggedId = e.dataTransfer.types.includes('draggedcomponentid') 
+        const activeDraggedId = e.dataTransfer.types.includes('draggedcomponentid')
             ? (e.dataTransfer.getData('draggedComponentId') || draggedComponentId)
             : draggedComponentId;
 
@@ -181,7 +181,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         const rect = e.currentTarget.getBoundingClientRect();
         const isArrangement = ['HorizontalArrangement', 'HorizontalScrollArrangement', 'VerticalArrangement', 'VerticalScrollArrangement', 'TableArrangement', 'AbsoluteArrangement', 'Map'].includes(targetNode.type);
-        
+
         const relativeY = e.clientY - rect.top;
 
         let position = 'after';
@@ -235,10 +235,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         const rect = e.currentTarget.getBoundingClientRect();
         const isArrangement = ['HorizontalArrangement', 'HorizontalScrollArrangement', 'VerticalArrangement', 'VerticalScrollArrangement', 'TableArrangement', 'AbsoluteArrangement', 'Map'].includes(targetNode.type);
-        
+
         const relativeY = e.clientY - rect.top;
         let position = 'after';
-        
+
         if (isArrangement) {
             const edgeThresholdY = Math.min(12, rect.height * 0.2);
             if (relativeY < edgeThresholdY) {
@@ -1071,8 +1071,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
             ? (dropTargetComponent.position === 'before'
                 ? { borderTop: '3px solid #3b82f6', borderTopLeftRadius: '0px', borderTopRightRadius: '0px' }
                 : dropTargetComponent.position === 'after'
-                ? { borderBottom: '3px solid #3b82f6', borderBottomLeftRadius: '0px', borderBottomRightRadius: '0px' }
-                : { outline: '2px solid #3b82f6', outlineOffset: '-2px' })
+                    ? { borderBottom: '3px solid #3b82f6', borderBottomLeftRadius: '0px', borderBottomRightRadius: '0px' }
+                    : { outline: '2px solid #3b82f6', outlineOffset: '-2px' })
             : {};
 
         const isDragged = draggedComponentId === comp.id;
@@ -1099,20 +1099,21 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const headerFooterHeight = deviceType === 'phone' ? phoneHeaderFooter : tabletHeaderFooter;
     const frameWidth = displayWidth;
     const frameHeight = displayHeight + headerFooterHeight;
-    // Cap maximum scale of phone at 0.72 and tablet/monitor at 0.85 to make it "medium size" with breathing room
-    const maxScale = deviceType === 'phone' ? 0.72 : 0.85;
+    // Cap maximum scale of phone and tablet/monitor at 0.95 to use screen space efficiently and reduce empty gap
+    const maxScale = 0.95;
     const scale = containerSize.width > 0 && containerSize.height > 0
-        ? Math.min(maxScale, Math.min((containerSize.width - 64) / frameWidth, (containerSize.height - 64) / frameHeight))
-        : 0.7; // default fallback scale
+        ? Math.min(maxScale, Math.min((containerSize.width - 32) / frameWidth, (containerSize.height - 32) / frameHeight))
+        : 0.8; // default fallback scale
+
 
     return (
         <div className="flex flex-col h-full w-full relative overflow-hidden" onClick={() => setSelectedId(currentScreen.id)}>
             {/* Professional Top Bar - Fixed at top of canvas pane */}
-            <div className="w-full bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between z-30 shadow-sm" style={{ height: '64px' }}>
+            <div className="w-full bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between gap-6 z-30 shadow-sm" style={{ height: '64px' }}>
                 <div className="flex items-center gap-6">
                     {/* Screen Selector - Tab Style */}
-                    <div className="flex items-center">
-                        <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider mr-4 select-none">Screens</span>
+                    <div className="flex items-center gap-4">
+                        <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider select-none">Screens</span>
                         <div style={{ height: '38px' }} className="flex bg-slate-200/50 p-1 rounded-xl gap-2 items-center">
                             {screens.map(screen => (
                                 <div key={screen.id} className="relative group/screen flex items-center">
@@ -1189,7 +1190,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             color: #2563eb;
                         }
                     `}</style>
-                    
+
                     {/* Device Selector */}
                     <div className="relative flex items-center">
                         <select
@@ -1282,11 +1283,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 setEditHeight(String(displayHeight));
                                 setIsEditingDimensions(true);
                             }}
-                            style={{ height: '34px', borderRadius: '10px' }}
-                            className="px-3.5 bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+                            style={{ height: '34px', borderRadius: '10px', paddingLeft: '12px', paddingRight: '12px' }}
+                            className="bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
                             title="Edit Canvas Dimensions"
                         >
-                            <span>{displayWidth} × {displayHeight} px</span>
+                            <span>&nbsp;{displayWidth} × {displayHeight} px&nbsp;</span>
                         </button>
                     )}
                 </div>
@@ -1295,7 +1296,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
             {/* Scrollable Workspace Content Area */}
             <div
                 ref={containerRef}
-                className="flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-8 p-6 min-h-0 relative bg-gradient-to-br from-slate-50 to-slate-100"
+                className="flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-4 p-4 min-h-0 relative bg-gradient-to-br from-slate-50 to-slate-100"
                 style={{
                     backgroundImage: `
                         radial-gradient(circle at center, rgba(255, 122, 0, 0.04) 0%, transparent 70%),

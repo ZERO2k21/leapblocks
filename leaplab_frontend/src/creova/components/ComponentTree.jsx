@@ -92,7 +92,7 @@ export default function ComponentTree({ appState }) {
                     {/* Expand/Collapse Arrow */}
                     {hasChildren && (
                         <button
-                            className="w-4 h-4 flex items-center justify-center mr-2 text-slate-500 hover:text-slate-900 text-[10px]"
+                            className="w-4 h-4 flex items-center justify-center mr-3 text-slate-500 hover:text-slate-900 text-[10px]"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpand(component.id);
@@ -101,10 +101,10 @@ export default function ComponentTree({ appState }) {
                             {isExpanded ? '▼' : '▶'}
                         </button>
                     )}
-                    {!hasChildren && <span className="w-4 mr-2"></span>}
+                    {!hasChildren && <span className="w-4 mr-3"></span>}
 
                     {/* Component Icon */}
-                    <ComponentIcon type={component.type} size={20} className="mr-2.5 shrink-0" />
+                    <ComponentIcon type={component.type} size={20} className="mr-4 shrink-0" />
 
                     {/* Component Name */}
                     {isRenaming ? (
@@ -125,7 +125,7 @@ export default function ComponentTree({ appState }) {
                             autoFocus
                         />
                     ) : (
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 pl-1.5">
                             <span className="text-[13.5px] block truncate">{component.id}</span>
                             <span className="text-[10px] text-slate-500 font-medium block truncate mt-0.5">
                                 {component.props?.Text || component.props?.Hint || component.type}
@@ -148,10 +148,10 @@ export default function ComponentTree({ appState }) {
         <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
             <div
-                style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
-                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
+                style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
+                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
             >
-                <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Components</span>
+                <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Components</span>
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
@@ -164,7 +164,7 @@ export default function ComponentTree({ appState }) {
                     onClick={() => selectComponent(currentScreen.id)}
                 >
                     <button
-                        className="w-5 h-5 flex items-center justify-center mr-1.5 text-slate-500 hover:text-slate-900 text-[10px]"
+                        className="w-5 h-5 flex items-center justify-center mr-3 text-slate-500 hover:text-slate-900 text-[10px]"
                         onClick={(e) => {
                             e.stopPropagation();
                             toggleExpand(currentScreen.id);
@@ -172,8 +172,8 @@ export default function ComponentTree({ appState }) {
                     >
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <ComponentIcon type="Screen" size={20} className="mr-2.5 shrink-0" />
-                    <span className="truncate">{currentScreen.id}</span>
+                    <ComponentIcon type="Screen" size={20} className="mr-4 shrink-0" />
+                    <span className="truncate pl-1.5">{currentScreen.id}</span>
                 </div>
 
                 {/* Visible Components */}

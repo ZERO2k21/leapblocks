@@ -606,10 +606,10 @@ export default function PropertiesPanel({ appState }) {
     <div className="w-[320px] bg-white border-l border-slate-100 flex flex-col h-full shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)] z-20">
       {/* Panel Header */}
       <div
-        style={{ paddingTop: '24px', paddingBottom: '16px', paddingLeft: '32px', paddingRight: '24px' }}
-        className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b-2 border-slate-200 flex items-center justify-between shrink-0 shadow-sm"
+        style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
+        className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
       >
-        <span className="text-[19px] font-black uppercase tracking-[0.15em] text-slate-900 [text-shadow:0_1px_2px_rgba(255,255,255,0.8)]">Properties</span>
+        <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Properties</span>
       </div>
       {/* Property Editor */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
