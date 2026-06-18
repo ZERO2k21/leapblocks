@@ -5,6 +5,7 @@
  */
 import Blockly from "@blockly-runtime";
 import { showToast } from "../components/Toast";
+import { setFaceVideoElement } from "../../../runtime/RuntimeBridge";
 
 const normalizeJuniorSpriteType = (rawType) => {
     const normalized = String(rawType || "").trim().toLowerCase();
@@ -573,19 +574,35 @@ export function useJuniorUIHandlers({
             if (cameraVideoRef.current) {
                 cameraVideoRef.current.srcObject = null;
             }
+            setFaceVideoElement(null);
             setIsCameraOn(false);
         } else {
             try {
+                // FIRST: render the <video> element by setting state
+                setIsCameraOn(true);
+                // Wait for React to commit the render so cameraVideoRef.current is available
+                await new Promise(r => setTimeout(r, 50));
+                // THEN: get stream and attach to the now-mounted video element
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 cameraStreamRef.current = stream;
                 if (cameraVideoRef.current) {
                     cameraVideoRef.current.srcObject = stream;
+                    setFaceVideoElement(cameraVideoRef.current);
                 }
-                setIsCameraOn(true);
             } catch (err) {
                 console.error('Camera error:', err);
+                setIsCameraOn(false);
                 showToast('Could not access camera. Please allow camera permissions.', 'error');
             }
+        }
+    };
+
+    // Expose setCameraOn for extension block generators (camera on/off)
+    window.setCameraOn = async (on) => {
+        if (on && !isCameraOn) {
+            await toggleCamera();
+        } else if (!on && isCameraOn) {
+            await toggleCamera();
         }
     };
 

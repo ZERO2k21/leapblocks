@@ -627,8 +627,10 @@ export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
         if (!mobileNetRef.current || !(window as any).tf) return null;
         return (window as any).tf.tidy(() => {
             const imgTensor = (window as any).tf.browser.fromPixels(canvas).toFloat().div(127.5).sub(1).expandDims(0);
-            const { values } = mobileNetRef.current.infer(imgTensor, true);
-            return values.squeeze();
+            const result = mobileNetRef.current.infer(imgTensor, true);
+            const embedding = result?.embedding ?? result;
+            if (!embedding) return null;
+            return embedding.squeeze();
         });
     }, []);
 
