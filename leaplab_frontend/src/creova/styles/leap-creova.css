@@ -178,3 +178,108 @@ rect[display="none"] {
   50% { transform: translateX(150%); }
   100% { transform: translateX(350%); }
 }
+
+/* Scoped Creova Designer Grid System */
+.creova-designer-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  overflow-y: auto !important;
+}
+
+/* Palette panel */
+.creova-grid-palette {
+  order: 1;
+  min-height: 400px;
+}
+/* Canvas panel */
+.creova-grid-canvas {
+  order: 2;
+  min-height: 500px;
+}
+/* Tree panel */
+.creova-grid-tree {
+  order: 3;
+  min-height: 450px;
+}
+/* Properties panel */
+.creova-grid-properties {
+  order: 4;
+  min-height: 450px;
+}
+
+@media (min-width: 900px) {
+  .creova-designer-grid {
+    display: grid !important;
+    grid-template-columns: 220px minmax(320px, 1fr) 260px !important;
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr) !important;
+    gap: 12px !important;
+    overflow: hidden !important;
+  }
+  .creova-grid-palette {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    min-height: 0 !important;
+  }
+  .creova-grid-canvas {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    min-height: 0 !important;
+  }
+  .creova-grid-tree {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    min-height: 0 !important;
+  }
+  .creova-grid-properties {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .creova-designer-grid {
+    grid-template-columns: 230px minmax(320px, 1fr) 250px 270px !important;
+    grid-template-rows: none !important;
+    gap: 12px !important;
+  }
+  .creova-grid-palette {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+  .creova-grid-canvas {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+  .creova-grid-tree {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+  .creova-grid-properties {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+  }
+}
+
+@media (min-width: 1440px) {
+  .creova-designer-grid {
+    grid-template-columns: 280px minmax(400px, 1fr) 300px 320px !important;
+    gap: 16px !important;
+  }
+}
+
+/* Media Manager Responsive Height */
+.creova-media-manager-container {
+  height: 260px !important;
+}
+@media (min-width: 1200px) {
+  .creova-media-manager-container {
+    height: 300px !important;
+  }
+}
+@media (min-width: 1440px) {
+  .creova-media-manager-container {
+    height: 380px !important;
+  }
+}

@@ -3287,21 +3287,128 @@ class CircuitEngine {
    * Called by LeapNode when it receives 'input' events from slide-switch.
    */
   public pushSlideSwitchState(nodeId: string, value: number) {
-    // Slide switch typically has 3 positions: 0, 1, 2
-    // Update the node data for UI visualization
-    const { updateNodeData } = useForgeStore.getState();
+    // Slide switch typically has 2 or 3 positions (we support both)
+    const { updateNodeData, edges, nodes } = useForgeStore.getState();
     updateNodeData(nodeId, {
       value: value,
       sensorValues: { position: value }
     });
 
-    // Push the digital state to the connected pin
-    // Position 0 = LOW, Position 1 = MIDDLE (could be HIGH or LOW depending on design), Position 2 = HIGH
-    // For simplicity, we'll treat it as: 0=LOW, 1=LOW, 2=HIGH (common slide switch behavior)
-    const isHigh = value === 2;
-    this.pushInputSignal(nodeId, 'OUT', isHigh);
+    const boardTypes = ['arduino-uno', 'esp32-c3', 'esp32', 'arduino-nano', 'arduino-mega', 'attiny85'];
 
-    console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value} (${isHigh ? 'HIGH' : 'LOW'})`);
+    // Helper to trace if a slide switch pin is connected to VCC or GND
+    const getPinVoltageSource = (pinName: string): 'VCC' | 'GND' | null => {
+      const connectedEdges = edges.filter(e => 
+        (e.source === nodeId && e.sourceHandle?.replace(/__target$/, '') === pinName) ||
+        (e.target === nodeId && e.targetHandle?.replace(/__target$/, '') === pinName)
+      );
+
+      for (const edge of connectedEdges) {
+        const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
+        const otherPinName = (edge.source === nodeId ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '') || '';
+        const otherNode = nodes.find(n => n.id === otherNodeId);
+        
+        if (otherNode) {
+          const isBoard = boardTypes.includes(otherNode.data?.type);
+          if (isBoard) {
+            if (['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(otherPinName)) {
+              return 'VCC';
+            }
+            if (['GND', 'GND.1', 'GND.2', 'GND.3', 'GROUND'].includes(otherPinName)) {
+              return 'GND';
+            }
+          } else {
+            // Trace this pin to see if it reaches board GND or VCC
+            const targets = this.traceNet(nodeId, pinName);
+            for (const t of targets) {
+              const tNode = nodes.find(n => n.id === t.nodeId);
+              if (tNode && boardTypes.includes(tNode.data?.type)) {
+                if (['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(t.pinName)) {
+                  return 'VCC';
+                }
+                if (['GND', 'GND.1', 'GND.2', 'GND.3', 'GROUND'].includes(t.pinName)) {
+                  return 'GND';
+                }
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    const hasConnection = (pinName: string): boolean => {
+      return edges.some(e => 
+        (e.source === nodeId && e.sourceHandle?.replace(/__target$/, '') === pinName) ||
+        (e.target === nodeId && e.targetHandle?.replace(/__target$/, '') === pinName)
+      );
+    };
+
+    // Traced voltage sources
+    const source1 = getPinVoltageSource('1'); // Common
+    const source2 = getPinVoltageSource('2'); // NO
+    const source3 = getPinVoltageSource('3'); // NC
+
+    // Switch position state:
+    // If value is 1 (for 2-position) or 2 (for 3-position), it is ON (connecting Common & NO).
+    // If value is 0, it is OFF (connecting Common & NC).
+    const isOn = value > 0;
+
+    // Calculate signal for each pin if connected
+    if (hasConnection('1')) {
+      let signal1 = false;
+      if (isOn) {
+        if (source2 === 'VCC') signal1 = true;
+        else if (source2 === 'GND') signal1 = false;
+        else {
+          // Default to opposite of NC's source if NC is connected to a source
+          if (source3 === 'VCC') signal1 = false;
+          else if (source3 === 'GND') signal1 = true;
+          else signal1 = false;
+        }
+      } else {
+        if (source3 === 'VCC') signal1 = true;
+        else if (source3 === 'GND') signal1 = false;
+        else {
+          // Default to opposite of NO's source if NO is connected to a source
+          if (source2 === 'VCC') signal1 = false;
+          else if (source2 === 'GND') signal1 = true;
+          else signal1 = true; // Default OFF is HIGH (assuming pull-up)
+        }
+      }
+      this.pushInputSignal(nodeId, '1', signal1);
+    }
+
+    if (hasConnection('2')) {
+      let signal2 = false;
+      if (isOn) {
+        if (source1 === 'VCC') signal2 = true;
+        else if (source1 === 'GND') signal2 = false;
+        else if (source3 === 'GND') signal2 = true;
+        else signal2 = true;
+      } else {
+        if (source1 === 'VCC') signal2 = false;
+        else if (source1 === 'GND') signal2 = true;
+        else signal2 = false;
+      }
+      this.pushInputSignal(nodeId, '2', signal2);
+    }
+
+    if (hasConnection('3')) {
+      let signal3 = false;
+      if (!isOn) {
+        if (source1 === 'VCC') signal3 = true;
+        else if (source1 === 'GND') signal3 = false;
+        else signal3 = true;
+      } else {
+        if (source1 === 'VCC') signal3 = false;
+        else if (source1 === 'GND') signal3 = true;
+        else signal3 = false;
+      }
+      this.pushInputSignal(nodeId, '3', signal3);
+    }
+
+    console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value}, isOn: ${isOn}`);
   }
 
   /**

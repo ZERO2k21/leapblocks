@@ -1,0 +1,11 @@
+{
+  "name": "leapblocks-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root proxy for Vercel builds. The actual frontend lives in leaplab_frontend/.",
+  "scripts": {
+    "postinstall": "cd leaplab_frontend && npm install",
+    "build": "cd leaplab_frontend && npm run build",
+    "build:web": "cd leaplab_frontend && npm run build:web"
+  }
+}

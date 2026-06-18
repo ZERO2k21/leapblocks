@@ -1,0 +1,101 @@
+- generic [ref=e1]:
+  - generic [ref=e14]:
+    - generic:
+      - img
+    - navigation [ref=e18]:
+      - generic [ref=e19]:
+        - link "LeapLab Logo" [ref=e20] [cursor=pointer]:
+          - /url: "#"
+          - img "LeapLab Logo" [ref=e21]
+        - generic [ref=e22]:
+          - link "Tutorials" [ref=e23] [cursor=pointer]:
+            - /url: "#"
+          - link "Explore" [ref=e24] [cursor=pointer]:
+            - /url: "#"
+      - generic [ref=e25]:
+        - button "LeapLab Sign In" [ref=e26]:
+          - img "LeapLab" [ref=e27]
+          - text: Sign In
+        - img "Leapblocks Top Logo" [ref=e28]
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Curiosity · Creativity · Critical Thinking
+          - heading "Learn to code the bold way" [level=1] [ref=e36]:
+            - text: Learn to code
+            - text: the bold way
+          - paragraph [ref=e37]: Eight unique tracks from junior picture-blocks all the way to AI, robotics, and machine vision. Pick your adventure.
+          - generic [ref=e38]:
+            - button "Choose your adventure" [ref=e39] [cursor=pointer]
+            - button "Watch 2-min demo" [ref=e40] [cursor=pointer]
+        - img [ref=e43]
+      - generic [ref=e569]:
+        - generic [ref=e570] [cursor=pointer]:
+          - img "Ignite Robot" [ref=e572]
+          - generic [ref=e573]:
+            - img "Leaplab" [ref=e574]
+            - generic [ref=e575]: Ignite
+            - generic [ref=e576]: leap & block coding
+        - generic [ref=e577] [cursor=pointer]:
+          - img "Circuit Icon" [ref=e579]
+          - generic [ref=e580]:
+            - img "Leaplab" [ref=e581]
+            - generic [ref=e582]: Embed
+            - generic [ref=e583]: Block Coding, Arduino & Embedded Systems
+        - generic [ref=e584] [cursor=pointer]:
+          - img "Logix Icon" [ref=e586]
+          - generic [ref=e587]:
+            - img "Leaplab" [ref=e588]
+            - generic [ref=e589]: Logix
+            - generic [ref=e590]: Python Programming
+        - generic [ref=e591] [cursor=pointer]:
+          - img "Neura Icon" [ref=e593]
+          - generic [ref=e594]:
+            - img "Leaplab" [ref=e595]
+            - generic [ref=e596]: Neura
+            - generic [ref=e597]: AI Logic & Advanced Block Programming
+        - generic [ref=e598] [cursor=pointer]:
+          - img "Forge Icon" [ref=e600]
+          - generic [ref=e601]:
+            - img "Leaplab" [ref=e602]
+            - generic [ref=e603]: Electra
+            - generic [ref=e604]: Circuit Design & Simulation
+        - generic [ref=e605] [cursor=pointer]:
+          - img "Vision3D Icon" [ref=e607]
+          - generic [ref=e608]:
+            - img "Leaplab" [ref=e609]
+            - generic [ref=e610]: Vision3D
+            - generic [ref=e611]: 3D Design & Modeling
+        - generic [ref=e612] [cursor=pointer]:
+          - img "Creova Icon" [ref=e614]
+          - generic [ref=e615]:
+            - img "Leaplab" [ref=e616]
+            - generic [ref=e617]: Creova
+            - generic [ref=e618]: App & Game Development
+        - generic [ref=e619] [cursor=pointer]:
+          - img "Quiz Icon" [ref=e621]
+          - generic [ref=e622]:
+            - img "Leaplab" [ref=e623]
+            - generic [ref=e624]: Pulse
+            - generic [ref=e625]: Assessment & Quiz Creation
+      - contentinfo [ref=e626]:
+        - generic [ref=e628]: LeapLab v1.0 © 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+  - generic [ref=e634]:
+    - generic [ref=e635]:
+      - generic [ref=e636]:
+        - heading "Sign in" [level=2] [ref=e637]
+        - paragraph [ref=e638]: Use your school credentials
+      - button "Close sign-in" [ref=e639]:
+        - img [ref=e640]
+    - generic [ref=e643]:
+      - generic [ref=e644]:
+        - generic [ref=e645]: Username
+        - textbox "Username" [active] [ref=e646]:
+          - /placeholder: computer1@schoolname
+      - generic [ref=e647]:
+        - generic [ref=e648]: Password
+        - generic [ref=e649]:
+          - textbox "Password" [ref=e650]
+          - button "Show password" [ref=e651]:
+            - img [ref=e652]
+      - button "Sign In" [ref=e655]

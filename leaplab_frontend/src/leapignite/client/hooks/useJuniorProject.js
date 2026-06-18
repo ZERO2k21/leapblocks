@@ -97,16 +97,21 @@ export function useJuniorProject({
         setShowUnsavedModal(true);
     };
 
-    const handleSaveProject = (isSilent = false) => {
+    const handleSaveProject = async (isSilent = false) => {
         saveCurrentWorkspace();
-        setTimeout(() => {
+        setTimeout(async () => {
             const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
             const payload = {
                 scenes: scenes,
                 recordedSounds: recordedSounds
             };
-            fileService.saveProject(projectName, 'junior', payload);
-            console.log(`[JuniorApp] Project saved: ${projectName}`);
+            try {
+                await fileService.saveProject(projectName, 'junior', payload);
+                console.log(`[JuniorApp] Project saved: ${projectName}`);
+            } catch (err) {
+                console.error('[JuniorApp] Failed to save project:', err);
+                alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+            }
         }, 50);
     };
 

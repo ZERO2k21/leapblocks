@@ -747,14 +747,19 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         resetStage();
     };
 
-    const handleSaveProject = () => {
+    const handleSaveProject = async () => {
         const payload = {
             projectFiles,
             activeFile,
             sprites,
             backdrop,
         };
-        fileService.saveProject(projectName, "python", payload);
+        try {
+            await fileService.saveProject(projectName, "python", payload);
+        } catch (err) {
+            console.error('[PythonApp] Failed to save project:', err);
+            alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+        }
     };
 
     const handleOpenProject = () => {
@@ -3098,9 +3103,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                             <Settings size={15} />
                         </div>
-                    </div>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#FF9800", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: "bold" }}>
-                        👤
                     </div>
                 </div>
 

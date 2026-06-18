@@ -14,6 +14,8 @@ const logAppTiming = (label: string) => {
 logAppTiming('App.tsx module loaded');
 
 import Loader from './components/Loader';
+import { getSharedProject, fetchCloudProjectContent } from './services/cloudProjectApi';
+import { useCloudProjectStore } from './store/cloudProjectStore';
 logAppTiming('Loader imported');
 
 const LandingPage = lazy(() => {
@@ -130,6 +132,7 @@ export default function App() {
     // Check for ?project=<url> query param — auto-open in correct mode
     const params = new URLSearchParams(window.location.search);
     const projectUrl = params.get('project') || params.get('projectUrl') || null;
+    const shareId = params.get('share') || null;
     const isElectraMode = params.get('mode') === 'electra';
 
     const [mode, setMode] = useState<AppMode>(isElectraMode ? 'electra' : 'home');
@@ -161,6 +164,59 @@ export default function App() {
             }
         })();
     }, [projectUrl]);
+
+    // When ?share=<shareId> is present, fetch the shared project and route to the correct module
+    React.useEffect(() => {
+        if (!shareId) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                logAppTiming(`Loading shared project: ${shareId}`);
+                const project = await getSharedProject(shareId);
+                if (!project.fileUrl) throw new Error('Shared project file URL is missing');
+
+                const fileUrl = project.fileUrl.startsWith('http')
+                    ? project.fileUrl
+                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.fileUrl}`;
+
+                const content = await fetchCloudProjectContent(fileUrl);
+
+                if (cancelled) return;
+
+                useCloudProjectStore.getState().setPendingProject({
+                    mode: project.mode,
+                    data: content,
+                    projectName: project.name,
+                });
+
+                if (project.sharePermission) {
+                    useCloudProjectStore.getState().setSharedProjectInfo({
+                        shareId,
+                        permission: project.sharePermission,
+                    });
+                } else {
+                    useCloudProjectStore.getState().clearSharedProjectInfo();
+                }
+
+                const detectedMode: AppMode =
+                    project.mode === 'junior' ? 'junior' :
+                    project.mode === 'python' ? 'python' :
+                    project.mode === 'creova' ? 'creova' :
+                    project.mode === 'electra' ? 'electra' :
+                    project.mode === 'neura' ? 'neura' :
+                    'intermediate';
+
+                logAppTiming(`Shared project mode detected: ${detectedMode}`);
+                setMode(detectedMode);
+            } catch (err) {
+                console.error('Failed to load shared project:', err);
+                alert('Failed to load shared project. The link may be invalid or expired.');
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [shareId]);
 
     const cleanBlocklyStyles = useCallback(() => {
         // Only remove floating Blockly DOM elements that are appended to document.body
@@ -264,6 +320,14 @@ export default function App() {
     };
 
     const confirmExit = () => {
+        // Clear shared-link URL parameters and cloud state when returning home
+        if (window.location.search) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        useCloudProjectStore.getState().clearPendingProject();
+        useCloudProjectStore.getState().clearSharedProjectInfo();
+        setResolvedProjectUrl(null);
+        setProjectUrlReady(true);
         handleSetMode('home');
         setExitPrompt(false);
     };
@@ -311,6 +375,7 @@ export default function App() {
                 {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                 {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
             </Suspense>
+
 
             {switchPrompt && (
                 <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -22,6 +22,8 @@ import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
 import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
+import { fileService } from '../Electra/Client/Src/services/FileService';
+import { useCloudProjectStore } from '../store/cloudProjectStore';
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -52,6 +54,30 @@ export default function AppInventor({ onBack }) {
   const [activeTab, setActiveTab] = useState('designer');
   const [projectPath, setProjectPath] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Auto-load project from cloud storage (My Projects)
+  useEffect(() => {
+    const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+    if (!pendingProject || pendingProject.mode !== 'creova') return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (cancelled) return;
+        console.log('[AppInventor] Loading project from cloud...');
+        appState.loadProject(pendingProject.data);
+        if (pendingProject.projectName) {
+          appState.setAppName(pendingProject.projectName);
+        }
+        setProjectPath(null);
+        clearPendingProject();
+      } catch (err) {
+        console.error('[AppInventor] Failed to load project from cloud:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [appState]);
 
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [buildState, setBuildState] = useState('idle');
@@ -117,29 +143,6 @@ export default function AppInventor({ onBack }) {
   };
 
   const handleSaveProject = async () => {
-    if (!window.electronAPI || !window.electronAPI.saveProject) {
-      try {
-        const payload = appState.getSerializedState();
-        const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
-        if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
-          payload.blockLogic = liveBlockXml;
-        }
-
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${appState.appName || 'project'}.leap`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error("Failed to save project locally:", err);
-        alert(`Failed to save project: ${err.message}`);
-      }
-      return;
-    }
     try {
       const payload = appState.getSerializedState();
       const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
@@ -147,18 +150,8 @@ export default function AppInventor({ onBack }) {
         payload.blockLogic = liveBlockXml;
       }
 
-      const result = await window.electronAPI.saveProject(payload, projectPath || undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        if (folderName) {
-          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
-        }
-        alert("Project saved successfully!");
-      } else if (result.error) {
-        alert(`Failed to save project: ${result.error}`);
-      }
+      await fileService.saveProject(appState.appName || 'project', 'creova', payload);
+      alert("Project saved successfully!");
     } catch (err) {
       console.error("Failed to save project:", err);
       alert(`Failed to save project: ${err.message}`);
@@ -166,33 +159,7 @@ export default function AppInventor({ onBack }) {
   };
 
   const handleSaveAsProject = async () => {
-    if (!window.electronAPI || !window.electronAPI.saveProject) {
-      handleSaveProject();
-      return;
-    }
-    try {
-      const payload = appState.getSerializedState();
-      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
-      if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
-        payload.blockLogic = liveBlockXml;
-      }
-
-      const result = await window.electronAPI.saveProject(payload, undefined);
-      if (result.success && result.projectPath) {
-        setProjectPath(result.projectPath);
-        const pathParts = result.projectPath.split(/[\\/]/);
-        const folderName = pathParts[pathParts.length - 1];
-        if (folderName) {
-          appState.setAppName(folderName.replace(/\.(leap|lbp)$/i, ''));
-        }
-        alert("Project saved successfully!");
-      } else if (result.error) {
-        alert(`Failed to save project: ${result.error}`);
-      }
-    } catch (err) {
-      console.error("Failed to save project as:", err);
-      alert(`Failed to save project: ${err.message}`);
-    }
+    await handleSaveProject();
   };
 
   const handleUndo = () => {
@@ -423,7 +390,7 @@ export default function AppInventor({ onBack }) {
         brandName="CREOVA"
         rightContent={
           <div className="flex items-center gap-6 shrink-0 creova-right-gap">
-            <style>{`@media (max-width: 767px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
+            <style>{`@media (max-width: 1499px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
             <nav style={{
               display: 'flex',
               alignItems: 'center',
@@ -523,27 +490,27 @@ export default function AppInventor({ onBack }) {
         }
       />
 
-      <div className={`flex-1 overflow-hidden ${activeTab === 'designer' ? 'grid grid-cols-[280px_minmax(400px,1fr)_300px_320px] gap-6 p-6 bg-slate-50' : 'flex p-0'}`}>
+      <div className={`flex-1 overflow-hidden ${activeTab === 'designer' ? 'creova-designer-grid p-4 bg-slate-50' : 'flex p-0'}`}>
         {activeTab === 'designer' ? (
           <>
-            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="creova-grid-palette min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
               <Palette />
             </div>
 
-            <div className="min-h-0 flex flex-col bg-transparent">
+            <div className="creova-grid-canvas min-h-0 flex flex-col bg-transparent">
               <PhoneCanvas appState={appState} />
             </div>
 
-            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="creova-grid-tree min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
               <div className="flex-1 min-h-0 flex flex-col">
                 <ComponentTree appState={appState} />
               </div>
-              <div className="h-[380px] border-t border-slate-200 flex flex-col">
+              <div className="creova-media-manager-container border-t border-slate-200 flex flex-col">
                 <MediaManager appState={appState} />
               </div>
             </div>
 
-            <div className="min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="creova-grid-properties min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
               <PropertiesPanel appState={appState} />
             </div>
           </>
