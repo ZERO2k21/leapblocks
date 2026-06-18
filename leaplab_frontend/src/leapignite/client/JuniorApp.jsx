@@ -760,6 +760,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 onEditAction={handlers.handleEditMenu}
                 onTutorialStart={handleTutorialStart}
                 onBack={onBack}
+                onDownload={project.handleDownloadProject}
             />
 
             {currentTutorial && (

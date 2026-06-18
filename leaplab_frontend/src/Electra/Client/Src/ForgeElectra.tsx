@@ -508,6 +508,18 @@ export default function ForgeElectra({
     }
   };
 
+  const handleDownloadProject = () => {
+    const projectData = {
+      nodes,
+      edges,
+      code,
+      board,
+      version: '1.0.0',
+      timestamp: new Date().toISOString()
+    };
+    fileService.saveProjectLocally(projectName || 'project', 'electra', projectData);
+  };
+
   const handleSaveAsProject = async () => {
     await handleSaveProject();
   };
@@ -843,6 +855,7 @@ export default function ForgeElectra({
         onBack={handleBack}
         onSave={handleSaveProject}
         onSaveAs={handleSaveAsProject}
+        onDownload={handleDownloadProject}
         onNew={handleNewProject}
         onOpen={handleOpenProject}
         onUndo={handleUndo}

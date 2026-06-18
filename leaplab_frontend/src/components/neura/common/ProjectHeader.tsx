@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
+import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 
 interface ProjectHeaderProps {
@@ -12,6 +12,7 @@ interface ProjectHeaderProps {
     title?: string;
     onBack?: () => void;
     onSave?: () => void;
+    onDownload?: () => void;
     onUploadFolder?: () => void;
     projectName?: string;
     onProjectNameChange?: (name: string) => void;
@@ -23,6 +24,7 @@ export default function ProjectHeader({
     title,
     onBack,
     onSave,
+    onDownload,
     onUploadFolder,
     projectName,
     onProjectNameChange,
@@ -177,6 +179,33 @@ export default function ProjectHeader({
                                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
                             >
                                 <Save size={18} strokeWidth={2.8} />
+                            </button>
+                        )}
+                        {onDownload && (
+                            <button
+                                title="Download .leap file"
+                                onClick={onDownload}
+                                style={{
+                                    background: 'rgb(59, 130, 246)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '42px',
+                                    height: '42px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'rgb(255, 255, 255)',
+                                    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 6px -1px',
+                                    transition: 'transform 0.2s',
+                                    flexShrink: 0,
+                                    transform: 'scale(1)',
+                                    marginLeft: '8px'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
+                            >
+                                <Download size={18} strokeWidth={2.8} />
                             </button>
                         )}
                     </div>

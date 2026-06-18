@@ -20,6 +20,7 @@ import NumbersCR from './components/neura/project-types/numbers-cr/NumbersCR';
 import TextClassifier from './components/neura/project-types/text-classifier/TextClassifier';
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
+import { fileService } from './Electra/Client/Src/services/FileService';
 
 interface NeuraAppProps {
     onBack?: () => void;
@@ -52,6 +53,11 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
         setCurrentProject(project);
         setCurrentProjectType(project.type);
         setView('project');
+    };
+
+    const handleDownloadProject = () => {
+        if (!currentProject) return;
+        fileService.saveProjectLocally(currentProject.name || 'neura-project', 'neura', currentProject);
     };
 
     const renderProjectComponent = () => {
@@ -89,6 +95,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
             projectName: currentProject?.name,
             onBack: handleBackToDashboard,
             onSave: () => console.log('Save project'),
+            onDownload: handleDownloadProject,
         };
     };
 

@@ -14,6 +14,7 @@ import {
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import Logo, { CreoleapLogo } from "../components/Logo";
 import LeapLabAuthButton from "../auth/LeapLabAuthButton";
+import { fileService } from "../Electra/Client/Src/services/FileService";
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
     PURPLE: "#210d4fff",
@@ -501,7 +502,16 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                             onChange={(e) => setNotebookName(e.target.value)}
                             className="bg-transparent border-none text-white w-32 outline-none text-sm"
                         />
-                        <Save size={14} className="opacity-80" />
+                        <Save size={14} className="opacity-80 cursor-pointer" />
+                        <Download
+                            size={14}
+                            className="opacity-80 cursor-pointer hover:opacity-100"
+                            title="Download .leap file"
+                            onClick={() => {
+                                const payload = { cells, sprites, notebookName };
+                                fileService.saveProjectLocally(notebookName.replace(/\.ipynb$/i, '') || 'notebook', 'python', payload);
+                            }}
+                        />
                     </div>
                     {/* Switch to IDE button */}
                     <button

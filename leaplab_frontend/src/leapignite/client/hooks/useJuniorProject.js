@@ -115,6 +115,19 @@ export function useJuniorProject({
         }, 50);
     };
 
+    const handleDownloadProject = () => {
+        saveCurrentWorkspace();
+        setTimeout(() => {
+            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
+            const payload = {
+                scenes: scenes,
+                recordedSounds: recordedSounds
+            };
+            fileService.saveProjectLocally(projectName, 'junior', payload);
+            console.log(`[JuniorApp] Project downloaded: ${projectName}`);
+        }, 50);
+    };
+
     const handleShareProject = () => {
         saveCurrentWorkspace();
         setTimeout(() => {
@@ -265,6 +278,7 @@ export function useJuniorProject({
         setShowUnsavedModal,
         handleNewProject,
         handleSaveProject,
+        handleDownloadProject,
         handleShareProject,
         handleOpenProject,
         confirmUnsavedAction,

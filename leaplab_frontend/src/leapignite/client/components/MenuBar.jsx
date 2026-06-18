@@ -5,7 +5,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    ChevronDown, File, FolderOpen, Save, Share,
+    ChevronDown, File, FolderOpen, Save, Share, Download,
     Undo, Redo, Cpu, RotateCcw, Home, Upload, Monitor, Rocket
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
@@ -321,6 +321,7 @@ export default function MenuBar({
     onFileAction,
     onEditAction,
     onBack,
+    onDownload,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const isConnected = connectionStatus === 'connected';
@@ -333,6 +334,8 @@ export default function MenuBar({
         { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
         { divider: true },
         { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
+        { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
+        { divider: true },
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share') },
     ];
 
@@ -505,6 +508,7 @@ export default function MenuBar({
                     >
                         <Save size={14} strokeWidth={2.8} />
                     </button>
+
                 </div>
             </div>
 
