@@ -3,8 +3,9 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { fileService } from "../../../Electra/Client/Src/services/FileService";
+import { useCloudProjectStore } from "../../../store/cloudProjectStore";
 import { getUniqueFileName, getFallbackActiveFile } from "../utils/fileUtils";
 
 const DEFAULT_ACTIVE_FILE = "main.py";
@@ -25,13 +26,43 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         resetStage();
     }, [resetStage]);
 
-    const handleSaveProject = useCallback(() => {
+    const handleSaveProject = useCallback(async () => {
         const payload = {
             projectFiles,
             activeFile,
         };
-        fileService.saveProject(projectName, "python", payload);
+        try {
+            await fileService.saveProject(projectName, "python", payload);
+        } catch (err) {
+            console.error('[useFileManager] Failed to save project:', err);
+            alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+        }
     }, [projectName, projectFiles, activeFile]);
+
+    const loadProjectData = useCallback((data) => {
+        try {
+            const validation = fileService.validateProject(data, "python");
+            if (!validation.isValid) {
+                alert(validation.error);
+                return;
+            }
+
+            const nextProjectFiles = data.projectFiles && Object.keys(data.projectFiles).length ? data.projectFiles : DEFAULT_FILES;
+            setProjectName(data.projectName || "My Project");
+            setProjectFiles(nextProjectFiles);
+            setActiveFile(getFallbackActiveFile(nextProjectFiles, data.activeFile));
+
+            if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
+                setSprites(data.sprites);
+                setSelectedSpriteId(data.sprites[0].id);
+            } else {
+                resetStage();
+            }
+            if (data.backdrop) setBackdropImg(data.backdrop);
+        } catch (err) {
+            alert('Failed to load project: ' + err.message);
+        }
+    }, [setSprites, setSelectedSpriteId, setBackdropImg, resetStage]);
 
     const handleOpenProject = useCallback(() => {
         const input = document.createElement("input");
@@ -43,31 +74,33 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
 
             try {
                 const data = await fileService.loadProject(file);
-                const validation = fileService.validateProject(data, "python");
-                if (!validation.isValid) {
-                    alert(validation.error);
-                    return;
-                }
-
-                const nextProjectFiles = data.projectFiles && Object.keys(data.projectFiles).length ? data.projectFiles : DEFAULT_FILES;
-                setProjectName(data.projectName || "My Project");
-                setProjectFiles(nextProjectFiles);
-                setActiveFile(getFallbackActiveFile(nextProjectFiles, data.activeFile));
-
-                if (data.sprites && Array.isArray(data.sprites) && data.sprites.length > 0) {
-                    setSprites(data.sprites);
-                    setSelectedSpriteId(data.sprites[0].id);
-                } else {
-                    resetStage();
-                }
-                if (data.backdrop) setBackdropImg(data.backdrop);
-
+                loadProjectData(data);
             } catch (err) {
                 alert('Failed to load project: ' + err.message);
             }
         };
         input.click();
-    }, [projectName, setSprites, setSelectedSpriteId, setBackdropImg, resetStage]);
+    }, [loadProjectData]);
+
+    // Auto-load project from cloud storage (My Projects)
+    useEffect(() => {
+        const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+        if (!pendingProject || pendingProject.mode !== 'python') return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                if (cancelled) return;
+                loadProjectData(pendingProject.data);
+                clearPendingProject();
+            } catch (err) {
+                console.error('[useFileManager] Failed to load project from cloud:', err);
+                alert('Failed to load project: ' + err.message);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [loadProjectData]);
 
     const handleShareProject = useCallback(() => {
         const payload = {

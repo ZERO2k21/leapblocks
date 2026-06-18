@@ -5,6 +5,8 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import LeapLabAuthButton from './auth/LeapLabAuthButton';
+import MyProjectsDashboard from './components/my-projects/MyProjectsDashboard';
+import './components/my-projects/my-projects.css';
 // JSZip lazy-loaded only when Lottie animation needs to be parsed
 
 interface LandingPageProps {
@@ -20,6 +22,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   const [highlightCards, setHighlightCards] = useState(false);
   const [scanIndex, setScanIndex] = useState(-1);
   const scanIntervalRef = useRef<any>(null);
+  const [activeTab, setActiveTab] = useState<'modules' | 'my-projects'>('modules');
+  const showProjects = activeTab === 'my-projects';
 
   /* ── Card scan ── */
   const startCardScan = () => {
@@ -353,8 +357,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display:flex; align-items:center; gap:14px;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
 }
-.landing-page-container .nav-links { display: flex; gap: 24px; margin-left: 12px; }
+.landing-page-container .nav-links { display: flex; gap: 24px; margin-left: 12px; align-items: center; }
 @media (max-width: 768px) { .landing-page-container .nav-links { display: none; } }
+.landing-page-container .nav-link {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+.landing-page-container .nav-link:hover { color: #4f46e5; background: rgba(79,70,229,0.06); }
+.landing-page-container .nav-link.active { color: #ffffff; background: #4f46e5; }
 
 /* ─── PAGE CONTENT ─── */
 .landing-page-container .page {
@@ -654,12 +673,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         {/* TOPBAR */}
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#" className="nav-brand">
+            <a href="#" className="nav-brand" onClick={() => setActiveTab('modules')}>
               <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
-              <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Tutorials</a>
-              <a href="#" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }}>Explore</a>
+              <button className="nav-link" onClick={() => (window as any).showComingSoon('Tutorials')}>
+                Tutorials
+              </button>
+              <button className="nav-link" onClick={() => (window as any).showComingSoon('Explore')}>
+                Explore
+              </button>
+              <button
+                className={`nav-link ${showProjects ? 'active' : ''}`}
+                onClick={() => setActiveTab(showProjects ? 'modules' : 'my-projects')}
+              >
+                My Projects
+              </button>
             </div>
           </div>
           <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -674,10 +703,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="line-primary"></div>
           <div className="line-secondary"></div>
         </div>
+
         <div className="page">
 
-          {/* HERO */}
-          <div className="hero-grid">
+          {activeTab === 'my-projects' && (
+            <MyProjectsDashboard onOpenProject={(mode) => onSelect(mode)} />
+          )}
+
+          {activeTab === 'modules' && (
+            <>
+              {/* HERO */}
+              <div className="hero-grid">
             <div className="hero-left">
               <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
               <h1 className="hero-title">
@@ -814,6 +850,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
             </div>
           </div>
+            </>
+          )}
 
           {/* FOOTER */}
           <footer style={{

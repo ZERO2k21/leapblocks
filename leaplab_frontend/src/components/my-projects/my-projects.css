@@ -1,0 +1,407 @@
+/* My Projects Dashboard styles */
+.my-projects-dashboard {
+    padding: 32px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.my-projects-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #100051;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+}
+
+.my-projects-subtitle {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0 0 32px;
+}
+
+/* Module selection row */
+.my-modules-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.my-module-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: var(--module-gradient, #ffffff);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.04),
+        0 12px 24px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.25s ease,
+                border-color 0.2s ease;
+    min-height: 180px;
+    width: 220px;
+    flex: 0 0 220px;
+    overflow: hidden;
+}
+
+.my-module-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    border-bottom: 4px solid var(--module-accent, #6366f1);
+    pointer-events: none;
+}
+
+.my-module-card:hover {
+    transform: translateY(-8px) scale(1.015);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        0 12px 28px rgba(0, 0, 0, 0.08),
+        0 24px 50px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(255, 255, 255, 1);
+}
+
+.my-module-card:focus {
+    outline: 2px solid var(--module-accent, #4f46e5);
+    outline-offset: 3px;
+}
+
+.my-module-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.my-module-card-icon {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.12));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.my-module-card:hover .my-module-card-icon {
+    transform: scale(1.1) translateY(-4px);
+}
+
+.my-module-card-count {
+    background: rgba(255, 255, 255, 0.85);
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+}
+
+.my-module-card-bottom {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.my-module-card-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+}
+
+.my-module-card-hint {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+}
+
+.my-module-card-arrow {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--module-accent, #6366f1);
+    font-size: 18px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.my-module-card:hover .my-module-card-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Back button */
+.my-projects-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: #4f46e5;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-bottom: 16px;
+    transition: color 0.15s ease;
+}
+
+.my-projects-back:hover {
+    color: #3730a3;
+    text-decoration: underline;
+}
+
+/* Module header in project list */
+.my-projects-module-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.my-projects-module-header-icon {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.1));
+}
+
+.my-projects-module-header-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 2px;
+}
+
+.my-projects-module-header-count {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Project cards */
+.my-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.my-project-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.my-project-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.my-project-card:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+.my-project-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.my-project-card-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.my-project-delete-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0.55;
+    transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.my-project-delete-btn:hover {
+    opacity: 1;
+    background: #fee2e2;
+    transform: scale(1.05);
+}
+
+.my-project-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 8px;
+    word-break: break-word;
+}
+
+.my-project-card-date {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.my-project-opening {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4f46e5;
+    backdrop-filter: blur(2px);
+}
+
+/* Empty / loading / error states */
+.my-projects-empty,
+.my-projects-error,
+.my-projects-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 360px;
+    text-align: center;
+    padding: 24px;
+}
+
+.my-projects-empty-icon,
+.my-projects-error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.my-projects-empty h3,
+.my-projects-error h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 8px;
+}
+
+.my-projects-empty p,
+.my-projects-error p {
+    font-size: 14px;
+    color: #64748b;
+    max-width: 360px;
+    margin: 0 0 16px;
+}
+
+.my-projects-error button,
+.my-projects-empty button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #4f46e5;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.my-projects-error button:hover,
+.my-projects-empty button:hover {
+    background: #4338ca;
+}
+
+.my-projects-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: my-projects-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes my-projects-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .my-projects-dashboard {
+        padding: 20px 16px;
+    }
+
+    .my-projects-title {
+        font-size: 26px;
+    }
+
+    .my-modules-grid {
+        gap: 14px;
+    }
+
+    .my-module-card {
+        width: 160px;
+        flex: 0 0 160px;
+        min-height: 160px;
+        padding: 18px;
+    }
+
+    .my-module-card-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .my-module-card-name {
+        font-size: 18px;
+    }
+
+    .my-projects-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .my-projects-module-header {
+        padding: 12px 16px;
+    }
+
+    .my-projects-module-header-name {
+        font-size: 20px;
+    }
+}

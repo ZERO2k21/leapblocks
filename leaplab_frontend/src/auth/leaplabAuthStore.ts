@@ -12,6 +12,8 @@ export interface LeapLabAuthState {
     username: string | null;
     institutionName: string | null;
     institutionId: string | null;
+    credentialId: string | null;
+    token: string | null;
     isLoading: boolean;
     error: string | null;
     signIn: (username: string, password: string) => Promise<boolean>;
@@ -26,6 +28,8 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
             username: null,
             institutionName: null,
             institutionId: null,
+            credentialId: null,
+            token: null,
             isLoading: false,
             error: null,
 
@@ -48,13 +52,15 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                         return false;
                     }
 
-                    const { username: verifiedUsername, institutionName, institutionId } = data.data;
+                    const { id, username: verifiedUsername, institutionName, institutionId, token } = data.data;
 
                     set({
                         isAuthenticated: true,
                         username: verifiedUsername,
                         institutionName,
                         institutionId,
+                        credentialId: id ?? null,
+                        token: token ?? null,
                         isLoading: false,
                         error: null,
                     });
@@ -74,6 +80,8 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                     username: null,
                     institutionName: null,
                     institutionId: null,
+                    credentialId: null,
+                    token: null,
                     error: null,
                 });
             },
@@ -87,7 +95,21 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                 username: state.username,
                 institutionName: state.institutionName,
                 institutionId: state.institutionId,
+                credentialId: state.credentialId,
+                token: state.token,
             }),
+            onRehydrateStorage: () => (state) => {
+                // Old sessions persisted before token support won't have a token.
+                // Treat them as signed-out so the user re-authenticates.
+                if (state && state.isAuthenticated && !state.token) {
+                    state.isAuthenticated = false;
+                    state.username = null;
+                    state.institutionName = null;
+                    state.institutionId = null;
+                    state.credentialId = null;
+                    state.token = null;
+                }
+            },
         },
     ),
 );

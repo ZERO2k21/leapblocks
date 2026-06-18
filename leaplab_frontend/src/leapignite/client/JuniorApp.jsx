@@ -40,6 +40,7 @@ import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
 import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
 import { ToastProvider, useToast } from "./components/Toast";
+import { useCloudProjectStore } from "../../store/cloudProjectStore";
 
 const TUTORIALS = {
     'getting_started': gettingStartedTutorial,
@@ -500,6 +501,26 @@ function JuniorAppInner({ onBack, projectUrl }) {
 
         return () => { cancelled = true; };
     }, [projectUrl]);
+
+    // Auto-load project from cloud storage (My Projects)
+    useEffect(() => {
+        const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+        if (!pendingProject || pendingProject.mode !== 'junior') return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                if (cancelled) return;
+                console.log('[JuniorApp] Loading project from cloud...');
+                await project.loadProjectData(pendingProject.data);
+                clearPendingProject();
+            } catch (err) {
+                console.error('Failed to load project from cloud:', err);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [project]);
 
     // Wrapper for backward compatibility - delegates to loadSpriteWorkspace
     const loadWorkspace = (sprite) => {
