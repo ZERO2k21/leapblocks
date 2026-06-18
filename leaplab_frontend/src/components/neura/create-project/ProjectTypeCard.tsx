@@ -12,6 +12,7 @@ interface ProjectTypeCardProps {
 }
 
 export default function ProjectTypeCard({ type, onClick }: ProjectTypeCardProps) {
+    const IconComponent = type.Icon;
     return (
         <div
             onClick={onClick}
@@ -26,8 +27,12 @@ export default function ProjectTypeCard({ type, onClick }: ProjectTypeCardProps)
                 h-full
             `}
         >
-            <div className="text-4xl mb-3 transition-transform duration-300 group-hover:scale-110">
-                {type.icon}
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8 flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-md">
+                {IconComponent ? (
+                    <IconComponent size={28} className="text-[#0a015a]" strokeWidth={1.8} />
+                ) : (
+                    <span className="text-4xl">{type.icon}</span>
+                )}
             </div>
 
             <h3 className="text-sm font-semibold text-[#0a015a]">

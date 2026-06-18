@@ -5,25 +5,26 @@
 
 import React from 'react';
 import { NeuraProject } from '../../../types/neura.types';
+import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface ProjectCardProps {
     project: NeuraProject;
     onClick?: () => void;
 }
 
+const projectIcons: Record<string, LucideIcon> = {
+    'image-classifier': Image,
+    'object-detection': ScanSearch,
+    'pose-classifier': PersonStanding,
+    'hand-pose-classifier': Hand,
+    'audio-classifier': AudioLines,
+    'numbers-cr': Calculator,
+    'text-classifier': FileText,
+};
+
 export default function ProjectCard({ project, onClick }: ProjectCardProps) {
-    const getProjectIcon = (type: string) => {
-        const icons: Record<string, string> = {
-            'image-classifier': '📸',
-            'object-detection': '🐱',
-            'pose-classifier': '🤸',
-            'hand-pose-classifier': '✋',
-            'audio-classifier': '🎵',
-            'numbers-cr': '🔢',
-            'text-classifier': '📝',
-        };
-        return icons[type] || '🤖';
-    };
+    const IconComp = projectIcons[project.type] || Bot;
 
     return (
         <div
@@ -33,7 +34,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
             {/* Project icon and type */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/10 rounded-xl flex items-center justify-center">
-                    <span className="text-2xl drop-shadow-sm">{getProjectIcon(project.type)}</span>
+                    <IconComp size={24} className="text-[#0a015a]" strokeWidth={1.8} />
                 </div>
                 <div className="flex-1">
                     <h3 className="font-bold text-[#0a015a] tracking-tight">{project.name}</h3>

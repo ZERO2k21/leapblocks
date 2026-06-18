@@ -4,36 +4,37 @@
  */
 
 import React, { useState } from 'react';
-import { GraduationCap, ChevronRight } from 'lucide-react';
+import { GraduationCap, ChevronRight, Brain, Image, AudioLines, BarChart3 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface LearningCenterProps {
     onViewAll?: () => void;
 }
 
-const tutorials = [
+const tutorials: { id: number; title: string; desc: string; icon: LucideIcon }[] = [
     {
         id: 1,
         title: "Beginner's Guide to Machine Learning",
         desc: 'Learn the basics of ML and build your first model in minutes.',
-        icon: '🧠',
+        icon: Brain,
     },
     {
         id: 2,
         title: 'Image Classification Tutorial',
         desc: 'Step-by-step guide to training an image classifier.',
-        icon: '📸',
+        icon: Image,
     },
     {
         id: 3,
         title: 'Working with Audio Data',
         desc: 'How to prepare and use audio datasets effectively.',
-        icon: '🎵',
+        icon: AudioLines,
     },
     {
         id: 4,
         title: 'Understanding Model Accuracy',
         desc: 'Tips to improve your model performance and accuracy.',
-        icon: '📊',
+        icon: BarChart3,
     },
 ];
 
@@ -61,7 +62,7 @@ export default function LearningCenter({ onViewAll }: LearningCenterProps) {
             <div className="bg-gradient-to-br from-[#f5f0ff] to-[#ede8ff] rounded-xl p-4 mb-4 border border-purple-100/50">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <span className="text-xl">{tutorials[activeIndex].icon}</span>
+                        {React.createElement(tutorials[activeIndex].icon, { size: 20, className: 'text-[#0a015a]', strokeWidth: 2 })}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[#0a015a] leading-tight mb-1">

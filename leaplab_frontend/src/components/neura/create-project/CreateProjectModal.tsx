@@ -8,15 +8,16 @@
 import React from 'react';
 import ProjectTypeCard from './ProjectTypeCard';
 import { ProjectTypeInfo } from '../../../types/neura.types';
+import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText } from 'lucide-react';
 
 const projectTypes: ProjectTypeInfo[] = [
-    { id: 'image-classifier', name: 'Image Classifier', icon: '📸', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'object-detection', name: 'Object Detection', icon: '🐱', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'pose-classifier', name: 'Pose Classifier', icon: '🤸', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'hand-pose-classifier', name: 'Hand Pose Classifier', icon: '✋', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'audio-classifier', name: 'Audio Classifier', icon: '🎵', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'numbers-cr', name: 'Numbers CR', icon: '🔢', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
-    { id: 'text-classifier', name: 'Text Classifier', icon: '📝', color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'image-classifier', name: 'Image Classifier', icon: '📸', Icon: Image, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'object-detection', name: 'Object Detection', icon: '🔍', Icon: ScanSearch, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'pose-classifier', name: 'Pose Classifier', icon: '🤸', Icon: PersonStanding, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'hand-pose-classifier', name: 'Hand Pose Classifier', icon: '✋', Icon: Hand, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'audio-classifier', name: 'Audio Classifier', icon: '🎵', Icon: AudioLines, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'numbers-cr', name: 'Numbers CR', icon: '🔢', Icon: Calculator, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
+    { id: 'text-classifier', name: 'Text Classifier', icon: '📝', Icon: FileText, color: 'bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_40px_rgba(10,1,90,0.15)] hover:scale-[1.04] transition-all duration-300' },
 ];
 
 interface CreateProjectModalProps {

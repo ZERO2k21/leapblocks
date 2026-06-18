@@ -4,48 +4,49 @@
  */
 
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Image, ScanSearch, AudioLines, PersonStanding, MessageSquare } from 'lucide-react';
 import { ProjectType } from '../../../types/neura.types';
+import type { LucideIcon } from 'lucide-react';
 
 interface TemplateGridProps {
     onSelectTemplate?: (typeId: ProjectType) => void;
     onViewAll?: () => void;
 }
 
-const templates = [
+const templates: { id: ProjectType; name: string; description: string; icon: LucideIcon; iconBg: string }[] = [
     {
-        id: 'image-classifier' as ProjectType,
+        id: 'image-classifier',
         name: 'Image Classification',
         description: 'Classify images into different categories',
-        icon: '📸',
+        icon: Image,
         iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
     },
     {
-        id: 'object-detection' as ProjectType,
+        id: 'object-detection',
         name: 'Object Detection',
         description: 'Detect and locate multiple objects in images',
-        icon: '🔍',
+        icon: ScanSearch,
         iconBg: 'bg-gradient-to-br from-orange-400 to-orange-500',
     },
     {
-        id: 'audio-classifier' as ProjectType,
+        id: 'audio-classifier',
         name: 'Audio Classification',
         description: 'Recognize sounds and audio patterns',
-        icon: '🎙️',
+        icon: AudioLines,
         iconBg: 'bg-gradient-to-br from-red-400 to-red-500',
     },
     {
-        id: 'pose-classifier' as ProjectType,
+        id: 'pose-classifier',
         name: 'Pose Detection',
         description: 'Detect human poses and keypoints',
-        icon: '🤸',
+        icon: PersonStanding,
         iconBg: 'bg-gradient-to-br from-green-400 to-green-500',
     },
     {
-        id: 'text-classifier' as ProjectType,
+        id: 'text-classifier',
         name: 'Text Sentiment',
         description: 'Analyze sentiment and opinions in text',
-        icon: '💬',
+        icon: MessageSquare,
         iconBg: 'bg-gradient-to-br from-purple-400 to-purple-500',
     },
 ];
@@ -57,7 +58,7 @@ export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGr
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h2 className="text-lg font-bold text-[#0a015a] tracking-tight flex items-center gap-2">
-                        <span className="text-base">&#x1F4D0;</span>
+                        <Image size={18} className="text-[#0a015a]" strokeWidth={2.2} />
                         Start with a Template
                     </h2>
                     <p className="text-xs text-gray-400 mt-0.5">Choose a prebuilt template and start training in seconds.</p>
@@ -81,7 +82,7 @@ export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGr
                     >
                         {/* Colored circular icon */}
                         <div className={`w-10 h-10 rounded-full ${template.iconBg} flex items-center justify-center mb-3 shadow-sm transition-transform duration-300 group-hover:scale-110`}>
-                            <span className="text-base">{template.icon}</span>
+                            <template.icon size={20} className="text-white" strokeWidth={2} />
                         </div>
 
                         {/* Text */}
