@@ -27,6 +27,7 @@ import { QRScannerRuntime } from '../extensions/qr-scanner/runtime';
 import { PhysicsEngineRuntime } from '../extensions/physics-engine/runtime';
 import { MakeyMakeyRuntime } from '../extensions/makey-makey/runtime';
 import { VideoPlayerRuntime } from '../extensions/video-player/runtime';
+import { HandPoseRuntime } from '../extensions/HandPose';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FACE RUNTIME  — MediaPipe-powered, works in all modern browsers
@@ -453,94 +454,6 @@ const spriteRuntime = {
     },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HAND POSE RUNTIME
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface HandLandmarks {
-    thumb: { x: number; y: number };
-    index: { x: number; y: number };
-    middle: { x: number; y: number };
-    ring: { x: number; y: number };
-    pinky: { x: number; y: number };
-    base: { x: number; y: number };
-}
-
-class HandPoseRuntime {
-    private lastSign = 'none';
-    private landmarks: HandLandmarks | null = null;
-    private videoEl: HTMLVideoElement | null = null;
-    private isDetecting = false;
-    private rafId: number | null = null;
-
-    setVideoElement(video: HTMLVideoElement | null) {
-        this.videoEl = video;
-        if (video && this.isDetecting) this._startLoop();
-    }
-
-    analyse(action: string) {
-        if (action === 'analyze' || action === 'on') {
-            this.isDetecting = true;
-            this._startLoop();
-        } else if (action === 'off') {
-            this.isDetecting = false;
-            if (this.rafId !== null) cancelAnimationFrame(this.rafId);
-            this.landmarks = null;
-        }
-    }
-
-    getSign(): string {
-        return this.lastSign;
-    }
-
-    getLandmarkX(finger: keyof HandLandmarks): number {
-        if (!this.landmarks) return 0;
-        const videoW = this.videoEl?.videoWidth || 480;
-        return Math.round((this.landmarks[finger].x / videoW) * 480 - 240);
-    }
-
-    getLandmarkY(finger: keyof HandLandmarks): number {
-        if (!this.landmarks) return 0;
-        const videoH = this.videoEl?.videoHeight || 360;
-        return Math.round(180 - (this.landmarks[finger].y / videoH) * 360);
-    }
-
-    moveSpriteToFinger(finger: string) {
-        const id = (window as any).__activeSpriteId;
-        const sprite = id ? spriteManager.getSprite(id) : null;
-        if (sprite && this.landmarks) {
-            const f = finger.toLowerCase() as keyof HandLandmarks;
-            if (f in this.landmarks) {
-                sprite.setX(this.getLandmarkX(f));
-                sprite.setY(this.getLandmarkY(f));
-            }
-        }
-    }
-
-    private _startLoop() {
-        if (!this.videoEl || !this.isDetecting) return;
-        const loop = () => {
-            if (!this.isDetecting || !this.videoEl) return;
-            if (this.videoEl.readyState >= 2) {
-                // Simulation: Hand follows mouse or floats at center
-                const vw = this.videoEl.videoWidth || 480;
-                const vh = this.videoEl.videoHeight || 360;
-                this.landmarks = {
-                    thumb: { x: vw * 0.4, y: vh * 0.5 },
-                    index: { x: vw * 0.45, y: vh * 0.3 },
-                    middle: { x: vw * 0.5, y: vh * 0.25 },
-                    ring: { x: vw * 0.55, y: vh * 0.32 },
-                    pinky: { x: vw * 0.6, y: vh * 0.45 },
-                    base: { x: vw * 0.5, y: vh * 0.7 }
-                };
-                this.lastSign = 'Open';
-            }
-            this.rafId = requestAnimationFrame(loop);
-        };
-        this.rafId = requestAnimationFrame(loop);
-    }
-}
-
 export const handPoseRuntime = new HandPoseRuntime();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -623,31 +536,16 @@ class BodyDetectionRuntime {
 
         this.detectorLoading = true;
         try {
-            // Dynamic import TF.js + pose-detection
+            // Dynamic import TF.js + pose-detection via npm (bundled by Vite)
             const tf = await import('@tensorflow/tfjs');
             await tf.ready();
 
             const poseDetection = await import('@tensorflow-models/pose-detection');
 
-            // Try CDN approach for pose-detection model
-            const loadScript = (src: string) => new Promise<void>((res, rej) => {
-                const s = document.createElement('script');
-                s.src = src;
-                s.onload = () => res();
-                s.onerror = () => rej(new Error(`Failed to load ${src}`));
-                document.head.appendChild(s);
-            });
-
-            // Ensure poseDetection global is available for the detector factory
-            if (!(window as any).poseDetection) {
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js');
-            }
-
-            const pd = (window as any).poseDetection || poseDetection;
-            if (pd && pd.createDetector) {
-                this.detector = await pd.createDetector(
-                    pd.SupportedModels.MoveNet,
-                    { modelType: pd.movenet?.modelType?.SINGLEPOSE_LIGHTNING || 'SinglePose.Lightning' }
+            if (poseDetection && poseDetection.createDetector) {
+                this.detector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.MoveNet,
+                    { modelType: poseDetection.movenet?.modelType?.SINGLEPOSE_LIGHTNING || 'SinglePose.Lightning' }
                 );
                 this.detectorReady = true;
                 console.log('[BodyDetection] MoveNet detector ready');
