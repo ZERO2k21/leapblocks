@@ -43,13 +43,13 @@ RUN arduino-cli lib install \
 
 WORKDIR /app
 
-COPY server/package.json server/package-lock.json* /tmp/server/
+COPY leaplab_frontend/server/package.json leaplab_frontend/server/package-lock.json* /tmp/server/
 RUN cd /tmp/server && npm install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
-COPY server/ ./server/
-COPY src/creova/apk/ ./src/creova/apk/
-COPY tools/ ./tools/
+COPY leaplab_frontend/server/ ./server/
+COPY leaplab_frontend/src/creova/apk/ ./src/creova/apk/
+COPY leaplab_frontend/tools/ ./tools/
 
 EXPOSE 3001
 EXPOSE 3002
