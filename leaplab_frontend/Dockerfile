@@ -15,8 +15,9 @@ RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/inst
 ENV ARDUINO_DIRECTORIES_DATA=/app/arduino-data
 ENV ARDUINO_DIRECTORIES_DOWNLOADS=/app/arduino-data/staging
 ENV ARDUINO_DIRECTORIES_USER=/app/arduino-data/user
+ENV ARDUINO_CONFIG_FILE=/app/arduino-cli.yaml
 
-RUN arduino-cli config init && \
+RUN arduino-cli config init --dest-file /app/arduino-cli.yaml && \
     arduino-cli config set directories.data /app/arduino-data && \
     arduino-cli config set directories.downloads /app/arduino-data/staging && \
     arduino-cli config set directories.user /app/arduino-data/user && \
@@ -55,8 +56,10 @@ RUN cd /tmp/server && npm install --production && \
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY tools/ ./tools/
-RUN cp /root/.arduino15/arduino-cli.yaml /app/server/arduino-cli.yaml && \
+RUN cp /app/arduino-cli.yaml /app/server/arduino-cli.yaml && \
     chmod 777 /app/server/arduino-cli.yaml
+
+ENV ARDUINO_CONFIG_FILE=/app/server/arduino-cli.yaml
 
 EXPOSE 3001
 EXPOSE 3002
