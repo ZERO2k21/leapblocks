@@ -11,30 +11,34 @@ interface LearningCenterProps {
     onViewAll?: () => void;
 }
 
-const tutorials: { id: number; title: string; desc: string; icon: LucideIcon }[] = [
+const tutorials: { id: number; title: string; desc: string; icon: LucideIcon; iconBg: string }[] = [
     {
         id: 1,
         title: "Beginner's Guide to Machine Learning",
         desc: 'Learn the basics of ML and build your first model in minutes.',
         icon: Brain,
+        iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
     },
     {
         id: 2,
         title: 'Image Classification Tutorial',
         desc: 'Step-by-step guide to training an image classifier.',
         icon: Image,
+        iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
     },
     {
         id: 3,
         title: 'Working with Audio Data',
         desc: 'How to prepare and use audio datasets effectively.',
         icon: AudioLines,
+        iconBg: 'bg-gradient-to-br from-rose-400 to-pink-500',
     },
     {
         id: 4,
         title: 'Understanding Model Accuracy',
         desc: 'Tips to improve your model performance and accuracy.',
         icon: BarChart3,
+        iconBg: 'bg-gradient-to-br from-emerald-400 to-green-500',
     },
 ];
 
@@ -42,27 +46,32 @@ export default function LearningCenter({ onViewAll }: LearningCenterProps) {
     const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
-                    <GraduationCap size={18} className="text-[#0a015a]" strokeWidth={2.2} />
-                    <h3 className="text-base font-bold text-[#0a015a]">Learning Center</h3>
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0a015a] to-[#15027a] flex items-center justify-center shadow-md shadow-[#0a015a]/20">
+                        <GraduationCap size={14} className="text-white" strokeWidth={2.2} />
+                    </div>
+                    <h3 className="text-sm font-bold text-[#0a015a]">Learning Center</h3>
                 </div>
                 <button
                     onClick={onViewAll}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#0a015a] hover:text-[#15027a] transition-colors"
+                    className="flex items-center gap-1 text-xs font-semibold text-[#0a015a]/60 hover:text-[#0a015a] transition-colors duration-200 group"
                 >
                     View All
-                    <ChevronRight size={14} strokeWidth={2.5} />
+                    <ChevronRight size={14} strokeWidth={2.5} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
             </div>
 
-            {/* Tutorial card */}
-            <div className="bg-gradient-to-br from-[#f5f0ff] to-[#ede8ff] rounded-xl p-4 mb-4 border border-purple-100/50">
-                <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center flex-shrink-0 shadow-sm">
-                        {React.createElement(tutorials[activeIndex].icon, { size: 20, className: 'text-[#0a015a]', strokeWidth: 2 })}
+            {/* Featured tutorial card */}
+            <div className="relative bg-gradient-to-br from-[#f5f0ff] via-[#ede8ff] to-[#f0ecff] rounded-xl p-4 mb-4 border border-purple-100/50 overflow-hidden">
+                {/* Subtle shimmer */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer-slide_3s_ease-in-out_infinite]" />
+
+                <div className="relative flex items-start gap-3">
+                    <div className={`w-11 h-11 rounded-xl ${tutorials[activeIndex].iconBg} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                        {React.createElement(tutorials[activeIndex].icon, { size: 20, className: 'text-white', strokeWidth: 2 })}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[#0a015a] leading-tight mb-1">
@@ -71,6 +80,10 @@ export default function LearningCenter({ onViewAll }: LearningCenterProps) {
                         <p className="text-xs text-gray-500 leading-relaxed">
                             {tutorials[activeIndex].desc}
                         </p>
+                        <button className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#0a015a] hover:text-[#15027a] transition-colors">
+                            Start Learning
+                            <ChevronRight size={12} strokeWidth={2.5} />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -81,10 +94,10 @@ export default function LearningCenter({ onViewAll }: LearningCenterProps) {
                     <button
                         key={i}
                         onClick={() => setActiveIndex(i)}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        className={`rounded-full transition-all duration-300 ${
                             i === activeIndex
-                                ? 'bg-[#0a015a] w-5'
-                                : 'bg-gray-300 hover:bg-gray-400'
+                                ? 'w-6 h-2 bg-gradient-to-r from-[#0a015a] to-[#4338ca] shadow-sm shadow-[#0a015a]/20'
+                                : 'w-2 h-2 bg-gray-200 hover:bg-gray-300 hover:scale-110'
                         }`}
                         aria-label={`Go to tutorial ${i + 1}`}
                     />

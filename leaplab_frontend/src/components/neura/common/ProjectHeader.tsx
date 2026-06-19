@@ -31,181 +31,78 @@ export default function ProjectHeader({
     showMiddleSection = true,
 }: ProjectHeaderProps) {
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '64px',
-            padding: '0px 18px',
-            background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-            boxShadow: 'rgba(8, 10, 37, 0.45) 0px 4px 20px, rgba(255, 255, 255, 0.06) 0px -1px 0px inset',
-            zIndex: 100,
-            borderBottom: '1px solid rgba(100, 180, 255, 0.1)',
-            userSelect: 'none',
-            flexShrink: 0
-        }}>
+        <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-[18px] bg-gradient-to-r from-[#0a015a] to-[#080a25] shadow-[0_4px_20px_rgba(8,10,37,0.45),inset_0_-1px_0_rgba(255,255,255,0.06)] z-[100] border-b border-white/10 select-none shrink-0 relative">
+            {/* Subtle glass overlay */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+                backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 50%)'
+            }} />
+
             {/* ── LEFT SECTION ────────────────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 0%', minWidth: '0px' }}>
+            <div className="relative flex items-center gap-2 sm:gap-3 flex-[1_1_0%] min-w-0">
                 {onBack && (
                     <button
-                        title="Back"
+                        title="Back to Dashboard"
                         onClick={onBack}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '40px',
-                            height: '40px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '12px',
-                            color: 'rgb(255, 255, 255)',
-                            cursor: 'pointer',
-                            transition: '0.2s',
-                            flexShrink: 0
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 hover:bg-white/[0.15] hover:border-white/20 hover:shadow-[0_0_12px_rgba(255,255,255,0.1)] shrink-0 active:scale-95"
                     >
-                        <Home size={20} strokeWidth={2.2} />
+                        <Home size={18} strokeWidth={2.2} />
                     </button>
                 )}
 
-                <div style={{ height: '32px', width: '1px', background: 'rgba(255, 255, 255, 0.1)', flexShrink: 0 }}></div>
+                <div className="h-6 sm:h-8 w-px bg-white/10 shrink-0" />
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginRight: '14px',
-                    flexShrink: 0,
-                    filter: 'drop-shadow(rgba(80, 200, 255, 0.3) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.3) 0px 2px 6px)'
-                }}>
+                <div className="flex items-center sm:mr-3.5 shrink-0 filter drop-shadow-[0_0_14px_rgba(80,200,255,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                     <img
                         alt="LeapLab"
                         src="assets/leaplab_logo_transparent.png"
-                        style={{ height: '52px', objectFit: 'contain' }}
+                        className="h-[36px] sm:h-[52px] object-contain"
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: '10px', lineHeight: '1.1' }}>
-                        <span style={{ color: 'rgb(255, 213, 0)', fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                    <div className="flex flex-col justify-center ml-1.5 sm:ml-2.5 leading-[1.1]">
+                        <span className="text-yellow-400 text-[7px] sm:text-[8px] font-[900] uppercase tracking-[0.18em] font-['Segoe_UI',Inter,sans-serif] hidden sm:block">
                             LEAPLAB
                         </span>
-                        <span style={{ color: 'rgb(255, 255, 255)', fontSize: '16px', fontWeight: 900, letterSpacing: '0.08em', fontFamily: '"Segoe UI", Inter, sans-serif' }}>
+                        <span className="text-white text-sm sm:text-base font-[900] tracking-[0.08em] font-['Segoe_UI',Inter,sans-serif]">
                             NEURA ML
                         </span>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 14px',
-                        border: 'none',
-                        color: 'rgb(255, 255, 255)',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        fontFamily: '"Segoe UI", Inter, sans-serif',
-                        cursor: 'pointer',
-                        borderRadius: '20px',
-                        transition: '0.2s',
-                        background: 'transparent',
-                        letterSpacing: '0.02em'
-                    }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                        <BookOpen size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />
+                <div className="hidden md:flex items-center gap-2">
+                    <button className="flex items-center gap-1.5 px-3.5 py-2 border-none text-white text-[13px] font-semibold font-['Segoe_UI',Inter,sans-serif] cursor-pointer rounded-full transition-all duration-200 bg-transparent tracking-[0.02em] hover:bg-white/10 active:scale-95">
+                        <BookOpen size={14} strokeWidth={2.2} className="opacity-90" />
                         Tutorials
                     </button>
                 </div>
             </div>
 
             {/* ── MIDDLE SECTION ──────────────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0px 16px', flex: '1 1 auto' }}>
+            <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 flex-[1_1_auto]">
                 {(showMiddleSection && title) && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        height: '40px',
-                        background: 'rgba(0, 0, 0, 0.25)',
-                        borderRadius: '20px',
-                        paddingLeft: '18px',
-                        paddingRight: '5px',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        gap: '8px',
-                        transition: '0.2s'
-                    }}>
-                        <span style={{ fontSize: '14px', opacity: 0.45 }}>{icon || '🧠'}</span>
+                    <div className="flex items-center h-10 bg-black/25 rounded-2xl pl-[18px] pr-1.5 border border-white/8 gap-2 transition-all duration-200 hover:bg-black/30 focus-within:bg-black/30 focus-within:border-white/15">
+                        <span className="text-sm opacity-45">{icon || '🧠'}</span>
                         <input
                             placeholder={title}
                             type="text"
                             value={projectName || title}
                             onChange={(e) => onProjectNameChange && onProjectNameChange(e.target.value)}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'rgb(255, 255, 255)',
-                                fontSize: '14px',
-                                fontWeight: 700,
-                                fontFamily: '"Segoe UI", Inter, sans-serif',
-                                width: '170px',
-                                textAlign: 'center',
-                                outline: 'none',
-                                letterSpacing: '0.01em'
-                            }}
+                            className="bg-transparent border-none text-white text-sm font-bold font-['Segoe_UI',Inter,sans-serif] w-[120px] sm:w-[170px] text-center outline-none tracking-[0.01em] placeholder:text-white/40"
                         />
                         {onSave && (
                             <button
                                 title="Save Project"
                                 onClick={onSave}
-                                style={{
-                                    background: 'rgb(34, 197, 94)',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '42px',
-                                    height: '42px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'rgb(255, 255, 255)',
-                                    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 6px -1px',
-                                    transition: 'transform 0.2s',
-                                    flexShrink: 0,
-                                    transform: 'scale(1)'
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
+                                className="bg-emerald-500 border-none rounded-full w-9 h-9 sm:w-[42px] sm:h-[42px] flex items-center justify-center cursor-pointer text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3)] transition-all duration-200 shrink-0 hover:bg-emerald-400 hover:scale-105 hover:shadow-[0_0_16px_rgba(34,197,94,0.4)] active:scale-95"
                             >
-                                <Save size={18} strokeWidth={2.8} />
+                                <Save size={16} strokeWidth={2.8} />
                             </button>
                         )}
                         {onDownload && (
                             <button
                                 title="Download .leap file"
                                 onClick={onDownload}
-                                style={{
-                                    background: 'rgb(59, 130, 246)',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '42px',
-                                    height: '42px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'rgb(255, 255, 255)',
-                                    boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 6px -1px',
-                                    transition: 'transform 0.2s',
-                                    flexShrink: 0,
-                                    transform: 'scale(1)',
-                                    marginLeft: '8px'
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none'; }}
+                                className="bg-blue-500 border-none rounded-full w-9 h-9 sm:w-[42px] sm:h-[42px] flex items-center justify-center cursor-pointer text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3)] transition-all duration-200 shrink-0 ml-1 sm:ml-2 hover:bg-blue-400 hover:scale-105 hover:shadow-[0_0_16px_rgba(59,130,246,0.4)] active:scale-95"
                             >
-                                <Download size={18} strokeWidth={2.8} />
+                                <Download size={16} strokeWidth={2.8} />
                             </button>
                         )}
                     </div>
@@ -213,88 +110,48 @@ export default function ProjectHeader({
             </div>
 
             {/* ── RIGHT SECTION ───────────────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px', flex: '1 1 0%', minWidth: '0px' }}>
+            <div className="relative flex items-center justify-end gap-3 sm:gap-5 flex-[1_1_0%] min-w-0">
                 {onUploadFolder && (
                     <button
                         onClick={onUploadFolder}
-                        style={{
-                            padding: '8px 16px',
-                            background: 'rgba(255, 255, 255, 0.2)',
-                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                            borderRadius: '8px',
-                            color: 'white',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                        className="hidden sm:flex px-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white text-[13px] font-semibold cursor-pointer items-center gap-1.5 transition-all duration-200 hover:bg-white/30 active:scale-95"
                     >
                         <span>📁</span> Upload Folder
                     </button>
                 )}
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    paddingRight: '16px',
-                    borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                    height: '32px',
-                    flexShrink: 0
-                }}>
-                    <button title="Feedback" style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.55)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}
-                    >
+                <div className="hidden sm:flex items-center gap-3.5 pr-4 border-r border-white/10 h-8 shrink-0">
+                    <button title="Feedback" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <MessageSquareWarning size={20} strokeWidth={2.2} />
                     </button>
-                    <button title="Achievements" style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.55)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}
-                    >
+                    <button title="Achievements" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <Trophy size={20} strokeWidth={2.2} />
                     </button>
-                    <button title="Settings" style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.55)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}
-                    >
+                    <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <Settings size={20} strokeWidth={2.2} />
                     </button>
-                    <button title="Help" style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.55)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}
-                    >
+                    <button title="Help" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <HelpCircle size={20} strokeWidth={2.2} />
                     </button>
                 </div>
 
-                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '8px', boxSizing: 'border-box' }} />
+                {/* Mobile: compact icon buttons */}
+                <div className="flex sm:hidden items-center gap-2">
+                    <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-1 transition-all duration-200 flex items-center hover:text-white/90 active:scale-95">
+                        <Settings size={18} strokeWidth={2.2} />
+                    </button>
+                    <button title="Help" className="bg-transparent border-none text-white/50 cursor-pointer p-1 transition-all duration-200 flex items-center hover:text-white/90 active:scale-95">
+                        <HelpCircle size={18} strokeWidth={2.2} />
+                    </button>
+                </div>
 
-                <div style={{
-                    marginLeft: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    height: '44px',
-                    overflow: 'hidden',
-                    filter: 'drop-shadow(rgba(255, 255, 255, 0.15) 0px 0px 14px) drop-shadow(rgba(0, 0, 0, 0.4) 0px 2px 8px)'
-                }}>
+                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '30px', borderRadius: '8px', boxSizing: 'border-box' }} />
+
+                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-11 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <img
                         alt="Leap into the AI Future"
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        style={{
-                            width: '95px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: 'brightness(1.2) contrast(1.1) drop-shadow(rgba(255, 255, 255, 0.2) 0px 0px 2px)'
-                        }}
+                        className="w-[95px] h-auto object-contain block shrink-0 brightness-120 contrast-110 drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
                     />
                 </div>
             </div>
