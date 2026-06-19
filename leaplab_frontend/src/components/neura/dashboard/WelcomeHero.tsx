@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Plus, Upload, BookOpen, Image, FileText, AudioLines, Brain, Sparkles } from 'lucide-react';
+import { Plus, Upload, BookOpen, Image, FileText, AudioLines, Sparkles } from 'lucide-react';
 
 interface WelcomeHeroProps {
     onCreateNew?: () => void;
@@ -59,7 +59,7 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                 </div>
 
                 {/* Right: Decorative illustration area */}
-                <div className="relative hidden lg:flex items-center justify-center w-[340px] h-[160px] flex-shrink-0">
+                <div className="relative hidden lg:flex items-center justify-center w-[400px] h-[200px] flex-shrink-0">
                     {/* Image card */}
                     <div className="absolute top-0 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-[0_3px_12px_rgba(0,0,0,0.06)] px-3 py-2 flex items-center gap-2.5 border border-gray-100 animate-float" style={{ animationDelay: '0s' }}>
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
@@ -94,19 +94,9 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                     </div>
 
                     {/* Central brain illustration */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[50%]">
-                        <div className="absolute inset-0 w-28 h-28 -translate-x-3 -translate-y-3 bg-gradient-radial from-[#7C3AED]/15 via-[#7C3AED]/5 to-transparent rounded-full blur-lg" />
-                        <div className="relative w-20 h-20 flex items-center justify-center animate-pulse-slow">
-                            <Brain size={48} className="text-[#7C3AED] drop-shadow-lg" strokeWidth={1.5} />
-                        </div>
-                        <div className="absolute inset-[-14px] border border-[#7C3AED]/12 rounded-full" />
-                        <div className="absolute inset-[-24px] border border-dashed border-[#7C3AED]/8 rounded-full" />
-                        <div className="absolute -top-4 left-1/2 w-1.5 h-1.5 bg-[#7C3AED]/25 rounded-full animate-float" style={{ animationDelay: '0.1s' }} />
-                        <div className="absolute top-1/2 -right-6 w-1 h-1 bg-[#7C3AED]/20 rounded-full animate-float" style={{ animationDelay: '0.3s' }} />
-                        <div className="absolute -bottom-3 left-3 w-1.5 h-1.5 bg-[#7C3AED]/15 rounded-full animate-float" style={{ animationDelay: '0.5s' }} />
-                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-28 h-4 bg-gradient-to-t from-[#7C3AED]/8 via-[#7C3AED]/3 to-transparent rounded-full blur-sm" />
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-2 bg-gradient-to-t from-[#7C3AED]/10 to-transparent rounded-full" />
-                    </div>
+                    <img src="/Brain.png" alt="" className="relative w-[280px] h-[200px] object-cover object-top opacity-90 pointer-events-none drop-shadow-2xl" />
+                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-5 bg-gradient-to-t from-[#7C3AED]/10 via-[#7C3AED]/4 to-transparent rounded-full blur-sm" />
+                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-32 h-2.5 bg-gradient-to-t from-[#7C3AED]/12 to-transparent rounded-full" />
 
                     {/* Robot mascot */}
                     <div className="absolute -bottom-2 right-2 animate-float" style={{ animationDelay: '0.6s' }}>
