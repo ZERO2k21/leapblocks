@@ -16,6 +16,7 @@ export interface ProjectTypeInfo {
     id: ProjectType;
     name: string;
     icon: string;
+    Icon?: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
     color: string;
     description?: string;
 }

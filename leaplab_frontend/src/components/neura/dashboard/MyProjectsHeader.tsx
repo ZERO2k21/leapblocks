@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { Plus } from 'lucide-react';
 
 interface MyProjectsHeaderProps {
     onCreateNew?: () => void;
@@ -20,7 +21,7 @@ export default function MyProjectsHeader({ onCreateNew }: MyProjectsHeaderProps)
                 onClick={onCreateNew}
                 className="neura-button-primary flex items-center gap-2 text-base"
             >
-                <span className="text-xl">+</span>
+                <Plus size={18} strokeWidth={2.5} />
                 <span>New Project</span>
             </button>
         </div>

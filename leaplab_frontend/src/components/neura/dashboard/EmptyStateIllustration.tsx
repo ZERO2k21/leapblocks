@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, Package, Sparkles, Diamond, Star } from 'lucide-react';
 
 interface EmptyStateIllustrationProps {
     onCreateNew?: () => void;
@@ -16,10 +16,10 @@ export default function EmptyStateIllustration({ onCreateNew }: EmptyStateIllust
             {/* Illustration */}
             <div className="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
                 <div className="relative">
-                    <span className="text-5xl drop-shadow-sm">&#x1F4E6;</span>
-                    <span className="absolute -top-3 -right-2 text-base animate-float" style={{ animationDelay: '0s' }}>&#x2728;</span>
-                    <span className="absolute -bottom-1 -left-3 text-sm animate-float" style={{ animationDelay: '0.3s' }}>&#x1F4A0;</span>
-                    <span className="absolute top-1 -left-4 text-xs animate-float" style={{ animationDelay: '0.6s' }}>&#x2B50;</span>
+                    <Package size={48} className="text-[#0a015a]/30 drop-shadow-sm" strokeWidth={1.5} />
+                    <Sparkles size={18} className="absolute -top-3 -right-2 text-amber-400 animate-float" strokeWidth={2} />
+                    <Diamond size={16} className="absolute -bottom-1 -left-3 text-purple-400 animate-float" strokeWidth={2} />
+                    <Star size={14} className="absolute top-1 -left-4 text-yellow-400 animate-float" strokeWidth={2} />
                 </div>
             </div>
 
