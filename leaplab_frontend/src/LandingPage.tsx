@@ -691,8 +691,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </button>
             </div>
           </div>
-          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <LeapLabAuthButton variant="light" size="md" />
+            <div className="nav-separator" style={{ width: '1.5px', height: '24px', backgroundColor: 'rgba(15, 23, 42, 0.15)' }}></div>
             <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
 

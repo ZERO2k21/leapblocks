@@ -235,7 +235,7 @@ export async function getSharedProject(shareId: string): Promise<CloudProject> {
 
 export function getShareUrl(shareId: string): string {
     const baseUrl =
-        (import.meta.env.VITE_APP_URL as string | undefined) ||
+        (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_APP_URL) ||
         'https://leaplab.creoleap.com';
     return `${baseUrl.replace(/\/$/, '')}/?share=${encodeURIComponent(shareId)}`;
 }
