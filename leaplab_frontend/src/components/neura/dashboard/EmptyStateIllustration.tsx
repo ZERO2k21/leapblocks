@@ -8,9 +8,10 @@ import { Plus, Upload, Package, Sparkles, Diamond, Star } from 'lucide-react';
 
 interface EmptyStateIllustrationProps {
     onCreateNew?: () => void;
+    onImport?: () => void;
 }
 
-export default function EmptyStateIllustration({ onCreateNew }: EmptyStateIllustrationProps) {
+export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyStateIllustrationProps) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 p-6 flex items-center gap-6">
             {/* Illustration */}
@@ -38,11 +39,11 @@ export default function EmptyStateIllustration({ onCreateNew }: EmptyStateIllust
                         <span>Create Project</span>
                     </button>
                     <button
-                        onClick={onCreateNew}
+                        onClick={onImport}
                         className="neura-button-secondary flex items-center gap-1.5 text-xs"
                     >
                         <Upload size={14} strokeWidth={2.2} />
-                        <span>Import Dataset</span>
+                        <span>Import Project</span>
                     </button>
                 </div>
             </div>
