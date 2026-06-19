@@ -53,7 +53,7 @@ const templates: { id: ProjectType; name: string; description: string; icon: Luc
 
 export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGridProps) {
     return (
-        <div className="mt-6">
+        <div className="mt-8">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div>
@@ -77,20 +77,20 @@ export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGr
                 {templates.map((template) => (
                     <div
                         key={template.id}
-                        className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col items-start cursor-pointer group hover:shadow-[0_4px_20px_rgba(10,1,90,0.08)] hover:border-[#0a015a]/10 hover:-translate-y-0.5 transition-all duration-300"
+                        className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col items-start min-h-[180px] cursor-pointer group hover:shadow-[0_4px_20px_rgba(10,1,90,0.08)] hover:border-[#0a015a]/10 hover:-translate-y-0.5 transition-all duration-300"
                         onClick={() => onSelectTemplate?.(template.id)}
                     >
                         {/* Colored circular icon */}
-                        <div className={`w-10 h-10 rounded-full ${template.iconBg} flex items-center justify-center mb-3 shadow-sm transition-transform duration-300 group-hover:scale-110`}>
-                            <template.icon size={20} className="text-white" strokeWidth={2} />
+                        <div className={`w-12 h-12 rounded-full ${template.iconBg} flex items-center justify-center mb-3 shadow-sm transition-transform duration-300 group-hover:scale-110`}>
+                            <template.icon size={22} className="text-white" strokeWidth={2} />
                         </div>
 
                         {/* Text */}
-                        <h3 className="text-[13px] font-bold text-[#0a015a] mb-1 leading-tight">{template.name}</h3>
-                        <p className="text-[11px] text-gray-400 leading-relaxed mb-4 flex-1">{template.description}</p>
+                        <h3 className="text-[14px] font-bold text-[#0a015a] mb-1 leading-tight">{template.name}</h3>
+                        <p className="text-[12px] text-gray-400 leading-relaxed mb-4 flex-1">{template.description}</p>
 
                         {/* CTA */}
-                        <button className="w-full py-1.5 px-3 rounded-lg text-[11px] font-semibold text-[#0a015a] border border-[#0a015a]/12 bg-[#0a015a]/[0.02] hover:bg-[#0a015a]/[0.06] transition-all">
+                        <button className="w-full py-2 px-3 rounded-lg text-[12px] font-semibold text-[#0a015a] border border-[#0a015a]/12 bg-[#0a015a]/[0.02] hover:bg-[#0a015a]/[0.06] transition-all">
                             Use Template
                         </button>
                     </div>

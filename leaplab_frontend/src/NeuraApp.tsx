@@ -105,7 +105,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 
             <div className="flex-1 overflow-y-auto relative">
                 {view === 'dashboard' && (
-                    <div className="p-6">
+                    <div className="p-6 lg:p-8">
                         <WelcomeHero
                             onCreateNew={handleCreateNew}
                             onImportDataset={() => console.log('Import dataset')}

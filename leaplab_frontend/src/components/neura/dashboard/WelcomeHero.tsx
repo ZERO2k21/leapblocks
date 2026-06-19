@@ -14,7 +14,7 @@ interface WelcomeHeroProps {
 
 export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials }: WelcomeHeroProps) {
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] px-6 py-6 mb-6">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] px-8 py-8 mb-8">
             {/* Background subtle dot pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: 'radial-gradient(circle, #0a015a 1px, transparent 1px)',
@@ -23,8 +23,8 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
 
             <div className="relative flex items-center justify-between">
                 {/* Left: Text content */}
-                <div className="flex-1 max-w-sm">
-                    <h1 className="text-[26px] font-bold text-[#0a015a] mb-1.5 tracking-tight leading-tight">
+                <div className="flex-1 max-w-md pt-2">
+                    <h1 className="text-[30px] font-bold text-[#0a015a] mb-2 tracking-tight leading-tight">
                         Welcome Back, Explorer! <span className="inline-block animate-wave">&#x1F44B;</span>
                     </h1>
                     <p className="text-gray-500 text-[13px] mb-6 leading-relaxed">
