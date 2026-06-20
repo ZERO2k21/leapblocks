@@ -81,7 +81,7 @@ function ActionMenu({
                 <MoreVertical size={16} strokeWidth={2} />
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-[0_8px_30px_rgba(10,1,90,0.12)] border border-gray-100 py-1.5 z-50 animate-fade-in-scale">
+                <div className="absolute right-0 bottom-full mb-1 w-44 bg-white rounded-xl shadow-[0_8px_30px_rgba(10,1,90,0.12)] border border-gray-100 py-1.5 z-50 animate-fade-in-scale">
                     <button
                         onClick={() => { onOpen?.(); setOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
