@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { saveProjectToCloud, updateSharedProject } from '../../../../services/cloudProjectApi';
+import { saveProjectToCloud, updateSharedProject, updateCloudProject } from '../../../../services/cloudProjectApi';
 import { useLeapLabAuthStore } from '../../../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../../../store/cloudProjectStore';
 
@@ -119,12 +119,24 @@ class FileService {
             throw new Error('Please sign in to save projects to the cloud.');
         }
 
-        await saveProjectToCloud({
-            projectName,
-            mode,
-            payload,
-            thumbnail,
-        });
+        const activeProjectId = useCloudProjectStore.getState().activeProjectId;
+
+        if (activeProjectId) {
+            await updateCloudProject(activeProjectId, {
+                projectName,
+                mode,
+                payload,
+                thumbnail,
+            });
+        } else {
+            const newProject = await saveProjectToCloud({
+                projectName,
+                mode,
+                payload,
+                thumbnail,
+            });
+            useCloudProjectStore.getState().setActiveProjectId(newProject.id);
+        }
     }
 
     saveProjectLocally(projectName: string, mode: SessionMode, payload: any): void {

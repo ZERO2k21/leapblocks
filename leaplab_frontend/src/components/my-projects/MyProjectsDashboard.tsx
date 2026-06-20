@@ -789,6 +789,30 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         }
     };
 
+    const escapeRegExp = (str: string) => {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    const highlightMatch = (text: string, query: string) => {
+        if (!query.trim()) return text;
+        const escapedQuery = escapeRegExp(query.trim());
+        const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+        const lowerQuery = query.trim().toLowerCase();
+        return (
+            <>
+                {parts.map((part, index) =>
+                    part.toLowerCase() === lowerQuery ? (
+                        <mark key={index} className="project-name-highlight">
+                            {part}
+                        </mark>
+                    ) : (
+                        part
+                    )
+                )}
+            </>
+        );
+    };
+
     const groupedProjects = projects.reduce((acc, project) => {
         const mode = project.mode || 'unknown';
         if (!acc[mode]) acc[mode] = [];
@@ -1016,7 +1040,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                             )}
 
                             <div className="my-project-card-content">
-                                <h4 className="my-project-card-name" title={project.name}>{project.name}</h4>
+                                <h4 className="my-project-card-name" title={project.name}>{highlightMatch(project.name, searchQuery)}</h4>
                                 <div className="my-project-card-footer-row">
                                     <div className="my-project-card-date">
                                         <Calendar size={14} style={{ marginRight: '4px', opacity: 0.7 }} />

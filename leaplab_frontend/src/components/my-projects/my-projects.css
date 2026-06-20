@@ -292,6 +292,8 @@
     display: flex;
     align-items: center;
     gap: 20px;
+    position: relative;
+    z-index: 2;
 }
 
 .my-module-header-icon-wrapper {
@@ -372,6 +374,8 @@
     flex-shrink: 0;
     width: 100%;
     max-width: 320px;
+    position: relative;
+    z-index: 2;
 }
 
 @media (max-width: 768px) {
@@ -1039,9 +1043,9 @@
 }
 
 .my-projects-search-wrapper:focus-within {
-    border-color: var(--module-accent);
+    border-color: #0f172a;
     background: #ffffff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04), 0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 0 5px var(--module-accent);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .my-projects-search-icon {
@@ -1058,7 +1062,13 @@
     font-size: 14px;
     font-weight: 600;
     color: #0f172a;
-    outline: none;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.my-projects-search-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .my-projects-search-input::placeholder {
@@ -1166,4 +1176,12 @@
     border-top-color: var(--spinner-color, #4f46e5);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+}
+
+.project-name-highlight {
+    background: #fef08a; /* Warm premium yellow background */
+    color: #0f172a; /* Dark slate text for readability */
+    padding: 0 2px;
+    border-radius: 4px;
+    font-weight: 700;
 }
