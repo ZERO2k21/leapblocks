@@ -557,6 +557,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const activeSpriteIdRef = useRef<string | null>(null); // Tracks true owner of current blocks
 
     const isLoadingWorkspaceRef = useRef(false);
+    const loadedProjectUrlRef = useRef<string | null>(null); // Prevents URL project from reloading in a loop
 
     const syncAllWorkspacesRef = useRef<(() => CompiledScript[]) | null>(null);
 
@@ -1695,11 +1696,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'compileTargetId:', compileTargetId);
 
-                console.log('[APP] Sprites available:', sprites.map(s => ({ id: s.id, name: s.name })));
+                const liveSprites = spriteManager.getAllSprites();
+                console.log('[APP] Sprites available:', liveSprites.map(s => ({ id: s.id, name: s.name })));
 
 
 
-                const sprite = sprites.find(s => s.id === compileTargetId);
+                const sprite = liveSprites.find(s => s.id === compileTargetId);
 
                 if (sprite) {
 
@@ -1769,7 +1771,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
-    }, [editorMode, appMode, sprites, selectedSpriteId, setToolboxUpdateKey]);
+    }, [editorMode, appMode, setToolboxUpdateKey]);
 
 
 
@@ -3354,7 +3356,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             addLog(`Loading project: ${data.projectName || 'Untitled'}`);
 
             // Full Reset before loading
-            sprites.forEach(s => animationVM.unregisterSprite(s.id));
+            spriteManager.getAllSprites().forEach(s => animationVM.unregisterSprite(s.id));
             spriteWorkspacesRef.current.clear();
             if (workspaceRef.current) workspaceRef.current.clear();
 
@@ -3468,11 +3470,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             console.error(`Failed to load project from ${source}:`, err);
             addLog(`Failed to load project: ${err.message}`);
         }
-    }, [sprites, addLog, setProjectName, setSprites, setSelectedSpriteId, setActiveSpriteId, setVariableMonitors, setListMonitors, setTableMonitors, setInstalledExtensions, loadSpriteWorkspace, triggerUpdate]);
+    }, [addLog, setProjectName, setSprites, setSelectedSpriteId, setActiveSpriteId, setVariableMonitors, setListMonitors, setTableMonitors, setInstalledExtensions, loadSpriteWorkspace, triggerUpdate]);
 
     // Auto-load project from URL parameter (?project=<url>)
     useEffect(() => {
-        if (!projectUrl) return;
+        if (!projectUrl || loadedProjectUrlRef.current === projectUrl) return;
 
         let cancelled = false;
 
@@ -3486,6 +3488,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 if (cancelled) return;
 
                 await loadProjectFromData(data, 'URL');
+                loadedProjectUrlRef.current = projectUrl;
             } catch (err: any) {
                 console.error('Failed to load project from URL:', err);
                 addLog(`Failed to load project: ${err.message}`);
@@ -4038,7 +4041,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     useEffect(() => {
 
-        if (editorMode === 'stage' && sprites.length === 0) {
+        if (editorMode === 'stage' && sprites.length === 0 && !projectUrl) {
 
             console.log('[APP] Initializing sprites (Stage + Default Robot)...');
 
@@ -4118,7 +4121,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         }
 
-    }, [editorMode]);
+    }, [editorMode, projectUrl]);
 
 
 
