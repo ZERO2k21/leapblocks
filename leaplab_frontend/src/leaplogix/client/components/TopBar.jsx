@@ -91,7 +91,11 @@ export default function TopBar() {
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={ctx.onBack} style={{
+                <button onClick={() => {
+                    sessionStorage.setItem('landingActiveTab', 'modules');
+                    sessionStorage.removeItem('myProjectsSelectedMode');
+                    ctx.onBack();
+                }} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: 40, height: 40, background: 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
@@ -99,7 +103,11 @@ export default function TopBar() {
                 }} title="Back to Home">
                     <Home size={19} strokeWidth={2.2} />
                 </button>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={ctx.onBack}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => {
+                    sessionStorage.setItem('landingActiveTab', 'modules');
+                    sessionStorage.removeItem('myProjectsSelectedMode');
+                    ctx.onBack();
+                }}>
                     <Logo height={50} />
                     <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>Logix</span>
                 </div>
@@ -114,7 +122,17 @@ export default function TopBar() {
                         { label: 'Save to your computer', icon: Save, onClick: ctx.handleSaveProject, shortcut: 'Ctrl+S' },
                         { label: 'Download .leap file', icon: Download, onClick: ctx.handleDownloadProject },
                         { divider: true },
-                        { label: 'Share', icon: Share, onClick: ctx.handleShareProject }
+                        { label: 'Share', icon: Share, onClick: ctx.handleShareProject },
+                        { divider: true },
+                        {
+                            label: 'My Projects',
+                            icon: FolderOpen,
+                            onClick: () => {
+                                sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                                ctx.onBack();
+                            }
+                        }
                     ]} />
 
                 <DropdownMenu label="Edit" isOpen={openMenuId === 'edit'} onToggle={() => setOpenMenuId(openMenuId === 'edit' ? null : 'edit')} onClose={() => setOpenMenuId(null)}

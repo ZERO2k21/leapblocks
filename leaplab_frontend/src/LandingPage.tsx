@@ -22,7 +22,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   const [highlightCards, setHighlightCards] = useState(false);
   const [scanIndex, setScanIndex] = useState(-1);
   const scanIntervalRef = useRef<any>(null);
-  const [activeTab, setActiveTab] = useState<'modules' | 'my-projects'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'my-projects'>(() => {
+    const saved = sessionStorage.getItem('landingActiveTab');
+    if (saved === 'my-projects') return 'my-projects';
+    return 'modules';
+  });
   const showProjects = activeTab === 'my-projects';
 
   /* ── Card scan ── */
@@ -674,7 +678,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         {/* TOPBAR */}
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#" className="nav-brand" onClick={() => setActiveTab('modules')}>
+            <a href="#" className="nav-brand" onClick={() => {
+              setActiveTab('modules');
+              sessionStorage.setItem('landingActiveTab', 'modules');
+              sessionStorage.removeItem('myProjectsSelectedMode');
+            }}>
               <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
@@ -686,7 +694,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </button>
               <button
                 className={`nav-link ${showProjects ? 'active' : ''}`}
-                onClick={() => setActiveTab(showProjects ? 'modules' : 'my-projects')}
+                onClick={() => {
+                  const target = showProjects ? 'modules' : 'my-projects';
+                  setActiveTab(target);
+                  sessionStorage.setItem('landingActiveTab', target);
+                }}
               >
                 My Projects
               </button>

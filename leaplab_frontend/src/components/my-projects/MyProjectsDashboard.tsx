@@ -666,7 +666,9 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [openingId, setOpeningId] = useState<string | null>(null);
     const [sharingProject, setSharingProject] = useState<CloudProject | null>(null);
-    const [selectedMode, setSelectedMode] = useState<string | null>(null);
+    const [selectedMode, setSelectedMode] = useState<string | null>(() => {
+        return sessionStorage.getItem('myProjectsSelectedMode') || null;
+    });
     const [searchQuery, setSearchQuery] = useState('');
     const { setPendingProject } = useCloudProjectStore();
     
@@ -848,7 +850,10 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                     '--module-gradient': meta?.gradient || '#ffffff',
                                     '--module-dark-accent': meta?.darkAccent || '#4f46e5'
                                 } as React.CSSProperties}
-                                onClick={() => setSelectedMode(mode)}
+                                onClick={() => {
+                                    setSelectedMode(mode);
+                                    sessionStorage.setItem('myProjectsSelectedMode', mode);
+                                }}
                             >
                                 <div className="my-module-card-banner">
                                     <img
@@ -903,6 +908,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                     className="my-projects-back-btn cursor-pointer"
                     onClick={() => {
                         setSelectedMode(null);
+                        sessionStorage.removeItem('myProjectsSelectedMode');
                         setSearchQuery('');
                         useCloudProjectStore.getState().clearActiveProjectId();
                     }}

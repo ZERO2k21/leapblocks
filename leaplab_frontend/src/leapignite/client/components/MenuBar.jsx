@@ -337,6 +337,16 @@ export default function MenuBar({
         { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
         { divider: true },
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share') },
+        { divider: true },
+        {
+            label: 'My Projects',
+            icon: FolderOpen,
+            onClick: () => {
+                sessionStorage.setItem('landingActiveTab', 'my-projects');
+                sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
+                onBack?.();
+            }
+        },
     ];
 
     const editMenuItems = [
@@ -376,7 +386,11 @@ export default function MenuBar({
 
                 {/* Home button */}
                 <button
-                    onClick={onBack}
+                    onClick={() => {
+                        sessionStorage.setItem('landingActiveTab', 'modules');
+                        sessionStorage.removeItem('myProjectsSelectedMode');
+                        onBack?.();
+                    }}
                     title="Back to Home"
                     style={{
                         width: 34, height: 34,

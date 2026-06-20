@@ -347,6 +347,7 @@ export default function ForgeElectra({
   }, [wifiLog, board, isSimulating]);
 
   const [isCompiling, setIsCompiling] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // File Operations
   const handleNewProject = () => {
@@ -496,6 +497,9 @@ export default function ForgeElectra({
   };
 
   const handleSaveProject = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    showToast("Saving project...", "info", 30000);
     try {
       const projectData = {
         nodes,
@@ -512,7 +516,9 @@ export default function ForgeElectra({
       showToast("Project saved successfully!", "success");
     } catch (err: any) {
       console.error('[FORGE] Failed to save project:', err);
-      alert(err?.message || 'Failed to save project.');
+      showToast(err?.message || 'Failed to save project.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -875,6 +881,7 @@ export default function ForgeElectra({
         canRedo={historyIndex < history.length - 1}
         onSwitchBoard={handleSwitchBoard}
         currentBoard={board}
+        isSaving={isSaving}
       />
 
       <main className="forge-main-split">

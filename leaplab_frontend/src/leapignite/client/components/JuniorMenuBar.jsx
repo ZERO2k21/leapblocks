@@ -188,6 +188,16 @@ export default function JuniorMenuBar({
         { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
         { divider: true },
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
+        { divider: true },
+        {
+            label: 'My Projects',
+            icon: FolderOpen,
+            onClick: () => {
+                sessionStorage.setItem('landingActiveTab', 'my-projects');
+                sessionStorage.setItem('myProjectsSelectedMode', 'junior');
+                onBack?.();
+            }
+        },
     ];
 
     const editMenuItems = [
@@ -217,7 +227,11 @@ export default function JuniorMenuBar({
             {/* LEFT SECTION: Home, Logo, Menus */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 <button
-                    onClick={onBack}
+                    onClick={() => {
+                        sessionStorage.setItem('landingActiveTab', 'modules');
+                        sessionStorage.removeItem('myProjectsSelectedMode');
+                        onBack?.();
+                    }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
