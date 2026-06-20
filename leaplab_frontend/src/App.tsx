@@ -153,9 +153,22 @@ export default function App() {
                 const resp = await fetch(projectUrl);
                 if (!resp.ok) throw new Error(`Failed to fetch project: ${resp.status}`);
                 const data = await resp.json();
+
+                // Electra payloads are identified by an explicit mode field, or by the raw circuit
+                // payload they were saved as before the wrapper existed. We check both the flat
+                // shape (nodes/edges/board) and the nested circuit shape for maximum coverage of
+                // already-uploaded trainer projects. Only the two supported Electra boards count.
+                const ELECTRA_BOARDS = ['arduino-uno', 'esp32-c3'] as const;
+                const hasElectraBoard = ELECTRA_BOARDS.includes(data.board);
+                const hasElectraCircuit =
+                    (Array.isArray(data.nodes) && Array.isArray(data.edges)) ||
+                    (Array.isArray(data.circuit?.nodes) && Array.isArray(data.circuit?.edges));
+                const isElectraPayload = data.mode === 'electra' ||
+                    (hasElectraCircuit && hasElectraBoard);
+
                 const detectedMode: AppMode =
                     data.mode === 'junior' ? 'junior' :
-                    data.mode === 'electra' ? 'electra' :
+                    isElectraPayload ? 'electra' :
                     'intermediate';
                 logAppTiming(`Project mode detected: ${detectedMode}`);
 

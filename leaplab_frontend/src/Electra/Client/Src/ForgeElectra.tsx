@@ -506,8 +506,7 @@ export default function ForgeElectra({
         edges,
         code,
         board,
-        version: '1.0.0',
-        timestamp: new Date().toISOString()
+        mode: 'electra' as const,
       };
       await fileService.saveProject(projectName || 'project', 'electra', projectData);
       if (!projectPath) {
@@ -528,8 +527,7 @@ export default function ForgeElectra({
       edges,
       code,
       board,
-      version: '1.0.0',
-      timestamp: new Date().toISOString()
+      mode: 'electra' as const,
     };
     fileService.saveProjectLocally(projectName || 'project', 'electra', projectData);
   };
