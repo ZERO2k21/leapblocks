@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
-import TemplateGrid from './components/neura/dashboard/TemplateGrid';
 import ProjectsTable from './components/neura/dashboard/ProjectsTable';
+import TemplateGrid from './components/neura/dashboard/TemplateGrid';
 import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
