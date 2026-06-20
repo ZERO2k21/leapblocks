@@ -306,7 +306,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative">
+            <div className="flex-1 overflow-y-auto relative flex flex-col">
                 {view === 'dashboard' && (
                     <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
                         <WelcomeHero
@@ -353,7 +353,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                 )}
 
                 {view === 'project' && (
-                    <div className="animate-fade-in">
+                    <div className="animate-fade-in flex flex-col flex-1" style={{ background: "#0a0a12" }}>
                         {renderProjectComponent()}
                     </div>
                 )}
