@@ -153,8 +153,20 @@ export default function App() {
                 const resp = await fetch(projectUrl);
                 if (!resp.ok) throw new Error(`Failed to fetch project: ${resp.status}`);
                 const data = await resp.json();
-                const detectedMode: AppMode = data.mode === 'junior' ? 'junior' : 'intermediate';
+                const detectedMode: AppMode =
+                    data.mode === 'junior' ? 'junior' :
+                    data.mode === 'electra' ? 'electra' :
+                    'intermediate';
                 logAppTiming(`Project mode detected: ${detectedMode}`);
+
+                if (detectedMode === 'electra') {
+                    useCloudProjectStore.getState().setPendingProject({
+                        mode: 'electra',
+                        data,
+                        projectName: data.projectName || 'Untitled Project',
+                    });
+                }
+
                 setMode(detectedMode);
             } catch (err) {
                 console.error('Failed to detect project mode:', err);
@@ -361,14 +373,14 @@ export default function App() {
                         redirectProjectData={redirectProjectData?.type === 'creova' ? redirectProjectData : null}
                         clearRedirectProjectData={clearRedirectProjectData}
                     />}
-                    {mode === 'appforge' && <ElectraWorkspace
+                    {projectUrlReady && mode === 'appforge' && <ElectraWorkspace
                         onBack={requestExit}
                         onHome={() => handleSetMode('home')}
                         onRedirectToCreova={handleRedirectToCreova}
                         redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
                         clearRedirectProjectData={clearRedirectProjectData}
                     />}
-                    {mode === 'electra' && <ElectraWorkspace
+                    {projectUrlReady && mode === 'electra' && <ElectraWorkspace
                         onBack={requestExit}
                         onHome={() => handleSetMode('home')}
                         onRedirectToCreova={handleRedirectToCreova}
