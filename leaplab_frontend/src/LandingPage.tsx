@@ -22,7 +22,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   const [highlightCards, setHighlightCards] = useState(false);
   const [scanIndex, setScanIndex] = useState(-1);
   const scanIntervalRef = useRef<any>(null);
-  const [activeTab, setActiveTab] = useState<'modules' | 'my-projects'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'my-projects'>(() => {
+    const saved = sessionStorage.getItem('landingActiveTab');
+    if (saved === 'my-projects') return 'my-projects';
+    return 'modules';
+  });
   const showProjects = activeTab === 'my-projects';
 
   /* ── Card scan ── */
@@ -319,7 +323,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: var(--text-main);
   height: 100dvh; 
   position: relative;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
@@ -673,7 +678,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         {/* TOPBAR */}
         <nav>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#" className="nav-brand" onClick={() => setActiveTab('modules')}>
+            <a href="#" className="nav-brand" onClick={() => {
+              setActiveTab('modules');
+              sessionStorage.setItem('landingActiveTab', 'modules');
+              sessionStorage.removeItem('myProjectsSelectedMode');
+            }}>
               <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
             </a>
             <div className="nav-links">
@@ -685,14 +694,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </button>
               <button
                 className={`nav-link ${showProjects ? 'active' : ''}`}
-                onClick={() => setActiveTab(showProjects ? 'modules' : 'my-projects')}
+                onClick={() => {
+                  const target = showProjects ? 'modules' : 'my-projects';
+                  setActiveTab(target);
+                  sessionStorage.setItem('landingActiveTab', target);
+                }}
               >
                 My Projects
               </button>
             </div>
           </div>
-          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <LeapLabAuthButton variant="light" size="md" />
+            <div className="nav-separator" style={{ width: '1.5px', height: '24px', backgroundColor: 'rgba(15, 23, 42, 0.15)' }}></div>
             <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
           </div>
 
@@ -854,53 +868,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           )}
 
           {/* FOOTER */}
-          <footer style={{
-            position: 'sticky',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            padding: '12px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            flexShrink: 0,
-            zIndex: 10,
-          }}>
-            {/* Ambient glow dot */}
-            <span style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #6366f1, #a855f7)',
-              boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+          {activeTab === 'modules' && (
+            <footer style={{
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              padding: '12px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
               flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
-              fontFamily: '"Poppins", sans-serif',
-              fontWeight: 500,
-              letterSpacing: '0.04em',
-              background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              zIndex: 10,
             }}>
-              LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
-            </span>
-            {/* Ambient glow dot */}
-            <span style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #a855f7, #6366f1)',
-              boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
-              flexShrink: 0,
-            }} />
-          </footer>
+              {/* Ambient glow dot */}
+              <span style={{
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #6366f1, #a855f7)',
+                boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+                flexShrink: 0,
+              }} />
+              <span style={{
+                fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
+                fontFamily: '"Poppins", sans-serif',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
+                background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+              </span>
+              {/* Ambient glow dot */}
+              <span style={{
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #a855f7, #6366f1)',
+                boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
+                flexShrink: 0,
+              }} />
+            </footer>
+          )}
 
         </div>
 

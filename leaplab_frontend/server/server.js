@@ -99,8 +99,22 @@ function sanitizeApkName(name) {
   return (name || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
 }
 
-let isInitialized = false;
+let isInitialized = true; // Initialize to true by default to avoid blocking compile requests on start
 let esp32CoreReady = false;
+let cachedCliVersion = null;
+
+async function getCliVersion() {
+  if (cachedCliVersion) return cachedCliVersion;
+  try {
+    const { stdout } = await runCLI(['version', '--format', 'json']);
+    const parsed = JSON.parse(stdout || '{}');
+    cachedCliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
+  } catch (err) {
+    cachedCliVersion = 'unknown';
+  }
+  return cachedCliVersion;
+}
+
 
 function getCliPath() {
   if (process.env.ARDUINO_CLI_PATH) return process.env.ARDUINO_CLI_PATH;
@@ -198,6 +212,9 @@ function runCommand(cmd, timeoutMs = 60_000) {
 async function initCores() {
   console.log('[SERVER] Initializing arduino cores...');
   try {
+    // Cache CLI version at startup to avoid spawning on /health requests
+    await getCliVersion();
+
     const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
     let data;
     try { data = JSON.parse(stdout || '[]'); } catch { data = []; }
@@ -208,10 +225,16 @@ async function initCores() {
       (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
     );
 
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+
     if (!hasAvr) {
-      console.log('[SERVER] Installing arduino:avr core...');
-      await runCLI(['core', 'update-index']);
-      await runCLI(['core', 'install', 'arduino:avr']);
+      if (isProduction) {
+        console.warn('[SERVER] Warning: arduino:avr core is missing but skipping auto-installation in production/Render environment.');
+      } else {
+        console.log('[SERVER] Installing arduino:avr core...');
+        await runCLI(['core', 'update-index']);
+        await runCLI(['core', 'install', 'arduino:avr']);
+      }
     }
 
     const hasEsp32 = cores.some(c =>
@@ -220,19 +243,22 @@ async function initCores() {
     );
 
     if (!hasEsp32) {
-      console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
-      await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
-      const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
-      esp32CoreReady = code === 0;
+      if (isProduction) {
+        console.warn('[SERVER] Warning: esp32:esp32 core is missing but skipping auto-installation in production/Render environment.');
+        esp32CoreReady = false;
+      } else {
+        console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
+        await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+        const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+        esp32CoreReady = code === 0;
+      }
     } else {
       esp32CoreReady = true;
     }
 
-    isInitialized = true;
     console.log('[SERVER] Core initialization complete');
   } catch (e) {
     console.warn('[SERVER] Core init warning:', e.message);
-    isInitialized = true;
   }
 }
 
@@ -247,6 +273,12 @@ async function ensureESP32Core() {
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
     if (installed) { esp32CoreReady = true; return true; }
+
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    if (isProduction) {
+      console.warn('[SERVER] ESP32 core is not installed. Skipping auto-installation in production/Render.');
+      return false;
+    }
 
     console.log('[SERVER] Installing ESP32 core (first run)...');
     const { code: ic } = await runCLI([
@@ -966,12 +998,7 @@ app.post('/relay', async (req, res) => {
 });
 // ─── GET /health ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {
-  let cliVersion = 'unknown';
-  try {
-    const { stdout } = await runCLI(['version', '--format', 'json']);
-    const parsed = JSON.parse(stdout || '{}');
-    cliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
-  } catch {}
+  const cliVersion = await getCliVersion();
 
   const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
   const apkBuilderExists = fs.existsSync(buildPath);

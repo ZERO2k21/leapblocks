@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { saveProjectToCloud, updateSharedProject } from '../../../../services/cloudProjectApi';
+import { saveProjectToCloud, updateSharedProject, updateCloudProject } from '../../../../services/cloudProjectApi';
 import { useLeapLabAuthStore } from '../../../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../../../store/cloudProjectStore';
 
@@ -29,9 +29,77 @@ const MODE_NAMES: Record<SessionMode, string> = {
     creova: 'Creova / App Builder'
 };
 
+async function captureProjectScreenshot(): Promise<Blob | null> {
+    try {
+        // 1. Look for the main active canvas element on the page (Blockly, Junior, Intermediate, Python, Creova)
+        const canvases = Array.from(document.querySelectorAll('canvas'));
+        const activeCanvas = canvases.find(c => {
+            const rect = c.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && c.width > 0 && c.height > 0;
+        });
+
+        if (activeCanvas) {
+            return new Promise((resolve) => {
+                activeCanvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/png');
+            });
+        }
+
+        // 2. Look for ReactFlow minimap canvas (Electra circuits)
+        const minimapCanvas = document.querySelector('.react-flow__minimap canvas') || document.querySelector('.glass-minimap canvas');
+        if (minimapCanvas instanceof HTMLCanvasElement) {
+            return new Promise((resolve) => {
+                minimapCanvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/png');
+            });
+        }
+
+        // 3. Fallback: search for any visible SVG element (Electra circuits fallback)
+        const svgElement = document.querySelector('.react-flow__viewport svg') || document.querySelector('.forge-canvas-container svg') || document.querySelector('svg');
+        if (svgElement instanceof SVGElement) {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const URL = window.URL || window.webkitURL || window;
+            const blobURL = URL.createObjectURL(svgBlob);
+            
+            const image = new Image();
+            const canvas = document.createElement('canvas');
+            canvas.width = svgElement.clientWidth || 800;
+            canvas.height = svgElement.clientHeight || 600;
+            const context = canvas.getContext('2d');
+            
+            return new Promise((resolve) => {
+                image.onload = () => {
+                    if (context) {
+                        context.fillStyle = '#ffffff';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        context.drawImage(image, 0, 0);
+                        canvas.toBlob((blob) => {
+                            URL.revokeObjectURL(blobURL);
+                            resolve(blob);
+                        }, 'image/png');
+                    } else {
+                        resolve(null);
+                    }
+                };
+                image.onerror = () => {
+                    resolve(null);
+                };
+                image.src = blobURL;
+            });
+        }
+    } catch (err) {
+        console.error('[Screenshot] Failed to capture project screenshot:', err);
+    }
+    return null;
+}
+
 class FileService {
     async saveProject(projectName: string, mode: SessionMode, payload: any): Promise<void> {
         const sharedInfo = useCloudProjectStore.getState().sharedProjectInfo;
+        const thumbnail = await captureProjectScreenshot();
 
         // If this project was opened via a shared link with editor permission,
         // save changes back to the shared project (no auth required).
@@ -40,6 +108,7 @@ class FileService {
                 projectName,
                 mode,
                 payload,
+                thumbnail,
             });
             return;
         }
@@ -50,11 +119,24 @@ class FileService {
             throw new Error('Please sign in to save projects to the cloud.');
         }
 
-        await saveProjectToCloud({
-            projectName,
-            mode,
-            payload,
-        });
+        const activeProjectId = useCloudProjectStore.getState().activeProjectId;
+
+        if (activeProjectId) {
+            await updateCloudProject(activeProjectId, {
+                projectName,
+                mode,
+                payload,
+                thumbnail,
+            });
+        } else {
+            const newProject = await saveProjectToCloud({
+                projectName,
+                mode,
+                payload,
+                thumbnail,
+            });
+            useCloudProjectStore.getState().setActiveProjectId(newProject.id);
+        }
     }
 
     saveProjectLocally(projectName: string, mode: SessionMode, payload: any): void {

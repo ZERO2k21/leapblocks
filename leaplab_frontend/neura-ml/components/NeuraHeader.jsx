@@ -28,6 +28,7 @@ export default function NeuraHeader({ onBack, onSave, projectName, onProjectName
                         title="Back to Home"
                         onClick={onBack}
                         style={{
+                            marginLeft: '6px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

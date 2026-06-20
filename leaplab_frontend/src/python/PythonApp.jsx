@@ -43,6 +43,7 @@ import {
     Share,
 } from "lucide-react";
 import { fileService } from "../Electra/Client/Src/services/FileService";
+import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
@@ -757,6 +758,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         };
         try {
             await fileService.saveProject(projectName, "python", payload);
+            showToast("Project saved successfully!", "success");
         } catch (err) {
             console.error('[PythonApp] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
@@ -2985,7 +2987,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     >
                         <Home size={19} strokeWidth={2.2} />
                     </button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={onBack}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => {
+                        sessionStorage.setItem('landingActiveTab', 'modules');
+                        sessionStorage.removeItem('myProjectsSelectedMode');
+                        onBack();
+                    }}>
                         <Logo height={50} />
                         <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>Logix</span>
                     </div>
@@ -3004,7 +3010,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
                             { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
                             { divider: true },
-                            { label: 'Share', icon: Share, onClick: handleShareProject }
+                            { label: 'Share', icon: Share, onClick: handleShareProject },
+                            { divider: true },
+                            {
+                                label: 'My Projects',
+                                icon: FolderOpen,
+                                onClick: () => {
+                                    sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                    sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                                    onBack();
+                                }
+                            }
                         ]}
                     />
 

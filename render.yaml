@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: leapblocks-server
+    runtime: docker
+    dockerContext: leaplab_frontend
+    dockerfilePath: leaplab_frontend/Dockerfile
+    envVars:
+      - key: PORT
+        value: 3001
+    healthCheckPath: /health
+    autoDeploy: true

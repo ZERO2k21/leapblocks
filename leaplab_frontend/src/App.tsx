@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, lazy, Suspense, useCallback } from 'react';
+import { ToastProvider } from './leapignite/client/components/Toast';
 
 const APP_LOAD_START = performance.now();
 const logAppTiming = (label: string) => {
@@ -152,8 +153,33 @@ export default function App() {
                 const resp = await fetch(projectUrl);
                 if (!resp.ok) throw new Error(`Failed to fetch project: ${resp.status}`);
                 const data = await resp.json();
-                const detectedMode: AppMode = data.mode === 'junior' ? 'junior' : 'intermediate';
+
+                // Electra payloads are identified by an explicit mode field, or by the raw circuit
+                // payload they were saved as before the wrapper existed. We check both the flat
+                // shape (nodes/edges/board) and the nested circuit shape for maximum coverage of
+                // already-uploaded trainer projects. Only the two supported Electra boards count.
+                const ELECTRA_BOARDS = ['arduino-uno', 'esp32-c3'] as const;
+                const hasElectraBoard = ELECTRA_BOARDS.includes(data.board);
+                const hasElectraCircuit =
+                    (Array.isArray(data.nodes) && Array.isArray(data.edges)) ||
+                    (Array.isArray(data.circuit?.nodes) && Array.isArray(data.circuit?.edges));
+                const isElectraPayload = data.mode === 'electra' ||
+                    (hasElectraCircuit && hasElectraBoard);
+
+                const detectedMode: AppMode =
+                    data.mode === 'junior' ? 'junior' :
+                    isElectraPayload ? 'electra' :
+                    'intermediate';
                 logAppTiming(`Project mode detected: ${detectedMode}`);
+
+                if (detectedMode === 'electra') {
+                    useCloudProjectStore.getState().setPendingProject({
+                        mode: 'electra',
+                        data,
+                        projectName: data.projectName || 'Untitled Project',
+                    });
+                }
+
                 setMode(detectedMode);
             } catch (err) {
                 console.error('Failed to detect project mode:', err);
@@ -325,6 +351,7 @@ export default function App() {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         useCloudProjectStore.getState().clearPendingProject();
+        useCloudProjectStore.getState().clearActiveProjectId();
         useCloudProjectStore.getState().clearSharedProjectInfo();
         setResolvedProjectUrl(null);
         setProjectUrlReady(true);
@@ -336,86 +363,88 @@ export default function App() {
 
     return (
         <ErrorBoundary key={mode}>
-            <Suspense fallback={<Loader />}>
-                {!projectUrlReady && projectUrl && <Loader />}
-                {projectUrlReady && mode === 'intermediate' && <IntermediateApp
-                    onBack={requestExit}
-                    onOpenPython={() => requestSwitch('intermediate', 'python')}
-                    openTab={intermediateOpenTab}
-                    projectUrl={resolvedProjectUrl}
-                />}
-                {projectUrlReady && mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} projectUrl={resolvedProjectUrl} />}
-                {mode === 'python' && <PythonApp
-                    onBack={requestExit}
-                    onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
-                    onSwitchToBlocks={() => requestSwitch('python', 'intermediate', 'blocks')}
-                    onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
-                />}
-                {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
-                {mode === 'creova' && <AppInventor
-                    onBack={requestExit}
-                    onRedirectToElectra={handleRedirectToElectra}
-                    redirectProjectData={redirectProjectData?.type === 'creova' ? redirectProjectData : null}
-                    clearRedirectProjectData={clearRedirectProjectData}
-                />}
-                {mode === 'appforge' && <ElectraWorkspace
-                    onBack={requestExit}
-                    onHome={() => handleSetMode('home')}
-                    onRedirectToCreova={handleRedirectToCreova}
-                    redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
-                    clearRedirectProjectData={clearRedirectProjectData}
-                />}
-                {mode === 'electra' && <ElectraWorkspace
-                    onBack={requestExit}
-                    onHome={() => handleSetMode('home')}
-                    onRedirectToCreova={handleRedirectToCreova}
-                    redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
-                    clearRedirectProjectData={clearRedirectProjectData}
-                />}
-                {mode === 'neura' && <NeuraApp onBack={requestExit} />}
-                {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
-            </Suspense>
+            <ToastProvider>
+                <Suspense fallback={<Loader />}>
+                    {!projectUrlReady && projectUrl && <Loader />}
+                    {projectUrlReady && mode === 'intermediate' && <IntermediateApp
+                        onBack={requestExit}
+                        onOpenPython={() => requestSwitch('intermediate', 'python')}
+                        openTab={intermediateOpenTab}
+                        projectUrl={resolvedProjectUrl}
+                    />}
+                    {projectUrlReady && mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} projectUrl={resolvedProjectUrl} />}
+                    {mode === 'python' && <PythonApp
+                        onBack={requestExit}
+                        onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
+                        onSwitchToBlocks={() => requestSwitch('python', 'intermediate', 'blocks')}
+                        onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
+                    />}
+                    {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
+                    {mode === 'creova' && <AppInventor
+                        onBack={requestExit}
+                        onRedirectToElectra={handleRedirectToElectra}
+                        redirectProjectData={redirectProjectData?.type === 'creova' ? redirectProjectData : null}
+                        clearRedirectProjectData={clearRedirectProjectData}
+                    />}
+                    {projectUrlReady && mode === 'appforge' && <ElectraWorkspace
+                        onBack={requestExit}
+                        onHome={() => handleSetMode('home')}
+                        onRedirectToCreova={handleRedirectToCreova}
+                        redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
+                        clearRedirectProjectData={clearRedirectProjectData}
+                    />}
+                    {projectUrlReady && mode === 'electra' && <ElectraWorkspace
+                        onBack={requestExit}
+                        onHome={() => handleSetMode('home')}
+                        onRedirectToCreova={handleRedirectToCreova}
+                        redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
+                        clearRedirectProjectData={clearRedirectProjectData}
+                    />}
+                    {mode === 'neura' && <NeuraApp onBack={requestExit} />}
+                    {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
+                </Suspense>
 
 
-            {switchPrompt && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
-                        <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Switching Coding Environment</h2>
-                        <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
-                            You are switching from <strong>{switchPrompt.from}</strong> into <strong>{switchPrompt.to}</strong>.
-                            {switchPrompt.tab ? ` (target tab: ${switchPrompt.tab})` : ''}
-                            The existing code in the current editor will stop running.
-                        </p>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button onClick={cancelSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
-                                Cancel
-                            </button>
-                            <button onClick={confirmSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
-                                Go Ahead
-                            </button>
+                {switchPrompt && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+                            <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Switching Coding Environment</h2>
+                            <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
+                                You are switching from <strong>{switchPrompt.from}</strong> into <strong>{switchPrompt.to}</strong>.
+                                {switchPrompt.tab ? ` (target tab: ${switchPrompt.tab})` : ''}
+                                The existing code in the current editor will stop running.
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                                <button onClick={cancelSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                                    Cancel
+                                </button>
+                                <button onClick={confirmSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
+                                    Go Ahead
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {exitPrompt && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
-                        <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Exit to Home?</h2>
-                        <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
-                            Are you sure you want to exit? The code in the current editor will stop running.
-                        </p>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button onClick={cancelExit} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
-                                No
-                            </button>
-                            <button onClick={confirmExit} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
-                                Yes
-                            </button>
+                {exitPrompt && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+                            <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Exit to Home?</h2>
+                            <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
+                                Are you sure you want to exit? The code in the current editor will stop running.
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                                <button onClick={cancelExit} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                                    No
+                                </button>
+                                <button onClick={confirmExit} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
+                                    Yes
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </ToastProvider>
         </ErrorBoundary>
     );
 }

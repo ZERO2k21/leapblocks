@@ -47,6 +47,7 @@ export interface SaveProjectPayload {
     payload: any;
     description?: string;
     metadata?: Record<string, any>;
+    thumbnail?: Blob | File | null;
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -72,6 +73,7 @@ export async function saveProjectToCloud({
     payload,
     description,
     metadata,
+    thumbnail,
 }: SaveProjectPayload): Promise<CloudProject> {
     const projectData = {
         version: '1.0',
@@ -98,6 +100,10 @@ export async function saveProjectToCloud({
 
     if (metadata) {
         formData.append('metadata', JSON.stringify(metadata));
+    }
+
+    if (thumbnail) {
+        formData.append('thumbnail', thumbnail, 'thumbnail.png');
     }
 
     const response = await fetch(LMS_PROJECTS_URL, {
@@ -178,6 +184,10 @@ export async function updateCloudProject(
         formData.append('metadata', JSON.stringify(payload.metadata));
     }
 
+    if (payload.thumbnail) {
+        formData.append('thumbnail', payload.thumbnail, 'thumbnail.png');
+    }
+
     const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
@@ -235,7 +245,7 @@ export async function getSharedProject(shareId: string): Promise<CloudProject> {
 
 export function getShareUrl(shareId: string): string {
     const baseUrl =
-        (import.meta.env.VITE_APP_URL as string | undefined) ||
+        (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_APP_URL) ||
         'https://leaplab.creoleap.com';
     return `${baseUrl.replace(/\/$/, '')}/?share=${encodeURIComponent(shareId)}`;
 }
@@ -261,6 +271,10 @@ export async function updateSharedProject(
     const formData = new FormData();
     formData.append('name', payload.projectName);
     formData.append('file', file);
+
+    if (payload.thumbnail) {
+        formData.append('thumbnail', payload.thumbnail, 'thumbnail.png');
+    }
 
     const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
         method: 'PATCH',

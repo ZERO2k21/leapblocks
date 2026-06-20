@@ -59,6 +59,7 @@ export class HandPoseRuntime {
         try {
             // Load MediaPipe Hands
             if (!this._hands) {
+                // @ts-ignore
                 const vision = await import('@mediapipe/tasks-vision');
                 const { HandLandmarker, FilesetResolver } = vision;
                 

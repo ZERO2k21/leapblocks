@@ -15,8 +15,12 @@ RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/inst
 ENV ARDUINO_DIRECTORIES_DATA=/app/arduino-data
 ENV ARDUINO_DIRECTORIES_DOWNLOADS=/app/arduino-data/staging
 ENV ARDUINO_DIRECTORIES_USER=/app/arduino-data/user
+ENV ARDUINO_CONFIG_FILE=/app/arduino-cli.yaml
 
-RUN arduino-cli config init && \
+RUN arduino-cli config init --dest-file /app/arduino-cli.yaml && \
+    arduino-cli config set directories.data /app/arduino-data && \
+    arduino-cli config set directories.downloads /app/arduino-data/staging && \
+    arduino-cli config set directories.user /app/arduino-data/user && \
     arduino-cli config set board_manager.additional_urls \
       "https://dl.espressif.com/dl/package_esp32_index.json" && \
     arduino-cli core update-index
@@ -41,6 +45,8 @@ RUN arduino-cli lib install \
     "HX711" \
     || true
 
+RUN chmod -R 777 /app/arduino-data
+
 WORKDIR /app
 
 COPY server/package.json server/package-lock.json* /tmp/server/
@@ -50,6 +56,10 @@ RUN cd /tmp/server && npm install --production && \
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY tools/ ./tools/
+RUN cp /app/arduino-cli.yaml /app/server/arduino-cli.yaml && \
+    chmod 777 /app/server/arduino-cli.yaml
+
+ENV ARDUINO_CONFIG_FILE=/app/server/arduino-cli.yaml
 
 EXPOSE 3001
 EXPOSE 3002

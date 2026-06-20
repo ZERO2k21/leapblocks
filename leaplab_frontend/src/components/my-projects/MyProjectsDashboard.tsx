@@ -2,7 +2,25 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+    ArrowLeft,
+    Trash2,
+    Share2,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    Cpu,
+    Lock,
+    FolderOpen,
+    AlertTriangle,
+    Code,
+    Brain,
+    Layers,
+    Tv,
+    Search,
+    X
+} from 'lucide-react';
 import {
     listMyProjects,
     getCloudProject,
@@ -13,6 +31,7 @@ import {
 import ShareProjectModal from './ShareProjectModal';
 import { useLeapLabAuthStore } from '../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../store/cloudProjectStore';
+import { isPacked, unpack } from '../../Electra/Client/utlis/compress';
 
 interface MyProjectsDashboardProps {
     onOpenProject: (mode: string) => void;
@@ -23,6 +42,7 @@ interface ModuleMeta {
     icon: string;
     accent: string;
     gradient: string;
+    darkAccent: string;
 }
 
 const MODULES: Record<string, ModuleMeta> = {
@@ -30,38 +50,612 @@ const MODULES: Record<string, ModuleMeta> = {
         label: 'Ignite',
         icon: 'assets/ignite_icon.png',
         accent: '#F97316',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #fff0e5 60%, #fce5d4 100%)',
+        gradient: 'linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(251, 146, 60, 0.1) 100%)',
+        darkAccent: '#C2410C',
     },
     intermediate: {
         label: 'Embed',
         icon: 'assets/arduino_icon.png',
         accent: '#59aaa4',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #e5f2f5 60%, #d5f2f7 100%)',
+        gradient: 'linear-gradient(135deg, rgba(89, 170, 164, 0.05) 0%, rgba(139, 211, 206, 0.1) 100%)',
+        darkAccent: '#0F766E',
     },
     python: {
         label: 'Logix',
         icon: 'assets/python_icon.png',
         accent: '#3B82F6',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #ebf0fd 60%, #ccdafa 100%)',
+        gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(96, 165, 250, 0.1) 100%)',
+        darkAccent: '#1D4ED8',
     },
     neura: {
         label: 'Neura',
         icon: 'assets/ml_brain_icon.png',
         accent: '#A855F7',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #f4ebfa 60%, #eddef7 100%)',
+        gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(192, 132, 252, 0.1) 100%)',
+        darkAccent: '#7E22CE',
     },
     electra: {
         label: 'Electra',
         icon: 'assets/creocad_icon.png',
         accent: '#22C55E',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #eaf8ed 60%, #d6f7df 100%)',
+        gradient: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(74, 222, 128, 0.1) 100%)',
+        darkAccent: '#15803D',
     },
     creova: {
         label: 'Creova',
         icon: 'assets/app_game_dev_icon.png',
         accent: '#EC4899',
-        gradient: 'linear-gradient(155deg, #ffffff 0%, #fbedf4 60%, #fae1ee 100%)',
+        gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(244, 114, 182, 0.1) 100%)',
+        darkAccent: '#BE185D',
     },
+};
+
+// Generates a modern abstract SVG representing the project's domain instead of repeating the logo
+const renderCardVisual = (mode: string, projectName: string) => {
+    const seed = projectName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const accent = MODULES[mode]?.accent || '#6366F1';
+
+    switch (mode) {
+        case 'electra':
+        case 'intermediate':
+            return (
+                <div className="project-card-visual visual-electra">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id={`grid-${seed}`} width="12" height="12" patternUnits="userSpaceOnUse">
+                                <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(34, 197, 94, 0.07)" strokeWidth="0.5"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill={`url(#grid-${seed})`} rx="8" />
+                        {/* Interactive schematic look */}
+                        <path d={`M 20 55 H 80 L 100 ${seed % 2 === 0 ? '25' : '85'} H 140`} stroke={accent} strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+                        <path d={`M 40 85 H 105 L 125 ${seed % 2 === 0 ? '90' : '20'} H 175`} stroke={accent} strokeWidth="1" opacity="0.4" />
+                        
+                        {/* Glowing Connection Nodes */}
+                        <circle cx="100" cy={seed % 2 === 0 ? '25' : '85'} r="3.5" fill={accent} className="animate-pulse" />
+                        <circle cx="125" cy={seed % 2 === 0 ? '90' : '20'} r="2.5" fill={accent} />
+                        
+                        {/* Stylized microcontroller block */}
+                        <rect x="80" y="40" width="40" height="30" rx="3" fill="#0F172A" stroke={accent} strokeWidth="1.5" />
+                        <line x1="88" y1="36" x2="88" y2="40" stroke={accent} strokeWidth="1" />
+                        <line x1="96" y1="36" x2="96" y2="40" stroke={accent} strokeWidth="1" />
+                        <line x1="104" y1="36" x2="104" y2="40" stroke={accent} strokeWidth="1" />
+                        <line x1="112" y1="36" x2="112" y2="40" stroke={accent} strokeWidth="1" />
+                        <line x1="88" y1="70" x2="88" y2="74" stroke={accent} strokeWidth="1" />
+                        <line x1="96" y1="70" x2="96" y2="74" stroke={accent} strokeWidth="1" />
+                        <line x1="104" y1="70" x2="104" y2="74" stroke={accent} strokeWidth="1" />
+                        <line x1="112" y1="70" x2="112" y2="74" stroke={accent} strokeWidth="1" />
+                        <Cpu size={18} color="#FFF" style={{ position: 'absolute', left: '91px', top: '46px', opacity: 0.9 }} />
+                    </svg>
+                </div>
+            );
+        case 'python':
+            return (
+                <div className="project-card-visual visual-python">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(59, 130, 246, 0.02)" rx="8" />
+                        {/* Stylized code terminal */}
+                        <rect x="10" y="10" width="180" height="90" rx="6" fill="#0B0F19" stroke="rgba(255,255,255,0.04)" strokeWidth="1.5" />
+                        <circle cx="22" cy="22" r="3" fill="#EF4444" />
+                        <circle cx="32" cy="22" r="3" fill="#F59E0B" />
+                        <circle cx="42" cy="22" r="3" fill="#10B981" />
+                        
+                        <text x="20" y="45" fontSize="8" fontFamily="monospace" fill="#3B82F6" fontWeight="bold">&gt;&gt; {projectName.substring(0, 14)}</text>
+                        <text x="20" y="60" fontSize="7" fontFamily="monospace" fill="#64748B">status: compiled successfully</text>
+                        <text x="20" y="75" fontSize="7" fontFamily="monospace" fill="#10B981">executing blockly modules...</text>
+                        
+                        <path d="M160 70 L170 80 L160 90" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </div>
+            );
+        case 'neura':
+            return (
+                <div className="project-card-visual visual-neura">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(168, 85, 247, 0.02)" rx="8" />
+                        {/* Synapse network nodes */}
+                        <line x1="30" y1="55" x2="80" y2="25" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
+                        <line x1="30" y1="55" x2="80" y2="85" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
+                        <line x1="80" y1="25" x2="140" y2="55" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
+                        <line x1="80" y1="85" x2="140" y2="55" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
+                        <line x1="80" y1="25" x2="80" y2="85" stroke="rgba(168, 85, 247, 0.15)" strokeWidth="0.75" />
+                        
+                        <circle cx="30" cy="55" r="6" fill="#A855F7" />
+                        <circle cx="80" cy="25" r="4.5" fill="#C084FC" />
+                        <circle cx="80" cy="85" r="4.5" fill="#C084FC" />
+                        <circle cx="140" cy="55" r="8" fill="#E979F9" />
+                        <circle cx="140" cy="55" r="12" stroke="#E979F9" strokeWidth="0.75" strokeDasharray="3 3" opacity="0.8" />
+                        <Brain size={14} color="#FFF" style={{ position: 'absolute', left: '133px', top: '48px' }} />
+                    </svg>
+                </div>
+            );
+        case 'creova':
+            return (
+                <div className="project-card-visual visual-creova">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(236, 72, 153, 0.02)" rx="8" />
+                        {/* Device frame preview */}
+                        <rect x="65" y="15" width="70" height="80" rx="8" fill="#1E293B" stroke={accent} strokeWidth="1.5" />
+                        <rect x="71" y="21" width="58" height="52" rx="4" fill="#0F172A" />
+                        <circle cx="100" cy="84" r="3" fill="#EC4899" />
+                        
+                        {/* UI Blocks inside preview */}
+                        <rect x="77" y="28" width="20" height="12" rx="2" fill="#EC4899" opacity="0.8" />
+                        <circle cx="110" cy="34" r="4" fill="#3B82F6" />
+                        <line x1="77" y1="48" x2="105" y2="48" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="77" y1="56" x2="115" y2="56" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                </div>
+            );
+        default:
+            return (
+                <div className="project-card-visual visual-default">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(99, 102, 241, 0.02)" rx="8" />
+                        <path d="M100 25 L145 75 H55 Z" stroke={accent} strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+                        <circle cx="100" cy="50" r="7" fill={accent} opacity="0.4" />
+                    </svg>
+                </div>
+            );
+    }
+};
+
+const renderHeaderBackgroundVisual = (mode: string) => {
+    const accent = MODULES[mode]?.accent || '#6366F1';
+    
+    switch (mode) {
+        case 'electra':
+        case 'intermediate':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-electra" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(34, 197, 94, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(34, 197, 94, 0.12)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-electra)" />
+                        <path d="M 400 60 H 600 L 620 30 H 680 L 690 60 H 750" stroke={accent} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.25" />
+                        <path d="M 500 90 H 550 L 570 110 H 660 L 675 75 H 780" stroke={accent} strokeWidth="1.2" opacity="0.18" />
+                        <path d="M 450 30 H 530 L 540 50 H 590 L 600 10 H 700" stroke={accent} strokeWidth="1" opacity="0.12" />
+                        
+                        <path d="M 648 20 V 40 M 652 20 V 40 M 644 30 H 648 M 652 30 H 656" stroke={accent} strokeWidth="1.5" opacity="0.3" />
+                        <path d="M 560 50 H 565 L 568 45 L 571 55 L 574 45 L 577 55 L 580 45 L 583 55 L 586 50 H 590" stroke={accent} strokeWidth="1.5" opacity="0.3" />
+                        
+                        <circle cx="600" cy="60" r="3.5" fill={accent} opacity="0.4" />
+                        <circle cx="620" cy="30" r="2.5" fill={accent} opacity="0.3" />
+                        <circle cx="680" cy="30" r="2.5" fill={accent} opacity="0.3" />
+                        <circle cx="690" cy="60" r="3.5" fill={accent} opacity="0.4" />
+                        <circle cx="570" cy="110" r="3" fill={accent} opacity="0.3" />
+                        <circle cx="660" cy="110" r="3" fill={accent} opacity="0.3" />
+                        <circle cx="675" cy="75" r="2" fill={accent} opacity="0.3" />
+                    </svg>
+                </div>
+            );
+        case 'python':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-python" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(59, 130, 246, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(59, 130, 246, 0.1)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-python)" />
+                        <text x="480" y="30" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.15">def init_workspace():</text>
+                        <text x="500" y="45" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.12">    load_modules(active=True)</text>
+                        <text x="500" y="60" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.12">    compile_blocks()</text>
+                        <text x="500" y="75" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.15">    return System.live_run()</text>
+                        
+                        <text x="680" y="40" fontFamily="monospace" fontSize="11" fill={accent} opacity="0.25" fontWeight="bold">&lt;/&gt;</text>
+                        <text x="710" y="85" fontFamily="monospace" fontSize="10" fill={accent} opacity="0.18">&gt;&gt;&gt; sys.ready</text>
+                        
+                        <path d="M 450 15 H 750 V 105 H 450 Z" stroke={accent} strokeWidth="1" strokeDasharray="8 8" opacity="0.08" />
+                    </svg>
+                </div>
+            );
+        case 'neura':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-neura" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(168, 85, 247, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(168, 85, 247, 0.12)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-neura)" />
+                        <line x1="520" y1="60" x2="600" y2="30" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="520" y1="60" x2="600" y2="90" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="600" y1="30" x2="680" y2="60" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="600" y1="90" x2="680" y2="60" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="680" y1="60" x2="760" y2="30" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="680" y1="60" x2="760" y2="90" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <line x1="600" y1="30" x2="600" y2="90" stroke={accent} strokeWidth="0.75" opacity="0.1" />
+                        <line x1="680" y1="60" x2="680" y2="10" stroke={accent} strokeWidth="0.75" opacity="0.1" />
+                        
+                        <circle cx="520" cy="60" r="4" fill={accent} opacity="0.3" />
+                        <circle cx="600" cy="30" r="5" fill={accent} opacity="0.25" />
+                        <circle cx="600" cy="90" r="5" fill={accent} opacity="0.25" />
+                        <circle cx="680" cy="60" r="6" fill={accent} opacity="0.35" />
+                        <circle cx="760" cy="30" r="4" fill={accent} opacity="0.25" />
+                        <circle cx="760" cy="90" r="4" fill={accent} opacity="0.25" />
+                        <circle cx="680" cy="60" r="10" stroke={accent} strokeWidth="0.75" strokeDasharray="2 2" opacity="0.3" />
+                    </svg>
+                </div>
+            );
+        case 'creova':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-creova" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(236, 72, 153, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(236, 72, 153, 0.12)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-creova)" />
+                        <rect x="580" y="20" width="60" height="80" rx="6" stroke={accent} strokeWidth="1" opacity="0.2" fill="none" />
+                        <rect x="585" y="25" width="50" height="50" rx="3" stroke={accent} strokeWidth="0.75" opacity="0.15" fill="none" />
+                        <circle cx="610" cy="85" r="2.5" fill={accent} opacity="0.25" />
+                        
+                        <path d="M 520 60 H 580" stroke={accent} strokeWidth="0.75" strokeDasharray="3 3" opacity="0.2" />
+                        <path d="M 640 40 H 700 L 720 60 H 760" stroke={accent} strokeWidth="1" opacity="0.18" />
+                        <circle cx="700" cy="40" r="2.5" fill={accent} opacity="0.3" />
+                        
+                        <line x1="680" y1="10" x2="680" y2="110" stroke={accent} strokeWidth="0.5" strokeDasharray="2 4" opacity="0.1" />
+                        <line x1="480" y1="80" x2="780" y2="80" stroke={accent} strokeWidth="0.5" strokeDasharray="2 4" opacity="0.1" />
+                    </svg>
+                </div>
+            );
+        case 'junior':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-junior" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(249, 115, 22, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(249, 115, 22, 0.12)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-junior)" />
+                        <path d="M 520 40 H 540 A 5 5 0 0 1 550 40 H 570 V 60 A 5 5 0 0 1 570 70 H 520 Z" stroke={accent} strokeWidth="1.2" opacity="0.25" fill="none" />
+                        <path d="M 580 60 H 600 A 5 5 0 0 1 610 60 H 630 V 80 A 5 5 0 0 1 630 90 H 580 Z" stroke={accent} strokeWidth="1.2" opacity="0.18" fill="none" />
+                        
+                        <circle cx="670" cy="30" r="3" fill={accent} opacity="0.2" />
+                        <circle cx="700" cy="75" r="4.5" fill={accent} opacity="0.25" />
+                        <circle cx="740" cy="45" r="2.5" fill={accent} opacity="0.2" />
+                        
+                        <path d="M 680 70 C 680 50, 720 50, 720 70 C 720 90, 680 90, 680 70" stroke={accent} strokeWidth="1" strokeDasharray="3 3" opacity="0.15" />
+                    </svg>
+                </div>
+            );
+        default:
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-default" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="100%" stopColor="rgba(99, 102, 241, 0.08)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-default)" />
+                        <path d="M 500 20 L 520 40 L 500 60" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <path d="M 600 80 L 620 100 L 600 120" stroke={accent} strokeWidth="1" opacity="0.15" />
+                        <circle cx="700" cy="50" r="8" stroke={accent} strokeWidth="1" strokeDasharray="4 4" opacity="0.15" />
+                    </svg>
+                </div>
+            );
+    }
+};
+
+interface SavedProjectCircuitVisualProps {
+    projectId: string;
+    fileUrl: string | null;
+    mode: string;
+    projectName: string;
+    accent: string;
+}
+
+const SavedProjectCircuitVisual: React.FC<SavedProjectCircuitVisualProps> = ({ projectId, fileUrl, mode, projectName, accent }) => {
+    const [loading, setLoading] = useState(true);
+    const [circuitData, setCircuitData] = useState<{ nodes: any[]; edges: any[] } | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                let url = fileUrl;
+                if (!url && projectId) {
+                    const fullProject = await getCloudProject(projectId);
+                    url = fullProject.fileUrl;
+                }
+
+                if (!url) {
+                    if (!cancelled) setLoading(false);
+                    return;
+                }
+
+                const fullUrl = url.startsWith('http')
+                    ? url
+                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${url}`;
+                
+                const response = await fetch(fullUrl);
+                if (!response.ok) throw new Error('Failed to load project content');
+                const text = await response.text();
+                
+                let content;
+                try {
+                    content = isPacked(text) ? unpack<any>(text) : JSON.parse(text);
+                } catch (parseErr) {
+                    console.error('[SavedProjectCircuitVisual] Failed to parse content:', parseErr);
+                    content = null;
+                }
+
+                if (content && !cancelled) {
+                    const loadedNodes = content.nodes || content.circuit?.nodes || [];
+                    const loadedEdges = content.edges || content.circuit?.edges || [];
+                    setCircuitData({ nodes: loadedNodes, edges: loadedEdges });
+                }
+            } catch (err) {
+                console.error('[SavedProjectCircuitVisual] Failed to load circuit:', err);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [fileUrl, projectId]);
+
+    if (loading) {
+        return (
+            <div className="project-card-visual-loader">
+                <div className="mini-spinner" style={{ '--spinner-color': accent } as React.CSSProperties} />
+            </div>
+        );
+    }
+
+    if (!circuitData || !Array.isArray(circuitData.nodes) || circuitData.nodes.length === 0) {
+        return renderCardVisual(mode, projectName);
+    }
+
+    const { nodes, edges } = circuitData;
+
+    // Calculate bounding box
+    const padding = 50;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    nodes.forEach((n: any) => {
+        const x = n.position?.x ?? 0;
+        const y = n.position?.y ?? 0;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    });
+
+    if (minX === Infinity || maxX === -Infinity || minY === Infinity || maxY === -Infinity) {
+        minX = 0;
+        maxX = 800;
+        minY = 0;
+        maxY = 600;
+    }
+
+    const width = Math.max(maxX - minX + padding * 2, 200);
+    const height = Math.max(maxY - minY + padding * 2, 110);
+    const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
+
+    return (
+        <div className="project-card-visual actual-circuit-render">
+            <svg viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="actual-circuit-svg">
+                <defs>
+                    <pattern id="card-circuit-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="0.5"/>
+                    </pattern>
+                </defs>
+                <rect x={minX - padding} y={minY - padding} width={width} height={height} fill="url(#card-circuit-grid)" />
+
+                {/* Draw wires (edges) */}
+                {Array.isArray(edges) && edges.map((edge: any) => {
+                    const srcNode = nodes.find((n: any) => n.id === edge.source);
+                    const tgtNode = nodes.find((n: any) => n.id === edge.target?.replace('__target', ''));
+                    if (!srcNode || !tgtNode) return null;
+
+                    const waypoints = edge.data?.waypoints || [];
+                    const color = edge.data?.color || accent;
+
+                    if (Array.isArray(waypoints) && waypoints.length > 0) {
+                        const pointsString = [
+                            { x: srcNode.position?.x ?? 0, y: srcNode.position?.y ?? 0 },
+                            ...waypoints,
+                            { x: tgtNode.position?.x ?? 0, y: tgtNode.position?.y ?? 0 }
+                        ].map(pt => `${pt.x},${pt.y}`).join(' ');
+
+                        return (
+                            <polyline
+                                key={edge.id}
+                                points={pointsString}
+                                stroke={color}
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                opacity="0.8"
+                            />
+                        );
+                    }
+
+                    return (
+                        <line
+                            key={edge.id}
+                            x1={srcNode.position?.x ?? 0}
+                            y1={srcNode.position?.y ?? 0}
+                            x2={tgtNode.position?.x ?? 0}
+                            y2={tgtNode.position?.y ?? 0}
+                            stroke={color}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            opacity="0.8"
+                        />
+                    );
+                })}
+
+                {/* Draw components (nodes) */}
+                {nodes.map((node: any) => {
+                    const x = node.position?.x ?? 0;
+                    const y = node.position?.y ?? 0;
+                    const isBoard = ['arduino-uno', 'esp32-c3', 'esp32'].includes(node.data?.type);
+                    const label = node.data?.label || node.data?.type || 'Component';
+
+                    if (isBoard) {
+                        return (
+                            <g key={node.id}>
+                                <rect
+                                    x={x - 40}
+                                    y={y - 25}
+                                    width="80"
+                                    height="50"
+                                    rx="5"
+                                    fill="#0F172A"
+                                    stroke={accent}
+                                    strokeWidth="1.5"
+                                />
+                                <text
+                                    x={x}
+                                    y={y + 4}
+                                    fill="#FFFFFF"
+                                    fontSize="8"
+                                    fontWeight="bold"
+                                    textAnchor="middle"
+                                    fontFamily="monospace"
+                                >
+                                    {label.substring(0, 10)}
+                                </text>
+                            </g>
+                        );
+                    }
+
+                    const type = node.data?.type?.toLowerCase() || '';
+                    
+                    let iconVisual = null;
+                    if (type === 'led') {
+                        iconVisual = (
+                            <>
+                                <circle cx={x} cy={y} r="7" fill={node.data?.color || '#EF4444'} opacity="0.9" />
+                                <path d={`M ${x-4} ${y-4} L ${x+4} ${y+4} M ${x+4} ${y-4} L ${x-4} ${y+4}`} stroke="#FFFFFF" strokeWidth="1" opacity="0.5" />
+                            </>
+                        );
+                    } else if (type === 'resistor') {
+                        iconVisual = <path d={`M ${x-10} ${y} H ${x-6} L ${x-4} ${y-3} L ${x-2} ${y+3} L ${x} ${y-3} L ${x+2} ${y+3} L ${x+4} ${y-3} L ${x+6} ${y} H ${x+10}`} stroke="#F59E0B" strokeWidth="1" fill="none" />;
+                    } else if (['servo', 'servo-motor', 'stepper-motor', 'dc-motor', 'biaxial-stepper'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <circle cx={x} cy={y} r="10" fill="#334155" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+                                <circle cx={x} cy={y} r="3" fill="#E2E8F0" />
+                                <line x1={x} y1={y} x2={x+8} y2={y-4} stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
+                            </>
+                        );
+                    } else if (['joystick', 'analog-joystick'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <circle cx={x} cy={y} r="11" stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" />
+                                <circle cx={x-2} cy={y-2} r="5" fill="#64748B" stroke="#FFFFFF" strokeWidth="1" />
+                            </>
+                        );
+                    } else if (['potentiometer', 'slide-potentiometer'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <circle cx={x} cy={y} r="9" stroke="#E2E8F0" strokeWidth="1.5" fill="none" />
+                                <line x1={x} y1={y} x2={x+6} y2={y+6} stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
+                            </>
+                        );
+                    } else if (['buzzer', 'speaker'].some(t => type.includes(t))) {
+                        iconVisual = <path d={`M ${x-8} ${y-5} H ${x-3} L ${x+4} ${y-9} V ${y+9} L ${x-3} ${y+5} H ${x-8} Z`} fill="#475569" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />;
+                    } else if (['hc-sr04', 'ultrasonic'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <circle cx={x-7} cy={y} r="6" fill="#1E293B" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+                                <circle cx={x-7} cy={y} r="3" fill="#64748B" />
+                                <circle cx={x+7} cy={y} r="6" fill="#1E293B" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+                                <circle cx={x+7} cy={y} r="3" fill="#64748B" />
+                            </>
+                        );
+                    } else if (['dht', 'temperature', 'humidity'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <rect x={x-10} y={y-10} width="20" height="20" rx="2" fill="#0EA5E9" opacity="0.8" />
+                                <line x1={x-6} y1={y-6} x2={x+6} y2={y-6} stroke="#FFFFFF" strokeWidth="1" />
+                                <line x1={x-6} y1={y-2} x2={x+6} y2={y-2} stroke="#FFFFFF" strokeWidth="1" />
+                                <line x1={x-6} y1={y+2} x2={x+6} y2={y+2} stroke="#FFFFFF" strokeWidth="1" />
+                                <line x1={x-6} y1={y+6} x2={x+6} y2={y+6} stroke="#FFFFFF" strokeWidth="1" />
+                            </>
+                        );
+                    } else if (['pushbutton', 'button'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <circle cx={x} cy={y} r="7" fill="#EF4444" stroke="#FFFFFF" strokeWidth="1" />
+                                <rect x={x-11} y={y-11} width="22" height="22" rx="2" stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
+                            </>
+                        );
+                    } else if (['lcd', 'screen', 'oled', 'ssd1306', 'ili9341'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <rect x={x-14} y={y-8} width="28" height="16" rx="1" fill="#1E3A8A" stroke="#3B82F6" strokeWidth="1.5" />
+                                <line x1={x-10} y1={y-4} x2={x+10} y2={y-4} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
+                                <line x1={x-10} y1={y} x2={x+10} y2={y} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
+                                <line x1={x-10} y1={y+4} x2={x+10} y2={y+4} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
+                            </>
+                        );
+                    } else if (['battery', 'power'].some(t => type.includes(t))) {
+                        iconVisual = (
+                            <>
+                                <rect x={x-10} y={y-6} width="20" height="12" rx="1" fill="#10B981" stroke="#FFFFFF" strokeWidth="1" />
+                                <rect x={x+10} y={y-2} width="2" height="4" fill="#FFFFFF" />
+                            </>
+                        );
+                    } else {
+                        iconVisual = <circle cx={x} cy={y} r="5" fill={accent} opacity="0.6" />;
+                    }
+
+                    return (
+                        <g key={node.id}>
+                            <rect
+                                x={x - 18}
+                                y={y - 18}
+                                width="36"
+                                height="36"
+                                rx="4"
+                                fill="#1E293B"
+                                stroke="rgba(255,255,255,0.2)"
+                                strokeWidth="1"
+                            />
+                            {iconVisual}
+                            <text
+                                x={x}
+                                y={y + 24}
+                                fill="rgba(15, 23, 42, 0.6)"
+                                fontSize="6"
+                                textAnchor="middle"
+                                fontFamily="sans-serif"
+                            >
+                                {label.substring(0, 8)}
+                            </text>
+                        </g>
+                    );
+                })}
+            </svg>
+        </div>
+    );
 };
 
 export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboardProps) {
@@ -72,8 +666,13 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [openingId, setOpeningId] = useState<string | null>(null);
     const [sharingProject, setSharingProject] = useState<CloudProject | null>(null);
-    const [selectedMode, setSelectedMode] = useState<string | null>(null);
+    const [selectedMode, setSelectedMode] = useState<string | null>(() => {
+        return sessionStorage.getItem('myProjectsSelectedMode') || null;
+    });
+    const [searchQuery, setSearchQuery] = useState('');
     const { setPendingProject } = useCloudProjectStore();
+    
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -98,6 +697,15 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         return () => { cancelled = true; };
     }, [isAuthenticated]);
 
+    const handleScroll = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const { scrollLeft } = scrollRef.current;
+            const scrollAmount = 300; // Match card width + gap
+            const scrollTo = direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount;
+            scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    };
+
     const handleOpenProject = async (project: CloudProject) => {
         if (openingId) return;
         setOpeningId(project.id);
@@ -119,6 +727,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                 projectName: project.name,
             });
 
+            useCloudProjectStore.getState().setActiveProjectId(project.id);
             useCloudProjectStore.getState().clearSharedProjectInfo();
 
             onOpenProject(project.mode);
@@ -154,15 +763,16 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         setProjects((prev) =>
             prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
         );
+        setSharingProject(updatedProject);
     };
 
     const renderShareButton = (project: CloudProject) => (
         <button
-            className="my-project-share-btn"
+            className={`my-project-share-btn ${project.isShared === 1 ? 'shared' : ''}`}
             onClick={(e) => handleShareProject(e, project)}
-            title={project.isShared === 1 ? 'Manage share link' : 'Share project'}
+            title={project.isShared === 1 ? 'Manage sharing' : 'Share project'}
         >
-            {project.isShared === 1 ? '🔗' : '⤴️'}
+            <Share2 size={16} />
         </button>
     );
 
@@ -179,6 +789,30 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         }
     };
 
+    const escapeRegExp = (str: string) => {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    const highlightMatch = (text: string, query: string) => {
+        if (!query.trim()) return text;
+        const escapedQuery = escapeRegExp(query.trim());
+        const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+        const lowerQuery = query.trim().toLowerCase();
+        return (
+            <>
+                {parts.map((part, index) =>
+                    part.toLowerCase() === lowerQuery ? (
+                        <mark key={index} className="project-name-highlight">
+                            {part}
+                        </mark>
+                    ) : (
+                        part
+                    )
+                )}
+            </>
+        );
+    };
+
     const groupedProjects = projects.reduce((acc, project) => {
         const mode = project.mode || 'unknown';
         if (!acc[mode]) acc[mode] = [];
@@ -186,16 +820,14 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         return acc;
     }, {} as Record<string, CloudProject[]>);
 
-    const sortedModes = Object.keys(groupedProjects).sort((a, b) => {
-        const aKnown = MODULES[a]?.label || a;
-        const bKnown = MODULES[b]?.label || b;
-        return aKnown.localeCompare(bKnown);
-    });
+    const sortedModes = ['junior', 'intermediate', 'python', 'neura', 'electra', 'creova'];
 
     if (!isAuthenticated) {
         return (
             <div className="my-projects-empty">
-                <div className="my-projects-empty-icon">🔒</div>
+                <div className="my-projects-empty-icon">
+                    <Lock size={44} />
+                </div>
                 <h3>Sign in to see your projects</h3>
                 <p>Your saved LeapLab projects will appear here after you sign in.</p>
             </div>
@@ -214,19 +846,11 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     if (error) {
         return (
             <div className="my-projects-error">
-                <div className="my-projects-error-icon">⚠️</div>
+                <div className="my-projects-error-icon">
+                    <AlertTriangle size={44} color="#EF4444" />
+                </div>
                 <p>{error}</p>
                 <button onClick={() => window.location.reload()}>Retry</button>
-            </div>
-        );
-    }
-
-    if (projects.length === 0) {
-        return (
-            <div className="my-projects-empty">
-                <div className="my-projects-empty-icon">📁</div>
-                <h3>No projects yet</h3>
-                <p>Projects you save from any LeapLab module will appear here.</p>
             </div>
         );
     }
@@ -235,37 +859,53 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     if (!selectedMode) {
         return (
             <div className="my-projects-dashboard">
-                <h2 className="my-projects-title">My Projects</h2>
-                <p className="my-projects-subtitle">Choose a module to view your saved projects</p>
+                <h2 className="my-projects-title">My Workspace</h2>
+                <p className="my-projects-subtitle">Select a module category to access your files</p>
                 <div className="my-modules-grid">
                     {sortedModes.map((mode) => {
                         const meta = MODULES[mode];
-                        const modeProjects = groupedProjects[mode];
+                        const modeProjects = groupedProjects[mode] || [];
                         return (
                             <button
                                 key={mode}
-                                className="my-module-card"
-                                style={{ '--module-accent': meta?.accent || '#6366f1', '--module-gradient': meta?.gradient || '#ffffff' } as React.CSSProperties}
-                                onClick={() => setSelectedMode(mode)}
+                                className="my-module-card cursor-pointer"
+                                style={{
+                                    '--module-accent': meta?.accent || '#6366f1',
+                                    '--module-gradient': meta?.gradient || '#ffffff',
+                                    '--module-dark-accent': meta?.darkAccent || '#4f46e5'
+                                } as React.CSSProperties}
+                                onClick={() => {
+                                    setSelectedMode(mode);
+                                    sessionStorage.setItem('myProjectsSelectedMode', mode);
+                                }}
                             >
-                                <div className="my-module-card-top">
+                                <div className="my-module-card-banner">
                                     <img
                                         src={meta?.icon || 'assets/splash_logo_b.png'}
                                         alt={meta?.label || mode}
                                         className="my-module-card-icon"
                                     />
                                     <span className="my-module-card-count">
-                                        {modeProjects.length} project{modeProjects.length !== 1 ? 's' : ''}
+                                        {modeProjects.length} {modeProjects.length === 1 ? 'project' : 'projects'}
                                     </span>
                                 </div>
-                                <div className="my-module-card-bottom">
+                                <div className="my-module-card-info">
                                     <h3 className="my-module-card-name">{meta?.label || mode}</h3>
-                                    <p className="my-module-card-hint">Click to open</p>
+                                    <p className="my-module-card-hint">Open Workspace</p>
                                 </div>
-                                <div className="my-module-card-arrow">→</div>
+                                <div className="my-module-card-arrow">
+                                    <ChevronRight size={18} />
+                                </div>
                             </button>
                         );
                     })}
+                </div>
+                
+                {/* Clean design credits footer */}
+                <div className="my-projects-footer">
+                    <span>LeapLab v1.1.0-STABLE</span>
+                    <span className="footer-divider" />
+                    <span>© 2026 Creoleap Technologies Pvt. Ltd. All rights reserved.</span>
                 </div>
             </div>
         );
@@ -274,71 +914,172 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     // Selected module project list view
     const meta = MODULES[selectedMode];
     const modeProjects = groupedProjects[selectedMode] || [];
+    const filteredProjects = modeProjects.filter((p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
-        <div className="my-projects-dashboard">
-            <button
-                className="my-projects-back"
-                onClick={() => setSelectedMode(null)}
-                aria-label="Back to modules"
-            >
-                ← Back to modules
-            </button>
-
-            <div className="my-projects-module-header">
-                <img
-                    src={meta?.icon || 'assets/splash_logo_b.png'}
-                    alt={meta?.label || selectedMode}
-                    className="my-projects-module-header-icon"
-                />
-                <div>
-                    <h2 className="my-projects-module-header-name">{meta?.label || selectedMode}</h2>
-                    <p className="my-projects-module-header-count">
-                        {modeProjects.length} project{modeProjects.length !== 1 ? 's' : ''}
-                    </p>
-                </div>
+        <div 
+            className="my-projects-dashboard page-projects-view"
+            style={{
+                '--module-accent': meta?.accent || '#6366f1',
+                '--module-gradient': meta?.gradient || '#ffffff',
+                '--module-dark-accent': meta?.darkAccent || '#4f46e5'
+            } as React.CSSProperties}
+        >
+            <div className="my-projects-top-nav">
+                <button
+                    className="my-projects-back-btn cursor-pointer"
+                    onClick={() => {
+                        setSelectedMode(null);
+                        sessionStorage.removeItem('myProjectsSelectedMode');
+                        setSearchQuery('');
+                        useCloudProjectStore.getState().clearActiveProjectId();
+                    }}
+                    aria-label="Back to modules"
+                    title="Back to modules"
+                >
+                    <ArrowLeft size={16} style={{ marginRight: '6px', transition: 'transform 0.2s' }} className="back-btn-arrow" />
+                    <span>Back to modules</span>
+                </button>
             </div>
 
-            <div className="my-projects-grid">
-                {modeProjects.map((project) => (
-                    <div
-                        key={project.id}
-                        className="my-project-card"
-                        onClick={() => handleOpenProject(project)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleOpenProject(project);
-                            }
-                        }}
-                    >
-                        <div className="my-project-card-header">
-                            <img
-                                src={meta?.icon || 'assets/splash_logo_b.png'}
-                                alt=""
-                                className="my-project-card-icon-img"
-                            />
-                            <div className="my-project-card-actions">
-                                {renderShareButton(project)}
-                                <button
-                                    className="my-project-delete-btn"
-                                    onClick={(e) => handleDeleteProject(e, project)}
-                                    disabled={deletingId === project.id}
-                                    title="Delete project"
-                                >
-                                    {deletingId === project.id ? '...' : '🗑️'}
-                                </button>
-                            </div>
-                        </div>
-                        <h4 className="my-project-card-name">{project.name}</h4>
-                        <p className="my-project-card-date">{formatDate(project.updatedAt)}</p>
-                        {openingId === project.id && (
-                            <div className="my-project-opening">Opening...</div>
-                        )}
+            <div className="my-projects-module-header">
+                {renderHeaderBackgroundVisual(selectedMode)}
+
+                <div className="my-projects-header-left">
+                    <div className="my-module-header-icon-wrapper">
+                        <img
+                            src={meta?.icon || 'assets/splash_logo_b.png'}
+                            alt={meta?.label || selectedMode}
+                            className="my-projects-module-header-icon"
+                        />
                     </div>
-                ))}
+                    <div className="my-projects-header-text">
+                        <h2 className="my-projects-module-header-name">{meta?.label || selectedMode} Workspace</h2>
+                        <div className="my-projects-header-badge-row">
+                            <span className="my-projects-module-header-count">
+                                {modeProjects.length} {modeProjects.length === 1 ? 'project' : 'projects'}
+                            </span>
+                            <span className="my-projects-live-badge">Live System</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Search Bar aligned to the right inside the header banner */}
+                {modeProjects.length > 0 && (
+                    <div className="my-projects-header-right">
+                        <div className="my-projects-search-wrapper">
+                            <Search size={18} className="my-projects-search-icon" />
+                            <input
+                                type="text"
+                                placeholder={`Search ${meta?.label || selectedMode} projects...`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="my-projects-search-input"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="my-projects-search-clear"
+                                    aria-label="Clear search"
+                                >
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Premium Project Grid Wrapper */}
+            {modeProjects.length === 0 ? (
+                <div className="my-projects-category-empty">
+                    <FolderOpen size={44} style={{ opacity: 0.6, marginBottom: '12px', color: meta?.accent }} />
+                    <h3>No projects saved yet</h3>
+                    <p>Open the workspace editor from the main landing page to build and save a project under {meta?.label}.</p>
+                </div>
+            ) : filteredProjects.length === 0 ? (
+                <div className="my-projects-search-empty">
+                    <Search size={44} style={{ opacity: 0.4, marginBottom: '12px', color: meta?.accent }} />
+                    <h3>No matching projects</h3>
+                    <p>We couldn't find any projects matching "{searchQuery}". Try adjusting your keywords.</p>
+                    <button className="clear-search-btn cursor-pointer" onClick={() => setSearchQuery('')}>
+                        Clear Search
+                    </button>
+                </div>
+            ) : (
+                <div className="my-projects-grid" ref={scrollRef}>
+                    {filteredProjects.map((project) => (
+                        <div
+                            key={project.id}
+                            className="my-project-card cursor-pointer"
+                            onClick={() => handleOpenProject(project)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleOpenProject(project);
+                                }
+                            }}
+                        >
+                            {/* Visual schematic panel or project thumbnail cover image */}
+                            {project.thumbnailUrl ? (
+                                <div className="project-card-visual">
+                                    <img
+                                        src={project.thumbnailUrl.startsWith('http')
+                                            ? project.thumbnailUrl
+                                            : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.thumbnailUrl}`}
+                                        alt={project.name}
+                                        className="project-card-thumbnail-img"
+                                    />
+                                </div>
+                            ) : (
+                                renderCardVisual(selectedMode, project.name)
+                            )}
+
+                            <div className="my-project-card-content">
+                                <h4 className="my-project-card-name" title={project.name}>{highlightMatch(project.name, searchQuery)}</h4>
+                                <div className="my-project-card-footer-row">
+                                    <div className="my-project-card-date">
+                                        <Calendar size={14} style={{ marginRight: '4px', opacity: 0.7 }} />
+                                        <span>{formatDate(project.updatedAt)}</span>
+                                    </div>
+                                    <div className="my-project-card-actions">
+                                        {renderShareButton(project)}
+                                        <button
+                                            className="my-project-delete-btn"
+                                            onClick={(e) => handleDeleteProject(e, project)}
+                                            disabled={deletingId === project.id}
+                                            title="Delete project"
+                                        >
+                                            {deletingId === project.id ? (
+                                                <span className="btn-spinner" />
+                                            ) : (
+                                                <Trash2 size={16} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {openingId === project.id && (
+                                <div className="my-project-opening">
+                                    <div className="opening-spinner" />
+                                    <span>Opening Workspace...</span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Dynamic Status / Credits footer */}
+            <div className="my-projects-footer">
+                <span>LeapLab v1.1.0-STABLE</span>
+                <span className="footer-divider" />
+                <span>© 2026 Creoleap Technologies Pvt. Ltd. All rights reserved.</span>
             </div>
 
             {sharingProject && (
@@ -351,3 +1092,4 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         </div>
     );
 }
+

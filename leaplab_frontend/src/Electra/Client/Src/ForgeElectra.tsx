@@ -28,6 +28,7 @@ import * as LibraryService from './services/LibraryService';
 import { pack, unpack, isPacked } from '../utlis/compress';
 import { fileService } from './services/FileService';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
+import { showToast } from '../../../leapignite/client/components/Toast';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -346,6 +347,7 @@ export default function ForgeElectra({
   }, [wifiLog, board, isSimulating]);
 
   const [isCompiling, setIsCompiling] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // File Operations
   const handleNewProject = () => {
@@ -495,22 +497,27 @@ export default function ForgeElectra({
   };
 
   const handleSaveProject = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    showToast("Saving project...", "info", 30000);
     try {
       const projectData = {
         nodes,
         edges,
         code,
         board,
-        version: '1.0.0',
-        timestamp: new Date().toISOString()
+        mode: 'electra' as const,
       };
       await fileService.saveProject(projectName || 'project', 'electra', projectData);
       if (!projectPath) {
         setProjectPath(uuidv4());
       }
+      showToast("Project saved successfully!", "success");
     } catch (err: any) {
       console.error('[FORGE] Failed to save project:', err);
-      alert(err?.message || 'Failed to save project.');
+      showToast(err?.message || 'Failed to save project.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -520,8 +527,7 @@ export default function ForgeElectra({
       edges,
       code,
       board,
-      version: '1.0.0',
-      timestamp: new Date().toISOString()
+      mode: 'electra' as const,
     };
     fileService.saveProjectLocally(projectName || 'project', 'electra', projectData);
   };
@@ -873,6 +879,7 @@ export default function ForgeElectra({
         canRedo={historyIndex < history.length - 1}
         onSwitchBoard={handleSwitchBoard}
         currentBoard={board}
+        isSaving={isSaving}
       />
 
       <main className="forge-main-split">
