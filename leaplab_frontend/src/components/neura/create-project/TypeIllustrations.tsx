@@ -137,37 +137,64 @@ function HandPoseClassifierIllustration({ className }: IllustrationProps) {
     return (
         <svg viewBox="0 0 200 140" fill="none" className={className}>
             <rect x="10" y="10" width="180" height="120" rx="12" fill="#ECFEFF" />
-            {/* Hand 1 - thumbs up */}
-            <g transform="translate(25, 20)">
-                <rect x="10" y="40" width="30" height="45" rx="8" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <rect x="18" y="15" width="14" height="30" rx="7" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <circle cx="25" cy="15" r="7" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+            {/* Hand 1 - thumbs up with detailed fingers */}
+            <g transform="translate(22, 18)">
+                {/* Palm base */}
+                <path d="M12 55 Q12 42 20 40 L40 40 Q48 42 48 55 L48 85 Q48 92 40 92 L20 92 Q12 92 12 85Z" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+                {/* Curled index finger */}
+                <path d="M20 40 Q20 30 25 28 Q30 26 32 30 Q34 34 32 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
+                <path d="M24 28 Q26 26 28 28" stroke="#F59E0B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+                {/* Curled middle finger */}
+                <path d="M30 40 Q30 28 35 26 Q40 24 42 28 Q44 32 42 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
+                <path d="M34 26 Q36 24 38 26" stroke="#F59E0B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+                {/* Curled ring finger */}
+                <path d="M38 40 Q38 32 42 30 Q46 28 48 32 Q49 36 48 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
+                <path d="M42 30 Q44 28 46 30" stroke="#F59E0B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+                {/* Curled pinky */}
+                <path d="M44 42 Q44 36 47 34 Q50 33 51 36 Q52 39 51 42" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.0" />
+                {/* Extended thumb - lower segment */}
+                <path d="M12 55 Q8 48 10 38 Q12 28 16 22" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                {/* Extended thumb - upper segment with nail */}
+                <path d="M16 22 Q18 14 22 10 Q26 8 28 12 Q30 16 26 22 Q22 26 18 24" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                <ellipse cx="24" cy="12" rx="4" ry="3" fill="#FBBF24" stroke="#F59E0B" strokeWidth="0.8" />
+                {/* Wrist */}
+                <path d="M16 92 L16 100 Q16 104 20 104 L40 104 Q44 104 44 100 L44 92" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
                 {/* Keypoints */}
-                <circle cx="25" cy="15" r="3" fill="#F97316" />
-                <circle cx="25" cy="30" r="3" fill="#F97316" />
-                <circle cx="25" cy="45" r="3" fill="#F97316" />
-                <circle cx="15" cy="55" r="2" fill="#FB923C" />
-                <circle cx="35" cy="55" r="2" fill="#FB923C" />
+                <circle cx="24" cy="10" r="3" fill="#F97316" />
+                <circle cx="16" cy="22" r="2.5" fill="#FB923C" />
+                <circle cx="12" cy="55" r="2.5" fill="#FB923C" />
+                <circle cx="48" cy="55" r="2" fill="#FB923C" />
             </g>
-            <rect x="20" y="100" width="60" height="14" rx="7" fill="#F97316" />
-            <text x="30" y="110" fontSize="7" fill="white" fontWeight="bold">Thumbs Up</text>
-            {/* Hand 2 - peace sign */}
-            <g transform="translate(100, 18)">
-                <rect x="10" y="42" width="30" height="45" rx="8" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <rect x="14" y="15" width="10" height="32" rx="5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <rect x="26" y="15" width="10" height="32" rx="5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <circle cx="19" cy="15" r="5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-                <circle cx="31" cy="15" r="5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+            <rect x="18" y="100" width="64" height="14" rx="7" fill="#F97316" />
+            <text x="26" y="110" fontSize="7" fill="white" fontWeight="bold">Thumbs Up</text>
+            {/* Hand 2 - peace sign with detailed fingers */}
+            <g transform="translate(105, 16)">
+                {/* Palm base */}
+                <path d="M8 55 Q8 42 16 40 L44 40 Q52 42 52 55 L52 85 Q52 92 44 92 L16 92 Q8 92 8 85Z" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+                {/* Extended index finger - left side of V */}
+                <path d="M18 40 Q18 28 16 18 Q14 10 16 6 Q20 2 24 4 Q28 6 26 14 Q24 24 22 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                <ellipse cx="18" cy="6" rx="4" ry="3.5" fill="#FBBF24" stroke="#F59E0B" strokeWidth="0.8" />
+                {/* Extended middle finger - right side of V */}
+                <path d="M32 40 Q32 26 34 16 Q36 8 38 4 Q42 0 46 4 Q48 8 44 16 Q40 26 38 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+                <ellipse cx="40" cy="4" rx="4" ry="3.5" fill="#FBBF24" stroke="#F59E0B" strokeWidth="0.8" />
+                {/* Curled ring finger */}
+                <path d="M40 40 Q40 34 43 32 Q46 30 48 34 Q49 38 48 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
+                <path d="M43 32 Q45 30 47 32" stroke="#F59E0B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+                {/* Curled pinky */}
+                <path d="M46 42 Q46 38 48 36 Q50 35 51 38 Q52 41 51 42" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.0" />
+                {/* Curled thumb across palm */}
+                <path d="M8 55 Q6 50 8 44 Q10 40 14 40" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round" />
+                {/* Wrist */}
+                <path d="M12 92 L12 100 Q12 104 16 104 L44 104 Q48 104 48 100 L48 92" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.2" />
                 {/* Keypoints */}
-                <circle cx="19" cy="15" r="3" fill="#F97316" />
-                <circle cx="31" cy="15" r="3" fill="#F97316" />
-                <circle cx="19" cy="35" r="2" fill="#FB923C" />
-                <circle cx="31" cy="35" r="2" fill="#FB923C" />
-                <circle cx="19" cy="50" r="3" fill="#F97316" />
-                <circle cx="31" cy="50" r="3" fill="#F97316" />
+                <circle cx="18" cy="6" r="3" fill="#F97316" />
+                <circle cx="40" cy="4" r="3" fill="#F97316" />
+                <circle cx="16" cy="18" r="2" fill="#FB923C" />
+                <circle cx="40" cy="16" r="2" fill="#FB923C" />
+                <circle cx="8" cy="55" r="2.5" fill="#FB923C" />
             </g>
-            <rect x="100" y="100" width="50" height="14" rx="7" fill="#06B6D4" />
-            <text x="112" y="110" fontSize="7" fill="white" fontWeight="bold">Peace</text>
+            <rect x="108" y="100" width="50" height="14" rx="7" fill="#06B6D4" />
+            <text x="120" y="110" fontSize="7" fill="white" fontWeight="bold">Peace</text>
         </svg>
     );
 }
