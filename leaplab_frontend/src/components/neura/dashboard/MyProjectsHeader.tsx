@@ -14,14 +14,16 @@ export default function MyProjectsHeader({ onCreateNew }: MyProjectsHeaderProps)
     return (
         <div className="flex items-center justify-between mb-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
-                <p className="text-gray-600">Manage and train your machine learning models</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+                    My <span className="neura-gradient-text">Projects</span>
+                </h1>
+                <p className="text-gray-500 text-sm">Manage and train your machine learning models</p>
             </div>
             <button
                 onClick={onCreateNew}
-                className="neura-button-primary flex items-center gap-2 text-base"
+                className="neura-button-primary flex items-center gap-2 text-sm"
             >
-                <Plus size={18} strokeWidth={2.5} />
+                <Plus size={16} strokeWidth={2.5} />
                 <span>New Project</span>
             </button>
         </div>

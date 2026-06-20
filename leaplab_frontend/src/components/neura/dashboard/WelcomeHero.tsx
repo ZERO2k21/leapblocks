@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Plus, Upload, BookOpen, Image, FileText, AudioLines, Sparkles } from 'lucide-react';
+import { Plus, Upload, BookOpen, Brain, Image, FileText, AudioLines, Sparkles } from 'lucide-react';
 
 interface WelcomeHeroProps {
     onCreateNew?: () => void;
@@ -14,56 +14,66 @@ interface WelcomeHeroProps {
 
 export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials }: WelcomeHeroProps) {
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] px-8 py-8 mb-8">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] px-6 sm:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 mb-6 border border-[#0a015a]/[0.04]">
             {/* Background subtle dot pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: 'radial-gradient(circle, #0a015a 1px, transparent 1px)',
                 backgroundSize: '20px 20px'
             }} />
 
-            <div className="relative flex items-center justify-between">
+            {/* Ambient glow */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-gradient-to-br from-[#7C3AED]/[0.06] to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-gradient-to-tr from-[#4F46E5]/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative flex items-center justify-between gap-6">
                 {/* Left: Text content */}
-                <div className="flex-1 max-w-md pt-2">
-                    <h1 className="text-[30px] font-bold text-[#0a015a] mb-2 tracking-tight leading-tight">
-                        Welcome Back, Explorer! <span className="inline-block animate-wave">&#x1F44B;</span>
-                    </h1>
-                    <p className="text-gray-500 text-[13px] mb-6 leading-relaxed">
-                        Start building powerful AI models in minutes.<br />
-                        No code. Just creativity.
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED]/15 to-[#4F46E5]/8 flex items-center justify-center">
+                            <Brain size={20} className="text-[#7C3AED]" strokeWidth={2} />
+                        </div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-[#0a015a] tracking-tight leading-tight">
+                            Welcome Back, <span className="neura-gradient-text">Explorer!</span>{' '}
+                            <span className="inline-block animate-wave">&#x1F44B;</span>
+                        </h1>
+                    </div>
+                    <p className="text-slate-500 text-sm sm:text-base mt-1.5 max-w-md">
+                        Build, train and deploy AI models without coding.{' '}
+                        <span className="font-medium text-violet-600">No code. Just creativity.</span>
                     </p>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mt-4 sm:mt-5">
                         <button
                             onClick={onCreateNew}
-                            className="neura-button-primary flex items-center gap-1.5 text-xs"
+                            className="neura-button-primary flex items-center gap-2 text-xs sm:text-sm"
                         >
-                            <Plus size={14} strokeWidth={2.5} />
+                            <Plus size={15} strokeWidth={2.5} />
                             <span>New Project</span>
                         </button>
                         <button
                             onClick={onImportDataset}
-                            className="neura-button-secondary flex items-center gap-1.5 text-xs"
+                            className="neura-button-secondary flex items-center gap-2 text-xs sm:text-sm"
                         >
-                            <Upload size={14} strokeWidth={2.2} />
+                            <Upload size={15} strokeWidth={2.2} />
                             <span>Import Dataset</span>
                         </button>
                         <button
                             onClick={onTutorials}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-[#0a015a] border border-[#0a015a]/15 bg-white hover:bg-gray-50 transition-all whitespace-nowrap"
+                            className="neura-button-ghost flex items-center gap-2 text-xs sm:text-sm"
                         >
-                            <BookOpen size={14} strokeWidth={2.2} />
+                            <BookOpen size={15} strokeWidth={2.2} />
                             <span>Tutorials</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Right: Decorative illustration area */}
-                <div className="relative hidden lg:flex items-center justify-center w-[400px] h-[200px] flex-shrink-0">
-                    {/* Image card */}
-                    <div className="absolute top-0 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-[0_3px_12px_rgba(0,0,0,0.06)] px-3 py-2 flex items-center gap-2.5 border border-gray-100 animate-float" style={{ animationDelay: '0s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
-                            <Image size={16} className="text-indigo-500" strokeWidth={2} />
+                <div className="relative hidden lg:flex items-center justify-center w-full max-w-[380px] flex-shrink-0">
+                    {/* Glass data-type cards */}
+                    <div className="absolute top-0 left-4 neura-glass rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0s' }}>
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20">
+                            <Image size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
                             <p className="text-[11px] font-bold text-gray-800">Image</p>
@@ -72,9 +82,9 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                     </div>
 
                     {/* Text card */}
-                    <div className="absolute bottom-2 left-0 bg-white/90 backdrop-blur-sm rounded-lg shadow-[0_3px_12px_rgba(0,0,0,0.06)] px-3 py-2 flex items-center gap-2.5 border border-gray-100 animate-float" style={{ animationDelay: '0.4s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-                            <FileText size={16} className="text-orange-500" strokeWidth={2} />
+                    <div className="absolute bottom-2 left-0 neura-glass rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0.4s' }}>
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md shadow-orange-500/20">
+                            <FileText size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
                             <p className="text-[11px] font-bold text-gray-800">Text</p>
@@ -83,9 +93,9 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                     </div>
 
                     {/* Audio card */}
-                    <div className="absolute top-0 right-0 bg-white/90 backdrop-blur-sm rounded-lg shadow-[0_3px_12px_rgba(0,0,0,0.06)] px-3 py-2 flex items-center gap-2.5 border border-gray-100 animate-float" style={{ animationDelay: '0.2s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center">
-                            <AudioLines size={16} className="text-pink-500" strokeWidth={2} />
+                    <div className="absolute top-0 right-0 neura-glass rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0.2s' }}>
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md shadow-pink-500/20">
+                            <AudioLines size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
                             <p className="text-[11px] font-bold text-gray-800">Audio</p>
@@ -93,14 +103,20 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                         </div>
                     </div>
 
-                    {/* Central brain illustration */}
-                    <img src="/Brain.png" alt="" className="relative w-[280px] h-[200px] object-cover object-top opacity-90 pointer-events-none drop-shadow-2xl" />
+                    {/* Central brain illustration with glow */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#7C3AED]/[0.08] to-[#4F46E5]/[0.04] rounded-full blur-2xl scale-110" />
+                        <img src="/Brain.png" alt="" className="relative w-full max-w-[260px] h-auto object-cover object-top opacity-90 pointer-events-none drop-shadow-2xl" />
+                    </div>
                     <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-5 bg-gradient-to-t from-[#7C3AED]/10 via-[#7C3AED]/4 to-transparent rounded-full blur-sm" />
                     <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-32 h-2.5 bg-gradient-to-t from-[#7C3AED]/12 to-transparent rounded-full" />
 
-                    {/* Robot mascot */}
+                    {/* Sparkle accent */}
                     <div className="absolute -bottom-2 right-2 animate-float" style={{ animationDelay: '0.6s' }}>
-                        <Sparkles size={36} className="text-[#7C3AED] drop-shadow-md" strokeWidth={1.5} />
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-[#7C3AED]/20 rounded-full blur-lg scale-150" />
+                            <Sparkles size={36} className="relative text-[#7C3AED] drop-shadow-md" strokeWidth={1.5} />
+                        </div>
                     </div>
                 </div>
             </div>

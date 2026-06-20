@@ -13,88 +13,141 @@ interface TemplateGridProps {
     onViewAll?: () => void;
 }
 
-const templates: { id: ProjectType; name: string; description: string; icon: LucideIcon; iconBg: string }[] = [
+const templates: {
+    id: ProjectType;
+    name: string;
+    description: string;
+    icon: LucideIcon;
+    iconBg: string;
+    accentFrom: string;
+    accentTo: string;
+    accentGlow: string;
+    tag: string;
+    popular?: boolean;
+}[] = [
     {
         id: 'image-classifier',
         name: 'Image Classification',
-        description: 'Classify images into different categories',
+        description: 'Instantly classify images into custom categories using powerful convolutional networks.',
         icon: Image,
-        iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
+        iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+        accentFrom: '#3b82f6',
+        accentTo: '#6366f1',
+        accentGlow: 'rgba(99, 102, 241, 0.35)',
+        tag: 'Vision',
+        popular: true,
     },
     {
         id: 'object-detection',
         name: 'Object Detection',
-        description: 'Detect and locate multiple objects in images',
+        description: 'Detect and locate multiple objects with precise bounding boxes in real-time.',
         icon: ScanSearch,
-        iconBg: 'bg-gradient-to-br from-orange-400 to-orange-500',
+        iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500',
+        accentFrom: '#f59e0b',
+        accentTo: '#f97316',
+        accentGlow: 'rgba(249, 115, 22, 0.35)',
+        tag: 'Vision',
+        popular: true,
     },
     {
         id: 'audio-classifier',
         name: 'Audio Classification',
-        description: 'Recognize sounds and audio patterns',
+        description: 'Recognize sounds, speech patterns, and audio events with high accuracy.',
         icon: AudioLines,
-        iconBg: 'bg-gradient-to-br from-red-400 to-red-500',
+        iconBg: 'bg-gradient-to-br from-rose-400 to-red-500',
+        accentFrom: '#fb7185',
+        accentTo: '#ef4444',
+        accentGlow: 'rgba(239, 68, 68, 0.35)',
+        tag: 'Audio',
     },
     {
         id: 'pose-classifier',
-        name: 'Pose Detection',
-        description: 'Detect human poses and keypoints',
+        name: 'Human Pose Detection',
+        description: 'Track body keypoints and human poses for movement analysis and AR applications.',
         icon: PersonStanding,
-        iconBg: 'bg-gradient-to-br from-green-400 to-green-500',
+        iconBg: 'bg-gradient-to-br from-emerald-400 to-green-500',
+        accentFrom: '#34d399',
+        accentTo: '#22c55e',
+        accentGlow: 'rgba(34, 197, 94, 0.35)',
+        tag: 'Vision',
     },
     {
         id: 'text-classifier',
-        name: 'Text Sentiment',
-        description: 'Analyze sentiment and opinions in text',
+        name: 'Sentiment Analysis',
+        description: 'Understand emotions and opinions in text with advanced NLP models.',
         icon: MessageSquare,
-        iconBg: 'bg-gradient-to-br from-purple-400 to-purple-500',
+        iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500',
+        accentFrom: '#a78bfa',
+        accentTo: '#8b5cf6',
+        accentGlow: 'rgba(139, 92, 246, 0.35)',
+        tag: 'NLP',
     },
 ];
 
 export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGridProps) {
     return (
-        <div className="mt-8">
+        <div className="mt-12">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-lg font-bold text-[#0a015a] tracking-tight flex items-center gap-2">
-                        <Image size={18} className="text-[#0a015a]" strokeWidth={2.2} />
+                    <h2 className="text-2xl font-bold text-[#0a015a] tracking-tight">
                         Start with a Template
                     </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Choose a prebuilt template and start training in seconds.</p>
+                    <p className="text-sm text-gray-400 mt-1">Choose a prebuilt template and start training in seconds.</p>
                 </div>
                 <button
                     onClick={onViewAll}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#0a015a] hover:text-[#15027a] transition-colors"
+                    className="flex items-center gap-1.5 text-base font-semibold text-violet-600 hover:text-violet-700 transition-colors duration-200 group"
                 >
                     View All Templates
-                    <ChevronRight size={14} strokeWidth={2.5} />
+                    <ChevronRight size={16} strokeWidth={2.5} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                 </button>
             </div>
 
             {/* Template cards grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {templates.map((template) => (
-                    <div
-                        key={template.id}
-                        className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col items-start min-h-[180px] cursor-pointer group hover:shadow-[0_4px_20px_rgba(10,1,90,0.08)] hover:border-[#0a015a]/10 hover:-translate-y-0.5 transition-all duration-300"
-                        onClick={() => onSelectTemplate?.(template.id)}
-                    >
-                        {/* Colored circular icon */}
-                        <div className={`w-12 h-12 rounded-full ${template.iconBg} flex items-center justify-center mb-3 shadow-sm transition-transform duration-300 group-hover:scale-110`}>
-                            <template.icon size={22} className="text-white" strokeWidth={2} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 sm:gap-7">
+                {templates.map((template, idx) => {
+                    const Icon = template.icon;
+                    return (
+                        <div
+                            key={template.id}
+                            className={`neura-premium-card group animate-slide-in-up stagger-${idx + 1}`}
+                            style={{
+                                '--accent-from': template.accentFrom,
+                                '--accent-to': template.accentTo,
+                                '--accent-glow': template.accentGlow,
+                            } as React.CSSProperties}
+                            onClick={() => onSelectTemplate?.(template.id)}
+                        >
+                            {/* Popular badge */}
+                            {template.popular && (
+                                <div className="neura-popular-badge">Popular</div>
+                            )}
+
+                            {/* Icon */}
+                            <div className={`neura-icon-wrapper ${template.iconBg}`}>
+                                <Icon size={32} className="text-white" strokeWidth={1.8} />
+                            </div>
+
+                            {/* Category badge */}
+                            <span className="neura-category-badge">{template.tag}</span>
+
+                            {/* Title */}
+                            <h3 className="neura-card-title">{template.name}</h3>
+
+                            {/* Description */}
+                            <p className="neura-card-desc">{template.description}</p>
+
+                            {/* Button */}
+                            <button className="neura-use-btn" onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectTemplate?.(template.id);
+                            }}>
+                                Use Template
+                            </button>
                         </div>
-
-                        {/* Text */}
-                        <h3 className="text-[14px] font-bold text-[#0a015a] mb-1 leading-tight">{template.name}</h3>
-                        <p className="text-[12px] text-gray-400 leading-relaxed mb-4 flex-1">{template.description}</p>
-
-                        {/* CTA */}
-                        <button className="w-full py-2 px-3 rounded-lg text-[12px] font-semibold text-[#0a015a] border border-[#0a015a]/12 bg-[#0a015a]/[0.02] hover:bg-[#0a015a]/[0.06] transition-all">
-                            Use Template
-                        </button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

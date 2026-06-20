@@ -44,6 +44,7 @@ export interface NeuraProject {
     updatedAt: number;
     modelTrained: boolean;
     accuracy?: number;
+    projectData?: Record<string, any>;
 }
 
 export interface TrainingConfig {
