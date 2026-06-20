@@ -16,6 +16,12 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    React.useEffect(() => {
+        if (project.sharePermission) {
+            setPermission(project.sharePermission);
+        }
+    }, [project.sharePermission]);
+
     const isShared = project.isShared === 1 && project.shareId;
     const shareUrl = isShared ? getShareUrl(project.shareId as string) : '';
 

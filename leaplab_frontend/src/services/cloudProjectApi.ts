@@ -47,6 +47,7 @@ export interface SaveProjectPayload {
     payload: any;
     description?: string;
     metadata?: Record<string, any>;
+    thumbnail?: Blob | File | null;
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -72,6 +73,7 @@ export async function saveProjectToCloud({
     payload,
     description,
     metadata,
+    thumbnail,
 }: SaveProjectPayload): Promise<CloudProject> {
     const projectData = {
         version: '1.0',
@@ -98,6 +100,10 @@ export async function saveProjectToCloud({
 
     if (metadata) {
         formData.append('metadata', JSON.stringify(metadata));
+    }
+
+    if (thumbnail) {
+        formData.append('thumbnail', thumbnail, 'thumbnail.png');
     }
 
     const response = await fetch(LMS_PROJECTS_URL, {
@@ -176,6 +182,10 @@ export async function updateCloudProject(
 
     if (payload.metadata) {
         formData.append('metadata', JSON.stringify(payload.metadata));
+    }
+
+    if (payload.thumbnail) {
+        formData.append('thumbnail', payload.thumbnail, 'thumbnail.png');
     }
 
     const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}`, {
@@ -261,6 +271,10 @@ export async function updateSharedProject(
     const formData = new FormData();
     formData.append('name', payload.projectName);
     formData.append('file', file);
+
+    if (payload.thumbnail) {
+        formData.append('thumbnail', payload.thumbnail, 'thumbnail.png');
+    }
 
     const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
         method: 'PATCH',

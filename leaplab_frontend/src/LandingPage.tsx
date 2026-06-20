@@ -319,7 +319,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   color: var(--text-main);
   height: 100dvh; 
   position: relative;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
@@ -855,53 +856,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           )}
 
           {/* FOOTER */}
-          <footer style={{
-            position: 'sticky',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            padding: '12px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            flexShrink: 0,
-            zIndex: 10,
-          }}>
-            {/* Ambient glow dot */}
-            <span style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #6366f1, #a855f7)',
-              boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+          {activeTab === 'modules' && (
+            <footer style={{
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              padding: '12px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
               flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
-              fontFamily: '"Poppins", sans-serif',
-              fontWeight: 500,
-              letterSpacing: '0.04em',
-              background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              zIndex: 10,
             }}>
-              LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
-            </span>
-            {/* Ambient glow dot */}
-            <span style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #a855f7, #6366f1)',
-              boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
-              flexShrink: 0,
-            }} />
-          </footer>
+              {/* Ambient glow dot */}
+              <span style={{
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #6366f1, #a855f7)',
+                boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
+                flexShrink: 0,
+              }} />
+              <span style={{
+                fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
+                fontFamily: '"Poppins", sans-serif',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
+                background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
+              </span>
+              {/* Ambient glow dot */}
+              <span style={{
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #a855f7, #6366f1)',
+                boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
+                flexShrink: 0,
+              }} />
+            </footer>
+          )}
 
         </div>
 

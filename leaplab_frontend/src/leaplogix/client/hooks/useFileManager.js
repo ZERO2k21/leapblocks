@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect } from "react";
 import { fileService } from "../../../Electra/Client/Src/services/FileService";
 import { useCloudProjectStore } from "../../../store/cloudProjectStore";
 import { getUniqueFileName, getFallbackActiveFile } from "../utils/fileUtils";
+import { showToast } from "../../../leapignite/client/components/Toast";
 
 const DEFAULT_ACTIVE_FILE = "main.py";
 const DEFAULT_FILES = {
@@ -33,6 +34,7 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         };
         try {
             await fileService.saveProject(projectName, "python", payload);
+            showToast("Project saved successfully!", "success");
         } catch (err) {
             console.error('[useFileManager] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');

@@ -43,6 +43,7 @@ import {
     Share,
 } from "lucide-react";
 import { fileService } from "../Electra/Client/Src/services/FileService";
+import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
 import SerialMonitor from "../components/SerialMonitor";
@@ -757,6 +758,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         };
         try {
             await fileService.saveProject(projectName, "python", payload);
+            showToast("Project saved successfully!", "success");
         } catch (err) {
             console.error('[PythonApp] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');

@@ -108,6 +108,9 @@ export function useJuniorProject({
             try {
                 await fileService.saveProject(projectName, 'junior', payload);
                 console.log(`[JuniorApp] Project saved: ${projectName}`);
+                if (!isSilent) {
+                    showToast("Project saved successfully!", "success");
+                }
             } catch (err) {
                 console.error('[JuniorApp] Failed to save project:', err);
                 alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
