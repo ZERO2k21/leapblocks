@@ -13,6 +13,7 @@ type HandPoseClass = {
 type HandPoseClassifierProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const COLORS = [
@@ -70,7 +71,7 @@ function HandPoseIllustration({ gestureIndex, size = 48 }: { gestureIndex: numbe
     return illustrations[gestureIndex % illustrations.length]
 }
 
-export default function HandPoseClassifier({ project, onBack }: HandPoseClassifierProps) {
+export default function HandPoseClassifier({ project, onBack, onDataChange }: HandPoseClassifierProps) {
     const [classes, setClasses] = useState<HandPoseClass[]>([
         { id: 1, name: 'Gesture 1', samples: [] },
         { id: 2, name: 'Gesture 2', samples: [] },
@@ -86,8 +87,56 @@ export default function HandPoseClassifier({ project, onBack }: HandPoseClassifi
     const [editingId, setEditingId] = useState<number | null>(null)
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+    const [restored, setRestored] = useState(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: HandPoseClass[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => {
+                    if (typeof s.data === 'string') {
+                        try { return JSON.parse(s.data) } catch { return [] }
+                    }
+                    return s.data ?? s
+                }),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: 'Gesture 1', samples: [] },
+                { id: 2, name: 'Gesture 2', samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            setTrained(project.modelTrained || false)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: classes.map((c, ci) => ({
+                    id: String(c.id),
+                    name: c.name,
+                    color: COLORS[ci % COLORS.length]?.bg || '#7c3aed',
+                    samples: c.samples.map((landmarks, i) => ({
+                        id: `hand-${c.id}-${i}`,
+                        type: 'keypoints' as const,
+                        data: JSON.stringify(landmarks),
+                        timestamp: Date.now(),
+                    })),
+                })),
+                modelTrained: trained,
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trained, nextId, epochs])
 
     const startWebcam = async (classId: number) => {
         try {

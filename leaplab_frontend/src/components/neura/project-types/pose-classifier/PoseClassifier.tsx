@@ -13,6 +13,7 @@ type PoseClass = {
 type PoseClassifierProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const COLORS = [
@@ -116,7 +117,7 @@ function PersonIllustration({ size = 80 }: { size?: number }) {
     )
 }
 
-export default function PoseClassifier({ project, onBack }: PoseClassifierProps) {
+export default function PoseClassifier({ project, onBack, onDataChange }: PoseClassifierProps) {
     const [classes, setClasses] = useState<PoseClass[]>([
         { id: 1, name: 'Pose 1', samples: [] },
         { id: 2, name: 'Pose 2', samples: [] },
@@ -133,10 +134,58 @@ export default function PoseClassifier({ project, onBack }: PoseClassifierProps)
     const [editingId, setEditingId] = useState<number | null>(null)
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+    const [restored, setRestored] = useState(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const detectorRef = useRef<any>(null)
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: PoseClass[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => {
+                    if (typeof s.data === 'string') {
+                        try { return JSON.parse(s.data) } catch { return [] }
+                    }
+                    return s.data ?? s
+                }),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: 'Pose 1', samples: [] },
+                { id: 2, name: 'Pose 2', samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            setTrained(project.modelTrained || false)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: classes.map((c, ci) => ({
+                    id: String(c.id),
+                    name: c.name,
+                    color: COLORS[ci % COLORS.length]?.bg || '#22c55e',
+                    samples: c.samples.map((kps, i) => ({
+                        id: `pose-${c.id}-${i}`,
+                        type: 'keypoints' as const,
+                        data: JSON.stringify(kps),
+                        timestamp: Date.now(),
+                    })),
+                })),
+                modelTrained: trained,
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trained, nextId, epochs])
 
     // Load MoveNet
     useEffect(() => {

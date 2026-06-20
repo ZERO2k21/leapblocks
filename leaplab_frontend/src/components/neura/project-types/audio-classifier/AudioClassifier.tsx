@@ -18,6 +18,7 @@ type TestResult = {
 type AudioClassifierProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const COLORS = [
@@ -91,7 +92,7 @@ function MicrophoneIllustration({ size = 80 }: { size?: number }) {
     )
 }
 
-export default function AudioClassifier({ project, onBack }: AudioClassifierProps) {
+export default function AudioClassifier({ project, onBack, onDataChange }: AudioClassifierProps) {
     const [classes, setClasses] = useState<AudioClass[]>([
         { id: 1, name: 'Sound 1', samples: [] },
         { id: 2, name: 'Sound 2', samples: [] },
@@ -109,10 +110,65 @@ export default function AudioClassifier({ project, onBack }: AudioClassifierProp
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [testRecording, setTestRecording] = useState(false)
     const [playingAudio, setPlayingAudio] = useState<string | null>(null)
+    const [restored, setRestored] = useState(false)
     const mediaRecRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
     const testRecRef = useRef<MediaRecorder | null>(null)
     const testChunks = useRef<Blob[]>([])
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: AudioClass[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => s.data ?? s),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: 'Sound 1', samples: [] },
+                { id: 2, name: 'Sound 2', samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            setTrained(project.modelTrained || false)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced, async for blob→base64)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(async () => {
+            const serializedClasses = await Promise.all(classes.map(async (c, ci) => ({
+                id: String(c.id),
+                name: c.name,
+                color: COLORS[ci % COLORS.length]?.bg || '#ec4899',
+                samples: await Promise.all(c.samples.map(async (sample, i) => {
+                    if (sample.startsWith('data:')) {
+                        return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: sample, timestamp: Date.now() }
+                    }
+                    try {
+                        const response = await fetch(sample)
+                        const blob = await response.blob()
+                        const base64 = await new Promise<string>((resolve) => {
+                            const reader = new FileReader()
+                            reader.onloadend = () => resolve(reader.result as string)
+                            reader.readAsDataURL(blob)
+                        })
+                        return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: base64, timestamp: Date.now() }
+                    } catch {
+                        return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: '', timestamp: Date.now() }
+                    }
+                })),
+            })))
+            onDataChange({
+                classes: serializedClasses,
+                modelTrained: trained,
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trained, nextId, epochs])
 
     const startRecording = async (classId: number) => {
         try {

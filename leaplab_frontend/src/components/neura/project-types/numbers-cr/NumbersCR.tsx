@@ -26,6 +26,7 @@ import {
 type NumbersCRProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const DIGIT_COLORS = [
@@ -41,7 +42,7 @@ const DIGIT_COLORS = [
     { bg: '#d946ef', light: '#e879f9', glow: 'rgba(217, 70, 239, 0.3)' },
 ]
 
-export default function NumbersCR({ project, onBack }: NumbersCRProps) {
+export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRProps) {
     const canvasRef = useRef<DrawingCanvasHandle>(null)
     const modelRef = useRef<DigitModel>(new DigitModel())
     const testCanvasRef = useRef<DrawingCanvasHandle>(null)
@@ -63,6 +64,32 @@ export default function NumbersCR({ project, onBack }: NumbersCRProps) {
     const [testCanvasClear, setTestCanvasClear] = useState(0)
     const [addedFeedback, setAddedFeedback] = useState(false)
     const [hoveredDigit, setHoveredDigit] = useState<number | null>(null)
+    const [restored, setRestored] = useState(false)
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.projectData && !restored) {
+            const pd = project.projectData
+            if (pd.sampleCounts) setSampleCounts(pd.sampleCounts)
+            if (pd.sampleThumbnails) setSampleThumbnails(pd.sampleThumbnails)
+            setTrained(project.modelTrained || false)
+            if (pd.epochs) setEpochs(pd.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: [],
+                modelTrained: trained,
+                projectData: { sampleCounts, sampleThumbnails, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [sampleCounts, sampleThumbnails, trained, epochs])
 
     const totalSamples = Object.values(sampleCounts).reduce((s, c) => s + c, 0)
     const canTrain = Object.values(sampleCounts).filter(c => c > 0).length >= 2

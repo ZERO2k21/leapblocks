@@ -171,6 +171,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                 updatedAt: data.updatedAt || data.timestamp || Date.now(),
                 modelTrained: data.modelTrained || false,
                 accuracy: data.accuracy,
+                projectData: data.projectData || {},
             };
 
             setCurrentProject(importedProject);
@@ -208,6 +209,11 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
         setPendingNavigation(null);
     };
 
+    const handleProjectDataChange = useCallback((data: Record<string, any>) => {
+        setCurrentProject(prev => prev ? { ...prev, projectData: { ...prev.projectData, ...data }, updatedAt: Date.now() } : null);
+        setHasUnsavedChanges(true);
+    }, []);
+
     const handleDeleteProject = (projectId: string) => {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
         setSaveMessage({ type: 'success', text: 'Project deleted.' });
@@ -239,19 +245,19 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     const renderProjectComponent = () => {
         switch (currentProjectType) {
             case 'image-classifier':
-                return <ImageClassifier onBack={handleBackToDashboard} />;
+                return <ImageClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'object-detection':
-                return <ObjectDetection onBack={handleBackToDashboard} />;
+                return <ObjectDetection project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'pose-classifier':
-                return <PoseClassifier onBack={handleBackToDashboard} />;
+                return <PoseClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'hand-pose-classifier':
-                return <HandPoseClassifier onBack={handleBackToDashboard} />;
+                return <HandPoseClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'audio-classifier':
-                return <AudioClassifier onBack={handleBackToDashboard} />;
+                return <AudioClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'numbers-cr':
-                return <NumbersCR onBack={handleBackToDashboard} />;
+                return <NumbersCR project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             case 'text-classifier':
-                return <TextClassifier onBack={handleBackToDashboard} />;
+                return <TextClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
             default:
                 return null;
         }

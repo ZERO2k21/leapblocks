@@ -11,6 +11,7 @@ type Detection = {
 type ObjectDetectionProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const CLASS_COLORS: Record<string, string> = {
@@ -88,19 +89,37 @@ function getClassColor(cls: string): string {
     return DEFAULT_COLOR
 }
 
-export default function ObjectDetection({ project, onBack }: ObjectDetectionProps) {
+export default function ObjectDetection({ project, onBack, onDataChange }: ObjectDetectionProps) {
     const [modelReady, setModelReady] = useState(false)
     const [loading, setLoading] = useState(false)
     const [loadProgress, setLoadProgress] = useState(0)
     const [detections, setDetections] = useState<Detection[]>([])
     const [running, setRunning] = useState(false)
     const [fps, setFps] = useState(0)
+    const [restored, setRestored] = useState(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const modelRef = useRef<any | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const rafRef = useRef<number | null>(null)
     const fpsFrames = useRef<number[]>([])
+
+    // Deserialize: mark as restored on mount
+    useEffect(() => {
+        if (project && !restored) {
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: minimal state sync (pre-trained model, no custom classes)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        onDataChange({
+            classes: [],
+            modelTrained: modelReady,
+            projectData: { model: 'coco-ssd' },
+        })
+    }, [modelReady])
 
     const loadModel = async () => {
         setLoading(true)

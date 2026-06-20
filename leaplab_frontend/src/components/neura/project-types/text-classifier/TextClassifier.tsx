@@ -1,5 +1,5 @@
 // classifiers/text-classifier/TextClassifier.tsx
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
 import { Type, Trash2, Edit2, Check, X, Plus, FileText, AlignLeft, Hash, Sparkles, Send } from 'lucide-react'
@@ -18,6 +18,7 @@ type TestResult = {
 type TextClassifierProps = {
     project?: any
     onBack: () => void
+    onDataChange?: (data: Record<string, any>) => void
 }
 
 const COLORS = [
@@ -86,7 +87,7 @@ function DocumentIllustration({ size = 80 }: { size?: number }) {
     )
 }
 
-export default function TextClassifier({ project, onBack }: TextClassifierProps) {
+export default function TextClassifier({ project, onBack, onDataChange }: TextClassifierProps) {
     const [classes, setClasses] = useState<TextClass[]>([
         { id: 1, name: 'Category 1', samples: [] },
         { id: 2, name: 'Category 2', samples: [] },
@@ -104,7 +105,50 @@ export default function TextClassifier({ project, onBack }: TextClassifierProps)
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [focusedInput, setFocusedInput] = useState<number | null>(null)
+    const [restored, setRestored] = useState(false)
     const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map())
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: TextClass[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => s.data ?? s),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: 'Category 1', samples: [] },
+                { id: 2, name: 'Category 2', samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            setTrained(project.modelTrained || false)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: classes.map(c => ({
+                    id: String(c.id),
+                    name: c.name,
+                    color: COLORS[(c.id - 1) % COLORS.length]?.bg || '#8b5cf6',
+                    samples: c.samples.map((text, i) => ({
+                        id: `txt-${c.id}-${i}`,
+                        type: 'text' as const,
+                        data: text,
+                        timestamp: Date.now(),
+                    })),
+                })),
+                modelTrained: trained,
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trained, nextId, epochs])
 
     const addSample = (classId: number) => {
         const text = inputs[classId]?.trim() ?? ''

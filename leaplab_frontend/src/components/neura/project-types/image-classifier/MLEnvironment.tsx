@@ -681,7 +681,7 @@ function TestingPanel({ trained, classes, predict }: {
 }
 
 // ─── MAIN ML ENVIRONMENT ──────────────────────────────────────────────────────
-export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
+export default function MLEnvironment({ project, onBack, onDataChange }: { project?: any; onBack?: () => void; onDataChange?: (data: Record<string, any>) => void }) {
     const { ready: tfReady, error: tfError } = useTFJS();
     const [classes, setClasses] = useState<ClassType[]>([
         { id: 1, name: "class1", samples: [] },
@@ -695,8 +695,50 @@ export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [epochs, setEpochs] = useState(30);
     const [projectName] = useState("My ML Project");
+    const [restored, setRestored] = useState(false);
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: ClassType[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => s.data ?? s),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: "class1", samples: [] },
+                { id: 2, name: "class2", samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: classes.map((c, ci) => ({
+                    id: String(c.id),
+                    name: c.name,
+                    color: CLASS_COLORS[ci % CLASS_COLORS.length]?.bg || '#FF6B6B',
+                    samples: c.samples.map((dataUrl, i) => ({
+                        id: `img-${c.id}-${i}`,
+                        type: 'image' as const,
+                        data: dataUrl,
+                        timestamp: Date.now(),
+                    })),
+                })),
+                modelTrained: trainStatus === 'done',
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trainStatus, nextId, epochs])
 
     // Load MobileNet once TF is ready
     useEffect(() => {
