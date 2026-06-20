@@ -85,6 +85,7 @@ import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinition
 
 import { fileService } from './Electra/Client/Src/services/FileService';
 import { useCloudProjectStore } from './store/cloudProjectStore';
+import { showToast } from './leapignite/client/components/Toast';
 import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
@@ -3094,6 +3095,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         try {
             await fileService.saveProject(projectName, 'intermediate', payload);
             addLog(`Project saved: ${projectName}`);
+            if (!isSilent) {
+                showToast("Project saved successfully!", "success");
+            }
         } catch (err: any) {
             console.error('[IntermediateApp] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');

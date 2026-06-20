@@ -24,6 +24,7 @@ import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 import { fileService } from '../Electra/Client/Src/services/FileService';
 import { useCloudProjectStore } from '../store/cloudProjectStore';
+import { showToast } from '../leapignite/client/components/Toast';
 
 function countVisibleComponents(screens = []) {
   let count = 0;
@@ -189,7 +190,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
       }
 
       await fileService.saveProject(appState.appName || 'project', 'creova', payload);
-      alert("Project saved successfully!");
+      showToast("Project saved successfully!", "success");
     } catch (err) {
       console.error("Failed to save project:", err);
       alert(`Failed to save project: ${err.message}`);

@@ -28,6 +28,7 @@ import * as LibraryService from './services/LibraryService';
 import { pack, unpack, isPacked } from '../utlis/compress';
 import { fileService } from './services/FileService';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
+import { showToast } from '../../../leapignite/client/components/Toast';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -508,6 +509,7 @@ export default function ForgeElectra({
       if (!projectPath) {
         setProjectPath(uuidv4());
       }
+      showToast("Project saved successfully!", "success");
     } catch (err: any) {
       console.error('[FORGE] Failed to save project:', err);
       alert(err?.message || 'Failed to save project.');
