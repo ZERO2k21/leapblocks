@@ -81,7 +81,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
                         <span className="text-[11px] text-gray-400 font-medium">Accuracy</span>
                         <span className="text-sm font-bold text-[#0a015a]">{project.accuracy}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
                             className="h-full bg-gradient-to-r from-[#0a015a] to-[#4338ca] rounded-full transition-all duration-700 ease-out"
                             style={{ width: `${Math.min(project.accuracy, 100)}%` }}
@@ -96,7 +96,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
                     <span className="text-[11px] text-gray-400 font-medium">
                         {getRelativeTime(project.updatedAt)}
                     </span>
-                    <span className="text-[11px] text-[#0a015a]/40 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-[11px] text-[#0a015a]/50 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         Open &rarr;
                     </span>
                 </div>

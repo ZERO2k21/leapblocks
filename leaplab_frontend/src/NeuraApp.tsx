@@ -308,7 +308,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 
             <div className="flex-1 overflow-y-auto relative flex flex-col">
                 {view === 'dashboard' && (
-                    <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+                    <div className="p-5 sm:p-8 lg:p-10 animate-fade-in">
                         <WelcomeHero
                             onCreateNew={handleCreateNew}
                             onImportDataset={handleImportProject}
