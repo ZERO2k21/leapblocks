@@ -168,12 +168,12 @@ const Icon = {
 
 // ─── CLASS CARD COLORS ───────────────────────────────────────────────────────
 const CLASS_COLORS = [
-    { bg: "#FF6B6B", light: "#fff5f5", border: "#ffc9c9", text: "#c92a2a" },
-    { bg: "#20C997", light: "#f0fff8", border: "#b2f2e0", text: "#087f5b" },
-    { bg: "#748FFC", light: "#f3f0ff", border: "#d0bfff", text: "#3b27aa" },
-    { bg: "#FFA94D", light: "#fff4e6", border: "#ffd8a8", text: "#d9480f" },
-    { bg: "#F06595", light: "#fff0f6", border: "#fcc2d7", text: "#a61e4d" },
-    { bg: "#4DABF7", light: "#e7f5ff", border: "#a5d8ff", text: "#1864ab" },
+    { bg: "#FF6B6B", light: "#fff5f5", border: "#ffc9c9", text: "#c92a2a", glow: "#FF6B6B40", lighter: "#FF8E8E" },
+    { bg: "#20C997", light: "#f0fff8", border: "#b2f2e0", text: "#087f5b", glow: "#20C99740", lighter: "#3DD8A8" },
+    { bg: "#748FFC", light: "#f3f0ff", border: "#d0bfff", text: "#3b27aa", glow: "#748FFC40", lighter: "#91A7FC" },
+    { bg: "#FFA94D", light: "#fff4e6", border: "#ffd8a8", text: "#d9480f", glow: "#FFA94D40", lighter: "#FFC078" },
+    { bg: "#F06595", light: "#fff0f6", border: "#fcc2d7", text: "#a61e4d", glow: "#F0659540", lighter: "#F489AD" },
+    { bg: "#4DABF7", light: "#e7f5ff", border: "#a5d8ff", text: "#1864ab", glow: "#4DABF740", lighter: "#74C0FC" },
 ];
 
 interface ClassType {
@@ -187,6 +187,8 @@ interface ColorType {
     light: string;
     border: string;
     text: string;
+    glow: string;
+    lighter: string;
 }
 
 // ─── WEBCAM MODAL ────────────────────────────────────────────────────────────
@@ -284,6 +286,8 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
 }) {
     const [editing, setEditing] = useState(false);
     const [name, setName] = useState(cls.name);
+    const [hovered, setHovered] = useState(false);
+    const [hoveredThumb, setHoveredThumb] = useState<number | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,55 +303,104 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
     const commitRename = () => { onRename(cls.id, name || cls.name); setEditing(false); };
 
     return (
-        <div style={{ background: "#13131f", border: `1px solid #1e1e2e`, borderRadius: 16, overflow: "hidden", transition: "border-color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = color.bg + "55"}
-            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = "#1e1e2e"}>
-            <div style={{ background: color.bg, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+            style={{
+                background: "#13131f",
+                border: `1px solid ${hovered ? color.bg + "60" : "#1e1e2e"}`,
+                borderRadius: 16,
+                overflow: "hidden",
+                transition: "all 0.25s ease",
+                boxShadow: hovered ? `0 4px 24px ${color.glow}, 0 0 0 1px ${color.bg}20` : "none",
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            {/* Gradient header */}
+            <div style={{
+                background: `linear-gradient(135deg, ${color.bg} 0%, ${color.lighter} 100%)`,
+                padding: "12px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+            }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
                     {editing ? (
                         <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && commitRename()} autoFocus
                             style={{ background: "rgba(0,0,0,0.25)", border: "none", borderRadius: 6, padding: "3px 8px", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, width: "100%", outline: "none" }} />
                     ) : (
-                        <span style={{ color: "#fff", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cls.name}</span>
+                        <span style={{ color: "#fff", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{cls.name}</span>
                     )}
                 </div>
                 <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
                     {editing ? (
                         <>
-                            <button onClick={commitRename} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}><Icon.Check /></button>
-                            <button onClick={() => { setName(cls.name); setEditing(false); }} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}><Icon.X /></button>
+                            <button onClick={commitRename} style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Check /></button>
+                            <button onClick={() => { setName(cls.name); setEditing(false); }} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.X /></button>
                         </>
                     ) : (
                         <>
-                            <button onClick={() => setEditing(true)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}><Icon.Edit /></button>
-                            <button onClick={() => onDelete(cls.id)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}><Icon.Trash /></button>
+                            <button onClick={() => setEditing(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Edit /></button>
+                            <button onClick={() => onDelete(cls.id)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Trash /></button>
                         </>
                     )}
                 </div>
             </div>
             <div style={{ padding: "14px 16px" }}>
-                <div style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#555", marginBottom: 10, letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600 }}>
-                    {sampleCount} image sample{sampleCount !== 1 ? "s" : ""}
+                {/* Sample count badge */}
+                <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{
+                        background: color.bg + "18",
+                        color: color.bg,
+                        padding: "3px 10px",
+                        borderRadius: 10,
+                        fontSize: 11,
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontWeight: 700,
+                        letterSpacing: "0.02em",
+                    }}>
+                        {sampleCount} sample{sampleCount !== 1 ? "s" : ""}
+                    </span>
                 </div>
                 {sampleCount > 0 && (
-                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12 }}>
                         {cls.samples.slice(-8).map((s, i) => (
-                            <div key={i} style={{ width: 36, height: 36, borderRadius: 6, overflow: "hidden", border: "1.5px solid #2a2a3d" }}>
+                            <div
+                                key={i}
+                                style={{
+                                    width: 40, height: 40, borderRadius: 8, overflow: "hidden",
+                                    border: `1.5px solid ${hoveredThumb === i ? color.bg : "#2a2a3d"}`,
+                                    transition: "all 0.2s ease",
+                                    transform: hoveredThumb === i ? "scale(1.12)" : "scale(1)",
+                                    zIndex: hoveredThumb === i ? 2 : 1,
+                                    boxShadow: hoveredThumb === i ? `0 2px 10px ${color.glow}` : "none",
+                                }}
+                                onMouseEnter={() => setHoveredThumb(i)}
+                                onMouseLeave={() => setHoveredThumb(null)}
+                            >
                                 <img src={s} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             </div>
                         ))}
-                        {sampleCount > 8 && <div style={{ width: 36, height: 36, borderRadius: 6, background: "#1e1e30", border: "1.5px solid #2a2a3d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>+{sampleCount - 8}</div>}
+                        {sampleCount > 8 && (
+                            <div style={{
+                                width: 40, height: 40, borderRadius: 8,
+                                background: color.bg + "12", border: `1.5px solid ${color.bg}30`,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: 11, color: color.bg, fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                            }}>
+                                +{sampleCount - 8}
+                            </div>
+                        )}
                     </div>
                 )}
                 <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "#1a1a2a", border: "1.5px dashed #2a2a3d", color: "#7070a0", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a3d"; (e.currentTarget as HTMLButtonElement).style.color = "#7070a0"; }}>
+                    <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "#1a1a2a", border: "1.5px dashed #2a2a3d", color: "#7070a0", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s ease" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a3d"; (e.currentTarget as HTMLButtonElement).style.color = "#7070a0"; (e.currentTarget as HTMLButtonElement).style.background = "#1a1a2a"; }}>
                         <Icon.Upload /><span>Upload</span>
                     </button>
-                    <button onClick={() => onWebcam(cls.id)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "#1a1a2a", border: "1.5px dashed #2a2a3d", color: "#7070a0", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a3d"; (e.currentTarget as HTMLButtonElement).style.color = "#7070a0"; }}>
+                    <button onClick={() => onWebcam(cls.id)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "#1a1a2a", border: "1.5px dashed #2a2a3d", color: "#7070a0", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s ease" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a3d"; (e.currentTarget as HTMLButtonElement).style.color = "#7070a0"; (e.currentTarget as HTMLButtonElement).style.background = "#1a1a2a"; }}>
                         <Icon.Camera /><span>Webcam</span>
                     </button>
                 </div>
@@ -402,8 +455,39 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
                     <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#2d6a4f" }}>Accuracy: {Math.round(accuracy * 100)}% · {classes.reduce((s, c) => s + c.samples.length, 0)} samples · {classes.length} classes</div>
                 </div>
             ) : (
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#555", lineHeight: 1.5 }}>
-                    {classesWithData.length < 2 ? "Add samples to at least 2 classes to begin." : "Ready to train."}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0" }}>
+                    {/* Neural network illustration */}
+                    <svg width="120" height="70" viewBox="0 0 120 70" fill="none" style={{ marginBottom: 10, opacity: 0.6 }}>
+                        {/* Input layer */}
+                        <circle cx="20" cy="15" r="5" fill="#7c3aed" opacity="0.4" />
+                        <circle cx="20" cy="35" r="5" fill="#7c3aed" opacity="0.5" />
+                        <circle cx="20" cy="55" r="5" fill="#7c3aed" opacity="0.4" />
+                        {/* Hidden layer */}
+                        <circle cx="60" cy="12" r="5" fill="#a78bfa" opacity="0.5" />
+                        <circle cx="60" cy="35" r="5" fill="#a78bfa" opacity="0.6" />
+                        <circle cx="60" cy="58" r="5" fill="#a78bfa" opacity="0.5" />
+                        {/* Output layer */}
+                        <circle cx="100" cy="25" r="5" fill="#c4b5fd" opacity="0.5" />
+                        <circle cx="100" cy="45" r="5" fill="#c4b5fd" opacity="0.4" />
+                        {/* Connections input → hidden */}
+                        <line x1="25" y1="15" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
+                        <line x1="25" y1="15" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="25" y1="35" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="25" y1="35" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
+                        <line x1="25" y1="35" x2="55" y2="58" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="25" y1="55" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="25" y1="55" x2="55" y2="58" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
+                        {/* Connections hidden → output */}
+                        <line x1="65" y1="12" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
+                        <line x1="65" y1="12" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="65" y1="35" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="65" y1="35" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
+                        <line x1="65" y1="58" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
+                        <line x1="65" y1="58" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
+                    </svg>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#555", lineHeight: 1.5, textAlign: "center" }}>
+                        {classesWithData.length < 2 ? "Add samples to at least 2 classes to begin." : "Ready to train."}
+                    </div>
                 </div>
             )}
 
@@ -509,9 +593,25 @@ function TestingPanel({ trained, classes, predict }: {
 
     if (!trained) {
         return (
-            <div style={{ background: "#13131f", border: "1px solid #1e1e2e", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 10, textAlign: "center" }}>
-                <div style={{ fontSize: 32, opacity: 0.3 }}>🧠</div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#444", lineHeight: 1.6 }}>Train a model first to enable live testing and predictions here.</div>
+            <div style={{ background: "#13131f", border: "1px solid #1e1e2e", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 12, textAlign: "center" }}>
+                {/* Camera + question mark illustration */}
+                <svg width="100" height="80" viewBox="0 0 100 80" fill="none" style={{ opacity: 0.5 }}>
+                    {/* Camera body */}
+                    <rect x="20" y="25" width="50" height="38" rx="6" stroke="#7c3aed" strokeWidth="2" fill="#7c3aed10" />
+                    {/* Camera lens */}
+                    <circle cx="45" cy="44" r="12" stroke="#a78bfa" strokeWidth="2" fill="#a78bfa10" />
+                    <circle cx="45" cy="44" r="6" stroke="#c4b5fd" strokeWidth="1.5" fill="#c4b5fd15" />
+                    {/* Camera flash */}
+                    <rect x="32" y="20" width="10" height="6" rx="2" stroke="#7c3aed" strokeWidth="1.5" fill="#7c3aed15" />
+                    {/* Question mark */}
+                    <text x="72" y="35" fontSize="24" fontWeight="700" fill="#7c3aed" opacity="0.6" fontFamily="'DM Sans', sans-serif">?</text>
+                    {/* Lock icon */}
+                    <rect x="38" y="60" width="14" height="10" rx="2" stroke="#555" strokeWidth="1.5" fill="#33320" />
+                    <path d="M41 60 V56 Q41 52 45 52 Q49 52 49 56 V60" stroke="#555" strokeWidth="1.5" fill="none" />
+                </svg>
+                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#555", lineHeight: 1.6, maxWidth: 180 }}>
+                    Train your model to unlock live predictions
+                </div>
             </div>
         );
     }
@@ -581,7 +681,7 @@ function TestingPanel({ trained, classes, predict }: {
 }
 
 // ─── MAIN ML ENVIRONMENT ──────────────────────────────────────────────────────
-export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
+export default function MLEnvironment({ project, onBack, onDataChange }: { project?: any; onBack?: () => void; onDataChange?: (data: Record<string, any>) => void }) {
     const { ready: tfReady, error: tfError } = useTFJS();
     const [classes, setClasses] = useState<ClassType[]>([
         { id: 1, name: "class1", samples: [] },
@@ -595,8 +695,50 @@ export default function MLEnvironment({ onBack }: { onBack?: () => void }) {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [epochs, setEpochs] = useState(30);
     const [projectName] = useState("My ML Project");
+    const [restored, setRestored] = useState(false);
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
+
+    // Deserialize: restore from saved project on mount
+    useEffect(() => {
+        if (project?.classes?.length > 0 && !restored) {
+            const restoredClasses: ClassType[] = project.classes.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                samples: (c.samples || []).map((s: any) => s.data ?? s),
+            }))
+            setClasses(restoredClasses.length > 0 ? restoredClasses : [
+                { id: 1, name: "class1", samples: [] },
+                { id: 2, name: "class2", samples: [] },
+            ])
+            setNextId(restoredClasses.length > 0 ? Math.max(...restoredClasses.map(c => c.id)) + 1 : 3)
+            if (project.projectData?.epochs) setEpochs(project.projectData.epochs)
+            setRestored(true)
+        }
+    }, [project])
+
+    // Serialize: sync state back to parent (debounced)
+    useEffect(() => {
+        if (!restored || !onDataChange) return
+        const timer = setTimeout(() => {
+            onDataChange({
+                classes: classes.map((c, ci) => ({
+                    id: String(c.id),
+                    name: c.name,
+                    color: CLASS_COLORS[ci % CLASS_COLORS.length]?.bg || '#FF6B6B',
+                    samples: c.samples.map((dataUrl, i) => ({
+                        id: `img-${c.id}-${i}`,
+                        type: 'image' as const,
+                        data: dataUrl,
+                        timestamp: Date.now(),
+                    })),
+                })),
+                modelTrained: trainStatus === 'done',
+                projectData: { nextId, epochs },
+            })
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [classes, trainStatus, nextId, epochs])
 
     // Load MobileNet once TF is ready
     useEffect(() => {

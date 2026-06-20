@@ -1,87 +1,222 @@
 /**
  * Neura ML Theme - Premium Deep Navy aesthetics matching the Topbar
+ * Enhanced with glass-morphism, micro-interactions, and refined shadows
  */
 
 @layer base {
   :root {
-    --neura-primary: #0a015a;     /* Deep navy blue matching topbar */
-    --neura-accent: #15027a;      /* Brighter navy */
-    --neura-hover: #1e05a3;       /* Hover navy */
-    --neura-light: #e0e7ff;       /* Light indigo */
-    --neura-dark: #080a25;        /* Very dark background */
+    --neura-primary: #0a015a;
+    --neura-accent: #15027a;
+    --neura-hover: #1e05a3;
+    --neura-light: #e0e7ff;
+    --neura-dark: #080a25;
+    --neura-glow: rgba(10, 1, 90, 0.35);
+    --neura-glass-bg: rgba(255, 255, 255, 0.72);
+    --neura-glass-border: rgba(255, 255, 255, 0.45);
+    --neura-shadow-sm: 0 1px 3px rgba(10, 1, 90, 0.04), 0 1px 2px rgba(10, 1, 90, 0.03);
+    --neura-shadow-md: 0 4px 12px rgba(10, 1, 90, 0.06), 0 2px 4px rgba(10, 1, 90, 0.04);
+    --neura-shadow-lg: 0 12px 40px rgba(10, 1, 90, 0.1), 0 4px 12px rgba(10, 1, 90, 0.06);
+    --neura-shadow-xl: 0 20px 60px rgba(10, 1, 90, 0.14), 0 8px 20px rgba(10, 1, 90, 0.08);
+    --neura-transition: cubic-bezier(0.4, 0, 0.2, 1);
+    --neura-transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
 
-/* Neura custom component styles */
+/* ── Neura Gradient ─────────────────────────────────────────────────────── */
+
 .neura-gradient {
   background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
 }
 
+/* ── Glass Morphism ─────────────────────────────────────────────────────── */
+
+.neura-glass {
+  background: var(--neura-glass-bg);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--neura-glass-border);
+  box-shadow: var(--neura-shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.neura-glass:hover {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: var(--neura-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* ── Premium Card ───────────────────────────────────────────────────────── */
+
 .neura-card {
-  background-color: white;
-  border-radius: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(10, 1, 90, 0.05), 0 2px 4px -2px rgba(10, 1, 90, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(10, 1, 90, 0.05);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+  border-radius: 1.25rem;
+  box-shadow: var(--neura-shadow-sm);
+  transition: all 0.35s var(--neura-transition);
+  border: 1px solid rgba(10, 1, 90, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(10, 1, 90, 0.02) 0%, transparent 60%);
+  transition: opacity 0.35s ease;
+  pointer-events: none;
 }
 
 .neura-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(10, 1, 90, 0.1), 0 8px 10px -6px rgba(10, 1, 90, 0.1);
-  border-color: rgba(10, 1, 90, 0.15);
+  box-shadow: var(--neura-shadow-xl);
+  border-color: rgba(10, 1, 90, 0.12);
 }
 
+.neura-card:hover::after {
+  opacity: 1;
+}
+
+.neura-card:active {
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: 0.1s;
+}
+
+/* ── Premium Buttons ────────────────────────────────────────────────────── */
+
 .neura-button-primary {
-  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
+  position: relative;
+  background: linear-gradient(135deg, #0a015a 0%, #15027a 50%, #0a015a 100%);
+  background-size: 200% 200%;
   color: white;
-  padding: 0.5rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  border-radius: 1rem;
   font-weight: 600;
-  font-size: 13px;
-  box-shadow: 0 2px 8px 0 rgba(10, 1, 90, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 14px;
+  box-shadow: 0 4px 14px rgba(10, 1, 90, 0.25), 0 1px 3px rgba(10, 1, 90, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.35s var(--neura-transition);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   letter-spacing: 0.025em;
   white-space: nowrap;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.neura-button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.5s ease;
+  z-index: -1;
 }
 
 .neura-button-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(10, 1, 90, 0.5);
-  background: linear-gradient(135deg, #15027a 0%, #0a0d33 100%);
+  box-shadow: 0 8px 20px rgba(10, 1, 90, 0.35), 0 2px 6px rgba(10, 1, 90, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background-position: 100% 0;
+}
+
+.neura-button-primary:hover::before {
+  left: 100%;
+}
+
+.neura-button-primary:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 8px rgba(10, 1, 90, 0.3);
+  transition-duration: 0.1s;
 }
 
 .neura-button-secondary {
   background-color: transparent;
   color: #0a015a;
-  padding: 0.5rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  border-radius: 1rem;
   font-weight: 600;
-  font-size: 13px;
-  border: 1.5px solid #0a015a;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  border: 1.5px solid rgba(10, 1, 90, 0.25);
+  transition: all 0.3s var(--neura-transition);
   letter-spacing: 0.025em;
   white-space: nowrap;
+  position: relative;
+}
+
+.neura-button-secondary::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(10, 1, 90, 0.1), rgba(21, 2, 122, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
 }
 
 .neura-button-secondary:hover {
-  background-color: rgba(10, 1, 90, 0.05);
+  border-color: rgba(10, 1, 90, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.1);
+}
+
+.neura-button-secondary:hover::after {
+  opacity: 1;
+}
+
+.neura-button-secondary:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
+}
+
+.neura-button-ghost {
+  color: #0a015a;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid rgba(10, 1, 90, 0.1);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s var(--neura-transition);
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+}
+
+.neura-button-ghost:hover {
+  background: white;
+  border-color: rgba(10, 1, 90, 0.2);
+  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.1);
   transform: translateY(-1px);
 }
 
+.neura-button-ghost:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
+}
+
+/* ── Premium Input ──────────────────────────────────────────────────────── */
+
 .neura-input {
   border: 2px solid #e2e8f0;
-  border-radius: 1rem;
+  border-radius: 0.875rem;
   padding: 0.75rem 1.25rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s var(--neura-transition);
   background-color: #f8fafc;
+  font-size: 14px;
+}
+
+.neura-input:hover {
+  border-color: #cbd5e1;
 }
 
 .neura-input:focus {
   border-color: #0a015a;
   background-color: white;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1);
+  box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1), 0 2px 8px rgba(10, 1, 90, 0.06);
 }
 
 /* ── Dashboard Animations ────────────────────────────────────────────────── */
@@ -107,6 +242,52 @@
   50% { opacity: 0.7; transform: scale(1.05); }
 }
 
+@keyframes shimmer-slide {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(10, 1, 90, 0.15); }
+  50% { box-shadow: 0 0 35px rgba(10, 1, 90, 0.3); }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -121,10 +302,255 @@
   animation: pulse-slow 4s ease-in-out infinite;
 }
 
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s var(--neura-transition) both;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.3s var(--neura-transition) both;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Staggered entrance delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+
 /* ── Gradient Utilities ────────────────────────────────────────────────── */
 
 .bg-gradient-radial {
   background-image: radial-gradient(var(--tw-gradient-stops));
+}
+
+.neura-gradient-text {
+  background: linear-gradient(135deg, #0a015a, #4338ca, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Premium Template Cards ─────────────────────────────────────────────── */
+
+.neura-template-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid rgba(10, 1, 90, 0.06);
+  border-radius: 1rem;
+  box-shadow: var(--neura-shadow-sm);
+  transition: all 0.35s var(--neura-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-template-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-from, #0a015a), var(--accent-to, #15027a));
+  opacity: 0.35;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.neura-template-card:hover::before {
+  opacity: 1;
+  box-shadow: 0 2px 12px var(--accent-glow, rgba(10, 1, 90, 0.3));
+}
+
+.neura-template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--neura-shadow-lg);
+  border-color: rgba(10, 1, 90, 0.12);
+}
+
+/* ── Premium Template Cards (Enhanced) ───────────────────────────────────── */
+
+.neura-premium-card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1),
+              0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.neura-premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-from, #6d28d9), var(--accent-to, #8b5cf6));
+  opacity: 0.35;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.neura-premium-card:hover::before {
+  opacity: 1;
+  box-shadow: 0 2px 12px var(--accent-glow, rgba(139, 92, 246, 0.3));
+}
+
+.neura-premium-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.25);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.neura-icon-wrapper {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  transition: all 0.4s ease;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.neura-premium-card:hover .neura-icon-wrapper {
+  transform: scale(1.12) rotate(6deg);
+}
+
+.neura-category-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  background: #f1f5f9;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  display: inline-block;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+.neura-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e2937;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+
+.neura-card-desc {
+  color: #64748b;
+  line-height: 1.6;
+  flex-grow: 1;
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+.neura-use-btn {
+  position: relative;
+  background: linear-gradient(90deg, #6d28d9, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 13px;
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  cursor: pointer;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.neura-use-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.neura-use-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+}
+
+.neura-use-btn:hover::before {
+  left: 100%;
+}
+
+.neura-popular-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+  z-index: 2;
+}
+
+/* ── Premium Badge ──────────────────────────────────────────────────────── */
+
+.neura-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.neura-badge-success {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  box-shadow: 0 1px 3px rgba(22, 101, 52, 0.12);
+}
+
+.neura-badge-warning {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  box-shadow: 0 1px 3px rgba(146, 64, 14, 0.12);
+}
+
+.neura-badge-info {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #3730a3;
+  box-shadow: 0 1px 3px rgba(55, 48, 163, 0.12);
 }
 
 /* ── Sidebar Styles ──────────────────────────────────────────────────────── */
@@ -132,8 +558,39 @@
 .neura-sidebar-card {
   background-color: white;
   border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(10, 1, 90, 0.06), 0 1px 2px rgba(10, 1, 90, 0.04);
+  box-shadow: var(--neura-shadow-sm);
   border: 1px solid rgba(10, 1, 90, 0.06);
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+
+.neura-tooltip {
+  position: relative;
+}
+
+.neura-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #0a015a;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s var(--neura-transition);
+  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.3);
+  z-index: 100;
+}
+
+.neura-tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
@@ -141,5 +598,16 @@
 @media (max-width: 1280px) {
   .neura-sidebar-card {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-wave,
+  .animate-pulse-slow,
+  .animate-glow-pulse,
+  .animate-shake,
+  .animate-gradient-shift {
+    animation: none;
   }
 }

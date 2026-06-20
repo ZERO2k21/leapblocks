@@ -16,49 +16,54 @@ const steps = [
         title: 'Upload Dataset',
         desc: 'Upload your data in images, audio or text format.',
         icon: FolderOpen,
-        iconBg: 'bg-purple-100',
-        iconColor: 'text-purple-600',
+        iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
+        iconShadow: 'shadow-violet-500/25',
     },
     {
         num: 2,
         title: 'Train Model',
         desc: 'Train your machine learning model with powerful ML algorithms.',
         icon: Brain,
-        iconBg: 'bg-purple-100',
-        iconColor: 'text-purple-600',
+        iconBg: 'bg-gradient-to-br from-indigo-500 to-blue-600',
+        iconShadow: 'shadow-indigo-500/25',
     },
     {
         num: 3,
         title: 'Deploy & Share',
         desc: 'Deploy your model and share with the world.',
         icon: BarChart3,
-        iconBg: 'bg-green-100',
-        iconColor: 'text-green-600',
+        iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
+        iconShadow: 'shadow-emerald-500/25',
     },
 ];
 
 export default function QuickStartGuide({ onWatchTutorial }: QuickStartGuideProps) {
     return (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] p-5">
             {/* Header */}
             <div className="flex items-center gap-2 mb-5">
-                <Rocket size={16} className="text-[#0a015a]" strokeWidth={2.2} />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0a015a] to-[#15027a] flex items-center justify-center shadow-md shadow-[#0a015a]/20">
+                    <Rocket size={14} className="text-white" strokeWidth={2.2} />
+                </div>
                 <h3 className="text-sm font-bold text-[#0a015a]">Quick Start</h3>
             </div>
 
             {/* Steps */}
-            <div className="space-y-4">
-                {steps.map((step) => {
+            <div className="relative space-y-0">
+                {/* Connecting line */}
+                <div className="absolute left-[11px] top-[28px] bottom-[28px] w-[2px] bg-gradient-to-b from-[#0a015a]/20 via-[#0a015a]/10 to-transparent" />
+
+                {steps.map((step, idx) => {
                     const Icon = step.icon;
                     return (
-                        <div key={step.num} className="flex items-start gap-3">
+                        <div key={step.num} className={`relative flex items-start gap-3 py-3 px-2 rounded-xl transition-all duration-200 hover:bg-gray-50/60 group ${idx < steps.length - 1 ? 'mb-1' : ''}`}>
                             {/* Step number */}
-                            <div className="w-6 h-6 rounded-full bg-[#0a015a] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#0a015a] to-[#15027a] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md shadow-[#0a015a]/20 relative z-10">
                                 {step.num}
                             </div>
                             {/* Icon circle */}
-                            <div className={`w-9 h-9 rounded-lg ${step.iconBg} flex items-center justify-center flex-shrink-0`}>
-                                <Icon size={16} className={step.iconColor} strokeWidth={2} />
+                            <div className={`w-9 h-9 rounded-xl ${step.iconBg} flex items-center justify-center flex-shrink-0 shadow-lg ${step.iconShadow} group-hover:scale-105 transition-transform duration-200`}>
+                                <Icon size={16} className="text-white" strokeWidth={2} />
                             </div>
                             {/* Step content */}
                             <div className="flex-1 min-w-0">
