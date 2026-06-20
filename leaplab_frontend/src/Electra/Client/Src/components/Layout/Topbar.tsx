@@ -24,7 +24,8 @@ import {
   Clipboard,
   Check,
   Menu,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import LeapLabAuthButton from '../../../../../auth/LeapLabAuthButton';
 
@@ -50,6 +51,7 @@ interface IgniteTopbarProps {
   canRedo?: boolean;
   onSwitchBoard?: (board: string) => void;
   currentBoard?: string;
+  isSaving?: boolean;
 }
 
 export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
@@ -73,7 +75,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   canUndo = false,
   canRedo = false,
   onSwitchBoard,
-  currentBoard
+  currentBoard,
+  isSaving = false
 }) => {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
@@ -164,7 +167,11 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         <div className="flex items-center gap-2.5 flex-auto min-w-0 h-full">
           <button
             title="Back to Home"
-            onClick={onBack}
+            onClick={() => {
+              sessionStorage.setItem('landingActiveTab', 'modules');
+              sessionStorage.removeItem('myProjectsSelectedMode');
+              onBack();
+            }}
             className={`flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
@@ -376,6 +383,39 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                       <span>Save As...</span>
                     </div>
                     <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Shift+S</span>
+                  </button>
+
+                  <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
+
+                  <button
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 14px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease'
+                    }}
+                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+                    onClick={() => {
+                      const currentModule = brandName === 'CREOVA' ? 'creova' : 'electra';
+                      sessionStorage.setItem('landingActiveTab', 'my-projects');
+                      sessionStorage.setItem('myProjectsSelectedMode', currentModule);
+                      setFileMenuOpen(false);
+                      onBack();
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <FolderOpen size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+                      <span>My Projects</span>
+                    </div>
                   </button>
                 </div>
               )}
@@ -722,13 +762,18 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             <button
               title="Save Project"
               onClick={onSave}
+              disabled={isSaving}
               className={`border-0 rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-all duration-200 shrink-0 scale-100 hover:scale-[1.08] hover:brightness-[1.08] ${
                 isElectra
                   ? 'bg-gradient-to-br from-[#22d3ee] to-[#06b6d4] text-black shadow-[0_4px_10px_-1px_rgba(34,211,238,0.4)]'
                   : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white shadow-[0_4px_10px_-1px_rgba(8,47,123,0.45)]'
-              }`}
+              } ${isSaving ? 'opacity-80 cursor-wait' : ''}`}
             >
-              <Save size={12} strokeWidth={2.5} />
+              {isSaving ? (
+                <Loader2 size={12} strokeWidth={2.5} className="animate-spin" />
+              ) : (
+                <Save size={12} strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
@@ -845,13 +890,20 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               <span>Open Project</span>
             </button>
             <button
+              disabled={isSaving}
               onClick={() => { onSave(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${
+                isSaving ? 'cursor-wait opacity-60' : 'cursor-pointer'
+              } ${
                 isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
               }`}
             >
-              <Save size={18} strokeWidth={2} className="opacity-80 shrink-0" />
-              <span>Save</span>
+              {isSaving ? (
+                <Loader2 size={18} strokeWidth={2} className="opacity-80 shrink-0 animate-spin" />
+              ) : (
+                <Save size={18} strokeWidth={2} className="opacity-80 shrink-0" />
+              )}
+              <span>{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
             <button
               onClick={() => { onSaveAs?.(); setMobileMenuOpen(false); }}
@@ -861,6 +913,21 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             >
               <FileText size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Save As...</span>
+            </button>
+            <button
+              onClick={() => {
+                const currentModule = brandName === 'CREOVA' ? 'creova' : 'electra';
+                sessionStorage.setItem('landingActiveTab', 'my-projects');
+                sessionStorage.setItem('myProjectsSelectedMode', currentModule);
+                setMobileMenuOpen(false);
+                onBack();
+              }}
+              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
+              }`}
+            >
+              <FolderOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
+              <span>My Projects</span>
             </button>
           </div>
 
