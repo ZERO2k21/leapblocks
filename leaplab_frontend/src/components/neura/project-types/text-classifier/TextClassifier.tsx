@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
 import { Type, Trash2, Edit2, Check, X, Plus, FileText, AlignLeft, Hash, Sparkles, Send } from 'lucide-react'
 
 type TextClass = {
@@ -106,7 +107,11 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [focusedInput, setFocusedInput] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
+    const [useReady, setUseReady] = useState(false)
+    const [accuracy, setAccuracy] = useState(0)
     const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map())
+    const encoderRef = useRef<any>(null)
+    const knnRef = useRef<KNNClassifier | null>(null)
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -161,38 +166,91 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
         setClasses(p => p.map(c => c.id === classId ? { ...c, samples: c.samples.filter((_, i) => i !== sampleIdx) } : c))
     }
 
+    // Load Universal Sentence Encoder
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (useReady) return
+                await ensureTf()
+                const loadScript = (src: string) => new Promise<void>((res, rej) => {
+                    const existing = document.querySelector(`script[src="${src}"]`)
+                    if (existing) { res(); return }
+                    const s = document.createElement('script')
+                    s.src = src
+                    s.onload = () => res()
+                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
+                    document.head.appendChild(s)
+                })
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@1.3.3/dist/universal-sentence-encoder.min.js')
+                encoderRef.current = await (window as any).use.load()
+                setUseReady(true)
+            } catch (e) { console.error('USE load failed:', e) }
+        }
+        load()
+    }, [])
+
+    const embedTexts = useCallback(async (texts: string[]): Promise<any> => {
+        if (!encoderRef.current) return null
+        return await encoderRef.current.embed(texts)
+    }, [])
+
     const handleTrain = async () => {
+        if (!useReady) return
         setStatus('training')
         setProgress(0)
-        for (let i = 0; i <= 100; i += 5) {
-            await new Promise(r => setTimeout(r, 80))
-            setProgress(i)
+        try {
+            const knn = new KNNClassifier()
+            knnRef.current = knn
+            const allTexts: string[] = []
+            const textToClass: { text: string; className: string }[] = []
+            for (const cls of classes) {
+                for (const sample of cls.samples) {
+                    allTexts.push(sample)
+                    textToClass.push({ text: sample, className: cls.name })
+                }
+            }
+            if (allTexts.length === 0) { setStatus('idle'); return }
+            const embeddings = await embedTexts(allTexts)
+            let loaded = 0
+            for (const item of textToClass) {
+                const idx = allTexts.indexOf(item.text)
+                const emb = embeddings.slice([idx, 0], [1, -1]).squeeze(0)
+                await knn.addExample(emb, item.className)
+                emb.dispose()
+                loaded++
+                setProgress(Math.round((loaded / allTexts.length) * 100))
+                await new Promise(r => setTimeout(r, 5))
+            }
+            embeddings.dispose()
+
+            let correct = 0, evaluated = 0
+            for (const item of textToClass) {
+                const emb = await embedTexts([item.text])
+                const pred = await knn.predictClass(emb.slice([0, 0], [1, -1]).squeeze(0), 3)
+                emb.dispose()
+                if (pred && pred.label === item.className) correct++
+                evaluated++
+            }
+            const acc = evaluated > 0 ? correct / evaluated : 0
+            setAccuracy(acc)
+            setTrained(true)
+            setStatus('done')
+        } catch (e) {
+            console.error('Training failed:', e)
+            setStatus('idle')
         }
-        setTrained(true)
-        setStatus('done')
     }
 
-    const handlePredict = () => {
-        if (!testText.trim() || !trained) return
-        const scores: Record<string, number> = {}
-        classes.forEach(cls => {
-            const words = testText.toLowerCase().split(/\s+/)
-            let score = 0
-            cls.samples.forEach(sample => {
-                const sWords = sample.toLowerCase().split(/\s+/)
-                words.forEach(w => {
-                    if (sWords.includes(w)) score++
-                })
-            })
-            scores[cls.name] = score + Math.random() * 0.5
-        })
-        const total = Object.values(scores).reduce((s, v) => s + v, 0) || 1
-        const confidences: Record<string, number> = {}
-        Object.entries(scores).forEach(([k, v]) => {
-            confidences[k] = v / total
-        })
-        const winner = Object.entries(confidences).sort((a, b) => b[1] - a[1])[0][0]
-        setTestResult({ label: winner, confidences })
+    const handlePredict = async () => {
+        if (!testText.trim() || !trained || !knnRef.current || !encoderRef.current) return
+        try {
+            const embeddings = await embedTexts([testText.trim()])
+            const emb = embeddings.slice([0, 0], [1, -1]).squeeze(0)
+            const result = await knnRef.current.predictClass(emb, 3)
+            emb.dispose()
+            embeddings.dispose()
+            if (result) setTestResult(result)
+        } catch (e) { console.error('Prediction failed:', e) }
     }
 
     const canTrain = classes.filter(c => c.samples.length > 0).length >= 2
@@ -552,7 +610,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                 <TrainingPanel
                     status={status}
                     progress={progress}
-                    accuracy={0.87}
+                    accuracy={accuracy}
                     canTrain={canTrain}
                     onTrain={handleTrain}
                     showAdvanced={showAdv}

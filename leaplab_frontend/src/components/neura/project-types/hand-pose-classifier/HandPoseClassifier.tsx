@@ -2,7 +2,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import { Camera, Hand, Trash2, Edit2, Check, X, Plus, AlertCircle, Zap, Activity } from 'lucide-react'
+import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
+import { Camera, Hand, Trash2, Edit2, Check, X, Plus, Activity } from 'lucide-react'
+
+declare const handPoseDetection: any
 
 type HandPoseClass = {
     id: number
@@ -88,8 +91,12 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
+    const [handDetReady, setHandDetReady] = useState(false)
+    const [accuracy, setAccuracy] = useState(0)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
+    const detectorRef = useRef<any>(null)
+    const knnRef = useRef<KNNClassifier | null>(null)
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -154,20 +161,105 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         setCapturing(null)
     }, [])
 
-    const captureGesture = () => {
+    // Load MediaPipe Hands detector
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (handDetReady) return
+                await ensureTf()
+                const loadScript = (src: string) => new Promise<void>((res, rej) => {
+                    const existing = document.querySelector(`script[src="${src}"]`)
+                    if (existing) { res(); return }
+                    const s = document.createElement('script')
+                    s.src = src
+                    s.onload = () => res()
+                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
+                    document.head.appendChild(s)
+                })
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.min.js')
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js')
+                const model = handPoseDetection.SupportedModels.MediaPipeHands
+                const detector = await handPoseDetection.createDetector(model, {
+                    runtime: 'mediapipe',
+                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
+                })
+                detectorRef.current = detector
+                setHandDetReady(true)
+            } catch (e) { console.error('Hand pose detector load failed:', e) }
+        }
+        load()
+    }, [])
+
+    const detectHandLandmarks = useCallback(async (): Promise<number[][] | null> => {
+        if (!detectorRef.current || !videoRef.current) return null
+        try {
+            const hands = await detectorRef.current.estimateHands(videoRef.current, { flipHorizontal: true })
+            if (hands.length > 0 && hands[0].keypoints) {
+                return hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
+            }
+        } catch (e) { console.error(e) }
+        return null
+    }, [])
+
+    const normalizeLandmarks = useCallback((landmarks: number[][]): number[] => {
+        const xs = landmarks.map(k => k[0])
+        const ys = landmarks.map(k => k[1])
+        const minX = Math.min(...xs), maxX = Math.max(...xs)
+        const minY = Math.min(...ys), maxY = Math.max(...ys)
+        const rangeX = (maxX - minX) || 1
+        const rangeY = (maxY - minY) || 1
+        return landmarks.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2]]).flat()
+    }, [])
+
+    const captureGesture = useCallback(async () => {
         if (capturing === null) return
-        const landmarks = Array.from({ length: 21 }, (_, i) => [Math.random(), Math.random(), Math.random()])
-        setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, landmarks] } : c))
-    }
+        const landmarks = await detectHandLandmarks()
+        if (landmarks) {
+            setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, landmarks] } : c))
+        }
+    }, [capturing, detectHandLandmarks])
 
     const handleTrain = async () => {
         setStatus('training')
-        for (let i = 0; i <= 100; i += 10) {
-            await new Promise(r => setTimeout(r, 100))
-            setProgress(i)
+        setProgress(0)
+        try {
+            const knn = new KNNClassifier()
+            knnRef.current = knn
+            let loaded = 0
+            const total = classes.reduce((s, c) => s + c.samples.length, 0)
+            for (const cls of classes) {
+                for (const landmarks of cls.samples) {
+                    const normalized = normalizeLandmarks(landmarks)
+                    if (normalized.length > 0) {
+                        await knn.addExampleFromData(new Float32Array(normalized), cls.name)
+                    }
+                    loaded++
+                    setProgress(Math.round((loaded / total) * 100))
+                    await new Promise(r => setTimeout(r, 10))
+                }
+            }
+
+            let correct = 0, evaluated = 0
+            for (const cls of classes) {
+                for (const landmarks of cls.samples) {
+                    const normalized = normalizeLandmarks(landmarks)
+                    if (normalized.length === 0) continue
+                    const tf = await ensureTf()
+                    const emb = tf.tensor1d(new Float32Array(normalized))
+                    const pred = await knn.predictClass(emb, 3)
+                    emb.dispose()
+                    if (pred && pred.label === cls.name) correct++
+                    evaluated++
+                }
+            }
+            const acc = evaluated > 0 ? correct / evaluated : 0
+            setAccuracy(acc)
+            setTrained(true)
+            setStatus('done')
+        } catch (e) {
+            console.error('Training failed:', e)
+            setStatus('idle')
         }
-        setTrained(true)
-        setStatus('done')
     }
 
     const canTrain = classes.filter(c => c.samples.length > 0).length >= 2
@@ -525,7 +617,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 <TrainingPanel
                     status={status}
                     progress={progress}
-                    accuracy={0.91}
+                    accuracy={accuracy}
                     canTrain={canTrain}
                     onTrain={handleTrain}
                     showAdvanced={showAdv}
@@ -646,6 +738,48 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         Results appear in real-time
                                     </div>
                                 </div>
+
+                                {/* Capture & Predict button */}
+                                <button onClick={async () => {
+                                    if (!knnRef.current || !detectorRef.current) return
+                                    const vid = videoRef.current
+                                    if (!vid) {
+                                        try {
+                                            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+                                            streamRef.current = stream
+                                            if (videoRef.current) videoRef.current.srcObject = stream
+                                            await new Promise(r => setTimeout(r, 500))
+                                        } catch { alert('Camera access denied.'); return }
+                                    }
+                                    const landmarks = await detectHandLandmarks()
+                                    if (landmarks) {
+                                        const normalized = normalizeLandmarks(landmarks)
+                                        const result = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
+                                        if (result) setTestResult(result)
+                                    } else {
+                                        setTestResult(null)
+                                    }
+                                }} style={{
+                                    width: '100%',
+                                    padding: '11px 0',
+                                    borderRadius: 10,
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                                    color: '#fff',
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontWeight: 700,
+                                    fontSize: 13,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
+                                    transition: 'all 0.2s ease'
+                                }}>
+                                    <Camera size={14} />
+                                    Capture & Predict
+                                </button>
 
                                 {/* Prediction results placeholder */}
                                 {testResult && (

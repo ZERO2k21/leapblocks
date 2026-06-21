@@ -2,6 +2,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import { AudioModel, blobToMelSpectrogram } from './AudioModel'
+import { ensureTf } from '../../ml/KNNClassifier'
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, Volume2, Waves, Square, Activity, Play, Pause } from 'lucide-react'
 
 type AudioClass = {
@@ -111,10 +113,12 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
     const [testRecording, setTestRecording] = useState(false)
     const [playingAudio, setPlayingAudio] = useState<string | null>(null)
     const [restored, setRestored] = useState(false)
+    const [accuracy, setAccuracy] = useState(0)
     const mediaRecRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
     const testRecRef = useRef<MediaRecorder | null>(null)
     const testChunks = useRef<Blob[]>([])
+    const modelRef = useRef<AudioModel | null>(null)
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -202,12 +206,37 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
     const handleTrain = async () => {
         setStatus('training')
         setProgress(0)
-        for (let i = 0; i <= 100; i += 10) {
-            await new Promise(r => setTimeout(r, 120))
-            setProgress(i)
+        try {
+            await ensureTf()
+            const model = new AudioModel()
+            modelRef.current = model
+            let loaded = 0
+            const total = classes.reduce((s, c) => s + c.samples.length, 0)
+            for (const cls of classes) {
+                for (const sampleUrl of cls.samples) {
+                    try {
+                        const response = await fetch(sampleUrl)
+                        const blob = await response.blob()
+                        const spectrogram = await blobToMelSpectrogram(blob)
+                        if (spectrogram && spectrogram.length > 0) {
+                            model.addSample(cls.name, spectrogram)
+                        }
+                    } catch (e) { console.warn('Failed to process sample:', e) }
+                    loaded++
+                    setProgress(Math.round((loaded / total) * 50))
+                }
+            }
+
+            const acc = await model.train((p) => {
+                setProgress(50 + Math.round(p * 0.5))
+            }, 20)
+            setAccuracy(acc)
+            setTrained(true)
+            setStatus('done')
+        } catch (e) {
+            console.error('Training failed:', e)
+            setStatus('idle')
         }
-        setTrained(true)
-        setStatus('done')
     }
 
     const handleTestRecord = async () => {
@@ -216,13 +245,17 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
             testChunks.current = []
             testRecRef.current = new MediaRecorder(stream)
             testRecRef.current.ondataavailable = (e: BlobEvent) => testChunks.current.push(e.data)
-            testRecRef.current.onstop = () => {
-                const winner = classes[Math.floor(Math.random() * classes.length)]
-                const conf: Record<string, number> = {}
-                classes.forEach((c) => {
-                    conf[c.name] = c.name === winner.name ? 0.82 + Math.random() * 0.1 : Math.random() * 0.2
-                })
-                setTestResult({ label: winner.name, confidences: conf })
+            testRecRef.current.onstop = async () => {
+                const blob = new Blob(testChunks.current, { type: 'audio/webm' })
+                if (modelRef.current) {
+                    try {
+                        const spectrogram = await blobToMelSpectrogram(blob)
+                        if (spectrogram && spectrogram.length > 0) {
+                            const result = await modelRef.current.predict(spectrogram)
+                            if (result) setTestResult(result)
+                        }
+                    } catch (e) { console.error('Prediction failed:', e) }
+                }
                 stream.getTracks().forEach(t => t.stop())
                 setTestRecording(false)
             }
@@ -566,7 +599,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                 <TrainingPanel
                     status={status}
                     progress={progress}
-                    accuracy={0.9}
+                    accuracy={accuracy}
                     canTrain={canTrain}
                     onTrain={handleTrain}
                     showAdvanced={showAdv}

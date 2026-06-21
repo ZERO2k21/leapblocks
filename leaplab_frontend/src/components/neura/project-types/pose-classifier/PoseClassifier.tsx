@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
 import { Camera, PersonStanding, Trash2, Edit2, Check, X, Plus, Activity, Users, Zap } from 'lucide-react'
 
 type PoseClass = {
@@ -135,10 +136,12 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
+    const [accuracy, setAccuracy] = useState(0)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const detectorRef = useRef<any>(null)
+    const knnRef = useRef<KNNClassifier | null>(null)
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -240,10 +243,60 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
         } catch (e) { console.error(e) }
     }, [capturing])
 
+    const normalizeKeypoints = useCallback((keypoints: number[][]): number[] => {
+        const flat = keypoints.flat()
+        if (flat.length === 0) return []
+        const xs = keypoints.map(k => k[0])
+        const ys = keypoints.map(k => k[1])
+        const minX = Math.min(...xs), maxX = Math.max(...xs)
+        const minY = Math.min(...ys), maxY = Math.max(...ys)
+        const rangeX = (maxX - minX) || 1
+        const rangeY = (maxY - minY) || 1
+        return keypoints.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2] ?? 0]).flat()
+    }, [])
+
     const handleTrain = async () => {
+        if (!poseDetReady) return
         setStatus('training')
-        for (let i = 0; i <= 100; i += 10) { await new Promise(r => setTimeout(r, 100)); setProgress(i) }
-        setTrained(true); setStatus('done')
+        setProgress(0)
+        try {
+            const knn = new KNNClassifier()
+            knnRef.current = knn
+            let loaded = 0
+            const total = classes.reduce((s, c) => s + c.samples.length, 0)
+            for (const cls of classes) {
+                for (const kps of cls.samples) {
+                    const normalized = normalizeKeypoints(kps)
+                    if (normalized.length > 0) {
+                        await knn.addExampleFromData(new Float32Array(normalized), cls.name)
+                    }
+                    loaded++
+                    setProgress(Math.round((loaded / total) * 100))
+                    await new Promise(r => setTimeout(r, 10))
+                }
+            }
+
+            let correct = 0, evaluated = 0
+            for (const cls of classes) {
+                for (const kps of cls.samples) {
+                    const normalized = normalizeKeypoints(kps)
+                    if (normalized.length === 0) continue
+                    const tf = await ensureTf()
+                    const emb = tf.tensor1d(new Float32Array(normalized))
+                    const pred = await knn.predictClass(emb, 3)
+                    emb.dispose()
+                    if (pred && pred.label === cls.name) correct++
+                    evaluated++
+                }
+            }
+            const acc = evaluated > 0 ? correct / evaluated : 0
+            setAccuracy(acc)
+            setTrained(true)
+            setStatus('done')
+        } catch (e) {
+            console.error('Training failed:', e)
+            setStatus('idle')
+        }
     }
 
     const canTrain = classes.filter(c => c.samples.length > 0).length >= 2
@@ -538,7 +591,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                 </div>
 
                 {/* Training Panel */}
-                <TrainingPanel status={status} progress={progress} accuracy={0.88} canTrain={canTrain}
+                <TrainingPanel status={status} progress={progress} accuracy={accuracy} canTrain={canTrain}
                     onTrain={handleTrain} showAdvanced={showAdv} setShowAdvanced={setShowAdv}
                     epochs={epochs} setEpochs={setEpochs} trained={trained}
                     sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))} />
@@ -596,7 +649,18 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                 </div>
 
                                 {/* Capture & Predict button */}
-                                <button style={{
+                                <button onClick={async () => {
+                                    if (!knnRef.current || !detectorRef.current || !videoRef.current) return
+                                    try {
+                                        const poses = await detectorRef.current.estimatePoses(videoRef.current)
+                                        if (poses.length > 0) {
+                                            const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
+                                            const normalized = normalizeKeypoints(keypoints)
+                                            const result = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
+                                            if (result) setTestResult(result)
+                                        }
+                                    } catch (e) { console.error(e) }
+                                }} style={{
                                     width: '100%',
                                     padding: '12px 16px',
                                     borderRadius: 10,
