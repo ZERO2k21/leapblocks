@@ -298,7 +298,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
                 {/* Sound Cards Column */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {classes.map((cls, i) => {
@@ -310,8 +310,8 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                             <div
                                 key={cls.id}
                                 style={{
-                                    background: '#13131f',
-                                    border: `1px solid ${isHovered ? color.border : '#1e1e2e'}`,
+                                    background: 'var(--ml-surface)',
+                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
                                     borderRadius: 16,
                                     overflow: 'hidden',
                                     transition: 'all 0.3s ease',
@@ -341,7 +341,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                     border: 'none',
                                                     borderRadius: 6,
                                                     padding: '3px 8px',
-                                                    color: '#fff',
+                                                    color: 'var(--ml-text-primary)',
                                                     fontFamily: "'DM Sans', sans-serif",
                                                     fontSize: 14,
                                                     fontWeight: 600,
@@ -351,7 +351,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                             />
                                         ) : (
                                             <span style={{
-                                                color: '#fff',
+                                                color: 'var(--ml-text-primary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontWeight: 700,
                                                 fontSize: 14,
@@ -368,19 +368,19 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                     <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
                                         {editingId === cls.id ? (
                                             <>
-                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Check size={14} />
                                                 </button>
-                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </>
@@ -410,7 +410,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
 
                                     {/* Waveform illustration */}
                                     <div style={{
-                                        background: '#0d0d1a',
+                                        background: 'var(--ml-well)',
                                         borderRadius: 10,
                                         padding: '4px 8px',
                                         marginBottom: 12
@@ -432,10 +432,10 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 8,
-                                                        background: '#0d0d1a',
+                                                        background: 'var(--ml-well)',
                                                         borderRadius: 8,
                                                         padding: '6px 10px',
-                                                        border: '1px solid #1e1e2e',
+                                                        border: '1px solid var(--ml-border)',
                                                         transition: 'all 0.2s ease'
                                                     }}
                                                     onMouseEnter={e => {
@@ -443,8 +443,8 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                         e.currentTarget.style.background = color.bg + '08'
                                                     }}
                                                     onMouseLeave={e => {
-                                                        e.currentTarget.style.borderColor = '#1e1e2e'
-                                                        e.currentTarget.style.background = '#0d0d1a'
+                                                        e.currentTarget.style.borderColor = 'var(--ml-border)'
+                                                        e.currentTarget.style.background = 'var(--ml-well)'
                                                     }}
                                                 >
                                                     <div style={{
@@ -469,15 +469,15 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                         style={{
                                                             background: 'transparent',
                                                             border: 'none',
-                                                            color: '#555',
+                                                            color: 'var(--ml-text-muted)',
                                                             cursor: 'pointer',
                                                             padding: 4,
                                                             display: 'flex',
                                                             borderRadius: 4,
                                                             transition: 'all 0.15s'
                                                         }}
-                                                        onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-                                                        onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = 'transparent' }}
+                                                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--ml-error-text)'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+                                                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--ml-text-muted)'; e.currentTarget.style.background = 'transparent' }}
                                                     >
                                                         <Trash2 size={12} />
                                                     </button>
@@ -486,7 +486,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                             {cls.samples.length > 3 && (
                                                 <div style={{
                                                     fontSize: 11,
-                                                    color: '#7070a0',
+                                                    color: 'var(--ml-text-secondary)',
                                                     textAlign: 'center',
                                                     padding: '2px 0'
                                                 }}>
@@ -510,9 +510,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                         onMouseLeave={e => {
                                             stopRecording()
                                             if (!isRecording) {
-                                                e.currentTarget.style.borderColor = '#2a2a3d'
-                                                e.currentTarget.style.color = '#7070a0'
-                                                e.currentTarget.style.background = '#0d0d1a'
+                                                e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                                                e.currentTarget.style.color = 'var(--ml-text-secondary)'
+                                                e.currentTarget.style.background = 'var(--ml-well)'
                                             }
                                         }}
                                         style={{
@@ -521,9 +521,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                             borderRadius: 10,
                                             background: isRecording
                                                 ? `linear-gradient(135deg, #ef4444, #f87171)`
-                                                : '#0d0d1a',
-                                            border: `1.5px dashed ${isRecording ? '#ef4444' : '#2a2a3d'}`,
-                                            color: isRecording ? '#fff' : '#7070a0',
+                                                : 'var(--ml-well)',
+                                            border: `1.5px dashed ${isRecording ? 'var(--ml-error-text)' : 'var(--ml-border-strong)'}`,
+                                            color: isRecording ? 'var(--ml-text-primary)' : 'var(--ml-text-secondary)',
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontSize: 12,
                                             fontWeight: 600,
@@ -566,9 +566,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                             width: '100%',
                             padding: '16px 0',
                             borderRadius: 16,
-                            border: '2px dashed #2a2a3d',
+                            border: '2px dashed var(--ml-border-strong)',
                             background: 'transparent',
-                            color: '#7070a0',
+                            color: 'var(--ml-text-secondary)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             fontWeight: 600,
@@ -585,8 +585,8 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                             e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = '#2a2a3d'
-                            e.currentTarget.style.color = '#7070a0'
+                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
                             e.currentTarget.style.background = 'transparent'
                         }}
                     >
@@ -618,8 +618,8 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                 {/* Testing Panel */}
                 <div style={{
                     width: 256,
-                    background: '#13131f',
-                    border: '1px solid #1e1e2e',
+                    background: 'var(--ml-surface)',
+                    border: '1px solid var(--ml-border)',
                     borderRadius: 16,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -632,9 +632,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                         alignItems: 'center',
                         gap: 8
                     }}>
-                        <Waves size={16} style={{ color: '#fff' }} />
+                        <Waves size={16} style={{ color: 'var(--ml-text-primary)' }} />
                         <span style={{
-                            color: '#fff',
+                            color: 'var(--ml-text-primary)',
                             fontWeight: 700,
                             fontSize: 14,
                             fontFamily: "'DM Sans', sans-serif"
@@ -648,7 +648,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                 <p style={{
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontSize: 12,
-                                    color: '#555',
+                                    color: 'var(--ml-text-muted)',
                                     lineHeight: 1.6,
                                     margin: '12px 0 0'
                                 }}>
@@ -662,7 +662,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#0d1f14',
+                                    background: 'var(--ml-success-bg)',
                                     border: '1px solid #1a3a25',
                                     borderRadius: 10,
                                     padding: '10px 12px'
@@ -671,13 +671,13 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                         width: 8,
                                         height: 8,
                                         borderRadius: '50%',
-                                        background: '#20c997',
-                                        boxShadow: '0 0 8px #20c997'
+                                        background: 'var(--ml-success-dot)',
+                                        boxShadow: '0 0 8px var(--ml-success-dot)'
                                     }} />
                                     <span style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: '#4ade80',
+                                        color: 'var(--ml-success-text)',
                                         fontWeight: 600
                                     }}>Model ready</span>
                                 </div>
@@ -694,7 +694,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                             ? 'linear-gradient(135deg, #ef4444, #f87171)'
                                             : 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
                                         border: 'none',
-                                        color: '#fff',
+                                        color: 'var(--ml-text-primary)',
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontWeight: 700,
                                         fontSize: 13,
@@ -750,7 +750,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                             <span style={{
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 13,
-                                                color: '#e0e0f0',
+                                                color: 'var(--ml-text-primary)',
                                                 fontWeight: 700
                                             }}>{testResult.label}</span>
                                         </div>
@@ -767,14 +767,14 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                         fontSize: 11,
                                                         marginBottom: 4
                                                     }}>
-                                                        <span style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-                                                        <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                                                             {Math.round(conf * 100)}%
                                                         </span>
                                                     </div>
                                                     <div style={{
                                                         height: 4,
-                                                        background: '#0d0d1a',
+                                                        background: 'var(--ml-well)',
                                                         borderRadius: 2,
                                                         overflow: 'hidden'
                                                     }}>

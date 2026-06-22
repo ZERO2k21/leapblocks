@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNeuraTheme } from '../common/NeuraThemeContext'
 
 type ClassifierLayoutProps = {
     project?: any
@@ -7,15 +8,17 @@ type ClassifierLayoutProps = {
 }
 
 export default function ClassifierLayout({ project, onBack, children }: ClassifierLayoutProps) {
+    const { isDark } = useNeuraTheme()
+
     return (
-        <div className="flex-1 w-full p-8 max-w-[1400px] mx-auto min-h-screen"
-             style={{ background: '#0a0a12' }}>
+        <div className="flex-1 w-full p-6 lg:p-8 max-w-[1400px] mx-auto flex flex-col"
+             style={{ background: 'var(--ml-bg)' }}>
             {/* Subtle dot pattern */}
             <div className="fixed inset-0 opacity-[0.015] pointer-events-none" style={{
-                backgroundImage: 'radial-gradient(circle, #7c3aed 1px, transparent 1px)',
+                backgroundImage: `radial-gradient(circle, var(--ml-accent) 1px, transparent 1px)`,
                 backgroundSize: '24px 24px'
             }} />
-            <div className="relative z-10">
+            <div className="relative z-10 flex-1 flex flex-col min-h-0">
                 {children}
             </div>
         </div>

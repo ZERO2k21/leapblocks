@@ -328,7 +328,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
                 {/* Pose Cards Column */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {classes.map((cls, i) => {
@@ -340,8 +340,8 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                             <div
                                 key={cls.id}
                                 style={{
-                                    background: '#13131f',
-                                    border: `1px solid ${isHovered ? color.border : '#1e1e2e'}`,
+                                    background: 'var(--ml-surface)',
+                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
                                     borderRadius: 16,
                                     overflow: 'hidden',
                                     transition: 'all 0.3s ease',
@@ -371,7 +371,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                                     border: 'none',
                                                     borderRadius: 6,
                                                     padding: '3px 8px',
-                                                    color: '#fff',
+                                                    color: 'var(--ml-text-primary)',
                                                     fontFamily: "'DM Sans', sans-serif",
                                                     fontSize: 14,
                                                     fontWeight: 600,
@@ -380,25 +380,25 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                                 }}
                                             />
                                         ) : (
-                                            <span style={{ color: '#fff', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>{cls.name}</span>
+                                            <span style={{ color: 'var(--ml-text-primary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>{cls.name}</span>
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', gap: 4 }}>
                                         {editingId === cls.id ? (
                                             <>
-                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#fff' }}>
+                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--ml-text-primary)' }}>
                                                     <Check size={14} />
                                                 </button>
-                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#fff' }}>
+                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--ml-text-primary)' }}>
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#fff', transition: 'all 0.2s ease' }}>
+                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--ml-text-primary)', transition: 'all 0.2s ease' }}>
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#fff', transition: 'all 0.2s ease' }}>
+                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--ml-text-primary)', transition: 'all 0.2s ease' }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </>
@@ -428,7 +428,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
 
                                     {/* Pose illustration + thumbnail grid */}
                                     <div style={{
-                                        background: '#0d0d1a',
+                                        background: 'var(--ml-well)',
                                         borderRadius: 10,
                                         padding: 12,
                                         marginBottom: 12,
@@ -464,12 +464,12 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                                             width: 36,
                                                             height: 36,
                                                             borderRadius: 8,
-                                                            background: '#1a1a2e',
+                                                            background: 'var(--ml-border)',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                             fontSize: 10,
-                                                            color: '#7070a0',
+                                                            color: 'var(--ml-text-secondary)',
                                                             fontFamily: "'DM Mono', monospace"
                                                         }}>
                                                             +{cls.samples.length - 5}
@@ -478,9 +478,9 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                                 </div>
                                             ) : (
                                                 <div style={{ display: 'flex', gap: 6 }}>
-                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a1a2e', border: '1px solid #2a2a3d' }} />
-                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a1a2e', border: '1px solid #2a2a3d' }} />
-                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a1a2e', border: '1px solid #2a2a3d' }} />
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--ml-border)', border: '1px solid #2a2a3d' }} />
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--ml-border)', border: '1px solid #2a2a3d' }} />
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--ml-border)', border: '1px solid #2a2a3d' }} />
                                                 </div>
                                             )}
                                         </div>
@@ -493,9 +493,9 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                             width: '100%',
                                             padding: '10px 16px',
                                             borderRadius: 10,
-                                            border: `2px dashed ${isCapturing ? color.bg : '#2a2a3d'}`,
+                                            border: `2px dashed ${isCapturing ? color.bg : 'var(--ml-border-strong)'}`,
                                             background: isCapturing ? `${color.bg}15` : 'transparent',
-                                            color: isCapturing ? color.bg : '#7070a0',
+                                            color: isCapturing ? color.bg : 'var(--ml-text-secondary)',
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontSize: 12,
                                             fontWeight: 600,
@@ -521,7 +521,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                                 borderRadius: 10,
                                                 border: 'none',
                                                 background: `linear-gradient(135deg, ${color.bg}, ${color.light})`,
-                                                color: '#fff',
+                                                color: 'var(--ml-text-primary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 700,
@@ -546,7 +546,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                     {/* Shared webcam preview */}
                     {capturing !== null && (
                         <div style={{
-                            background: '#13131f',
+                            background: 'var(--ml-surface)',
                             border: '1px solid #1e1e2e',
                             borderRadius: 16,
                             padding: 16,
@@ -554,7 +554,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)' }} />
-                                <span style={{ color: '#a0a0d0', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Live Pose Detection</span>
+                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Live Pose Detection</span>
                             </div>
                             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 10, transform: 'scaleX(-1)' }} />
                             <canvas ref={canvasRef} style={{ display: 'none' }} />
@@ -573,7 +573,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                             borderRadius: 12,
                             border: '2px dashed #2a2a3d',
                             background: 'transparent',
-                            color: '#7070a0',
+                            color: 'var(--ml-text-secondary)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             fontWeight: 600,
@@ -604,7 +604,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                 {/* Testing Panel */}
                 <div style={{
                     width: 256,
-                    background: '#13131f',
+                    background: 'var(--ml-surface)',
                     borderRadius: 16,
                     border: '1px solid #1e1e2e',
                     overflow: 'hidden',
@@ -618,8 +618,8 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                         alignItems: 'center',
                         gap: 8
                     }}>
-                        <Activity size={16} style={{ color: '#fff' }} />
-                        <span style={{ color: '#fff', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>Testing</span>
+                        <Activity size={16} style={{ color: 'var(--ml-text-primary)' }} />
+                        <span style={{ color: 'var(--ml-text-primary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>Testing</span>
                     </div>
 
                     {/* Content */}
@@ -627,7 +627,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                         {!trained ? (
                             <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
                                 <PersonIllustration size={80} />
-                                <p style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif", fontSize: 12, marginTop: 16, lineHeight: 1.5 }}>
+                                <p style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, marginTop: 16, lineHeight: 1.5 }}>
                                     Train your pose model to start testing
                                 </p>
                             </div>
@@ -635,7 +635,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                             <div>
                                 {/* Model ready indicator */}
                                 <div style={{
-                                    background: '#0d1f14',
+                                    background: 'var(--ml-success-bg)',
                                     border: '1px solid #1a3a25',
                                     borderRadius: 10,
                                     padding: '10px 12px',
@@ -644,8 +644,8 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                     gap: 8,
                                     marginBottom: 16
                                 }}>
-                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#20c997', boxShadow: '0 0 8px rgba(32,201,151,0.5)' }} />
-                                    <span style={{ color: '#4ade80', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Model ready</span>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ml-success-dot)', boxShadow: '0 0 8px rgba(32,201,151,0.5)' }} />
+                                    <span style={{ color: 'var(--ml-success-text)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Model ready</span>
                                 </div>
 
                                 {/* Capture & Predict button */}
@@ -666,7 +666,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                     borderRadius: 10,
                                     border: 'none',
                                     background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                                    color: '#fff',
+                                    color: 'var(--ml-text-primary)',
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontSize: 13,
                                     fontWeight: 700,
@@ -701,10 +701,10 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                             return (
                                                 <div key={cls.id} style={{ marginBottom: 8 }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                        <span style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif", fontSize: 11 }}>{cls.name}</span>
-                                                        <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>{(conf * 100).toFixed(0)}%</span>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11 }}>{cls.name}</span>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>{(conf * 100).toFixed(0)}%</span>
                                                     </div>
-                                                    <div style={{ height: 4, background: '#1a1a2e', borderRadius: 2, overflow: 'hidden' }}>
+                                                    <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
                                                         <div style={{ height: '100%', width: `${conf * 100}%`, background: `linear-gradient(90deg, ${color.bg}, ${color.light})`, borderRadius: 2, transition: 'width 0.5s ease' }} />
                                                     </div>
                                                 </div>
@@ -716,7 +716,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                 {/* Instructions when no result */}
                                 {!testResult && (
                                     <div style={{ textAlign: 'center', paddingTop: 8 }}>
-                                        <p style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif", fontSize: 11, lineHeight: 1.5 }}>
+                                        <p style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11, lineHeight: 1.5 }}>
                                             Point your webcam at a person to see pose predictions
                                         </p>
                                     </div>

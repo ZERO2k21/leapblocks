@@ -23,6 +23,7 @@ import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
 import { listMyProjects } from './services/cloudProjectApi';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
+import { NeuraThemeProvider, useNeuraTheme } from './components/neura/common/NeuraThemeContext';
 
 interface NeuraAppProps {
     onBack?: () => void;
@@ -31,6 +32,15 @@ interface NeuraAppProps {
 type NeuraView = 'dashboard' | 'create' | 'project';
 
 export default function NeuraApp({ onBack }: NeuraAppProps) {
+    return (
+        <NeuraThemeProvider>
+            <NeuraAppInner onBack={onBack} />
+        </NeuraThemeProvider>
+    );
+}
+
+function NeuraAppInner({ onBack }: NeuraAppProps) {
+    const { isDark } = useNeuraTheme();
     const [view, setView] = useState<NeuraView>('dashboard');
     const [projects, setProjects] = useState<NeuraProject[]>([]);
     const [currentProjectType, setCurrentProjectType] = useState<ProjectType | null>(null);
@@ -282,7 +292,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     };
 
     return (
-        <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+        <div className={`h-screen flex flex-col overflow-hidden ${isDark ? 'bg-[#0f1117]' : 'bg-gray-50'}`}>
             <ProjectHeader {...getHeaderProps()} />
 
             {saveMessage && (
@@ -312,9 +322,9 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative flex flex-col">
+            <div className="flex-1 overflow-y-auto relative flex flex-col px-4 sm:px-8 lg:px-12">
                 {view === 'dashboard' && (
-                    <div className="p-5 sm:p-8 lg:p-10 animate-fade-in">
+                    <div className="pt-4 sm:pt-6 lg:pt-8 pb-5 sm:pb-8 lg:pb-10 animate-fade-in">
                         <WelcomeHero
                             onCreateNew={handleCreateNew}
                             onImportDataset={handleImportProject}
@@ -375,7 +385,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
             {/* Rename Modal */}
             {showRenameModal && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl w-full max-w-sm mx-4 shadow-2xl overflow-hidden animate-fade-in-scale border border-gray-100">
+                    <div className={`${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100'} rounded-2xl w-full max-w-sm mx-4 shadow-2xl overflow-hidden animate-fade-in-scale border`}>
                         <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between">
                             <h2 className="text-white text-lg font-bold">Rename Project</h2>
                             <button onClick={() => { setShowRenameModal(false); setRenamingProject(null); }} className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
@@ -383,18 +393,18 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                             </button>
                         </div>
                         <div className="px-6 py-6">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">New Name</label>
+                            <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>New Name</label>
                             <input
                                 type="text"
                                 value={renameValue}
                                 onChange={(e) => setRenameValue(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') { setShowRenameModal(false); setRenamingProject(null); } }}
                                 autoFocus
-                                className="neura-input w-full px-4 py-3 text-sm text-gray-800"
+                                className={`neura-input w-full px-4 py-3 text-sm ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
                             />
                         </div>
                         <div className="px-6 pb-6 flex justify-end gap-3">
-                            <button onClick={() => { setShowRenameModal(false); setRenamingProject(null); }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all duration-200 active:scale-[0.97]">Cancel</button>
+                            <button onClick={() => { setShowRenameModal(false); setRenamingProject(null); }} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${isDark ? 'text-gray-400 bg-white/[0.06] hover:bg-white/[0.1]' : 'text-gray-500 bg-gray-100 hover:bg-gray-200'}`}>Cancel</button>
                             <button onClick={handleConfirmRename} disabled={!renameValue.trim()} className="neura-button-primary px-5 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none">Rename</button>
                         </div>
                     </div>

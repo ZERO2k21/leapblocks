@@ -291,7 +291,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
                 {/* Gesture Cards Column */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {classes.map((cls, i) => {
@@ -303,8 +303,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             <div
                                 key={cls.id}
                                 style={{
-                                    background: '#13131f',
-                                    border: `1px solid ${isHovered ? color.border : '#1e1e2e'}`,
+                                    background: 'var(--ml-surface)',
+                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
                                     borderRadius: 16,
                                     overflow: 'hidden',
                                     transition: 'all 0.3s ease',
@@ -430,8 +430,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                                 width: 44,
                                                                 height: 44,
                                                                 borderRadius: 10,
-                                                                background: '#0d0d1a',
-                                                                border: `1.5px solid #2a2a3d`,
+                                                                background: 'var(--ml-well)',
+                                                                border: `1.5px solid var(--ml-border-strong)`,
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
@@ -445,7 +445,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                                 e.currentTarget.style.boxShadow = `0 2px 10px ${color.glow}`
                                                             }}
                                                             onMouseLeave={e => {
-                                                                e.currentTarget.style.borderColor = '#2a2a3d'
+                                                                e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
                                                                 e.currentTarget.style.transform = 'scale(1)'
                                                                 e.currentTarget.style.boxShadow = 'none'
                                                             }}
@@ -477,7 +477,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    color: '#555',
+                                                    color: 'var(--ml-text-muted)',
                                                     fontSize: 12,
                                                     fontFamily: "'DM Sans', sans-serif"
                                                 }}>
@@ -495,9 +495,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                 flex: 1,
                                                 padding: '10px 0',
                                                 borderRadius: 10,
-                                                background: isCapturing ? color.bg + '15' : '#0d0d1a',
-                                                border: `1.5px dashed ${isCapturing ? color.bg : '#2a2a3d'}`,
-                                                color: isCapturing ? color.bg : '#7070a0',
+                                                background: isCapturing ? color.bg + '15' : 'var(--ml-well)',
+                                                border: `1.5px dashed ${isCapturing ? color.bg : 'var(--ml-border-strong)'}`,
+                                                color: isCapturing ? color.bg : 'var(--ml-text-secondary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 600,
@@ -517,9 +517,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                             }}
                                             onMouseLeave={e => {
                                                 if (!isCapturing) {
-                                                    e.currentTarget.style.borderColor = '#2a2a3d'
-                                                    e.currentTarget.style.color = '#7070a0'
-                                                    e.currentTarget.style.background = '#0d0d1a'
+                                                    e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                                                    e.currentTarget.style.color = 'var(--ml-text-secondary)'
+                                                    e.currentTarget.style.background = 'var(--ml-well)'
                                                 }
                                             }}
                                         >
@@ -561,8 +561,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     {/* Video preview when capturing */}
                     {capturing !== null && (
                         <div style={{
-                            background: '#13131f',
-                            border: '1px solid #1e1e2e',
+                            background: 'var(--ml-surface)',
+                            border: '1px solid var(--ml-border)',
                             borderRadius: 16,
                             padding: 12,
                             overflow: 'hidden'
@@ -584,9 +584,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             width: '100%',
                             padding: '16px 0',
                             borderRadius: 16,
-                            border: '2px dashed #2a2a3d',
+                            border: '2px dashed var(--ml-border-strong)',
                             background: 'transparent',
-                            color: '#7070a0',
+                            color: 'var(--ml-text-secondary)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             fontWeight: 600,
@@ -603,8 +603,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             e.currentTarget.style.background = 'rgba(124, 58, 237, 0.05)'
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = '#2a2a3d'
-                            e.currentTarget.style.color = '#7070a0'
+                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
                             e.currentTarget.style.background = 'transparent'
                         }}
                     >
@@ -636,8 +636,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 {/* Testing Panel */}
                 <div style={{
                     width: 256,
-                    background: '#13131f',
-                    border: '1px solid #1e1e2e',
+                    background: 'var(--ml-surface)',
+                    border: '1px solid var(--ml-border)',
                     borderRadius: 16,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -672,7 +672,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 <p style={{
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontSize: 12,
-                                    color: '#555',
+                                    color: 'var(--ml-text-muted)',
                                     lineHeight: 1.6,
                                     margin: 0
                                 }}>
@@ -686,8 +686,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#0d1f14',
-                                    border: '1px solid #1a3a25',
+                                    background: 'var(--ml-success-bg)',
+                                    border: '1px solid var(--ml-success-border)',
                                     borderRadius: 10,
                                     padding: '10px 12px'
                                 }}>
@@ -695,20 +695,20 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         width: 8,
                                         height: 8,
                                         borderRadius: '50%',
-                                        background: '#20c997',
-                                        boxShadow: '0 0 8px #20c997'
+                                        background: 'var(--ml-success-dot)',
+                                        boxShadow: '0 0 8px var(--ml-success-dot)'
                                     }} />
                                     <span style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: '#4ade80',
+                                        color: 'var(--ml-success-text)',
                                         fontWeight: 600
                                     }}>Model ready</span>
                                 </div>
 
                                 {/* Instructions */}
                                 <div style={{
-                                    background: '#0d0d1a',
+                                    background: 'var(--ml-well)',
                                     borderRadius: 10,
                                     padding: 12,
                                     display: 'flex',
@@ -720,7 +720,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         alignItems: 'center',
                                         gap: 6,
                                         fontSize: 11,
-                                        color: '#7070a0',
+                                        color: 'var(--ml-text-secondary)',
                                         fontFamily: "'DM Sans', sans-serif"
                                     }}>
                                         <Camera size={12} />
@@ -731,7 +731,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         alignItems: 'center',
                                         gap: 6,
                                         fontSize: 11,
-                                        color: '#7070a0',
+                                        color: 'var(--ml-text-secondary)',
                                         fontFamily: "'DM Sans', sans-serif"
                                     }}>
                                         <Hand size={12} />
@@ -793,13 +793,13 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                 width: 6,
                                                 height: 6,
                                                 borderRadius: '50%',
-                                                background: '#20c997',
+                                                background: 'var(--ml-success-dot)',
                                                 animation: 'pulse 2s infinite'
                                             }} />
                                             <span style={{
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
-                                                color: '#e0e0f0',
+                                                color: 'var(--ml-text-primary)',
                                                 fontWeight: 600
                                             }}>{testResult.label}</span>
                                         </div>
@@ -811,14 +811,14 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                     fontSize: 10,
                                                     marginBottom: 3
                                                 }}>
-                                                    <span style={{ color: '#7070a0' }}>{label}</span>
-                                                    <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace" }}>
+                                                    <span style={{ color: 'var(--ml-text-secondary)' }}>{label}</span>
+                                                    <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace" }}>
                                                         {Math.round((conf as number) * 100)}%
                                                     </span>
                                                 </div>
                                                 <div style={{
                                                     height: 3,
-                                                    background: '#0d0d1a',
+                                                    background: 'var(--ml-well)',
                                                     borderRadius: 2,
                                                     overflow: 'hidden'
                                                 }}>

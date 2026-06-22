@@ -36,7 +36,7 @@ function TextLinesIllustration({ color, sampleCount }: { color: typeof COLORS[0]
     const lines = Math.min(sampleCount, 5)
     return (
         <div style={{
-            background: '#0d0d1a',
+            background: 'var(--ml-well)',
             borderRadius: 10,
             padding: '10px 12px',
             marginBottom: 12
@@ -281,7 +281,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
                 {/* Category Cards Column */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {classes.map((cls, i) => {
@@ -294,8 +294,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                             <div
                                 key={cls.id}
                                 style={{
-                                    background: '#13131f',
-                                    border: `1px solid ${isHovered ? color.border : '#1e1e2e'}`,
+                                    background: 'var(--ml-surface)',
+                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
                                     borderRadius: 16,
                                     overflow: 'hidden',
                                     transition: 'all 0.3s ease',
@@ -325,7 +325,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                     border: 'none',
                                                     borderRadius: 6,
                                                     padding: '3px 8px',
-                                                    color: '#fff',
+                                                    color: 'var(--ml-text-primary)',
                                                     fontFamily: "'DM Sans', sans-serif",
                                                     fontSize: 14,
                                                     fontWeight: 600,
@@ -335,7 +335,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                             />
                                         ) : (
                                             <span style={{
-                                                color: '#fff',
+                                                color: 'var(--ml-text-primary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontWeight: 700,
                                                 fontSize: 14,
@@ -352,19 +352,19 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
                                         {editingId === cls.id ? (
                                             <>
-                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Check size={14} />
                                                 </button>
-                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </>
@@ -395,8 +395,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: 5,
-                                            background: '#0d0d1a',
-                    color: '#7070a0',
+                                            background: 'var(--ml-well)',
+                    color: 'var(--ml-text-secondary)',
                                             padding: '4px 10px',
                                             borderRadius: 8,
                                             fontSize: 11,
@@ -423,7 +423,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                     <div
                                                         key={idx}
                                                         style={{
-                                                            background: '#0d0d1a',
+                                                            background: 'var(--ml-well)',
                                                             border: `1px solid ${color.bg}25`,
                                                             borderRadius: 20,
                                                             padding: '5px 10px',
@@ -431,7 +431,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                             alignItems: 'center',
                                                             gap: 6,
                                                             fontSize: 11,
-                                                            color: '#a0a0d0',
+                                                            color: 'var(--ml-text-secondary)',
                                                             fontFamily: "'DM Sans', sans-serif",
                                                             maxWidth: '100%',
                                                             transition: 'all 0.2s ease',
@@ -443,7 +443,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                         }}
                                                         onMouseLeave={e => {
                                                             e.currentTarget.style.borderColor = color.bg + '25'
-                                                            e.currentTarget.style.background = '#0d0d1a'
+                                                            e.currentTarget.style.background = 'var(--ml-well)'
                                                         }}
                                                     >
                                                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
@@ -465,7 +465,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                             style={{
                                                                 background: 'transparent',
                                                                 border: 'none',
-                                                                color: '#555',
+                                                                color: 'var(--ml-text-muted)',
                                                                 cursor: 'pointer',
                                                                 padding: 0,
                                                                 display: 'flex',
@@ -473,8 +473,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                                 transition: 'all 0.15s',
                                                                 flexShrink: 0
                                                             }}
-                                                            onMouseEnter={e => { e.currentTarget.style.color = '#ef4444' }}
-                                                            onMouseLeave={e => { e.currentTarget.style.color = '#555' }}
+                                                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ml-error-text)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--ml-text-muted)' }}
                                                         >
                                                             <X size={10} />
                                                         </button>
@@ -513,11 +513,11 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                 onBlur={() => setFocusedInput(null)}
                                                 style={{
                                                     width: '100%',
-                                                    background: '#0d0d1a',
-                                                    border: `1.5px solid ${focusedInput === cls.id ? color.bg : '#2a2a3d'}`,
+                                                    background: 'var(--ml-well)',
+                                                    border: `1.5px solid ${focusedInput === cls.id ? color.bg : 'var(--ml-border-strong)'}`,
                                                     borderRadius: 10,
                                                     padding: '10px 12px',
-                                                    color: '#e0e0f0',
+                                                    color: 'var(--ml-text-primary)',
                                                     fontFamily: "'DM Sans', sans-serif",
                                                     fontSize: 12,
                                                     outline: 'none',
@@ -532,7 +532,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                     top: '50%',
                                                     transform: 'translateY(-50%)',
                                                     fontSize: 9,
-                                                    color: '#555',
+                                                    color: 'var(--ml-text-muted)',
                                                     fontFamily: "'DM Mono', monospace"
                                                 }}>
                                                     {(inputs[cls.id] || '').length}
@@ -547,9 +547,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                 borderRadius: 10,
                                                 background: (inputs[cls.id] || '').trim()
                                                     ? `linear-gradient(135deg, ${color.bg}, ${color.light})`
-                                                    : '#1a1a2a',
+                                                    : 'var(--ml-btn-idle)',
                                             border: 'none',
-                                                color: (inputs[cls.id] || '').trim() ? '#fff' : '#333',
+                                                color: (inputs[cls.id] || '').trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 700,
@@ -577,9 +577,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                             width: '100%',
                             padding: '16px 0',
                             borderRadius: 16,
-                            border: '2px dashed #2a2a3d',
+                            border: '2px dashed var(--ml-border-strong)',
                             background: 'transparent',
-                            color: '#7070a0',
+                            color: 'var(--ml-text-secondary)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             fontWeight: 600,
@@ -596,8 +596,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                             e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = '#2a2a3d'
-                            e.currentTarget.style.color = '#7070a0'
+                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
                             e.currentTarget.style.background = 'transparent'
                         }}
                     >
@@ -629,8 +629,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                 {/* Testing Panel */}
                 <div style={{
                     width: 256,
-                    background: '#13131f',
-                    border: '1px solid #1e1e2e',
+                    background: 'var(--ml-surface)',
+                    border: '1px solid var(--ml-border)',
                     borderRadius: 16,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -643,9 +643,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                         alignItems: 'center',
                         gap: 8
                     }}>
-                        <FileText size={16} style={{ color: '#fff' }} />
+                        <FileText size={16} style={{ color: 'var(--ml-text-primary)' }} />
                         <span style={{
-                            color: '#fff',
+                            color: 'var(--ml-text-primary)',
                             fontWeight: 700,
                             fontSize: 14,
                             fontFamily: "'DM Sans', sans-serif"
@@ -659,7 +659,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                 <p style={{
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontSize: 12,
-                                    color: '#555',
+                                    color: 'var(--ml-text-muted)',
                                     lineHeight: 1.6,
                                     margin: '12px 0 0'
                                 }}>
@@ -673,7 +673,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#0d1f14',
+                                    background: 'var(--ml-success-bg)',
                                     border: '1px solid #1a3a25',
                                     borderRadius: 10,
                                     padding: '10px 12px'
@@ -682,13 +682,13 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                         width: 8,
                                         height: 8,
                                         borderRadius: '50%',
-                                        background: '#20c997',
-                                        boxShadow: '0 0 8px #20c997'
+                                        background: 'var(--ml-success-dot)',
+                                        boxShadow: '0 0 8px var(--ml-success-dot)'
                                     }} />
                                     <span style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: '#4ade80',
+                                        color: 'var(--ml-success-text)',
                                         fontWeight: 600
                                     }}>Model ready</span>
                                 </div>
@@ -700,11 +700,11 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     placeholder="Type text to classify..."
                                     style={{
                                         width: '100%',
-                                        background: '#0d0d1a',
-                                        border: '1.5px solid #2a2a3d',
+                                        background: 'var(--ml-well)',
+                                        border: '1.5px solid var(--ml-border-strong)',
                                         borderRadius: 10,
                                         padding: '10px 12px',
-                                        color: '#e0e0f0',
+                                        color: 'var(--ml-text-primary)',
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
                                         outline: 'none',
@@ -713,7 +713,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                         transition: 'border-color 0.2s ease'
                                     }}
                                     onFocus={e => { e.currentTarget.style.borderColor = '#8b5cf6' }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = '#2a2a3d' }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--ml-border-strong)' }}
                                 />
 
                                 {/* Character count */}
@@ -721,7 +721,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     fontSize: 10,
-                                    color: '#555',
+                                    color: 'var(--ml-text-muted)',
                                     marginTop: -8
                                 }}>
                                     <span>{testText.length} characters</span>
@@ -738,9 +738,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                         borderRadius: 10,
                                         background: testText.trim()
                                             ? 'linear-gradient(135deg, #8b5cf6, #a78bfa)'
-                                            : '#1a1a2a',
+                                            : 'var(--ml-btn-idle)',
                                         border: 'none',
-                                        color: testText.trim() ? '#fff' : '#333',
+                                        color: testText.trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontWeight: 700,
                                         fontSize: 13,
@@ -779,7 +779,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                             <span style={{
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 13,
-                                                color: '#e0e0f0',
+                                                color: 'var(--ml-text-primary)',
                                                 fontWeight: 700
                                             }}>{testResult.label}</span>
                                         </div>
@@ -796,14 +796,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                         fontSize: 11,
                                                         marginBottom: 4
                                                     }}>
-                                                        <span style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-                                                        <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                                                             {Math.round(conf * 100)}%
                                                         </span>
                                                     </div>
                                                     <div style={{
                                                         height: 4,
-                                                        background: '#0d0d1a',
+                                                        background: 'var(--ml-well)',
                                                         borderRadius: 2,
                                                         overflow: 'hidden'
                                                     }}>

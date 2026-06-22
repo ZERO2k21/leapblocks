@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NeuraProject } from '../../../types/neura.types';
 import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot, MoreVertical, Pencil, Trash2, Download, ExternalLink } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface ProjectsTableProps {
     projects: NeuraProject[];
@@ -63,6 +64,7 @@ function ActionMenu({
 }) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const { isDark } = useNeuraTheme();
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -76,37 +78,37 @@ function ActionMenu({
         <div ref={ref} className="relative">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 active:scale-90"
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${isDark ? 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
             >
                 <MoreVertical size={16} strokeWidth={2} />
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-[0_8px_30px_rgba(10,1,90,0.12)] border border-gray-100 py-1.5 z-50 animate-fade-in-scale">
+                <div className={`absolute right-0 top-full mt-1 w-44 rounded-xl shadow-[0_8px_30px_rgba(10,1,90,0.12)] border py-1.5 z-50 animate-fade-in-scale ${isDark ? 'bg-[#1a1d2e] border-white/[0.08]' : 'bg-white border-gray-100'}`}>
                     <button
                         onClick={() => { onOpen?.(); setOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition-colors ${isDark ? 'text-gray-300 hover:bg-white/[0.06]' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
                         <ExternalLink size={14} strokeWidth={2} />
                         Open Project
                     </button>
                     <button
                         onClick={() => { onRename?.(); setOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition-colors ${isDark ? 'text-gray-300 hover:bg-white/[0.06]' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
                         <Pencil size={14} strokeWidth={2} />
                         Rename
                     </button>
                     <button
                         onClick={() => { onDownload?.(); setOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition-colors ${isDark ? 'text-gray-300 hover:bg-white/[0.06]' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
                         <Download size={14} strokeWidth={2} />
                         Download
                     </button>
-                    <div className="my-1 border-t border-gray-100" />
+                    <div className={`my-1 border-t ${isDark ? 'border-white/[0.06]' : 'border-gray-100'}`} />
                     <button
                         onClick={() => { onDelete?.(); setOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition-colors ${isDark ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
                     >
                         <Trash2 size={14} strokeWidth={2} />
                         Delete
@@ -133,22 +135,27 @@ function MobileProjectCard({
 }) {
     const config = typeConfig[project.type] || fallbackConfig;
     const Icon = config.icon;
+    const { isDark } = useNeuraTheme();
 
     return (
         <div
             onClick={onOpen}
-            className="bg-white rounded-xl border border-gray-100/80 p-4 cursor-pointer active:scale-[0.98] transition-transform duration-150 relative overflow-hidden"
+            className={`rounded-xl border p-4 cursor-pointer active:scale-[0.98] transition-transform duration-150 relative overflow-hidden ${
+                isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'
+            }`}
             style={{ borderLeft: `3px solid ${config.accentBorder}` }}
         >
             {/* Top row: icon + name + menu */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8 flex items-center justify-center shrink-0">
-                        <Icon size={18} className="text-[#0a015a]" strokeWidth={2} />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        isDark ? 'bg-white/[0.06] border border-white/[0.06]' : 'bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8'
+                    }`}>
+                        <Icon size={18} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-bold text-[#0a015a] tracking-tight text-sm truncate">{project.name}</p>
-                        <p className="text-[11px] text-gray-400 font-medium capitalize">{project.type.replace(/-/g, ' ')}</p>
+                        <p className={`font-bold tracking-tight text-sm truncate ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>{project.name}</p>
+                        <p className={`text-[11px] font-medium capitalize ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{project.type.replace(/-/g, ' ')}</p>
                     </div>
                 </div>
                 <div onClick={(e) => e.stopPropagation()}>
@@ -165,7 +172,7 @@ function MobileProjectCard({
             {/* Stats row */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <span className="text-[11px] text-gray-400">Classes: <span className="font-bold text-[#0a015a]">{project.classes.length}</span></span>
+                    <span className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Classes: <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-[#0a015a]'}`}>{project.classes.length}</span></span>
                     {project.modelTrained ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
@@ -174,10 +181,10 @@ function MobileProjectCard({
                             Trained
                         </span>
                     ) : (
-                        <span className="text-[10px] text-gray-400 font-medium">Not Trained</span>
+                        <span className={`text-[10px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Not Trained</span>
                     )}
                 </div>
-                <span className="text-[10px] text-gray-400">{formatDateShort(project.updatedAt)}</span>
+                <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDateShort(project.updatedAt)}</span>
             </div>
         </div>
     );
@@ -185,16 +192,18 @@ function MobileProjectCard({
 
 /* ── Main Component ───────────────────────────────────────────────────── */
 export default function ProjectsTable({ projects, onOpenProject, onDeleteProject, onRenameProject, onDownloadProject }: ProjectsTableProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
         <div className="mb-6">
             {/* Section header */}
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h2 className="text-base sm:text-lg font-bold text-[#0a015a] tracking-tight flex items-center gap-2">
+                    <h2 className={`text-base sm:text-lg font-bold tracking-tight flex items-center gap-2 ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
                         <span className="text-sm sm:text-base">&#x1F4C2;</span>
                         Recent Projects
                     </h2>
-                    <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">All your machine learning projects in one place.</p>
+                    <p className={`text-[11px] sm:text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>All your machine learning projects in one place.</p>
                 </div>
             </div>
 
@@ -212,14 +221,16 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                     </div>
                 ))}
                 {projects.length === 0 && (
-                    <div className="py-8 text-center bg-white rounded-xl border border-gray-100/80">
-                        <p className="text-gray-400 text-sm">No projects found.</p>
+                    <div className={`py-8 text-center rounded-xl border ${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'}`}>
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>No projects found.</p>
                     </div>
                 )}
             </div>
 
             {/* Desktop: Table */}
-            <div className="hidden sm:block bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden">
+            <div className={`hidden sm:block rounded-2xl border shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden ${
+                isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'
+            }`}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
@@ -240,17 +251,23 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                                     <tr
                                         key={project.id}
                                         onClick={() => onOpenProject?.(project)}
-                                        className={`group border-b border-gray-50 cursor-pointer transition-colors duration-200 hover:bg-[#f8f9ff]/60 animate-slide-in-up stagger-${(idx % 7) + 1} ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
+                                        className={`group border-b cursor-pointer transition-colors duration-200 animate-slide-in-up stagger-${(idx % 7) + 1} ${
+                                            isDark
+                                                ? `border-white/[0.04] hover:bg-white/[0.03] ${idx % 2 === 0 ? 'bg-[#1a1d2e]' : 'bg-[#161829]'}`
+                                                : `border-gray-50 hover:bg-[#f8f9ff]/60 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`
+                                        }`}
                                     >
                                         {/* Project Details */}
                                         <td className="px-4 lg:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
-                                                    <Icon size={18} className="text-[#0a015a]" strokeWidth={2} />
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200 ${
+                                                    isDark ? 'bg-white/[0.06] border border-white/[0.06]' : 'bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8'
+                                                }`}>
+                                                    <Icon size={18} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="font-bold text-[#0a015a] tracking-tight truncate max-w-[180px]">{project.name}</p>
-                                                    <p className="text-[11px] text-gray-400 font-medium capitalize">{project.type.replace(/-/g, ' ')}</p>
+                                                    <p className={`font-bold tracking-tight truncate max-w-[180px] ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>{project.name}</p>
+                                                    <p className={`text-[11px] font-medium capitalize ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{project.type.replace(/-/g, ' ')}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -264,12 +281,12 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
 
                                         {/* No. of Classes */}
                                         <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-                                            <span className="font-bold text-[#0a015a]">{project.classes.length}</span>
+                                            <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-[#0a015a]'}`}>{project.classes.length}</span>
                                         </td>
 
                                         {/* Last Updated */}
                                         <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
-                                            <span className="text-gray-500 text-xs">{formatDateFull(project.updatedAt)}</span>
+                                            <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{formatDateFull(project.updatedAt)}</span>
                                         </td>
 
                                         {/* Status */}
@@ -283,7 +300,7 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                                                     {project.accuracy != null && <span className="ml-0.5 text-emerald-500">{project.accuracy}%</span>}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400 text-xs font-medium">Model Not Trained</span>
+                                                <span className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Model Not Trained</span>
                                             )}
                                         </td>
 
@@ -306,7 +323,7 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
 
                 {projects.length === 0 && (
                     <div className="py-12 text-center">
-                        <p className="text-gray-400 text-sm">No projects found.</p>
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>No projects found.</p>
                     </div>
                 )}
             </div>

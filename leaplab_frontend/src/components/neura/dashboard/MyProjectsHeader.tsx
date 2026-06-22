@@ -5,19 +5,22 @@
 
 import React from 'react';
 import { Plus } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface MyProjectsHeaderProps {
     onCreateNew?: () => void;
 }
 
 export default function MyProjectsHeader({ onCreateNew }: MyProjectsHeaderProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
         <div className="flex items-center justify-between mb-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+                <h1 className={`text-3xl font-bold mb-2 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     My <span className="neura-gradient-text">Projects</span>
                 </h1>
-                <p className="text-gray-500 text-sm">Manage and train your machine learning models</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Manage and train your machine learning models</p>
             </div>
             <button
                 onClick={onCreateNew}

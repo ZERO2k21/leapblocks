@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import ProjectTypeCard from './ProjectTypeCard';
 import { ProjectTypeInfo, ProjectType } from '../../../types/neura.types';
 import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, ArrowLeft } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 const projectTypes: ProjectTypeInfo[] = [
     { id: 'image-classifier', name: 'Image Classifier', icon: '📸', Icon: Image, color: 'from-blue-500 to-indigo-600', description: 'Classify images into categories' },
@@ -29,6 +30,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
     const [selectedType, setSelectedType] = useState<ProjectType | null>(null);
+    const { isDark } = useNeuraTheme();
 
     const canCreate = projectName.trim() && selectedType;
 
@@ -43,10 +45,10 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
     };
 
     return (
-        <div className="w-full h-full flex flex-col bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff] relative overflow-hidden">
+        <div className={`w-full h-full flex flex-col relative overflow-hidden ${isDark ? 'bg-[#0f1117]' : 'bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff]'}`}>
             {/* Background ambient glows */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-indigo-400/[0.06] to-transparent rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-400/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
+            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} />
 
             {/* Header bar */}
             <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0">
@@ -83,7 +85,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                 onChange={(e) => setProjectName(e.target.value)}
                                 placeholder="Enter Project Name"
                                 autoFocus
-                                className="w-full px-0 py-3 border-0 border-b-2 border-gray-200 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:border-[#0a015a] focus:outline-none transition-colors font-medium"
+                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm font-medium focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
                             />
                         </div>
                         <div>
@@ -92,7 +94,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                 value={projectDescription}
                                 onChange={(e) => setProjectDescription(e.target.value)}
                                 placeholder="Enter Project Description (optional)"
-                                className="w-full px-0 py-3 border-0 border-b-2 border-gray-200 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:border-[#0a015a] focus:outline-none transition-colors"
+                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
                             />
                         </div>
                     </div>
@@ -116,7 +118,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
             </div>
 
             {/* Footer with Create button */}
-            <div className="relative px-8 sm:px-12 py-5 border-t border-gray-100/80 bg-white/60 backdrop-blur-sm flex justify-end shrink-0">
+            <div className={`relative px-8 sm:px-12 py-5 border-t backdrop-blur-sm flex justify-end shrink-0 ${isDark ? 'border-white/[0.06] bg-[#13131f]/80' : 'border-gray-100/80 bg-white/60'}`}>
                 <button
                     onClick={handleCreate}
                     disabled={!canCreate}
