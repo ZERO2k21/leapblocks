@@ -192,8 +192,10 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
 
     const detectHandLandmarks = useCallback(async (): Promise<number[][] | null> => {
         if (!detectorRef.current || !videoRef.current) return null
+        const video = videoRef.current
+        if (!video.videoWidth || !video.videoHeight) return null
         try {
-            const hands = await detectorRef.current.estimateHands(videoRef.current, { flipHorizontal: true })
+            const hands = await detectorRef.current.estimateHands(video, { flipHorizontal: true })
             if (hands.length > 0 && hands[0].keypoints) {
                 return hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
             }

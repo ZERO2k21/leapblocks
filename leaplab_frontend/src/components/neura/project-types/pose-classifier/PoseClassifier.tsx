@@ -137,6 +137,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
     const [accuracy, setAccuracy] = useState(0)
+    const [videoReady, setVideoReady] = useState(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
@@ -218,9 +219,14 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
 
     const startWebcam = async (classId: number) => {
         try {
+            setVideoReady(false)
             const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
             streamRef.current = stream
-            if (videoRef.current) videoRef.current.srcObject = stream
+            if (videoRef.current) {
+                const video = videoRef.current
+                video.srcObject = stream
+                video.onloadeddata = () => setVideoReady(true)
+            }
             setCapturing(classId)
         } catch {
             alert('Camera access denied.')
@@ -230,12 +236,15 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     const stopWebcam = useCallback(() => {
         streamRef.current?.getTracks().forEach(t => t.stop())
         setCapturing(null)
+        setVideoReady(false)
     }, [])
 
     const capturePose = useCallback(async () => {
         if (!detectorRef.current || !videoRef.current || capturing === null) return
+        const video = videoRef.current
+        if (!video.videoWidth || !video.videoHeight) return
         try {
-            const poses = await detectorRef.current.estimatePoses(videoRef.current)
+            const poses = await detectorRef.current.estimatePoses(video)
             if (poses.length > 0) {
                 const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
                 setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, keypoints] } : c))
@@ -651,8 +660,10 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                 {/* Capture & Predict button */}
                                 <button onClick={async () => {
                                     if (!knnRef.current || !detectorRef.current || !videoRef.current) return
+                                    const video = videoRef.current
+                                    if (!video.videoWidth || !video.videoHeight) return
                                     try {
-                                        const poses = await detectorRef.current.estimatePoses(videoRef.current)
+                                        const poses = await detectorRef.current.estimatePoses(video)
                                         if (poses.length > 0) {
                                             const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
                                             const normalized = normalizeKeypoints(keypoints)
