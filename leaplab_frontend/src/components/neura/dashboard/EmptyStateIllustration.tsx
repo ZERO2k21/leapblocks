@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Plus, Upload } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface EmptyStateIllustrationProps {
     onCreateNew?: () => void;
@@ -12,8 +13,14 @@ interface EmptyStateIllustrationProps {
 }
 
 export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyStateIllustrationProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-dashed border-slate-300 p-12 text-center">
+        <div className={`relative overflow-hidden rounded-3xl border border-dashed p-12 text-center ${
+            isDark
+                ? 'bg-gradient-to-br from-[#141627] to-[#1a1d2e] border-white/[0.1]'
+                : 'bg-gradient-to-br from-slate-50 to-white border-slate-300'
+        }`}>
             {/* Subtle background pattern */}
             <div className="absolute inset-0 opacity-[0.015]" style={{
                 backgroundImage: 'radial-gradient(circle, #0a015a 1px, transparent 1px)',
@@ -23,15 +30,15 @@ export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyS
             {/* Content */}
             <div className="relative flex flex-col items-center">
                 {/* Icon */}
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-inner flex items-center justify-center text-4xl mb-6 mx-auto">
+                <div className={`w-16 h-16 rounded-2xl shadow-inner flex items-center justify-center text-4xl mb-6 mx-auto ${isDark ? 'bg-[#1e2035]' : 'bg-white'}`}>
                     📦
                 </div>
 
                 {/* Heading */}
-                <h3 className="text-2xl font-semibold text-slate-800 mb-3">No projects yet</h3>
+                <h3 className={`text-2xl font-semibold mb-3 ${isDark ? 'text-gray-100' : 'text-slate-800'}`}>No projects yet</h3>
 
                 {/* Description */}
-                <p className="text-slate-600 max-w-md mx-auto mb-8 leading-relaxed">
+                <p className={`max-w-md mx-auto mb-8 leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
                     Create your first AI project or import a dataset to get started on your journey.
                 </p>
 

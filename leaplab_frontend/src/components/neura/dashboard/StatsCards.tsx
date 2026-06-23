@@ -6,12 +6,14 @@
 import React from 'react';
 import { FolderOpen, CheckCircle, Database, Brain } from 'lucide-react';
 import { NeuraProject } from '../../../types/neura.types';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface StatsCardsProps {
     projects: NeuraProject[];
 }
 
 export default function StatsCards({ projects }: StatsCardsProps) {
+    const { isDark } = useNeuraTheme();
     const totalProjects = projects.length;
     const trainedCount = projects.filter((p) => p.modelTrained).length;
     const totalClasses = projects.reduce((sum, p) => sum + p.classes.length, 0);
@@ -28,19 +30,16 @@ export default function StatsCards({ projects }: StatsCardsProps) {
             {stats.map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
-                    <div
-                        key={stat.label}
-                        className={`neura-card p-4 sm:p-5 flex items-center gap-3 sm:gap-4 animate-slide-in-up stagger-${idx + 1}`}
-                    >
+                        <div className={`neura-card p-4 sm:p-5 flex items-center gap-3 sm:gap-4 animate-slide-in-up stagger-${idx + 1}`}>
                         <div
                             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style={{ background: `${stat.color}12` }}
                         >
                             <Icon size={20} style={{ color: stat.color }} strokeWidth={2.2} />
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                            <p className="text-xl sm:text-2xl font-bold text-[#0a015a] tabular-nums">{stat.value}</p>
+                        <div className={`min-w-0`}>
+                            <p className={`text-[11px] sm:text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>{stat.label}</p>
+                            <p className={`text-xl sm:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>{stat.value}</p>
                         </div>
                     </div>
                 );

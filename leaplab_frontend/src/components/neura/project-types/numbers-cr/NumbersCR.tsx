@@ -168,20 +168,20 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1, minHeight: 0 }}>
                 {/* Digit Selector Row */}
                 <div style={{
-                    background: '#13131f',
-                    border: '1px solid #1e1e2e',
+                    background: 'var(--ml-surface)',
+                    border: '1px solid var(--ml-border)',
                     borderRadius: 16,
                     padding: '14px 20px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
                 }}>
-                    <Target size={16} style={{ color: '#7070a0', flexShrink: 0 }} />
+                    <Target size={16} style={{ color: 'var(--ml-text-secondary)', flexShrink: 0 }} />
                     <span style={{
-                        color: '#7070a0',
+                        color: 'var(--ml-text-secondary)',
                         fontSize: 12,
                         fontFamily: "'DM Sans', sans-serif",
                         fontWeight: 600,
@@ -203,9 +203,9 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                         width: 44,
                                         height: 44,
                                         borderRadius: 10,
-                                        border: `2px solid ${isSelected ? color.bg : hoveredDigit === digit ? color.bg + '60' : '#2a2a3d'}`,
-                                        background: isSelected ? color.bg + '20' : '#0d0d1a',
-                                        color: isSelected ? color.bg : '#7070a0',
+                                        border: `2px solid ${isSelected ? color.bg : hoveredDigit === digit ? color.bg + '60' : 'var(--ml-border-strong)'}`,
+                                        background: isSelected ? color.bg + '20' : 'var(--ml-well)',
+                                        color: isSelected ? color.bg : 'var(--ml-text-secondary)',
                                         fontFamily: "'DM Mono', monospace",
                                         fontSize: 18,
                                         fontWeight: 700,
@@ -245,8 +245,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                         })}
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                        <Activity size={12} style={{ color: '#555' }} />
-                        <span style={{ color: '#555', fontSize: 11, fontFamily: "'DM Mono', monospace" }}>
+                        <Activity size={12} style={{ color: 'var(--ml-text-muted)' }} />
+                        <span style={{ color: 'var(--ml-text-muted)', fontSize: 11, fontFamily: "'DM Mono', monospace" }}>
                             {totalSamples} total
                         </span>
                     </div>
@@ -258,8 +258,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {/* Canvas Card */}
                         <div style={{
-                            background: '#13131f',
-                            border: '1px solid #1e1e2e',
+                            background: 'var(--ml-surface)',
+                            border: '1px solid var(--ml-border)',
                             borderRadius: 16,
                             padding: 20,
                         }}>
@@ -273,7 +273,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                         boxShadow: `0 0 8px ${DIGIT_COLORS[selectedDigit].glow}`,
                                     }} />
                                     <span style={{
-                                        color: '#e0e0f0',
+                                        color: 'var(--ml-text-primary)',
                                         fontSize: 14,
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontWeight: 700,
@@ -287,9 +287,9 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                         style={{
                                             padding: '6px 12px',
                                             borderRadius: 8,
-                                            background: '#0d0d1a',
-                                            border: '1px solid #2a2a3d',
-                                            color: '#7070a0',
+                                            background: 'var(--ml-well)',
+                                            border: '1px solid var(--ml-border-strong)',
+                                            color: 'var(--ml-text-secondary)',
                                             fontSize: 11,
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontWeight: 600,
@@ -304,8 +304,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                             e.currentTarget.style.color = '#ef4444'
                                         }}
                                         onMouseLeave={e => {
-                                            e.currentTarget.style.borderColor = '#2a2a3d'
-                                            e.currentTarget.style.color = '#7070a0'
+                                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
                                         }}
                                     >
                                         <Eraser size={12} />
@@ -341,7 +341,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                 width={280}
                                 height={280}
                                 strokeColor="#ffffff"
-                                bgColor="#0d0d1a"
+                                bgColor="var(--ml-well)"
                                 strokeWidth={16}
                                 clearTrigger={canvasClear}
                             />
@@ -350,7 +350,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                 marginTop: 12,
                                 textAlign: 'center',
                                 fontSize: 11,
-                                color: '#555',
+                                color: 'var(--ml-text-muted)',
                                 fontFamily: "'DM Sans', sans-serif",
                             }}>
                                 Draw a digit with your mouse or touch, then click "Add Sample"
@@ -359,15 +359,15 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
 
                         {/* Samples Grid */}
                         <div style={{
-                            background: '#13131f',
-                            border: '1px solid #1e1e2e',
+                            background: 'var(--ml-surface)',
+                            border: '1px solid var(--ml-border)',
                             borderRadius: 16,
                             padding: 16,
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                <Grid3X3 size={14} style={{ color: '#7070a0' }} />
+                                <Grid3X3 size={14} style={{ color: 'var(--ml-text-secondary)' }} />
                                 <span style={{
-                                    color: '#7070a0',
+                                    color: 'var(--ml-text-secondary)',
                                     fontSize: 11,
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontWeight: 600,
@@ -384,8 +384,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                         <div
                                             key={digit}
                                             style={{
-                                                background: '#0d0d1a',
-                                                border: `1px solid ${count > 0 ? color.bg + '30' : '#1e1e2e'}`,
+                                                background: 'var(--ml-well)',
+                                                border: `1px solid ${count > 0 ? color.bg + '30' : 'var(--ml-border)'}`,
                                                 borderRadius: 10,
                                                 padding: 6,
                                                 textAlign: 'center',
@@ -396,7 +396,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                                 fontSize: 14,
                                                 fontFamily: "'DM Mono', monospace",
                                                 fontWeight: 700,
-                                                color: count > 0 ? color.bg : '#333',
+                                                color: count > 0 ? color.bg : 'var(--ml-text-disabled)',
                                                 marginBottom: 4,
                                             }}>{digit}</div>
                                             {thumbnails.length > 0 ? (
@@ -419,17 +419,17 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                                     height: 32,
                                                     margin: '0 auto',
                                                     borderRadius: 4,
-                                                    border: '1px dashed #2a2a3d',
+                                                    border: '1px dashed var(--ml-border-strong)',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                 }}>
-                                                    <span style={{ fontSize: 10, color: '#333' }}>—</span>
+                                                    <span style={{ fontSize: 10, color: 'var(--ml-text-disabled)' }}>—</span>
                                                 </div>
                                             )}
                                             <div style={{
                                                 fontSize: 9,
-                                                color: count > 0 ? color.bg : '#333',
+                                                color: count > 0 ? color.bg : 'var(--ml-text-disabled)',
                                                 marginTop: 4,
                                                 fontFamily: "'DM Mono', monospace",
                                             }}>{count}</div>
@@ -465,8 +465,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                     {/* Testing Panel */}
                     <div style={{
                         width: 280,
-                        background: '#13131f',
-                        border: '1px solid #1e1e2e',
+                        background: 'var(--ml-surface)',
+                        border: '1px solid var(--ml-border)',
                         borderRadius: 16,
                         overflow: 'hidden',
                         flexShrink: 0,
@@ -506,7 +506,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                     <p style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: '#555',
+                                        color: 'var(--ml-text-muted)',
                                         lineHeight: 1.6,
                                     }}>
                                         Train your digit model first.
@@ -519,8 +519,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 8,
-                                        background: '#0d1f14',
-                                        border: '1px solid #1a3a25',
+                                        background: 'var(--ml-success-bg)',
+                                        border: '1px solid var(--ml-success-border)',
                                         borderRadius: 10,
                                         padding: '10px 12px',
                                     }}>
@@ -528,30 +528,30 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                             width: 8,
                                             height: 8,
                                             borderRadius: '50%',
-                                            background: '#20c997',
-                                            boxShadow: '0 0 8px #20c997',
+                                            background: 'var(--ml-success-dot)',
+                                            boxShadow: '0 0 8px var(--ml-success-dot)',
                                         }} />
                                         <span style={{
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontSize: 12,
-                                            color: '#4ade80',
+                                            color: 'var(--ml-success-text)',
                                             fontWeight: 600,
                                         }}>Model ready</span>
                                     </div>
 
                                     {/* Test canvas */}
                                     <div style={{
-                                        background: '#0d0d1a',
+                                        background: 'var(--ml-well)',
                                         borderRadius: 10,
                                         padding: 8,
-                                        border: '1px solid #1e1e2e',
+                                        border: '1px solid var(--ml-border)',
                                     }}>
                                         <DrawingCanvas
                                             ref={testCanvasRef}
                                             width={248}
                                             height={160}
                                             strokeColor="#ffffff"
-                                            bgColor="#0d0d1a"
+                                            bgColor="var(--ml-well)"
                                             strokeWidth={12}
                                             clearTrigger={testCanvasClear}
                                         />
@@ -565,9 +565,9 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                                 flex: 1,
                                                 padding: '10px 0',
                                                 borderRadius: 10,
-                                                background: '#0d0d1a',
-                                                border: '1px solid #2a2a3d',
-                                                color: '#7070a0',
+                                                background: 'var(--ml-well)',
+                                                border: '1px solid var(--ml-border-strong)',
+                                                color: 'var(--ml-text-secondary)',
                                                 fontSize: 12,
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontWeight: 600,
@@ -645,14 +645,14 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                                                                 fontSize: 11,
                                                                 marginBottom: 3,
                                                             }}>
-                                                                <span style={{ color: '#7070a0', fontFamily: "'DM Sans', sans-serif" }}>Digit {d}</span>
-                                                                <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Digit {d}</span>
+                                                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                                                                     {Math.round((conf as number) * 100)}%
                                                                 </span>
                                                             </div>
                                                             <div style={{
                                                                 height: 4,
-                                                                background: '#0d0d1a',
+                                                                background: 'var(--ml-well)',
                                                                 borderRadius: 2,
                                                                 overflow: 'hidden',
                                                             }}>

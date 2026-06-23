@@ -230,11 +230,11 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
                 * { box-sizing: border-box; }
                 ::-webkit-scrollbar { width: 6px; }
-                ::-webkit-scrollbar-track { background: #0a0a12; }
-                ::-webkit-scrollbar-thumb { background: #2a2a3d; border-radius: 3px; }
+                ::-webkit-scrollbar-track { background: var(--ml-bg); }
+                ::-webkit-scrollbar-thumb { background: var(--ml-border-strong); border-radius: 3px; }
             `}</style>
 
-            <div style={{ flex: 1, background: '#0a0a12', color: '#e0e0f0', fontFamily: "'DM Sans', sans-serif", minHeight: '100%' }}>
+            <div style={{ flex: 1, color: 'var(--ml-text-primary)', fontFamily: "'DM Sans', sans-serif", minHeight: 0 }}>
                 <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
                     {/* Header */}
@@ -247,13 +247,13 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                         </div>
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 700, color: '#F97316', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Object Detection</div>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: '#f0f0fa', letterSpacing: '-0.02em' }}>COCO-SSD Live Detector</div>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ml-text-primary)', letterSpacing: '-0.02em' }}>COCO-SSD Live Detector</div>
                         </div>
                     </div>
 
                     {/* Model Loading Card */}
                     {!modelReady && (
-                        <div style={{ background: '#13131f', border: '1px solid #1e1e2e', borderRadius: 16, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, animation: 'fade-in 0.3s ease' }}>
+                        <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border)', borderRadius: 16, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, animation: 'fade-in 0.3s ease' }}>
                             {/* Crosshair SVG */}
                             <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 8 }}>
                                 <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
@@ -287,8 +287,8 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             </div>
 
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 17, fontWeight: 700, color: '#f0f0fa', marginBottom: 6 }}>COCO-SSD Object Detection</div>
-                                <div style={{ fontSize: 13, color: '#7070a0', lineHeight: 1.6, maxWidth: 400 }}>
+                                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--ml-text-primary)', marginBottom: 6 }}>COCO-SSD Object Detection</div>
+                                <div style={{ fontSize: 13, color: 'var(--ml-text-secondary)', lineHeight: 1.6, maxWidth: 400 }}>
                                     Detects 80+ common objects in real-time using a pre-trained model. No training needed — just load and point your camera.
                                 </div>
                             </div>
@@ -304,10 +304,10 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             {loading && (
                                 <div style={{ width: '100%', maxWidth: 320 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <span style={{ fontSize: 12, color: '#7070a0' }}>Loading model…</span>
+                                        <span style={{ fontSize: 12, color: 'var(--ml-text-secondary)' }}>Loading model…</span>
                                         <span style={{ fontSize: 12, color: '#F97316', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{loadProgress}%</span>
                                     </div>
-                                    <div style={{ background: '#0d0d1a', borderRadius: 6, height: 6, overflow: 'hidden' }}>
+                                    <div style={{ background: 'var(--ml-well)', borderRadius: 6, height: 6, overflow: 'hidden' }}>
                                         <div style={{ height: '100%', width: `${loadProgress}%`, background: 'linear-gradient(90deg, #F97316, #FB923C)', borderRadius: 6, transition: 'width 0.3s' }} />
                                     </div>
                                 </div>
@@ -316,8 +316,8 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             <button onClick={loadModel} disabled={loading}
                                 style={{
                                     padding: '13px 32px', borderRadius: 12,
-                                    background: loading ? '#1a1a2a' : 'linear-gradient(135deg, #F97316, #FB923C)',
-                                    border: 'none', color: loading ? '#555' : '#fff',
+                                    background: loading ? 'var(--ml-btn-idle)' : 'linear-gradient(135deg, #F97316, #FB923C)',
+                                    border: 'none', color: loading ? 'var(--ml-text-muted)' : '#fff',
                                     fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14,
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', gap: 8,
@@ -326,7 +326,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 }}>
                                 {loading ? (
                                     <>
-                                        <div style={{ width: 16, height: 16, border: '2px solid #333', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                                        <div style={{ width: 16, height: 16, border: '2px solid var(--ml-text-disabled)', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                                         Loading…
                                     </>
                                 ) : (
@@ -341,7 +341,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 )}
                             </button>
 
-                            <div style={{ fontSize: 11, color: '#444', textAlign: 'center' }}>
+                            <div style={{ fontSize: 11, color: 'var(--ml-text-muted)', textAlign: 'center' }}>
                                 Model size: ~10 MB · Powered by TensorFlow.js
                             </div>
                         </div>
@@ -370,14 +370,14 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 {running && (
                                     <button onClick={captureSnapshot}
                                         style={{
-                                            padding: '11px 20px', borderRadius: 12, border: '1.5px solid #2a2a3d',
-                                            background: '#1a1a2a', color: '#7070a0',
+                                            padding: '11px 20px', borderRadius: 12, border: '1.5px solid var(--ml-border-strong)',
+                                            background: 'var(--ml-btn-idle)', color: 'var(--ml-text-secondary)',
                                             fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 13,
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                                             transition: 'all 0.2s',
                                         }}
                                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#F97316'; (e.currentTarget as HTMLButtonElement).style.color = '#F97316'; }}
-                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a3d'; (e.currentTarget as HTMLButtonElement).style.color = '#7070a0'; }}>
+                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ml-border-strong)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ml-text-secondary)'; }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                             <circle cx="12" cy="13" r="4" />
@@ -389,13 +389,13 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 {/* Status badges */}
                                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
                                     {running && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, background: '#0d1f14', border: '1px solid #1a3a25' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, background: 'var(--ml-success-bg)', border: '1px solid var(--ml-success-border)' }}>
                                             <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E', animation: 'pulse-ring 1.5s infinite' }} />
                                             <span style={{ fontSize: 11, fontWeight: 700, color: '#22C55E', letterSpacing: '0.05em' }}>LIVE</span>
                                         </div>
                                     )}
                                     {running && (
-                                        <div style={{ padding: '6px 12px', borderRadius: 10, background: '#13131f', border: '1px solid #1e1e2e', fontSize: 11, color: '#7070a0', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                        <div style={{ padding: '6px 12px', borderRadius: 10, background: 'var(--ml-surface)', border: '1px solid var(--ml-border)', fontSize: 11, color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                                             {fps} FPS
                                         </div>
                                     )}
@@ -408,7 +408,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             </div>
 
                             {/* Viewfinder */}
-                            <div style={{ position: 'relative', background: '#0d0d1a', border: '1px solid #1e1e2e', borderRadius: 16, overflow: 'hidden', minHeight: 360, animation: 'fade-in 0.3s ease' }}>
+                            <div style={{ position: 'relative', background: 'var(--ml-well)', border: '1px solid var(--ml-border)', borderRadius: 16, overflow: 'hidden', minHeight: 360, animation: 'fade-in 0.3s ease' }}>
                                 <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block' }} />
                                 <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
@@ -433,20 +433,20 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                             <circle cx="12" cy="13" r="4" />
                                         </svg>
-                                        <span style={{ fontSize: 13, color: '#555', fontWeight: 500 }}>Click "Start Camera" to begin detection</span>
+                                        <span style={{ fontSize: 13, color: 'var(--ml-text-muted)', fontWeight: 500 }}>Click "Start Camera" to begin detection</span>
                                     </div>
                                 )}
                             </div>
 
                             {/* Detection Results Card */}
                             {detections.length > 0 && (
-                                <div style={{ background: '#13131f', border: '1px solid #1e1e2e', borderRadius: 16, padding: 20, animation: 'fade-in 0.3s ease' }}>
+                                <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border)', borderRadius: 16, padding: 20, animation: 'fade-in 0.3s ease' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: '#7070a0', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Detected Objects</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ml-text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Detected Objects</div>
                                             <span style={{ padding: '2px 8px', borderRadius: 8, background: '#F9731618', color: '#F97316', fontSize: 11, fontWeight: 700 }}>{detections.length}</span>
                                         </div>
-                                        <div style={{ fontSize: 11, color: '#444' }}>
+                                        <div style={{ fontSize: 11, color: 'var(--ml-text-muted)' }}>
                                             {uniqueClasses.length} unique class{uniqueClasses.length !== 1 ? 'es' : ''}
                                         </div>
                                     </div>
@@ -456,15 +456,15 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                             const color = getClassColor(d.class)
                                             const pct = Math.round(d.score * 100)
                                             return (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: '#0d0d1a', transition: 'background 0.15s' }}
-                                                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = '#1a1a2a'}
-                                                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = '#0d0d1a'}>
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'var(--ml-well)', transition: 'background 0.15s' }}
+                                                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--ml-btn-idle)'}
+                                                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--ml-well)'}>
                                                     <div style={{ width: 10, height: 10, borderRadius: 3, background: color, flexShrink: 0 }} />
-                                                    <span style={{ fontSize: 13, fontWeight: 600, color: '#e0e0f0', minWidth: 80, textTransform: 'capitalize' }}>{d.class}</span>
-                                                    <div style={{ flex: 1, height: 6, background: '#1e1e2e', borderRadius: 3, overflow: 'hidden' }}>
+                                                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ml-text-primary)', minWidth: 80, textTransform: 'capitalize' }}>{d.class}</span>
+                                                    <div style={{ flex: 1, height: 6, background: 'var(--ml-border)', borderRadius: 3, overflow: 'hidden' }}>
                                                         <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}CC)`, borderRadius: 3, transition: 'width 0.3s' }} />
                                                     </div>
-                                                    <span style={{ fontSize: 12, color: '#7070a0', fontFamily: "'DM Mono', monospace", fontWeight: 600, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                                                    <span style={{ fontSize: 12, color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600, minWidth: 36, textAlign: 'right' }}>{pct}%</span>
                                                 </div>
                                             )
                                         })}

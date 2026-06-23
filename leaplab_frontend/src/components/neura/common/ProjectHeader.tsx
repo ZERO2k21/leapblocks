@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
-import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
+import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
+import { useNeuraTheme } from './NeuraThemeContext';
 
 interface ProjectHeaderProps {
     icon?: string;
@@ -30,8 +31,10 @@ export default function ProjectHeader({
     onProjectNameChange,
     showMiddleSection = true,
 }: ProjectHeaderProps) {
+    const { theme, toggleTheme, isDark } = useNeuraTheme();
+
     return (
-        <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-[18px] bg-gradient-to-r from-[#0a015a] to-[#080a25] shadow-[0_4px_20px_rgba(8,10,37,0.45),inset_0_-1px_0_rgba(255,255,255,0.06)] z-[100] border-b border-white/10 select-none shrink-0 relative">
+        <div className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#0a015a] to-[#080a25] shadow-[0_4px_20px_rgba(8,10,37,0.45),inset_0_-1px_0_rgba(255,255,255,0.06)] z-[100] border-b border-white/10 select-none shrink-0 relative">
             {/* Subtle glass overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
                 backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 50%)'
@@ -127,6 +130,13 @@ export default function ProjectHeader({
                     <button title="Achievements" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <Trophy size={20} strokeWidth={2.2} />
                     </button>
+                    <button
+                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        onClick={toggleTheme}
+                        className="bg-transparent border-none text-white/60 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-all duration-200 flex items-center hover:scale-110 active:scale-95"
+                    >
+                        {isDark ? <Sun size={18} strokeWidth={2.2} /> : <Moon size={18} strokeWidth={2.2} />}
+                    </button>
                     <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <Settings size={20} strokeWidth={2.2} />
                     </button>
@@ -137,6 +147,13 @@ export default function ProjectHeader({
 
                 {/* Mobile: compact icon buttons */}
                 <div className="flex sm:hidden items-center gap-2">
+                    <button
+                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        onClick={toggleTheme}
+                        className="bg-transparent border-none text-white/60 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-all duration-200 flex items-center active:scale-95"
+                    >
+                        {isDark ? <Sun size={18} strokeWidth={2.2} /> : <Moon size={18} strokeWidth={2.2} />}
+                    </button>
                     <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-1 transition-all duration-200 flex items-center hover:text-white/90 active:scale-95">
                         <Settings size={18} strokeWidth={2.2} />
                     </button>

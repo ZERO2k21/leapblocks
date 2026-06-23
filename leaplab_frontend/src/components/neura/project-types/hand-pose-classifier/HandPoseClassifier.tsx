@@ -2,7 +2,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import { Camera, Hand, Trash2, Edit2, Check, X, Plus, AlertCircle, Zap, Activity } from 'lucide-react'
+import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
+import { Camera, Hand, Trash2, Edit2, Check, X, Plus, Activity } from 'lucide-react'
+
+declare const handPoseDetection: any
 
 type HandPoseClass = {
     id: number
@@ -88,8 +91,12 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
     const [editName, setEditName] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
+    const [handDetReady, setHandDetReady] = useState(false)
+    const [accuracy, setAccuracy] = useState(0)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
+    const detectorRef = useRef<any>(null)
+    const knnRef = useRef<KNNClassifier | null>(null)
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -154,20 +161,107 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         setCapturing(null)
     }, [])
 
-    const captureGesture = () => {
+    // Load MediaPipe Hands detector
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (handDetReady) return
+                await ensureTf()
+                const loadScript = (src: string) => new Promise<void>((res, rej) => {
+                    const existing = document.querySelector(`script[src="${src}"]`)
+                    if (existing) { res(); return }
+                    const s = document.createElement('script')
+                    s.src = src
+                    s.onload = () => res()
+                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
+                    document.head.appendChild(s)
+                })
+                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.min.js')
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js')
+                const model = handPoseDetection.SupportedModels.MediaPipeHands
+                const detector = await handPoseDetection.createDetector(model, {
+                    runtime: 'mediapipe',
+                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
+                })
+                detectorRef.current = detector
+                setHandDetReady(true)
+            } catch (e) { console.error('Hand pose detector load failed:', e) }
+        }
+        load()
+    }, [])
+
+    const detectHandLandmarks = useCallback(async (): Promise<number[][] | null> => {
+        if (!detectorRef.current || !videoRef.current) return null
+        const video = videoRef.current
+        if (!video.videoWidth || !video.videoHeight) return null
+        try {
+            const hands = await detectorRef.current.estimateHands(video, { flipHorizontal: true })
+            if (hands.length > 0 && hands[0].keypoints) {
+                return hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
+            }
+        } catch (e) { console.error(e) }
+        return null
+    }, [])
+
+    const normalizeLandmarks = useCallback((landmarks: number[][]): number[] => {
+        const xs = landmarks.map(k => k[0])
+        const ys = landmarks.map(k => k[1])
+        const minX = Math.min(...xs), maxX = Math.max(...xs)
+        const minY = Math.min(...ys), maxY = Math.max(...ys)
+        const rangeX = (maxX - minX) || 1
+        const rangeY = (maxY - minY) || 1
+        return landmarks.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2]]).flat()
+    }, [])
+
+    const captureGesture = useCallback(async () => {
         if (capturing === null) return
-        const landmarks = Array.from({ length: 21 }, (_, i) => [Math.random(), Math.random(), Math.random()])
-        setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, landmarks] } : c))
-    }
+        const landmarks = await detectHandLandmarks()
+        if (landmarks) {
+            setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, landmarks] } : c))
+        }
+    }, [capturing, detectHandLandmarks])
 
     const handleTrain = async () => {
         setStatus('training')
-        for (let i = 0; i <= 100; i += 10) {
-            await new Promise(r => setTimeout(r, 100))
-            setProgress(i)
+        setProgress(0)
+        try {
+            const knn = new KNNClassifier()
+            knnRef.current = knn
+            let loaded = 0
+            const total = classes.reduce((s, c) => s + c.samples.length, 0)
+            for (const cls of classes) {
+                for (const landmarks of cls.samples) {
+                    const normalized = normalizeLandmarks(landmarks)
+                    if (normalized.length > 0) {
+                        await knn.addExampleFromData(new Float32Array(normalized), cls.name)
+                    }
+                    loaded++
+                    setProgress(Math.round((loaded / total) * 100))
+                    await new Promise(r => setTimeout(r, 10))
+                }
+            }
+
+            let correct = 0, evaluated = 0
+            for (const cls of classes) {
+                for (const landmarks of cls.samples) {
+                    const normalized = normalizeLandmarks(landmarks)
+                    if (normalized.length === 0) continue
+                    const tf = await ensureTf()
+                    const emb = tf.tensor1d(new Float32Array(normalized))
+                    const pred = await knn.predictClass(emb, 3)
+                    emb.dispose()
+                    if (pred && pred.label === cls.name) correct++
+                    evaluated++
+                }
+            }
+            const acc = evaluated > 0 ? correct / evaluated : 0
+            setAccuracy(acc)
+            setTrained(true)
+            setStatus('done')
+        } catch (e) {
+            console.error('Training failed:', e)
+            setStatus('idle')
         }
-        setTrained(true)
-        setStatus('done')
     }
 
     const canTrain = classes.filter(c => c.samples.length > 0).length >= 2
@@ -199,7 +293,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
                 {/* Gesture Cards Column */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {classes.map((cls, i) => {
@@ -211,8 +305,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             <div
                                 key={cls.id}
                                 style={{
-                                    background: '#13131f',
-                                    border: `1px solid ${isHovered ? color.border : '#1e1e2e'}`,
+                                    background: 'var(--ml-surface)',
+                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
                                     borderRadius: 16,
                                     overflow: 'hidden',
                                     transition: 'all 0.3s ease',
@@ -338,8 +432,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                                 width: 44,
                                                                 height: 44,
                                                                 borderRadius: 10,
-                                                                background: '#0d0d1a',
-                                                                border: `1.5px solid #2a2a3d`,
+                                                                background: 'var(--ml-well)',
+                                                                border: `1.5px solid var(--ml-border-strong)`,
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
@@ -353,7 +447,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                                 e.currentTarget.style.boxShadow = `0 2px 10px ${color.glow}`
                                                             }}
                                                             onMouseLeave={e => {
-                                                                e.currentTarget.style.borderColor = '#2a2a3d'
+                                                                e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
                                                                 e.currentTarget.style.transform = 'scale(1)'
                                                                 e.currentTarget.style.boxShadow = 'none'
                                                             }}
@@ -385,7 +479,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    color: '#555',
+                                                    color: 'var(--ml-text-muted)',
                                                     fontSize: 12,
                                                     fontFamily: "'DM Sans', sans-serif"
                                                 }}>
@@ -403,9 +497,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                 flex: 1,
                                                 padding: '10px 0',
                                                 borderRadius: 10,
-                                                background: isCapturing ? color.bg + '15' : '#0d0d1a',
-                                                border: `1.5px dashed ${isCapturing ? color.bg : '#2a2a3d'}`,
-                                                color: isCapturing ? color.bg : '#7070a0',
+                                                background: isCapturing ? color.bg + '15' : 'var(--ml-well)',
+                                                border: `1.5px dashed ${isCapturing ? color.bg : 'var(--ml-border-strong)'}`,
+                                                color: isCapturing ? color.bg : 'var(--ml-text-secondary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 600,
@@ -425,9 +519,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                             }}
                                             onMouseLeave={e => {
                                                 if (!isCapturing) {
-                                                    e.currentTarget.style.borderColor = '#2a2a3d'
-                                                    e.currentTarget.style.color = '#7070a0'
-                                                    e.currentTarget.style.background = '#0d0d1a'
+                                                    e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                                                    e.currentTarget.style.color = 'var(--ml-text-secondary)'
+                                                    e.currentTarget.style.background = 'var(--ml-well)'
                                                 }
                                             }}
                                         >
@@ -469,8 +563,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     {/* Video preview when capturing */}
                     {capturing !== null && (
                         <div style={{
-                            background: '#13131f',
-                            border: '1px solid #1e1e2e',
+                            background: 'var(--ml-surface)',
+                            border: '1px solid var(--ml-border)',
                             borderRadius: 16,
                             padding: 12,
                             overflow: 'hidden'
@@ -492,9 +586,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             width: '100%',
                             padding: '16px 0',
                             borderRadius: 16,
-                            border: '2px dashed #2a2a3d',
+                            border: '2px dashed var(--ml-border-strong)',
                             background: 'transparent',
-                            color: '#7070a0',
+                            color: 'var(--ml-text-secondary)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             fontWeight: 600,
@@ -511,8 +605,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                             e.currentTarget.style.background = 'rgba(124, 58, 237, 0.05)'
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = '#2a2a3d'
-                            e.currentTarget.style.color = '#7070a0'
+                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
                             e.currentTarget.style.background = 'transparent'
                         }}
                     >
@@ -525,7 +619,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 <TrainingPanel
                     status={status}
                     progress={progress}
-                    accuracy={0.91}
+                    accuracy={accuracy}
                     canTrain={canTrain}
                     onTrain={handleTrain}
                     showAdvanced={showAdv}
@@ -544,8 +638,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 {/* Testing Panel */}
                 <div style={{
                     width: 256,
-                    background: '#13131f',
-                    border: '1px solid #1e1e2e',
+                    background: 'var(--ml-surface)',
+                    border: '1px solid var(--ml-border)',
                     borderRadius: 16,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -580,7 +674,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 <p style={{
                                     fontFamily: "'DM Sans', sans-serif",
                                     fontSize: 12,
-                                    color: '#555',
+                                    color: 'var(--ml-text-muted)',
                                     lineHeight: 1.6,
                                     margin: 0
                                 }}>
@@ -594,8 +688,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    background: '#0d1f14',
-                                    border: '1px solid #1a3a25',
+                                    background: 'var(--ml-success-bg)',
+                                    border: '1px solid var(--ml-success-border)',
                                     borderRadius: 10,
                                     padding: '10px 12px'
                                 }}>
@@ -603,20 +697,20 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         width: 8,
                                         height: 8,
                                         borderRadius: '50%',
-                                        background: '#20c997',
-                                        boxShadow: '0 0 8px #20c997'
+                                        background: 'var(--ml-success-dot)',
+                                        boxShadow: '0 0 8px var(--ml-success-dot)'
                                     }} />
                                     <span style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: '#4ade80',
+                                        color: 'var(--ml-success-text)',
                                         fontWeight: 600
                                     }}>Model ready</span>
                                 </div>
 
                                 {/* Instructions */}
                                 <div style={{
-                                    background: '#0d0d1a',
+                                    background: 'var(--ml-well)',
                                     borderRadius: 10,
                                     padding: 12,
                                     display: 'flex',
@@ -628,7 +722,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         alignItems: 'center',
                                         gap: 6,
                                         fontSize: 11,
-                                        color: '#7070a0',
+                                        color: 'var(--ml-text-secondary)',
                                         fontFamily: "'DM Sans', sans-serif"
                                     }}>
                                         <Camera size={12} />
@@ -639,13 +733,55 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                         alignItems: 'center',
                                         gap: 6,
                                         fontSize: 11,
-                                        color: '#7070a0',
+                                        color: 'var(--ml-text-secondary)',
                                         fontFamily: "'DM Sans', sans-serif"
                                     }}>
                                         <Hand size={12} />
                                         Results appear in real-time
                                     </div>
                                 </div>
+
+                                {/* Capture & Predict button */}
+                                <button onClick={async () => {
+                                    if (!knnRef.current || !detectorRef.current) return
+                                    const vid = videoRef.current
+                                    if (!vid) {
+                                        try {
+                                            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+                                            streamRef.current = stream
+                                            if (videoRef.current) videoRef.current.srcObject = stream
+                                            await new Promise(r => setTimeout(r, 500))
+                                        } catch { alert('Camera access denied.'); return }
+                                    }
+                                    const landmarks = await detectHandLandmarks()
+                                    if (landmarks) {
+                                        const normalized = normalizeLandmarks(landmarks)
+                                        const result = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
+                                        if (result) setTestResult(result)
+                                    } else {
+                                        setTestResult(null)
+                                    }
+                                }} style={{
+                                    width: '100%',
+                                    padding: '11px 0',
+                                    borderRadius: 10,
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                                    color: '#fff',
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontWeight: 700,
+                                    fontSize: 13,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
+                                    transition: 'all 0.2s ease'
+                                }}>
+                                    <Camera size={14} />
+                                    Capture & Predict
+                                </button>
 
                                 {/* Prediction results placeholder */}
                                 {testResult && (
@@ -659,13 +795,13 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                 width: 6,
                                                 height: 6,
                                                 borderRadius: '50%',
-                                                background: '#20c997',
+                                                background: 'var(--ml-success-dot)',
                                                 animation: 'pulse 2s infinite'
                                             }} />
                                             <span style={{
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
-                                                color: '#e0e0f0',
+                                                color: 'var(--ml-text-primary)',
                                                 fontWeight: 600
                                             }}>{testResult.label}</span>
                                         </div>
@@ -677,14 +813,14 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                     fontSize: 10,
                                                     marginBottom: 3
                                                 }}>
-                                                    <span style={{ color: '#7070a0' }}>{label}</span>
-                                                    <span style={{ color: '#a0a0d0', fontFamily: "'DM Mono', monospace" }}>
+                                                    <span style={{ color: 'var(--ml-text-secondary)' }}>{label}</span>
+                                                    <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace" }}>
                                                         {Math.round((conf as number) * 100)}%
                                                     </span>
                                                 </div>
                                                 <div style={{
                                                     height: 3,
-                                                    background: '#0d0d1a',
+                                                    background: 'var(--ml-well)',
                                                     borderRadius: 2,
                                                     overflow: 'hidden'
                                                 }}>

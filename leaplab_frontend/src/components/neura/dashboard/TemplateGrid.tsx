@@ -7,6 +7,7 @@ import React from 'react';
 import { ChevronRight, Image, ScanSearch, AudioLines, PersonStanding, MessageSquare } from 'lucide-react';
 import { ProjectType } from '../../../types/neura.types';
 import type { LucideIcon } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface TemplateGridProps {
     onSelectTemplate?: (typeId: ProjectType) => void;
@@ -85,19 +86,21 @@ const templates: {
 ];
 
 export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGridProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
         <div className="mt-12">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-[#0a015a] tracking-tight">
+                    <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
                         Start with a Template
                     </h2>
-                    <p className="text-sm text-gray-400 mt-1">Choose a prebuilt template and start training in seconds.</p>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Choose a prebuilt template and start training in seconds.</p>
                 </div>
                 <button
                     onClick={onViewAll}
-                    className="flex items-center gap-1.5 text-base font-semibold text-violet-600 hover:text-violet-700 transition-colors duration-200 group"
+                    className={`flex items-center gap-1.5 text-base font-semibold transition-colors duration-200 group ${isDark ? 'text-violet-400 hover:text-violet-300' : 'text-violet-600 hover:text-violet-700'}`}
                 >
                     View All Templates
                     <ChevronRight size={16} strokeWidth={2.5} className="group-hover:translate-x-0.5 transition-transform duration-200" />

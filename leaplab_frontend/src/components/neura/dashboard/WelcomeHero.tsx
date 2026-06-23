@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Plus, Upload, BookOpen, Brain, Image, FileText, AudioLines, Sparkles } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface WelcomeHeroProps {
     onCreateNew?: () => void;
@@ -13,8 +14,14 @@ interface WelcomeHeroProps {
 }
 
 export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials }: WelcomeHeroProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] px-6 sm:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 mb-6 border border-[#0a015a]/[0.04]">
+        <div className={`relative overflow-hidden rounded-2xl px-6 sm:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 mb-6 border ${
+            isDark
+                ? 'bg-gradient-to-br from-[#1a1d2e] via-[#141627] to-[#1e2035] border-white/[0.06]'
+                : 'bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] border-[#0a015a]/[0.04]'
+        }`}>
             {/* Background subtle dot pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: 'radial-gradient(circle, #0a015a 1px, transparent 1px)',
@@ -29,17 +36,17 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                 {/* Left: Text content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED]/15 to-[#4F46E5]/8 flex items-center justify-center">
-                            <Brain size={20} className="text-[#7C3AED]" strokeWidth={2} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-violet-500/20 to-indigo-500/10' : 'bg-gradient-to-br from-[#7C3AED]/15 to-[#4F46E5]/8'}`}>
+                            <Brain size={20} className={isDark ? 'text-violet-400' : 'text-[#7C3AED]'} strokeWidth={2} />
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-[#0a015a] tracking-tight leading-tight">
+                        <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
                             Welcome Back, <span className="neura-gradient-text">Explorer!</span>{' '}
                             <span className="inline-block animate-wave">&#x1F44B;</span>
                         </h1>
                     </div>
-                    <p className="text-slate-500 text-sm sm:text-base mt-1.5 max-w-md">
+                    <p className={`text-sm sm:text-base mt-1.5 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                         Build, train and deploy AI models without coding.{' '}
-                        <span className="font-medium text-violet-600">No code. Just creativity.</span>
+                        <span className={`font-medium ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>No code. Just creativity.</span>
                     </p>
 
                     {/* Action buttons */}

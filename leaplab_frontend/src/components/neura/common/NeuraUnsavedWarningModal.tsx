@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useNeuraTheme } from './NeuraThemeContext';
 
 interface NeuraUnsavedWarningModalProps {
     isOpen: boolean;
@@ -14,11 +15,12 @@ interface NeuraUnsavedWarningModalProps {
 }
 
 export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, onCancel }: NeuraUnsavedWarningModalProps) {
+    const { isDark } = useNeuraTheme();
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-[400px] shadow-2xl overflow-hidden animate-fade-in-scale border border-gray-100">
+            <div className={`rounded-2xl w-[400px] shadow-2xl overflow-hidden animate-fade-in-scale border ${isDark ? 'bg-[#1a1d2e] border-white/[0.08]' : 'bg-white border-gray-100'}`}>
                 {/* Header */}
                 <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between overflow-hidden">
                     <div className="absolute inset-0 opacity-10" style={{
@@ -38,8 +40,8 @@ export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, on
                             <AlertTriangle size={30} className="text-amber-500" strokeWidth={2} />
                         </div>
                     </div>
-                    <p className="text-gray-800 text-[15px] font-bold">Save changes to your current project?</p>
-                    <p className="text-gray-400 text-sm mt-1.5">Your progress will be lost if you don't save.</p>
+                    <p className={`text-[15px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Save changes to your current project?</p>
+                    <p className={`text-sm mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Your progress will be lost if you don't save.</p>
                 </div>
 
                 <div className="px-6 pb-6 flex justify-center gap-3">
@@ -51,13 +53,13 @@ export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, on
                     </button>
                     <button
                         onClick={onDiscard}
-                        className="px-6 py-2.5 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-all duration-200 active:scale-[0.97]"
+                        className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${isDark ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20' : 'text-red-600 bg-red-50 hover:bg-red-100 border border-red-100'}`}
                     >
                         Don't Save
                     </button>
                     <button
                         onClick={onCancel}
-                        className="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 hover:text-gray-700 transition-all duration-200 active:scale-[0.97]"
+                        className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${isDark ? 'text-gray-400 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08]' : 'text-gray-500 bg-gray-100 hover:bg-gray-200 hover:text-gray-700'}`}
                     >
                         Cancel
                     </button>

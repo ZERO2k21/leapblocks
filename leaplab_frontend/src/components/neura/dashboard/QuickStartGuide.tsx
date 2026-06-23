@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Rocket, FolderOpen, Brain, BarChart3 } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface QuickStartGuideProps {
     onWatchTutorial?: () => void;
@@ -38,25 +39,27 @@ const steps = [
 ];
 
 export default function QuickStartGuide({ onWatchTutorial }: QuickStartGuideProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
-        <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] p-5">
+        <div className={`rounded-2xl border shadow-[0_2px_16px_rgba(10,1,90,0.04)] p-5 ${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'}`}>
             {/* Header */}
             <div className="flex items-center gap-2 mb-5">
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0a015a] to-[#15027a] flex items-center justify-center shadow-md shadow-[#0a015a]/20">
                     <Rocket size={14} className="text-white" strokeWidth={2.2} />
                 </div>
-                <h3 className="text-sm font-bold text-[#0a015a]">Quick Start</h3>
+                <h3 className={`text-sm font-bold ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>Quick Start</h3>
             </div>
 
             {/* Steps */}
             <div className="relative space-y-0">
                 {/* Connecting line */}
-                <div className="absolute left-[11px] top-[28px] bottom-[28px] w-[2px] bg-gradient-to-b from-[#0a015a]/20 via-[#0a015a]/10 to-transparent" />
+                <div className={`absolute left-[11px] top-[28px] bottom-[28px] w-[2px] bg-gradient-to-b ${isDark ? 'from-violet-500/20 via-violet-500/10 to-transparent' : 'from-[#0a015a]/20 via-[#0a015a]/10 to-transparent'}`} />
 
                 {steps.map((step, idx) => {
                     const Icon = step.icon;
                     return (
-                        <div key={step.num} className={`relative flex items-start gap-3 py-3 px-2 rounded-xl transition-all duration-200 hover:bg-gray-50/60 group ${idx < steps.length - 1 ? 'mb-1' : ''}`}>
+                        <div key={step.num} className={`relative flex items-start gap-3 py-3 px-2 rounded-xl transition-all duration-200 group ${isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50/60'} ${idx < steps.length - 1 ? 'mb-1' : ''}`}>
                             {/* Step number */}
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#0a015a] to-[#15027a] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md shadow-[#0a015a]/20 relative z-10">
                                 {step.num}
@@ -67,8 +70,8 @@ export default function QuickStartGuide({ onWatchTutorial }: QuickStartGuideProp
                             </div>
                             {/* Step content */}
                             <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-bold text-gray-800 leading-tight">{step.title}</p>
-                                <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{step.desc}</p>
+                                <p className={`text-[13px] font-bold leading-tight ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{step.title}</p>
+                                <p className={`text-[11px] mt-0.5 leading-relaxed ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{step.desc}</p>
                             </div>
                         </div>
                     );

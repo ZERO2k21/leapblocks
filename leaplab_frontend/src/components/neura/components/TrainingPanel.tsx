@@ -31,19 +31,19 @@ export default function TrainingPanel({
     const totalSamples = Object.values(sampleCounts).reduce((s, c) => s + c, 0)
 
     return (
-        <div style={{ background: '#13131f', border: '1px solid #1e1e2e', borderRadius: 16, width: 288, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border)', borderRadius: 16, width: 288, overflow: 'hidden' }}>
             {/* Header with status indicator */}
             <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: trained ? '#20c997' : '#444',
-                    boxShadow: trained ? '0 0 8px #20c997' : 'none',
+                    background: trained ? 'var(--ml-success-dot)' : 'var(--ml-text-muted)',
+                    boxShadow: trained ? '0 0 8px var(--ml-success-dot)' : 'none',
                     transition: 'all 0.4s'
                 }} />
-                <span style={{ color: '#e0e0f0', fontWeight: 700, fontSize: 15, fontFamily: "'DM Sans', sans-serif" }}>Training</span>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, background: '#0d0d1a', borderRadius: 8, padding: '3px 4px' }}>
+                <span style={{ color: 'var(--ml-text-primary)', fontWeight: 700, fontSize: 15, fontFamily: "'DM Sans', sans-serif" }}>Training</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, background: 'var(--ml-well)', borderRadius: 8, padding: '3px 4px' }}>
                     {['JS', 'PY'].map(m => (
                         <div key={m} style={{
                             padding: '3px 9px',
@@ -51,7 +51,7 @@ export default function TrainingPanel({
                             background: m === 'JS' ? '#7c3aed' : 'transparent',
                             fontSize: 11,
                             fontFamily: "'DM Mono', monospace",
-                            color: m === 'JS' ? '#fff' : '#555',
+                            color: m === 'JS' ? '#fff' : 'var(--ml-text-muted)',
                             fontWeight: 700,
                             transition: 'all 0.2s'
                         }}>{m}</div>
@@ -91,7 +91,7 @@ export default function TrainingPanel({
                             <line x1="65" y1="58" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
                             <line x1="65" y1="58" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
                         </svg>
-                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#555', lineHeight: 1.5, textAlign: 'center' }}>
+                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--ml-text-muted)', lineHeight: 1.5, textAlign: 'center' }}>
                             {!canTrain ? 'Add samples to at least 2 classes to begin.' : 'Ready to train.'}
                         </div>
                     </div>
@@ -101,10 +101,10 @@ export default function TrainingPanel({
                 {status === 'training' && (
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#7070a0' }}>Extracting features…</span>
+                            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--ml-text-secondary)' }}>Extracting features…</span>
                             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: '#a78bfa', fontWeight: 600 }}>{Math.round(progress)}%</span>
                         </div>
-                        <div style={{ background: '#0d0d1a', borderRadius: 6, height: 6, overflow: 'hidden' }}>
+                        <div style={{ background: 'var(--ml-well)', borderRadius: 6, height: 6, overflow: 'hidden' }}>
                             <div style={{
                                 height: '100%',
                                 width: `${progress}%`,
@@ -118,9 +118,9 @@ export default function TrainingPanel({
 
                 {/* Trained state: Success message */}
                 {trained && (
-                    <div style={{ background: '#0d1f14', border: '1px solid #1a3a25', borderRadius: 10, padding: '10px 14px' }}>
-                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#4ade80', fontWeight: 600, marginBottom: 4 }}>✓ Model trained successfully</div>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#2d6a4f' }}>
+                    <div style={{ background: 'var(--ml-success-bg)', border: '1px solid var(--ml-success-border)', borderRadius: 10, padding: '10px 14px' }}>
+                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--ml-success-text)', fontWeight: 600, marginBottom: 4 }}>✓ Model trained successfully</div>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: 'var(--ml-text-secondary)' }}>
                             Accuracy: {Math.round(accuracy * 100)}% · {totalSamples} samples · {Object.keys(sampleCounts).length} classes
                         </div>
                     </div>
@@ -129,18 +129,18 @@ export default function TrainingPanel({
                 {/* Sample counts grid */}
                 {Object.keys(sampleCounts).length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: '#7070a0', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 600 }}>Samples</div>
+                        <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: 'var(--ml-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 600 }}>Samples</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                             {Object.entries(sampleCounts).map(([name, count]) => (
                                 <div key={name} style={{
-                                    background: '#0d0d1a',
+                                    background: 'var(--ml-well)',
                                     borderRadius: 10,
                                     padding: '8px 12px',
                                     fontSize: 11,
-                                    color: '#a0a0d0',
+                                    color: 'var(--ml-text-secondary)',
                                     fontFamily: "'DM Sans', sans-serif"
                                 }}>
-                                    {name}: <span style={{ fontWeight: 700, color: '#e0e0f0' }}>{count}</span>
+                                    {name}: <span style={{ fontWeight: 700, color: 'var(--ml-text-primary)' }}>{count}</span>
                                 </div>
                             ))}
                         </div>
@@ -158,9 +158,9 @@ export default function TrainingPanel({
                         borderRadius: 11,
                         background: canTrain && status !== 'training'
                             ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)'
-                            : '#1a1a2a',
+                            : 'var(--ml-btn-idle)',
                         border: 'none',
-                        color: canTrain && status !== 'training' ? '#fff' : '#333',
+                        color: canTrain && status !== 'training' ? '#fff' : 'var(--ml-text-disabled)',
                         fontFamily: "'DM Sans', sans-serif",
                         fontWeight: 700,
                         fontSize: 14,
@@ -186,7 +186,7 @@ export default function TrainingPanel({
                         style={{
                             background: 'none',
                             border: 'none',
-                            color: '#555',
+                            color: 'var(--ml-text-muted)',
                             fontFamily: "'DM Sans', sans-serif",
                             fontSize: 13,
                             cursor: 'pointer',
@@ -202,10 +202,10 @@ export default function TrainingPanel({
                         <span style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: showAdvanced ? 'rotate(180deg)' : 'none' }}>▾</span>
                     </button>
                     {showAdvanced && (
-                        <div style={{ marginTop: 10, background: '#0d0d1a', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ marginTop: 10, background: 'var(--ml-well)', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'spaceBetween', marginBottom: 4 }}>
-                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#7070a0' }}>Epochs</span>
+                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--ml-text-secondary)' }}>Epochs</span>
                                     <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: '#a78bfa', fontWeight: 600 }}>{epochs}</span>
                                 </div>
                                 <input
@@ -218,7 +218,7 @@ export default function TrainingPanel({
                                     style={{ width: '100%', accentColor: '#7c3aed' }}
                                 />
                             </div>
-                            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#444', lineHeight: 1.5 }}>
+                            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: 'var(--ml-text-muted)', lineHeight: 1.5 }}>
                                 Using MediaPipe hand landmarks + KNN classifier. All computation runs in-browser — no data leaves your device.
                             </div>
                         </div>

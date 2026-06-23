@@ -7,6 +7,7 @@ import React from 'react';
 import { NeuraProject } from '../../../types/neura.types';
 import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot, FolderOpen, Brain } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface ProjectListPanelProps {
     projects: NeuraProject[];
@@ -34,14 +35,16 @@ function formatDateShort(ts: number): string {
 }
 
 export default function ProjectListPanel({ projects, selectedProject, onSelectProject }: ProjectListPanelProps) {
+    const { isDark } = useNeuraTheme();
+
     return (
-        <div className="w-full lg:w-[320px] xl:w-[340px] shrink-0 bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col">
+        <div className={`w-full lg:w-[320px] xl:w-[340px] shrink-0 rounded-2xl border shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col ${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'}`}>
             {/* Header */}
-            <div className="px-5 py-4 border-b border-gray-100">
+            <div className={`px-5 py-4 border-b ${isDark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-bold text-[#0a015a] tracking-tight">My Projects</h3>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
+                        <h3 className={`text-sm font-bold tracking-tight ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>My Projects</h3>
+                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                             {projects.length} project{projects.length !== 1 ? 's' : ''}
                         </p>
                     </div>
@@ -90,7 +93,7 @@ export default function ProjectListPanel({ projects, selectedProject, onSelectPr
                                     <Icon size={16} style={{ color: config.accentBorder }} strokeWidth={2} />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[13px] font-semibold text-[#0a015a] truncate">{project.name}</p>
+                                    <p className={`text-[13px] font-semibold truncate ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>{project.name}</p>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <p className="text-[10px] text-gray-400 font-medium">{config.label}</p>
                                         <span className="text-[9px] text-gray-300">·</span>
