@@ -158,13 +158,16 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         }
       `}</style>
 
-      <div className={`flex items-center justify-between h-12 px-[18px] z-[100] select-none min-w-0 border-b gap-4 ${
-        isElectra
-          ? 'bg-gradient-to-br from-[#09090b] to-[#18181b] border-[#27272a] shadow-[0_2px_12px_rgba(0,0,0,0.4)]'
-          : 'bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]'
-      }`}>
+      <div 
+        style={{ paddingLeft: '2px' }}
+        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 ${
+          isElectra
+            ? 'bg-gradient-to-br from-[#09090b] to-[#18181b] border-[#27272a] shadow-[0_2px_12px_rgba(0,0,0,0.4)]'
+            : 'bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]'
+        }`}
+      >
         {/* Left section */}
-        <div className="flex items-center gap-2.5 flex-auto min-w-0 h-full">
+        <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
             title="Back to Home"
             onClick={() => {
@@ -172,6 +175,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               sessionStorage.removeItem('myProjectsSelectedMode');
               onBack();
             }}
+            style={{ marginLeft: '16px' }}
             className={`flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
@@ -781,13 +785,19 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         {/* Right section */}
         <div className="flex items-center justify-end gap-2 flex-auto min-w-0">
           {/* Quick actions - Desktop only */}
-          <div className={`hidden xl:flex items-center gap-2 pr-2 border-r h-5 shrink-0 ${
+          <div className={`hidden xl:flex items-center gap-2 pr-4 border-r h-5 shrink-0 ${
             isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
           }`}>
             <button title="Feedback" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
             <button title="Achievements" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><Trophy size={16} strokeWidth={2.2} /></button>
             <button title="Settings" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><Settings size={16} strokeWidth={2.2} /></button>
-            <button title="Help" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><CircleHelp size={16} strokeWidth={2.2} /></button>
+            <button 
+              title="Help" 
+              style={{ marginRight: '10px' }}
+              className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}
+            >
+              <CircleHelp size={16} strokeWidth={2.2} />
+            </button>
           </div>
 
           {rightContent && (
