@@ -3,7 +3,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
 import { AudioModel, blobToMelSpectrogram } from './AudioModel'
-import { ensureTf } from '../../ml/KNNClassifier'
+import { ensureTf } from '../../ml/loadScript'
+import { showToast } from '../../../../leapignite/client/components/Toast'
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, Volume2, Waves, Square, Activity, Play, Pause } from 'lucide-react'
 
 type AudioClass = {
@@ -189,7 +190,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
             mediaRecRef.current.start()
             setRecording(classId)
         } catch {
-            alert('Microphone access denied.')
+            showToast('Microphone access denied.', 'error')
         }
     }
 
@@ -263,7 +264,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
             setTestRecording(true)
             setTimeout(() => { testRecRef.current?.stop() }, 2000)
         } catch {
-            alert('Microphone access denied.')
+            showToast('Microphone access denied.', 'error')
         }
     }
 

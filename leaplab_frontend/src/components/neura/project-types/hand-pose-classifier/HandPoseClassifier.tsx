@@ -2,7 +2,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
+import { KNNClassifier } from '../../ml/KNNClassifier'
+import { ensureTf, ensureHandPose } from '../../ml/loadScript'
+import { showToast } from '../../../../leapignite/client/components/Toast'
 import { Camera, Hand, Trash2, Edit2, Check, X, Plus, Activity } from 'lucide-react'
 
 declare const handPoseDetection: any
@@ -152,7 +154,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
             if (videoRef.current) videoRef.current.srcObject = stream
             setCapturing(classId)
         } catch {
-            alert('Camera access denied.')
+            showToast('Camera access denied.', 'error')
         }
     }
 
@@ -166,18 +168,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         const load = async () => {
             try {
                 if (handDetReady) return
-                await ensureTf()
-                const loadScript = (src: string) => new Promise<void>((res, rej) => {
-                    const existing = document.querySelector(`script[src="${src}"]`)
-                    if (existing) { res(); return }
-                    const s = document.createElement('script')
-                    s.src = src
-                    s.onload = () => res()
-                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
-                    document.head.appendChild(s)
-                })
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.min.js')
-                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js')
+                const handPoseDetection = await ensureHandPose()
                 const model = handPoseDetection.SupportedModels.MediaPipeHands
                 const detector = await handPoseDetection.createDetector(model, {
                     runtime: 'mediapipe',
@@ -751,7 +742,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                             streamRef.current = stream
                                             if (videoRef.current) videoRef.current.srcObject = stream
                                             await new Promise(r => setTimeout(r, 500))
-                                        } catch { alert('Camera access denied.'); return }
+                                        } catch { showToast('Camera access denied.', 'error'); return }
                                     }
                                     const landmarks = await detectHandLandmarks()
                                     if (landmarks) {
