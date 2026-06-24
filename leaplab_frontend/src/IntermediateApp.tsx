@@ -1061,6 +1061,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             });
         };
 
+        // StopAll: when stopAll() is called from a block, clear the ask prompt UI
+        animationVM.onStopAll = () => {
+            setAskState(prev => {
+                if (prev.resolve) prev.resolve('');
+                return { isAsking: false, question: '', resolve: null };
+            });
+        };
+
         animationVM.onVariableChange = (name, value) => {
             setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, value } : m));
         };
@@ -1085,6 +1093,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             animationVM.onShowTable = undefined;
             animationVM.onHideTable = undefined;
             animationVM.onAskQuestion = undefined;
+            animationVM.onStopAll = undefined;
             animationVM.onVariableChange = undefined;
             animationVM.onListChange = undefined;
             animationVM.onTableChange = undefined;
