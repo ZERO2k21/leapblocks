@@ -551,24 +551,22 @@ export default function PropertiesPanel({ appState }) {
                 <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="flex gap-2 shrink-0">
               {!isRenaming && (
                 <button
                   onClick={handleStartRename}
-                  style={{ padding: '14px' }}
-                  className="bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-blue-600 border border-slate-200 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                  className="w-10 h-10 bg-slate-50 hover:bg-blue-50/50 text-slate-500 hover:text-blue-600 border border-slate-200/80 hover:border-blue-200/60 rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center group shrink-0 cursor-pointer"
                   title="Rename Module"
                 >
-                  <Pencil style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:scale-110" />
+                  <Pencil className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110" />
                 </button>
               )}
               <button
                 onClick={() => setDeleteConfirm({ id, type: selectedComponent.type })}
-                style={{ padding: '14px' }}
-                className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 group shrink-0"
+                className="w-10 h-10 bg-slate-50 hover:bg-rose-50/60 text-slate-500 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200/60 rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center group shrink-0 cursor-pointer"
                 title="Delete Module"
               >
-                <Trash2 style={{ width: '20px', height: '20px' }} className="transition-transform group-hover:rotate-12" />
+                <Trash2 className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6" />
               </button>
             </div>
           </div>
@@ -630,103 +628,115 @@ export default function PropertiesPanel({ appState }) {
       )}
       {deleteConfirm && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in"
-          style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(2, 6, 23, 0.7)',
+            backdropFilter: 'blur(12px) saturate(150%)',
+            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
           onClick={() => setDeleteConfirm(null)}
         >
           <div
-            className="bg-white rounded-[20px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.15)] w-full max-w-[380px] overflow-hidden border border-slate-100 animate-scale-in flex flex-col"
+            style={{ animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
+            className="w-full max-w-[400px] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 pt-6 pb-0 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-100 shadow-sm">
-                  <AlertTriangle className="w-5 h-5 text-rose-500" />
+            {/* Outer glow ring */}
+            <div className="rounded-[28px] p-[1px] bg-gradient-to-b from-rose-200/60 via-white/40 to-slate-200/60 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+              <div className="bg-white rounded-[27px] overflow-hidden">
+                {/* Top accent gradient bar */}
+                <div className="h-1 w-full bg-gradient-to-r from-rose-400 via-red-500 to-rose-400" />
+
+                {/* Header */}
+                <div className="relative px-6 pt-5 pb-4">
+                  {/* Subtle bg pattern */}
+                  <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #ef4444 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      {/* Animated icon */}
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50 flex items-center justify-center border border-rose-100/80 shadow-[0_2px_8px_rgba(239,68,68,0.12)]">
+                          <AlertTriangle className="w-6 h-6 text-rose-500" strokeWidth={2.5} />
+                        </div>
+                        {/* Pulse ring */}
+                        <div className="absolute -inset-1 rounded-[18px] border-2 border-rose-400/20 animate-ping" style={{ animationDuration: '2s' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-[17px] font-extrabold text-slate-900 tracking-tight leading-none">Delete Module</h3>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em]">Confirmation Required</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Close button */}
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100/80 transition-all duration-200 active:scale-90"
+                    >
+                      <X className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </div>
-                <span className="text-[17px] font-bold text-slate-900 tracking-tight">Delete Module</span>
-              </div>
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-90"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="px-6 py-5 flex-1">
-              <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100 shadow-inner">
-                <ComponentIcon type={deleteConfirm.type} size={36} />
-                <div>
-                  <div className="text-[15px] font-bold text-slate-900 leading-snug">{deleteConfirm.id}</div>
-                  <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.1em] mt-0.5">{deleteConfirm.type}</div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+                {/* Body */}
+                <div className="px-6 py-5">
+                  {/* Component card */}
+                  <div className="relative flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-slate-50/80 to-slate-50/40 border border-slate-200/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.04)]">
+                    {/* Left accent bar */}
+                    <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-gradient-to-b from-rose-400 to-red-500" />
+
+                    {/* Icon container */}
+                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.06)] shrink-0">
+                      <ComponentIcon type={deleteConfirm.type} size={26} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="min-w-0 flex-1 pl-1">
+                      <div className="text-[14px] font-bold text-slate-800 truncate leading-tight">{deleteConfirm.id}</div>
+                      <div className="inline-flex items-center gap-1 mt-1.5 px-2 py-[3px] rounded-md bg-slate-100/80 border border-slate-200/50">
+                        <div className="w-1 h-1 rounded-full bg-slate-400" />
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.1em]">{deleteConfirm.type}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Warning text */}
+                  <p className="mt-4 text-[13px] text-slate-500 leading-[1.7] font-medium">
+                    Are you sure you want to delete this module? This action{' '}
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 font-bold text-[12px] border border-rose-100/60">
+                      cannot be undone
+                    </span>
+                    . All properties and block references will be permanently removed.
+                  </p>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 pb-5 pt-1">
+                  <div className="flex items-center gap-3 p-1 rounded-2xl bg-slate-50/80 border border-slate-100">
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="flex-1 h-11 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] text-slate-600 bg-white border border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 active:scale-[0.98] cursor-pointer shadow-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        removeComponent(deleteConfirm.id);
+                        setDeleteConfirm(null);
+                      }}
+                      className="flex-1 h-11 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] text-white bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-[0_4px_14px_-3px_rgba(239,68,68,0.4)] hover:shadow-[0_6px_20px_-3px_rgba(239,68,68,0.5)] transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer border-none"
+                    >
+                      <Trash2 className="w-4 h-4" strokeWidth={2.5} />
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="mt-4 text-[13px] text-slate-500 font-medium leading-relaxed">
-                Are you sure you want to delete this module? This action cannot be undone. All properties and block references will be permanently removed.
-              </p>
-            </div>
-            <div 
-              style={{
-                padding: '18px 24px 24px 24px',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-                alignItems: 'center',
-                backgroundColor: '#f8fafc',
-                borderTop: '1px solid #f1f5f9',
-                flexShrink: 0
-              }}
-            >
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  color: '#475569',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                className="hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  removeComponent(deleteConfirm.id);
-                  setDeleteConfirm(null);
-                }}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  border: 'none',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-                className="hover:shadow-rose-500/35 hover:brightness-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
             </div>
           </div>
         </div>,

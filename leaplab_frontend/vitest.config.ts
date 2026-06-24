@@ -30,7 +30,7 @@ export default defineConfig({
         resolve: {
           alias: {
             // Stub out electron so imports don't crash in Node
-            electron: path.join(dirname, 'test/__mocks__/electron.ts'),
+            electron: path.join(dirname, 'src/test/__mocks__/electron.ts'),
           },
         },
       },

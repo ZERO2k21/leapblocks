@@ -20,10 +20,10 @@ function resolveToolPath(toolName) {
   const candidates = [
     // Packaged Electron
     process.resourcesPath && path.join(process.resourcesPath, 'tools', toolName),
-    // Development — project root /tools/
-    path.join(__dirname, '..', '..', '..', 'tools', toolName),
-    // Development — from apk/ directory
+    // Development — src/tools/
     path.join(__dirname, '..', '..', 'tools', toolName),
+    // Development — project root /tools/ (legacy)
+    path.join(__dirname, '..', '..', '..', 'tools', toolName),
   ].filter(Boolean);
 
   for (const candidate of candidates) {
