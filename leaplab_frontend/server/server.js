@@ -1022,7 +1022,7 @@ app.get('/health', async (req, res) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[LeapBlocks Server] Running on http://localhost:${PORT}`);
   console.log(`[LeapBlocks Server] arduino-cli: ${CLI_PATH}`);
   initCores().then(() => {
