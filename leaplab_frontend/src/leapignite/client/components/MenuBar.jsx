@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
+import TopbarShareButton from '../../../components/common/TopbarShareButton';
 
 // ─── Dropdown ────────────────────────────────────────────────────────────────
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
@@ -322,6 +323,7 @@ export default function MenuBar({
     onEditAction,
     onBack,
     onDownload,
+    onSave,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const isConnected = connectionStatus === 'connected';
@@ -588,6 +590,13 @@ export default function MenuBar({
 
                 {/* Divider */}
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
+                <TopbarShareButton
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    size={18}
+                    onSave={onSave}
+                    projectName={projectName}
+                />
 
                 <LeapLabAuthButton variant="dark" size="sm" />
 

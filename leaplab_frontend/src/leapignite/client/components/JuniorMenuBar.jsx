@@ -8,10 +8,11 @@ import {
     ChevronDown, File, FolderOpen, Save, Download,
     Undo, Redo, BookOpen, HelpCircle, Home,
     MessageSquareWarning, Trophy, Settings,
-    Share
+    Share, Share2
 } from 'lucide-react';
 import Logo, { CreoleapLogo } from '../../../components/Logo';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
+import TopbarShareButton from '../../../components/common/TopbarShareButton';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
@@ -171,6 +172,7 @@ export default function JuniorMenuBar({
     onTutorialStart,
     onBack,
     onDownload,
+    onSave,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
 
@@ -383,6 +385,35 @@ export default function JuniorMenuBar({
                     height: 32,
                     flexShrink: 0,
                 }}>
+                    <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
+                        {({ onClick, loading }) => (
+                            <button
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'rgba(255,255,255,0.55)',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.transform = 'scale(1.15)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                                onClick={onClick}
+                                disabled={loading}
+                                title="Share project"
+                            >
+                                <Share2 size={20} strokeWidth={2.2} />
+                            </button>
+                        )}
+                    </TopbarShareButton>
                     {[
                         { Icon: MessageSquareWarning, title: 'Feedback' },
                         { Icon: Trophy, title: 'Achievements' },

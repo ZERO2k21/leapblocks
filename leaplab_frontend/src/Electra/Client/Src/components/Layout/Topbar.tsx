@@ -11,6 +11,7 @@ import {
   Save,
   Download,
   MessageSquareWarning,
+  Share2,
   Trophy,
   Settings,
   CircleHelp,
@@ -28,6 +29,7 @@ import {
   Loader2
 } from 'lucide-react';
 import LeapLabAuthButton from '../../../../../auth/LeapLabAuthButton';
+import TopbarShareButton from '../../../../../components/common/TopbarShareButton';
 
 interface IgniteTopbarProps {
   onBack: () => void;
@@ -788,6 +790,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <div className={`hidden xl:flex items-center gap-2 pr-4 border-r h-5 shrink-0 ${
             isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
           }`}>
+            <TopbarShareButton className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`} size={16} onSave={onSave} projectName={title} />
             <button title="Feedback" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
             <button title="Achievements" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><Trophy size={16} strokeWidth={2.2} /></button>
             <button title="Settings" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><Settings size={16} strokeWidth={2.2} /></button>
@@ -1040,6 +1043,16 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               <BookOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Tutorials</span>
             </button>
+            <TopbarShareButton size={18} onSave={onSave} projectName={title}>
+              {({ onClick, loading }: { onClick: () => void; loading: boolean }) => (
+                <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
+                  isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
+                }`} onClick={onClick} disabled={loading}>
+                  <Share2 size={18} strokeWidth={2} className="opacity-80 shrink-0" />
+                  <span>Share project</span>
+                </button>
+              )}
+            </TopbarShareButton>
             <button className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${
               isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
             }`}>

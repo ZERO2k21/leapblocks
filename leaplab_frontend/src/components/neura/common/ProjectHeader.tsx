@@ -7,6 +7,7 @@ import React from 'react';
 import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import { useNeuraTheme } from './NeuraThemeContext';
+import TopbarShareButton from '../../common/TopbarShareButton';
 
 interface ProjectHeaderProps {
     icon?: string;
@@ -124,6 +125,7 @@ export default function ProjectHeader({
                 )}
 
                 <div className="hidden sm:flex items-center gap-3.5 pr-4 border-r border-white/10 h-8 shrink-0">
+                    <TopbarShareButton className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95" size={20} onSave={onSave} projectName={projectName} />
                     <button title="Feedback" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
                         <MessageSquareWarning size={20} strokeWidth={2.2} />
                     </button>

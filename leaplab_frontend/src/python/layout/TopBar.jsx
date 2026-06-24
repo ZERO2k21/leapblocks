@@ -7,6 +7,7 @@ import React from "react";
 import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
+import TopbarShareButton from "../../../components/common/TopbarShareButton";
 
 // ─── Theme (LeapBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -284,6 +285,11 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     </div>
                 </div>
 
+
+                <TopbarShareButton
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    size={18}
+                />
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
 
