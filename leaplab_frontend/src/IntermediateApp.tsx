@@ -5902,6 +5902,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 onDownload={handleDownloadProject}
 
+                onSave={handleSaveProject}
+
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
 
             />
