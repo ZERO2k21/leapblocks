@@ -273,6 +273,9 @@ export class AnimationVM {
     public onLog?: (msg: string) => void;
     public onAnswerChange?: (answer: string) => void;
 
+    // StopAll callback — called when stopAll() is invoked (from block or UI) so React can clear UI state
+    public onStopAll?: () => void;
+
     // Change callbacks for UI/Monitor synchronization
     public onVariableChange?: (name: string, value: string | number) => void;
     public onListChange?: (name: string, value: (string | number)[]) => void;
@@ -815,6 +818,9 @@ export class AnimationVM {
         }
 
         vmLog.info('All scripts stopped');
+
+        // Notify React UI to clear any pending state (ask prompts, etc.)
+        if (this.onStopAll) this.onStopAll();
     }
 
     /**
