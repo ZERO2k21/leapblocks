@@ -303,35 +303,6 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
                   <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
 
-                  <button
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '7px 14px',
-                      border: 'none',
-                      background: 'transparent',
-                      fontSize: '12px',
-                      fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                      fontWeight: 500,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.12s ease'
-                    }}
-                    className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
-                    onClick={() => {
-                      onSave();
-                      setFileMenuOpen(false);
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Save size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
-                      <span>Save</span>
-                    </div>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+S</span>
-                  </button>
-
                   {onDownload && (
                     <button
                       style={{
@@ -901,22 +872,6 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             >
               <FolderOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
               <span>Open Project</span>
-            </button>
-            <button
-              disabled={isSaving}
-              onClick={() => { onSave(); setMobileMenuOpen(false); }}
-              className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${
-                isSaving ? 'cursor-wait opacity-60' : 'cursor-pointer'
-              } ${
-                isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
-              }`}
-            >
-              {isSaving ? (
-                <Loader2 size={18} strokeWidth={2} className="opacity-80 shrink-0 animate-spin" />
-              ) : (
-                <Save size={18} strokeWidth={2} className="opacity-80 shrink-0" />
-              )}
-              <span>{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
             <button
               onClick={() => { onSaveAs?.(); setMobileMenuOpen(false); }}
