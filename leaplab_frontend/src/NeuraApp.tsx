@@ -23,6 +23,7 @@ import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
 import { listMyProjects } from './services/cloudProjectApi';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
+import ClassifierErrorBoundary from './components/neura/common/ClassifierErrorBoundary';
 import { NeuraThemeProvider, useNeuraTheme } from './components/neura/common/NeuraThemeContext';
 
 interface NeuraAppProps {
@@ -136,16 +137,18 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
         });
     };
 
-    const handleSaveProject = async () => {
-        if (!currentProject) return;
+    const handleSaveProject = async (): Promise<boolean> => {
+        if (!currentProject) return false;
         setIsSaving(true);
         try {
             await fileService.saveProject(currentProject.name, 'neura', currentProject);
             setHasUnsavedChanges(false);
             setSaveMessage({ type: 'success', text: 'Project saved to cloud!' });
+            return true;
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Failed to save project.';
             setSaveMessage({ type: 'error', text: message });
+            return false;
         } finally {
             setIsSaving(false);
         }
@@ -201,10 +204,12 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     };
 
     const handleUnsavedSave = async () => {
-        await handleSaveProject();
-        setShowUnsavedModal(false);
-        pendingNavigation?.();
-        setPendingNavigation(null);
+        const saved = await handleSaveProject();
+        if (saved) {
+            setShowUnsavedModal(false);
+            pendingNavigation?.();
+            setPendingNavigation(null);
+        }
     };
 
     const handleUnsavedDiscard = () => {
@@ -253,24 +258,38 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     };
 
     const renderProjectComponent = () => {
+        const commonProps = { project: currentProject, onBack: handleBackToDashboard, onDataChange: handleProjectDataChange }
+        let component: React.ReactNode = null
         switch (currentProjectType) {
             case 'image-classifier':
-                return <ImageClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <ImageClassifier {...commonProps} />
+                break
             case 'object-detection':
-                return <ObjectDetection project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <ObjectDetection {...commonProps} />
+                break
             case 'pose-classifier':
-                return <PoseClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <PoseClassifier {...commonProps} />
+                break
             case 'hand-pose-classifier':
-                return <HandPoseClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <HandPoseClassifier {...commonProps} />
+                break
             case 'audio-classifier':
-                return <AudioClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <AudioClassifier {...commonProps} />
+                break
             case 'numbers-cr':
-                return <NumbersCR project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <NumbersCR {...commonProps} />
+                break
             case 'text-classifier':
-                return <TextClassifier project={currentProject} onBack={handleBackToDashboard} onDataChange={handleProjectDataChange} />;
+                component = <TextClassifier {...commonProps} />
+                break
             default:
-                return null;
+                return null
         }
+        return (
+            <ClassifierErrorBoundary onBackToDashboard={handleBackToDashboard} key={currentProjectType}>
+                {component}
+            </ClassifierErrorBoundary>
+        )
     };
 
     const getHeaderProps = () => {
@@ -369,7 +388,7 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 )}
 
                 {view === 'project' && (
-                    <div className="animate-fade-in flex flex-col flex-1" style={{ background: "#0a0a12" }}>
+                    <div className="animate-fade-in flex flex-col flex-1" style={{ background: "var(--ml-bg)" }}>
                         {renderProjectComponent()}
                     </div>
                 )}

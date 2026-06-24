@@ -757,7 +757,7 @@ export class AnimationVM {
             const scripts = (sprite.scripts as CompiledScript[]) || [];
             for (const script of scripts) {
                 // Handle matching for specific key or "any"
-                if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
+                if (script.trigger === 'key' && (this.normalizeTriggerKey(script.triggerKey!) === key || script.triggerKey === 'any')) {
                     matchedTotal++;
                     this.setRunning(true);
 
@@ -775,7 +775,7 @@ export class AnimationVM {
 
         // Also check Stage
         for (const script of this.stageScripts) {
-            if (script.trigger === 'key' && (script.triggerKey === key || script.triggerKey === 'any')) {
+            if (script.trigger === 'key' && (this.normalizeTriggerKey(script.triggerKey!) === key || script.triggerKey === 'any')) {
                 matchedTotal++;
                 this.setRunning(true);
                 if (script.hatBlockId) this.stopScriptByHat('stage', script.hatBlockId);
@@ -2474,10 +2474,25 @@ export class AnimationVM {
         }
     }
 
+    /**
+     * Normalize legacy block dropdown values to canonical key names.
+     * The legacy leapBlocks.ts uses 'left arrow' while normalizeKey() returns 'ArrowLeft'.
+     * This ensures both old and new block definitions work correctly.
+     */
+    private normalizeTriggerKey(key: string): string {
+        switch (key) {
+            case 'up arrow': return 'ArrowUp';
+            case 'down arrow': return 'ArrowDown';
+            case 'left arrow': return 'ArrowLeft';
+            case 'right arrow': return 'ArrowRight';
+            default: return key;
+        }
+    }
+
     isKeyPressed(key: string): boolean {
-        if (key === 'any') return this.keysPressed.size > 0;
-        // The key passed here comes from the block dropdown fields
-        return this.keysPressed.has(key);
+        const normalized = this.normalizeTriggerKey(key);
+        if (normalized === 'any') return this.keysPressed.size > 0;
+        return this.keysPressed.has(normalized);
     }
 
     isMouseDown(): boolean {

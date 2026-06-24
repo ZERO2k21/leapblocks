@@ -1,6 +1,8 @@
 // classifiers/object-detection/ObjectDetection.tsx
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
+import { ensureTf, ensureCocoSsd } from '../../ml/loadScript'
+import { showToast } from '../../../../leapignite/client/components/Toast'
 
 type Detection = {
     class: string
@@ -125,22 +127,12 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
         setLoading(true)
         setLoadProgress(0)
         try {
-            const loadScript = (src: string) => new Promise<void>((res, rej) => {
-                const s = document.createElement('script')
-                s.src = src
-                s.onload = () => res()
-                s.onerror = () => rej(new Error(`Failed to load ${src}`))
-                document.head.appendChild(s)
-            })
             setLoadProgress(15)
-            if (!window._tfLoaded) {
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js')
-                window._tfLoaded = true
-            }
+            await ensureTf()
             setLoadProgress(45)
-            await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js')
+            const cocoSsd = await ensureCocoSsd()
             setLoadProgress(70)
-            modelRef.current = await window.cocoSsd.load()
+            modelRef.current = await cocoSsd.load()
             setLoadProgress(100)
             setModelReady(true)
         } catch (e) { console.error('COCO-SSD load failed:', e) }
@@ -192,7 +184,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                 rafRef.current = requestAnimationFrame(detect)
             }
             if (videoRef.current) videoRef.current.onloadedmetadata = detect
-        } catch { alert('Camera access denied.') }
+        } catch { showToast('Camera access denied.', 'error') }
     }
 
     const stopDetection = () => {

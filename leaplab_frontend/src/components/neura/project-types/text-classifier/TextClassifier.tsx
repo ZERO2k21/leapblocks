@@ -2,7 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
+import { KNNClassifier } from '../../ml/KNNClassifier'
+import { ensureUSE } from '../../ml/loadScript'
 import { Type, Trash2, Edit2, Check, X, Plus, FileText, AlignLeft, Hash, Sparkles, Send } from 'lucide-react'
 
 type TextClass = {
@@ -171,18 +172,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
         const load = async () => {
             try {
                 if (useReady) return
-                await ensureTf()
-                const loadScript = (src: string) => new Promise<void>((res, rej) => {
-                    const existing = document.querySelector(`script[src="${src}"]`)
-                    if (existing) { res(); return }
-                    const s = document.createElement('script')
-                    s.src = src
-                    s.onload = () => res()
-                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
-                    document.head.appendChild(s)
-                })
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@1.3.3/dist/universal-sentence-encoder.min.js')
-                encoderRef.current = await (window as any).use.load()
+                const encoder = await ensureUSE()
+                encoderRef.current = await encoder.load()
                 setUseReady(true)
             } catch (e) { console.error('USE load failed:', e) }
         }

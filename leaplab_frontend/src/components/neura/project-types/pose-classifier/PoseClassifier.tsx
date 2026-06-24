@@ -2,7 +2,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import { KNNClassifier, ensureTf } from '../../ml/KNNClassifier'
+import { KNNClassifier } from '../../ml/KNNClassifier'
+import { ensureTf, ensurePoseDetection } from '../../ml/loadScript'
+import { showToast } from '../../../../leapignite/client/components/Toast'
 import { Camera, PersonStanding, Trash2, Edit2, Check, X, Plus, Activity, Users, Zap } from 'lucide-react'
 
 type PoseClass = {
@@ -196,18 +198,10 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
         const load = async () => {
             try {
                 if (window._poseDetReady) { setPoseDetReady(true); return }
-                const loadScript = (src: string) => new Promise<void>((res, rej) => {
-                    const s = document.createElement('script')
-                    s.src = src
-                    s.onload = () => res()
-                    s.onerror = () => rej(new Error(`Failed to load ${src}`))
-                    document.head.appendChild(s)
-                })
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js')
-                await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js')
-                const detector = await window.poseDetection.createDetector(
-                    window.poseDetection.SupportedModels.MoveNet,
-                    { modelType: window.poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+                const poseDetection = await ensurePoseDetection()
+                const detector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.MoveNet,
+                    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
                 )
                 detectorRef.current = detector
                 window._poseDetReady = true
@@ -229,7 +223,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
             }
             setCapturing(classId)
         } catch {
-            alert('Camera access denied.')
+            showToast('Camera access denied.', 'error')
         }
     }
 

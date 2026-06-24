@@ -1,38 +1,9 @@
 /**
  * Shared KNN Classifier using TensorFlow.js cosine similarity.
  * Used by PoseClassifier, HandPoseClassifier, TextClassifier, and AudioClassifier.
- *
- * Loads TF.js from CDN if not already available on window.tf.
  */
 
-declare const window: Window & {
-    tf?: any
-    _tfLoaded?: boolean
-}
-
-let tfReady = false
-
-async function ensureTf(): Promise<any> {
-    if (window.tf && tfReady) return window.tf
-    if (window._tfLoaded && window.tf) {
-        tfReady = true
-        return window.tf
-    }
-    const loadScript = (src: string) =>
-        new Promise<void>((res, rej) => {
-            const existing = document.querySelector(`script[src="${src}"]`)
-            if (existing) { res(); return }
-            const s = document.createElement('script')
-            s.src = src
-            s.onload = () => res()
-            s.onerror = () => rej(new Error(`Failed to load: ${src}`))
-            document.head.appendChild(s)
-        })
-    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js')
-    window._tfLoaded = true
-    tfReady = true
-    return window.tf
-}
+import { ensureTf } from './loadScript'
 
 export interface KNNPrediction {
     label: string
@@ -172,4 +143,4 @@ export class KNNClassifier {
     }
 }
 
-export { ensureTf }
+export { ensureTf } from './loadScript'

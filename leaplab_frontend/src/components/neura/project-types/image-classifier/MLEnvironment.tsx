@@ -7,103 +7,10 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { KNNClassifier } from '../../ml/KNNClassifier';
+import { ensureTf, ensureMobileNet } from '../../ml/loadScript';
+import { showToast } from '../../../../leapignite/client/components/Toast';
 
-// ─── Utility: load TF.js + MobileNet from CDN dynamically ───────────────────
-function useTFJS() {
-    const [ready, setReady] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if ((window as any)._tfReady) {
-            setReady(true);
-            return;
-        }
-
-        const loadScript = (src: string) =>
-            new Promise((res, rej) => {
-                const s = document.createElement("script");
-                s.src = src;
-                s.onload = () => res(true);
-                s.onerror = () => rej(new Error("Failed to load: " + src));
-                document.head.appendChild(s);
-            });
-
-        (async () => {
-            try {
-                await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js");
-                await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js");
-                (window as any)._tfReady = true;
-                setReady(true);
-            } catch (e: any) {
-                setError(e.message);
-            }
-        })();
-    }, []);
-
-    return { ready, error };
-}
-
-// ─── Tiny KNN Classifier built on TF.js tensors ─────────────────────────────
-class KNNClassifier {
-    examples: Record<string, any> = {};
-
-    addExample(embedding: any, label: string) {
-        const ex = embedding.expandDims(0);
-        if (!this.examples[label]) {
-            this.examples[label] = ex;
-        } else {
-            const prev = this.examples[label];
-            this.examples[label] = (window as any).tf.concat([prev, ex], 0);
-            prev.dispose();
-        }
-    }
-
-    async predictClass(embedding: any, k = 3) {
-        const labels = Object.keys(this.examples);
-        if (!labels.length) return null;
-
-        const emb = embedding.expandDims(0);
-        const scores: Record<string, number> = {};
-
-        for (const label of labels) {
-            const examples = this.examples[label];
-            const sim = (window as any).tf.tidy(() => {
-                const normEmb = (window as any).tf.div(emb, (window as any).tf.norm(emb));
-                const normEx = (window as any).tf.div(examples, (window as any).tf.norm(examples, 2, 1, true));
-                return normEmb.matMul(normEx.transpose()).squeeze();
-            });
-            const vals = await sim.data();
-            sim.dispose();
-            const sorted = Array.from(vals).sort((a: any, b: any) => b - a);
-            scores[label] = sorted.slice(0, k).reduce((s: number, v: any) => s + v, 0) / Math.min(k, sorted.length);
-        }
-
-        emb.dispose();
-        const total = Object.values(scores).reduce((s, v) => s + Math.max(0, v), 0) || 1;
-        const confidences: Record<string, number> = {};
-        labels.forEach(l => confidences[l] = Math.max(0, scores[l]) / total);
-        const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b);
-
-        return { label: winner, confidences };
-    }
-
-    clear() {
-        Object.values(this.examples).forEach((t: any) => t.dispose());
-        this.examples = {};
-    }
-
-    get classCount() {
-        return Object.keys(this.examples).length;
-    }
-
-    get sampleCounts() {
-        const out: Record<string, number> = {};
-        for (const [k, v] of Object.entries(this.examples)) {
-            out[k] = (v as any).shape[0];
-        }
-        return out;
-    }
-}
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const Icon = {
@@ -682,7 +589,8 @@ function TestingPanel({ trained, classes, predict }: {
 
 // ─── MAIN ML ENVIRONMENT ──────────────────────────────────────────────────────
 export default function MLEnvironment({ project, onBack, onDataChange }: { project?: any; onBack?: () => void; onDataChange?: (data: Record<string, any>) => void }) {
-    const { ready: tfReady, error: tfError } = useTFJS();
+    const [tfReady, setTfReady] = useState(false);
+    const [tfError, setTfError] = useState<string | null>(null);
     const [classes, setClasses] = useState<ClassType[]>([
         { id: 1, name: "class1", samples: [] },
         { id: 2, name: "class2", samples: [] },
@@ -698,6 +606,18 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const [restored, setRestored] = useState(false);
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
+
+    // Load TF.js + MobileNet
+    useEffect(() => {
+        (async () => {
+            try {
+                await ensureTf();
+                setTfReady(true);
+            } catch (e: any) {
+                setTfError(e.message);
+            }
+        })();
+    }, []);
 
     // Deserialize: restore from saved project on mount
     useEffect(() => {
@@ -743,7 +663,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     // Load MobileNet once TF is ready
     useEffect(() => {
         if (!tfReady) return;
-        (window as any).mobilenet.load().then((m: any) => { mobileNetRef.current = m; });
+        ensureMobileNet().then((m: any) => { mobileNetRef.current = m; });
     }, [tfReady]);
 
     const trained = trainStatus === "done";
@@ -791,13 +711,13 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
             const { label, src } = allSamples[i];
             await new Promise<void>(res => {
                 const img = new Image(); img.src = src;
-                img.onload = () => {
+                img.onload = async () => {
                     const c = document.createElement("canvas"); c.width = 224; c.height = 224;
                     const ctx = c.getContext("2d");
                     if (!ctx) { res(); return; }
                     ctx.drawImage(img, 0, 0, 224, 224);
                     const emb = getEmbedding(c);
-                    if (emb) knn.addExample(emb, label);
+                    if (emb) await knn.addExample(emb, label);
                     res();
                 };
                 img.onerror = () => res();
@@ -954,7 +874,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ml-text-muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Export model</div>
                             {[
                                 { label: "Download as JSON", desc: "TensorFlow.js format", action: () => { const data = { type: "neura-ml-knn", classes: classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy, created: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "neura-model.json"; a.click(); } },
-                                { label: "Copy embed code", desc: "Use in your app", action: () => { try { navigator.clipboard?.writeText(`<!-- Neura ML Model -->\n<script>const model = ${JSON.stringify({ classes: classes.map(c => c.name) })}</script>`).then(() => alert("Copied!")).catch(() => alert("Failed to copy. Please copy manually.")); } catch (_) { alert("Failed to copy. Please copy manually."); } } },
+                                { label: "Copy embed code", desc: "Use in your app", action: () => { try { navigator.clipboard?.writeText(`<!-- Neura ML Model -->\n<script>const model = ${JSON.stringify({ classes: classes.map(c => c.name) })}</script>`).then(() => showToast("Copied!", "success")).catch(() => showToast("Failed to copy. Please copy manually.", "error")); } catch (_) { showToast("Failed to copy. Please copy manually.", "error"); } } },
                             ].map(({ label, desc, action }) => (
                                 <button key={label} onClick={action} style={{ padding: "10px 14px", borderRadius: 9, background: "var(--ml-well)", border: "1.5px solid var(--ml-border)", color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-primary)"; }}
