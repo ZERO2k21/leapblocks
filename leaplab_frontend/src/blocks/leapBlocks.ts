@@ -1470,7 +1470,7 @@ const leapBlocks = [
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
             {
                 type: 'field_variable',
                 name: 'LIST',
@@ -1545,7 +1545,7 @@ const leapBlocks = [
         type: 'data_itemoflist',
         message0: 'item %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
             {
                 type: 'field_variable',
                 name: 'LIST',
