@@ -1773,33 +1773,29 @@ export class AnimationVM {
             }
             case 'tts_set_voice' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
-                    const voice = typeof (step as any).voice === 'function' ? (step as any).voice() : (step as any).voice;
-                    (window as any).runtime.tts.setVoice(voice);
-                    vmLog.info(`Set voice to ${voice}`);
+                    (window as any).runtime.tts.setVoice((step as any).voice);
+                    vmLog.info(`Set voice to ${(step as any).voice}`);
                 }
                 break;
             }
             case 'tts_set_rate' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
-                    const rate = typeof (step as any).rate === 'function' ? (step as any).rate() : (step as any).rate;
-                    (window as any).runtime.tts.setRate(rate);
-                    vmLog.info(`Set speech rate to ${rate}`);
+                    (window as any).runtime.tts.setRate((step as any).rate);
+                    vmLog.info(`Set speech rate to ${(step as any).rate}`);
                 }
                 break;
             }
             case 'tts_set_volume' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
-                    const volume = typeof (step as any).volume === 'function' ? (step as any).volume() : (step as any).volume;
-                    (window as any).runtime.tts.setVolume(volume);
-                    vmLog.info(`Set speech volume to ${volume}`);
+                    (window as any).runtime.tts.setVolume((step as any).volume);
+                    vmLog.info(`Set speech volume to ${(step as any).volume}`);
                 }
                 break;
             }
             case 'tts_set_pitch' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.tts) {
-                    const pitch = typeof (step as any).pitch === 'function' ? (step as any).pitch() : (step as any).pitch;
-                    (window as any).runtime.tts.setPitch(pitch);
-                    vmLog.info(`Set speech pitch to ${pitch}`);
+                    (window as any).runtime.tts.setPitch((step as any).pitch);
+                    vmLog.info(`Set speech pitch to ${(step as any).pitch}`);
                 }
                 break;
             }

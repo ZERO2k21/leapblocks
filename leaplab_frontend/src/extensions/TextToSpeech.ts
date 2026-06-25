@@ -8,8 +8,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_speak',
         message0: 'speak %1',
-        args0: [{ type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] }],
-        inputsInline: true,
+        args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -19,8 +18,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_set_voice',
         message0: 'set voice to %1',
-        args0: [{ type: 'input_value', name: 'VOICE', check: 'String' }],
-        inputsInline: true,
+        args0: [{ type: 'field_input', name: 'VOICE', text: '' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -30,8 +28,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_set_rate',
         message0: 'set speech rate to %1',
-        args0: [{ type: 'input_value', name: 'RATE', check: 'Number' }],
-        inputsInline: true,
+        args0: [{ type: 'field_number', name: 'RATE', value: 1, min: 0.1, max: 10, step: 0.1 }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -41,8 +38,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_set_volume',
         message0: 'set speech volume to %1',
-        args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }],
-        inputsInline: true,
+        args0: [{ type: 'field_number', name: 'VOLUME', value: 1, min: 0, max: 1, step: 0.1 }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -52,8 +48,7 @@ export const textToSpeechBlocks = [
     {
         type: 'tts_set_pitch',
         message0: 'set speech pitch to %1',
-        args0: [{ type: 'input_value', name: 'PITCH', check: 'Number' }],
-        inputsInline: true,
+        args0: [{ type: 'field_number', name: 'PITCH', value: 1, min: 0, max: 2, step: 0.1 }],
         previousStatement: null,
         nextStatement: null,
         colour: '#4a90d9',
@@ -183,23 +178,23 @@ export function registerTextToSpeechGenerators() {
     if (!jsGen) return;
 
     jsGen['tts_speak'] = (block: any) => {
-        const msg = jsGen.valueToCode(block, 'MESSAGE', jsGen.ORDER_ATOMIC || 0) || "''";
-        return `if(window.runtime?.tts) await window.runtime.tts.speak(${msg});\n`;
+        const msg = block.getFieldValue('MESSAGE') || 'Hello';
+        return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
     };
     jsGen['tts_set_voice'] = (block: any) => {
-        const voice = jsGen.valueToCode(block, 'VOICE', jsGen.ORDER_ATOMIC || 0) || "''";
-        return `if(window.runtime?.tts) window.runtime.tts.setVoice(${voice});\n`;
+        const voice = block.getFieldValue('VOICE') || '';
+        return `if(window.runtime?.tts) window.runtime.tts.setVoice('${voice.replace(/'/g, "\\'")}');\n`;
     };
     jsGen['tts_set_rate'] = (block: any) => {
-        const rate = jsGen.valueToCode(block, 'RATE', jsGen.ORDER_ATOMIC || 0) || '1';
+        const rate = block.getFieldValue('RATE') || 1;
         return `if(window.runtime?.tts) window.runtime.tts.setRate(${rate});\n`;
     };
     jsGen['tts_set_volume'] = (block: any) => {
-        const volume = jsGen.valueToCode(block, 'VOLUME', jsGen.ORDER_ATOMIC || 0) || '1';
+        const volume = block.getFieldValue('VOLUME') || 1;
         return `if(window.runtime?.tts) window.runtime.tts.setVolume(${volume});\n`;
     };
     jsGen['tts_set_pitch'] = (block: any) => {
-        const pitch = jsGen.valueToCode(block, 'PITCH', jsGen.ORDER_ATOMIC || 0) || '1';
+        const pitch = block.getFieldValue('PITCH') || 1;
         return `if(window.runtime?.tts) window.runtime.tts.setPitch(${pitch});\n`;
     };
     jsGen['tts_stop'] = () =>
@@ -218,70 +213,8 @@ export const textToSpeechExtension: ExtensionCategory = {
     name: 'Text to Speech',
     colour: '#4a90d9',
     icon: '🔊',
-    blocks: [
-        {
-            kind: 'block',
-            type: 'tts_speak',
-            inputs: {
-                MESSAGE: {
-                    shadow: {
-                        type: 'text',
-                        fields: { TEXT: 'Hello world' }
-                    }
-                }
-            }
-        },
-        { kind: 'block', type: 'tts_stop' },
-        {
-            kind: 'block',
-            type: 'tts_set_voice',
-            inputs: {
-                VOICE: {
-                    shadow: {
-                        type: 'text',
-                        fields: { TEXT: '' }
-                    }
-                }
-            }
-        },
-        {
-            kind: 'block',
-            type: 'tts_set_rate',
-            inputs: {
-                RATE: {
-                    shadow: {
-                        type: 'math_number',
-                        fields: { NUM: 1 }
-                    }
-                }
-            }
-        },
-        {
-            kind: 'block',
-            type: 'tts_set_volume',
-            inputs: {
-                VOLUME: {
-                    shadow: {
-                        type: 'math_number',
-                        fields: { NUM: 1 }
-                    }
-                }
-            }
-        },
-        {
-            kind: 'block',
-            type: 'tts_set_pitch',
-            inputs: {
-                PITCH: {
-                    shadow: {
-                        type: 'math_number',
-                        fields: { NUM: 1 }
-                    }
-                }
-            }
-        },
-        { kind: 'block', type: 'tts_is_speaking' },
-        { kind: 'block', type: 'tts_get_rate' },
-        { kind: 'block', type: 'tts_get_volume' }
-    ]
+    blocks: textToSpeechBlocks.map(block => ({
+        kind: 'block',
+        type: block.type
+    }))
 };
