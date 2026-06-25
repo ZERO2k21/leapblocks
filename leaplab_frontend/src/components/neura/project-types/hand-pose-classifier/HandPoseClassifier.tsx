@@ -30,6 +30,313 @@ const COLORS = [
     { bg: '#ef4444', light: '#f87171', glow: 'rgba(239, 68, 68, 0.3)', border: 'rgba(239, 68, 68, 0.3)' },
 ]
 
+// MediaPipe hand skeleton connections (21 keypoints)
+const HAND_CONNECTIONS: [number, number][] = [
+    [0, 1], [1, 2], [2, 3], [3, 4],
+    [0, 5], [5, 6], [6, 7], [7, 8],
+    [0, 9], [9, 10], [10, 11], [11, 12],
+    [0, 13], [13, 14], [14, 15], [15, 16],
+    [0, 17], [17, 18], [18, 19], [19, 20],
+    [5, 9], [9, 13], [13, 17],
+]
+
+function drawHandSkeleton(ctx: CanvasRenderingContext2D, landmarks: number[][], w: number, h: number, color: string) {
+    ctx.clearRect(0, 0, w, h)
+    if (!landmarks || landmarks.length < 21) return
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.globalAlpha = 0.6
+    for (const [a, b] of HAND_CONNECTIONS) {
+        ctx.beginPath()
+        ctx.moveTo(landmarks[a][0] * w, landmarks[a][1] * h)
+        ctx.lineTo(landmarks[b][0] * w, landmarks[b][1] * h)
+        ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+    for (let i = 0; i < landmarks.length; i++) {
+        const x = landmarks[i][0] * w, y = landmarks[i][1] * h
+        const r = i === 0 ? 5 : (i % 4 === 0 ? 4 : 3)
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = i % 4 === 0 ? '#fff' : color
+        ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+    }
+}
+
+// ─── HAND WEBCAM MODAL ──────────────────────────────────────────────────────
+function HandWebcamModal({ classLabel, color, classId, onCapture, onClose, detectorRef }: {
+    classLabel: string
+    color: { bg: string; light: string }
+    classId: number
+    onCapture: (classId: number, landmarks: number[][]) => void
+    onClose: () => void
+    detectorRef: React.MutableRefObject<any>
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const overlayRef = useRef<HTMLCanvasElement>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const intervalRef = useRef<any>(null)
+    const [capturing, setCapturing] = useState(false)
+    const [count, setCount] = useState(0)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } as any })
+            .then(stream => {
+                streamRef.current = stream
+                if (videoRef.current) videoRef.current.srcObject = stream
+                setLoading(false)
+            })
+            .catch(() => setError('Camera access denied. Please allow camera permissions.'))
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            streamRef.current?.getTracks().forEach(t => t.stop())
+        }
+    }, [])
+
+    useEffect(() => {
+        if (loading || error) return
+        let running = true
+        const draw = async () => {
+            if (!running) return
+            const v = videoRef.current, c = overlayRef.current
+            if (v && c && detectorRef.current && v.videoWidth && v.videoHeight) {
+                c.width = v.videoWidth; c.height = v.videoHeight
+                const ctx = c.getContext('2d')
+                if (ctx) {
+                    try {
+                        const hands = await detectorRef.current.estimateHands(v, { flipHorizontal: true })
+                        if (hands.length > 0 && hands[0].keypoints) {
+                            drawHandSkeleton(ctx, hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0]), c.width, c.height, color.bg)
+                        } else { ctx.clearRect(0, 0, c.width, c.height) }
+                    } catch { /* busy */ }
+                }
+            }
+            rafRef.current = requestAnimationFrame(draw)
+        }
+        rafRef.current = requestAnimationFrame(draw)
+        return () => { running = false; if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    }, [loading, error, color.bg, detectorRef])
+
+    const captureOnce = useCallback(async () => {
+        if (!detectorRef.current || !videoRef.current) return null
+        const v = videoRef.current
+        if (!v.videoWidth || !v.videoHeight) return null
+        try {
+            const hands = await detectorRef.current.estimateHands(v, { flipHorizontal: true })
+            if (hands.length > 0 && hands[0].keypoints) {
+                return hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
+            }
+        } catch { /* busy */ }
+        return null
+    }, [detectorRef])
+
+    useEffect(() => {
+        if (!capturing) {
+            if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+            return
+        }
+        intervalRef.current = setInterval(async () => {
+            const lm = await captureOnce()
+            if (lm) { onCapture(classId, lm); setCount(n => n + 1) }
+        }, 300)
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    }, [capturing, classId, onCapture, captureOnce])
+
+    const handleSingleCapture = async () => {
+        const lm = await captureOnce()
+        if (lm) { onCapture(classId, lm); setCount(n => n + 1) }
+    }
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: color.bg }} />
+                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
+                            Capture for <em style={{ fontStyle: 'normal', color: color.bg }}>{classLabel}</em>
+                        </span>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                </div>
+                {error ? (
+                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                ) : (
+                    <>
+                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
+                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
+                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
+                            {capturing && <div style={{ position: 'absolute', top: 10, right: 10, background: '#ff4444', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />REC</div>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <button
+                                onMouseDown={() => setCapturing(true)} onMouseUp={() => setCapturing(false)} onMouseLeave={() => setCapturing(false)}
+                                onTouchStart={() => setCapturing(true)} onTouchEnd={() => setCapturing(false)}
+                                style={{ flex: 1, padding: '12px 0', borderRadius: 10, background: capturing ? color.bg : '#1e1e30', border: `1.5px solid ${capturing ? color.bg : 'var(--ml-border-strong)'}`, color: capturing ? '#fff' : 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                {capturing ? '● Recording…' : 'Hold to Capture'}
+                            </button>
+                            <button onClick={handleSingleCapture} style={{ padding: '12px 16px', borderRadius: 10, background: '#1e1e30', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                <Camera size={16} />
+                            </button>
+                        </div>
+                        {count > 0 && <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: color.bg, fontWeight: 600 }}>{count} gesture{count !== 1 ? 's' : ''} captured</div>}
+                    </>
+                )}
+                <button onClick={onClose} style={{ width: '100%', marginTop: 14, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+            </div>
+        </div>
+    )
+}
+
+// ─── HAND PREDICT MODAL ─────────────────────────────────────────────────────
+function HandPredictModal({ onClose, onResult, detectorRef, knnRef, normalizeLandmarks }: {
+    onClose: () => void
+    onResult: (result: { label: string; confidences: Record<string, number> }) => void
+    detectorRef: React.MutableRefObject<any>
+    knnRef: React.MutableRefObject<KNNClassifier | null>
+    normalizeLandmarks: (landmarks: number[][]) => number[]
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const overlayRef = useRef<HTMLCanvasElement>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const intervalRef = useRef<any>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [result, setResult] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
+    const [noHand, setNoHand] = useState(false)
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } as any })
+            .then(stream => {
+                streamRef.current = stream
+                if (videoRef.current) videoRef.current.srcObject = stream
+                setLoading(false)
+            })
+            .catch(() => setError('Camera access denied. Please allow camera permissions.'))
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            streamRef.current?.getTracks().forEach(t => t.stop())
+        }
+    }, [])
+
+    // Real-time skeleton overlay
+    useEffect(() => {
+        if (loading || error) return
+        let running = true
+        const draw = async () => {
+            if (!running) return
+            const v = videoRef.current, c = overlayRef.current
+            if (v && c && detectorRef.current && v.videoWidth && v.videoHeight) {
+                c.width = v.videoWidth; c.height = v.videoHeight
+                const ctx = c.getContext('2d')
+                if (ctx) {
+                    try {
+                        const hands = await detectorRef.current.estimateHands(v, { flipHorizontal: true })
+                        if (hands.length > 0 && hands[0].keypoints) {
+                            drawHandSkeleton(ctx, hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0]), c.width, c.height, '#7c3aed')
+                        } else { ctx.clearRect(0, 0, c.width, c.height) }
+                    } catch { /* busy */ }
+                }
+            }
+            rafRef.current = requestAnimationFrame(draw)
+        }
+        rafRef.current = requestAnimationFrame(draw)
+        return () => { running = false; if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    }, [loading, error, detectorRef])
+
+    // Continuous prediction loop
+    useEffect(() => {
+        if (loading || error) return
+        intervalRef.current = setInterval(async () => {
+            const v = videoRef.current
+            if (!v || !detectorRef.current || !knnRef.current) return
+            if (!v.videoWidth || !v.videoHeight) return
+            try {
+                const hands = await detectorRef.current.estimateHands(v, { flipHorizontal: true })
+                if (hands.length > 0 && hands[0].keypoints) {
+                    setNoHand(false)
+                    const landmarks = hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
+                    const normalized = normalizeLandmarks(landmarks)
+                    if (normalized.length > 0) {
+                        const r = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
+                        if (r) { setResult(r); onResult(r) }
+                    }
+                } else {
+                    setNoHand(true)
+                    setResult(null)
+                }
+            } catch { /* busy */ }
+        }, 300)
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    }, [loading, error, detectorRef, knnRef, normalizeLandmarks, onResult])
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 420, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed' }} />
+                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
+                            Predict — Show a hand gesture
+                        </span>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                </div>
+                {error ? (
+                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                ) : (
+                    <>
+                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
+                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
+                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
+                            {/* Live status badge */}
+                            <div style={{ position: 'absolute', top: 10, right: 10, background: noHand ? '#6b7280' : '#22C55E', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: noHand ? 'none' : 'pulse 1.5s infinite' }} />
+                                {noHand ? 'No hand' : 'LIVE'}
+                            </div>
+                        </div>
+
+                        {/* Live prediction result */}
+                        {result ? (
+                            <div style={{ background: 'var(--ml-well)', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--ml-text-primary)', fontWeight: 700 }}>{result.label}</span>
+                                </div>
+                                {Object.entries(result.confidences).map(([label, conf]) => (
+                                    <div key={label} style={{ marginBottom: 6 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{Math.round((conf as number) * 100)}%</span>
+                                        </div>
+                                        <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${(conf as number) * 100}%`, background: 'linear-gradient(90deg, #7c3aed, #a78bfa)', borderRadius: 2, transition: 'width 0.2s' }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--ml-text-muted)' }}>
+                                {noHand ? 'Show your hand to the camera' : 'Detecting…'}
+                            </div>
+                        )}
+                    </>
+                )}
+                <button onClick={onClose} style={{ width: '100%', marginTop: 8, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+            </div>
+        </div>
+    )
+}
+
 // Hand pose SVG illustrations for different gestures
 function HandPoseIllustration({ gestureIndex, size = 48 }: { gestureIndex: number; size?: number }) {
     const illustrations = [
@@ -82,7 +389,8 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         { id: 2, name: 'Gesture 2', samples: [] },
     ])
     const [nextId, setNextId] = useState(3)
-    const [capturing, setCapturing] = useState<number | null>(null)
+    const [webcamFor, setWebcamFor] = useState<number | null>(null)
+    const [showPredictModal, setShowPredictModal] = useState(false)
     const [trained, setTrained] = useState(false)
     const [status, setStatus] = useState('idle')
     const [progress, setProgress] = useState(0)
@@ -95,8 +403,6 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
     const [restored, setRestored] = useState(false)
     const [handDetReady, setHandDetReady] = useState(false)
     const [accuracy, setAccuracy] = useState(0)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const streamRef = useRef<MediaStream | null>(null)
     const detectorRef = useRef<any>(null)
     const knnRef = useRef<KNNClassifier | null>(null)
 
@@ -147,51 +453,31 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         return () => clearTimeout(timer)
     }, [classes, trained, nextId, epochs])
 
-    const startWebcam = async (classId: number) => {
+    // Load MediaPipe Hands detector on demand (first camera open)
+    const ensureDetector = useCallback(async () => {
+        if (detectorRef.current) return detectorRef.current
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
-            streamRef.current = stream
-            if (videoRef.current) videoRef.current.srcObject = stream
-            setCapturing(classId)
-        } catch {
-            showToast('Camera access denied.', 'error')
-        }
-    }
-
-    const stopWebcam = useCallback(() => {
-        streamRef.current?.getTracks().forEach(t => t.stop())
-        setCapturing(null)
+            const handPoseDetection = await ensureHandPose()
+            const model = handPoseDetection.SupportedModels.MediaPipeHands
+            const detector = await handPoseDetection.createDetector(model, {
+                runtime: 'mediapipe',
+                solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
+            })
+            detectorRef.current = detector
+            setHandDetReady(true)
+            return detector
+        } catch (e) { console.error('Hand pose detector load failed:', e); return null }
     }, [])
 
-    // Load MediaPipe Hands detector
+    // Preload detector when webcam modal opens
     useEffect(() => {
-        const load = async () => {
-            try {
-                if (handDetReady) return
-                const handPoseDetection = await ensureHandPose()
-                const model = handPoseDetection.SupportedModels.MediaPipeHands
-                const detector = await handPoseDetection.createDetector(model, {
-                    runtime: 'mediapipe',
-                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
-                })
-                detectorRef.current = detector
-                setHandDetReady(true)
-            } catch (e) { console.error('Hand pose detector load failed:', e) }
+        if (webcamFor !== null && !detectorRef.current) {
+            ensureDetector()
         }
-        load()
-    }, [])
+    }, [webcamFor, ensureDetector])
 
-    const detectHandLandmarks = useCallback(async (): Promise<number[][] | null> => {
-        if (!detectorRef.current || !videoRef.current) return null
-        const video = videoRef.current
-        if (!video.videoWidth || !video.videoHeight) return null
-        try {
-            const hands = await detectorRef.current.estimateHands(video, { flipHorizontal: true })
-            if (hands.length > 0 && hands[0].keypoints) {
-                return hands[0].keypoints.map((k: any) => [k.x, k.y, k.z ?? 0])
-            }
-        } catch (e) { console.error(e) }
-        return null
+    const addGestureSample = useCallback((classId: number, landmarks: number[][]) => {
+        setClasses(p => p.map(c => c.id === classId ? { ...c, samples: [...c.samples, landmarks] } : c))
     }, [])
 
     const normalizeLandmarks = useCallback((landmarks: number[][]): number[] => {
@@ -203,14 +489,6 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         const rangeY = (maxY - minY) || 1
         return landmarks.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2]]).flat()
     }, [])
-
-    const captureGesture = useCallback(async () => {
-        if (capturing === null) return
-        const landmarks = await detectHandLandmarks()
-        if (landmarks) {
-            setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, landmarks] } : c))
-        }
-    }, [capturing, detectHandLandmarks])
 
     const handleTrain = async () => {
         setStatus('training')
@@ -228,16 +506,15 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     }
                     loaded++
                     setProgress(Math.round((loaded / total) * 100))
-                    await new Promise(r => setTimeout(r, 10))
                 }
             }
 
             let correct = 0, evaluated = 0
+            const tf = await ensureTf()
             for (const cls of classes) {
                 for (const landmarks of cls.samples) {
                     const normalized = normalizeLandmarks(landmarks)
                     if (normalized.length === 0) continue
-                    const tf = await ensureTf()
                     const emb = tf.tensor1d(new Float32Array(normalized))
                     const pred = await knn.predictClass(emb, 3)
                     emb.dispose()
@@ -278,10 +555,6 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         setNextId(n => n + 1)
     }
 
-    useEffect(() => {
-        return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
-    }, [])
-
     return (
         <ClassifierLayout project={project} onBack={onBack}>
             <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
@@ -290,7 +563,6 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     {classes.map((cls, i) => {
                         const color = COLORS[i % COLORS.length]
                         const isHovered = hoveredCard === cls.id
-                        const isCapturing = capturing === cls.id
 
                         return (
                             <div
@@ -483,14 +755,14 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                     {/* Action buttons */}
                                     <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                                         <button
-                                            onClick={() => isCapturing ? stopWebcam() : startWebcam(cls.id)}
+                                            onClick={() => setWebcamFor(cls.id)}
                                             style={{
                                                 flex: 1,
                                                 padding: '10px 0',
                                                 borderRadius: 10,
-                                                background: isCapturing ? color.bg + '15' : 'var(--ml-well)',
-                                                border: `1.5px dashed ${isCapturing ? color.bg : 'var(--ml-border-strong)'}`,
-                                                color: isCapturing ? color.bg : 'var(--ml-text-secondary)',
+                                                background: 'var(--ml-well)',
+                                                border: '1.5px dashed var(--ml-border-strong)',
+                                                color: 'var(--ml-text-secondary)',
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 600,
@@ -502,73 +774,24 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                 transition: 'all 0.2s ease'
                                             }}
                                             onMouseEnter={e => {
-                                                if (!isCapturing) {
-                                                    e.currentTarget.style.borderColor = color.bg
-                                                    e.currentTarget.style.color = color.bg
-                                                    e.currentTarget.style.background = color.bg + '10'
-                                                }
+                                                e.currentTarget.style.borderColor = color.bg
+                                                e.currentTarget.style.color = color.bg
+                                                e.currentTarget.style.background = color.bg + '10'
                                             }}
                                             onMouseLeave={e => {
-                                                if (!isCapturing) {
-                                                    e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
-                                                    e.currentTarget.style.color = 'var(--ml-text-secondary)'
-                                                    e.currentTarget.style.background = 'var(--ml-well)'
-                                                }
+                                                e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
+                                                e.currentTarget.style.color = 'var(--ml-text-secondary)'
+                                                e.currentTarget.style.background = 'var(--ml-well)'
                                             }}
                                         >
                                             <Camera size={14} />
-                                            {isCapturing ? 'Stop' : 'Webcam'}
+                                            Webcam
                                         </button>
-                                        {isCapturing && (
-                                            <button
-                                                onClick={captureGesture}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '10px 0',
-                                                    borderRadius: 10,
-                                                    background: `linear-gradient(135deg, ${color.bg}, ${color.light})`,
-                                                    border: 'none',
-                                                    color: '#fff',
-                                                    fontFamily: "'DM Sans', sans-serif",
-                                                    fontSize: 12,
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: 6,
-                                                    transition: 'all 0.2s ease',
-                                                    boxShadow: `0 4px 12px ${color.glow}`
-                                                }}
-                                            >
-                                                <Hand size={14} />
-                                                Capture
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             </div>
                         )
                     })}
-
-                    {/* Video preview when capturing */}
-                    {capturing !== null && (
-                        <div style={{
-                            background: 'var(--ml-surface)',
-                            border: '1px solid var(--ml-border)',
-                            borderRadius: 16,
-                            padding: 12,
-                            overflow: 'hidden'
-                        }}>
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                style={{ width: '100%', borderRadius: 10, transform: 'scaleX(-1)' }}
-                            />
-                        </div>
-                    )}
 
                     {/* Add Class button */}
                     <button
@@ -733,25 +956,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 </div>
 
                                 {/* Capture & Predict button */}
-                                <button onClick={async () => {
-                                    if (!knnRef.current || !detectorRef.current) return
-                                    const vid = videoRef.current
-                                    if (!vid) {
-                                        try {
-                                            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
-                                            streamRef.current = stream
-                                            if (videoRef.current) videoRef.current.srcObject = stream
-                                            await new Promise(r => setTimeout(r, 500))
-                                        } catch { showToast('Camera access denied.', 'error'); return }
-                                    }
-                                    const landmarks = await detectHandLandmarks()
-                                    if (landmarks) {
-                                        const normalized = normalizeLandmarks(landmarks)
-                                        const result = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
-                                        if (result) setTestResult(result)
-                                    } else {
-                                        setTestResult(null)
-                                    }
+                                <button onClick={() => {
+                                    if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
+                                    setShowPredictModal(true)
                                 }} style={{
                                     width: '100%',
                                     padding: '11px 0',
@@ -831,6 +1038,29 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     </div>
                 </div>
             </div>
+
+            {/* Hand Webcam Modal */}
+            {webcamFor !== null && (
+                <HandWebcamModal
+                    classLabel={classes.find(c => c.id === webcamFor)?.name || 'Gesture'}
+                    color={COLORS[classes.findIndex(c => c.id === webcamFor) % COLORS.length] || COLORS[0]}
+                    classId={webcamFor}
+                    onCapture={addGestureSample}
+                    onClose={() => setWebcamFor(null)}
+                    detectorRef={detectorRef}
+                />
+            )}
+
+            {/* Hand Predict Modal */}
+            {showPredictModal && trained && (
+                <HandPredictModal
+                    onClose={() => setShowPredictModal(false)}
+                    onResult={(r) => setTestResult(r)}
+                    detectorRef={detectorRef}
+                    knnRef={knnRef}
+                    normalizeLandmarks={normalizeLandmarks}
+                />
+            )}
         </ClassifierLayout>
     )
 }

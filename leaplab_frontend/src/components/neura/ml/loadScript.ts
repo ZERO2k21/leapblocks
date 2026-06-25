@@ -21,14 +21,21 @@ const HAND_POSE_VERSION = '2.0.1'
 const USE_VERSION = '1.3.3'
 const MEDIAPIPE_HANDS_VERSION = '0.4.1675469240'
 
-function loadScript(src: string): Promise<void> {
+function loadScript(src: string, retries = 2): Promise<void> {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src="${src}"]`)
         if (existing) { resolve(); return }
         const s = document.createElement('script')
         s.src = src
         s.onload = () => resolve()
-        s.onerror = () => reject(new Error(`Failed to load: ${src}`))
+        s.onerror = () => {
+            s.remove()
+            if (retries > 0) {
+                loadScript(src, retries - 1).then(resolve, reject)
+            } else {
+                reject(new Error(`Failed to load: ${src}`))
+            }
+        }
         document.head.appendChild(s)
     })
 }
@@ -40,9 +47,14 @@ export async function ensureTf(): Promise<any> {
     if (tfPromise) return tfPromise
 
     tfPromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
-        window._tfLoaded = true
-        return window.tf
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
+            window._tfLoaded = true
+            return window.tf
+        } catch (e) {
+            tfPromise = null
+            throw e
+        }
     })()
 
     return tfPromise
@@ -56,8 +68,13 @@ export async function ensureMobileNet(): Promise<any> {
     if (mobilenetPromise) return mobilenetPromise
 
     mobilenetPromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@${MOBILENET_VERSION}/dist/mobilenet.min.js`)
-        return window.mobilenet
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@${MOBILENET_VERSION}/dist/mobilenet.min.js`)
+            return window.mobilenet
+        } catch (e) {
+            mobilenetPromise = null
+            throw e
+        }
     })()
 
     return mobilenetPromise
@@ -71,8 +88,13 @@ export async function ensureCocoSsd(): Promise<any> {
     if (cocoSsdPromise) return cocoSsdPromise
 
     cocoSsdPromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@${COCO_SSD_VERSION}/dist/coco-ssd.min.js`)
-        return window.cocoSsd
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@${COCO_SSD_VERSION}/dist/coco-ssd.min.js`)
+            return window.cocoSsd
+        } catch (e) {
+            cocoSsdPromise = null
+            throw e
+        }
     })()
 
     return cocoSsdPromise
@@ -86,8 +108,13 @@ export async function ensurePoseDetection(): Promise<any> {
     if (poseDetectionPromise) return poseDetectionPromise
 
     poseDetectionPromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@${POSE_DETECTION_VERSION}/dist/pose-detection.min.js`)
-        return window.poseDetection
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@${POSE_DETECTION_VERSION}/dist/pose-detection.min.js`)
+            return window.poseDetection
+        } catch (e) {
+            poseDetectionPromise = null
+            throw e
+        }
     })()
 
     return poseDetectionPromise
@@ -101,9 +128,16 @@ export async function ensureHandPose(): Promise<any> {
     if (handPosePromise) return handPosePromise
 
     handPosePromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@${HAND_POSE_VERSION}/dist/hand-pose-detection.min.js`)
-        await loadScript(`https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/hands.min.js`)
-        return window.handPoseDetection
+        try {
+            await Promise.all([
+                loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@${HAND_POSE_VERSION}/dist/hand-pose-detection.min.js`),
+                loadScript(`https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/hands.min.js`),
+            ])
+            return window.handPoseDetection
+        } catch (e) {
+            handPosePromise = null
+            throw e
+        }
     })()
 
     return handPosePromise
@@ -117,8 +151,13 @@ export async function ensureUSE(): Promise<any> {
     if (usePromise) return usePromise
 
     usePromise = (async () => {
-        await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@${USE_VERSION}/dist/universal-sentence-encoder.min.js`)
-        return window.use
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@${USE_VERSION}/dist/universal-sentence-encoder.min.js`)
+            return window.use
+        } catch (e) {
+            usePromise = null
+            throw e
+        }
     })()
 
     return usePromise

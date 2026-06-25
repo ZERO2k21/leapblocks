@@ -21,7 +21,7 @@ import TextClassifier from './components/neura/project-types/text-classifier/Tex
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
-import { listMyProjects } from './services/cloudProjectApi';
+import { listMyProjects, deleteCloudProject } from './services/cloudProjectApi';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
 import ClassifierErrorBoundary from './components/neura/common/ClassifierErrorBoundary';
 import { NeuraThemeProvider, useNeuraTheme } from './components/neura/common/NeuraThemeContext';
@@ -59,6 +59,13 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     useEffect(() => {
         const loadProjects = async () => {
             try {
+                const cached = localStorage.getItem('neura-projects-cache');
+                if (cached) {
+                    setProjects(JSON.parse(cached));
+                }
+            } catch { /* ignore cache read errors */ }
+
+            try {
                 const cloudProjects = await listMyProjects('neura');
                 const loaded: NeuraProject[] = cloudProjects.map((cp) => {
                     const meta = cp.metadata ? JSON.parse(cp.metadata) : {};
@@ -74,8 +81,11 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                     };
                 });
                 setProjects(loaded);
+                try {
+                    localStorage.setItem('neura-projects-cache', JSON.stringify(loaded));
+                } catch { /* ignore quota errors */ }
             } catch {
-                // User may not be logged in
+                // Cloud failed — keep using cache if available
             }
         };
         loadProjects();
@@ -87,6 +97,12 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
             return () => clearTimeout(timer);
         }
     }, [saveMessage]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('neura-projects-cache', JSON.stringify(projects));
+        } catch { /* ignore quota errors */ }
+    }, [projects]);
 
     const navigateWithUnsavedCheck = useCallback((action: () => void) => {
         if (hasUnsavedChanges && currentProject) {
@@ -229,7 +245,12 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
         setHasUnsavedChanges(true);
     }, []);
 
-    const handleDeleteProject = (projectId: string) => {
+    const handleDeleteProject = async (projectId: string) => {
+        try {
+            await deleteCloudProject(projectId);
+        } catch {
+            // Cloud delete failed — local state already updated
+        }
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
         setSaveMessage({ type: 'success', text: 'Project deleted.' });
     };
@@ -242,11 +263,16 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
     const handleConfirmRename = () => {
         if (!renamingProject || !renameValue.trim()) return;
+        const newName = renameValue.trim();
         setProjects((prev) =>
             prev.map((p) =>
-                p.id === renamingProject.id ? { ...p, name: renameValue.trim(), updatedAt: Date.now() } : p
+                p.id === renamingProject.id ? { ...p, name: newName, updatedAt: Date.now() } : p
             )
         );
+        if (currentProject?.id === renamingProject.id) {
+            setCurrentProject(prev => prev ? { ...prev, name: newName } : null);
+            setHasUnsavedChanges(true);
+        }
         setShowRenameModal(false);
         setRenamingProject(null);
         setRenameValue('');

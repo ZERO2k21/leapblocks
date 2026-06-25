@@ -7,6 +7,15 @@ import { ensureTf } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, Volume2, Waves, Square, Activity, Play, Pause } from 'lucide-react'
 
+function blobToDataURL(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+    })
+}
+
 type AudioClass = {
     id: number
     name: string
@@ -181,9 +190,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
             chunksRef.current = []
             mediaRecRef.current = new MediaRecorder(stream)
             mediaRecRef.current.ondataavailable = (e: BlobEvent) => chunksRef.current.push(e.data)
-            mediaRecRef.current.onstop = () => {
+            mediaRecRef.current.onstop = async () => {
                 const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-                const url = URL.createObjectURL(blob)
+                const url = await blobToDataURL(blob)
                 setClasses(p => p.map(c => c.id === classId ? { ...c, samples: [...c.samples, url] } : c))
                 stream.getTracks().forEach(t => t.stop())
             }

@@ -445,7 +445,7 @@ function TestingPanel({ trained, classes, predict }: {
     const [camError, setCamError] = useState<string | null>(null);
 
     const stopCam = useCallback(() => {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        if (rafRef.current) clearTimeout(rafRef.current);
         streamRef.current?.getTracks().forEach(t => t.stop());
         rafRef.current = null;
         streamRef.current = null;
@@ -467,7 +467,7 @@ function TestingPanel({ trained, classes, predict }: {
                 ctx.drawImage(v, 0, 0, 224, 224);
                 const res = await predict(c);
                 if (res) setResult(res);
-                rafRef.current = requestAnimationFrame(() => setTimeout(loop, 300));
+                rafRef.current = setTimeout(loop, 300) as any;
             };
             if (videoRef.current) {
                 videoRef.current.onloadedmetadata = loop;
@@ -607,11 +607,12 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
 
-    // Load TF.js + MobileNet
+    // Load TF.js + MobileNet in one shot (ensureMobileNet internally waits for TF)
     useEffect(() => {
         (async () => {
             try {
-                await ensureTf();
+                const m = await ensureMobileNet();
+                mobileNetRef.current = await m.load();
                 setTfReady(true);
             } catch (e: any) {
                 setTfError(e.message);
@@ -659,12 +660,6 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
         }, 500)
         return () => clearTimeout(timer)
     }, [classes, trainStatus, nextId, epochs])
-
-    // Load MobileNet once TF is ready
-    useEffect(() => {
-        if (!tfReady) return;
-        ensureMobileNet().then((m: any) => { mobileNetRef.current = m; });
-    }, [tfReady]);
 
     const trained = trainStatus === "done";
 
@@ -717,7 +712,10 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                     if (!ctx) { res(); return; }
                     ctx.drawImage(img, 0, 0, 224, 224);
                     const emb = getEmbedding(c);
-                    if (emb) await knn.addExample(emb, label);
+                    if (emb) {
+                        await knn.addExample(emb, label);
+                        emb.dispose();
+                    }
                     res();
                 };
                 img.onerror = () => res();
