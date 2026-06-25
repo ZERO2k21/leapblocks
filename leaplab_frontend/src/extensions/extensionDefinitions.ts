@@ -748,7 +748,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_speak',
                     message0: 'speak %1',
-                    args0: [{ type: 'field_input', name: 'MESSAGE', text: 'Hello world' }],
+                    args0: [{ type: 'input_value', name: 'MESSAGE', check: ['String', 'Number'] }],
+                    inputsInline: true,
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -757,7 +758,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_set_voice',
                     message0: 'set voice to %1',
-                    args0: [{ type: 'field_input', name: 'VOICE', text: '' }],
+                    args0: [{ type: 'input_value', name: 'VOICE', check: 'String' }],
+                    inputsInline: true,
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -766,7 +768,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_set_rate',
                     message0: 'set speech rate to %1',
-                    args0: [{ type: 'field_number', name: 'RATE', value: 1, min: 0.1, max: 10, step: 0.1 }],
+                    args0: [{ type: 'input_value', name: 'RATE', check: 'Number' }],
+                    inputsInline: true,
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -775,7 +778,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_set_volume',
                     message0: 'set speech volume to %1',
-                    args0: [{ type: 'field_number', name: 'VOLUME', value: 1, min: 0, max: 1, step: 0.1 }],
+                    args0: [{ type: 'input_value', name: 'VOLUME', check: 'Number' }],
+                    inputsInline: true,
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -784,7 +788,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'tts_set_pitch',
                     message0: 'set speech pitch to %1',
-                    args0: [{ type: 'field_number', name: 'PITCH', value: 1, min: 0, max: 2, step: 0.1 }],
+                    args0: [{ type: 'input_value', name: 'PITCH', check: 'Number' }],
+                    inputsInline: true,
                     previousStatement: null,
                     nextStatement: null,
                     colour: '#4a90d9',
@@ -826,27 +831,27 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             }
         },
         registerGenerators: (_Blockly: any) => {
-            const jsGen = javascriptGenerator;
+            const jsGen = javascriptGenerator as any;
             if (!jsGen) return;
 
             jsGen.forBlock['tts_speak'] = (b: any) => {
-                const msg = b.getFieldValue('MESSAGE') || 'Hello';
-                return `if(window.runtime?.tts) await window.runtime.tts.speak('${msg.replace(/'/g, "\\'")}');\n`;
+                const msg = jsGen.valueToCode(b, 'MESSAGE', jsGen.ORDER_ATOMIC || 0) || "''";
+                return `if(window.runtime?.tts) await window.runtime.tts.speak(${msg});\n`;
             };
             jsGen.forBlock['tts_set_voice'] = (b: any) => {
-                const voice = b.getFieldValue('VOICE') || '';
-                return `if(window.runtime?.tts) window.runtime.tts.setVoice('${voice.replace(/'/g, "\\'")}');\n`;
+                const voice = jsGen.valueToCode(b, 'VOICE', jsGen.ORDER_ATOMIC || 0) || "''";
+                return `if(window.runtime?.tts) window.runtime.tts.setVoice(${voice});\n`;
             };
             jsGen.forBlock['tts_set_rate'] = (b: any) => {
-                const rate = b.getFieldValue('RATE') || 1;
+                const rate = jsGen.valueToCode(b, 'RATE', jsGen.ORDER_ATOMIC || 0) || '1';
                 return `if(window.runtime?.tts) window.runtime.tts.setRate(${rate});\n`;
             };
             jsGen.forBlock['tts_set_volume'] = (b: any) => {
-                const volume = b.getFieldValue('VOLUME') || 1;
+                const volume = jsGen.valueToCode(b, 'VOLUME', jsGen.ORDER_ATOMIC || 0) || '1';
                 return `if(window.runtime?.tts) window.runtime.tts.setVolume(${volume});\n`;
             };
             jsGen.forBlock['tts_set_pitch'] = (b: any) => {
-                const pitch = b.getFieldValue('PITCH') || 1;
+                const pitch = jsGen.valueToCode(b, 'PITCH', jsGen.ORDER_ATOMIC || 0) || '1';
                 return `if(window.runtime?.tts) window.runtime.tts.setPitch(${pitch});\n`;
             };
             jsGen.forBlock['tts_stop'] = () =>
@@ -860,13 +865,68 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
         },
         getToolbox: () => [
             { kind: 'label', text: 'Speak' },
-            { kind: 'block', type: 'tts_speak' },
+            {
+                kind: 'block',
+                type: 'tts_speak',
+                inputs: {
+                    MESSAGE: {
+                        shadow: {
+                            type: 'text',
+                            fields: { TEXT: 'Hello world' }
+                        }
+                    }
+                }
+            },
             { kind: 'block', type: 'tts_stop' },
             { kind: 'label', text: 'Settings' },
-            { kind: 'block', type: 'tts_set_voice' },
-            { kind: 'block', type: 'tts_set_rate' },
-            { kind: 'block', type: 'tts_set_volume' },
-            { kind: 'block', type: 'tts_set_pitch' },
+            {
+                kind: 'block',
+                type: 'tts_set_voice',
+                inputs: {
+                    VOICE: {
+                        shadow: {
+                            type: 'text',
+                            fields: { TEXT: '' }
+                        }
+                    }
+                }
+            },
+            {
+                kind: 'block',
+                type: 'tts_set_rate',
+                inputs: {
+                    RATE: {
+                        shadow: {
+                            type: 'math_number',
+                            fields: { NUM: 1 }
+                        }
+                    }
+                }
+            },
+            {
+                kind: 'block',
+                type: 'tts_set_volume',
+                inputs: {
+                    VOLUME: {
+                        shadow: {
+                            type: 'math_number',
+                            fields: { NUM: 1 }
+                        }
+                    }
+                }
+            },
+            {
+                kind: 'block',
+                type: 'tts_set_pitch',
+                inputs: {
+                    PITCH: {
+                        shadow: {
+                            type: 'math_number',
+                            fields: { NUM: 1 }
+                        }
+                    }
+                }
+            },
             { kind: 'label', text: 'Reporters' },
             { kind: 'block', type: 'tts_is_speaking' },
             { kind: 'block', type: 'tts_get_rate' },
