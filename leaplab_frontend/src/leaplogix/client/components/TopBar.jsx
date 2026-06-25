@@ -84,8 +84,13 @@ export default function TopBar() {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
 
+    const [showMenuItems, setShowMenuItems] = useState(window.innerWidth >= 1100);
+
     useEffect(() => {
-        const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
+        const handleResize = () => {
+            setShowCreoleap(window.innerWidth >= 1400);
+            setShowMenuItems(window.innerWidth >= 1100);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -98,7 +103,7 @@ export default function TopBar() {
             boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
                 <button onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
@@ -111,15 +116,27 @@ export default function TopBar() {
                 }} title="Back to Home">
                     <Home size={19} strokeWidth={2.2} />
                 </button>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => {
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, cursor: 'pointer' }} onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     ctx.onBack();
                 }}>
                     <Logo height={48} />
-                    <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>Logix</span>
+                    <div style={{
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                        borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 8,
+                    }}>
+                        <span style={{
+                            color: '#FFD500', fontSize: 8, fontWeight: 900,
+                            textTransform: 'uppercase', letterSpacing: '0.18em', lineHeight: 1.1,
+                        }}>LEAPLAB</span>
+                        <span style={{
+                            color: '#fff', fontSize: 15, fontWeight: 900,
+                            letterSpacing: '0.08em', lineHeight: 1.2,
+                        }}>Logix</span>
+                    </div>
                 </div>
-                <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
+                <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
 
                 <DropdownMenu label="File" isOpen={openMenuId === 'file'} onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')} onClose={() => setOpenMenuId(null)}
                     items={[
@@ -149,7 +166,7 @@ export default function TopBar() {
                         { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
                     ]} />
 
-                {["Tutorials", "Board", "Connect"].map((menuLabel) => (
+                {showMenuItems && ["Board", "Connect"].map((menuLabel) => (
                     <button key={menuLabel} 
                         style={{
                             background: "transparent",
@@ -175,7 +192,9 @@ export default function TopBar() {
                 ))}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
                 <div style={{ 
                     background: "rgba(255, 255, 255, 0.08)", 
                     border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -219,7 +238,7 @@ export default function TopBar() {
                     <div style={{ padding: "0 8px 0 10px", color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</div>
                     {["ide", "stage", "upload"].map(mode => (
                         <button key={mode} onClick={() => ctx.setWorkflowMode(mode)} style={{
-                            padding: "4px 12px", 
+                            padding: "6px 12px", 
                             border: "none",
                             borderRadius: 16,
                             background: ctx.workflowMode === mode ? "linear-gradient(135deg, #7C3AED, #4F46E5)" : "transparent",
@@ -278,7 +297,7 @@ export default function TopBar() {
                 </button>
 
                 <TopbarShareButton
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 10px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
                     size={18}
                     onSave={ctx.handleSaveProject}
                     projectName={ctx.projectName}
