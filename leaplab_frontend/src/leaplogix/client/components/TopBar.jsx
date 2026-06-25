@@ -82,6 +82,13 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 export default function TopBar() {
     const ctx = useLogix();
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+
+    useEffect(() => {
+        const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     return (
         <header style={{
@@ -279,33 +286,35 @@ export default function TopBar() {
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    paddingLeft: 4,
-                    height: '44px',
-                    overflow: 'hidden',
-                }}>
-                    <img
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        alt="CREOLEAP"
-                        style={{
-                            width: '145px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: [
-                                'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                'brightness(1.14)',
-                                'contrast(1.05)',
-                            ].join(' '),
-                        }}
-                    />
-                </div>
+                {showCreoleap && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        paddingLeft: 4,
+                        height: '44px',
+                        overflow: 'hidden',
+                    }}>
+                        <img
+                            src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                            alt="CREOLEAP"
+                            style={{
+                                width: '145px',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                display: 'block',
+                                flexShrink: 0,
+                                filter: [
+                                    'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                                    'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                                    'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                                    'brightness(1.14)',
+                                    'contrast(1.05)',
+                                ].join(' '),
+                            }}
+                        />
+                    </div>
+                )}
             </div>
         </header>
     );

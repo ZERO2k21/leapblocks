@@ -536,11 +536,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
 
                     {/* CREOLEAP Right Logo */}
-                    <div style={{
-                        marginLeft: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexShrink: 0,
+                    <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0" style={{
                         height: '34px',
                         overflow: 'hidden',
                         filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
