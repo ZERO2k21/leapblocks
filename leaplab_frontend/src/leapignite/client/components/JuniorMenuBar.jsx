@@ -270,7 +270,7 @@ export default function JuniorMenuBar({
                     flexShrink: 0,
                     filter: 'drop-shadow(0 0 14px rgba(80,200,255,0.3)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
                 }}>
-                    <Logo height={52} />
+                    <Logo height={48} />
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -463,7 +463,7 @@ export default function JuniorMenuBar({
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                         alt="CREOLEAP"
                         style={{
-                            width: '95px',
+                            width: '145px',
                             height: 'auto',
                             objectFit: 'contain',
                             display: 'block',

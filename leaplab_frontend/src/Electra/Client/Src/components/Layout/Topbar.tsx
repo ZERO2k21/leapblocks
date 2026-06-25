@@ -195,7 +195,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             <img
               alt="LeapLab"
               src="assets/leaplab_logo_transparent.png"
-              className="h-9 object-contain"
+              className="h-12 object-contain"
             />
             <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none">
               <span className={`text-[7px] font-black uppercase tracking-[0.18em] font-sans ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]'}`}>
@@ -756,9 +756,9 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
 
         {/* Right section */}
-        <div className="flex items-center justify-end gap-2 flex-auto min-w-0">
+        <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
           {/* Quick actions - Desktop only */}
-          <div className={`hidden xl:flex items-center gap-2 pr-4 border-r h-5 shrink-0 ${
+          <div className={`hidden xl:flex items-center gap-3 pr-4 border-r h-8 shrink-0 ${
             isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
           }`}>
             <TopbarShareButton className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`} size={16} onSave={onSave} projectName={title} />
@@ -770,7 +770,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               style={{ marginRight: '10px' }}
               className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}
             >
-              <CircleHelp size={16} strokeWidth={2.2} />
+              <CircleHelp size={20} strokeWidth={2.2} />
             </button>
           </div>
 
@@ -780,17 +780,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             </div>
           )}
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box' }} />
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
           </div>
 
           {/* Creoleap brand logo (large desktop only) */}
-          <div className={`hidden min-[1500px]:flex ml-2 items-center shrink-0 h-11 overflow-hidden ${
+          <div className={`hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden ${
             isElectra ? '' : 'filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]'
           }`}>
             <img
               alt="Leap into the AI Future"
               src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-              className={`w-[95px] h-auto object-contain block shrink-0 ${
+              className={`w-[145px] h-auto object-contain block shrink-0 ${
                 isElectra ? 'brightness-[1.14] contrast-[1.05]' : 'brightness-[1.14] contrast-[1.05]'
               }`}
             />
@@ -800,13 +800,13 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
-            className={`xl:hidden flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
+            className={`xl:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
                 : 'bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24'
             }`}
           >
-            <Menu size={18} strokeWidth={2.2} />
+            <Menu size={20} strokeWidth={2.2} />
           </button>
         </div>
       </div>
@@ -838,13 +838,13 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           </div>
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${
+            className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${
               isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
                 : 'bg-[#94c5ff]/10 border-[#94c5ff]/20 text-white hover:bg-white/10'
             }`}
           >
-            <X size={18} strokeWidth={2.2} />
+            <X size={20} strokeWidth={2.2} />
           </button>
         </div>
 

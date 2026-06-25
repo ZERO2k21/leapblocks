@@ -5,7 +5,7 @@ import TrainingPanel from '../../components/TrainingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
 import { ensureTf, ensurePoseDetection } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
-import { Camera, PersonStanding, Trash2, Edit2, Check, X, Plus, Activity, Users, Zap } from 'lucide-react'
+import { Camera, PersonStanding, Trash2, Edit2, Check, X, Plus, Activity, Users } from 'lucide-react'
 
 type PoseClass = {
     id: number
@@ -27,6 +27,48 @@ const COLORS = [
     { bg: '#ec4899', light: '#f472b6', glow: 'rgba(236, 72, 153, 0.3)', border: 'rgba(236, 72, 153, 0.3)' },
     { bg: '#3b82f6', light: '#60a5fa', glow: 'rgba(59, 130, 246, 0.3)', border: 'rgba(59, 130, 246, 0.3)' },
 ]
+
+// MoveNet COCO 17-keypoint skeleton connections
+const POSE_CONNECTIONS: [number, number][] = [
+    [0, 1], [1, 2], [2, 3], [3, 4],       // head
+    [0, 5], [5, 7], [7, 9],                // left arm
+    [0, 6], [6, 8], [8, 10],               // right arm
+    [5, 6],                                 // shoulders
+    [5, 11], [6, 12],                       // torso
+    [11, 12],                               // hips
+    [11, 13], [13, 15],                     // left leg
+    [12, 14], [14, 16],                     // right leg
+]
+
+function drawBodySkeleton(ctx: CanvasRenderingContext2D, keypoints: number[][], w: number, h: number, color: string) {
+    ctx.clearRect(0, 0, w, h)
+    if (!keypoints || keypoints.length < 17) return
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.globalAlpha = 0.6
+    for (const [a, b] of POSE_CONNECTIONS) {
+        const ka = keypoints[a], kb = keypoints[b]
+        if (!ka || !kb) continue
+        ctx.beginPath()
+        ctx.moveTo(ka[0] * w, ka[1] * h)
+        ctx.lineTo(kb[0] * w, kb[1] * h)
+        ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+    for (let i = 0; i < keypoints.length; i++) {
+        const k = keypoints[i]
+        if (!k) continue
+        const x = k[0] * w, y = k[1] * h
+        const r = i === 0 ? 5 : (i <= 4 ? 4 : 3)
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = i <= 4 ? '#fff' : color
+        ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+    }
+}
 
 function PoseIllustration({ poseIndex, size = 48 }: { poseIndex: number; size?: number }) {
     const illustrations = [
@@ -120,13 +162,280 @@ function PersonIllustration({ size = 80 }: { size?: number }) {
     )
 }
 
+// ─── POSE WEBCAM MODAL ──────────────────────────────────────────────────────
+function PoseWebcamModal({ classLabel, color, classId, onCapture, onClose, detectorRef }: {
+    classLabel: string
+    color: { bg: string; light: string }
+    classId: number
+    onCapture: (classId: number, keypoints: number[][]) => void
+    onClose: () => void
+    detectorRef: React.MutableRefObject<any>
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const overlayRef = useRef<HTMLCanvasElement>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const intervalRef = useRef<any>(null)
+    const [capturing, setCapturing] = useState(false)
+    const [count, setCount] = useState(0)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } as any })
+            .then(stream => {
+                streamRef.current = stream
+                if (videoRef.current) videoRef.current.srcObject = stream
+                setLoading(false)
+            })
+            .catch(() => setError('Camera access denied. Please allow camera permissions.'))
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            streamRef.current?.getTracks().forEach(t => t.stop())
+        }
+    }, [])
+
+    useEffect(() => {
+        if (loading || error) return
+        let running = true
+        const draw = async () => {
+            if (!running) return
+            const v = videoRef.current, c = overlayRef.current
+            if (v && c && detectorRef.current && v.videoWidth && v.videoHeight) {
+                c.width = v.videoWidth; c.height = v.videoHeight
+                const ctx = c.getContext('2d')
+                if (ctx) {
+                    try {
+                        const poses = await detectorRef.current.estimatePoses(v)
+                        if (poses.length > 0 && poses[0].keypoints) {
+                            drawBodySkeleton(ctx, poses[0].keypoints.map((k: any) => [k.x, k.y, k.score ?? 0]), c.width, c.height, color.bg)
+                        } else { ctx.clearRect(0, 0, c.width, c.height) }
+                    } catch { /* busy */ }
+                }
+            }
+            rafRef.current = requestAnimationFrame(draw)
+        }
+        rafRef.current = requestAnimationFrame(draw)
+        return () => { running = false; if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    }, [loading, error, color.bg, detectorRef])
+
+    const captureOnce = useCallback(async () => {
+        if (!detectorRef.current || !videoRef.current) return null
+        const v = videoRef.current
+        if (!v.videoWidth || !v.videoHeight) return null
+        try {
+            const poses = await detectorRef.current.estimatePoses(v)
+            if (poses.length > 0 && poses[0].keypoints) {
+                return poses[0].keypoints.map((k: any) => [k.x, k.y, k.score ?? 0])
+            }
+        } catch { /* busy */ }
+        return null
+    }, [detectorRef])
+
+    useEffect(() => {
+        if (!capturing) {
+            if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+            return
+        }
+        intervalRef.current = setInterval(async () => {
+            const kp = await captureOnce()
+            if (kp) { onCapture(classId, kp); setCount(n => n + 1) }
+        }, 300)
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    }, [capturing, classId, onCapture, captureOnce])
+
+    const handleSingleCapture = async () => {
+        const kp = await captureOnce()
+        if (kp) { onCapture(classId, kp); setCount(n => n + 1) }
+    }
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: color.bg }} />
+                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
+                            Capture for <em style={{ fontStyle: 'normal', color: color.bg }}>{classLabel}</em>
+                        </span>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                </div>
+                {error ? (
+                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                ) : (
+                    <>
+                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
+                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
+                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
+                            {capturing && <div style={{ position: 'absolute', top: 10, right: 10, background: '#ff4444', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />REC</div>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <button
+                                onMouseDown={() => setCapturing(true)} onMouseUp={() => setCapturing(false)} onMouseLeave={() => setCapturing(false)}
+                                onTouchStart={() => setCapturing(true)} onTouchEnd={() => setCapturing(false)}
+                                style={{ flex: 1, padding: '12px 0', borderRadius: 10, background: capturing ? color.bg : '#1e1e30', border: `1.5px solid ${capturing ? color.bg : 'var(--ml-border-strong)'}`, color: capturing ? '#fff' : 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                {capturing ? '● Recording…' : 'Hold to Capture'}
+                            </button>
+                            <button onClick={handleSingleCapture} style={{ padding: '12px 16px', borderRadius: 10, background: '#1e1e30', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                <Camera size={16} />
+                            </button>
+                        </div>
+                        {count > 0 && <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: color.bg, fontWeight: 600 }}>{count} pose{count !== 1 ? 's' : ''} captured</div>}
+                    </>
+                )}
+                <button onClick={onClose} style={{ width: '100%', marginTop: 14, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+            </div>
+        </div>
+    )
+}
+
+// ─── POSE PREDICT MODAL ─────────────────────────────────────────────────────
+function PosePredictModal({ onClose, onResult, detectorRef, knnRef, normalizeKeypoints }: {
+    onClose: () => void
+    onResult: (result: { label: string; confidences: Record<string, number> }) => void
+    detectorRef: React.MutableRefObject<any>
+    knnRef: React.MutableRefObject<KNNClassifier | null>
+    normalizeKeypoints: (keypoints: number[][]) => number[]
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const overlayRef = useRef<HTMLCanvasElement>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const intervalRef = useRef<any>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [result, setResult] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
+    const [noPose, setNoPose] = useState(false)
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } as any })
+            .then(stream => {
+                streamRef.current = stream
+                if (videoRef.current) videoRef.current.srcObject = stream
+                setLoading(false)
+            })
+            .catch(() => setError('Camera access denied. Please allow camera permissions.'))
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            streamRef.current?.getTracks().forEach(t => t.stop())
+        }
+    }, [])
+
+    useEffect(() => {
+        if (loading || error) return
+        let running = true
+        const draw = async () => {
+            if (!running) return
+            const v = videoRef.current, c = overlayRef.current
+            if (v && c && detectorRef.current && v.videoWidth && v.videoHeight) {
+                c.width = v.videoWidth; c.height = v.videoHeight
+                const ctx = c.getContext('2d')
+                if (ctx) {
+                    try {
+                        const poses = await detectorRef.current.estimatePoses(v)
+                        if (poses.length > 0 && poses[0].keypoints) {
+                            drawBodySkeleton(ctx, poses[0].keypoints.map((k: any) => [k.x, k.y, k.score ?? 0]), c.width, c.height, '#8b5cf6')
+                        } else { ctx.clearRect(0, 0, c.width, c.height) }
+                    } catch { /* busy */ }
+                }
+            }
+            rafRef.current = requestAnimationFrame(draw)
+        }
+        rafRef.current = requestAnimationFrame(draw)
+        return () => { running = false; if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    }, [loading, error, detectorRef])
+
+    useEffect(() => {
+        if (loading || error) return
+        intervalRef.current = setInterval(async () => {
+            const v = videoRef.current
+            if (!v || !detectorRef.current || !knnRef.current) return
+            if (!v.videoWidth || !v.videoHeight) return
+            try {
+                const poses = await detectorRef.current.estimatePoses(v)
+                if (poses.length > 0 && poses[0].keypoints) {
+                    setNoPose(false)
+                    const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score ?? 0])
+                    const normalized = normalizeKeypoints(keypoints)
+                    if (normalized.length > 0) {
+                        const r = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
+                        if (r) { setResult(r); onResult(r) }
+                    }
+                } else {
+                    setNoPose(true)
+                    setResult(null)
+                }
+            } catch { /* busy */ }
+        }, 300)
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    }, [loading, error, detectorRef, knnRef, normalizeKeypoints, onResult])
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 420, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#8b5cf6' }} />
+                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
+                            Predict — Show a pose
+                        </span>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                </div>
+                {error ? (
+                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                ) : (
+                    <>
+                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
+                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
+                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
+                            <div style={{ position: 'absolute', top: 10, right: 10, background: noPose ? '#6b7280' : '#22C55E', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: noPose ? 'none' : 'pulse 1.5s infinite' }} />
+                                {noPose ? 'No pose' : 'LIVE'}
+                            </div>
+                        </div>
+                        {result ? (
+                            <div style={{ background: 'var(--ml-well)', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--ml-text-primary)', fontWeight: 700 }}>{result.label}</span>
+                                </div>
+                                {Object.entries(result.confidences).map(([label, conf]) => (
+                                    <div key={label} style={{ marginBottom: 6 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{Math.round((conf as number) * 100)}%</span>
+                                        </div>
+                                        <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${(conf as number) * 100}%`, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)', borderRadius: 2, transition: 'width 0.2s' }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--ml-text-muted)' }}>
+                                {noPose ? 'Show your full body to the camera' : 'Detecting…'}
+                            </div>
+                        )}
+                    </>
+                )}
+                <button onClick={onClose} style={{ width: '100%', marginTop: 8, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+            </div>
+        </div>
+    )
+}
+
 export default function PoseClassifier({ project, onBack, onDataChange }: PoseClassifierProps) {
     const [classes, setClasses] = useState<PoseClass[]>([
         { id: 1, name: 'Pose 1', samples: [] },
         { id: 2, name: 'Pose 2', samples: [] },
     ])
     const [nextId, setNextId] = useState(3)
-    const [capturing, setCapturing] = useState<number | null>(null)
+    const [webcamFor, setWebcamFor] = useState<number | null>(null)
+    const [showPredictModal, setShowPredictModal] = useState(false)
     const [trained, setTrained] = useState(false)
     const [status, setStatus] = useState('idle')
     const [progress, setProgress] = useState(0)
@@ -139,10 +448,6 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
     const [accuracy, setAccuracy] = useState(0)
-    const [videoReady, setVideoReady] = useState(false)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const canvasRef = useRef<HTMLCanvasElement | null>(null)
-    const streamRef = useRef<MediaStream | null>(null)
     const detectorRef = useRef<any>(null)
     const knnRef = useRef<KNNClassifier | null>(null)
 
@@ -209,41 +514,9 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
         } catch (e) { console.error('Pose det load failed:', e); return null }
     }, [])
 
-    const startWebcam = async (classId: number) => {
-        try {
-            setVideoReady(false)
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
-            streamRef.current = stream
-            if (videoRef.current) {
-                const video = videoRef.current
-                video.srcObject = stream
-                video.onloadeddata = () => setVideoReady(true)
-            }
-            setCapturing(classId)
-        } catch {
-            showToast('Camera access denied.', 'error')
-        }
-    }
-
-    const stopWebcam = useCallback(() => {
-        streamRef.current?.getTracks().forEach(t => t.stop())
-        setCapturing(null)
-        setVideoReady(false)
+    const addPoseSample = useCallback((classId: number, keypoints: number[][]) => {
+        setClasses(p => p.map(c => c.id === classId ? { ...c, samples: [...c.samples, keypoints] } : c))
     }, [])
-
-    const capturePose = useCallback(async () => {
-        const detector = detectorRef.current || await ensureDetector()
-        if (!detector || !videoRef.current || capturing === null) return
-        const video = videoRef.current
-        if (!video.videoWidth || !video.videoHeight) return
-        try {
-            const poses = await detector.estimatePoses(video)
-            if (poses.length > 0) {
-                const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
-                setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, keypoints] } : c))
-            }
-        } catch (e) { console.error(e) }
-    }, [capturing, ensureDetector])
 
     const normalizeKeypoints = useCallback((keypoints: number[][]): number[] => {
         const flat = keypoints.flat()
@@ -323,9 +596,12 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
         setNextId(n => n + 1)
     }
 
+    // Ensure detector loaded when webcam or predict modal opens
     useEffect(() => {
-        return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
-    }, [])
+        if (webcamFor !== null || showPredictModal) {
+            ensureDetector()
+        }
+    }, [webcamFor, showPredictModal, ensureDetector])
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
@@ -335,7 +611,6 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                     {classes.map((cls, i) => {
                         const color = COLORS[i % COLORS.length]
                         const isHovered = hoveredCard === cls.id
-                        const isCapturing = capturing === cls.id
 
                         return (
                             <div
@@ -487,16 +762,16 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                         </div>
                                     </div>
 
-                                    {/* Capture button */}
+                                    {/* Webcam button */}
                                     <button
-                                        onClick={() => isCapturing ? stopWebcam() : startWebcam(cls.id)}
+                                        onClick={() => setWebcamFor(cls.id)}
                                         style={{
                                             width: '100%',
                                             padding: '10px 16px',
                                             borderRadius: 10,
-                                            border: `2px dashed ${isCapturing ? color.bg : 'var(--ml-border-strong)'}`,
-                                            background: isCapturing ? `${color.bg}15` : 'transparent',
-                                            color: isCapturing ? color.bg : 'var(--ml-text-secondary)',
+                                            border: `2px dashed ${color.border}`,
+                                            background: 'transparent',
+                                            color: 'var(--ml-text-secondary)',
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontSize: 12,
                                             fontWeight: 600,
@@ -509,61 +784,12 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                         }}
                                     >
                                         <Camera size={14} />
-                                        {isCapturing ? 'Stop Capture' : 'Start Webcam'}
+                                        Webcam
                                     </button>
-
-                                    {isCapturing && (
-                                        <button
-                                            onClick={capturePose}
-                                            style={{
-                                                width: '100%',
-                                                marginTop: 8,
-                                                padding: '10px 16px',
-                                                borderRadius: 10,
-                                                border: 'none',
-                                                background: `linear-gradient(135deg, ${color.bg}, ${color.light})`,
-                                                color: 'var(--ml-text-primary)',
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 12,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: 8,
-                                                boxShadow: `0 4px 12px ${color.glow}`,
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                        >
-                                            <Zap size={14} />
-                                            Capture Pose
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         )
                     })}
-
-                    {/* Shared webcam preview */}
-                    {capturing !== null && (
-                        <div style={{
-                            background: 'var(--ml-surface)',
-                            border: '1px solid #1e1e2e',
-                            borderRadius: 16,
-                            padding: 16,
-                            overflow: 'hidden'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)' }} />
-                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Live Pose Detection</span>
-                            </div>
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 10, transform: 'scaleX(-1)' }} />
-                            <canvas ref={canvasRef} style={{ display: 'none' }} />
-                            {!poseDetReady && (
-                                <p style={{ color: '#f59e0b', fontFamily: "'DM Sans', sans-serif", fontSize: 11, textAlign: 'center', marginTop: 8 }}>Loading MoveNet...</p>
-                            )}
-                        </div>
-                    )}
 
                     {/* Add Class button */}
                     <button
@@ -650,19 +876,9 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                                 </div>
 
                                 {/* Capture & Predict button */}
-                                <button onClick={async () => {
-                                    if (!knnRef.current || !detectorRef.current || !videoRef.current) return
-                                    const video = videoRef.current
-                                    if (!video.videoWidth || !video.videoHeight) return
-                                    try {
-                                        const poses = await detectorRef.current.estimatePoses(video)
-                                        if (poses.length > 0) {
-                                            const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
-                                            const normalized = normalizeKeypoints(keypoints)
-                                            const result = await knnRef.current.predictFromData(new Float32Array(normalized), 3)
-                                            if (result) setTestResult(result)
-                                        }
-                                    } catch (e) { console.error(e) }
+                                <button onClick={() => {
+                                    if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
+                                    setShowPredictModal(true)
                                 }} style={{
                                     width: '100%',
                                     padding: '12px 16px',
@@ -729,6 +945,29 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                     </div>
                 </div>
             </div>
+
+            {/* Pose Webcam Modal */}
+            {webcamFor !== null && (
+                <PoseWebcamModal
+                    classLabel={classes.find(c => c.id === webcamFor)?.name || 'Pose'}
+                    color={COLORS[classes.findIndex(c => c.id === webcamFor) % COLORS.length] || COLORS[0]}
+                    classId={webcamFor}
+                    onCapture={addPoseSample}
+                    onClose={() => setWebcamFor(null)}
+                    detectorRef={detectorRef}
+                />
+            )}
+
+            {/* Pose Predict Modal */}
+            {showPredictModal && trained && (
+                <PosePredictModal
+                    onClose={() => setShowPredictModal(false)}
+                    onResult={(r) => setTestResult(r)}
+                    detectorRef={detectorRef}
+                    knnRef={knnRef}
+                    normalizeKeypoints={normalizeKeypoints}
+                />
+            )}
         </ClassifierLayout>
     )
 }

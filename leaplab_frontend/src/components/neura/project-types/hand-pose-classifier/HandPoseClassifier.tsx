@@ -155,41 +155,42 @@ function HandWebcamModal({ classLabel, color, classId, onCapture, onClose, detec
     }
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: color.bg }} />
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
-                            Capture for <em style={{ fontStyle: 'normal', color: color.bg }}>{classLabel}</em>
+        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center">
+            <div className="bg-ml-surface border border-ml-border-strong rounded-[20px] p-7 w-[400px] shadow-modal">
+                <div className="flex items-center justify-between mb-[18px]">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: color.bg }} />
+                        <span className="font-sans font-semibold text-ml-text-primary text-[15px]">
+                            Capture for <em className="not-italic" style={{ color: color.bg }}>{classLabel}</em>
                         </span>
                     </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                    <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-ml-text-muted p-1"><X size={18} /></button>
                 </div>
                 {error ? (
-                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                    <div className="py-6 text-center text-ml-error-text font-sans text-sm">{error}</div>
                 ) : (
                     <>
-                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
-                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
-                            {capturing && <div style={{ position: 'absolute', top: 10, right: 10, background: '#ff4444', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />REC</div>}
+                        <div className="rounded-xl overflow-hidden bg-ml-bg relative mb-4">
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full block -scale-x-100" />
+                            <canvas ref={overlayRef} className="absolute inset-0 w-full h-full -scale-x-100 pointer-events-none" />
+                            {capturing && <div className="absolute top-2.5 right-2.5 bg-[#ff4444] rounded-md px-2 py-[3px] text-xs font-sans text-white font-semibold flex items-center gap-[5px]"><span className="w-[7px] h-[7px] rounded-full bg-white inline-block" />REC</div>}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="flex items-center gap-2.5">
                             <button
                                 onMouseDown={() => setCapturing(true)} onMouseUp={() => setCapturing(false)} onMouseLeave={() => setCapturing(false)}
                                 onTouchStart={() => setCapturing(true)} onTouchEnd={() => setCapturing(false)}
-                                style={{ flex: 1, padding: '12px 0', borderRadius: 10, background: capturing ? color.bg : '#1e1e30', border: `1.5px solid ${capturing ? color.bg : 'var(--ml-border-strong)'}`, color: capturing ? '#fff' : 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                className="flex-1 py-3 rounded-[10px] font-sans font-semibold text-sm cursor-pointer transition-all duration-150"
+                                style={{ background: capturing ? color.bg : '#1e1e30', border: `1.5px solid ${capturing ? color.bg : 'var(--ml-border-strong)'}`, color: capturing ? '#fff' : 'var(--ml-text-secondary)' }}>
                                 {capturing ? '● Recording…' : 'Hold to Capture'}
                             </button>
-                            <button onClick={handleSingleCapture} style={{ padding: '12px 16px', borderRadius: 10, background: '#1e1e30', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                            <button onClick={handleSingleCapture} className="px-4 py-3 rounded-[10px] bg-[#1e1e30] border-[1.5px] border-ml-border-strong text-ml-text-secondary cursor-pointer flex items-center">
                                 <Camera size={16} />
                             </button>
                         </div>
-                        {count > 0 && <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: color.bg, fontWeight: 600 }}>{count} gesture{count !== 1 ? 's' : ''} captured</div>}
+                        {count > 0 && <div className="text-center mt-3 font-sans text-[13px] font-semibold" style={{ color: color.bg }}>{count} gesture{count !== 1 ? 's' : ''} captured</div>}
                     </>
                 )}
-                <button onClick={onClose} style={{ width: '100%', marginTop: 14, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+                <button onClick={onClose} className="w-full mt-3.5 py-2.5 rounded-[10px] bg-transparent border-[1.5px] border-ml-border-strong text-ml-text-muted font-sans text-sm cursor-pointer">Done</button>
             </div>
         </div>
     )
@@ -280,58 +281,58 @@ function HandPredictModal({ onClose, onResult, detectorRef, knnRef, normalizeLan
     }, [loading, error, detectorRef, knnRef, normalizeLandmarks, onResult])
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border-strong)', borderRadius: 20, padding: 28, width: 420, boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed' }} />
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: 'var(--ml-text-primary)', fontSize: 15 }}>
+        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center">
+            <div className="bg-ml-surface border border-ml-border-strong rounded-[20px] p-7 w-[420px] shadow-modal">
+                <div className="flex items-center justify-between mb-[18px]">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#7c3aed]" />
+                        <span className="font-sans font-semibold text-ml-text-primary text-[15px]">
                             Predict — Show a hand gesture
                         </span>
                     </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ml-text-muted)', padding: 4 }}><X size={18} /></button>
+                    <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-ml-text-muted p-1"><X size={18} /></button>
                 </div>
                 {error ? (
-                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ml-error-text, #ef4444)', fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                    <div className="py-6 text-center text-ml-error-text font-sans text-sm">{error}</div>
                 ) : (
                     <>
-                        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--ml-bg)', position: 'relative', marginBottom: 16 }}>
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: 'block', transform: 'scaleX(-1)' }} />
-                            <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)', pointerEvents: 'none' }} />
+                        <div className="rounded-xl overflow-hidden bg-ml-bg relative mb-4">
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full block -scale-x-100" />
+                            <canvas ref={overlayRef} className="absolute inset-0 w-full h-full -scale-x-100 pointer-events-none" />
                             {/* Live status badge */}
-                            <div style={{ position: 'absolute', top: 10, right: 10, background: noHand ? '#6b7280' : '#22C55E', borderRadius: 6, padding: '3px 8px', fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: noHand ? 'none' : 'pulse 1.5s infinite' }} />
+                            <div className="absolute top-2.5 right-2.5 rounded-md px-2 py-[3px] text-xs font-sans text-white font-semibold flex items-center gap-[5px]" style={{ background: noHand ? '#6b7280' : '#22C55E' }}>
+                                <span className="w-[7px] h-[7px] rounded-full bg-white inline-block" style={{ animation: noHand ? 'none' : 'pulse 1.5s infinite' }} />
                                 {noHand ? 'No hand' : 'LIVE'}
                             </div>
                         </div>
 
                         {/* Live prediction result */}
                         {result ? (
-                            <div style={{ background: 'var(--ml-well)', borderRadius: 12, padding: 14, marginBottom: 12 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
-                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--ml-text-primary)', fontWeight: 700 }}>{result.label}</span>
+                            <div className="bg-ml-well rounded-xl p-3.5 mb-3">
+                                <div className="flex items-center gap-2 mb-2.5">
+                                    <div className="w-2 h-2 rounded-full bg-[#22C55E]" style={{ boxShadow: '0 0 8px #22C55E' }} />
+                                    <span className="font-sans text-sm text-ml-text-primary font-bold">{result.label}</span>
                                 </div>
                                 {Object.entries(result.confidences).map(([label, conf]) => (
-                                    <div key={label} style={{ marginBottom: 6 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
-                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{Math.round((conf as number) * 100)}%</span>
+                                    <div key={label} className="mb-1.5">
+                                        <div className="flex justify-between text-[11px] mb-0.5">
+                                            <span className="text-ml-text-secondary font-sans">{label}</span>
+                                            <span className="text-ml-text-secondary font-mono font-semibold">{Math.round((conf as number) * 100)}%</span>
                                         </div>
-                                        <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
-                                            <div style={{ height: '100%', width: `${(conf as number) * 100}%`, background: 'linear-gradient(90deg, #7c3aed, #a78bfa)', borderRadius: 2, transition: 'width 0.2s' }} />
+                                        <div className="h-1 bg-ml-border rounded-sm overflow-hidden">
+                                            <div className="h-full rounded-sm bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] transition-all duration-200" style={{ width: `${(conf as number) * 100}%` }} />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--ml-text-muted)' }}>
+                            <div className="text-center py-4 font-sans text-[13px] text-ml-text-muted">
                                 {noHand ? 'Show your hand to the camera' : 'Detecting…'}
                             </div>
                         )}
                     </>
                 )}
-                <button onClick={onClose} style={{ width: '100%', marginTop: 8, padding: '10px 0', borderRadius: 10, background: 'transparent', border: '1.5px solid var(--ml-border-strong)', color: 'var(--ml-text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: 'pointer' }}>Done</button>
+                <button onClick={onClose} className="w-full mt-2 py-2.5 rounded-[10px] bg-transparent border-[1.5px] border-ml-border-strong text-ml-text-muted font-sans text-sm cursor-pointer">Done</button>
             </div>
         </div>
     )
@@ -557,9 +558,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
+            <div className="flex gap-6 items-stretch flex-1 min-h-0">
                 {/* Gesture Cards Column */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="flex-1 flex flex-col gap-4">
                     {classes.map((cls, i) => {
                         const color = COLORS[i % COLORS.length]
                         const isHovered = hoveredCard === cls.id
@@ -567,12 +568,9 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                         return (
                             <div
                                 key={cls.id}
+                                className="bg-ml-surface rounded-2xl overflow-hidden transition-all duration-300 ease-out"
                                 style={{
-                                    background: 'var(--ml-surface)',
                                     border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
-                                    borderRadius: 16,
-                                    overflow: 'hidden',
-                                    transition: 'all 0.3s ease',
                                     transform: isHovered ? 'translateY(-2px)' : 'none',
                                     boxShadow: isHovered ? `0 8px 24px ${color.glow}` : 'none'
                                 }}
@@ -580,65 +578,41 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 onMouseLeave={() => setHoveredCard(null)}
                             >
                                 {/* Gradient Header */}
-                                <div style={{
-                                    background: `linear-gradient(135deg, ${color.bg} 0%, ${color.light} 100%)`,
-                                    padding: '12px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                                <div
+                                    className="flex items-center justify-between px-4 py-3"
+                                    style={{ background: `linear-gradient(135deg, ${color.bg} 0%, ${color.light} 100%)` }}
+                                >
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                         {editingId === cls.id ? (
                                             <input
                                                 value={editName}
                                                 onChange={e => setEditName(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && commitRename()}
                                                 autoFocus
-                                                style={{
-                                                    background: 'rgba(0,0,0,0.25)',
-                                                    border: 'none',
-                                                    borderRadius: 6,
-                                                    padding: '3px 8px',
-                                                    color: '#fff',
-                                                    fontFamily: "'DM Sans', sans-serif",
-                                                    fontSize: 14,
-                                                    fontWeight: 600,
-                                                    width: '100%',
-                                                    outline: 'none'
-                                                }}
+                                                className="bg-black/25 border-none rounded-md px-2 py-[3px] text-white font-sans text-sm font-semibold w-full outline-none"
                                             />
                                         ) : (
-                                            <span style={{
-                                                color: '#fff',
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontWeight: 700,
-                                                fontSize: 14,
-                                                letterSpacing: '-0.01em',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                textShadow: '0 1px 2px rgba(0,0,0,0.15)'
-                                            }}>
+                                            <span className="text-white font-sans font-bold text-sm tracking-tight overflow-hidden text-ellipsis whitespace-nowrap" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}>
                                                 {cls.name}
                                             </span>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+                                    <div className="flex gap-1 ml-2">
                                         {editingId === cls.id ? (
                                             <>
-                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={commitRename} className="bg-white/25 border-none rounded-md px-1.5 py-1 cursor-pointer text-white flex items-center transition-colors duration-150">
                                                     <Check size={14} />
                                                 </button>
-                                                <button onClick={() => { setEditingId(null) }} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => { setEditingId(null) }} className="bg-white/15 border-none rounded-md px-1.5 py-1 cursor-pointer text-white flex items-center transition-colors duration-150">
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => startRename(cls)} className="bg-white/20 border-none rounded-md px-1.5 py-1 cursor-pointer text-white flex items-center transition-colors duration-150">
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => deleteClass(cls.id)} className="bg-white/15 border-none rounded-md px-1.5 py-1 cursor-pointer text-white flex items-center transition-colors duration-150">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </>
@@ -647,63 +621,35 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 </div>
 
                                 {/* Card Content */}
-                                <div style={{ padding: 16 }}>
+                                <div className="p-4">
                                     {/* Sample count badge */}
-                                    <div style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        background: color.bg + '18',
-                                        color: color.bg,
-                                        padding: '4px 12px',
-                                        borderRadius: 8,
-                                        fontSize: 12,
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontWeight: 700,
-                                        marginBottom: 12
-                                    }}>
+                                    <div
+                                        className="inline-flex items-center gap-1.5 text-xs font-sans font-bold mb-3"
+                                        style={{ background: color.bg + '18', color: color.bg, padding: '4px 12px', borderRadius: 8 }}
+                                    >
                                         <Activity size={12} />
                                         {cls.samples.length} gesture{cls.samples.length !== 1 ? 's' : ''} captured
                                     </div>
 
                                     {/* Hand pose illustration and thumbnail grid */}
-                                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                    <div className="flex gap-3 items-start">
                                         {/* Main illustration */}
-                                        <div style={{
-                                            width: 64,
-                                            height: 64,
-                                            borderRadius: 12,
-                                            background: `linear-gradient(135deg, ${color.bg}15 0%, ${color.light}10 100%)`,
-                                            border: `1px solid ${color.bg}30`,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: color.bg,
-                                            flexShrink: 0
-                                        }}>
+                                        <div
+                                            className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0"
+                                            style={{ background: `linear-gradient(135deg, ${color.bg}15 0%, ${color.light}10 100%)`, border: `1px solid ${color.bg}30`, color: color.bg }}
+                                        >
                                             <HandPoseIllustration gestureIndex={i} size={40} />
                                         </div>
 
                                         {/* Thumbnail grid */}
-                                        <div style={{ flex: 1 }}>
+                                        <div className="flex-1">
                                             {cls.samples.length > 0 ? (
-                                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                <div className="flex gap-1.5 flex-wrap">
                                                     {cls.samples.slice(-6).map((_, idx) => (
                                                         <div
                                                             key={idx}
-                                                            style={{
-                                                                width: 44,
-                                                                height: 44,
-                                                                borderRadius: 10,
-                                                                background: 'var(--ml-well)',
-                                                                border: `1.5px solid var(--ml-border-strong)`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                color: color.bg,
-                                                                transition: 'all 0.2s ease',
-                                                                cursor: 'pointer'
-                                                            }}
+                                                            className="w-[44px] h-[44px] rounded-[10px] bg-ml-well border-[1.5px] border-ml-border-strong flex items-center justify-center cursor-pointer transition-all duration-200"
+                                                            style={{ color: color.bg }}
                                                             onMouseEnter={e => {
                                                                 e.currentTarget.style.borderColor = color.bg
                                                                 e.currentTarget.style.transform = 'scale(1.1)'
@@ -719,33 +665,16 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                                         </div>
                                                     ))}
                                                     {cls.samples.length > 6 && (
-                                                        <div style={{
-                                                            width: 44,
-                                                            height: 44,
-                                                            borderRadius: 10,
-                                                            background: color.bg + '12',
-                                                            border: `1.5px solid ${color.bg}30`,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            fontSize: 11,
-                                                            color: color.bg,
-                                                            fontWeight: 700
-                                                        }}>
+                                                        <div
+                                                            className="w-[44px] h-[44px] rounded-[10px] flex items-center justify-center text-[11px] font-bold"
+                                                            style={{ background: color.bg + '12', border: `1.5px solid ${color.bg}30`, color: color.bg }}
+                                                        >
                                                             +{cls.samples.length - 6}
                                                         </div>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div style={{
-                                                    height: 44,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: 'var(--ml-text-muted)',
-                                                    fontSize: 12,
-                                                    fontFamily: "'DM Sans', sans-serif"
-                                                }}>
+                                                <div className="h-[44px] flex items-center justify-center text-ml-text-muted text-xs font-sans">
                                                     No gestures captured yet
                                                 </div>
                                             )}
@@ -753,26 +682,10 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                     </div>
 
                                     {/* Action buttons */}
-                                    <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                                    <div className="flex gap-2 mt-4">
                                         <button
                                             onClick={() => setWebcamFor(cls.id)}
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px 0',
-                                                borderRadius: 10,
-                                                background: 'var(--ml-well)',
-                                                border: '1.5px dashed var(--ml-border-strong)',
-                                                color: 'var(--ml-text-secondary)',
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: 6,
-                                                transition: 'all 0.2s ease'
-                                            }}
+                                            className="flex-1 py-2.5 rounded-[10px] bg-ml-well border-[1.5px] border-dashed border-ml-border-strong text-ml-text-secondary font-sans text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200"
                                             onMouseEnter={e => {
                                                 e.currentTarget.style.borderColor = color.bg
                                                 e.currentTarget.style.color = color.bg
@@ -796,23 +709,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     {/* Add Class button */}
                     <button
                         onClick={addClass}
-                        style={{
-                            width: '100%',
-                            padding: '16px 0',
-                            borderRadius: 16,
-                            border: '2px dashed var(--ml-border-strong)',
-                            background: 'transparent',
-                            color: 'var(--ml-text-secondary)',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            transition: 'all 0.2s ease'
-                        }}
+                        className="w-full py-4 rounded-2xl border-2 border-dashed border-ml-border-strong bg-transparent text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-200"
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = '#7c3aed'
                             e.currentTarget.style.color = '#a78bfa'
@@ -845,37 +742,22 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 />
 
                 {/* Divider */}
-                <div style={{ width: 32, display: 'flex', alignItems: 'center', paddingTop: 64 }}>
-                    <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #7c3aed40, transparent)' }} />
+                <div className="w-8 flex items-center pt-16">
+                    <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, #7c3aed40, transparent)' }} />
                 </div>
 
                 {/* Testing Panel */}
-                <div style={{
-                    width: 256,
-                    background: 'var(--ml-surface)',
-                    border: '1px solid var(--ml-border)',
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    flexShrink: 0
-                }}>
+                <div className="w-64 bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0">
                     {/* Header */}
-                    <div style={{
-                        background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
-                        padding: '14px 16px'
-                    }}>
-                        <span style={{
-                            color: '#fff',
-                            fontWeight: 700,
-                            fontSize: 14,
-                            fontFamily: "'DM Sans', sans-serif"
-                        }}>Testing</span>
+                    <div className="px-4 py-3.5" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)' }}>
+                        <span className="text-white font-bold text-sm font-sans">Testing</span>
                     </div>
 
-                    <div style={{ padding: 20 }}>
+                    <div className="p-5">
                         {!trained ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                            <div className="flex flex-col items-center text-center">
                                 {/* Camera + hand illustration */}
-                                <svg width="80" height="64" viewBox="0 0 80 64" fill="none" style={{ opacity: 0.4, marginBottom: 12 }}>
+                                <svg width="80" height="64" viewBox="0 0 80 64" fill="none" className="opacity-40 mb-3">
                                     {/* Camera body */}
                                     <rect x="18" y="16" width="44" height="32" rx="4" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
                                     <circle cx="40" cy="32" r="10" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
@@ -885,71 +767,25 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                     {/* Question mark */}
                                     <text x="62" y="28" fontSize="16" fill="#7c3aed" opacity="0.5" fontWeight="bold">?</text>
                                 </svg>
-                                <p style={{
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontSize: 12,
-                                    color: 'var(--ml-text-muted)',
-                                    lineHeight: 1.6,
-                                    margin: 0
-                                }}>
+                                <p className="font-sans text-xs text-ml-text-muted leading-relaxed m-0">
                                     Train your hand pose model first
                                 </p>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div className="flex flex-col gap-3">
                                 {/* Success indicator */}
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    background: 'var(--ml-success-bg)',
-                                    border: '1px solid var(--ml-success-border)',
-                                    borderRadius: 10,
-                                    padding: '10px 12px'
-                                }}>
-                                    <div style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        background: 'var(--ml-success-dot)',
-                                        boxShadow: '0 0 8px var(--ml-success-dot)'
-                                    }} />
-                                    <span style={{
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontSize: 12,
-                                        color: 'var(--ml-success-text)',
-                                        fontWeight: 600
-                                    }}>Model ready</span>
+                                <div className="flex items-center gap-2 bg-ml-success-bg border border-ml-success-border rounded-[10px] py-2.5 px-3">
+                                    <div className="w-2 h-2 rounded-full bg-ml-success-dot" style={{ boxShadow: '0 0 8px var(--ml-success-dot)' }} />
+                                    <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
                                 </div>
 
                                 {/* Instructions */}
-                                <div style={{
-                                    background: 'var(--ml-well)',
-                                    borderRadius: 10,
-                                    padding: 12,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 8
-                                }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        fontSize: 11,
-                                        color: 'var(--ml-text-secondary)',
-                                        fontFamily: "'DM Sans', sans-serif"
-                                    }}>
+                                <div className="bg-ml-well rounded-[10px] p-3 flex flex-col gap-2">
+                                    <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
                                         <Camera size={12} />
                                         Show hand gestures to camera
                                     </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        fontSize: 11,
-                                        color: 'var(--ml-text-secondary)',
-                                        fontFamily: "'DM Sans', sans-serif"
-                                    }}>
+                                    <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
                                         <Hand size={12} />
                                         Results appear in real-time
                                     </div>
@@ -959,75 +795,28 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                                 <button onClick={() => {
                                     if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
                                     setShowPredictModal(true)
-                                }} style={{
-                                    width: '100%',
-                                    padding: '11px 0',
-                                    borderRadius: 10,
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-                                    color: '#fff',
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontWeight: 700,
-                                    fontSize: 13,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 6,
-                                    boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
-                                    transition: 'all 0.2s ease'
-                                }}>
+                                }} className="w-full py-[11px] rounded-[10px] border-none bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-sans font-bold text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200" style={{ boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
                                     <Camera size={14} />
                                     Capture & Predict
                                 </button>
 
                                 {/* Prediction results placeholder */}
                                 {testResult && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 6
-                                        }}>
-                                            <div style={{
-                                                width: 6,
-                                                height: 6,
-                                                borderRadius: '50%',
-                                                background: 'var(--ml-success-dot)',
-                                                animation: 'pulse 2s infinite'
-                                            }} />
-                                            <span style={{
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 12,
-                                                color: 'var(--ml-text-primary)',
-                                                fontWeight: 600
-                                            }}>{testResult.label}</span>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-ml-success-dot" style={{ animation: 'pulse 2s infinite' }} />
+                                            <span className="font-sans text-xs text-ml-text-primary font-semibold">{testResult.label}</span>
                                         </div>
                                         {Object.entries(testResult.confidences).map(([label, conf]) => (
                                             <div key={label}>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    fontSize: 10,
-                                                    marginBottom: 3
-                                                }}>
-                                                    <span style={{ color: 'var(--ml-text-secondary)' }}>{label}</span>
-                                                    <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace" }}>
+                                                <div className="flex justify-between text-[10px] mb-[3px]">
+                                                    <span className="text-ml-text-secondary">{label}</span>
+                                                    <span className="text-ml-text-secondary font-mono">
                                                         {Math.round((conf as number) * 100)}%
                                                     </span>
                                                 </div>
-                                                <div style={{
-                                                    height: 3,
-                                                    background: 'var(--ml-well)',
-                                                    borderRadius: 2,
-                                                    overflow: 'hidden'
-                                                }}>
-                                                    <div style={{
-                                                        height: '100%',
-                                                        width: `${(conf as number) * 100}%`,
-                                                        background: 'linear-gradient(90deg, #7c3aed, #a78bfa)',
-                                                        borderRadius: 2
-                                                    }} />
+                                                <div className="h-[3px] bg-ml-well rounded-sm overflow-hidden">
+                                                    <div className="h-full rounded-sm bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]" style={{ width: `${(conf as number) * 100}%` }} />
                                                 </div>
                                             </div>
                                         ))}

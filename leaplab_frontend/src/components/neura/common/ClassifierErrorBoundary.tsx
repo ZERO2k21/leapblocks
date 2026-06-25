@@ -30,106 +30,42 @@ export default class ClassifierErrorBoundary extends React.Component<Props, Stat
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '100%',
-                    padding: '40px 20px',
-                    background: 'var(--ml-bg)',
-                    color: 'var(--ml-text-primary)',
-                    fontFamily: "'DM Sans', sans-serif",
-                }}>
-                    <div style={{
-                        background: 'var(--ml-surface)',
-                        border: '1px solid var(--ml-border)',
-                        borderRadius: 16,
-                        padding: '40px 32px',
-                        maxWidth: 480,
-                        width: '100%',
-                        textAlign: 'center',
-                        boxShadow: 'var(--ml-card-shadow)',
-                    }}>
-                        <div style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: '50%',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 20px',
-                        }}>
+                <div className="flex flex-col items-center justify-center min-h-full py-10 px-5 bg-ml-bg text-ml-text-primary font-sans">
+                    <div className="bg-ml-surface border border-ml-border rounded-2xl py-10 px-8 max-w-[480px] w-full text-center shadow-ml-card">
+                        <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-5">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="15" y1="9" x2="9" y2="15" />
                                 <line x1="9" y1="9" x2="15" y2="15" />
                             </svg>
                         </div>
-                        <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>
+                        <h2 className="m-0 mb-2 text-xl font-semibold">
                             Something went wrong
                         </h2>
-                        <p style={{ margin: '0 0 24px', fontSize: 14, color: 'var(--ml-text-secondary)', lineHeight: 1.5 }}>
+                        <p className="m-0 mb-6 text-sm text-ml-text-secondary leading-relaxed">
                             The classifier encountered an unexpected error. Your collected samples are still saved.
                         </p>
                         {this.state.error && (
-                            <details style={{
-                                marginBottom: 24,
-                                textAlign: 'left',
-                            }}>
-                                <summary style={{
-                                    cursor: 'pointer',
-                                    fontSize: 13,
-                                    color: 'var(--ml-text-muted)',
-                                    marginBottom: 8,
-                                }}>
+                            <details className="mb-6 text-left">
+                                <summary className="cursor-pointer text-[13px] text-ml-text-muted mb-2">
                                     Error details
                                 </summary>
-                                <pre style={{
-                                    background: 'var(--ml-well)',
-                                    border: '1px solid var(--ml-border)',
-                                    borderRadius: 8,
-                                    padding: 12,
-                                    fontSize: 12,
-                                    color: 'var(--ml-error-text)',
-                                    overflow: 'auto',
-                                    margin: 0,
-                                    fontFamily: "'DM Mono', monospace",
-                                }}>
+                                <pre className="bg-ml-well border border-ml-border rounded-lg p-3 text-xs text-ml-error-text overflow-auto m-0 font-mono">
                                     {this.state.error.message}
                                 </pre>
                             </details>
                         )}
-                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                        <div className="flex gap-3 justify-center">
                             <button
                                 onClick={this.handleReset}
-                                style={{
-                                    padding: '10px 24px',
-                                    borderRadius: 10,
-                                    border: '1px solid var(--ml-border)',
-                                    background: 'var(--ml-surface)',
-                                    color: 'var(--ml-text-primary)',
-                                    fontSize: 14,
-                                    fontWeight: 500,
-                                    cursor: 'pointer',
-                                }}
+                                className="px-6 py-2.5 rounded-[10px] border border-ml-border bg-ml-surface text-ml-text-primary text-sm font-medium cursor-pointer"
                             >
                                 Try Again
                             </button>
                             {this.props.onBackToDashboard && (
                                 <button
                                     onClick={this.props.onBackToDashboard}
-                                    style={{
-                                        padding: '10px 24px',
-                                        borderRadius: 10,
-                                        border: 'none',
-                                        background: 'var(--ml-accent)',
-                                        color: '#fff',
-                                        fontSize: 14,
-                                        fontWeight: 500,
-                                        cursor: 'pointer',
-                                    }}
+                                    className="px-6 py-2.5 rounded-[10px] border-none bg-ml-accent text-white text-sm font-medium cursor-pointer"
                                 >
                                     Back to Dashboard
                                 </button>

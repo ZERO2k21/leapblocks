@@ -489,7 +489,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         className="flex items-center gap-2 hover:opacity-80 transition"
                     >
                         <ArrowLeft size={18} />
-                        <Logo height={42} />
+                        <Logo height={48} />
                     </button>
                     <div className="w-px h-5 bg-white/30" />
                     <span className="text-sm opacity-85 font-extrabold tracking-widest text-yellow-400">NOTEBOOK</span>
@@ -549,7 +549,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                             src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                             alt="CREOLEAP"
                             style={{
-                                width: '85px',
+                                width: '145px',
                                 height: 'auto',
                                 objectFit: 'contain',
                                 display: 'block',
