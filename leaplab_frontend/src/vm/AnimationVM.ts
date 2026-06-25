@@ -2539,9 +2539,15 @@ export class AnimationVM {
         if (target === '_mouse_') {
             targetX = this.mouseX;
             targetY = this.mouseY;
+        } else if (target === '_edge_') {
+            const minX = Math.abs(fromSprite.x - (-240));
+            const maxX = Math.abs(fromSprite.x - 240);
+            const minY = Math.abs(fromSprite.y - (-155));
+            const maxY = Math.abs(fromSprite.y - 155);
+            return Math.min(minX, maxX, minY, maxY);
         } else {
             const targetSprite = spriteManager.getSprite(target) || spriteManager.getSpriteByName(target);
-            if (!targetSprite) return 0;
+            if (!targetSprite) return 10000;
             targetX = targetSprite.x;
             targetY = targetSprite.y;
         }
@@ -2570,8 +2576,9 @@ export class AnimationVM {
                 Math.abs(this.mouseY - fromSprite.y) < hh;
         } else if (target === '_edge_') {
             const { hw, hh } = getHalfDims(fromSprite);
+            // Stage bounds: X from -240 to 240, Y from -155 to 155 (480x310)
             return (fromSprite.x + hw) >= 240 || (fromSprite.x - hw) <= -240 ||
-                (fromSprite.y + hh) >= 180 || (fromSprite.y - hh) <= -180;
+                (fromSprite.y + hh) >= 155 || (fromSprite.y - hh) <= -155;
         }
 
         // Sprite-to-sprite collision: find target by name (supports clones too)

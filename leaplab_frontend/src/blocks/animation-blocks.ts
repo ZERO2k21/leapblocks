@@ -957,7 +957,7 @@ export const animationBlocks = [
             type: 'field_dropdown',
             name: 'OBJECT',
             options: () => {
-                const baseOptions: [string, string][] = [['mouse-pointer', '_mouse_']];
+                const baseOptions: [string, string][] = [['mouse-pointer', '_mouse_'], ['edge', '_edge_']];
                 if (typeof window !== 'undefined' && (window as any).getAllSpriteNames) {
                     const names: string[] = (window as any).getAllSpriteNames();
                     if (names && names.length > 0) {
