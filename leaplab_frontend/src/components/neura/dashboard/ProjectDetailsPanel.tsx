@@ -5,26 +5,15 @@
 
 import React from 'react';
 import { NeuraProject } from '../../../types/neura.types';
-import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot, ExternalLink, Trash2, FolderOpen, Calendar, Layers, Clock, CheckCircle, Brain } from 'lucide-react';
+import { ExternalLink, Trash2, Calendar, Layers, Clock, CheckCircle, Brain } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { projectTypeConfig, fallbackConfig } from '../config/projectTypeConfig';
 
 interface ProjectDetailsPanelProps {
     project: NeuraProject | null;
     onOpenProject: (project: NeuraProject) => void;
     onDeleteProject: (projectId: string) => void;
 }
-
-const typeConfig: Record<string, { icon: LucideIcon; label: string; accentBorder: string }> = {
-    'image-classifier': { icon: Image, label: 'Image Classifier', accentBorder: '#6366f1' },
-    'object-detection': { icon: ScanSearch, label: 'Object Detection', accentBorder: '#f97316' },
-    'pose-classifier': { icon: PersonStanding, label: 'Pose Classifier', accentBorder: '#22c55e' },
-    'hand-pose-classifier': { icon: Hand, label: 'Hand Pose', accentBorder: '#06b6d4' },
-    'audio-classifier': { icon: AudioLines, label: 'Audio Classifier', accentBorder: '#ef4444' },
-    'numbers-cr': { icon: Calculator, label: 'Numbers CR', accentBorder: '#a855f7' },
-    'text-classifier': { icon: FileText, label: 'Text Classifier', accentBorder: '#3b82f6' },
-};
-
-const fallbackConfig = { icon: Bot, label: 'Unknown', accentBorder: '#6b7280' };
 
 function formatDateFull(ts: number): string {
     return new Date(ts).toLocaleDateString('en-US', {
@@ -61,7 +50,7 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
         );
     }
 
-    const config = typeConfig[project.type] || fallbackConfig;
+    const config = projectTypeConfig[project.type] || fallbackConfig;
     const Icon = config.icon;
 
     return (

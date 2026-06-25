@@ -127,13 +127,26 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
         setLoading(true)
         setLoadProgress(0)
         try {
+            // Start camera in parallel with model load so feed is warm when model is ready
+            const streamPromise = navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
             setLoadProgress(15)
-            await ensureTf()
-            setLoadProgress(45)
-            const cocoSsd = await ensureCocoSsd()
-            setLoadProgress(70)
-            modelRef.current = await cocoSsd.load()
-            setLoadProgress(100)
+            const [cocoSsd, stream] = await Promise.all([
+                (async () => {
+                    await ensureTf()
+                    setLoadProgress(45)
+                    const cs = await ensureCocoSsd()
+                    setLoadProgress(70)
+                    const model = await cs.load()
+                    setLoadProgress(100)
+                    return model
+                })(),
+                streamPromise.catch(() => null),
+            ])
+            modelRef.current = cocoSsd
+            if (stream && videoRef.current) {
+                streamRef.current = stream
+                videoRef.current.srcObject = stream
+            }
             setModelReady(true)
         } catch (e) { console.error('COCO-SSD load failed:', e) }
         setLoading(false)
@@ -141,9 +154,11 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
 
     const startDetection = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
-            streamRef.current = stream
-            if (videoRef.current) videoRef.current.srcObject = stream
+            if (!streamRef.current) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+                streamRef.current = stream
+                if (videoRef.current) videoRef.current.srcObject = stream
+            }
             setRunning(true)
             fpsFrames.current = []
             const detect = async () => {

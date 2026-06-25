@@ -193,22 +193,20 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
         return () => clearTimeout(timer)
     }, [classes, trained, nextId, epochs])
 
-    // Load MoveNet
-    useEffect(() => {
-        const load = async () => {
-            try {
-                if (window._poseDetReady) { setPoseDetReady(true); return }
-                const poseDetection = await ensurePoseDetection()
-                const detector = await poseDetection.createDetector(
-                    poseDetection.SupportedModels.MoveNet,
-                    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
-                )
-                detectorRef.current = detector
-                window._poseDetReady = true
-                setPoseDetReady(true)
-            } catch (e) { console.error('Pose det load failed:', e) }
-        }
-        load()
+    // Load MoveNet on demand (first camera open)
+    const ensureDetector = useCallback(async () => {
+        if (detectorRef.current) return detectorRef.current
+        try {
+            const poseDetection = await ensurePoseDetection()
+            const detector = await poseDetection.createDetector(
+                poseDetection.SupportedModels.MoveNet,
+                { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+            )
+            detectorRef.current = detector
+            window._poseDetReady = true
+            setPoseDetReady(true)
+            return detector
+        } catch (e) { console.error('Pose det load failed:', e); return null }
     }, [])
 
     const startWebcam = async (classId: number) => {
@@ -234,17 +232,18 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     }, [])
 
     const capturePose = useCallback(async () => {
-        if (!detectorRef.current || !videoRef.current || capturing === null) return
+        const detector = detectorRef.current || await ensureDetector()
+        if (!detector || !videoRef.current || capturing === null) return
         const video = videoRef.current
         if (!video.videoWidth || !video.videoHeight) return
         try {
-            const poses = await detectorRef.current.estimatePoses(video)
+            const poses = await detector.estimatePoses(video)
             if (poses.length > 0) {
                 const keypoints = poses[0].keypoints.map((k: any) => [k.x, k.y, k.score])
                 setClasses(p => p.map(c => c.id === capturing ? { ...c, samples: [...c.samples, keypoints] } : c))
             }
         } catch (e) { console.error(e) }
-    }, [capturing])
+    }, [capturing, ensureDetector])
 
     const normalizeKeypoints = useCallback((keypoints: number[][]): number[] => {
         const flat = keypoints.flat()
@@ -275,16 +274,15 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                     }
                     loaded++
                     setProgress(Math.round((loaded / total) * 100))
-                    await new Promise(r => setTimeout(r, 10))
                 }
             }
 
             let correct = 0, evaluated = 0
+            const tf = await ensureTf()
             for (const cls of classes) {
                 for (const kps of cls.samples) {
                     const normalized = normalizeKeypoints(kps)
                     if (normalized.length === 0) continue
-                    const tf = await ensureTf()
                     const emb = tf.tensor1d(new Float32Array(normalized))
                     const pred = await knn.predictClass(emb, 3)
                     emb.dispose()

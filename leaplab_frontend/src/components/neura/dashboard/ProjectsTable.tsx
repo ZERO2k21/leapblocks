@@ -5,9 +5,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { NeuraProject } from '../../../types/neura.types';
-import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot, MoreVertical, Pencil, Trash2, Download, ExternalLink } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Download, ExternalLink } from 'lucide-react';
 import { useNeuraTheme } from '../common/NeuraThemeContext';
+import { projectTypeConfig, fallbackConfig } from '../config/projectTypeConfig';
 
 interface ProjectsTableProps {
     projects: NeuraProject[];
@@ -16,18 +16,6 @@ interface ProjectsTableProps {
     onRenameProject?: (project: NeuraProject) => void;
     onDownloadProject?: (project: NeuraProject) => void;
 }
-
-const typeConfig: Record<string, { icon: LucideIcon; label: string; badgeBg: string; badgeText: string; badgeBorder: string; accentBorder: string }> = {
-    'image-classifier': { icon: Image, label: 'Image Classifier', badgeBg: 'bg-blue-50', badgeText: 'text-blue-700', badgeBorder: 'border-blue-200', accentBorder: '#6366f1' },
-    'object-detection': { icon: ScanSearch, label: 'Object Detection', badgeBg: 'bg-orange-50', badgeText: 'text-orange-700', badgeBorder: 'border-orange-200', accentBorder: '#f97316' },
-    'pose-classifier': { icon: PersonStanding, label: 'Pose Classifier', badgeBg: 'bg-green-50', badgeText: 'text-green-700', badgeBorder: 'border-green-200', accentBorder: '#22c55e' },
-    'hand-pose-classifier': { icon: Hand, label: 'Hand Pose', badgeBg: 'bg-cyan-50', badgeText: 'text-cyan-700', badgeBorder: 'border-cyan-200', accentBorder: '#06b6d4' },
-    'audio-classifier': { icon: AudioLines, label: 'Audio Classifier', badgeBg: 'bg-rose-50', badgeText: 'text-rose-700', badgeBorder: 'border-rose-200', accentBorder: '#ef4444' },
-    'numbers-cr': { icon: Calculator, label: 'Numbers CR', badgeBg: 'bg-purple-50', badgeText: 'text-purple-700', badgeBorder: 'border-purple-200', accentBorder: '#a855f7' },
-    'text-classifier': { icon: FileText, label: 'Text Classifier', badgeBg: 'bg-sky-50', badgeText: 'text-sky-700', badgeBorder: 'border-sky-200', accentBorder: '#3b82f6' },
-};
-
-const fallbackConfig = { icon: Bot, label: 'Unknown', badgeBg: 'bg-gray-50', badgeText: 'text-gray-700', badgeBorder: 'border-gray-200', accentBorder: '#6b7280' };
 
 function formatDateFull(ts: number): string {
     return new Date(ts).toLocaleDateString('en-US', {
@@ -133,7 +121,7 @@ function MobileProjectCard({
     onRename?: () => void;
     onDownload?: () => void;
 }) {
-    const config = typeConfig[project.type] || fallbackConfig;
+    const config = projectTypeConfig[project.type] || fallbackConfig;
     const Icon = config.icon;
     const { isDark } = useNeuraTheme();
 
@@ -245,7 +233,7 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                         </thead>
                         <tbody>
                             {projects.map((project, idx) => {
-                                const config = typeConfig[project.type] || fallbackConfig;
+                                const config = projectTypeConfig[project.type] || fallbackConfig;
                                 const Icon = config.icon;
                                 return (
                                     <tr

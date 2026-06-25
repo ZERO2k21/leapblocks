@@ -28,6 +28,7 @@ export class KNNClassifier {
             const prev = this.examples[label]
             this.examples[label] = tf.concat([prev, ex], 0)
             prev.dispose()
+            ex.dispose()
         }
     }
 

@@ -5,25 +5,12 @@
 
 import React from 'react';
 import { NeuraProject } from '../../../types/neura.types';
-import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, Bot } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { projectTypeConfig, fallbackConfig } from '../config/projectTypeConfig';
 
 interface ProjectCardProps {
     project: NeuraProject;
     onClick?: () => void;
 }
-
-const projectConfig: Record<string, { icon: LucideIcon; gradient: string; glow: string; accentBorder: string }> = {
-    'image-classifier': { icon: Image, gradient: 'from-blue-500 to-indigo-600', glow: 'shadow-blue-500/25', accentBorder: '#6366f1' },
-    'object-detection': { icon: ScanSearch, gradient: 'from-amber-400 to-orange-500', glow: 'shadow-orange-500/25', accentBorder: '#f97316' },
-    'pose-classifier': { icon: PersonStanding, gradient: 'from-emerald-400 to-green-500', glow: 'shadow-green-500/25', accentBorder: '#22c55e' },
-    'hand-pose-classifier': { icon: Hand, gradient: 'from-teal-400 to-cyan-500', glow: 'shadow-cyan-500/25', accentBorder: '#06b6d4' },
-    'audio-classifier': { icon: AudioLines, gradient: 'from-rose-400 to-red-500', glow: 'shadow-red-500/25', accentBorder: '#ef4444' },
-    'numbers-cr': { icon: Calculator, gradient: 'from-violet-400 to-purple-500', glow: 'shadow-purple-500/25', accentBorder: '#a855f7' },
-    'text-classifier': { icon: FileText, gradient: 'from-sky-400 to-blue-500', glow: 'shadow-blue-500/25', accentBorder: '#3b82f6' },
-};
-
-const fallbackConfig = { icon: Bot, gradient: 'from-gray-400 to-gray-500', glow: 'shadow-gray-500/25', accentBorder: '#6b7280' };
 
 function getRelativeTime(date: number): string {
     const diff = Date.now() - date;
@@ -38,7 +25,7 @@ function getRelativeTime(date: number): string {
 }
 
 export default function ProjectCard({ project, onClick }: ProjectCardProps) {
-    const config = projectConfig[project.type] || fallbackConfig;
+    const config = projectTypeConfig[project.type] || fallbackConfig;
     const IconComp = config.icon;
 
     return (

@@ -203,12 +203,13 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
             if (allTexts.length === 0) { setStatus('idle'); return }
             const embeddings = await embedTexts(allTexts)
             let loaded = 0
+            let idx = 0
             for (const item of textToClass) {
-                const idx = allTexts.indexOf(item.text)
                 const emb = embeddings.slice([idx, 0], [1, -1]).squeeze(0)
                 await knn.addExample(emb, item.className)
                 emb.dispose()
                 loaded++
+                idx++
                 setProgress(Math.round((loaded / allTexts.length) * 100))
                 await new Promise(r => setTimeout(r, 5))
             }

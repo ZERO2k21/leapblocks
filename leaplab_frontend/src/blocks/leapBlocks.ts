@@ -1470,7 +1470,7 @@ const leapBlocks = [
         type: 'data_deleteoflist',
         message0: 'delete %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
             {
                 type: 'field_variable',
                 name: 'LIST',
@@ -1545,7 +1545,7 @@ const leapBlocks = [
         type: 'data_itemoflist',
         message0: 'item %1 of %2',
         args0: [
-            { type: 'input_value', name: 'INDEX', check: 'Number' },
+            { type: 'field_input', name: 'INDEX', text: '1' },
             {
                 type: 'field_variable',
                 name: 'LIST',
@@ -1706,6 +1706,131 @@ const leapBlocks = [
         tooltip: 'Reports the contents of a table.',
         helpUrl: ''
     },
+    {
+        type: 'data_showtable',
+        message0: 'show table %1 as %2',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            { type: 'field_dropdown', name: 'FORMAT', options: [['stage', 'stage'], ['bar chart', 'bar'], ['line chart', 'line']] }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Shows the table on stage in the specified format.'
+    },
+    {
+        type: 'data_hidetable',
+        message0: 'hide table %1',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Hides the table from the stage.'
+    },
+    {
+        type: 'data_setintable',
+        message0: 'set in table %1 column %2 row %3 value %4',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' },
+            { type: 'field_number', name: 'COLUMN', value: 1, min: 1 },
+            { type: 'field_number', name: 'ROW', value: 1, min: 1 },
+            { type: 'field_input', name: 'VALUE', text: '0' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Sets a value in the table at the specified column and row.'
+    },
+    {
+        type: 'data_addcolumn',
+        message0: 'add column %1 to table %2',
+        args0: [
+            { type: 'field_input', name: 'COLUMN', text: 'new col' },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Adds a new column to the table.'
+    },
+    {
+        type: 'data_deletecolumn',
+        message0: 'delete column %1 from table %2',
+        args0: [
+            { type: 'field_number', name: 'COLUMN', value: 1, min: 1 },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Deletes a column from the table.'
+    },
+    {
+        type: 'data_deleterow',
+        message0: 'delete row %1 from table %2',
+        args0: [
+            { type: 'field_number', name: 'ROW', value: 1, min: 1 },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Deletes a row from the table.'
+    },
+    {
+        type: 'data_cleartable',
+        message0: 'clear table %1',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Clears all data from the table.'
+    },
+    {
+        type: 'data_getvalueattable',
+        message0: 'get value at column %1 row %2 from %3',
+        args0: [
+            { type: 'field_number', name: 'COLUMN', value: 1, min: 1 },
+            { type: 'field_number', name: 'ROW', value: 1, min: 1 },
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Reports the value at the specified column and row.'
+    },
+    {
+        type: 'data_gettablecount',
+        message0: 'table %1 row count',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        output: 'Number',
+        colour: '#FF8C1A',
+        tooltip: 'Reports the number of rows in the table.'
+    },
+    {
+        type: 'data_gettimestamp',
+        message0: 'get timestamp',
+        args0: [],
+        output: 'String',
+        colour: '#FF8C1A',
+        tooltip: 'Reports the current timestamp.'
+    },
+    {
+        type: 'data_exporttable',
+        message0: 'export %1 as csv file',
+        args0: [
+            { type: 'field_variable', name: 'TABLE', variable: 'my table', variableTypes: ['table'], defaultType: 'table' }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        colour: '#FF8C1A',
+        tooltip: 'Exports the table as a CSV file.'
+    },
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MY BLOCKS (Custom procedures)
@@ -1747,7 +1872,7 @@ export const registerleapBlocks = () => {
     // Step 1: Force-register ALL blocks (overwrite any clobbered definitions from other modes)
     // Without this, switching from Junior→Intermediate leaves stale Junior block definitions
     // (e.g. looks_say with dropdown instead of input_value) which causes MissingConnection errors.
-    Blockly.common.defineBlocks(leapBlocks);
+    Blockly.common.defineBlocksWithJsonArray(leapBlocks);
 
     // Step 2: Register broadcast blocks imperatively (they need dynamic dropdown + extension)
     const broadcastOptions = () => {
