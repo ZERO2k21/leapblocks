@@ -423,7 +423,7 @@ export default function MenuBar({
                     display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
                     filter: 'drop-shadow(0 0 12px rgba(80,180,255,0.25)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
                 }}>
-                    <Logo height={36} />
+                    <Logo height={48} />
                     <div style={{ lineHeight: 1.1 }}>
                         <div style={{
                             color: '#FFD500', fontSize: 8, fontWeight: 900,
@@ -604,13 +604,7 @@ export default function MenuBar({
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                         alt="CREOLEAP"
                         style={{
-                            /* SVG is 375×375 square. Render at 120px wide so both
-                             * the H vector (top) and text (bottom) are visible.
-                             * height: auto keeps the square aspect ratio.
-                             * marginTop shifts it up slightly to center the H mark
-                             * in the 60px topbar viewport.
-                             */
-                            width: '120px',
+                            width: '145px',
                             height: 'auto',
                             objectFit: 'contain',
                             display: 'block',

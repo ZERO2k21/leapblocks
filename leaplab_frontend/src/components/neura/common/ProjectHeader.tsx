@@ -58,7 +58,7 @@ export default function ProjectHeader({
                     <img
                         alt="LeapLab"
                         src="assets/leaplab_logo_transparent.png"
-                        className="h-[36px] sm:h-[52px] object-contain"
+                        className="h-12 object-contain"
                     />
                     <div className="flex flex-col justify-center ml-1.5 sm:ml-2.5 leading-[1.1]">
                         <span className="text-yellow-400 text-[7px] sm:text-[8px] font-[900] uppercase tracking-[0.18em] font-['Segoe_UI',Inter,sans-serif] hidden sm:block">
@@ -113,7 +113,7 @@ export default function ProjectHeader({
             </div>
 
             {/* ── RIGHT SECTION ───────────────────────────────────────────────────────── */}
-            <div className="relative flex items-center justify-end gap-3 sm:gap-5 flex-[1_1_0%] min-w-0">
+            <div className="relative flex items-center justify-end gap-4 sm:gap-6 flex-[1_1_0%] min-w-0">
                 {onUploadFolder && (
                     <button
                         onClick={onUploadFolder}
@@ -123,52 +123,52 @@ export default function ProjectHeader({
                     </button>
                 )}
 
-                <div className="hidden sm:flex items-center gap-3.5 pr-4 border-r border-white/10 h-8 shrink-0">
+                <div className="hidden sm:flex items-center gap-4 pr-4 border-r border-white/10 h-9 shrink-0">
                     <button title="Feedback" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
-                        <MessageSquareWarning size={20} strokeWidth={2.2} />
+                        <MessageSquareWarning size={22} strokeWidth={2.2} />
                     </button>
                     <button title="Achievements" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
-                        <Trophy size={20} strokeWidth={2.2} />
+                        <Trophy size={22} strokeWidth={2.2} />
                     </button>
                     <button
                         title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                         onClick={toggleTheme}
                         className="bg-transparent border-none text-white/60 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-all duration-200 flex items-center hover:scale-110 active:scale-95"
                     >
-                        {isDark ? <Sun size={18} strokeWidth={2.2} /> : <Moon size={18} strokeWidth={2.2} />}
+                        {isDark ? <Sun size={20} strokeWidth={2.2} /> : <Moon size={20} strokeWidth={2.2} />}
                     </button>
                     <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
-                        <Settings size={20} strokeWidth={2.2} />
+                        <Settings size={22} strokeWidth={2.2} />
                     </button>
                     <button title="Help" className="bg-transparent border-none text-white/50 cursor-pointer p-0 transition-all duration-200 flex items-center hover:text-white/90 hover:scale-110 active:scale-95">
-                        <HelpCircle size={20} strokeWidth={2.2} />
+                        <HelpCircle size={22} strokeWidth={2.2} />
                     </button>
                 </div>
 
                 {/* Mobile: compact icon buttons */}
-                <div className="flex sm:hidden items-center gap-2">
+                <div className="flex sm:hidden items-center gap-2.5">
                     <button
                         title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                         onClick={toggleTheme}
                         className="bg-transparent border-none text-white/60 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-all duration-200 flex items-center active:scale-95"
                     >
-                        {isDark ? <Sun size={18} strokeWidth={2.2} /> : <Moon size={18} strokeWidth={2.2} />}
+                        {isDark ? <Sun size={20} strokeWidth={2.2} /> : <Moon size={20} strokeWidth={2.2} />}
                     </button>
                     <button title="Settings" className="bg-transparent border-none text-white/50 cursor-pointer p-1 transition-all duration-200 flex items-center hover:text-white/90 active:scale-95">
-                        <Settings size={18} strokeWidth={2.2} />
+                        <Settings size={20} strokeWidth={2.2} />
                     </button>
                     <button title="Help" className="bg-transparent border-none text-white/50 cursor-pointer p-1 transition-all duration-200 flex items-center hover:text-white/90 active:scale-95">
-                        <HelpCircle size={18} strokeWidth={2.2} />
+                        <HelpCircle size={20} strokeWidth={2.2} />
                     </button>
                 </div>
 
-                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '30px', borderRadius: '8px', boxSizing: 'border-box' }} />
+                <LeapLabAuthButton variant="dark" style={{ height: '34px', borderRadius: '8px', boxSizing: 'border-box', fontSize: '13px' }} />
 
-                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-11 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <img
                         alt="Leap into the AI Future"
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        className="w-[95px] h-auto object-contain block shrink-0 brightness-120 contrast-110 drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
+                        className="w-[145px] h-auto object-contain block shrink-0 brightness-120 contrast-110 drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
                     />
                 </div>
             </div>

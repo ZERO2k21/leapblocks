@@ -108,7 +108,7 @@ export default function TopBar() {
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     ctx.onBack();
                 }}>
-                    <Logo height={50} />
+                    <Logo height={48} />
                     <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>Logix</span>
                 </div>
                 <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
@@ -283,7 +283,7 @@ export default function TopBar() {
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                         alt="CREOLEAP"
                         style={{
-                            width: '95px',
+                            width: '145px',
                             height: 'auto',
                             objectFit: 'contain',
                             display: 'block',

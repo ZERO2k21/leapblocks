@@ -67,7 +67,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
 
                 {/* Logo + App Name */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8, flexShrink: 0 }}>
-                    <Logo height={43} />
+                    <Logo height={48} />
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -301,7 +301,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
                         alt="CREOLEAP"
                         style={{
-                            width: '88px',
+                            width: '145px',
                             height: 'auto',
                             objectFit: 'contain',
                             display: 'block',
