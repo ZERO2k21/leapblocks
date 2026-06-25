@@ -27,12 +27,12 @@ function formatDateFull(ts: number): string {
 
 function DetailCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string; color: string }) {
     return (
-        <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/60">
+        <div className="bg-ml-well rounded-xl p-4 border border-ml-border">
             <div className="flex items-center gap-2 mb-1.5">
                 <Icon size={13} style={{ color }} strokeWidth={2.2} />
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+                <span className="text-[10px] font-semibold text-ml-text-muted uppercase tracking-wider">{label}</span>
             </div>
-            <p className="text-sm font-bold text-[#0a015a]">{value}</p>
+            <p className="text-sm font-bold text-ml-text-primary">{value}</p>
         </div>
     );
 }
@@ -40,12 +40,12 @@ function DetailCard({ icon: Icon, label, value, color }: { icon: LucideIcon; lab
 export default function ProjectDetailsPanel({ project, onOpenProject, onDeleteProject }: ProjectDetailsPanelProps) {
     if (!project) {
         return (
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] flex flex-col items-center justify-center min-h-[400px]">
+            <div className="flex-1 bg-ml-surface rounded-2xl border border-ml-border shadow-[0_2px_16px_rgba(10,1,90,0.04)] flex flex-col items-center justify-center min-h-[400px]">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7C3AED]/10 to-[#4F46E5]/5 flex items-center justify-center mb-4">
                     <Brain size={28} className="text-[#7C3AED]" strokeWidth={1.5} />
                 </div>
-                <p className="text-sm text-gray-400 font-medium">Select a project to view details</p>
-                <p className="text-xs text-gray-300 mt-1">Click on any project from the list</p>
+                <p className="text-sm text-ml-text-muted font-medium">Select a project to view details</p>
+                <p className="text-xs text-ml-text-muted mt-1">Click on any project from the list</p>
             </div>
         );
     }
@@ -54,9 +54,9 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
     const Icon = config.icon;
 
     return (
-        <div className="flex-1 bg-white rounded-2xl border border-gray-100/80 shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col min-h-[400px]">
+        <div className="flex-1 bg-ml-surface rounded-2xl border border-ml-border shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col min-h-[400px]">
             {/* Header with gradient accent */}
-            <div className="relative px-6 pt-6 pb-5 border-b border-gray-100">
+            <div className="relative px-6 pt-6 pb-5 border-b border-ml-border">
                 <div
                     className="absolute top-0 left-0 right-0 h-1 opacity-60"
                     style={{ background: `linear-gradient(90deg, ${config.accentBorder}, ${config.accentBorder}80)` }}
@@ -73,8 +73,8 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
                             <Icon size={22} style={{ color: config.accentBorder }} strokeWidth={2} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-[#0a015a] tracking-tight">{project.name}</h2>
-                            <p className="text-xs text-gray-400 font-medium mt-0.5">{config.label}</p>
+                            <h2 className="text-lg font-bold text-ml-text-primary tracking-tight">{project.name}</h2>
+                            <p className="text-xs text-ml-text-muted font-medium mt-0.5">{config.label}</p>
                         </div>
                     </div>
 
@@ -89,7 +89,7 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
                         </button>
                         <button
                             onClick={() => onDeleteProject(project.id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-ml-text-muted hover:text-red-500 hover:bg-red-50 transition-all duration-200"
                         >
                             <Trash2 size={14} strokeWidth={2} />
                         </button>
@@ -129,12 +129,12 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
                 {/* Class preview */}
                 {project.classes.length > 0 && (
                     <div>
-                        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">Classes</h4>
+                        <h4 className="text-[10px] font-semibold text-ml-text-muted uppercase tracking-wider mb-2.5">Classes</h4>
                         <div className="flex flex-wrap gap-1.5">
                             {project.classes.map((cls) => (
                                 <span
                                     key={cls.id}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-gray-100"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-ml-border"
                                     style={{ background: `${cls.color}10`, color: cls.color }}
                                 >
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: cls.color }} />

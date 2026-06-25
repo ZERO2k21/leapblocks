@@ -36,13 +36,8 @@ const COLORS = [
 function TextLinesIllustration({ color, sampleCount }: { color: typeof COLORS[0]; sampleCount: number }) {
     const lines = Math.min(sampleCount, 5)
     return (
-        <div style={{
-            background: 'var(--ml-well)',
-            borderRadius: 10,
-            padding: '10px 12px',
-            marginBottom: 12
-        }}>
-            <svg width="100%" height={lines > 0 ? lines * 10 + 4 : 24} viewBox={`0 0 200 ${lines > 0 ? lines * 10 + 4 : 24}`} fill="none" style={{ display: 'block' }}>
+        <div className="bg-ml-well rounded-[10px] px-3 py-2.5 mb-3">
+            <svg width="100%" height={lines > 0 ? lines * 10 + 4 : 24} viewBox={`0 0 200 ${lines > 0 ? lines * 10 + 4 : 24}`} fill="none" className="block">
                 {lines > 0 ? (
                     Array.from({ length: lines }).map((_, i) => (
                         <rect
@@ -70,7 +65,7 @@ function TextLinesIllustration({ color, sampleCount }: { color: typeof COLORS[0]
 // Document SVG for testing panel idle state
 function DocumentIllustration({ size = 80 }: { size?: number }) {
     return (
-        <svg width={size} height={size * 0.8} viewBox="0 0 80 64" fill="none" style={{ opacity: 0.5 }}>
+        <svg width={size} height={size * 0.8} viewBox="0 0 80 64" fill="none" className="opacity-50">
             {/* Document body */}
             <rect x="16" y="4" width="48" height="56" rx="4" stroke="#8b5cf6" strokeWidth="1.5" fill="none" />
             <rect x="16" y="4" width="48" height="12" rx="4" fill="#8b5cf6" opacity="0.1" />
@@ -273,9 +268,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
+            <div className="flex gap-6 items-stretch flex-1 min-h-0">
                 {/* Category Cards Column */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="flex-1 flex flex-col gap-4">
                     {classes.map((cls, i) => {
                         const color = COLORS[i % COLORS.length]
                         const isHovered = hoveredCard === cls.id
@@ -285,12 +280,9 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                         return (
                             <div
                                 key={cls.id}
+                                className="bg-ml-surface border rounded-2xl overflow-hidden transition-all duration-300"
                                 style={{
-                                    background: 'var(--ml-surface)',
-                                    border: `1px solid ${isHovered ? color.border : 'var(--ml-border)'}`,
-                                    borderRadius: 16,
-                                    overflow: 'hidden',
-                                    transition: 'all 0.3s ease',
+                                    borderColor: isHovered ? color.border : 'var(--ml-border)',
                                     transform: isHovered ? 'translateY(-2px)' : 'none',
                                     boxShadow: isHovered ? `0 8px 24px ${color.glow}` : 'none'
                                 }}
@@ -298,65 +290,42 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                 onMouseLeave={() => setHoveredCard(null)}
                             >
                                 {/* Gradient Header */}
-                                <div style={{
-                                    background: `linear-gradient(135deg, ${color.bg} 0%, ${color.light} 100%)`,
-                                    padding: '12px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                                <div
+                                    className="px-4 py-3 flex items-center justify-between"
+                                    style={{ background: `linear-gradient(135deg, ${color.bg} 0%, ${color.light} 100%)` }}
+                                >
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                         {editingId === cls.id ? (
                                             <input
                                                 value={editName}
                                                 onChange={e => setEditName(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && commitRename()}
                                                 autoFocus
-                                                style={{
-                                                    background: 'rgba(0,0,0,0.25)',
-                                                    border: 'none',
-                                                    borderRadius: 6,
-                                                    padding: '3px 8px',
-                                                    color: 'var(--ml-text-primary)',
-                                                    fontFamily: "'DM Sans', sans-serif",
-                                                    fontSize: 14,
-                                                    fontWeight: 600,
-                                                    width: '100%',
-                                                    outline: 'none'
-                                                }}
+                                                className="border-none rounded-md text-ml-text-primary font-sans text-sm font-semibold w-full outline-none"
+                                                style={{ background: 'rgba(0,0,0,0.25)', padding: '3px 8px' }}
                                             />
                                         ) : (
-                                            <span style={{
-                                                color: 'var(--ml-text-primary)',
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontWeight: 700,
-                                                fontSize: 14,
-                                                letterSpacing: '-0.01em',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                textShadow: '0 1px 2px rgba(0,0,0,0.15)'
-                                            }}>
+                                            <span className="text-ml-text-primary font-sans font-bold text-sm truncate" style={{ letterSpacing: '-0.01em', textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}>
                                                 {cls.name}
                                             </span>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+                                    <div className="flex gap-1 ml-2">
                                         {editingId === cls.id ? (
                                             <>
-                                                <button onClick={commitRename} style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={commitRename} className="border-none rounded-md cursor-pointer text-ml-text-primary flex items-center transition-colors duration-150" style={{ background: 'rgba(255,255,255,0.25)', padding: '4px 6px' }}>
                                                     <Check size={14} />
                                                 </button>
-                                                <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => setEditingId(null)} className="border-none rounded-md cursor-pointer text-ml-text-primary flex items-center transition-colors duration-150" style={{ background: 'rgba(255,255,255,0.15)', padding: '4px 6px' }}>
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startRename(cls)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => startRename(cls)} className="border-none rounded-md cursor-pointer text-ml-text-primary flex items-center transition-colors duration-150" style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 6px' }}>
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => deleteClass(cls.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: '4px 6px', cursor: 'pointer', color: 'var(--ml-text-primary)', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                                                <button onClick={() => deleteClass(cls.id)} className="border-none rounded-md cursor-pointer text-ml-text-primary flex items-center transition-colors duration-150" style={{ background: 'rgba(255,255,255,0.15)', padding: '4px 6px' }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </>
@@ -365,36 +334,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                 </div>
 
                                 {/* Card Content */}
-                                <div style={{ padding: 16 }}>
+                                <div className="p-4">
                                     {/* Stats badges */}
-                                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 5,
-                                            background: color.bg + '18',
-                                            color: color.bg,
-                                            padding: '4px 10px',
-                                            borderRadius: 8,
-                                            fontSize: 11,
-                                            fontFamily: "'DM Sans', sans-serif",
-                                            fontWeight: 700
-                                        }}>
+                                    <div className="flex gap-2 mb-3">
+                                        <div className="inline-flex items-center rounded-lg text-[11px] font-sans font-bold" style={{ gap: 5, background: color.bg + '18', color: color.bg, padding: '4px 10px' }}>
                                             <Type size={11} />
                                             {sampleCount} sample{sampleCount !== 1 ? 's' : ''}
                                         </div>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 5,
-                                            background: 'var(--ml-well)',
-                    color: 'var(--ml-text-secondary)',
-                                            padding: '4px 10px',
-                                            borderRadius: 8,
-                                            fontSize: 11,
-                                            fontFamily: "'DM Sans', sans-serif",
-                                            fontWeight: 600
-                                        }}>
+                                        <div className="inline-flex items-center bg-ml-well text-ml-text-secondary rounded-lg text-[11px] font-sans font-semibold" style={{ gap: 5, padding: '4px 10px' }}>
                                             <AlignLeft size={11} />
                                             {wordCount} word{wordCount !== 1 ? 's' : ''}
                                         </div>
@@ -405,7 +352,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
 
                                     {/* Sample tags */}
                                     {sampleCount > 0 && (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                                        <div className="flex flex-wrap gap-1.5 mb-3">
                                             {cls.samples.slice(-5).map((sample, idx) => {
                                                 const actualIdx = cls.samples.length - 5 + idx
                                                 const displayIdx = actualIdx >= 0 ? actualIdx : idx
@@ -414,21 +361,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                 return (
                                                     <div
                                                         key={idx}
-                                                        style={{
-                                                            background: 'var(--ml-well)',
-                                                            border: `1px solid ${color.bg}25`,
-                                                            borderRadius: 20,
-                                                            padding: '5px 10px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 6,
-                                                            fontSize: 11,
-                                                            color: 'var(--ml-text-secondary)',
-                                                            fontFamily: "'DM Sans', sans-serif",
-                                                            maxWidth: '100%',
-                                                            transition: 'all 0.2s ease',
-                                                            cursor: 'default'
-                                                        }}
+                                                        className="bg-ml-well rounded-[20px] flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans max-w-full transition-all duration-200 cursor-default"
+                                                        style={{ border: `1px solid ${color.bg}25`, padding: '5px 10px' }}
                                                         onMouseEnter={e => {
                                                             e.currentTarget.style.borderColor = color.bg + '50'
                                                             e.currentTarget.style.background = color.bg + '08'
@@ -438,33 +372,16 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                             e.currentTarget.style.background = 'var(--ml-well)'
                                                         }}
                                                     >
-                                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+                                                        <span className="overflow-hidden text-ellipsis whitespace-nowrap" style={{ maxWidth: 140 }}>
                                                             {isLong ? sample.slice(0, 40) + '...' : sample}
                                                         </span>
-                                                        <span style={{
-                                                            background: color.bg + '20',
-                                                            color: color.bg,
-                                                            padding: '1px 5px',
-                                                            borderRadius: 4,
-                                                            fontSize: 9,
-                                                            fontWeight: 700,
-                                                            flexShrink: 0
-                                                        }}>
+                                                        <span className="rounded text-[9px] font-bold shrink-0" style={{ background: color.bg + '20', color: color.bg, padding: '1px 5px' }}>
                                                             {wordCount}w
                                                         </span>
                                                         <button
                                                             onClick={() => removeSample(cls.id, displayIdx)}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                color: 'var(--ml-text-muted)',
-                                                                cursor: 'pointer',
-                                                                padding: 0,
-                                                                display: 'flex',
-                                                                borderRadius: 3,
-                                                                transition: 'all 0.15s',
-                                                                flexShrink: 0
-                                                            }}
+                                                            className="bg-transparent border-none cursor-pointer p-0 flex rounded-[3px] transition-all duration-150 shrink-0"
+                                                            style={{ color: 'var(--ml-text-muted)' }}
                                                             onMouseEnter={e => { e.currentTarget.style.color = 'var(--ml-error-text)' }}
                                                             onMouseLeave={e => { e.currentTarget.style.color = 'var(--ml-text-muted)' }}
                                                         >
@@ -474,17 +391,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                 )
                                             })}
                                             {sampleCount > 5 && (
-                                                <div style={{
-                                                    background: color.bg + '12',
-                                                    border: `1px solid ${color.bg}30`,
-                                                    borderRadius: 20,
-                                                    padding: '5px 10px',
-                                                    fontSize: 10,
-                                                    color: color.bg,
-                                                    fontWeight: 700,
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}>
+                                                <div className="rounded-[20px] text-[10px] font-bold flex items-center" style={{ background: color.bg + '12', border: `1px solid ${color.bg}30`, padding: '5px 10px', color: color.bg }}>
                                                     +{sampleCount - 5} more
                                                 </div>
                                             )}
@@ -492,8 +399,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     )}
 
                                     {/* Text input */}
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <div style={{ flex: 1, position: 'relative' }}>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 relative">
                                             <input
                                                 ref={el => { if (el) inputRefs.current.set(cls.id, el) }}
                                                 type="text"
@@ -503,30 +410,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                 onKeyDown={e => e.key === 'Enter' && addSample(cls.id)}
                                                 onFocus={() => setFocusedInput(cls.id)}
                                                 onBlur={() => setFocusedInput(null)}
+                                                className="w-full bg-ml-well rounded-[10px] px-3 py-2.5 text-ml-text-primary font-sans text-xs outline-none transition-all duration-200"
                                                 style={{
-                                                    width: '100%',
-                                                    background: 'var(--ml-well)',
                                                     border: `1.5px solid ${focusedInput === cls.id ? color.bg : 'var(--ml-border-strong)'}`,
-                                                    borderRadius: 10,
-                                                    padding: '10px 12px',
-                                                    color: 'var(--ml-text-primary)',
-                                                    fontFamily: "'DM Sans', sans-serif",
-                                                    fontSize: 12,
-                                                    outline: 'none',
-                                                    transition: 'all 0.2s ease',
                                                     boxShadow: focusedInput === cls.id ? `0 0 0 3px ${color.bg}15` : 'none'
                                                 }}
                                             />
                                             {(inputs[cls.id] || '').length > 0 && (
-                                                <span style={{
-                                                    position: 'absolute',
-                                                    right: 10,
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    fontSize: 9,
-                                                    color: 'var(--ml-text-muted)',
-                                                    fontFamily: "'DM Mono', monospace"
-                                                }}>
+                                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-ml-text-muted font-mono">
                                                     {(inputs[cls.id] || '').length}
                                                 </span>
                                             )}
@@ -534,22 +425,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                         <button
                                             onClick={() => addSample(cls.id)}
                                             disabled={!(inputs[cls.id] || '').trim()}
+                                            className="px-4 py-2.5 rounded-[10px] border-none font-sans text-xs font-bold flex items-center transition-all duration-200"
                                             style={{
-                                                padding: '10px 16px',
-                                                borderRadius: 10,
                                                 background: (inputs[cls.id] || '').trim()
                                                     ? `linear-gradient(135deg, ${color.bg}, ${color.light})`
                                                     : 'var(--ml-btn-idle)',
-                                            border: 'none',
                                                 color: (inputs[cls.id] || '').trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 12,
-                                                fontWeight: 700,
                                                 cursor: (inputs[cls.id] || '').trim() ? 'pointer' : 'not-allowed',
-                                                display: 'flex',
-                                                alignItems: 'center',
                                                 gap: 5,
-                                                transition: 'all 0.2s ease',
                                                 boxShadow: (inputs[cls.id] || '').trim() ? `0 2px 8px ${color.glow}` : 'none'
                                             }}
                                         >
@@ -565,23 +448,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                     {/* Add Class button */}
                     <button
                         onClick={addClass}
-                        style={{
-                            width: '100%',
-                            padding: '16px 0',
-                            borderRadius: 16,
-                            border: '2px dashed var(--ml-border-strong)',
-                            background: 'transparent',
-                            color: 'var(--ml-text-secondary)',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            transition: 'all 0.2s ease'
-                        }}
+                        className="w-full py-4 rounded-2xl text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-200"
+                        style={{ border: '2px dashed var(--ml-border-strong)', background: 'transparent' }}
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = '#8b5cf6'
                             e.currentTarget.style.color = '#a78bfa'
@@ -614,75 +482,32 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                 />
 
                 {/* Divider */}
-                <div style={{ width: 32, display: 'flex', alignItems: 'center', paddingTop: 64 }}>
-                    <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #8b5cf640, transparent)' }} />
+                <div className="w-8 flex items-center pt-16">
+                    <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, #8b5cf640, transparent)' }} />
                 </div>
 
                 {/* Testing Panel */}
-                <div style={{
-                    width: 256,
-                    background: 'var(--ml-surface)',
-                    border: '1px solid var(--ml-border)',
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    flexShrink: 0
-                }}>
+                <div className="w-64 bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0">
                     {/* Header */}
-                    <div style={{
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                        padding: '14px 16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8
-                    }}>
-                        <FileText size={16} style={{ color: 'var(--ml-text-primary)' }} />
-                        <span style={{
-                            color: 'var(--ml-text-primary)',
-                            fontWeight: 700,
-                            fontSize: 14,
-                            fontFamily: "'DM Sans', sans-serif"
-                        }}>Testing</span>
+                    <div className="px-4 py-3.5 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)' }}>
+                        <FileText size={16} className="text-ml-text-primary" />
+                        <span className="text-ml-text-primary font-bold text-sm font-sans">Testing</span>
                     </div>
 
-                    <div style={{ padding: 20 }}>
+                    <div className="p-5">
                         {!trained ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                            <div className="flex flex-col items-center text-center">
                                 <DocumentIllustration />
-                                <p style={{
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontSize: 12,
-                                    color: 'var(--ml-text-muted)',
-                                    lineHeight: 1.6,
-                                    margin: '12px 0 0'
-                                }}>
+                                <p className="font-sans text-xs text-ml-text-muted mt-3 leading-relaxed">
                                     Train your text model first.
                                 </p>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div className="flex flex-col gap-3">
                                 {/* Success indicator */}
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    background: 'var(--ml-success-bg)',
-                                    border: '1px solid #1a3a25',
-                                    borderRadius: 10,
-                                    padding: '10px 12px'
-                                }}>
-                                    <div style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        background: 'var(--ml-success-dot)',
-                                        boxShadow: '0 0 8px var(--ml-success-dot)'
-                                    }} />
-                                    <span style={{
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontSize: 12,
-                                        color: 'var(--ml-success-text)',
-                                        fontWeight: 600
-                                    }}>Model ready</span>
+                                <div className="flex items-center gap-2 bg-ml-success-bg rounded-[10px] px-3 py-2.5" style={{ border: '1px solid #1a3a25' }}>
+                                    <div className="w-2 h-2 rounded-full bg-ml-success-dot" style={{ boxShadow: '0 0 8px var(--ml-success-dot)' }} />
+                                    <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
                                 </div>
 
                                 {/* Textarea */}
@@ -690,32 +515,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                     value={testText}
                                     onChange={e => setTestText(e.target.value)}
                                     placeholder="Type text to classify..."
-                                    style={{
-                                        width: '100%',
-                                        background: 'var(--ml-well)',
-                                        border: '1.5px solid var(--ml-border-strong)',
-                                        borderRadius: 10,
-                                        padding: '10px 12px',
-                                        color: 'var(--ml-text-primary)',
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontSize: 12,
-                                        outline: 'none',
-                                        resize: 'none',
-                                        height: 80,
-                                        transition: 'border-color 0.2s ease'
-                                    }}
+                                    className="w-full bg-ml-well rounded-[10px] px-3 py-2.5 text-ml-text-primary font-sans text-xs outline-none resize-none h-20 transition-colors duration-200"
+                                    style={{ border: '1.5px solid var(--ml-border-strong)' }}
                                     onFocus={e => { e.currentTarget.style.borderColor = '#8b5cf6' }}
                                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--ml-border-strong)' }}
                                 />
 
                                 {/* Character count */}
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    fontSize: 10,
-                                    color: 'var(--ml-text-muted)',
-                                    marginTop: -8
-                                }}>
+                                <div className="flex justify-between text-[10px] text-ml-text-muted -mt-2">
                                     <span>{testText.length} characters</span>
                                     <span>{testText.split(/\s+/).filter(Boolean).length} words</span>
                                 </div>
@@ -724,24 +531,13 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                 <button
                                     onClick={handlePredict}
                                     disabled={!testText.trim()}
+                                    className="w-full py-[11px] rounded-[10px] border-none font-sans font-bold text-[13px] flex items-center justify-center gap-1.5 transition-all duration-200"
                                     style={{
-                                        width: '100%',
-                                        padding: '11px 0',
-                                        borderRadius: 10,
                                         background: testText.trim()
                                             ? 'linear-gradient(135deg, #8b5cf6, #a78bfa)'
                                             : 'var(--ml-btn-idle)',
-                                        border: 'none',
                                         color: testText.trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: 13,
                                         cursor: testText.trim() ? 'pointer' : 'not-allowed',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: 6,
-                                        transition: 'all 0.2s ease',
                                         boxShadow: testText.trim() ? '0 4px 14px rgba(139, 92, 246, 0.25)' : 'none'
                                     }}
                                 >
@@ -751,29 +547,14 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
 
                                 {/* Prediction results */}
                                 {testResult && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div className="flex flex-col gap-2">
                                         {/* Prediction label */}
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
+                                        <div className="flex items-center justify-between rounded-[10px] px-3 py-2.5" style={{
                                             background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
-                                            border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            borderRadius: 10,
-                                            padding: '10px 12px'
+                                            border: '1px solid rgba(139, 92, 246, 0.2)'
                                         }}>
-                                            <span style={{
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 11,
-                                                color: '#a78bfa',
-                                                fontWeight: 600
-                                            }}>Prediction</span>
-                                            <span style={{
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 13,
-                                                color: 'var(--ml-text-primary)',
-                                                fontWeight: 700
-                                            }}>{testResult.label}</span>
+                                            <span className="font-sans text-[11px] font-semibold" style={{ color: '#a78bfa' }}>Prediction</span>
+                                            <span className="font-sans text-[13px] text-ml-text-primary font-bold">{testResult.label}</span>
                                         </div>
 
                                         {/* Confidence bars */}
@@ -782,29 +563,17 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                             const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
                                             return (
                                                 <div key={label}>
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        fontSize: 11,
-                                                        marginBottom: 4
-                                                    }}>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                    <div className="flex justify-between text-[11px] mb-1">
+                                                        <span className="text-ml-text-secondary font-sans">{label}</span>
+                                                        <span className="text-ml-text-secondary font-mono font-semibold">
                                                             {Math.round(conf * 100)}%
                                                         </span>
                                                     </div>
-                                                    <div style={{
-                                                        height: 4,
-                                                        background: 'var(--ml-well)',
-                                                        borderRadius: 2,
-                                                        overflow: 'hidden'
-                                                    }}>
-                                                        <div style={{
-                                                            height: '100%',
+                                                    <div className="h-1 bg-ml-well rounded-[2px] overflow-hidden">
+                                                        <div className="h-full transition-all duration-500" style={{
                                                             width: `${conf * 100}%`,
                                                             background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
-                                                            borderRadius: 2,
-                                                            transition: 'width 0.5s ease'
+                                                            borderRadius: 2
                                                         }} />
                                                     </div>
                                                 </div>

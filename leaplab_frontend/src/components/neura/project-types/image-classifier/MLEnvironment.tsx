@@ -141,39 +141,40 @@ function WebcamModal({ classLabel, color, onCapture, onClose }: {
     }, [capturing, captureFrame]);
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border-strong)", borderRadius: 20, padding: 28, width: 400, boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: color.bg }} />
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: "var(--ml-text-primary)", fontSize: 15 }}>Capture for <em style={{ fontStyle: "normal", color: color.bg }}>{classLabel}</em></span>
+        <div className="fixed inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", zIndex: 1000 }}>
+            <div className="bg-ml-surface border border-ml-border-strong rounded-[20px] shadow-modal" style={{ padding: 28, width: 400 }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 18 }}>
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-[10px] h-[10px] rounded-full" style={{ background: color.bg }} />
+                        <span className="font-sans font-semibold text-ml-text-primary text-[15px]">Capture for <em className="not-italic" style={{ color: color.bg }}>{classLabel}</em></span>
                     </div>
-                    <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ml-text-muted)", padding: 4 }}><Icon.X /></button>
+                    <button onClick={onClose} className="bg-transparent border-0 cursor-pointer text-ml-text-muted p-1"><Icon.X /></button>
                 </div>
                 {error ? (
-                    <div style={{ padding: "24px 0", textAlign: "center", color: "var(--ml-error-text)", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>{error}</div>
+                    <div className="py-6 text-center text-ml-error-text font-sans text-sm">{error}</div>
                 ) : (
                     <>
-                        <div style={{ borderRadius: 12, overflow: "hidden", background: "var(--ml-bg)", position: "relative", marginBottom: 16 }}>
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", transform: "scaleX(-1)" }} />
-                            {capturing && <div style={{ position: "absolute", top: 10, right: 10, background: "#ff4444", borderRadius: 6, padding: "3px 8px", fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block" }} />REC</div>}
+                        <div className="rounded-xl overflow-hidden bg-ml-bg relative mb-4">
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full block" style={{ transform: "scaleX(-1)" }} />
+                            {capturing && <div className="absolute rounded-md text-xs font-sans font-semibold flex items-center" style={{ top: 10, right: 10, background: "#ff4444", padding: "3px 8px", color: "#fff", gap: 5 }}><span className="w-[7px] h-[7px] rounded-full inline-block" style={{ background: "#fff" }} />REC</div>}
                         </div>
-                        <canvas ref={canvasRef} style={{ display: "none" }} />
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <canvas ref={canvasRef} className="hidden" />
+                        <div className="flex items-center gap-2.5">
                             <button
                                 onMouseDown={() => setCapturing(true)} onMouseUp={() => setCapturing(false)} onMouseLeave={() => setCapturing(false)}
                                 onTouchStart={() => setCapturing(true)} onTouchEnd={() => setCapturing(false)}
-                                style={{ flex: 1, padding: "12px 0", borderRadius: 10, background: capturing ? color.bg : "#1e1e30", border: `1.5px solid ${capturing ? color.bg : "var(--ml-border-strong)"}`, color: capturing ? "#fff" : "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.15s" }}>
+                                className="flex-1 rounded-[10px] font-sans font-semibold text-sm cursor-pointer transition-all duration-150 ease-out"
+                                style={{ padding: "12px 0", background: capturing ? color.bg : "#1e1e30", border: `1.5px solid ${capturing ? color.bg : "var(--ml-border-strong)"}`, color: capturing ? "#fff" : "var(--ml-text-secondary)" }}>
                                 {capturing ? "● Recording…" : "Hold to Capture"}
                             </button>
-                            <button onClick={captureFrame} style={{ padding: "12px 16px", borderRadius: 10, background: "#1e1e30", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)", cursor: "pointer" }}>
+                            <button onClick={captureFrame} className="px-4 py-3 rounded-[10px] cursor-pointer" style={{ background: "#1e1e30", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)" }}>
                                 <Icon.Camera />
                             </button>
                         </div>
-                        {count > 0 && <div style={{ textAlign: "center", marginTop: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: color.bg, fontWeight: 600 }}>{count} frame{count !== 1 ? "s" : ""} captured</div>}
+                        {count > 0 && <div className="text-center font-sans text-[13px] font-semibold mt-3" style={{ color: color.bg }}>{count} frame{count !== 1 ? "s" : ""} captured</div>}
                     </>
                 )}
-                <button onClick={onClose} style={{ width: "100%", marginTop: 14, padding: "10px 0", borderRadius: 10, background: "transparent", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: "pointer" }}>Done</button>
+                <button onClick={onClose} className="w-full rounded-[10px] font-sans text-sm cursor-pointer" style={{ marginTop: 14, padding: "10px 0", background: "transparent", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-muted)" }}>Done</button>
             </div>
         </div>
     );
@@ -211,11 +212,9 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
 
     return (
         <div
+            className="bg-ml-surface rounded-2xl overflow-hidden"
             style={{
-                background: "var(--ml-surface)",
                 border: `1px solid ${hovered ? color.bg + "60" : "var(--ml-border)"}`,
-                borderRadius: 16,
-                overflow: "hidden",
                 transition: "all 0.25s ease",
                 boxShadow: hovered ? `0 4px 24px ${color.glow}, 0 0 0 1px ${color.bg}20` : "none",
             }}
@@ -223,60 +222,53 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
             onMouseLeave={() => setHovered(false)}
         >
             {/* Gradient header */}
-            <div style={{
+            <div className="px-4 py-3 flex items-center justify-between" style={{
                 background: `linear-gradient(135deg, ${color.bg} 0%, ${color.lighter} 100%)`,
-                padding: "12px 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
             }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                     {editing ? (
                         <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && commitRename()} autoFocus
-                            style={{ background: "rgba(0,0,0,0.25)", border: "none", borderRadius: 6, padding: "3px 8px", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, width: "100%", outline: "none" }} />
+                            className="rounded-md font-sans text-sm font-semibold w-full outline-none"
+                            style={{ background: "rgba(0,0,0,0.25)", border: "none", padding: "3px 8px", color: "#fff" }} />
                     ) : (
-                        <span style={{ color: "#fff", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{cls.name}</span>
+                        <span className="text-white font-sans font-bold text-sm truncate" style={{ letterSpacing: "-0.01em", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{cls.name}</span>
                     )}
                 </div>
-                <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+                <div className="flex gap-1 ml-2">
                     {editing ? (
                         <>
-                            <button onClick={commitRename} style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Check /></button>
-                            <button onClick={() => { setName(cls.name); setEditing(false); }} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.X /></button>
+                            <button onClick={commitRename} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.25)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Check /></button>
+                            <button onClick={() => { setName(cls.name); setEditing(false); }} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.X /></button>
                         </>
                     ) : (
                         <>
-                            <button onClick={() => setEditing(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Edit /></button>
-                            <button onClick={() => onDelete(cls.id)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 6px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", transition: "background 0.15s" }}><Icon.Trash /></button>
+                            <button onClick={() => setEditing(true)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.2)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Edit /></button>
+                            <button onClick={() => onDelete(cls.id)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Trash /></button>
                         </>
                     )}
                 </div>
             </div>
-            <div style={{ padding: "14px 16px" }}>
+            <div className="px-4 py-3.5">
                 {/* Sample count badge */}
-                <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{
+                <div className="flex items-center gap-1.5" style={{ marginBottom: 10 }}>
+                    <span className="rounded-[10px] text-[11px] font-sans font-bold" style={{
                         background: color.bg + "18",
                         color: color.bg,
                         padding: "3px 10px",
-                        borderRadius: 10,
-                        fontSize: 11,
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontWeight: 700,
                         letterSpacing: "0.02em",
                     }}>
                         {sampleCount} sample{sampleCount !== 1 ? "s" : ""}
                     </span>
                 </div>
                 {sampleCount > 0 && (
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12 }}>
+                    <div className="flex flex-wrap mb-3" style={{ gap: 5 }}>
                         {cls.samples.slice(-8).map((s, i) => (
                             <div
                                 key={i}
+                                className="rounded-lg overflow-hidden transition-all duration-200 ease-out"
                                 style={{
-                                    width: 40, height: 40, borderRadius: 8, overflow: "hidden",
+                                    width: 40, height: 40,
                                     border: `1.5px solid ${hoveredThumb === i ? color.bg : "var(--ml-border-strong)"}`,
-                                    transition: "all 0.2s ease",
                                     transform: hoveredThumb === i ? "scale(1.12)" : "scale(1)",
                                     zIndex: hoveredThumb === i ? 2 : 1,
                                     boxShadow: hoveredThumb === i ? `0 2px 10px ${color.glow}` : "none",
@@ -284,34 +276,33 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
                                 onMouseEnter={() => setHoveredThumb(i)}
                                 onMouseLeave={() => setHoveredThumb(null)}
                             >
-                                <img src={s} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <img src={s} alt="" className="w-full h-full object-cover" />
                             </div>
                         ))}
                         {sampleCount > 8 && (
-                            <div style={{
-                                width: 40, height: 40, borderRadius: 8,
+                            <div className="rounded-lg flex items-center justify-center text-[11px] font-sans font-bold" style={{
+                                width: 40, height: 40,
                                 background: color.bg + "12", border: `1.5px solid ${color.bg}30`,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 11, color: color.bg, fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                                color: color.bg,
                             }}>
                                 +{sampleCount - 8}
                             </div>
                         )}
                     </div>
                 )}
-                <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => fileRef.current?.click()} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "var(--ml-btn-idle)", border: "1.5px dashed var(--ml-border-strong)", color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s ease" }}
+                <div className="flex gap-2">
+                    <button onClick={() => fileRef.current?.click()} className="flex-1 rounded-[9px] bg-ml-btn-idle border border-dashed border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200 ease-out" style={{ padding: "9px 0" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--ml-btn-idle)"; }}>
                         <Icon.Upload /><span>Upload</span>
                     </button>
-                    <button onClick={() => onWebcam(cls.id)} style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: "var(--ml-btn-idle)", border: "1.5px dashed var(--ml-border-strong)", color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s ease" }}
+                    <button onClick={() => onWebcam(cls.id)} className="flex-1 rounded-[9px] bg-ml-btn-idle border border-dashed border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200 ease-out" style={{ padding: "9px 0" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--ml-btn-idle)"; }}>
                         <Icon.Camera /><span>Webcam</span>
                     </button>
                 </div>
-                <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleFiles} />
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
             </div>
         </div>
     );
@@ -335,34 +326,34 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
     const canTrain = classesWithData.length >= 2 && totalSamples >= 4 && status !== "training";
 
     return (
-        <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: trained ? "var(--ml-success-dot)" : "#444", boxShadow: trained ? "0 0 8px var(--ml-success-dot)" : "none", transition: "all 0.4s" }} />
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--ml-text-primary)", letterSpacing: "-0.01em" }}>Training</span>
-                <div style={{ marginLeft: "auto", display: "flex", gap: 4, background: "var(--ml-well)", borderRadius: 8, padding: "3px 4px" }}>
+        <div className="bg-ml-surface border border-ml-border rounded-2xl p-5 flex flex-col gap-3.5">
+            <div className="flex items-center gap-2">
+                <div className="rounded-full" style={{ width: 8, height: 8, background: trained ? "var(--ml-success-dot)" : "#444", boxShadow: trained ? "0 0 8px var(--ml-success-dot)" : "none", transition: "all 0.4s" }} />
+                <span className="font-sans font-bold text-[15px] text-ml-text-primary" style={{ letterSpacing: "-0.01em" }}>Training</span>
+                <div className="ml-auto flex gap-1 bg-ml-well rounded-lg" style={{ padding: "3px 4px" }}>
                     {["JS", "PY"].map(m => (
-                        <div key={m} style={{ padding: "3px 9px", borderRadius: 6, background: m === "JS" ? "#7c3aed" : "transparent", fontSize: 11, fontFamily: "'DM Mono', monospace", color: m === "JS" ? "#fff" : "var(--ml-text-muted)", fontWeight: 700, transition: "all 0.2s" }}>{m}</div>
+                        <div key={m} className="rounded-md text-[11px] font-mono font-bold transition-all duration-200 ease-out" style={{ padding: "3px 9px", background: m === "JS" ? "#7c3aed" : "transparent", color: m === "JS" ? "#fff" : "var(--ml-text-muted)" }}>{m}</div>
                     ))}
                 </div>
             </div>
 
             {status === "training" ? (
                 <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "var(--ml-text-secondary)" }}>Extracting features…</span>
-                        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#a78bfa", fontWeight: 600 }}>{Math.round(progress)}%</span>
+                    <div className="flex justify-between mb-1.5">
+                        <span className="font-sans text-xs text-ml-text-secondary">Extracting features…</span>
+                        <span className="font-mono text-xs font-semibold" style={{ color: "#a78bfa" }}>{Math.round(progress)}%</span>
                     </div>
-                    <div style={{ background: "var(--ml-well)", borderRadius: 6, height: 6, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #7c3aed, #a78bfa)", borderRadius: 6, transition: "width 0.3s" }} />
+                    <div className="bg-ml-well rounded-md overflow-hidden" style={{ height: 6 }}>
+                        <div className="rounded-md" style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #7c3aed, #a78bfa)", transition: "width 0.3s" }} />
                     </div>
                 </div>
             ) : trained ? (
-                <div style={{ background: "var(--ml-success-bg)", border: "1px solid var(--ml-success-border)", borderRadius: 10, padding: "10px 14px" }}>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "var(--ml-success-text)", fontWeight: 600, marginBottom: 4 }}>✓ Model trained successfully</div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--ml-text-secondary)" }}>Accuracy: {Math.round(accuracy * 100)}% · {classes.reduce((s, c) => s + c.samples.length, 0)} samples · {classes.length} classes</div>
+                <div className="bg-ml-success-bg border border-ml-success-border rounded-[10px] px-3.5 py-2.5">
+                    <div className="font-sans text-xs text-ml-success-text font-semibold mb-1">✓ Model trained successfully</div>
+                    <div className="font-mono text-[11px] text-ml-text-secondary">Accuracy: {Math.round(accuracy * 100)}% · {classes.reduce((s, c) => s + c.samples.length, 0)} samples · {classes.length} classes</div>
                 </div>
             ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0" }}>
+                <div className="flex flex-col items-center py-2">
                     {/* Neural network illustration */}
                     <svg width="120" height="70" viewBox="0 0 120 70" fill="none" style={{ marginBottom: 10, opacity: 0.6 }}>
                         {/* Input layer */}
@@ -392,32 +383,33 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
                         <line x1="65" y1="58" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
                         <line x1="65" y1="58" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
                     </svg>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "var(--ml-text-muted)", lineHeight: 1.5, textAlign: "center" }}>
+                    <div className="font-sans text-[13px] text-ml-text-muted text-center" style={{ lineHeight: 1.5 }}>
                         {classesWithData.length < 2 ? "Add samples to at least 2 classes to begin." : "Ready to train."}
                     </div>
                 </div>
             )}
 
-            <button onClick={onTrain} disabled={!canTrain} style={{ width: "100%", padding: "13px 0", borderRadius: 11, background: canTrain ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "var(--ml-btn-idle)", border: "none", color: canTrain ? "#fff" : "var(--ml-text-disabled)", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14, cursor: canTrain ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.2s", letterSpacing: "-0.01em" }}>
+            <button onClick={onTrain} disabled={!canTrain} className="w-full rounded-[11px] font-sans font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out"
+                style={{ padding: "13px 0", background: canTrain ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "var(--ml-btn-idle)", border: "none", color: canTrain ? "#fff" : "var(--ml-text-disabled)", cursor: canTrain ? "pointer" : "not-allowed", letterSpacing: "-0.01em" }}>
                 <Icon.Zap />{status === "training" ? "Training…" : trained ? "Retrain Model" : "Train Model"}
             </button>
 
-            <button onClick={() => setShowAdvanced(!showAdvanced)} style={{ background: "none", border: "none", color: "var(--ml-text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0 }}>
+            <button onClick={() => setShowAdvanced(!showAdvanced)} className="bg-transparent border-0 text-ml-text-muted font-sans text-[13px] cursor-pointer flex items-center gap-1.5 p-0">
                 <Icon.Settings /><span>Advanced settings</span>
-                <span style={{ marginLeft: "auto", transition: "transform 0.2s", transform: showAdvanced ? "rotate(180deg)" : "none" }}>▾</span>
+                <span className="ml-auto" style={{ transition: "transform 0.2s", transform: showAdvanced ? "rotate(180deg)" : "none" }}>▾</span>
             </button>
 
             {showAdvanced && (
-                <div style={{ background: "var(--ml-well)", borderRadius: 10, padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="bg-ml-well rounded-[10px] flex flex-col gap-3" style={{ padding: 14 }}>
                     <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "var(--ml-text-secondary)" }}>Epochs</span>
-                            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#a78bfa", fontWeight: 600 }}>{epochs}</span>
+                        <div className="flex justify-between mb-1">
+                            <span className="font-sans text-xs text-ml-text-secondary">Epochs</span>
+                            <span className="font-mono text-xs font-semibold" style={{ color: "#a78bfa" }}>{epochs}</span>
                         </div>
                         <input type="range" min={5} max={100} step={5} value={epochs} onChange={e => setEpochs(+e.target.value)}
-                            style={{ width: "100%", accentColor: "#7c3aed" }} />
+                            className="w-full" style={{ accentColor: "#7c3aed" }} />
                     </div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "var(--ml-text-muted)", lineHeight: 1.5 }}>
+                    <div className="font-sans text-[11px] text-ml-text-muted" style={{ lineHeight: 1.5 }}>
                         Using MobileNet transfer learning + KNN classifier. All computation runs in-browser via TensorFlow.js — no data leaves your device.
                     </div>
                 </div>
@@ -500,7 +492,7 @@ function TestingPanel({ trained, classes, predict }: {
 
     if (!trained) {
         return (
-            <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 12, textAlign: "center" }}>
+            <div className="bg-ml-surface border border-ml-border rounded-2xl p-6 flex flex-col items-center justify-center gap-3 text-center" style={{ minHeight: 200 }}>
                 {/* Camera + question mark illustration */}
                 <svg width="100" height="80" viewBox="0 0 100 80" fill="none" style={{ opacity: 0.5 }}>
                     {/* Camera body */}
@@ -516,7 +508,7 @@ function TestingPanel({ trained, classes, predict }: {
                     <rect x="38" y="60" width="14" height="10" rx="2" stroke="#555" strokeWidth="1.5" fill="#33320" />
                     <path d="M41 60 V56 Q41 52 45 52 Q49 52 49 56 V60" stroke="#555" strokeWidth="1.5" fill="none" />
                 </svg>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "var(--ml-text-muted)", lineHeight: 1.6, maxWidth: 180 }}>
+                <div className="font-sans text-sm text-ml-text-muted" style={{ lineHeight: 1.6, maxWidth: 180 }}>
                     Train your model to unlock live predictions
                 </div>
             </div>
@@ -527,55 +519,57 @@ function TestingPanel({ trained, classes, predict }: {
     const sortedConf = result ? Object.entries(result.confidences).sort((a: any, b: any) => b[1] - a[1]) : [];
 
     return (
-        <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 8px #a78bfa" }} />
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--ml-text-primary)", letterSpacing: "-0.01em" }}>Testing</span>
+        <div className="bg-ml-surface border border-ml-border rounded-2xl p-5 flex flex-col gap-3.5">
+            <div className="flex items-center gap-2">
+                <div className="rounded-full" style={{ width: 8, height: 8, background: "#a78bfa", boxShadow: "0 0 8px #a78bfa" }} />
+                <span className="font-sans font-bold text-[15px] text-ml-text-primary" style={{ letterSpacing: "-0.01em" }}>Testing</span>
             </div>
 
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-2">
                 <button onClick={() => { stopCam(); setMode("idle"); setResult(null); setTestImg(null); fileRef.current?.click(); }}
-                    style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: mode === "upload" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "upload" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "upload" ? "#a78bfa" : "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
+                    style={{ padding: "9px 0", background: mode === "upload" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "upload" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "upload" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
                     <Icon.Upload /><span>Upload Image</span>
                 </button>
                 <button onClick={() => mode === "webcam" ? (stopCam(), setMode("idle"), setResult(null)) : startCam()}
-                    style={{ flex: 1, padding: "9px 0", borderRadius: 9, background: mode === "webcam" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "webcam" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "webcam" ? "#a78bfa" : "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
+                    style={{ padding: "9px 0", background: mode === "webcam" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "webcam" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "webcam" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
                     <Icon.Camera /><span>{mode === "webcam" ? "Stop Camera" : "Live Webcam"}</span>
                 </button>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
 
-            {camError && <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "var(--ml-error-text)" }}>{camError}</div>}
+            {camError && <div className="font-sans text-[13px] text-ml-error-text">{camError}</div>}
 
             {mode === "webcam" && (
-                <div style={{ borderRadius: 10, overflow: "hidden", background: "var(--ml-bg)" }}>
-                    <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", transform: "scaleX(-1)" }} />
+                <div className="rounded-[10px] overflow-hidden bg-ml-bg">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full block" style={{ transform: "scaleX(-1)" }} />
                 </div>
             )}
             {mode === "upload" && testImg && (
-                <div style={{ borderRadius: 10, overflow: "hidden", background: "var(--ml-bg)", textAlign: "center" }}>
+                <div className="rounded-[10px] overflow-hidden bg-ml-bg text-center">
                     <img src={testImg} alt="test" style={{ maxWidth: "100%", maxHeight: 200, objectFit: "contain" }} />
                 </div>
             )}
-            <canvas ref={canvasRef} style={{ display: "none" }} />
+            <canvas ref={canvasRef} className="hidden" />
 
             {result && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="flex flex-col gap-2">
                     {topLabel && (
-                        <div style={{ background: "var(--ml-well)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#a78bfa", fontWeight: 600 }}>Prediction</span>
-                            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--ml-success-dot)", fontWeight: 700 }}>{topLabel[0]}</span>
+                        <div className="bg-ml-well rounded-[10px] px-3.5 py-2.5 flex items-center justify-between">
+                            <span className="font-sans text-[13px] font-semibold" style={{ color: "#a78bfa" }}>Prediction</span>
+                            <span className="font-mono text-sm text-ml-success-dot font-bold">{topLabel[0]}</span>
                         </div>
                     )}
                     {sortedConf.map(([label, conf]: any, i: number) => {
                         const color = CLASS_COLORS[i % CLASS_COLORS.length];
                         return (
                             <div key={label}>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "var(--ml-text-secondary)" }}>{label}</span>
-                                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: color.bg, fontWeight: 700 }}>{Math.round(conf * 100)}%</span>
+                                <div className="flex justify-between mb-1">
+                                    <span className="font-sans text-xs text-ml-text-secondary">{label}</span>
+                                    <span className="font-mono text-xs font-bold" style={{ color: color.bg }}>{Math.round(conf * 100)}%</span>
                                 </div>
-                                <div style={{ background: "var(--ml-well)", borderRadius: 4, height: 5, overflow: "hidden" }}>
+                                <div className="bg-ml-well overflow-hidden" style={{ borderRadius: 4, height: 5 }}>
                                     <div style={{ height: "100%", width: `${conf * 100}%`, background: color.bg, borderRadius: 4, transition: "width 0.3s" }} />
                                 </div>
                             </div>
@@ -761,22 +755,22 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const webcamColor = webcamClass ? CLASS_COLORS[(classes.findIndex(c => c.id === webcamFor)) % CLASS_COLORS.length] : CLASS_COLORS[0];
 
     return (
-        <div style={{ flex: 1, background: "var(--ml-bg)", color: "var(--ml-text-primary)", fontFamily: "'DM Sans', sans-serif", overflowY: "auto", minHeight: 0 }}>
+        <div className="flex-1 bg-ml-bg text-ml-text-primary font-sans overflow-y-auto min-h-0">
             {/* Google Fonts load */}
             <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');`}</style>
 
 
 
             {/* Main layout */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 280px 280px", gap: 20, padding: "24px 28px", maxWidth: 1300, margin: "0 auto", alignItems: "stretch", minHeight: 0 }}>
+            <div className="grid gap-5 items-stretch" style={{ gridTemplateColumns: "1fr 280px 280px", padding: "24px 28px", maxWidth: 1300, margin: "0 auto", minHeight: 0 }}>
                 {/* Left: Data Collection */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                <div className="flex flex-col gap-3.5">
+                    <div className="flex items-center justify-between mb-0.5">
                         <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ml-text-secondary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>01 — Collect</div>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--ml-text-primary)", letterSpacing: "-0.02em" }}>Training Data</div>
+                            <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>01 — Collect</div>
+                            <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Training Data</div>
                         </div>
-                        <button style={{ padding: "8px 14px", borderRadius: 10, background: "var(--ml-btn-idle)", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+                        <button className="rounded-[10px] bg-ml-btn-idle border border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center gap-1.5 transition-all duration-150 ease-out" style={{ padding: "8px 14px" }}
                             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}
                             onClick={() => {
@@ -812,7 +806,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         </button>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="flex flex-col gap-3">
                         {classes.map((cls, i) => (
                             <ClassCard key={cls.id} cls={cls} color={CLASS_COLORS[i % CLASS_COLORS.length]}
                                 onAddSamples={addSample} onWebcam={setWebcamFor} onDelete={deleteClass} onRename={renameClass}
@@ -820,7 +814,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         ))}
                     </div>
 
-                    <button onClick={addClass} style={{ padding: "14px 0", borderRadius: 12, background: "transparent", border: "2px dashed var(--ml-border)", color: "var(--ml-text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.2s" }}
+                    <button onClick={addClass} className="rounded-xl bg-transparent border-2 border-dashed border-ml-border text-ml-text-muted font-sans text-sm cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 ease-out" style={{ padding: "14px 0" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#7c3aed"; (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-muted)"; }}>
                         <Icon.Plus /><span>Add Class</span>
@@ -828,28 +822,28 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                 </div>
 
                 {/* Middle: Training */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div style={{ marginBottom: 2 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ml-text-secondary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>02 — Train</div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--ml-text-primary)", letterSpacing: "-0.02em" }}>Model</div>
+                <div className="flex flex-col gap-3.5">
+                    <div className="mb-0.5">
+                        <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>02 — Train</div>
+                        <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Model</div>
                     </div>
                     <TrainingPanel classes={classes} status={trainStatus} progress={progress} accuracy={accuracy}
                         onTrain={handleTrain} showAdvanced={showAdvanced} setShowAdvanced={setShowAdvanced}
                         epochs={epochs} setEpochs={setEpochs} trained={trained} />
 
                     {trained && (
-                        <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border)", borderRadius: 16, padding: 16 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ml-text-muted)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>Class distribution</div>
+                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-4">
+                            <div className="text-xs font-bold text-ml-text-muted uppercase mb-3" style={{ letterSpacing: "0.05em" }}>Class distribution</div>
                             {classes.map((c, i) => {
                                 const total = classes.reduce((s, x) => s + x.samples.length, 0);
                                 const pct = total > 0 ? (c.samples.length / total) * 100 : 0;
                                 return (
-                                    <div key={c.id} style={{ marginBottom: 8 }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                                            <span style={{ fontSize: 12, color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif" }}>{c.name}</span>
-                                            <span style={{ fontSize: 12, color: CLASS_COLORS[i % CLASS_COLORS.length].bg, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{c.samples.length}</span>
+                                    <div key={c.id} className="mb-2">
+                                        <div className="flex justify-between" style={{ marginBottom: 3 }}>
+                                            <span className="text-xs text-ml-text-secondary font-sans">{c.name}</span>
+                                            <span className="text-xs font-mono font-semibold" style={{ color: CLASS_COLORS[i % CLASS_COLORS.length].bg }}>{c.samples.length}</span>
                                         </div>
-                                        <div style={{ background: "var(--ml-well)", borderRadius: 4, height: 4, overflow: "hidden" }}>
+                                        <div className="bg-ml-well overflow-hidden" style={{ borderRadius: 4, height: 4 }}>
                                             <div style={{ height: "100%", width: `${pct}%`, background: CLASS_COLORS[i % CLASS_COLORS.length].bg, borderRadius: 4 }} />
                                         </div>
                                     </div>
@@ -860,25 +854,25 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                 </div>
 
                 {/* Right: Testing */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div style={{ marginBottom: 2 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ml-text-secondary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>03 — Test</div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--ml-text-primary)", letterSpacing: "-0.02em" }}>Predictions</div>
+                <div className="flex flex-col gap-3.5">
+                    <div className="mb-0.5">
+                        <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>03 — Test</div>
+                        <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Predictions</div>
                     </div>
                     <TestingPanel trained={trained} classes={classes} predict={predict} />
 
                     {trained && (
-                        <div style={{ background: "var(--ml-surface)", border: "1px solid var(--ml-border)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ml-text-muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Export model</div>
+                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-4 flex flex-col gap-2.5">
+                            <div className="text-xs font-bold text-ml-text-muted uppercase" style={{ letterSpacing: "0.05em" }}>Export model</div>
                             {[
                                 { label: "Download as JSON", desc: "TensorFlow.js format", action: () => { const data = { type: "neura-ml-knn", classes: classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy, created: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "neura-model.json"; a.click(); } },
                                 { label: "Copy embed code", desc: "Use in your app", action: () => { try { navigator.clipboard?.writeText(`<!-- Neura ML Model -->\n<script>const model = ${JSON.stringify({ classes: classes.map(c => c.name) })}</script>`).then(() => showToast("Copied!", "success")).catch(() => showToast("Failed to copy. Please copy manually.", "error")); } catch (_) { showToast("Failed to copy. Please copy manually.", "error"); } } },
                             ].map(({ label, desc, action }) => (
-                                <button key={label} onClick={action} style={{ padding: "10px 14px", borderRadius: 9, background: "var(--ml-well)", border: "1.5px solid var(--ml-border)", color: "var(--ml-text-secondary)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                                <button key={label} onClick={action} className="rounded-[9px] bg-ml-well border border-ml-border text-ml-text-secondary font-sans text-[13px] cursor-pointer text-left transition-all duration-150 ease-out" style={{ padding: "10px 14px" }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-primary)"; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}>
-                                    <div style={{ fontWeight: 600, fontSize: 13 }}>{label}</div>
-                                    <div style={{ fontSize: 11, color: "var(--ml-text-muted)", marginTop: 2 }}>{desc}</div>
+                                    <div className="font-semibold text-[13px]">{label}</div>
+                                    <div className="text-[11px] text-ml-text-muted" style={{ marginTop: 2 }}>{desc}</div>
                                 </button>
                             ))}
                         </div>
