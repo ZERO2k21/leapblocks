@@ -452,7 +452,7 @@ export class AnimationCompiler {
                 const expr = valueBlock.getFieldValue('EXPRESSION') ?? 'happy';
                 return () => {
                     const emotion = (window as any).runtime?.face?.getEmotion() ?? '';
-                    return String(emotion.toLowerCase() === expr); 
+                    return String(emotion.toLowerCase() === expr);
                 };
             }
 

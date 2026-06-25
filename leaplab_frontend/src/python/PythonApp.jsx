@@ -43,6 +43,7 @@ import {
     Share,
 } from "lucide-react";
 import { fileService } from "../Electra/Client/Src/services/FileService";
+import TopbarShareButton from "../components/common/TopbarShareButton";
 import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -3133,6 +3134,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                     </div>
                 </div>
+
+                <TopbarShareButton
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    size={18}
+                    onSave={handleSaveProject}
+                    projectName={projectName}
+                />
 
                 {/* CREOLEAP Right Logo */}
                 <div style={{

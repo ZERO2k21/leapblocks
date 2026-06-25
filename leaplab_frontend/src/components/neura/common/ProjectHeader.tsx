@@ -7,6 +7,7 @@ import React from 'react';
 import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import { useNeuraTheme } from './NeuraThemeContext';
+import TopbarShareButton from '../../common/TopbarShareButton';
 
 interface ProjectHeaderProps {
     icon?: string;

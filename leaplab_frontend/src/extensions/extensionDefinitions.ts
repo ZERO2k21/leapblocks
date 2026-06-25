@@ -603,40 +603,52 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 { type: 'bd_camera', message0: 'camera %1', args0: [{ type: 'field_dropdown', name: 'STATE', options: [['on', 'on'], ['off', 'off']] }], previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Turn camera on or off for body detection' },
                 { type: 'bd_analyze', message0: 'detect body pose', previousStatement: null, nextStatement: null, colour: '#D43D41', tooltip: 'Run MoveNet pose detection on the current camera frame' },
                 { type: 'bd_body_count', message0: 'body count', output: 'Number', colour: '#D43D41', tooltip: 'Number of people detected' },
-                { type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [
-                    { type: 'field_dropdown', name: 'PART', options: [
-                        ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
-                        ['left ear', 'left_ear'], ['right ear', 'right_ear'],
-                        ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
-                        ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
-                        ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
-                        ['left hip', 'left_hip'], ['right hip', 'right_hip'],
-                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
-                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
-                    ] },
-                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
-                ], output: 'Number', colour: '#D43D41', tooltip: 'X position of a body part (stage coords)' },
-                { type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [
-                    { type: 'field_dropdown', name: 'PART', options: [
-                        ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
-                        ['left ear', 'left_ear'], ['right ear', 'right_ear'],
-                        ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
-                        ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
-                        ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
-                        ['left hip', 'left_hip'], ['right hip', 'right_hip'],
-                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
-                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
-                    ] },
-                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
-                ], output: 'Number', colour: '#D43D41', tooltip: 'Y position of a body part (stage coords)' },
-                { type: 'bd_is_part_visible', message0: 'is %1 of body %2 visible?', args0: [
-                    { type: 'field_dropdown', name: 'PART', options: [
-                        ['nose', 'nose'], ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
-                        ['left knee', 'left_knee'], ['right knee', 'right_knee'],
-                        ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
-                    ] },
-                    { type: 'field_number', name: 'BODY', value: 1, min: 1 }
-                ], output: 'Boolean', colour: '#D43D41', tooltip: 'Check if a body part is detected with high confidence' },
+                {
+                    type: 'bd_get_x', message0: 'x position of %1 of body %2', args0: [
+                        {
+                            type: 'field_dropdown', name: 'PART', options: [
+                                ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
+                                ['left ear', 'left_ear'], ['right ear', 'right_ear'],
+                                ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
+                                ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
+                                ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                                ['left hip', 'left_hip'], ['right hip', 'right_hip'],
+                                ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                                ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                            ]
+                        },
+                        { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                    ], output: 'Number', colour: '#D43D41', tooltip: 'X position of a body part (stage coords)'
+                },
+                {
+                    type: 'bd_get_y', message0: 'y position of %1 of body %2', args0: [
+                        {
+                            type: 'field_dropdown', name: 'PART', options: [
+                                ['nose', 'nose'], ['left eye', 'left_eye'], ['right eye', 'right_eye'],
+                                ['left ear', 'left_ear'], ['right ear', 'right_ear'],
+                                ['left shoulder', 'left_shoulder'], ['right shoulder', 'right_shoulder'],
+                                ['left elbow', 'left_elbow'], ['right elbow', 'right_elbow'],
+                                ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                                ['left hip', 'left_hip'], ['right hip', 'right_hip'],
+                                ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                                ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                            ]
+                        },
+                        { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                    ], output: 'Number', colour: '#D43D41', tooltip: 'Y position of a body part (stage coords)'
+                },
+                {
+                    type: 'bd_is_part_visible', message0: 'is %1 of body %2 visible?', args0: [
+                        {
+                            type: 'field_dropdown', name: 'PART', options: [
+                                ['nose', 'nose'], ['left wrist', 'left_wrist'], ['right wrist', 'right_wrist'],
+                                ['left knee', 'left_knee'], ['right knee', 'right_knee'],
+                                ['left ankle', 'left_ankle'], ['right ankle', 'right_ankle']
+                            ]
+                        },
+                        { type: 'field_number', name: 'BODY', value: 1, min: 1 }
+                    ], output: 'Boolean', colour: '#D43D41', tooltip: 'Check if a body part is detected with high confidence'
+                },
             ];
             const newDefs = bdBlockDefs.filter((d: any) => !Blockly.Blocks[d.type]);
             if (newDefs.length > 0) Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(newDefs));
@@ -695,18 +707,18 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             const jsGen = javascriptGenerator;
             if (!jsGen) return;
             // Training
-            jsGen.forBlock['ml_add_sample'] = (b: any) => `if(window.runtime?.ml) await window.runtime.ml.addSample('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}');\n`;
+            jsGen.forBlock['ml_add_sample'] = (b: any) => `if(window.runtime?.ml) await window.runtime.ml.addSample('${(b.getFieldValue('LABEL') || 'class1').replace(/'/g, "\\'")}');\n`;
             jsGen.forBlock['ml_train'] = () => 'if(window.runtime?.ml) window.runtime.ml.train();\n';
             jsGen.forBlock['ml_clear_all'] = () => 'if(window.runtime?.ml) window.runtime.ml.clearAll();\n';
-            jsGen.forBlock['ml_clear_class'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.clearClass('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}');\n`;
+            jsGen.forBlock['ml_clear_class'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.clearClass('${(b.getFieldValue('LABEL') || 'class1').replace(/'/g, "\\'")}');\n`;
             // Detection
             jsGen.forBlock['ml_analyze'] = (b: any) => `if(window.runtime?.ml) window.runtime.ml.analyse('${b.getFieldValue('ACTION')}');\n`;
             // Reporters
             jsGen.forBlock['ml_get_prediction'] = () => [`window.runtime?.ml?.getPrediction()||'none'`, 0];
             jsGen.forBlock['ml_get_confidence'] = () => [`window.runtime?.ml?.getConfidence()||0`, 0];
-            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.isClass('${(b.getFieldValue('CLASS')||'').replace(/'/g, "\\'")}')`, 0];
+            jsGen.forBlock['ml_is_class'] = (b: any) => [`window.runtime?.ml?.isClass('${(b.getFieldValue('CLASS') || '').replace(/'/g, "\\'")}')`, 0];
             jsGen.forBlock['ml_get_class_count'] = () => [`window.runtime?.ml?.getClassCount()||0`, 0];
-            jsGen.forBlock['ml_get_sample_count'] = (b: any) => [`window.runtime?.ml?.getSampleCount('${(b.getFieldValue('LABEL')||'class1').replace(/'/g, "\\'")}')||0`, 0];
+            jsGen.forBlock['ml_get_sample_count'] = (b: any) => [`window.runtime?.ml?.getSampleCount('${(b.getFieldValue('LABEL') || 'class1').replace(/'/g, "\\'")}')||0`, 0];
             jsGen.forBlock['ml_is_trained'] = () => [`window.runtime?.ml?.isTrained()`, 0];
         },
         getToolbox: () => [
@@ -1496,16 +1508,16 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             if (!jsGen) return;
 
             // Statement blocks
-            jsGen.forBlock['video_set_source'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setSource('${(b.getFieldValue('URL')||'').replace(/'/g, "\\'")}');\n`;
+            jsGen.forBlock['video_set_source'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setSource('${(b.getFieldValue('URL') || '').replace(/'/g, "\\'")}');\n`;
             jsGen.forBlock['video_play'] = () => 'if(window.runtime?.video) window.runtime.video.play();\n';
             jsGen.forBlock['video_pause'] = () => 'if(window.runtime?.video) window.runtime.video.pause();\n';
             jsGen.forBlock['video_stop'] = () => 'if(window.runtime?.video) window.runtime.video.stop();\n';
             jsGen.forBlock['video_show'] = () => 'if(window.runtime?.video) window.runtime.video.show();\n';
             jsGen.forBlock['video_hide'] = () => 'if(window.runtime?.video) window.runtime.video.hide();\n';
-            jsGen.forBlock['video_set_speed'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setSpeed(${b.getFieldValue('SPEED')||1});\n`;
-            jsGen.forBlock['video_set_volume'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setVolume(${b.getFieldValue('VOLUME')||100});\n`;
-            jsGen.forBlock['video_seek'] = (b: any) => `if(window.runtime?.video) window.runtime.video.seek(${b.getFieldValue('TIME')||0});\n`;
-            jsGen.forBlock['video_set_position'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setPosition(${b.getFieldValue('X')||50}, ${b.getFieldValue('Y')||50}, ${b.getFieldValue('SIZE')||100});\n`;
+            jsGen.forBlock['video_set_speed'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setSpeed(${b.getFieldValue('SPEED') || 1});\n`;
+            jsGen.forBlock['video_set_volume'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setVolume(${b.getFieldValue('VOLUME') || 100});\n`;
+            jsGen.forBlock['video_seek'] = (b: any) => `if(window.runtime?.video) window.runtime.video.seek(${b.getFieldValue('TIME') || 0});\n`;
+            jsGen.forBlock['video_set_position'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setPosition(${b.getFieldValue('X') || 50}, ${b.getFieldValue('Y') || 50}, ${b.getFieldValue('SIZE') || 100});\n`;
             jsGen.forBlock['video_set_loop'] = (b: any) => `if(window.runtime?.video) window.runtime.video.setLoop('${b.getFieldValue('LOOP')}'==='on');\n`;
 
             // Reporter blocks
@@ -1803,25 +1815,25 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
             jsGen.forBlock['physics_stop'] = () =>
                 'if(window.runtime?.physics) window.runtime.physics.stop();\n';
             jsGen.forBlock['physics_set_gravity'] = (b: any) =>
-                `if(window.runtime?.physics) window.runtime.physics.setGravity(${b.getFieldValue('GX')||0}, ${b.getFieldValue('GY')||1});\n`;
+                `if(window.runtime?.physics) window.runtime.physics.setGravity(${b.getFieldValue('GX') || 0}, ${b.getFieldValue('GY') || 1});\n`;
             jsGen.forBlock['physics_add_body'] = (b: any) =>
-                `if(window.runtime?.physics) window.runtime.physics.addBody('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}');\n`;
+                `if(window.runtime?.physics) window.runtime.physics.addBody('${(b.getFieldValue('SPRITE') || '').replace(/'/g, "\\'")}');\n`;
             jsGen.forBlock['physics_add_force'] = (b: any) =>
-                `if(window.runtime?.physics) window.runtime.physics.addForce('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}', ${b.getFieldValue('FX')||0}, ${b.getFieldValue('FY')||-0.01});\n`;
+                `if(window.runtime?.physics) window.runtime.physics.addForce('${(b.getFieldValue('SPRITE') || '').replace(/'/g, "\\'")}', ${b.getFieldValue('FX') || 0}, ${b.getFieldValue('FY') || -0.01});\n`;
             jsGen.forBlock['physics_set_bounce'] = (b: any) => {
                 const spr = `(window.__activeSpriteId||'')`;
-                return `if(window.runtime?.physics) window.runtime.physics.setBounce(${spr}, ${b.getFieldValue('VALUE')||0.5});\n`;
+                return `if(window.runtime?.physics) window.runtime.physics.setBounce(${spr}, ${b.getFieldValue('VALUE') || 0.5});\n`;
             };
             jsGen.forBlock['physics_set_mass'] = (b: any) => {
                 const spr = `(window.__activeSpriteId||'')`;
-                return `if(window.runtime?.physics) window.runtime.physics.setMass(${spr}, ${b.getFieldValue('VALUE')||1});\n`;
+                return `if(window.runtime?.physics) window.runtime.physics.setMass(${spr}, ${b.getFieldValue('VALUE') || 1});\n`;
             };
             jsGen.forBlock['physics_set_static'] = (b: any) =>
-                `if(window.runtime?.physics) window.runtime.physics.setStatic('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}', '${b.getFieldValue('VALUE')}'==='yes');\n`;
+                `if(window.runtime?.physics) window.runtime.physics.setStatic('${(b.getFieldValue('SPRITE') || '').replace(/'/g, "\\'")}', '${b.getFieldValue('VALUE')}'==='yes');\n`;
             jsGen.forBlock['physics_get_velocity_x'] = (b: any) =>
-                [`window.runtime?.physics?.getVelocityX('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}')||0`, 0];
+                [`window.runtime?.physics?.getVelocityX('${(b.getFieldValue('SPRITE') || '').replace(/'/g, "\\'")}')||0`, 0];
             jsGen.forBlock['physics_get_velocity_y'] = (b: any) =>
-                [`window.runtime?.physics?.getVelocityY('${(b.getFieldValue('SPRITE')||'').replace(/'/g,"\\'")}')||0`, 0];
+                [`window.runtime?.physics?.getVelocityY('${(b.getFieldValue('SPRITE') || '').replace(/'/g, "\\'")}')||0`, 0];
             jsGen.forBlock['physics_on_collision'] = () => '';
         },
         getToolbox: () => [
@@ -1905,7 +1917,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
 
             jsGen.forBlock['makey_on_key'] = () => '';
             jsGen.forBlock['makey_set_key'] = (b: any) =>
-                `if(window.runtime?.makeyMakey) window.runtime.makeyMakey.setKeyMap('${(b.getFieldValue('SIGNAL')||'').replace(/'/g,"\\'")}', '${(b.getFieldValue('KEY')||'').replace(/'/g,"\\'")}');\n`;
+                `if(window.runtime?.makeyMakey) window.runtime.makeyMakey.setKeyMap('${(b.getFieldValue('SIGNAL') || '').replace(/'/g, "\\'")}', '${(b.getFieldValue('KEY') || '').replace(/'/g, "\\'")}');\n`;
             jsGen.forBlock['makey_get_key'] = () =>
                 ['window.runtime?.makeyMakey?.getLastKey()||""', 0];
         },

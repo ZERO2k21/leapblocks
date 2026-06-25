@@ -662,8 +662,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleFullscreen = () => {
         if (!isFullscreen) {
             setIsFullscreen(true);
-            // Calculate initial scale (account for 240px sprite panel and 48px toolbar)
-            const scaleX = (window.innerWidth - 240) / 480;
+            const scaleX = window.innerWidth / 480;
             const scaleY = (window.innerHeight - 48) / 310;
             setFullscreenScale(Math.min(scaleX, scaleY));
         } else {
@@ -678,8 +677,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         const updateScale = () => {
             if (isFullscreen) {
-                // Scale stage canvas (480x310) to fill viewport minus toolbar (48px) and sprite panel (240px)
-                const scaleX = (window.innerWidth - 240) / 480;
+                const scaleX = window.innerWidth / 480;
                 const scaleY = (window.innerHeight - 48) / 310;
                 setFullscreenScale(Math.min(scaleX, scaleY));
             } else {
@@ -5902,6 +5900,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 onDownload={handleDownloadProject}
 
+                onSave={handleSaveProject}
+
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
 
             />
@@ -6279,7 +6279,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Stage Container */}
                     <div ref={stageContainerRef} className="stage-container-responsive" style={{
                         ...(!isFullscreen ? styles.stageContainer : {}),
-                        width: isFullscreen ? 'calc(100vw - 240px)' : '100%',
+                        width: isFullscreen ? '100vw' : '100%',
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
                         position: isFullscreen ? 'fixed' : 'relative',
@@ -6390,12 +6390,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             const CANVAS_WIDTH = 480;
                             const CANVAS_HEIGHT = 310;
 
-                            // Fullscreen: scale canvas to fill viewport minus 48px toolbar and 240px sprite panel
                             const TOOLBAR_H = 48;
-                            const SPRITE_PANEL_W = 240;
                             const fsScale = isFullscreen
                                 ? Math.min(
-                                    (window.innerWidth - SPRITE_PANEL_W) / CANVAS_WIDTH,
+                                    window.innerWidth / CANVAS_WIDTH,
                                     (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
                                 )
                                 : 1;
@@ -6492,8 +6490,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         </div>
                                     </div>
 
-                                    {/* Sprite & Stage Panel Unit — visible in fullscreen on right side */}
-                                    {editorMode === 'stage' && (
+                                    {/* Sprite & Stage Panel Unit — hidden in fullscreen for clean presentation */}
+                                    {editorMode === 'stage' && !isFullscreen && (
                                         <div style={{
                                             ...styles.assetsContainer,
                                             width: isFullscreen ? '240px' : '100%',

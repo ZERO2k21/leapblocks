@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import React, { useState } from 'react';
-import { shareCloudProject, revokeCloudProjectShare, getShareUrl, CloudProject } from '../../services/cloudProjectApi';
+import { shareCloudProject, revokeCloudProjectShare, renameCloudProject, getShareUrl, CloudProject } from '../../services/cloudProjectApi';
 
 interface ShareProjectModalProps {
     project: CloudProject;
@@ -13,6 +13,7 @@ interface ShareProjectModalProps {
 
 export default function ShareProjectModal({ project, onClose, onUpdate }: ShareProjectModalProps) {
     const [permission, setPermission] = useState<'viewer' | 'editor'>(project.sharePermission || 'viewer');
+    const [editName, setEditName] = useState(project.name);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -24,12 +25,34 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
 
     const isShared = project.isShared === 1 && project.shareId;
     const shareUrl = isShared ? getShareUrl(project.shareId as string) : '';
+    const nameChanged = editName.trim() !== '' && editName.trim() !== project.name;
+
+    const handleRename = async () => {
+        if (!nameChanged) return;
+        setLoading(true);
+        try {
+            const updated = await renameCloudProject(project.id, editName.trim());
+            onUpdate(updated);
+        } catch (err: any) {
+            console.error('[ShareProjectModal] Failed to rename project:', err);
+            alert(err?.message || 'Failed to rename project');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleShare = async () => {
         setLoading(true);
         try {
-            const updated = await shareCloudProject(project.id, permission);
-            onUpdate(updated);
+            if (nameChanged) {
+                const renamed = await renameCloudProject(project.id, editName.trim());
+                onUpdate(renamed);
+                const updated = await shareCloudProject(renamed.id, permission);
+                onUpdate(updated);
+            } else {
+                const updated = await shareCloudProject(project.id, permission);
+                onUpdate(updated);
+            }
         } catch (err: any) {
             console.error('[ShareProjectModal] Failed to share project:', err);
             alert(err?.message || 'Failed to share project');
@@ -58,7 +81,6 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            // Fallback for older browsers
             const input = document.createElement('input');
             input.value = shareUrl;
             document.body.appendChild(input);
@@ -79,7 +101,51 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                 </div>
 
                 <div className="share-modal-body">
-                    <p className="share-project-name">{project.name}</p>
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Project Name
+                        </label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onBlur={handleRename}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); }}
+                                disabled={loading}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid rgba(255,255,255,0.12)',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    color: '#fff',
+                                    fontSize: 14,
+                                    fontWeight: 500,
+                                    outline: 'none',
+                                }}
+                            />
+                            {nameChanged && (
+                                <button
+                                    onClick={handleRename}
+                                    disabled={loading}
+                                    style={{
+                                        padding: '8px 14px',
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: 'rgba(99,102,241,0.2)',
+                                        color: '#818cf8',
+                                        cursor: 'pointer',
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {loading ? '...' : 'Rename'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
                     <div className="share-permission-group">
                         <label className="share-permission-label">

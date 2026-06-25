@@ -198,6 +198,20 @@ export async function updateCloudProject(
     return result.data;
 }
 
+export async function renameCloudProject(projectId: string, name: string): Promise<CloudProject> {
+    const formData = new FormData();
+    formData.append('name', name);
+
+    const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: formData,
+    });
+
+    const result = await handleResponse<CloudProjectResponse>(response);
+    return result.data;
+}
+
 export async function deleteCloudProject(projectId: string): Promise<void> {
     const response = await fetch(`${LMS_PROJECTS_URL}/${projectId}`, {
         method: 'DELETE',

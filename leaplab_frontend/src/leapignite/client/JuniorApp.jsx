@@ -761,6 +761,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 onTutorialStart={handleTutorialStart}
                 onBack={onBack}
                 onDownload={project.handleDownloadProject}
+                onSave={project.handleSaveProject}
             />
 
             {currentTutorial && (

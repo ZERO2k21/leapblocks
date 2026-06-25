@@ -8,6 +8,7 @@ import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus,
 import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
+import TopbarShareButton from "../../../components/common/TopbarShareButton";
 
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -268,6 +269,13 @@ export default function TopBar() {
                 >
                     <Upload size={13} strokeWidth={2.5} /> {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                 </button>
+
+                <TopbarShareButton
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    size={18}
+                    onSave={ctx.handleSaveProject}
+                    projectName={ctx.projectName}
+                />
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
 

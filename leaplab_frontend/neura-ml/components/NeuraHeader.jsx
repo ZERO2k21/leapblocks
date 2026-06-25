@@ -6,6 +6,7 @@
 import React from 'react';
 import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
 import LeapLabAuthButton from '@/auth/LeapLabAuthButton';
+import TopbarShareButton from '../../src/components/common/TopbarShareButton';
 
 export default function NeuraHeader({ onBack, onSave, projectName, onProjectNameChange, showProjectInput = false }) {
     return (
@@ -174,6 +175,13 @@ export default function NeuraHeader({ onBack, onSave, projectName, onProjectName
                     height: '32px',
                     flexShrink: 0
                 }}>
+                    <TopbarShareButton
+                        className="bg-transparent border-none cursor-pointer p-0 transition-all duration-200 flex items-center"
+                        style={{ color: 'rgba(255, 255, 255, 0.55)' }}
+                        size={20}
+                        onSave={onSave}
+                        projectName={projectName}
+                    />
                     <button title="Feedback" style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.55)', cursor: 'pointer', padding: '0px', transition: '0.2s', display: 'flex', alignItems: 'center' }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
                         onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}

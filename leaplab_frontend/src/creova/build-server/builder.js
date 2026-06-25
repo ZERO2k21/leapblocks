@@ -5,8 +5,8 @@ const jobManager = require('./jobManager');
 
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
 const TOOLS = {
-  apktool:  path.join(PROJECT_ROOT, 'tools', 'apktool', 'apktool.jar'),
-  signer:   path.join(PROJECT_ROOT, 'tools', 'signer', 'uber-apk-signer.jar'),
+  apktool:  path.join(PROJECT_ROOT, 'src', 'tools', 'apktool', 'apktool.jar'),
+  signer:   path.join(PROJECT_ROOT, 'src', 'tools', 'signer', 'uber-apk-signer.jar'),
   template: path.join(PROJECT_ROOT, 'template', 'base.apk'),
   keystore: path.join(PROJECT_ROOT, 'keys', 'appforge.keystore'),
 };
