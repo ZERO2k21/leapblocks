@@ -1672,7 +1672,7 @@ class CircuitEngine {
           } */
 
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
-            'mpu6050',
+            'mpu6050', 'ssd1306',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
             '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
             'ir-receiver', 'ir-remote'].includes(pType);

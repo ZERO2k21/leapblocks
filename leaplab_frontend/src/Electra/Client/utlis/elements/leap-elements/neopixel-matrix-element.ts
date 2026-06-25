@@ -145,6 +145,9 @@ export class NeopixelMatrixElement extends LitElement {
       maxOpacity ? Math.floor(Math.min(glowColor(value / maxOpacity) * multiplier, 1) * 255) : 255;
     const cssColor = `rgb(${cssVal(r)}, ${cssVal(g)}, ${cssVal(b)})`;
     const pixelElement = pixelElements[row * this.cols + col];
+    if (!pixelElement) {
+      return null;
+    }
     const [rElement, gElement, bElement, colorElement] = pixelElement;
     rElement.style.opacity = spotOpacity(r).toFixed(2);
     gElement.style.opacity = spotOpacity(g).toFixed(2);
