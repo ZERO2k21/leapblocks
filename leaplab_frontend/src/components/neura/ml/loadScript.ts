@@ -25,13 +25,19 @@ function loadScript(src: string, retries = 2): Promise<void> {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src="${src}"]`)
         if (existing) { resolve(); return }
+        if (!navigator.onLine) {
+            reject(new Error(`Failed to load: ${src} (no internet connection)`))
+            return
+        }
         const s = document.createElement('script')
         s.src = src
         s.onload = () => resolve()
         s.onerror = () => {
             s.remove()
             if (retries > 0) {
-                loadScript(src, retries - 1).then(resolve, reject)
+                setTimeout(() => {
+                    loadScript(src, retries - 1).then(resolve, reject)
+                }, 1000)
             } else {
                 reject(new Error(`Failed to load: ${src}`))
             }

@@ -1,6 +1,7 @@
 // classifiers/object-detection/ObjectDetection.tsx
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
+import StepIndicator from '../../components/StepIndicator'
 import { ensureTf, ensureCocoSsd } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
 
@@ -256,6 +257,15 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             <div className="text-[11px] font-bold uppercase" style={{ color: '#F97316', letterSpacing: '0.08em' }}>Object Detection</div>
                             <div className="text-[18px] font-bold text-ml-text-primary" style={{ letterSpacing: '-0.02em' }}>COCO-SSD Live Detector</div>
                         </div>
+                    </div>
+
+                    {/* Step Indicators */}
+                    <div className="flex items-center gap-4">
+                        <StepIndicator number="01" label="LOAD" title="Load Model" accentColor="#F97316" />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #F9731640, transparent)' }} />
+                        <StepIndicator number="02" label="DETECT" title="Live Detection" accentColor="#F97316" />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #F9731640, transparent)' }} />
+                        <StepIndicator number="03" label="RESULTS" title="View Results" accentColor="#F97316" />
                     </div>
 
                     {/* Model Loading Card */}

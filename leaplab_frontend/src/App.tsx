@@ -235,9 +235,10 @@ export default function App() {
 
                 logAppTiming(`Shared project mode detected: ${detectedMode}`);
                 setMode(detectedMode);
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Failed to load shared project:', err);
-                alert('Failed to load shared project. The link may be invalid or expired.');
+                const msg = err?.message || 'Failed to load shared project.';
+                alert(msg.includes('Authentication') ? msg : 'Failed to load shared project. The link may be invalid or expired.');
             }
         })();
 

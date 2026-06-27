@@ -1,77 +1,20 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * 
+ *
  * Full-featured ML Environment with TensorFlow.js + MobileNet
  * Real-time training, webcam capture, and live predictions
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import ClassifierLayout from '../../components/ClassifierLayout';
+import StepIndicator from '../../components/StepIndicator';
+import AddClassButton from '../../components/AddClassButton';
+import ProjectTestingPanel from '../../components/ProjectTestingPanel';
 import { KNNClassifier } from '../../ml/KNNClassifier';
 import { ensureTf, ensureMobileNet } from '../../ml/loadScript';
 import { showToast } from '../../../../leapignite/client/components/Toast';
-
-
-// ─── Icons ───────────────────────────────────────────────────────────────────
-const Icon = {
-    Brain: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.98-3 2.5 2.5 0 0 1-1.32-4.24 3 3 0 0 1 .34-5.58 2.5 2.5 0 0 1 1.96-3.42A2.5 2.5 0 0 1 9.5 2Z" />
-            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.98-3 2.5 2.5 0 0 0 1.32-4.24 3 3 0 0 0-.34-5.58 2.5 2.5 0 0 0-1.96-3.42A2.5 2.5 0 0 0 14.5 2Z" />
-        </svg>
-    ),
-    Camera: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-            <circle cx="12" cy="13" r="3" />
-        </svg>
-    ),
-    Upload: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-    ),
-    Plus: () => (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-    ),
-    Trash: () => (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-        </svg>
-    ),
-    Edit: () => (
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-    ),
-    Check: () => (
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-        </svg>
-    ),
-    X: () => (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-    ),
-    Zap: () => (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-    ),
-    ArrowLeft: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-    ),
-    Settings: () => (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-    ),
-};
+import { Image as ImageIcon, Upload, Camera, Zap, Settings } from 'lucide-react';
 
 // ─── CLASS CARD COLORS ───────────────────────────────────────────────────────
 const CLASS_COLORS = [
@@ -148,7 +91,9 @@ function WebcamModal({ classLabel, color, onCapture, onClose }: {
                         <div className="w-[10px] h-[10px] rounded-full" style={{ background: color.bg }} />
                         <span className="font-sans font-semibold text-ml-text-primary text-[15px]">Capture for <em className="not-italic" style={{ color: color.bg }}>{classLabel}</em></span>
                     </div>
-                    <button onClick={onClose} className="bg-transparent border-0 cursor-pointer text-ml-text-muted p-1"><Icon.X /></button>
+                    <button onClick={onClose} className="bg-transparent border-0 cursor-pointer text-ml-text-muted p-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    </button>
                 </div>
                 {error ? (
                     <div className="py-6 text-center text-ml-error-text font-sans text-sm">{error}</div>
@@ -168,7 +113,7 @@ function WebcamModal({ classLabel, color, onCapture, onClose }: {
                                 {capturing ? "● Recording…" : "Hold to Capture"}
                             </button>
                             <button onClick={captureFrame} className="px-4 py-3 rounded-[10px] cursor-pointer" style={{ background: "#1e1e30", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)" }}>
-                                <Icon.Camera />
+                                <Camera size={18} />
                             </button>
                         </div>
                         {count > 0 && <div className="text-center font-sans text-[13px] font-semibold mt-3" style={{ color: color.bg }}>{count} frame{count !== 1 ? "s" : ""} captured</div>}
@@ -179,8 +124,6 @@ function WebcamModal({ classLabel, color, onCapture, onClose }: {
         </div>
     );
 }
-
-// Continue in next message due to length...
 
 // ─── CLASS CARD ──────────────────────────────────────────────────────────────
 function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sampleCount }: {
@@ -237,13 +180,21 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
                 <div className="flex gap-1 ml-2">
                     {editing ? (
                         <>
-                            <button onClick={commitRename} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.25)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Check /></button>
-                            <button onClick={() => { setName(cls.name); setEditing(false); }} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.X /></button>
+                            <button onClick={commitRename} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.25)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                            </button>
+                            <button onClick={() => { setName(cls.name); setEditing(false); }} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
                         </>
                     ) : (
                         <>
-                            <button onClick={() => setEditing(true)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.2)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Edit /></button>
-                            <button onClick={() => onDelete(cls.id)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}><Icon.Trash /></button>
+                            <button onClick={() => setEditing(true)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.2)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                            </button>
+                            <button onClick={() => onDelete(cls.id)} className="rounded-md cursor-pointer text-white flex items-center" style={{ background: "rgba(255,255,255,0.15)", border: "none", padding: "4px 6px", transition: "background 0.15s" }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                            </button>
                         </>
                     )}
                 </div>
@@ -294,12 +245,12 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
                     <button onClick={() => fileRef.current?.click()} className="flex-1 rounded-[9px] bg-ml-btn-idle border border-dashed border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200 ease-out" style={{ padding: "9px 0" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--ml-btn-idle)"; }}>
-                        <Icon.Upload /><span>Upload</span>
+                        <Upload size={15} /><span>Upload</span>
                     </button>
                     <button onClick={() => onWebcam(cls.id)} className="flex-1 rounded-[9px] bg-ml-btn-idle border border-dashed border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200 ease-out" style={{ padding: "9px 0" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color.bg; (e.currentTarget as HTMLButtonElement).style.color = color.bg; (e.currentTarget as HTMLButtonElement).style.background = color.bg + "10"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--ml-btn-idle)"; }}>
-                        <Icon.Camera /><span>Webcam</span>
+                        <Camera size={15} /><span>Webcam</span>
                     </button>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
@@ -350,24 +301,19 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
             ) : trained ? (
                 <div className="bg-ml-success-bg border border-ml-success-border rounded-[10px] px-3.5 py-2.5">
                     <div className="font-sans text-xs text-ml-success-text font-semibold mb-1">✓ Model trained successfully</div>
-                    <div className="font-mono text-[11px] text-ml-text-secondary">Accuracy: {Math.round(accuracy * 100)}% · {classes.reduce((s, c) => s + c.samples.length, 0)} samples · {classes.length} classes</div>
+                    <div className="font-mono text-[11px] text-ml-text-secondary">Accuracy: {Math.round(accuracy * 100)}% · {totalSamples} samples · {classes.length} classes</div>
                 </div>
             ) : (
                 <div className="flex flex-col items-center py-2">
-                    {/* Neural network illustration */}
                     <svg width="120" height="70" viewBox="0 0 120 70" fill="none" style={{ marginBottom: 10, opacity: 0.6 }}>
-                        {/* Input layer */}
                         <circle cx="20" cy="15" r="5" fill="#7c3aed" opacity="0.4" />
                         <circle cx="20" cy="35" r="5" fill="#7c3aed" opacity="0.5" />
                         <circle cx="20" cy="55" r="5" fill="#7c3aed" opacity="0.4" />
-                        {/* Hidden layer */}
                         <circle cx="60" cy="12" r="5" fill="#a78bfa" opacity="0.5" />
                         <circle cx="60" cy="35" r="5" fill="#a78bfa" opacity="0.6" />
                         <circle cx="60" cy="58" r="5" fill="#a78bfa" opacity="0.5" />
-                        {/* Output layer */}
                         <circle cx="100" cy="25" r="5" fill="#c4b5fd" opacity="0.5" />
                         <circle cx="100" cy="45" r="5" fill="#c4b5fd" opacity="0.4" />
-                        {/* Connections input → hidden */}
                         <line x1="25" y1="15" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
                         <line x1="25" y1="15" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
                         <line x1="25" y1="35" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
@@ -375,7 +321,6 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
                         <line x1="25" y1="35" x2="55" y2="58" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
                         <line x1="25" y1="55" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
                         <line x1="25" y1="55" x2="55" y2="58" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
-                        {/* Connections hidden → output */}
                         <line x1="65" y1="12" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
                         <line x1="65" y1="12" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
                         <line x1="65" y1="35" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
@@ -391,11 +336,11 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
 
             <button onClick={onTrain} disabled={!canTrain} className="w-full rounded-[11px] font-sans font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out"
                 style={{ padding: "13px 0", background: canTrain ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "var(--ml-btn-idle)", border: "none", color: canTrain ? "#fff" : "var(--ml-text-disabled)", cursor: canTrain ? "pointer" : "not-allowed", letterSpacing: "-0.01em" }}>
-                <Icon.Zap />{status === "training" ? "Training…" : trained ? "Retrain Model" : "Train Model"}
+                <Zap size={15} />{status === "training" ? "Training…" : trained ? "Retrain Model" : "Train Model"}
             </button>
 
             <button onClick={() => setShowAdvanced(!showAdvanced)} className="bg-transparent border-0 text-ml-text-muted font-sans text-[13px] cursor-pointer flex items-center gap-1.5 p-0">
-                <Icon.Settings /><span>Advanced settings</span>
+                <Settings size={14} /><span>Advanced settings</span>
                 <span className="ml-auto" style={{ transition: "transform 0.2s", transform: showAdvanced ? "rotate(180deg)" : "none" }}>▾</span>
             </button>
 
@@ -418,10 +363,8 @@ function TrainingPanel({ classes, status, progress, accuracy, onTrain, showAdvan
     );
 }
 
-// Continue in next message...
-
-// ─── TESTING PANEL ───────────────────────────────────────────────────────────
-function TestingPanel({ trained, classes, predict }: {
+// ─── TESTING PANEL CONTENT ───────────────────────────────────────────────────
+function TestingPanelContent({ trained, classes, predict }: {
     trained: boolean;
     classes: ClassType[];
     predict: (canvas: HTMLCanvasElement) => Promise<any>;
@@ -475,7 +418,7 @@ function TestingPanel({ trained, classes, predict }: {
         reader.onload = async ev => {
             const dataUrl = ev.target?.result as string;
             setTestImg(dataUrl); setMode("upload");
-            const img = new Image(); img.src = dataUrl;
+            const img = new window.Image(); img.src = dataUrl;
             img.onload = async () => {
                 const c = canvasRef.current; if (!c) return;
                 c.width = 224; c.height = 224;
@@ -490,51 +433,21 @@ function TestingPanel({ trained, classes, predict }: {
         e.target.value = "";
     };
 
-    if (!trained) {
-        return (
-            <div className="bg-ml-surface border border-ml-border rounded-2xl p-6 flex flex-col items-center justify-center gap-3 text-center" style={{ minHeight: 200 }}>
-                {/* Camera + question mark illustration */}
-                <svg width="100" height="80" viewBox="0 0 100 80" fill="none" style={{ opacity: 0.5 }}>
-                    {/* Camera body */}
-                    <rect x="20" y="25" width="50" height="38" rx="6" stroke="#7c3aed" strokeWidth="2" fill="#7c3aed10" />
-                    {/* Camera lens */}
-                    <circle cx="45" cy="44" r="12" stroke="#a78bfa" strokeWidth="2" fill="#a78bfa10" />
-                    <circle cx="45" cy="44" r="6" stroke="#c4b5fd" strokeWidth="1.5" fill="#c4b5fd15" />
-                    {/* Camera flash */}
-                    <rect x="32" y="20" width="10" height="6" rx="2" stroke="#7c3aed" strokeWidth="1.5" fill="#7c3aed15" />
-                    {/* Question mark */}
-                    <text x="72" y="35" fontSize="24" fontWeight="700" fill="#7c3aed" opacity="0.6" fontFamily="'DM Sans', sans-serif">?</text>
-                    {/* Lock icon */}
-                    <rect x="38" y="60" width="14" height="10" rx="2" stroke="#555" strokeWidth="1.5" fill="#33320" />
-                    <path d="M41 60 V56 Q41 52 45 52 Q49 52 49 56 V60" stroke="#555" strokeWidth="1.5" fill="none" />
-                </svg>
-                <div className="font-sans text-sm text-ml-text-muted" style={{ lineHeight: 1.6, maxWidth: 180 }}>
-                    Train your model to unlock live predictions
-                </div>
-            </div>
-        );
-    }
-
     const topLabel = result ? Object.entries(result.confidences).sort((a: any, b: any) => b[1] - a[1])[0] : null;
     const sortedConf = result ? Object.entries(result.confidences).sort((a: any, b: any) => b[1] - a[1]) : [];
 
     return (
-        <div className="bg-ml-surface border border-ml-border rounded-2xl p-5 flex flex-col gap-3.5">
-            <div className="flex items-center gap-2">
-                <div className="rounded-full" style={{ width: 8, height: 8, background: "#a78bfa", boxShadow: "0 0 8px #a78bfa" }} />
-                <span className="font-sans font-bold text-[15px] text-ml-text-primary" style={{ letterSpacing: "-0.01em" }}>Testing</span>
-            </div>
-
+        <>
             <div className="flex gap-2">
                 <button onClick={() => { stopCam(); setMode("idle"); setResult(null); setTestImg(null); fileRef.current?.click(); }}
                     className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
                     style={{ padding: "9px 0", background: mode === "upload" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "upload" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "upload" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
-                    <Icon.Upload /><span>Upload Image</span>
+                    <Upload size={15} /><span>Upload</span>
                 </button>
                 <button onClick={() => mode === "webcam" ? (stopCam(), setMode("idle"), setResult(null)) : startCam()}
                     className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
                     style={{ padding: "9px 0", background: mode === "webcam" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "webcam" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "webcam" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
-                    <Icon.Camera /><span>{mode === "webcam" ? "Stop Camera" : "Live Webcam"}</span>
+                    <Camera size={15} /><span>{mode === "webcam" ? "Stop Camera" : "Webcam"}</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
@@ -577,7 +490,7 @@ function TestingPanel({ trained, classes, predict }: {
                     })}
                 </div>
             )}
-        </div>
+        </>
     );
 }
 
@@ -596,12 +509,11 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const [accuracy, setAccuracy] = useState(0);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [epochs, setEpochs] = useState(30);
-    const [projectName] = useState("My ML Project");
     const [restored, setRestored] = useState(false);
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
 
-    // Load TF.js + MobileNet in one shot (ensureMobileNet internally waits for TF)
+    // Load TF.js + MobileNet in one shot
     useEffect(() => {
         (async () => {
             try {
@@ -699,7 +611,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
         for (let i = 0; i < total; i++) {
             const { label, src } = allSamples[i];
             await new Promise<void>(res => {
-                const img = new Image(); img.src = src;
+                const img = new window.Image(); img.src = src;
                 img.onload = async () => {
                     const c = document.createElement("canvas"); c.width = 224; c.height = 224;
                     const ctx = c.getContext("2d");
@@ -718,11 +630,10 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
             await new Promise(r => setTimeout(r, 10));
         }
 
-        // Simulate accuracy estimation
         let correct = 0, total2 = 0;
         for (const cls of classes) {
             for (const src of cls.samples) {
-                const img = new Image(); img.src = src;
+                const img = new window.Image(); img.src = src;
                 await new Promise(res => { img.onload = res; img.onerror = res; });
                 const c2 = document.createElement("canvas"); c2.width = 224; c2.height = 224;
                 const ctx = c2.getContext("2d");
@@ -754,57 +665,56 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const webcamClass = webcamFor ? classes.find(c => c.id === webcamFor) : null;
     const webcamColor = webcamClass ? CLASS_COLORS[(classes.findIndex(c => c.id === webcamFor)) % CLASS_COLORS.length] : CLASS_COLORS[0];
 
+    const totalSamples = classes.reduce((s, c) => s + c.samples.length, 0);
+
     return (
-        <div className="flex-1 bg-ml-bg text-ml-text-primary font-sans overflow-y-auto min-h-0">
-            {/* Google Fonts load */}
-            <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');`}</style>
-
-
-
-            {/* Main layout */}
-            <div className="grid gap-5 items-stretch" style={{ gridTemplateColumns: "1fr 280px 280px", padding: "24px 28px", maxWidth: 1300, margin: "0 auto", minHeight: 0 }}>
+        <ClassifierLayout project={project} onBack={onBack || (() => {})}>
+            <div className="flex gap-5 items-stretch flex-1 min-h-0">
                 {/* Left: Data Collection */}
-                <div className="flex flex-col gap-3.5">
-                    <div className="flex items-center justify-between mb-0.5">
-                        <div>
-                            <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>01 — Collect</div>
-                            <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Training Data</div>
-                        </div>
-                        <button className="rounded-[10px] bg-ml-btn-idle border border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center gap-1.5 transition-all duration-150 ease-out" style={{ padding: "8px 14px" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}
-                            onClick={() => {
-                                const el = document.createElement("input");
-                                el.type = "file";
-                                (el as any).webkitdirectory = true;
-                                el.onchange = (ev: any) => {
-                                    const files = Array.from(ev.target.files);
-                                    const folderGroups: Record<string, any[]> = {};
-                                    (files as any[]).filter((f: any) => f.type.startsWith("image/")).forEach((f: any) => {
-                                        const parts = f.webkitRelativePath.split("/");
-                                        const cls = parts[1] || parts[0];
-                                        if (!folderGroups[cls]) folderGroups[cls] = [];
-                                        folderGroups[cls].push(f);
-                                    });
-                                    Object.entries(folderGroups).forEach(([name, fls]) => {
-                                        const existing = classes.find(c => c.name === name);
-                                        const cid = existing ? existing.id : nextId;
-                                        if (!existing) {
-                                            setClasses(p => [...p, { id: cid, name, samples: [] }]);
-                                            setNextId(n => n + 1);
-                                        }
-                                        fls.forEach((file: any) => {
-                                            const r = new FileReader();
-                                            r.onload = (ev2: any) => addSample(cid, ev2.target.result);
-                                            r.readAsDataURL(file);
+                <div className="flex-1 flex flex-col gap-3.5">
+                    <StepIndicator
+                        number={1}
+                        label="Collect"
+                        title="Training Data"
+                        action={
+                            <button
+                                className="rounded-[10px] bg-ml-btn-idle border border-ml-border-strong text-ml-text-secondary font-sans text-[13px] cursor-pointer flex items-center gap-1.5 transition-all duration-150"
+                                style={{ padding: "8px 14px" }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}
+                                onClick={() => {
+                                    const el = document.createElement("input");
+                                    el.type = "file";
+                                    (el as any).webkitdirectory = true;
+                                    el.onchange = (ev: any) => {
+                                        const files = Array.from(ev.target.files);
+                                        const folderGroups: Record<string, any[]> = {};
+                                        (files as any[]).filter((f: any) => f.type.startsWith("image/")).forEach((f: any) => {
+                                            const parts = f.webkitRelativePath.split("/");
+                                            const cls = parts[1] || parts[0];
+                                            if (!folderGroups[cls]) folderGroups[cls] = [];
+                                            folderGroups[cls].push(f);
                                         });
-                                    });
-                                };
-                                el.click();
-                            }}>
-                            <Icon.Upload /><span>Upload Folder</span>
-                        </button>
-                    </div>
+                                        Object.entries(folderGroups).forEach(([name, fls]) => {
+                                            const existing = classes.find(c => c.name === name);
+                                            const cid = existing ? existing.id : nextId;
+                                            if (!existing) {
+                                                setClasses(p => [...p, { id: cid, name, samples: [] }]);
+                                                setNextId(n => n + 1);
+                                            }
+                                            fls.forEach((file: any) => {
+                                                const r = new FileReader();
+                                                r.onload = (ev2: any) => addSample(cid, ev2.target.result);
+                                                r.readAsDataURL(file);
+                                            });
+                                        });
+                                    };
+                                    el.click();
+                                }}>
+                                <Upload size={15} /><span>Upload Folder</span>
+                            </button>
+                        }
+                    />
 
                     <div className="flex flex-col gap-3">
                         {classes.map((cls, i) => (
@@ -814,19 +724,12 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         ))}
                     </div>
 
-                    <button onClick={addClass} className="rounded-xl bg-transparent border-2 border-dashed border-ml-border text-ml-text-muted font-sans text-sm cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 ease-out" style={{ padding: "14px 0" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#7c3aed"; (e.currentTarget as HTMLButtonElement).style.color = "#a78bfa"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-muted)"; }}>
-                        <Icon.Plus /><span>Add Class</span>
-                    </button>
+                    <AddClassButton onClick={addClass} />
                 </div>
 
                 {/* Middle: Training */}
-                <div className="flex flex-col gap-3.5">
-                    <div className="mb-0.5">
-                        <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>02 — Train</div>
-                        <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Model</div>
-                    </div>
+                <div className="flex flex-col gap-3.5 w-[280px] shrink-0">
+                    <StepIndicator number={2} label="Train" title="Model" />
                     <TrainingPanel classes={classes} status={trainStatus} progress={progress} accuracy={accuracy}
                         onTrain={handleTrain} showAdvanced={showAdvanced} setShowAdvanced={setShowAdvanced}
                         epochs={epochs} setEpochs={setEpochs} trained={trained} />
@@ -835,8 +738,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         <div className="bg-ml-surface border border-ml-border rounded-2xl p-4">
                             <div className="text-xs font-bold text-ml-text-muted uppercase mb-3" style={{ letterSpacing: "0.05em" }}>Class distribution</div>
                             {classes.map((c, i) => {
-                                const total = classes.reduce((s, x) => s + x.samples.length, 0);
-                                const pct = total > 0 ? (c.samples.length / total) * 100 : 0;
+                                const pct = totalSamples > 0 ? (c.samples.length / totalSamples) * 100 : 0;
                                 return (
                                     <div key={c.id} className="mb-2">
                                         <div className="flex justify-between" style={{ marginBottom: 3 }}>
@@ -854,12 +756,26 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                 </div>
 
                 {/* Right: Testing */}
-                <div className="flex flex-col gap-3.5">
-                    <div className="mb-0.5">
-                        <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: "0.06em" }}>03 — Test</div>
-                        <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: "-0.02em" }}>Predictions</div>
-                    </div>
-                    <TestingPanel trained={trained} classes={classes} predict={predict} />
+                <div className="flex flex-col gap-3.5 w-[280px] shrink-0">
+                    <StepIndicator number={3} label="Test" title="Predictions" />
+                    <ProjectTestingPanel
+                        icon={<ImageIcon size={16} className="text-white" />}
+                        trained={trained}
+                        emptyText="Train your model to unlock live predictions"
+                        emptyIllustration={
+                            <svg width="100" height="80" viewBox="0 0 100 80" fill="none" style={{ opacity: 0.5 }}>
+                                <rect x="20" y="25" width="50" height="38" rx="6" stroke="#7c3aed" strokeWidth="2" fill="#7c3aed10" />
+                                <circle cx="45" cy="44" r="12" stroke="#a78bfa" strokeWidth="2" fill="#a78bfa10" />
+                                <circle cx="45" cy="44" r="6" stroke="#c4b5fd" strokeWidth="1.5" fill="#c4b5fd15" />
+                                <rect x="32" y="20" width="10" height="6" rx="2" stroke="#7c3aed" strokeWidth="1.5" fill="#7c3aed15" />
+                                <text x="72" y="35" fontSize="24" fontWeight="700" fill="#7c3aed" opacity="0.6" fontFamily="'DM Sans', sans-serif">?</text>
+                                <rect x="38" y="60" width="14" height="10" rx="2" stroke="#555" strokeWidth="1.5" fill="#33320" />
+                                <path d="M41 60 V56 Q41 52 45 52 Q49 52 49 56 V60" stroke="#555" strokeWidth="1.5" fill="none" />
+                            </svg>
+                        }
+                    >
+                        <TestingPanelContent trained={trained} classes={classes} predict={predict} />
+                    </ProjectTestingPanel>
 
                     {trained && (
                         <div className="bg-ml-surface border border-ml-border rounded-2xl p-4 flex flex-col gap-2.5">
@@ -868,7 +784,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                                 { label: "Download as JSON", desc: "TensorFlow.js format", action: () => { const data = { type: "neura-ml-knn", classes: classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy, created: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "neura-model.json"; a.click(); } },
                                 { label: "Copy embed code", desc: "Use in your app", action: () => { try { navigator.clipboard?.writeText(`<!-- Neura ML Model -->\n<script>const model = ${JSON.stringify({ classes: classes.map(c => c.name) })}</script>`).then(() => showToast("Copied!", "success")).catch(() => showToast("Failed to copy. Please copy manually.", "error")); } catch (_) { showToast("Failed to copy. Please copy manually.", "error"); } } },
                             ].map(({ label, desc, action }) => (
-                                <button key={label} onClick={action} className="rounded-[9px] bg-ml-well border border-ml-border text-ml-text-secondary font-sans text-[13px] cursor-pointer text-left transition-all duration-150 ease-out" style={{ padding: "10px 14px" }}
+                                <button key={label} onClick={action} className="rounded-[9px] bg-ml-well border border-ml-border text-ml-text-secondary font-sans text-[13px] cursor-pointer text-left transition-all duration-150" style={{ padding: "10px 14px" }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#a78bfa"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-primary)"; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}>
                                     <div className="font-semibold text-[13px]">{label}</div>
@@ -886,12 +802,6 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                     onCapture={(dataUrl) => addSample(webcamFor, dataUrl)}
                     onClose={() => setWebcamFor(null)} />
             )}
-
-            <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--ml-bg); } ::-webkit-scrollbar-thumb { background: var(--ml-border-strong); border-radius: 3px; }
-      `}</style>
-        </div>
+        </ClassifierLayout>
     );
 }

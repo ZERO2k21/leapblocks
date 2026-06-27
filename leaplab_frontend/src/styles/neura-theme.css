@@ -1163,3 +1163,55 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── Responsive Breakpoints ────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .neura-card-3d {
+    transform: none;
+  }
+
+  .neura-card-3d:hover {
+    transform: translateY(-2px);
+  }
+
+  .neura-animated-border::before {
+    animation: none;
+  }
+
+  .neura-shimmer::before {
+    animation: none;
+  }
+
+  .neura-progress-fill {
+    transition: width 0.3s ease;
+  }
+}
+
+@media (max-width: 768px) {
+  .neura-glass-premium {
+    backdrop-filter: blur(8px);
+  }
+
+  .neura-card-glow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .neura-card-glow:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .neura-status-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .neura-badge-premium {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .neura-focus-ring:focus {
+    outline: none;
+  }
+}

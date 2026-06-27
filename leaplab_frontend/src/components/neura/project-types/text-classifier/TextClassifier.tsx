@@ -2,6 +2,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import StepIndicator from '../../components/StepIndicator'
+import AddClassButton from '../../components/AddClassButton'
+import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
 import { ensureUSE } from '../../ml/loadScript'
 import { Type, Trash2, Edit2, Check, X, Plus, FileText, AlignLeft, Hash, Sparkles, Send } from 'lucide-react'
@@ -104,6 +107,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
     const [focusedInput, setFocusedInput] = useState<number | null>(null)
     const [restored, setRestored] = useState(false)
     const [useReady, setUseReady] = useState(false)
+    const [useError, setUseError] = useState<string | null>(null)
     const [accuracy, setAccuracy] = useState(0)
     const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map())
     const encoderRef = useRef<any>(null)
@@ -167,10 +171,16 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
         const load = async () => {
             try {
                 if (useReady) return
+                setUseError(null)
                 const encoder = await ensureUSE()
                 encoderRef.current = await encoder.load()
                 setUseReady(true)
-            } catch (e) { console.error('USE load failed:', e) }
+            } catch (e: any) {
+                console.error('USE load failed:', e)
+                setUseError(e?.message?.includes('Failed to load')
+                    ? 'Could not load ML model. Please check your internet connection and try again.'
+                    : 'Failed to initialize the text encoder. Please refresh the page.')
+            }
         }
         load()
     }, [])
@@ -271,6 +281,8 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
             <div className="flex gap-6 items-stretch flex-1 min-h-0">
                 {/* Category Cards Column */}
                 <div className="flex-1 flex flex-col gap-4">
+                    <StepIndicator number="01" label="COLLECT" title="Add Classes & Samples" accentColor="#8b5cf6" />
+
                     {classes.map((cls, i) => {
                         const color = COLORS[i % COLORS.length]
                         const isHovered = hoveredCard === cls.id
@@ -446,40 +458,55 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                     })}
 
                     {/* Add Class button */}
-                    <button
-                        onClick={addClass}
-                        className="w-full py-4 rounded-2xl text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-200"
-                        style={{ border: '2px dashed var(--ml-border-strong)', background: 'transparent' }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.borderColor = '#8b5cf6'
-                            e.currentTarget.style.color = '#a78bfa'
-                            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
-                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
-                            e.currentTarget.style.background = 'transparent'
-                        }}
-                    >
-                        <Plus size={16} />
-                        Add Class
-                    </button>
+                    <AddClassButton onClick={addClass} accentColor="#8b5cf6" />
                 </div>
 
                 {/* Training Panel */}
-                <TrainingPanel
-                    status={status}
-                    progress={progress}
-                    accuracy={accuracy}
-                    canTrain={canTrain}
-                    onTrain={handleTrain}
-                    showAdvanced={showAdv}
-                    setShowAdvanced={setShowAdv}
-                    epochs={epochs}
-                    setEpochs={setEpochs}
-                    trained={trained}
-                    sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
-                />
+                <div className="flex flex-col gap-4">
+                    <StepIndicator number="02" label="TRAIN" title="Train Your Model" accentColor="#8b5cf6" />
+
+                    {useError && (
+                        <div className="rounded-[12px] px-4 py-3 flex flex-col gap-2" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                            <span className="font-sans text-xs font-semibold" style={{ color: '#f87171' }}>{useError}</span>
+                            <button
+                                onClick={() => {
+                                    setUseError(null)
+                                    setUseReady(false)
+                                    const load = async () => {
+                                        try {
+                                            const encoder = await ensureUSE()
+                                            encoderRef.current = await encoder.load()
+                                            setUseReady(true)
+                                        } catch (e: any) {
+                                            setUseError(e?.message?.includes('Failed to load')
+                                                ? 'Could not load ML model. Please check your internet connection and try again.'
+                                                : 'Failed to initialize the text encoder. Please refresh the page.')
+                                        }
+                                    }
+                                    load()
+                                }}
+                                className="self-start px-3 py-1.5 rounded-lg border-none font-sans text-[11px] font-bold cursor-pointer transition-colors duration-150"
+                                style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171' }}
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    )}
+
+                    <TrainingPanel
+                        status={status}
+                        progress={progress}
+                        accuracy={accuracy}
+                        canTrain={canTrain}
+                        onTrain={handleTrain}
+                        showAdvanced={showAdv}
+                        setShowAdvanced={setShowAdv}
+                        epochs={epochs}
+                        setEpochs={setEpochs}
+                        trained={trained}
+                        sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
+                    />
+                </div>
 
                 {/* Divider */}
                 <div className="w-8 flex items-center pt-16">
@@ -487,103 +514,95 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                 </div>
 
                 {/* Testing Panel */}
-                <div className="w-64 bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0">
-                    {/* Header */}
-                    <div className="px-4 py-3.5 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)' }}>
-                        <FileText size={16} className="text-ml-text-primary" />
-                        <span className="text-ml-text-primary font-bold text-sm font-sans">Testing</span>
+                <ProjectTestingPanel
+                    icon={<FileText size={16} className="text-white" />}
+                    accentColor="#8b5cf6"
+                    trained={trained}
+                    emptyText="Train your text model first."
+                    emptyIllustration={<DocumentIllustration />}
+                >
+                    {/* Step Indicator */}
+                    <div className="p-3">
+                        <StepIndicator number="03" label="TEST" title="Test Your Model" accentColor="#8b5cf6" />
                     </div>
 
-                    <div className="p-5">
-                                {!trained ? (
-                                    <div className="flex flex-col items-center text-center">
-                                        <DocumentIllustration />
-                                        <p className="font-sans text-xs text-ml-text-muted mt-3 leading-relaxed">
-                                            Train your text model first.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-3">
-                                        {/* Success indicator */}
-                                        <div className="flex items-center gap-2 bg-ml-success-bg rounded-[10px] px-3 py-2.5 animate-celebration" style={{ border: '1px solid #1a3a25' }}>
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-dot-pulse" />
-                                            <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
-                                        </div>
+                    {/* Success indicator */}
+                    <div className="flex items-center gap-2 bg-ml-success-bg rounded-[10px] px-3 py-2.5 animate-celebration" style={{ border: '1px solid #1a3a25' }}>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-dot-pulse" />
+                        <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
+                    </div>
 
-                                {/* Textarea */}
-                                <textarea
-                                    value={testText}
-                                    onChange={e => setTestText(e.target.value)}
-                                    placeholder="Type text to classify..."
-                                    className="w-full bg-ml-well rounded-[10px] px-3 py-2.5 text-ml-text-primary font-sans text-xs outline-none resize-none h-20 transition-colors duration-200"
-                                    style={{ border: '1.5px solid var(--ml-border-strong)' }}
-                                    onFocus={e => { e.currentTarget.style.borderColor = '#8b5cf6' }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--ml-border-strong)' }}
-                                />
+                    {/* Textarea */}
+                    <textarea
+                        value={testText}
+                        onChange={e => setTestText(e.target.value)}
+                        placeholder="Type text to classify..."
+                        className="w-full bg-ml-well rounded-[10px] px-3 py-2.5 text-ml-text-primary font-sans text-xs outline-none resize-none h-20 transition-colors duration-200"
+                        style={{ border: '1.5px solid var(--ml-border-strong)' }}
+                        onFocus={e => { e.currentTarget.style.borderColor = '#8b5cf6' }}
+                        onBlur={e => { e.currentTarget.style.borderColor = 'var(--ml-border-strong)' }}
+                    />
 
-                                {/* Character count */}
-                                <div className="flex justify-between text-[10px] text-ml-text-muted -mt-2">
-                                    <span>{testText.length} characters</span>
-                                    <span>{testText.split(/\s+/).filter(Boolean).length} words</span>
-                                </div>
+                    {/* Character count */}
+                    <div className="flex justify-between text-[10px] text-ml-text-muted -mt-2">
+                        <span>{testText.length} characters</span>
+                        <span>{testText.split(/\s+/).filter(Boolean).length} words</span>
+                    </div>
 
-                                {/* Predict button */}
-                                <button
-                                    onClick={handlePredict}
-                                    disabled={!testText.trim()}
-                                    className="w-full py-[11px] rounded-[10px] border-none font-sans font-bold text-[13px] flex items-center justify-center gap-1.5 transition-all duration-200"
-                                    style={{
-                                        background: testText.trim()
-                                            ? 'linear-gradient(135deg, #8b5cf6, #a78bfa)'
-                                            : 'var(--ml-btn-idle)',
-                                        color: testText.trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
-                                        cursor: testText.trim() ? 'pointer' : 'not-allowed',
-                                        boxShadow: testText.trim() ? '0 4px 14px rgba(139, 92, 246, 0.25)' : 'none'
-                                    }}
-                                >
-                                    <Send size={14} />
-                                    Predict
-                                </button>
+                    {/* Predict button */}
+                    <button
+                        onClick={handlePredict}
+                        disabled={!testText.trim()}
+                        className="w-full py-[11px] rounded-[10px] border-none font-sans font-bold text-[13px] flex items-center justify-center gap-1.5 transition-all duration-200"
+                        style={{
+                            background: testText.trim()
+                                ? 'linear-gradient(135deg, #8b5cf6, #a78bfa)'
+                                : 'var(--ml-btn-idle)',
+                            color: testText.trim() ? 'var(--ml-text-primary)' : 'var(--ml-text-disabled)',
+                            cursor: testText.trim() ? 'pointer' : 'not-allowed',
+                            boxShadow: testText.trim() ? '0 4px 14px rgba(139, 92, 246, 0.25)' : 'none'
+                        }}
+                    >
+                        <Send size={14} />
+                        Predict
+                    </button>
 
-                                {/* Prediction results */}
-                                {testResult && (
-                                    <div className="flex flex-col gap-2 animate-slide-in-up">
-                                        {/* Prediction label */}
-                                        <div className="flex items-center justify-between rounded-[10px] px-3 py-2.5" style={{
-                                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
-                                            border: '1px solid rgba(139, 92, 246, 0.2)'
-                                        }}>
-                                            <span className="font-sans text-[11px] font-semibold" style={{ color: '#a78bfa' }}>Prediction</span>
-                                            <span className="font-sans text-[13px] text-ml-text-primary font-bold">{testResult.label}</span>
-                                        </div>
-
-                                        {/* Confidence bars with animation */}
-                                        {Object.entries(testResult.confidences).map(([label, conf]) => {
-                                            const classIdx = classes.findIndex(c => c.name === label)
-                                            const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
-                                            return (
-                                                <div key={label}>
-                                                    <div className="flex justify-between text-[11px] mb-1">
-                                                        <span className="text-ml-text-secondary font-sans">{label}</span>
-                                                        <span className="text-ml-text-secondary font-mono font-semibold">
-                                                            {Math.round(conf * 100)}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="neura-progress-premium">
-                                                        <div className="neura-progress-fill" style={{
-                                                            width: `${conf * 100}%`,
-                                                            background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
+                    {/* Prediction results */}
+                    {testResult && (
+                        <div className="flex flex-col gap-2 animate-slide-in-up">
+                            {/* Prediction label */}
+                            <div className="flex items-center justify-between rounded-[10px] px-3 py-2.5" style={{
+                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                                border: '1px solid rgba(139, 92, 246, 0.2)'
+                            }}>
+                                <span className="font-sans text-[11px] font-semibold" style={{ color: '#a78bfa' }}>Prediction</span>
+                                <span className="font-sans text-[13px] text-ml-text-primary font-bold">{testResult.label}</span>
                             </div>
-                        )}
-                    </div>
-                </div>
+
+                            {/* Confidence bars with animation */}
+                            {Object.entries(testResult.confidences).map(([label, conf]) => {
+                                const classIdx = classes.findIndex(c => c.name === label)
+                                const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
+                                return (
+                                    <div key={label}>
+                                        <div className="flex justify-between text-[11px] mb-1">
+                                            <span className="text-ml-text-secondary font-sans">{label}</span>
+                                            <span className="text-ml-text-secondary font-mono font-semibold">
+                                                {Math.round(conf * 100)}%
+                                            </span>
+                                        </div>
+                                        <div className="neura-progress-premium">
+                                            <div className="neura-progress-fill" style={{
+                                                width: `${conf * 100}%`,
+                                                background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
+                                            }} />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </ProjectTestingPanel>
             </div>
         </ClassifierLayout>
     )

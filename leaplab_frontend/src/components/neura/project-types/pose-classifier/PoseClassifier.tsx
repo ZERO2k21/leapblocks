@@ -2,6 +2,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import StepIndicator from '../../components/StepIndicator'
+import AddClassButton from '../../components/AddClassButton'
+import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
 import { ensureTf, ensurePoseDetection } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
@@ -792,29 +795,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                     })}
 
                     {/* Add Class button */}
-                    <button
-                        onClick={addClass}
-                        style={{
-                            width: '100%',
-                            padding: 16,
-                            borderRadius: 12,
-                            border: '2px dashed #2a2a3d',
-                            background: 'transparent',
-                            color: 'var(--ml-text-secondary)',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <Plus size={16} />
-                        Add Class
-                    </button>
+                    <AddClassButton onClick={addClass} accentColor="#22c55e" />
                 </div>
 
                 {/* Training Panel */}
@@ -829,121 +810,92 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                 </div>
 
                 {/* Testing Panel */}
-                <div style={{
-                    width: 256,
-                    background: 'var(--ml-surface)',
-                    borderRadius: 16,
-                    border: '1px solid #1e1e2e',
-                    overflow: 'hidden',
-                    flexShrink: 0
-                }}>
-                    {/* Header */}
+                <ProjectTestingPanel
+                    icon={<Activity size={16} className="text-white" />}
+                    accentColor="#8b5cf6"
+                    trained={trained}
+                    emptyText="Train your pose model to start testing"
+                    emptyIllustration={<PersonIllustration size={80} />}
+                >
+                    {/* Model ready indicator */}
                     <div style={{
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                        padding: '14px 16px',
+                        background: 'var(--ml-success-bg)',
+                        border: '1px solid #1a3a25',
+                        borderRadius: 10,
+                        padding: '10px 12px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8
+                        gap: 8,
                     }}>
-                        <Activity size={16} style={{ color: 'var(--ml-text-primary)' }} />
-                        <span style={{ color: 'var(--ml-text-primary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>Testing</span>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ml-success-dot)', boxShadow: '0 0 8px rgba(32,201,151,0.5)' }} />
+                        <span style={{ color: 'var(--ml-success-text)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Model ready</span>
                     </div>
 
-                    {/* Content */}
-                    <div style={{ padding: 20 }}>
-                        {!trained ? (
-                            <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 16 }}>
-                                <PersonIllustration size={80} />
-                                <p style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, marginTop: 16, lineHeight: 1.5 }}>
-                                    Train your pose model to start testing
-                                </p>
+                    {/* Capture & Predict button */}
+                    <button onClick={() => {
+                        if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
+                        setShowPredictModal(true)
+                    }} style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: 10,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
+                        color: 'var(--ml-text-primary)',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        <Camera size={14} />
+                        Capture & Predict
+                    </button>
+
+                    {/* Prediction results */}
+                    {testResult && (
+                        <div>
+                            <div style={{
+                                background: 'rgba(139,92,246,0.1)',
+                                border: '1px solid rgba(139,92,246,0.2)',
+                                borderRadius: 8,
+                                padding: '8px 12px',
+                                marginBottom: 12
+                            }}>
+                                <span style={{ color: '#a78bfa', fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700 }}>Prediction</span>
                             </div>
-                        ) : (
-                            <div>
-                                {/* Model ready indicator */}
-                                <div style={{
-                                    background: 'var(--ml-success-bg)',
-                                    border: '1px solid #1a3a25',
-                                    borderRadius: 10,
-                                    padding: '10px 12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    marginBottom: 16
-                                }}>
-                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ml-success-dot)', boxShadow: '0 0 8px rgba(32,201,151,0.5)' }} />
-                                    <span style={{ color: 'var(--ml-success-text)', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>Model ready</span>
-                                </div>
-
-                                {/* Capture & Predict button */}
-                                <button onClick={() => {
-                                    if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
-                                    setShowPredictModal(true)
-                                }} style={{
-                                    width: '100%',
-                                    padding: '12px 16px',
-                                    borderRadius: 10,
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                                    color: 'var(--ml-text-primary)',
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 8,
-                                    boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
-                                    marginBottom: 16,
-                                    transition: 'all 0.2s ease'
-                                }}>
-                                    <Camera size={14} />
-                                    Capture & Predict
-                                </button>
-
-                                {/* Prediction results placeholder */}
-                                {testResult && (
-                                    <div>
-                                        <div style={{
-                                            background: 'rgba(139,92,246,0.1)',
-                                            border: '1px solid rgba(139,92,246,0.2)',
-                                            borderRadius: 8,
-                                            padding: '8px 12px',
-                                            marginBottom: 12
-                                        }}>
-                                            <span style={{ color: '#a78bfa', fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700 }}>Prediction</span>
+                            {classes.map((cls, i) => {
+                                const color = COLORS[i % COLORS.length]
+                                const conf = testResult.confidences?.[cls.name] || 0
+                                return (
+                                    <div key={cls.id} style={{ marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11 }}>{cls.name}</span>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>{(conf * 100).toFixed(0)}%</span>
                                         </div>
-                                        {classes.map((cls, i) => {
-                                            const color = COLORS[i % COLORS.length]
-                                            const conf = testResult.confidences?.[cls.name] || 0
-                                            return (
-                                                <div key={cls.id} style={{ marginBottom: 8 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11 }}>{cls.name}</span>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>{(conf * 100).toFixed(0)}%</span>
-                                                    </div>
-                                                    <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
-                                                        <div style={{ height: '100%', width: `${conf * 100}%`, background: `linear-gradient(90deg, ${color.bg}, ${color.light})`, borderRadius: 2, transition: 'width 0.5s ease' }} />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
+                                        <div style={{ height: 4, background: 'var(--ml-border)', borderRadius: 2, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${conf * 100}%`, background: `linear-gradient(90deg, ${color.bg}, ${color.light})`, borderRadius: 2, transition: 'width 0.5s ease' }} />
+                                        </div>
                                     </div>
-                                )}
+                                )
+                            })}
+                        </div>
+                    )}
 
-                                {/* Instructions when no result */}
-                                {!testResult && (
-                                    <div style={{ textAlign: 'center', paddingTop: 8 }}>
-                                        <p style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11, lineHeight: 1.5 }}>
-                                            Point your webcam at a person to see pose predictions
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                    {/* Instructions when no result */}
+                    {!testResult && (
+                        <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                            <p style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: 11, lineHeight: 1.5 }}>
+                                Point your webcam at a person to see pose predictions
+                            </p>
+                        </div>
+                    )}
+                </ProjectTestingPanel>
             </div>
 
             {/* Pose Webcam Modal */}
