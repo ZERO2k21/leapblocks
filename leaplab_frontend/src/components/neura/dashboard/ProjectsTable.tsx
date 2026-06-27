@@ -163,9 +163,7 @@ function MobileProjectCard({
                     <span className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Classes: <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-[#0a015a]'}`}>{project.classes.length}</span></span>
                     {project.modelTrained ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-dot-pulse" />
                             Trained
                         </span>
                     ) : (
@@ -281,9 +279,7 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                                         <td className="px-4 lg:px-6 py-4">
                                             {project.modelTrained ? (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                                                        <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                    </svg>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-dot-pulse" />
                                                     Trained
                                                     {project.accuracy != null && <span className="ml-0.5 text-emerald-500">{project.accuracy}%</span>}
                                                 </span>

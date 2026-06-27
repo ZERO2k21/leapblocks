@@ -291,7 +291,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                             >
                                 {/* Gradient Header */}
                                 <div
-                                    className="px-4 py-3 flex items-center justify-between"
+                                    className="px-4 py-3 flex items-center justify-between neura-shimmer"
                                     style={{ background: `linear-gradient(135deg, ${color.bg} 0%, ${color.light} 100%)` }}
                                 >
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -495,20 +495,20 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                     </div>
 
                     <div className="p-5">
-                        {!trained ? (
-                            <div className="flex flex-col items-center text-center">
-                                <DocumentIllustration />
-                                <p className="font-sans text-xs text-ml-text-muted mt-3 leading-relaxed">
-                                    Train your text model first.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {/* Success indicator */}
-                                <div className="flex items-center gap-2 bg-ml-success-bg rounded-[10px] px-3 py-2.5" style={{ border: '1px solid #1a3a25' }}>
-                                    <div className="w-2 h-2 rounded-full bg-ml-success-dot" style={{ boxShadow: '0 0 8px var(--ml-success-dot)' }} />
-                                    <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
-                                </div>
+                                {!trained ? (
+                                    <div className="flex flex-col items-center text-center">
+                                        <DocumentIllustration />
+                                        <p className="font-sans text-xs text-ml-text-muted mt-3 leading-relaxed">
+                                            Train your text model first.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-3">
+                                        {/* Success indicator */}
+                                        <div className="flex items-center gap-2 bg-ml-success-bg rounded-[10px] px-3 py-2.5 animate-celebration" style={{ border: '1px solid #1a3a25' }}>
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-dot-pulse" />
+                                            <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
+                                        </div>
 
                                 {/* Textarea */}
                                 <textarea
@@ -547,7 +547,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
 
                                 {/* Prediction results */}
                                 {testResult && (
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-2 animate-slide-in-up">
                                         {/* Prediction label */}
                                         <div className="flex items-center justify-between rounded-[10px] px-3 py-2.5" style={{
                                             background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
@@ -557,7 +557,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                             <span className="font-sans text-[13px] text-ml-text-primary font-bold">{testResult.label}</span>
                                         </div>
 
-                                        {/* Confidence bars */}
+                                        {/* Confidence bars with animation */}
                                         {Object.entries(testResult.confidences).map(([label, conf]) => {
                                             const classIdx = classes.findIndex(c => c.name === label)
                                             const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
@@ -569,11 +569,10 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                                                             {Math.round(conf * 100)}%
                                                         </span>
                                                     </div>
-                                                    <div className="h-1 bg-ml-well rounded-[2px] overflow-hidden">
-                                                        <div className="h-full transition-all duration-500" style={{
+                                                    <div className="neura-progress-premium">
+                                                        <div className="neura-progress-fill" style={{
                                                             width: `${conf * 100}%`,
                                                             background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
-                                                            borderRadius: 2
                                                         }} />
                                                     </div>
                                                 </div>

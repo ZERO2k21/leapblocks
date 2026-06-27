@@ -16,7 +16,7 @@ export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyS
     const { isDark } = useNeuraTheme();
 
     return (
-        <div className={`relative overflow-hidden rounded-3xl border border-dashed p-12 text-center ${
+        <div className={`relative overflow-hidden rounded-3xl border border-dashed p-12 text-center neura-animated-border ${
             isDark
                 ? 'bg-gradient-to-br from-[#141627] to-[#1a1d2e] border-white/[0.1]'
                 : 'bg-gradient-to-br from-slate-50 to-white border-slate-300'
@@ -27,10 +27,13 @@ export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyS
                 backgroundSize: '24px 24px'
             }} />
 
+            {/* Ambient glow orbs */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-gradient-to-br from-[#7C3AED]/[0.06] to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
+
             {/* Content */}
             <div className="relative flex flex-col items-center">
                 {/* Icon */}
-                <div className={`w-16 h-16 rounded-2xl shadow-inner flex items-center justify-center text-4xl mb-6 mx-auto ${isDark ? 'bg-[#1e2035]' : 'bg-white'}`}>
+                <div className={`w-16 h-16 rounded-2xl shadow-inner flex items-center justify-center text-4xl mb-6 mx-auto animate-celebration ${isDark ? 'bg-[#1e2035]' : 'bg-white'}`}>
                     📦
                 </div>
 

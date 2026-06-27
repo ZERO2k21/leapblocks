@@ -53,15 +53,31 @@ export default function TrainingPanel({
                 {/* Idle state: Neural network SVG */}
                 {!trained && status === 'idle' && (
                     <div className="flex flex-col items-center py-3">
-                        <svg width="120" height="70" viewBox="0 0 120 70" fill="none" className="mb-2.5 opacity-60">
-                            <circle cx="20" cy="15" r="5" fill="#7c3aed" opacity="0.4" />
-                            <circle cx="20" cy="35" r="5" fill="#7c3aed" opacity="0.5" />
-                            <circle cx="20" cy="55" r="5" fill="#7c3aed" opacity="0.4" />
-                            <circle cx="60" cy="12" r="5" fill="#a78bfa" opacity="0.5" />
-                            <circle cx="60" cy="35" r="5" fill="#a78bfa" opacity="0.6" />
-                            <circle cx="60" cy="58" r="5" fill="#a78bfa" opacity="0.5" />
-                            <circle cx="100" cy="25" r="5" fill="#c4b5fd" opacity="0.5" />
-                            <circle cx="100" cy="45" r="5" fill="#c4b5fd" opacity="0.4" />
+                        <svg width="120" height="70" viewBox="0 0 120 70" fill="none" className="mb-2.5 opacity-70">
+                            <circle cx="20" cy="15" r="5" fill="#7c3aed" opacity="0.4">
+                                <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="20" cy="35" r="5" fill="#7c3aed" opacity="0.5">
+                                <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2.5s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="20" cy="55" r="5" fill="#7c3aed" opacity="0.4">
+                                <animate attributeName="opacity" values="0.4;0.7;0.4" dur="1.8s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="60" cy="12" r="5" fill="#a78bfa" opacity="0.5">
+                                <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2.2s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="60" cy="35" r="5" fill="#a78bfa" opacity="0.6">
+                                <animate attributeName="opacity" values="0.6;0.9;0.6" dur="1.9s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="60" cy="58" r="5" fill="#a78bfa" opacity="0.5">
+                                <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2.3s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="100" cy="25" r="5" fill="#c4b5fd" opacity="0.5">
+                                <animate attributeName="opacity" values="0.5;0.7;0.5" dur="2.1s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="100" cy="45" r="5" fill="#c4b5fd" opacity="0.4">
+                                <animate attributeName="opacity" values="0.4;0.6;0.4" dur="2.4s" repeatCount="indefinite" />
+                            </circle>
                             <line x1="25" y1="15" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.3" />
                             <line x1="25" y1="15" x2="55" y2="35" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
                             <line x1="25" y1="35" x2="55" y2="12" stroke="#7c3aed" strokeWidth="0.8" opacity="0.2" />
@@ -82,25 +98,34 @@ export default function TrainingPanel({
                     </div>
                 )}
 
-                {/* Training state: Progress bar */}
+                {/* Training state: Progress ring */}
                 {status === 'training' && (
-                    <div>
-                        <div className="flex justify-between mb-1.5">
-                            <span className="text-xs text-ml-text-secondary">Extracting features…</span>
-                            <span className="font-mono text-xs text-ml-accent-light font-semibold">{Math.round(progress)}%</span>
+                    <div className="flex flex-col items-center py-2">
+                        <div className="relative w-16 h-16 mb-2">
+                            <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--ml-well)" strokeWidth="4" />
+                                <circle cx="32" cy="32" r="28" fill="none" stroke="url(#progress-gradient)" strokeWidth="4" strokeLinecap="round"
+                                    strokeDasharray={`${2 * Math.PI * 28}`}
+                                    strokeDashoffset={`${2 * Math.PI * 28 * (1 - progress / 100)}`}
+                                    style={{ transition: 'stroke-dashoffset 0.3s ease' }} />
+                                <defs>
+                                    <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#7c3aed" />
+                                        <stop offset="100%" stopColor="#a78bfa" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="font-mono text-xs font-bold text-ml-accent-light">{Math.round(progress)}%</span>
+                            </div>
                         </div>
-                        <div className="bg-ml-well rounded-md h-1.5 overflow-hidden">
-                            <div
-                                className="h-full rounded-md bg-gradient-to-r from-ml-accent to-ml-accent-light transition-[width] duration-300"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
+                        <span className="text-xs text-ml-text-secondary">Extracting features…</span>
                     </div>
                 )}
 
                 {/* Trained state: Success message */}
                 {trained && (
-                    <div className="bg-ml-success-bg border border-ml-success-border rounded-[10px] px-3.5 py-2.5">
+                    <div className="bg-ml-success-bg border border-ml-success-border rounded-[10px] px-3.5 py-2.5 animate-celebration">
                         <div className="text-xs text-ml-success-text font-semibold mb-1">✓ Model trained successfully</div>
                         <div className="font-mono text-[11px] text-ml-text-secondary">
                             Accuracy: {Math.round(accuracy * 100)}% · {totalSamples} samples · {Object.keys(sampleCounts).length} classes

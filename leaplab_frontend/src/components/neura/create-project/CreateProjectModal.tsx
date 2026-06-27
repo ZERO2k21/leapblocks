@@ -47,11 +47,11 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
     return (
         <div className={`w-full h-full flex flex-col relative overflow-hidden ${isDark ? 'bg-[#0f1117]' : 'bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff]'}`}>
             {/* Background ambient glows */}
-            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
-            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} />
+            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
+            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} style={{ animationDelay: '1s' }} />
 
             {/* Header bar */}
-            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0 neura-shimmer">
                 <div className="absolute inset-0 opacity-10" style={{
                     backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)'
                 }} />
@@ -85,7 +85,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                 onChange={(e) => setProjectName(e.target.value)}
                                 placeholder="Enter Project Name"
                                 autoFocus
-                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm font-medium focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
+                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm font-medium focus:outline-none transition-all duration-300 ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
                             />
                         </div>
                         <div>
@@ -94,7 +94,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                 value={projectDescription}
                                 onChange={(e) => setProjectDescription(e.target.value)}
                                 placeholder="Enter Project Description (optional)"
-                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
+                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm focus:outline-none transition-all duration-300 ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
                             />
                         </div>
                     </div>
