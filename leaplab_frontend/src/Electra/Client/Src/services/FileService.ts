@@ -31,11 +31,48 @@ const MODE_NAMES: Record<SessionMode, string> = {
 
 async function captureProjectScreenshot(): Promise<Blob | null> {
     try {
-        // 1. Look for the main active canvas element on the page (Blockly, Junior, Intermediate, Python, Creova)
+        // Check if we are in Electra / Forge canvas mode
+        const forgeCanvas = document.querySelector('.forge-canvas-container') || document.querySelector('.react-flow');
+        if (forgeCanvas) {
+            const svgElement = forgeCanvas.querySelector('.react-flow__edges') || forgeCanvas.querySelector('svg');
+            if (svgElement instanceof SVGElement) {
+                const svgString = new XMLSerializer().serializeToString(svgElement);
+                const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                const URL = window.URL || window.webkitURL || window;
+                const blobURL = URL.createObjectURL(svgBlob);
+                
+                const image = new Image();
+                const canvas = document.createElement('canvas');
+                canvas.width = forgeCanvas.clientWidth || 800;
+                canvas.height = forgeCanvas.clientHeight || 600;
+                const context = canvas.getContext('2d');
+                
+                return new Promise((resolve) => {
+                    image.onload = () => {
+                        if (context) {
+                            context.fillStyle = '#ffffff';
+                            context.fillRect(0, 0, canvas.width, canvas.height);
+                            context.drawImage(image, 0, 0);
+                            canvas.toBlob((blob) => {
+                                URL.revokeObjectURL(blobURL);
+                                resolve(blob);
+                            }, 'image/png');
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    image.onerror = () => resolve(null);
+                    image.src = blobURL;
+                });
+            }
+        }
+
+        // 1. Look for the main active canvas element on the page (excluding minimap canvases)
         const canvases = Array.from(document.querySelectorAll('canvas'));
         const activeCanvas = canvases.find(c => {
             const rect = c.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0 && c.width > 0 && c.height > 0;
+            const isMinimap = c.closest('.react-flow__minimap') || c.closest('.glass-minimap');
+            return !isMinimap && rect.width > 0 && rect.height > 0 && c.width > 0 && c.height > 0;
         });
 
         if (activeCanvas) {
@@ -46,7 +83,7 @@ async function captureProjectScreenshot(): Promise<Blob | null> {
             });
         }
 
-        // 2. Look for ReactFlow minimap canvas (Electra circuits)
+        // 2. Look for ReactFlow minimap canvas (Electra circuits fallback)
         const minimapCanvas = document.querySelector('.react-flow__minimap canvas') || document.querySelector('.glass-minimap canvas');
         if (minimapCanvas instanceof HTMLCanvasElement) {
             return new Promise((resolve) => {
@@ -56,7 +93,7 @@ async function captureProjectScreenshot(): Promise<Blob | null> {
             });
         }
 
-        // 3. Fallback: search for any visible SVG element (Electra circuits fallback)
+        // 3. Fallback: search for any visible SVG element
         const svgElement = document.querySelector('.react-flow__viewport svg') || document.querySelector('.forge-canvas-container svg') || document.querySelector('svg');
         if (svgElement instanceof SVGElement) {
             const svgString = new XMLSerializer().serializeToString(svgElement);
