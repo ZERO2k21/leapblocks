@@ -2,6 +2,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import StepIndicator from '../../components/StepIndicator'
+import AddClassButton from '../../components/AddClassButton'
+import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { AudioModel, blobToMelSpectrogram } from './AudioModel'
 import { ensureTf } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
@@ -14,6 +17,15 @@ function blobToDataURL(blob: Blob): Promise<string> {
         reader.onerror = reject
         reader.readAsDataURL(blob)
     })
+}
+
+function dataURLToBlob(dataURL: string): Blob {
+    const [header, data] = dataURL.split(',')
+    const mime = header.match(/:(.*?);/)?.[1] || 'audio/webm'
+    const binary = atob(data)
+    const array = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i)
+    return new Blob([array], { type: mime })
 }
 
 type AudioClass = {
@@ -162,14 +174,13 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                         return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: sample, timestamp: Date.now() }
                     }
                     try {
-                        const response = await fetch(sample)
-                        const blob = await response.blob()
-                        const base64 = await new Promise<string>((resolve) => {
-                            const reader = new FileReader()
-                            reader.onloadend = () => resolve(reader.result as string)
-                            reader.readAsDataURL(blob)
-                        })
-                        return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: base64, timestamp: Date.now() }
+                        if (sample.startsWith('blob:')) {
+                            const resp = await fetch(sample)
+                            const blob = await resp.blob()
+                            const base64 = await blobToDataURL(blob)
+                            return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: base64, timestamp: Date.now() }
+                        }
+                        return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: sample, timestamp: Date.now() }
                     } catch {
                         return { id: `aud-${c.id}-${i}`, type: 'audio' as const, data: '', timestamp: Date.now() }
                     }
@@ -225,8 +236,9 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
             for (const cls of classes) {
                 for (const sampleUrl of cls.samples) {
                     try {
-                        const response = await fetch(sampleUrl)
-                        const blob = await response.blob()
+                        const blob = sampleUrl.startsWith('data:')
+                            ? dataURLToBlob(sampleUrl)
+                            : await (await fetch(sampleUrl)).blob()
                         const spectrogram = await blobToMelSpectrogram(blob)
                         if (spectrogram && spectrogram.length > 0) {
                             model.addSample(cls.name, spectrogram)
@@ -570,39 +582,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                     })}
 
                     {/* Add Class button */}
-                    <button
-                        onClick={addClass}
-                        style={{
-                            width: '100%',
-                            padding: '16px 0',
-                            borderRadius: 16,
-                            border: '2px dashed var(--ml-border-strong)',
-                            background: 'transparent',
-                            color: 'var(--ml-text-secondary)',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.borderColor = '#8b5cf6'
-                            e.currentTarget.style.color = '#a78bfa'
-                            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
-                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
-                            e.currentTarget.style.background = 'transparent'
-                        }}
-                    >
-                        <Plus size={16} />
-                        Add Class
-                    </button>
+                    <AddClassButton onClick={addClass} accentColor="#8b5cf6" />
                 </div>
 
                 {/* Training Panel */}
@@ -626,185 +606,148 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                 </div>
 
                 {/* Testing Panel */}
-                <div style={{
-                    width: 256,
-                    background: 'var(--ml-surface)',
-                    border: '1px solid var(--ml-border)',
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    flexShrink: 0
-                }}>
-                    {/* Header */}
+                <ProjectTestingPanel
+                    icon={<Waves size={16} className="text-white" />}
+                    accentColor="#8b5cf6"
+                    trained={trained}
+                    emptyText="Train a model first to test it here."
+                    emptyIllustration={<MicrophoneIllustration />}
+                >
+                    {/* Success indicator */}
                     <div style={{
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                        padding: '14px 16px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8
+                        gap: 8,
+                        background: 'var(--ml-success-bg)',
+                        border: '1px solid #1a3a25',
+                        borderRadius: 10,
+                        padding: '10px 12px'
                     }}>
-                        <Waves size={16} style={{ color: 'var(--ml-text-primary)' }} />
+                        <div style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: 'var(--ml-success-dot)',
+                            boxShadow: '0 0 8px var(--ml-success-dot)'
+                        }} />
                         <span style={{
-                            color: 'var(--ml-text-primary)',
-                            fontWeight: 700,
-                            fontSize: 14,
-                            fontFamily: "'DM Sans', sans-serif"
-                        }}>Testing</span>
+                            fontFamily: "'DM Sans', sans-serif",
+                            fontSize: 12,
+                            color: 'var(--ml-success-text)',
+                            fontWeight: 600
+                        }}>Model ready</span>
                     </div>
 
-                    <div style={{ padding: 20 }}>
-                        {!trained ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                                <MicrophoneIllustration />
-                                <p style={{
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontSize: 12,
-                                    color: 'var(--ml-text-muted)',
-                                    lineHeight: 1.6,
-                                    margin: '12px 0 0'
-                                }}>
-                                    Train a model first to test it here.
-                                </p>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {/* Success indicator */}
+                    {/* Record button */}
+                    <button
+                        onClick={handleTestRecord}
+                        disabled={testRecording}
+                        style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            borderRadius: 10,
+                            background: testRecording
+                                ? 'linear-gradient(135deg, #ef4444, #f87171)'
+                                : 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                            border: 'none',
+                            color: 'var(--ml-text-primary)',
+                            fontFamily: "'DM Sans', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            cursor: testRecording ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            transition: 'all 0.2s ease',
+                            boxShadow: testRecording
+                                ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                : '0 4px 14px rgba(139, 92, 246, 0.25)'
+                        }}
+                    >
+                        {testRecording ? (
+                            <>
                                 <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    background: 'var(--ml-success-bg)',
-                                    border: '1px solid #1a3a25',
-                                    borderRadius: 10,
-                                    padding: '10px 12px'
-                                }}>
-                                    <div style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        background: 'var(--ml-success-dot)',
-                                        boxShadow: '0 0 8px var(--ml-success-dot)'
-                                    }} />
-                                    <span style={{
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontSize: 12,
-                                        color: 'var(--ml-success-text)',
-                                        fontWeight: 600
-                                    }}>Model ready</span>
-                                </div>
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: '#fff',
+                                    animation: 'pulse 1s infinite'
+                                }} />
+                                Recording 2s...
+                            </>
+                        ) : (
+                            <>
+                                <Mic size={15} />
+                                Record 2s & Predict
+                            </>
+                        )}
+                    </button>
 
-                                {/* Record button */}
-                                <button
-                                    onClick={handleTestRecord}
-                                    disabled={testRecording}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 0',
-                                        borderRadius: 10,
-                                        background: testRecording
-                                            ? 'linear-gradient(135deg, #ef4444, #f87171)'
-                                            : 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-                                        border: 'none',
-                                        color: 'var(--ml-text-primary)',
-                                        fontFamily: "'DM Sans', sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: 13,
-                                        cursor: testRecording ? 'not-allowed' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: 8,
-                                        transition: 'all 0.2s ease',
-                                        boxShadow: testRecording
-                                            ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                                            : '0 4px 14px rgba(139, 92, 246, 0.25)'
-                                    }}
-                                >
-                                    {testRecording ? (
-                                        <>
-                                            <div style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                background: '#fff',
-                                                animation: 'pulse 1s infinite'
-                                            }} />
-                                            Recording 2s...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Mic size={15} />
-                                            Record 2s & Predict
-                                        </>
-                                    )}
-                                </button>
+                    {/* Prediction results */}
+                    {testResult && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {/* Prediction label */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                                border: '1px solid rgba(139, 92, 246, 0.2)',
+                                borderRadius: 10,
+                                padding: '10px 12px'
+                            }}>
+                                <span style={{
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontSize: 11,
+                                    color: '#a78bfa',
+                                    fontWeight: 600
+                                }}>Prediction</span>
+                                <span style={{
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontSize: 13,
+                                    color: 'var(--ml-text-primary)',
+                                    fontWeight: 700
+                                }}>{testResult.label}</span>
+                            </div>
 
-                                {/* Prediction results */}
-                                {testResult && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {/* Prediction label */}
+                            {/* Confidence bars */}
+                            {Object.entries(testResult.confidences).map(([label, conf]) => {
+                                const classIdx = classes.findIndex(c => c.name === label)
+                                const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
+                                return (
+                                    <div key={label}>
                                         <div style={{
                                             display: 'flex',
-                                            alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
-                                            border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            borderRadius: 10,
-                                            padding: '10px 12px'
+                                            fontSize: 11,
+                                            marginBottom: 4
                                         }}>
-                                            <span style={{
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 11,
-                                                color: '#a78bfa',
-                                                fontWeight: 600
-                                            }}>Prediction</span>
-                                            <span style={{
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontSize: 13,
-                                                color: 'var(--ml-text-primary)',
-                                                fontWeight: 700
-                                            }}>{testResult.label}</span>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                {Math.round(conf * 100)}%
+                                            </span>
                                         </div>
-
-                                        {/* Confidence bars */}
-                                        {Object.entries(testResult.confidences).map(([label, conf]) => {
-                                            const classIdx = classes.findIndex(c => c.name === label)
-                                            const color = COLORS[classIdx >= 0 ? classIdx % COLORS.length : 0]
-                                            return (
-                                                <div key={label}>
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        fontSize: 11,
-                                                        marginBottom: 4
-                                                    }}>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-                                                        <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
-                                                            {Math.round(conf * 100)}%
-                                                        </span>
-                                                    </div>
-                                                    <div style={{
-                                                        height: 4,
-                                                        background: 'var(--ml-well)',
-                                                        borderRadius: 2,
-                                                        overflow: 'hidden'
-                                                    }}>
-                                                        <div style={{
-                                                            height: '100%',
-                                                            width: `${conf * 100}%`,
-                                                            background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
-                                                            borderRadius: 2,
-                                                            transition: 'width 0.5s ease'
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
+                                        <div style={{
+                                            height: 4,
+                                            background: 'var(--ml-well)',
+                                            borderRadius: 2,
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${conf * 100}%`,
+                                                background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
+                                                borderRadius: 2,
+                                                transition: 'width 0.5s ease'
+                                            }} />
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </ProjectTestingPanel>
             </div>
         </ClassifierLayout>
     )

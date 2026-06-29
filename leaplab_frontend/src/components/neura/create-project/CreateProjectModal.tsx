@@ -47,11 +47,11 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
     return (
         <div className={`w-full h-full flex flex-col relative overflow-hidden ${isDark ? 'bg-[#0f1117]' : 'bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff]'}`}>
             {/* Background ambient glows */}
-            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
-            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} />
+            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
+            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} style={{ animationDelay: '1s' }} />
 
             {/* Header bar */}
-            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0 neura-shimmer">
                 <div className="absolute inset-0 opacity-10" style={{
                     backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)'
                 }} />
@@ -73,52 +73,54 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
             </div>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto px-8 sm:px-12 py-8" onKeyDown={handleKeyDown}>
-                {/* Project Details Section */}
-                <div className="mb-8 animate-slide-in-up">
-                    <h3 className="text-[#7C3AED] font-bold text-sm mb-4">Enter Project Details:</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <input
-                                type="text"
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                                placeholder="Enter Project Name"
-                                autoFocus
-                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm font-medium focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                type="text"
-                                value={projectDescription}
-                                onChange={(e) => setProjectDescription(e.target.value)}
-                                placeholder="Enter Project Description (optional)"
-                                className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent text-sm focus:outline-none transition-colors ${isDark ? 'border-white/[0.1] text-gray-100 placeholder-gray-500 focus:border-[#7c3aed]' : 'border-gray-200 text-gray-800 placeholder-gray-400 focus:border-[#0a015a]'}`}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Project Type Section */}
-                <div className="mb-8 animate-slide-in-up stagger-2">
-                    <h3 className="text-[#7C3AED] font-bold text-sm mb-4">Select Project Type:</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {projectTypes.map((type, idx) => (
-                            <div key={type.id} className={`animate-slide-in-up stagger-${(idx % 7) + 1}`}>
-                                <ProjectTypeCard
-                                    type={type}
-                                    selected={selectedType === type.id}
-                                    onClick={() => setSelectedType(type.id)}
+            <div className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-12 py-6 sm:py-8" onKeyDown={handleKeyDown}>
+                <div className="max-w-4xl mx-auto">
+                    {/* Project Details Section */}
+                    <div className="mb-8 animate-slide-in-up">
+                        <h3 className="neura-section-title">Enter Project Details:</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <input
+                                    type="text"
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                    placeholder="Enter Project Name"
+                                    autoFocus
+                                    className="neura-form-input"
                                 />
                             </div>
-                        ))}
+                            <div>
+                                <input
+                                    type="text"
+                                    value={projectDescription}
+                                    onChange={(e) => setProjectDescription(e.target.value)}
+                                    placeholder="Enter Project Description (optional)"
+                                    className="neura-form-input"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Project Type Section */}
+                    <div className="mb-8 animate-slide-in-up stagger-2">
+                        <h3 className="neura-section-title">Select Project Type:</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                            {projectTypes.map((type, idx) => (
+                                <div key={type.id} className={`animate-slide-in-up stagger-${(idx % 7) + 1}`}>
+                                    <ProjectTypeCard
+                                        type={type}
+                                        selected={selectedType === type.id}
+                                        onClick={() => setSelectedType(type.id)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Footer with Create button */}
-            <div className={`relative px-8 sm:px-12 py-5 border-t backdrop-blur-sm flex justify-end shrink-0 ${isDark ? 'border-white/[0.06] bg-[#13131f]/80' : 'border-gray-100/80 bg-white/60'}`}>
+            <div className={`relative px-5 sm:px-8 lg:px-12 py-4 sm:py-5 border-t backdrop-blur-sm flex justify-end shrink-0 ${isDark ? 'border-white/[0.06] bg-[#13131f]/80' : 'border-gray-100/80 bg-white/60'}`}>
                 <button
                     onClick={handleCreate}
                     disabled={!canCreate}

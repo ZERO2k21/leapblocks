@@ -1,6 +1,7 @@
 // classifiers/object-detection/ObjectDetection.tsx
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
+import StepIndicator from '../../components/StepIndicator'
 import { ensureTf, ensureCocoSsd } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
 
@@ -258,9 +259,18 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                         </div>
                     </div>
 
+                    {/* Step Indicators */}
+                    <div className="flex items-center gap-4">
+                        <StepIndicator number="01" label="LOAD" title="Load Model" accentColor="#F97316" />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #F9731640, transparent)' }} />
+                        <StepIndicator number="02" label="DETECT" title="Live Detection" accentColor="#F97316" />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #F9731640, transparent)' }} />
+                        <StepIndicator number="03" label="RESULTS" title="View Results" accentColor="#F97316" />
+                    </div>
+
                     {/* Model Loading Card */}
                     {!modelReady && (
-                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-10 flex flex-col items-center gap-4" style={{ animation: 'fade-in 0.3s ease' }}>
+                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-10 flex flex-col items-center gap-4 animate-fade-in-scale neura-card-glow">
                             {/* Crosshair SVG */}
                             <div className="relative w-25 h-25 mb-2">
                                 <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
@@ -276,7 +286,9 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                     {/* Inner ring */}
                                     <circle cx="50" cy="50" r="16" stroke="#F97316" strokeWidth="2" opacity="0.5" />
                                     {/* Center dot */}
-                                    <circle cx="50" cy="50" r="4" fill="#F97316" />
+                                    <circle cx="50" cy="50" r="4" fill="#F97316">
+                                        <animate attributeName="r" values="4;6;4" dur="1s" repeatCount="indefinite" />
+                                    </circle>
                                     {/* Crosshair lines */}
                                     <line x1="50" y1="6" x2="50" y2="22" stroke="#F97316" strokeWidth="1.5" opacity="0.4" />
                                     <line x1="50" y1="78" x2="50" y2="94" stroke="#F97316" strokeWidth="1.5" opacity="0.4" />
@@ -300,28 +312,28 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 </div>
                             </div>
 
-                            {/* Feature pills */}
+                            {/* Feature pills with shimmer */}
                             <div className="flex gap-2 flex-wrap justify-center">
                                 {['80+ Classes', 'Pre-trained', 'Real-time', 'In-browser'].map(f => (
-                                    <span key={f} className="px-3 py-1 rounded-[20px] text-[11px] font-semibold" style={{ background: '#F9731612', border: '1px solid #F9731630', color: '#FB923C', letterSpacing: '0.02em' }}>{f}</span>
+                                    <span key={f} className="px-3 py-1 rounded-[20px] text-[11px] font-semibold neura-shimmer" style={{ background: '#F9731612', border: '1px solid #F9731630', color: '#FB923C', letterSpacing: '0.02em' }}>{f}</span>
                                 ))}
                             </div>
 
-                            {/* Load progress */}
+                            {/* Load progress with premium bar */}
                             {loading && (
                                 <div className="w-full" style={{ maxWidth: 320 }}>
                                     <div className="flex justify-between mb-1.5">
                                         <span className="text-xs text-ml-text-secondary">Loading model…</span>
                                         <span className="text-xs font-mono font-semibold" style={{ color: '#F97316' }}>{loadProgress}%</span>
                                     </div>
-                                    <div className="bg-ml-well rounded-md h-1.5 overflow-hidden">
-                                        <div className="h-full rounded-md" style={{ width: `${loadProgress}%`, background: 'linear-gradient(90deg, #F97316, #FB923C)', transition: 'width 0.3s' }} />
+                                    <div className="neura-progress-premium">
+                                        <div className="neura-progress-fill" style={{ width: `${loadProgress}%` }} />
                                     </div>
                                 </div>
                             )}
 
                             <button onClick={loadModel} disabled={loading}
-                                className="px-8 py-[13px] rounded-xl border-0 font-sans font-bold text-sm flex items-center gap-2 transition-all duration-200"
+                                className="px-8 py-[13px] rounded-xl border-0 font-sans font-bold text-sm flex items-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                                 style={{
                                     background: loading ? 'var(--ml-btn-idle)' : 'linear-gradient(135deg, #F97316, #FB923C)',
                                     color: loading ? 'var(--ml-text-muted)' : '#fff',
@@ -387,7 +399,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                 <div className="ml-auto flex gap-2 items-center">
                                     {running && (
                                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-ml-success-bg border border-ml-success-border">
-                                            <div className="w-[7px] h-[7px] rounded-full" style={{ background: '#22C55E', boxShadow: '0 0 8px #22C55E', animation: 'pulse-ring 1.5s infinite' }} />
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-dot-pulse" />
                                             <span className="text-[11px] font-bold" style={{ color: '#22C55E', letterSpacing: '0.05em' }}>LIVE</span>
                                         </div>
                                     )}
@@ -437,11 +449,11 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
 
                             {/* Detection Results Card */}
                             {detections.length > 0 && (
-                                <div className="bg-ml-surface border border-ml-border rounded-2xl p-5" style={{ animation: 'fade-in 0.3s ease' }}>
+                                <div className="bg-ml-surface border border-ml-border rounded-2xl p-5 animate-slide-in-up neura-card-glow">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-2">
                                             <div className="text-xs font-bold text-ml-text-secondary uppercase" style={{ letterSpacing: '0.05em' }}>Detected Objects</div>
-                                            <span className="px-2 py-0.5 rounded-lg text-[11px] font-bold" style={{ background: '#F9731618', color: '#F97316' }}>{detections.length}</span>
+                                            <span className="px-2 py-0.5 rounded-lg text-[11px] font-bold animate-celebration" style={{ background: '#F9731618', color: '#F97316' }}>{detections.length}</span>
                                         </div>
                                         <div className="text-[11px] text-ml-text-muted">
                                             {uniqueClasses.length} unique class{uniqueClasses.length !== 1 ? 'es' : ''}

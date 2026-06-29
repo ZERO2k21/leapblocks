@@ -2,6 +2,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import StepIndicator from '../../components/StepIndicator'
+import AddClassButton from '../../components/AddClassButton'
+import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
 import { ensureTf, ensureHandPose } from '../../ml/loadScript'
 import { showToast } from '../../../../leapignite/client/components/Toast'
@@ -707,23 +710,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     })}
 
                     {/* Add Class button */}
-                    <button
-                        onClick={addClass}
-                        className="w-full py-4 rounded-2xl border-2 border-dashed border-ml-border-strong bg-transparent text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-200"
-                        onMouseEnter={e => {
-                            e.currentTarget.style.borderColor = '#7c3aed'
-                            e.currentTarget.style.color = '#a78bfa'
-                            e.currentTarget.style.background = 'rgba(124, 58, 237, 0.05)'
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = 'var(--ml-border-strong)'
-                            e.currentTarget.style.color = 'var(--ml-text-secondary)'
-                            e.currentTarget.style.background = 'transparent'
-                        }}
-                    >
-                        <Plus size={16} />
-                        Add Class
-                    </button>
+                    <AddClassButton onClick={addClass} accentColor="#7c3aed" />
                 </div>
 
                 {/* Training Panel */}
@@ -747,85 +734,71 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                 </div>
 
                 {/* Testing Panel */}
-                <div className="w-64 bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0">
-                    {/* Header */}
-                    <div className="px-4 py-3.5" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)' }}>
-                        <span className="text-white font-bold text-sm font-sans">Testing</span>
+                <ProjectTestingPanel
+                    icon={<Activity size={16} className="text-white" />}
+                    accentColor="#7c3aed"
+                    trained={trained}
+                    emptyText="Train your hand pose model first"
+                    emptyIllustration={
+                        <svg width="80" height="64" viewBox="0 0 80 64" fill="none" className="opacity-40 mb-3">
+                            <rect x="18" y="16" width="44" height="32" rx="4" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
+                            <circle cx="40" cy="32" r="10" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
+                            <circle cx="40" cy="32" r="5" fill="#7c3aed" opacity="0.2" />
+                            <path d="M36 26 L40 20 L44 26 L44 38 L36 38Z" fill="#7c3aed" opacity="0.3" />
+                            <text x="62" y="28" fontSize="16" fill="#7c3aed" opacity="0.5" fontWeight="bold">?</text>
+                        </svg>
+                    }
+                >
+                    {/* Success indicator */}
+                    <div className="flex items-center gap-2 bg-ml-success-bg border border-ml-success-border rounded-[10px] py-2.5 px-3">
+                        <div className="w-2 h-2 rounded-full bg-ml-success-dot" style={{ boxShadow: '0 0 8px var(--ml-success-dot)' }} />
+                        <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
                     </div>
 
-                    <div className="p-5">
-                        {!trained ? (
-                            <div className="flex flex-col items-center text-center">
-                                {/* Camera + hand illustration */}
-                                <svg width="80" height="64" viewBox="0 0 80 64" fill="none" className="opacity-40 mb-3">
-                                    {/* Camera body */}
-                                    <rect x="18" y="16" width="44" height="32" rx="4" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
-                                    <circle cx="40" cy="32" r="10" stroke="#7c3aed" strokeWidth="1.5" fill="none" />
-                                    <circle cx="40" cy="32" r="5" fill="#7c3aed" opacity="0.2" />
-                                    {/* Hand silhouette */}
-                                    <path d="M36 26 L40 20 L44 26 L44 38 L36 38Z" fill="#7c3aed" opacity="0.3" />
-                                    {/* Question mark */}
-                                    <text x="62" y="28" fontSize="16" fill="#7c3aed" opacity="0.5" fontWeight="bold">?</text>
-                                </svg>
-                                <p className="font-sans text-xs text-ml-text-muted leading-relaxed m-0">
-                                    Train your hand pose model first
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {/* Success indicator */}
-                                <div className="flex items-center gap-2 bg-ml-success-bg border border-ml-success-border rounded-[10px] py-2.5 px-3">
-                                    <div className="w-2 h-2 rounded-full bg-ml-success-dot" style={{ boxShadow: '0 0 8px var(--ml-success-dot)' }} />
-                                    <span className="font-sans text-xs text-ml-success-text font-semibold">Model ready</span>
-                                </div>
-
-                                {/* Instructions */}
-                                <div className="bg-ml-well rounded-[10px] p-3 flex flex-col gap-2">
-                                    <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
-                                        <Camera size={12} />
-                                        Show hand gestures to camera
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
-                                        <Hand size={12} />
-                                        Results appear in real-time
-                                    </div>
-                                </div>
-
-                                {/* Capture & Predict button */}
-                                <button onClick={() => {
-                                    if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
-                                    setShowPredictModal(true)
-                                }} className="w-full py-[11px] rounded-[10px] border-none bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-sans font-bold text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200" style={{ boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
-                                    <Camera size={14} />
-                                    Capture & Predict
-                                </button>
-
-                                {/* Prediction results placeholder */}
-                                {testResult && (
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-ml-success-dot" style={{ animation: 'pulse 2s infinite' }} />
-                                            <span className="font-sans text-xs text-ml-text-primary font-semibold">{testResult.label}</span>
-                                        </div>
-                                        {Object.entries(testResult.confidences).map(([label, conf]) => (
-                                            <div key={label}>
-                                                <div className="flex justify-between text-[10px] mb-[3px]">
-                                                    <span className="text-ml-text-secondary">{label}</span>
-                                                    <span className="text-ml-text-secondary font-mono">
-                                                        {Math.round((conf as number) * 100)}%
-                                                    </span>
-                                                </div>
-                                                <div className="h-[3px] bg-ml-well rounded-sm overflow-hidden">
-                                                    <div className="h-full rounded-sm bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]" style={{ width: `${(conf as number) * 100}%` }} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                    {/* Instructions */}
+                    <div className="bg-ml-well rounded-[10px] p-3 flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
+                            <Camera size={12} />
+                            Show hand gestures to camera
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-ml-text-secondary font-sans">
+                            <Hand size={12} />
+                            Results appear in real-time
+                        </div>
                     </div>
-                </div>
+
+                    {/* Capture & Predict button */}
+                    <button onClick={() => {
+                        if (!knnRef.current) { showToast('Train your model first.', 'error'); return }
+                        setShowPredictModal(true)
+                    }} className="w-full py-[11px] rounded-[10px] border-none bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-sans font-bold text-[13px] cursor-pointer flex items-center justify-center gap-1.5 transition-all duration-200" style={{ boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
+                        <Camera size={14} />
+                        Capture & Predict
+                    </button>
+
+                    {/* Prediction results */}
+                    {testResult && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-ml-success-dot" style={{ animation: 'pulse 2s infinite' }} />
+                                <span className="font-sans text-xs text-ml-text-primary font-semibold">{testResult.label}</span>
+                            </div>
+                            {Object.entries(testResult.confidences).map(([label, conf]) => (
+                                <div key={label}>
+                                    <div className="flex justify-between text-[10px] mb-[3px]">
+                                        <span className="text-ml-text-secondary">{label}</span>
+                                        <span className="text-ml-text-secondary font-mono">
+                                            {Math.round((conf as number) * 100)}%
+                                        </span>
+                                    </div>
+                                    <div className="h-[3px] bg-ml-well rounded-sm overflow-hidden">
+                                        <div className="h-full rounded-sm bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]" style={{ width: `${(conf as number) * 100}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </ProjectTestingPanel>
             </div>
 
             {/* Hand Webcam Modal */}

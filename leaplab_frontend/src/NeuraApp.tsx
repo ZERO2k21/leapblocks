@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
+import ActionBar from './components/neura/dashboard/ActionBar';
 import ProjectsTable from './components/neura/dashboard/ProjectsTable';
-import TemplateGrid from './components/neura/dashboard/TemplateGrid';
 import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
@@ -54,7 +54,13 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [renamingProject, setRenamingProject] = useState<NeuraProject | null>(null);
     const [renameValue, setRenameValue] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const filteredProjects = projects.filter(p =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.type.replace(/-/g, ' ').toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     useEffect(() => {
         const loadProjects = async () => {
@@ -367,31 +373,30 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative flex flex-col px-4 sm:px-8 lg:px-12">
+            <div className="flex-1 overflow-y-auto relative flex flex-col px-4 sm:px-6 lg:px-10 xl:px-12">
                 {view === 'dashboard' && (
-                    <div className="pt-4 sm:pt-6 lg:pt-8 pb-5 sm:pb-8 lg:pb-10 animate-fade-in">
+                    <div className="pt-3 sm:pt-5 lg:pt-7 pb-5 sm:pb-8 lg:pb-10 animate-fade-in">
                         <WelcomeHero
                             onCreateNew={handleCreateNew}
                             onImportDataset={handleImportProject}
                             onTutorials={() => console.log('Open tutorials')}
                         />
 
+                        <ActionBar
+                            projectCount={projects.length}
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            onCreateNew={handleCreateNew}
+                            onImport={handleImportProject}
+                        />
+
                         {projects.length > 0 && (
                             <ProjectsTable
-                                projects={projects}
+                                projects={filteredProjects}
                                 onOpenProject={handleOpenProject}
                                 onDeleteProject={handleDeleteProject}
                                 onRenameProject={handleRenameProject}
                                 onDownloadProject={handleDownloadFromTable}
-                            />
-                        )}
-
-                        {projects.length === 0 && (
-                            <TemplateGrid
-                                onSelectTemplate={(typeId) => {
-                                    navigateWithUnsavedCheck(() => setView('create'));
-                                }}
-                                onViewAll={() => console.log('View all templates')}
                             />
                         )}
 

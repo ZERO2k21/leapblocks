@@ -9,6 +9,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
+import StepIndicator from '../../components/StepIndicator'
+import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import DrawingCanvas, { DrawingCanvasHandle } from './DrawingCanvas'
 import { DigitModel } from './DigitModel'
 import {
@@ -256,6 +258,8 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                 <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
                     {/* Drawing Canvas Section */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <StepIndicator number="01" label="COLLECT" title="Draw Digits to Train" accentColor="#8b5cf6" />
+
                         {/* Canvas Card */}
                         <div style={{
                             background: 'var(--ml-surface)',
@@ -441,21 +445,25 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                     </div>
 
                     {/* Training Panel */}
-                    <TrainingPanel
-                        status={status}
-                        progress={progress}
-                        accuracy={modelRef.current.accuracy}
-                        canTrain={canTrain}
-                        onTrain={handleTrain}
-                        showAdvanced={showAdv}
-                        setShowAdvanced={setShowAdv}
-                        epochs={epochs}
-                        setEpochs={setEpochs}
-                        trained={trained}
-                        sampleCounts={Object.fromEntries(
-                            Object.entries(sampleCounts).filter(([_, c]) => c > 0).map(([d, c]) => [`Digit ${d}`, c])
-                        )}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <StepIndicator number="02" label="TRAIN" title="Train Your Model" accentColor="#8b5cf6" />
+
+                        <TrainingPanel
+                            status={status}
+                            progress={progress}
+                            accuracy={modelRef.current.accuracy}
+                            canTrain={canTrain}
+                            onTrain={handleTrain}
+                            showAdvanced={showAdv}
+                            setShowAdvanced={setShowAdv}
+                            epochs={epochs}
+                            setEpochs={setEpochs}
+                            trained={trained}
+                            sampleCounts={Object.fromEntries(
+                                Object.entries(sampleCounts).filter(([_, c]) => c > 0).map(([d, c]) => [`Digit ${d}`, c])
+                            )}
+                        />
+                    </div>
 
                     {/* Divider */}
                     <div style={{ width: 32, display: 'flex', alignItems: 'center', paddingTop: 64 }}>
@@ -463,216 +471,197 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                     </div>
 
                     {/* Testing Panel */}
-                    <div style={{
-                        width: 280,
-                        background: 'var(--ml-surface)',
-                        border: '1px solid var(--ml-border)',
-                        borderRadius: 16,
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                    }}>
-                        {/* Header */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                            padding: '14px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                        }}>
-                            <Sparkles size={16} style={{ color: '#fff' }} />
-                            <span style={{
-                                color: '#fff',
-                                fontWeight: 700,
-                                fontSize: 14,
-                                fontFamily: "'DM Sans', sans-serif",
-                            }}>Testing</span>
+                    <ProjectTestingPanel
+                        icon={<Sparkles size={16} className="text-white" />}
+                        accentColor="#8b5cf6"
+                        trained={trained}
+                        emptyText="Train your digit model first."
+                    >
+                        {/* Step Indicator */}
+                        <div style={{ padding: 12 }}>
+                            <StepIndicator number="03" label="TEST" title="Test Your Model" accentColor="#8b5cf6" />
                         </div>
 
-                        <div style={{ padding: 16 }}>
-                            {!trained ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '16px 0' }}>
-                                    <svg width="80" height="64" viewBox="0 0 80 64" fill="none" style={{ opacity: 0.4, marginBottom: 12 }}>
-                                        {/* Canvas frame */}
-                                        <rect x="16" y="4" width="48" height="48" rx="6" stroke="#8b5cf6" strokeWidth="1.5" fill="none" />
-                                        {/* Grid lines */}
-                                        <line x1="32" y1="4" x2="32" y2="52" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
-                                        <line x1="48" y1="4" x2="48" y2="52" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
-                                        <line x1="16" y1="20" x2="64" y2="20" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
-                                        <line x1="16" y1="36" x2="64" y2="36" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
-                                        {/* Pencil */}
-                                        <path d="M56 44 L64 52 L52 64 L44 56 Z" fill="#8b5cf6" opacity="0.3" />
-                                        <line x1="56" y1="44" x2="64" y2="36" stroke="#8b5cf6" strokeWidth="1" opacity="0.5" />
-                                    </svg>
-                                    <p style={{
+                        {!trained ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '16px 0' }}>
+                                <svg width="80" height="64" viewBox="0 0 80 64" fill="none" style={{ opacity: 0.4, marginBottom: 12 }}>
+                                    <rect x="16" y="4" width="48" height="48" rx="6" stroke="#8b5cf6" strokeWidth="1.5" fill="none" />
+                                    <line x1="32" y1="4" x2="32" y2="52" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
+                                    <line x1="48" y1="4" x2="48" y2="52" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
+                                    <line x1="16" y1="20" x2="64" y2="20" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
+                                    <line x1="16" y1="36" x2="64" y2="36" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.3" />
+                                    <path d="M56 44 L64 52 L52 64 L44 56 Z" fill="#8b5cf6" opacity="0.3" />
+                                    <line x1="56" y1="44" x2="64" y2="36" stroke="#8b5cf6" strokeWidth="1" opacity="0.5" />
+                                </svg>
+                                <p style={{
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontSize: 12,
+                                    color: 'var(--ml-text-muted)',
+                                    lineHeight: 1.6,
+                                }}>
+                                    Train your digit model first.
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {/* Success indicator */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    background: 'var(--ml-success-bg)',
+                                    border: '1px solid var(--ml-success-border)',
+                                    borderRadius: 10,
+                                    padding: '10px 12px',
+                                }}>
+                                    <div style={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: '50%',
+                                        background: 'var(--ml-success-dot)',
+                                        boxShadow: '0 0 8px var(--ml-success-dot)',
+                                    }} />
+                                    <span style={{
                                         fontFamily: "'DM Sans', sans-serif",
                                         fontSize: 12,
-                                        color: 'var(--ml-text-muted)',
-                                        lineHeight: 1.6,
-                                    }}>
-                                        Train your digit model first.
-                                    </p>
+                                        color: 'var(--ml-success-text)',
+                                        fontWeight: 600,
+                                    }}>Model ready</span>
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    {/* Success indicator */}
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        background: 'var(--ml-success-bg)',
-                                        border: '1px solid var(--ml-success-border)',
-                                        borderRadius: 10,
-                                        padding: '10px 12px',
-                                    }}>
-                                        <div style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: '50%',
-                                            background: 'var(--ml-success-dot)',
-                                            boxShadow: '0 0 8px var(--ml-success-dot)',
-                                        }} />
-                                        <span style={{
-                                            fontFamily: "'DM Sans', sans-serif",
+
+                                {/* Test canvas */}
+                                <div style={{
+                                    background: 'var(--ml-well)',
+                                    borderRadius: 10,
+                                    padding: 8,
+                                    border: '1px solid var(--ml-border)',
+                                }}>
+                                    <DrawingCanvas
+                                        ref={testCanvasRef}
+                                        width={248}
+                                        height={160}
+                                        strokeColor="#ffffff"
+                                        bgColor="var(--ml-well)"
+                                        strokeWidth={12}
+                                        clearTrigger={testCanvasClear}
+                                    />
+                                </div>
+
+                                {/* Buttons */}
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button
+                                        onClick={() => { testCanvasRef.current?.clear(); setTestCanvasClear(c => c + 1); setTestResult(null) }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 0',
+                                            borderRadius: 10,
+                                            background: 'var(--ml-well)',
+                                            border: '1px solid var(--ml-border-strong)',
+                                            color: 'var(--ml-text-secondary)',
                                             fontSize: 12,
-                                            color: 'var(--ml-success-text)',
+                                            fontFamily: "'DM Sans', sans-serif",
                                             fontWeight: 600,
-                                        }}>Model ready</span>
-                                    </div>
-
-                                    {/* Test canvas */}
-                                    <div style={{
-                                        background: 'var(--ml-well)',
-                                        borderRadius: 10,
-                                        padding: 8,
-                                        border: '1px solid var(--ml-border)',
-                                    }}>
-                                        <DrawingCanvas
-                                            ref={testCanvasRef}
-                                            width={248}
-                                            height={160}
-                                            strokeColor="#ffffff"
-                                            bgColor="var(--ml-well)"
-                                            strokeWidth={12}
-                                            clearTrigger={testCanvasClear}
-                                        />
-                                    </div>
-
-                                    {/* Buttons */}
-                                    <div style={{ display: 'flex', gap: 8 }}>
-                                        <button
-                                            onClick={() => { testCanvasRef.current?.clear(); setTestCanvasClear(c => c + 1); setTestResult(null) }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px 0',
-                                                borderRadius: 10,
-                                                background: 'var(--ml-well)',
-                                                border: '1px solid var(--ml-border-strong)',
-                                                color: 'var(--ml-text-secondary)',
-                                                fontSize: 12,
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: 5,
-                                                transition: 'all 0.2s ease',
-                                            }}
-                                        >
-                                            <Eraser size={12} />
-                                            Clear
-                                        </button>
-                                        <button
-                                            onClick={handlePredict}
-                                            style={{
-                                                flex: 1.5,
-                                                padding: '10px 0',
-                                                borderRadius: 10,
-                                                background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-                                                border: 'none',
-                                                color: '#fff',
-                                                fontSize: 12,
-                                                fontFamily: "'DM Sans', sans-serif",
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: 5,
-                                                transition: 'all 0.2s ease',
-                                                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)',
-                                            }}
-                                        >
-                                            <Zap size={13} />
-                                            Predict
-                                        </button>
-                                    </div>
-
-                                    {/* Prediction results */}
-                                    {testResult && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                            {/* Predicted digit */}
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: `linear-gradient(135deg, ${DIGIT_COLORS[testResult.label].bg}15, ${DIGIT_COLORS[testResult.label].light}10)`,
-                                                border: `1px solid ${DIGIT_COLORS[testResult.label].bg}30`,
-                                                borderRadius: 12,
-                                                padding: '12px 0',
-                                            }}>
-                                                <span style={{
-                                                    fontFamily: "'DM Mono', monospace",
-                                                    fontSize: 48,
-                                                    fontWeight: 700,
-                                                    color: DIGIT_COLORS[testResult.label].bg,
-                                                    lineHeight: 1,
-                                                }}>{testResult.label}</span>
-                                            </div>
-
-                                            {/* Confidence bars */}
-                                            {Object.entries(testResult.confidences)
-                                                .sort((a, b) => (b[1] as number) - (a[1] as number))
-                                                .slice(0, 5)
-                                                .map(([digit, conf]) => {
-                                                    const d = parseInt(digit)
-                                                    const color = DIGIT_COLORS[d]
-                                                    return (
-                                                        <div key={digit}>
-                                                            <div style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                fontSize: 11,
-                                                                marginBottom: 3,
-                                                            }}>
-                                                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Digit {d}</span>
-                                                                <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
-                                                                    {Math.round((conf as number) * 100)}%
-                                                                </span>
-                                                            </div>
-                                                            <div style={{
-                                                                height: 4,
-                                                                background: 'var(--ml-well)',
-                                                                borderRadius: 2,
-                                                                overflow: 'hidden',
-                                                            }}>
-                                                                <div style={{
-                                                                    height: '100%',
-                                                                    width: `${(conf as number) * 100}%`,
-                                                                    background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
-                                                                    borderRadius: 2,
-                                                                    transition: 'width 0.5s ease',
-                                                                }} />
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                        </div>
-                                    )}
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 5,
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        <Eraser size={12} />
+                                        Clear
+                                    </button>
+                                    <button
+                                        onClick={handlePredict}
+                                        style={{
+                                            flex: 1.5,
+                                            padding: '10px 0',
+                                            borderRadius: 10,
+                                            background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                                            border: 'none',
+                                            color: '#fff',
+                                            fontSize: 12,
+                                            fontFamily: "'DM Sans', sans-serif",
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 5,
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)',
+                                        }}
+                                    >
+                                        <Zap size={13} />
+                                        Predict
+                                    </button>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+
+                                {/* Prediction results */}
+                                {testResult && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {/* Predicted digit */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: `linear-gradient(135deg, ${DIGIT_COLORS[testResult.label].bg}15, ${DIGIT_COLORS[testResult.label].light}10)`,
+                                            border: `1px solid ${DIGIT_COLORS[testResult.label].bg}30`,
+                                            borderRadius: 12,
+                                            padding: '12px 0',
+                                        }}>
+                                            <span style={{
+                                                fontFamily: "'DM Mono', monospace",
+                                                fontSize: 48,
+                                                fontWeight: 700,
+                                                color: DIGIT_COLORS[testResult.label].bg,
+                                                lineHeight: 1,
+                                            }}>{testResult.label}</span>
+                                        </div>
+
+                                        {/* Confidence bars */}
+                                        {Object.entries(testResult.confidences)
+                                            .sort((a, b) => (b[1] as number) - (a[1] as number))
+                                            .slice(0, 5)
+                                            .map(([digit, conf]) => {
+                                                const d = parseInt(digit)
+                                                const color = DIGIT_COLORS[d]
+                                                return (
+                                                    <div key={digit}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            fontSize: 11,
+                                                            marginBottom: 3,
+                                                        }}>
+                                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Digit {d}</span>
+                                                            <span style={{ color: 'var(--ml-text-secondary)', fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                                                                {Math.round((conf as number) * 100)}%
+                                                            </span>
+                                                        </div>
+                                                        <div style={{
+                                                            height: 4,
+                                                            background: 'var(--ml-well)',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                        }}>
+                                                            <div style={{
+                                                                height: '100%',
+                                                                width: `${(conf as number) * 100}%`,
+                                                                background: `linear-gradient(90deg, ${color.bg}, ${color.light})`,
+                                                                borderRadius: 2,
+                                                                transition: 'width 0.5s ease',
+                                                            }} />
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </ProjectTestingPanel>
                 </div>
             </div>
         </ClassifierLayout>

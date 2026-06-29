@@ -67,7 +67,7 @@ export default function LearningCenter({ onViewAll }: LearningCenterProps) {
             </div>
 
             {/* Featured tutorial card */}
-            <div className={`relative rounded-xl p-4 mb-4 overflow-hidden ${
+            <div className={`relative rounded-xl p-4 mb-4 overflow-hidden neura-animated-border ${
                 isDark
                     ? 'bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-indigo-500/10 border border-violet-500/20'
                     : 'bg-gradient-to-br from-[#f5f0ff] via-[#ede8ff] to-[#f0ecff] border border-purple-100/50'
