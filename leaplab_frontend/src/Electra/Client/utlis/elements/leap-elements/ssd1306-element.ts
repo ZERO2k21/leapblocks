@@ -25,6 +25,36 @@ const SCREEN_H = Math.round(12.4 * SCALE); // 50
 const PIN_Y_PX  = Math.round(1.71 * SCALE); // 7
 const PIN_XS_PX = [10.1, 12.6, 15.1, 17.7].map(x => Math.round(x * SCALE)); // 40,50,60,71
 
+function ensureImageData(data: any, defaultWidth: number, defaultHeight: number): ImageData {
+  if (data instanceof ImageData) {
+    return data;
+  }
+  if (data && typeof data === 'object') {
+    const w = typeof data.width === 'number' && data.width > 0 ? data.width : defaultWidth;
+    const h = typeof data.height === 'number' && data.height > 0 ? data.height : defaultHeight;
+    if (data.data) {
+      try {
+        let array: Uint8ClampedArray;
+        if (data.data instanceof Uint8ClampedArray) {
+          array = data.data;
+        } else if (Array.isArray(data.data) || ArrayBuffer.isView(data.data)) {
+          array = new Uint8ClampedArray(data.data as any);
+        } else if (typeof data.data === 'object') {
+          array = new Uint8ClampedArray(Object.values(data.data));
+        } else {
+          array = new Uint8ClampedArray(w * h * 4);
+        }
+        if (array.length === w * h * 4) {
+          return new ImageData(array as any, w, h);
+        }
+      } catch (e) {
+        console.warn('[SSD1306Element] Failed to reconstruct ImageData:', e);
+      }
+    }
+  }
+  return new ImageData(defaultWidth, defaultHeight);
+}
+
 // ── No @customElement decorator — use guarded define() below to survive HMR ──
 export class SSD1306Element extends LitElement {
   /**
@@ -36,9 +66,10 @@ export class SSD1306Element extends LitElement {
   get imageData(): ImageData { return this._imageData; }
 
   set imageData(data: ImageData) {
-    this._imageData = data;
-    console.log(`[OLED ELEMENT] imageData setter: ${data?.width}×${data?.height}, ctx=${!!this.ctx}, canvas=${!!this.canvas}`);
-    this._drawImmediate(data);
+    const validData = ensureImageData(data, this.screenWidth, this.screenHeight);
+    this._imageData = validData;
+    console.log(`[OLED ELEMENT] imageData setter: ${validData.width}×${validData.height}, ctx=${!!this.ctx}, canvas=${!!this.canvas}`);
+    this._drawImmediate(validData);
   }
 
   readonly width  = PX_W;
@@ -92,7 +123,10 @@ export class SSD1306Element extends LitElement {
   }
 
   /** Draw immediately — re-acquires canvas context if needed */
-  private _drawImmediate(data: ImageData) {
+  private _drawImmediate(data?: ImageData) {
+    const validData = ensureImageData(data ?? this._imageData, this.screenWidth, this.screenHeight);
+    this._imageData = validData;
+
     // Re-acquire context if lost (e.g. after HMR or shadow DOM re-render)
     if (!this.ctx || !this.canvas) {
       this.canvas = this.shadowRoot?.querySelector('canvas') ?? null;
@@ -103,13 +137,9 @@ export class SSD1306Element extends LitElement {
       console.error(`[OLED ELEMENT] _drawImmediate FAILED — no canvas context. shadowRoot=${!!this.shadowRoot}`);
       return;
     }
-    if (!data) {
-      console.warn(`[OLED ELEMENT] _drawImmediate — no ImageData`);
-      return;
-    }
     try {
-      this.ctx.putImageData(data, 0, 0);
-      console.log(`[OLED ELEMENT] ✓ putImageData(${data.width}×${data.height})`);
+      this.ctx.putImageData(validData, 0, 0);
+      console.log(`[OLED ELEMENT] ✓ putImageData(${validData.width}×${validData.height})`);
     } catch (e) {
       console.error(`[OLED ELEMENT] putImageData FAILED:`, e);
     }

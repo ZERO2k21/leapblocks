@@ -115,6 +115,21 @@ export class ILI9341TouchElement extends LitElement {
 
   public redraw(): void {
     if (this._ctx && this.imageData) {
+      if (!(this.imageData instanceof ImageData)) {
+        try {
+          const w = (this.imageData as any).width || NATIVE_W;
+          const h = (this.imageData as any).height || NATIVE_H;
+          const raw = (this.imageData as any).data;
+          if (raw) {
+            const arr = raw instanceof Uint8ClampedArray ? raw : new Uint8ClampedArray(Object.values(raw));
+            this.imageData = new ImageData(arr as any, w, h);
+          } else {
+            this.imageData = new ImageData(NATIVE_W, NATIVE_H);
+          }
+        } catch (e) {
+          this.imageData = new ImageData(NATIVE_W, NATIVE_H);
+        }
+      }
       this._ctx.putImageData(this.imageData, 0, 0);
     }
   }
