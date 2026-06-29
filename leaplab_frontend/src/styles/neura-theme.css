@@ -616,6 +616,374 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* ── Premium Enhanced Animations ──────────────────────────────────────────── */
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rotate-gradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+  25% { transform: translateY(-12px) translateX(6px) scale(1.1); opacity: 0.8; }
+  50% { transform: translateY(-6px) translateX(-4px) scale(0.95); opacity: 0.5; }
+  75% { transform: translateY(-16px) translateX(2px) scale(1.05); opacity: 0.7; }
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+@keyframes glow-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(124, 58, 237, 0.2); }
+  50% { border-color: rgba(124, 58, 237, 0.5); }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+@keyframes sweep-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes celebration-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-count-up {
+  animation: count-up 0.5s var(--neura-transition) both;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s var(--neura-transition) both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s var(--neura-transition) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s var(--neura-transition-spring) both;
+}
+
+.animate-glow-ring {
+  animation: glow-ring 2s ease-in-out infinite;
+}
+
+.animate-dot-pulse {
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-celebration {
+  animation: celebration-pop 0.5s var(--neura-transition-spring) both;
+}
+
+/* ── Premium Glass Utilities ─────────────────────────────────────────────── */
+
+.neura-glass-premium {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(10, 1, 90, 0.08),
+              0 2px 8px rgba(10, 1, 90, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.neura-glass-premium:hover {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 40px rgba(10, 1, 90, 0.12),
+              0 4px 12px rgba(10, 1, 90, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.neura-glass-dark {
+  background: rgba(20, 20, 40, 0.65);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ── Premium Card Hover Effects ──────────────────────────────────────────── */
+
+.neura-card-3d {
+  transition: all 0.4s var(--neura-transition);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.neura-card-3d:hover {
+  transform: translateY(-6px) rotateX(2deg) rotateY(-1deg);
+  box-shadow: 0 20px 50px rgba(10, 1, 90, 0.15),
+              0 8px 20px rgba(10, 1, 90, 0.08);
+}
+
+.neura-card-glow {
+  position: relative;
+}
+
+.neura-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+  filter: blur(8px);
+}
+
+.neura-card-glow:hover::before {
+  opacity: 1;
+}
+
+/* ── Animated Border Gradient ────────────────────────────────────────────── */
+
+.neura-animated-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-animated-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #7c3aed, #6366f1, #a855f7, #7c3aed);
+  background-size: 300% 300%;
+  animation: shimmer-border 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.neura-animated-border:hover::before {
+  opacity: 1;
+}
+
+/* ── Shimmer Overlay ─────────────────────────────────────────────────────── */
+
+.neura-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: sweep-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Premium Progress Bar ────────────────────────────────────────────────── */
+
+.neura-progress-premium {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(124, 58, 237, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd);
+  background-size: 200% 100%;
+  animation: shimmer-border 2s ease infinite;
+  transition: width 0.6s var(--neura-transition);
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: sweep-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Premium Status Dot ──────────────────────────────────────────────────── */
+
+.neura-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.neura-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.3;
+  animation: glow-ring 2s ease-in-out infinite;
+}
+
+.neura-status-dot-active {
+  background: #22c55e;
+  color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+/* ── Premium Badge Enhanced ──────────────────────────────────────────────── */
+
+.neura-badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-badge-premium::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: sweep-shimmer 2s ease-in-out infinite;
+}
+
+/* ── Premium Upload Zone ─────────────────────────────────────────────────── */
+
+.neura-upload-zone {
+  border: 2px dashed rgba(124, 58, 237, 0.3);
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s var(--neura-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-upload-zone:hover {
+  border-color: rgba(124, 58, 237, 0.6);
+  background: rgba(124, 58, 237, 0.03);
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08);
+}
+
+.neura-upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(124, 58, 237, 0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.neura-upload-zone:hover::before {
+  opacity: 1;
+}
+
+/* ── Premium Tooltip ─────────────────────────────────────────────────────── */
+
+.neura-tooltip-premium {
+  position: relative;
+}
+
+.neura-tooltip-premium::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: linear-gradient(135deg, #0a015a, #15027a);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s var(--neura-transition);
+  box-shadow: 0 8px 24px rgba(10, 1, 90, 0.35);
+  z-index: 100;
+}
+
+.neura-tooltip-premium:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Premium Focus Ring ──────────────────────────────────────────────────── */
+
+.neura-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5),
+              0 0 0 4px rgba(124, 58, 237, 0.15);
+}
+
+/* ── Skeleton Loading ────────────────────────────────────────────────────── */
+
+.neura-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer-border 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.neura-dark .neura-skeleton {
+  background: linear-gradient(90deg, #1a1a2a 25%, #252540 50%, #1a1a2a 75%);
+  background-size: 200% 100%;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 1280px) {
@@ -624,13 +992,232 @@
   }
 }
 
+/* ── Dashboard Action Bar ──────────────────────────────────────────────── */
+
+.neura-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
+  background: var(--ml-surface);
+  border: 1px solid var(--ml-border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .neura-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 16px;
+  }
+}
+
+/* ── Clean Table System ────────────────────────────────────────────────── */
+
+.neura-table-wrap {
+  border-radius: 16px;
+  border: 1px solid var(--ml-border);
+  background: var(--ml-surface);
+  overflow: visible;
+}
+
+.neura-table-wrap .neura-table thead th:first-child { border-top-left-radius: 15px; }
+.neura-table-wrap .neura-table thead th:last-child { border-top-right-radius: 15px; }
+.neura-table-wrap .neura-table tbody tr:last-child td:first-child { border-bottom-left-radius: 15px; }
+.neura-table-wrap .neura-table tbody tr:last-child td:last-child { border-bottom-right-radius: 15px; }
+
+.neura-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.neura-table thead th {
+  padding: 14px 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid var(--ml-border);
+}
+
+.neura-table thead th:not(:last-child) {
+  border-right: 1px solid var(--ml-border);
+}
+
+.neura-table tbody td {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--ml-border);
+  transition: background-color 0.15s ease;
+}
+
+.neura-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.neura-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.neura-table tbody tr:hover {
+  background-color: var(--ml-surface-alt);
+}
+
+.neura-table tbody tr:active {
+  background-color: var(--ml-well);
+}
+
+@media (max-width: 640px) {
+  .neura-table thead th,
+  .neura-table tbody td {
+    padding: 12px 16px;
+  }
+}
+
+/* ── Mobile Premium Card ───────────────────────────────────────────────── */
+
+.neura-mobile-project-card {
+  border-radius: 14px;
+  border: 1px solid var(--ml-border);
+  background: var(--ml-surface);
+  padding: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+}
+
+.neura-mobile-project-card:active {
+  transform: scale(0.98);
+}
+
+.neura-mobile-project-card:hover {
+  border-color: var(--ml-border-strong);
+  box-shadow: 0 4px 16px rgba(10, 1, 90, 0.06);
+}
+
+/* ── Pipeline Layout ───────────────────────────────────────────────────── */
+
+.neura-pipeline-layout {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.neura-pipeline-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.neura-pipeline-divider {
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, var(--ml-border) 20%, var(--ml-border) 80%, transparent 100%);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .neura-pipeline-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .neura-pipeline-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--ml-border) 20%, var(--ml-border) 80%, transparent 100%);
+  }
+}
+
+/* ── Centered Workspace Card ───────────────────────────────────────────── */
+
+.neura-workspace-card {
+  max-width: 56rem;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(10, 1, 90, 0.08), 0 2px 8px rgba(10, 1, 90, 0.04);
+  border: 1px solid var(--ml-border);
+  background: var(--ml-surface);
+}
+
+@media (max-width: 640px) {
+  .neura-workspace-card {
+    border-radius: 16px;
+    margin: 0 8px;
+  }
+}
+
+/* ── Form Input Styles ─────────────────────────────────────────────────── */
+
+.neura-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--ml-border);
+  background: var(--ml-well);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ml-text-primary);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.neura-form-input:hover {
+  border-color: var(--ml-border-strong);
+}
+
+.neura-form-input:focus {
+  border-color: var(--ml-accent);
+  background: var(--ml-surface);
+  box-shadow: 0 0 0 3px var(--ml-accent-muted);
+}
+
+.neura-form-input::placeholder {
+  color: var(--ml-text-muted);
+}
+
+.neura-dark .neura-form-input {
+  color: var(--ml-text-primary);
+}
+
+/* ── Section Header ────────────────────────────────────────────────────── */
+
+.neura-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ml-accent);
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Reduced Motion ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
   .animate-wave,
   .animate-pulse-slow,
   .animate-glow-pulse,
   .animate-shake,
-  .animate-gradient-shift {
+  .animate-gradient-shift,
+  .animate-count-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-glow-ring,
+  .animate-dot-pulse,
+  .animate-celebration {
+    animation: none;
+  }
+  .neura-shimmer::after,
+  .neura-animated-border::before,
+  .neura-badge-premium::after {
     animation: none;
   }
 }
@@ -782,4 +1369,82 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ── Responsive Breakpoints ────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .neura-card-3d {
+    transform: none;
+  }
+
+  .neura-card-3d:hover {
+    transform: translateY(-2px);
+  }
+
+  .neura-animated-border::before {
+    animation: none;
+  }
+
+  .neura-shimmer::before {
+    animation: none;
+  }
+
+  .neura-progress-fill {
+    transition: width 0.3s ease;
+  }
+}
+
+@media (max-width: 768px) {
+  .neura-glass-premium {
+    backdrop-filter: blur(8px);
+  }
+
+  .neura-card-glow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .neura-card-glow:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .neura-status-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .neura-badge-premium {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .neura-focus-ring:focus {
+    outline: none;
+  }
+
+  .neura-premium-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .neura-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  .neura-card-title {
+    font-size: 1.1rem;
+  }
+
+  .neura-card-desc {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .neura-use-btn {
+    padding: 12px 24px;
+    font-size: 12px;
+  }
 }

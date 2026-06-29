@@ -18,13 +18,19 @@ export default function ProjectTypeCard({ type, selected, onClick }: ProjectType
     const { isDark } = useNeuraTheme();
 
     const cardClass = selected
-        ? `border-2 shadow-[0_0_0_3px_rgba(10,1,90,0.1),0_8px_30px_rgba(10,1,90,0.12)] scale-[1.02] ${isDark ? 'border-[#7c3aed] bg-white/[0.05]' : 'border-[#0a015a] bg-[#f8f9ff]'}`
-        : `border-2 border-dashed ${isDark ? 'border-white/[0.1] bg-[#13131f] hover:border-[#7c3aed]/40 hover:bg-white/[0.03] hover:shadow-[0_8px_30px_rgba(124,58,237,0.08)]' : 'border-gray-200 bg-white hover:border-[#0a015a]/40 hover:bg-[#fafbff] hover:shadow-[0_8px_30px_rgba(10,1,90,0.08)]'} hover:scale-[1.01]`;
+        ? `border-2 shadow-[0_0_0_3px_rgba(10,1,90,0.1),0_8px_30px_rgba(10,1,90,0.12)] scale-[1.02] ${
+            isDark ? 'border-[#7c3aed] bg-white/[0.05]' : 'border-[#0a015a] bg-[#f8f9ff]'
+          }`
+        : `border-2 border-dashed ${
+            isDark
+              ? 'border-white/[0.1] bg-[#13131f] hover:border-[#7c3aed]/40 hover:bg-white/[0.03] hover:shadow-[0_8px_30px_rgba(124,58,237,0.08)]'
+              : 'border-gray-200 bg-white hover:border-[#0a015a]/40 hover:bg-[#fafbff] hover:shadow-[0_8px_30px_rgba(10,1,90,0.08)]'
+          } hover:scale-[1.01]`;
 
     return (
         <div
             onClick={onClick}
-            className={`relative cursor-pointer rounded-2xl p-4 flex flex-col items-center text-center transition-all duration-300 group h-full ${cardClass}`}
+            className={`relative cursor-pointer rounded-2xl p-3.5 sm:p-4 flex flex-col items-center text-center transition-all duration-300 group h-full min-h-[160px] sm:min-h-[180px] ${cardClass}`}
         >
             {/* Selected checkmark */}
             {selected && (
@@ -36,12 +42,12 @@ export default function ProjectTypeCard({ type, selected, onClick }: ProjectType
             )}
 
             {/* Illustration area */}
-            <div className={`w-full h-[100px] flex items-center justify-center mb-3 rounded-xl overflow-hidden ${isDark ? 'bg-gradient-to-b from-white/[0.03] to-transparent' : 'bg-gradient-to-b from-gray-50/80 to-transparent'}`}>
+            <div className={`w-full h-[80px] sm:h-[100px] flex items-center justify-center mb-2.5 sm:mb-3 rounded-xl overflow-hidden ${isDark ? 'bg-gradient-to-b from-white/[0.03] to-transparent' : 'bg-gradient-to-b from-gray-50/80 to-transparent'}`}>
                 <TypeIllustration type={type.id as ProjectType} className="w-full h-full object-contain" />
             </div>
 
             {/* Label */}
-            <h3 className={`text-[13px] font-bold tracking-tight transition-colors duration-200 ${
+            <h3 className={`text-[12px] sm:text-[13px] font-bold tracking-tight transition-colors duration-200 ${
                 selected
                     ? (isDark ? 'text-violet-300' : 'text-[#0a015a]')
                     : (isDark ? 'text-gray-300 group-hover:text-violet-300' : 'text-gray-700 group-hover:text-[#0a015a]')

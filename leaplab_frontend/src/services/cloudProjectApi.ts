@@ -142,16 +142,26 @@ export async function getCloudProject(projectId: string): Promise<CloudProject> 
 }
 
 export async function fetchCloudProjectContent(fileUrl: string): Promise<any> {
-    const response = await fetch(fileUrl, {
-        method: 'GET',
-    });
+    try {
+        const response = await fetch(fileUrl, {
+            method: 'GET',
+        });
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch project content: ${response.status}`);
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Authentication required. Please sign in to access this project.');
+            }
+            throw new Error(`Failed to fetch project content: ${response.status}`);
+        }
+
+        const text = await response.text();
+        return JSON.parse(text);
+    } catch (e: any) {
+        if (e?.message?.includes('Failed to fetch') || e?.name === 'TypeError') {
+            throw new Error('Network error. Please check your internet connection and try again.');
+        }
+        throw e;
     }
-
-    const text = await response.text();
-    return JSON.parse(text);
 }
 
 export async function updateCloudProject(
@@ -249,12 +259,22 @@ export async function revokeCloudProjectShare(projectId: string): Promise<CloudP
 }
 
 export async function getSharedProject(shareId: string): Promise<CloudProject> {
-    const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
-        method: 'GET',
-    });
+    try {
+        const response = await fetch(`${LMS_PROJECTS_URL}/share/${shareId}`, {
+            method: 'GET',
+        });
 
-    const result = await handleResponse<CloudProjectResponse>(response);
-    return result.data;
+        const result = await handleResponse<CloudProjectResponse>(response);
+        return result.data;
+    } catch (e: any) {
+        if (e?.message?.includes('401')) {
+            throw new Error('Authentication required. Please sign in to access this shared project.');
+        }
+        if (e?.message?.includes('Failed to fetch') || e?.name === 'TypeError') {
+            throw new Error('Network error. Please check your internet connection and try again.');
+        }
+        throw e;
+    }
 }
 
 export function getShareUrl(shareId: string): string {

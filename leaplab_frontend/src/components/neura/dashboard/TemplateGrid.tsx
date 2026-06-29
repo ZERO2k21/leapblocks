@@ -114,7 +114,7 @@ export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGr
                     return (
                         <div
                             key={template.id}
-                            className={`neura-premium-card group animate-slide-in-up stagger-${idx + 1}`}
+                            className={`neura-premium-card neura-card-glow group animate-slide-in-up stagger-${idx + 1}`}
                             style={{
                                 '--accent-from': template.accentFrom,
                                 '--accent-to': template.accentTo,
@@ -128,7 +128,7 @@ export default function TemplateGrid({ onSelectTemplate, onViewAll }: TemplateGr
                             )}
 
                             {/* Icon */}
-                            <div className={`neura-icon-wrapper ${template.iconBg}`}>
+                            <div className={`neura-icon-wrapper ${template.iconBg} group-hover:shadow-lg`}>
                                 <Icon size={32} className="text-white" strokeWidth={1.8} />
                             </div>
 
