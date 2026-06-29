@@ -17,7 +17,7 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
     const { isDark } = useNeuraTheme();
 
     return (
-        <div className={`relative overflow-hidden rounded-2xl px-6 sm:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6 mb-6 border neura-shimmer ${
+        <div className={`relative overflow-hidden rounded-2xl px-5 py-4 sm:px-8 sm:py-6 lg:px-8 lg:py-6 mb-5 sm:mb-6 border neura-shimmer ${
             isDark
                 ? 'bg-gradient-to-br from-[#1a1d2e] via-[#141627] to-[#1e2035] border-white/[0.06]'
                 : 'bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] border-[#0a015a]/[0.04]'
@@ -40,18 +40,18 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center animate-glow-ring ${isDark ? 'bg-gradient-to-br from-violet-500/20 to-indigo-500/10' : 'bg-gradient-to-br from-[#7C3AED]/15 to-[#4F46E5]/8'}`}>
                             <Brain size={20} className={isDark ? 'text-violet-400' : 'text-[#7C3AED]'} strokeWidth={2} />
                         </div>
-                        <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
+                        <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
                             Welcome Back, <span className="neura-gradient-text">Explorer!</span>{' '}
                             <span className="inline-block animate-wave">&#x1F44B;</span>
                         </h1>
                     </div>
-                    <p className={`text-sm sm:text-base mt-1.5 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                    <p className={`text-sm sm:text-base mt-1 sm:mt-1.5 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                         Build, train and deploy AI models without coding.{' '}
                         <span className={`font-medium ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>No code. Just creativity.</span>
                     </p>
 
                     {/* Action buttons */}
-                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mt-4 sm:mt-5">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-5">
                         <button
                             onClick={onCreateNew}
                             className="neura-button-primary flex items-center gap-2 text-xs sm:text-sm"
