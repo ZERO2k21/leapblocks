@@ -248,6 +248,13 @@ class FileService {
             error: `This looks like a ${actualName} project. Please open it in the ${actualName} session instead of ${expectedName}.`
         };
     }
+
+    validateNeuraImport(data: any): { isValid: boolean; error?: string } {
+        if (!data || typeof data !== 'object') {
+            return { isValid: false, error: 'Invalid project data' };
+        }
+        return { isValid: true };
+    }
 }
 
 let _fileService: FileService | null = null;

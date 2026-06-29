@@ -4,18 +4,16 @@
  */
 
 import React from 'react';
-import { Plus, Upload, Search, FolderOpen } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface ActionBarProps {
     projectCount: number;
-    searchQuery: string;
-    onSearchChange: (query: string) => void;
     onCreateNew?: () => void;
     onImport?: () => void;
 }
 
-export default function ActionBar({ projectCount, searchQuery, onSearchChange, onCreateNew, onImport }: ActionBarProps) {
+export default function ActionBar({ projectCount, onCreateNew, onImport }: ActionBarProps) {
     const { isDark } = useNeuraTheme();
 
     return (
@@ -38,42 +36,24 @@ export default function ActionBar({ projectCount, searchQuery, onSearchChange, o
                 )}
             </div>
 
-            {/* Center: Search */}
-            <div className={`flex-1 max-w-xs relative`}>
-                <Search size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${
-                    isDark ? 'text-gray-500' : 'text-gray-400'
-                }`} strokeWidth={2} />
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder="Search projects..."
-                    className={`w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all duration-200 ${
-                        isDark
-                            ? 'bg-white/[0.04] border border-white/[0.08] text-gray-200 placeholder-gray-500 focus:border-violet-500/40 focus:bg-white/[0.06]'
-                            : 'bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:border-[#0a015a]/30 focus:bg-white'
-                    }`}
-                />
-            </div>
-
             {/* Right: Action buttons */}
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0 ml-auto">
                 <button
                     onClick={onImport}
-                    className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
                         isDark
                             ? 'text-gray-300 bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.12]'
                             : 'text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                     }`}
                 >
-                    <Upload size={14} strokeWidth={2.2} />
+                    <Upload size={16} strokeWidth={2.2} />
                     <span className="hidden sm:inline">Import</span>
                 </button>
                 <button
                     onClick={onCreateNew}
-                    className="neura-button-primary flex items-center gap-2 !py-2.5 !px-4 !text-xs !rounded-xl"
+                    className="neura-button-primary flex items-center gap-2.5 !py-2.5 !px-4 !text-xs !rounded-xl"
                 >
-                    <Plus size={14} strokeWidth={2.5} />
+                    <Plus size={16} strokeWidth={2.5} />
                     <span>New Project</span>
                 </button>
             </div>

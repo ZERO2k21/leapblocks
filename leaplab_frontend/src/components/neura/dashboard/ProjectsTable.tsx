@@ -143,10 +143,10 @@ function MobileProjectCard({
         >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                         isDark ? 'bg-white/[0.06] border border-white/[0.06]' : 'bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8'
                     }`}>
-                        <Icon size={18} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
+                        <Icon size={20} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
                         <p className={`font-bold tracking-tight text-sm truncate ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>{project.name}</p>
@@ -228,10 +228,10 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
                                     {/* Project Details */}
                                     <td>
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                                                 isDark ? 'bg-white/[0.06] border border-white/[0.06]' : 'bg-gradient-to-br from-[#0a015a]/10 to-[#15027a]/5 border border-[#0a015a]/8'
                                             }`}>
-                                                <Icon size={18} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
+                                                <Icon size={20} className={isDark ? 'text-violet-400' : 'text-[#0a015a]'} strokeWidth={2} />
                                             </div>
                                             <div className="min-w-0">
                                                 <p className={`font-bold tracking-tight truncate max-w-[200px] ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>{project.name}</p>
