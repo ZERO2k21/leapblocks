@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { saveProjectToCloud, updateSharedProject, updateCloudProject } from '../../../../services/cloudProjectApi';
+import { saveProjectToCloud, updateSharedProject, updateCloudProject, listMyProjects } from '../../../../services/cloudProjectApi';
 import { useLeapLabAuthStore } from '../../../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../../../store/cloudProjectStore';
 
@@ -119,7 +119,33 @@ class FileService {
             throw new Error('Please sign in to save projects to the cloud.');
         }
 
-        const activeProjectId = useCloudProjectStore.getState().activeProjectId;
+        let activeProjectId = useCloudProjectStore.getState().activeProjectId;
+        const metadata = payload?.board ? { board: payload.board } : undefined;
+
+        // Check if a project with the same name already exists in cloud projects for this mode
+        try {
+            const existingProjects = await listMyProjects(mode);
+            const duplicate = existingProjects.find(
+                p => p.id !== activeProjectId && p.name.trim().toLowerCase() === projectName.trim().toLowerCase()
+            );
+
+            if (duplicate) {
+                const confirmed = window.confirm(
+                    `A cloud project named "${projectName}" already exists. Do you want to overwrite it?`
+                );
+                if (!confirmed) {
+                    throw new Error(`Save cancelled: A project named "${projectName}" already exists.`);
+                }
+                // If confirmed to overwrite, update the duplicate project
+                activeProjectId = duplicate.id;
+                useCloudProjectStore.getState().setActiveProjectId(duplicate.id);
+            }
+        } catch (err: any) {
+            if (err.message?.includes('Save cancelled')) {
+                throw err;
+            }
+            console.warn('[FileService] Failed to check duplicate cloud projects:', err);
+        }
 
         if (activeProjectId) {
             await updateCloudProject(activeProjectId, {
@@ -127,6 +153,7 @@ class FileService {
                 mode,
                 payload,
                 thumbnail,
+                metadata,
             });
         } else {
             const newProject = await saveProjectToCloud({
@@ -134,6 +161,7 @@ class FileService {
                 mode,
                 payload,
                 thumbnail,
+                metadata,
             });
             useCloudProjectStore.getState().setActiveProjectId(newProject.id);
         }

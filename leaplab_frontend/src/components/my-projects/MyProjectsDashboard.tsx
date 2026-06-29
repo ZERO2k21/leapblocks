@@ -658,6 +658,58 @@ const SavedProjectCircuitVisual: React.FC<SavedProjectCircuitVisualProps> = ({ p
     );
 };
 
+interface ProjectBoardBadgeProps {
+    project: CloudProject;
+}
+
+const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
+    const [board, setBoard] = useState<string | null>(() => {
+        if (project.metadata) {
+            try {
+                const parsed = typeof project.metadata === 'string' ? JSON.parse(project.metadata) : project.metadata;
+                if (parsed?.board) return parsed.board;
+            } catch (e) {}
+        }
+        return null;
+    });
+
+    useEffect(() => {
+        if (board) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                if (!project.fileUrl) return;
+                const fullUrl = project.fileUrl.startsWith('http')
+                    ? project.fileUrl
+                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.fileUrl}`;
+                const res = await fetch(fullUrl);
+                if (!res.ok) return;
+                const text = await res.text();
+                const content = isPacked(text) ? unpack<any>(text) : JSON.parse(text);
+                const loadedNodes = content.nodes || content.circuit?.nodes || [];
+                const detectedBoard = content.board || (loadedNodes.some((n: any) => n.data?.type === 'esp32-c3' || n.data?.type === 'esp32') ? 'esp32-c3' : 'arduino-uno');
+                if (!cancelled && detectedBoard) {
+                    setBoard(detectedBoard);
+                }
+            } catch (err) {}
+        })();
+        return () => { cancelled = true; };
+    }, [project.fileUrl, project.metadata, board]);
+
+    if (project.mode !== 'electra' && project.mode !== 'intermediate') return null;
+    const targetBoard = board || 'arduino-uno';
+
+    const displayLabel = (targetBoard === 'esp32-c3' || targetBoard === 'esp32') ? 'ESP32-C3' : 'Arduino Uno';
+    const isEsp32 = targetBoard === 'esp32-c3' || targetBoard === 'esp32';
+
+    return (
+        <span className={`my-project-board-tag ${isEsp32 ? 'tag-esp32' : 'tag-arduino'}`}>
+            <Cpu size={12} style={{ marginRight: '4px' }} />
+            {displayLabel}
+        </span>
+    );
+};
+
 export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboardProps) {
     const { isAuthenticated } = useLeapLabAuthStore();
     const [projects, setProjects] = useState<CloudProject[]>([]);
@@ -1040,7 +1092,10 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                             )}
 
                             <div className="my-project-card-content">
-                                <h4 className="my-project-card-name" title={project.name}>{highlightMatch(project.name, searchQuery)}</h4>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                                    <h4 className="my-project-card-name" title={project.name} style={{ margin: 0, flex: 1 }}>{highlightMatch(project.name, searchQuery)}</h4>
+                                    <ProjectBoardBadge project={project} />
+                                </div>
                                 <div className="my-project-card-footer-row">
                                     <div className="my-project-card-date">
                                         <Calendar size={14} style={{ marginRight: '4px', opacity: 0.7 }} />
