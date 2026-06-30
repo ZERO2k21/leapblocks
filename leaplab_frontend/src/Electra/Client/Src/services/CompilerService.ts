@@ -437,6 +437,8 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\/\*[\s\S]*?\*\//g, '');
     // Remove #include
     js = js.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
+    // Strip function prototypes / declarations (e.g. void myFunc();) to prevent them being treated as calls and getting prepended with invalid top-level awaits
+    js = js.replace(/^\s*(void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s*\*?\s*(\w+)\s*\([^)]*\)\s*;/gm, '');
     // Strip C++ const / volatile qualifiers (before type processing)
     // Only strip when followed by a known C++ type so #define-generated `const X = Y;` is preserved
     js = js.replace(/\b(const|volatile)\s+(?=(void|int|long|short|unsigned|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool|String|string)\b)/g, '');
@@ -543,7 +545,7 @@ function clientSideTranspile(code: string): TranspileResult {
       (_m, _t, name, params) => {
         // Filter out 'void' params (C++ uses 'void' to mean no params) and extract param names
         const jsParams = params.split(',')
-          .map((p: string) => p.trim().split(/\s+/).pop())
+          .map((p: string) => p.trim().split(/\s+/).pop()?.replace(/[*&]/g, '') || '')
           .filter((p: any) => p && p !== 'void')
           .join(', ');
         // All functions get async so that await __delay / await __delayMicroseconds / await pulseIn work everywhere

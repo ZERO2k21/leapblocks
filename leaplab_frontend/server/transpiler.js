@@ -14,6 +14,8 @@ export function transpileArduinoToJS(arduinoCode) {
   }
 
   code = code.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
+  // Strip function prototypes / declarations (e.g. void myFunc();)
+  code = code.replace(/^\s*(void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s*\*?\s*(\w+)\s*\([^)]*\)\s*;/gm, '');
 
   code = code.replace(/^\s*#define\s+(\w+)\s+(.+)$/gm, (_m, n, v) => `const ${n} = ${v.trim()};`);
 
@@ -40,7 +42,7 @@ export function transpileArduinoToJS(arduinoCode) {
     new RegExp(`\\b${TYPES}\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{`, 'g'),
     (_m, name, params) => {
       const jsParams = params.split(',')
-        .map(p => p.trim().split(/\s+/).pop())
+        .map(p => p.trim().split(/\s+/).pop().replace(/[*&]/g, ''))
         .filter(p => p && p !== 'void').join(', ');
       const isLifecycle = name === 'setup' || name === 'loop';
       const prefix = isLifecycle ? 'async ' : '';

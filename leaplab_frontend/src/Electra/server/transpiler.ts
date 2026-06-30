@@ -34,6 +34,8 @@ export function transpileArduinoToJS(arduinoCode: string): string {
 
   // ── Step 2: Process #include (strip them — stubs provide everything) ──
   code = code.replace(/^\s*#include\s*[<"].*?[>"]\s*$/gm, '');
+  // Strip function prototypes / declarations (e.g. void myFunc();)
+  code = code.replace(/^\s*(void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s*\*?\s*(\w+)\s*\([^)]*\)\s*;/gm, '');
 
   // ── Step 3: Process #define macros ──────────────────────────
   const defines = new Map<string, string>();
