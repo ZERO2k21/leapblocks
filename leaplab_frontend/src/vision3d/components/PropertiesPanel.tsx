@@ -37,7 +37,7 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const handleRotationChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    log.debug('PropertiesPanel: rotation ' + axis + '=' + value + 'deg id=' + selectedShape.id);
+    debug('PropertiesPanel: rotation ' + axis + '=' + value + 'deg id=' + selectedShape.id);
     const newRotation: [number, number, number] = [...selectedShape.rotation];
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
     newRotation[axisIndex] = (value * Math.PI) / 180;
@@ -45,7 +45,7 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const handleScaleChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    log.debug('PropertiesPanel: scale ' + axis + '=' + value.toFixed(2) + ' id=' + selectedShape.id);
+    debug('PropertiesPanel: scale ' + axis + '=' + value.toFixed(2) + ' id=' + selectedShape.id);
     const newScale: [number, number, number] = [...selectedShape.scale];
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
     newScale[axisIndex] = Math.max(0.1, value);
@@ -53,7 +53,7 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const handleColorChange = (color: string) => {
-    log.debug('PropertiesPanel: color=' + color + ' id=' + selectedShape.id);
+    debug('PropertiesPanel: color=' + color + ' id=' + selectedShape.id);
     updateShape(selectedShape.id, { color });
   };
 
@@ -73,7 +73,7 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const updateProp = (key: string, value: number | string) => {
-    log.debug('PropertiesPanel: prop ' + key + '=' + value + ' id=' + selectedShape.id);
+    debug('PropertiesPanel: prop ' + key + '=' + value + ' id=' + selectedShape.id);
     updateShape(selectedShape.id, { [key]: value } as any);
   };
 

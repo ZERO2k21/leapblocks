@@ -191,7 +191,7 @@ const SceneContent: React.FC = () => {
 // Main Canvas3D component
 export const Canvas3D: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  log.debug('Canvas3D: rendering');
+  debug('Canvas3D: rendering');
 
   return (
     <div ref={containerRef} className="canvas-3d-container">

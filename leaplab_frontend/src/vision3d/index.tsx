@@ -109,10 +109,10 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
         deselectAll();
       }
 
-      if (key === 'v') { log.debug('Keyboard: V (select tool)'); setTool('select'); }
-      if (key === 'g' && !e.ctrlKey) { log.debug('Keyboard: G (move tool)'); setTool('move'); }
-      if (key === 'r' && !e.ctrlKey) { log.debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
-      if (key === 's' && !e.ctrlKey) { log.debug('Keyboard: S (scale tool)'); setTool('scale'); }
+      if (key === 'v') { debug('Keyboard: V (select tool)'); setTool('select'); }
+      if (key === 'g' && !e.ctrlKey) { debug('Keyboard: G (move tool)'); setTool('move'); }
+      if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
+      if (key === 's' && !e.ctrlKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
     },
     [
       selectedIds,
