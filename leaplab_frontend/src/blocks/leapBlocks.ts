@@ -1438,7 +1438,7 @@ const leapBlocks = [
             variable: 'my variable',
             variableTypes: ['Number', 'String', '']
         }],
-        output: 'Number',
+        output: null,
         colour: '#FF8C1A',
         tooltip: 'Reports the value of a variable.',
         helpUrl: ''

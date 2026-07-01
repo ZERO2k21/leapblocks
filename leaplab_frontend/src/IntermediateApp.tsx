@@ -5045,13 +5045,24 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         }
                                     }
                                 };
-                                if (type === 'data_setvariableto' || type === 'data_changevariableby') {
+                                if (type === 'data_setvariableto') {
+                                    block.inputs = {
+                                        'VALUE': {
+                                            shadow: {
+                                                type: 'text',
+                                                fields: {
+                                                    'TEXT': '0'
+                                                }
+                                            }
+                                        }
+                                    };
+                                } else if (type === 'data_changevariableby') {
                                     block.inputs = {
                                         'VALUE': {
                                             shadow: {
                                                 type: 'arduino_number',
                                                 fields: {
-                                                    'NUM': type === 'data_changevariableby' ? '1' : '0'
+                                                    'NUM': '1'
                                                 }
                                             }
                                         }
