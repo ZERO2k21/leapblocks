@@ -232,10 +232,10 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
     return (
         <ClassifierLayout project={project} onBack={onBack}>
             <div className="flex-1 text-ml-text-primary font-sans min-h-0">
-                <div className="w-full py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-5 max-w-[900px] mx-auto">
+                <div className="w-full py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-5 max-w-[900px] mx-auto flex-1 justify-center min-h-0">
 
                     {/* Header */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center gap-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F97316, #FB923C)' }}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -249,7 +249,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                     </div>
 
                     {/* Step Indicators */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center gap-3 max-w-[600px] mx-auto">
                         <StepIndicator number="01" label="LOAD" title="Load Model" accentColor="#F97316" />
                         <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #F9731640, transparent)' }} />
                         <StepIndicator number="02" label="DETECT" title="Live Detection" accentColor="#F97316" />
@@ -259,7 +259,10 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
 
                     {/* Model Loading Card */}
                     {!modelReady && (
-                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-10 flex flex-col items-center gap-4 animate-fade-in-scale neura-card-glow">
+                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-10 flex flex-col items-center gap-4 animate-fade-in-scale neura-card-glow max-w-[560px] mx-auto relative overflow-hidden od-card-shadow">
+                            {/* Top accent line */}
+                            <div className="absolute top-0 left-0 right-0 h-[2px] od-accent-line"
+                                 style={{ background: 'linear-gradient(90deg, transparent, #F97316, transparent)' }} />
                             {/* Crosshair SVG */}
                             <div className="relative w-[100px] h-[100px] mb-2">
                                 <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
@@ -404,7 +407,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                             </div>
 
                             {/* Viewfinder */}
-                            <div className="relative bg-ml-well border border-ml-border rounded-2xl overflow-hidden" style={{ minHeight: 360, animation: 'fade-in 0.3s ease' }}>
+                            <div className="relative bg-ml-well border border-ml-border rounded-2xl overflow-hidden" style={{ minHeight: 360, maxHeight: 480, animation: 'fade-in 0.3s ease' }}>
                                 <video ref={videoRef} autoPlay playsInline muted className="w-full block" />
                                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
