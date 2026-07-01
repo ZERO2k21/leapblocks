@@ -3,7 +3,6 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import { Shape3D, Project3D } from '../types';
 import { log, debug, warn } from './logger';
 
 const DB_NAME = 'vision3d_db';
@@ -11,7 +10,7 @@ const DB_VERSION = 1;
 const PROJECTS_STORE = 'projects';
 const SHAPES_STORE = 'shapes';
 
-function openDB(): Promise<IDBDatabase> {
+function openDB() {
   debug('openDB: opening', DB_NAME, 'v' + DB_VERSION);
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -20,7 +19,7 @@ function openDB(): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
 
     request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+      const db = event.target.result;
 
       if (!db.objectStoreNames.contains(PROJECTS_STORE)) {
         const projectStore = db.createObjectStore(PROJECTS_STORE, { keyPath: 'id' });
@@ -36,10 +35,7 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-/**
- * Save a project to IndexedDB
- */
-export async function saveProject(project: Project3D): Promise<void> {
+export async function saveProject(project) {
   debug('saveProject:', project.id, project.name);
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -57,10 +53,7 @@ export async function saveProject(project: Project3D): Promise<void> {
   });
 }
 
-/**
- * Load a project from IndexedDB
- */
-export async function loadProject(projectId: string): Promise<Project3D | null> {
+export async function loadProject(projectId) {
   debug('loadProject:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -73,10 +66,7 @@ export async function loadProject(projectId: string): Promise<Project3D | null> 
   });
 }
 
-/**
- * Load all projects from IndexedDB
- */
-export async function loadAllProjects(): Promise<Project3D[]> {
+export async function loadAllProjects() {
   debug('loadAllProjects');
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -89,10 +79,7 @@ export async function loadAllProjects(): Promise<Project3D[]> {
   });
 }
 
-/**
- * Delete a project from IndexedDB
- */
-export async function deleteProject(projectId: string): Promise<void> {
+export async function deleteProject(projectId) {
   log('deleteProject:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -105,30 +92,22 @@ export async function deleteProject(projectId: string): Promise<void> {
   });
 }
 
-/**
- * Save shapes to IndexedDB
- */
-export async function saveShapes(
-  projectId: string,
-  shapes: Shape3D[]
-): Promise<void> {
+export async function saveShapes(projectId, shapes) {
   debug('saveShapes:', shapes.length, 'shapes for project:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(SHAPES_STORE, 'readwrite');
     const store = transaction.objectStore(SHAPES_STORE);
 
-    // Delete existing shapes for this project
     const index = store.index('projectId');
     const deleteRequest = index.openCursor(IDBKeyRange.only(projectId));
 
     deleteRequest.onsuccess = (event) => {
-      const cursor = (event.target as IDBRequest).result;
+      const cursor = event.target.result;
       if (cursor) {
         cursor.delete();
         cursor.continue();
       } else {
-        // All deleted, now add new shapes
         shapes.forEach((shape) => {
           store.put({ ...shape, projectId });
         });
@@ -140,10 +119,7 @@ export async function saveShapes(
   });
 }
 
-/**
- * Load shapes from IndexedDB
- */
-export async function loadShapes(projectId: string): Promise<Shape3D[]> {
+export async function loadShapes(projectId) {
   debug('loadShapes: project:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -157,12 +133,9 @@ export async function loadShapes(projectId: string): Promise<Shape3D[]> {
   });
 }
 
-/**
- * Auto-save project (debounced)
- */
-let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+let autoSaveTimeout = null;
 
-export function autoSave(project: Project3D, shapes: Shape3D[]): void {
+export function autoSave(project, shapes) {
   if (autoSaveTimeout) {
     clearTimeout(autoSaveTimeout);
   }
@@ -178,10 +151,7 @@ export function autoSave(project: Project3D, shapes: Shape3D[]): void {
   }, 2000);
 }
 
-/**
- * Export project as JSON for download
- */
-export function exportProjectAsJSON(project: Project3D, shapes: Shape3D[]): string {
+export function exportProjectAsJSON(project, shapes) {
   return JSON.stringify(
     {
       version: '1.0',
@@ -194,13 +164,7 @@ export function exportProjectAsJSON(project: Project3D, shapes: Shape3D[]): stri
   );
 }
 
-/**
- * Import project from JSON
- */
-export function importProjectFromJSON(jsonString: string): {
-  project: Project3D;
-  shapes: Shape3D[];
-} {
+export function importProjectFromJSON(jsonString) {
   log('importProjectFromJSON');
   const data = JSON.parse(jsonString);
 

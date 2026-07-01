@@ -8,7 +8,7 @@ import { use3DStore } from '../store/use3DStore';
 import { DEFAULT_COLORS } from '../utils/constants';
 import { log, debug } from '../utils/logger';
 
-export const PropertiesPanel: React.FC = () => {
+export const PropertiesPanel = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const updateShape = use3DStore((s) => s.updateShape);
@@ -28,31 +28,31 @@ export const PropertiesPanel: React.FC = () => {
     );
   }
 
-  const handlePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
+  const handlePositionChange = (axis, value) => {
     debug('PropertiesPanel: position ' + axis + '=' + value.toFixed(2) + ' id=' + selectedShape.id);
-    const newPosition: [number, number, number] = [...selectedShape.position];
+    const newPosition = [...selectedShape.position];
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
     newPosition[axisIndex] = value;
     updateShape(selectedShape.id, { position: newPosition });
   };
 
-  const handleRotationChange = (axis: 'x' | 'y' | 'z', value: number) => {
+  const handleRotationChange = (axis, value) => {
     debug('PropertiesPanel: rotation ' + axis + '=' + value + 'deg id=' + selectedShape.id);
-    const newRotation: [number, number, number] = [...selectedShape.rotation];
+    const newRotation = [...selectedShape.rotation];
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
     newRotation[axisIndex] = (value * Math.PI) / 180;
     updateShape(selectedShape.id, { rotation: newRotation });
   };
 
-  const handleScaleChange = (axis: 'x' | 'y' | 'z', value: number) => {
+  const handleScaleChange = (axis, value) => {
     debug('PropertiesPanel: scale ' + axis + '=' + value.toFixed(2) + ' id=' + selectedShape.id);
-    const newScale: [number, number, number] = [...selectedShape.scale];
+    const newScale = [...selectedShape.scale];
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
     newScale[axisIndex] = Math.max(0.1, value);
     updateShape(selectedShape.id, { scale: newScale });
   };
 
-  const handleColorChange = (color: string) => {
+  const handleColorChange = (color) => {
     debug('PropertiesPanel: color=' + color + ' id=' + selectedShape.id);
     updateShape(selectedShape.id, { color });
   };
@@ -72,9 +72,9 @@ export const PropertiesPanel: React.FC = () => {
     updateShape(selectedShape.id, { locked: !selectedShape.locked });
   };
 
-  const updateProp = (key: string, value: number | string) => {
+  const updateProp = (key, value) => {
     debug('PropertiesPanel: prop ' + key + '=' + value + ' id=' + selectedShape.id);
-    updateShape(selectedShape.id, { [key]: value } as any);
+    updateShape(selectedShape.id, { [key]: value });
   };
 
   return (
@@ -97,7 +97,7 @@ export const PropertiesPanel: React.FC = () => {
         </div>
 
         {/* Shape-specific properties */}
-        {(selectedShape.type === 'box') && (
+        {selectedShape.type === 'box' && (
           <div className="property-group">
             <label>Dimensions</label>
             <div className="property-row">
@@ -266,33 +266,21 @@ export const PropertiesPanel: React.FC = () => {
           <div className="property-row">
             <div className="property-field">
               <span className="axis-label x">X</span>
-              <input
-                type="number"
-                value={selectedShape.position[0].toFixed(2)}
+              <input type="number" value={selectedShape.position[0].toFixed(2)}
                 onChange={(e) => handlePositionChange('x', parseFloat(e.target.value) || 0)}
-                step={0.1}
-                className="property-input"
-              />
+                step={0.1} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label y">Y</span>
-              <input
-                type="number"
-                value={selectedShape.position[1].toFixed(2)}
+              <input type="number" value={selectedShape.position[1].toFixed(2)}
                 onChange={(e) => handlePositionChange('y', parseFloat(e.target.value) || 0)}
-                step={0.1}
-                className="property-input"
-              />
+                step={0.1} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label z">Z</span>
-              <input
-                type="number"
-                value={selectedShape.position[2].toFixed(2)}
+              <input type="number" value={selectedShape.position[2].toFixed(2)}
                 onChange={(e) => handlePositionChange('z', parseFloat(e.target.value) || 0)}
-                step={0.1}
-                className="property-input"
-              />
+                step={0.1} className="property-input" />
             </div>
           </div>
         </div>
@@ -303,33 +291,21 @@ export const PropertiesPanel: React.FC = () => {
           <div className="property-row">
             <div className="property-field">
               <span className="axis-label x">X</span>
-              <input
-                type="number"
-                value={((selectedShape.rotation[0] * 180) / Math.PI).toFixed(1)}
+              <input type="number" value={((selectedShape.rotation[0] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('x', parseFloat(e.target.value) || 0)}
-                step={15}
-                className="property-input"
-              />
+                step={15} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label y">Y</span>
-              <input
-                type="number"
-                value={((selectedShape.rotation[1] * 180) / Math.PI).toFixed(1)}
+              <input type="number" value={((selectedShape.rotation[1] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('y', parseFloat(e.target.value) || 0)}
-                step={15}
-                className="property-input"
-              />
+                step={15} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label z">Z</span>
-              <input
-                type="number"
-                value={((selectedShape.rotation[2] * 180) / Math.PI).toFixed(1)}
+              <input type="number" value={((selectedShape.rotation[2] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('z', parseFloat(e.target.value) || 0)}
-                step={15}
-                className="property-input"
-              />
+                step={15} className="property-input" />
             </div>
           </div>
         </div>
@@ -340,36 +316,21 @@ export const PropertiesPanel: React.FC = () => {
           <div className="property-row">
             <div className="property-field">
               <span className="axis-label x">X</span>
-              <input
-                type="number"
-                value={selectedShape.scale[0].toFixed(2)}
+              <input type="number" value={selectedShape.scale[0].toFixed(2)}
                 onChange={(e) => handleScaleChange('x', parseFloat(e.target.value) || 1)}
-                step={0.1}
-                min={0.1}
-                className="property-input"
-              />
+                step={0.1} min={0.1} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label y">Y</span>
-              <input
-                type="number"
-                value={selectedShape.scale[1].toFixed(2)}
+              <input type="number" value={selectedShape.scale[1].toFixed(2)}
                 onChange={(e) => handleScaleChange('y', parseFloat(e.target.value) || 1)}
-                step={0.1}
-                min={0.1}
-                className="property-input"
-              />
+                step={0.1} min={0.1} className="property-input" />
             </div>
             <div className="property-field">
               <span className="axis-label z">Z</span>
-              <input
-                type="number"
-                value={selectedShape.scale[2].toFixed(2)}
+              <input type="number" value={selectedShape.scale[2].toFixed(2)}
                 onChange={(e) => handleScaleChange('z', parseFloat(e.target.value) || 1)}
-                step={0.1}
-                min={0.1}
-                className="property-input"
-              />
+                step={0.1} min={0.1} className="property-input" />
             </div>
           </div>
         </div>
@@ -378,12 +339,9 @@ export const PropertiesPanel: React.FC = () => {
         <div className="property-group">
           <label>Color</label>
           <div className="color-picker">
-            <input
-              type="color"
-              value={selectedShape.color}
+            <input type="color" value={selectedShape.color}
               onChange={(e) => handleColorChange(e.target.value)}
-              className="color-input"
-            />
+              className="color-input" />
             <div className="color-presets">
               {DEFAULT_COLORS.map((color) => (
                 <button
@@ -403,31 +361,17 @@ export const PropertiesPanel: React.FC = () => {
           <div className="property-row">
             <div className="property-field">
               <span className="property-label">Metalness</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
+              <input type="range" min={0} max={1} step={0.05}
                 value={selectedShape.metalness ?? 0.1}
-                onChange={(e) =>
-                  updateShape(selectedShape.id, { metalness: parseFloat(e.target.value) })
-                }
-                className="property-slider"
-              />
+                onChange={(e) => updateShape(selectedShape.id, { metalness: parseFloat(e.target.value) })}
+                className="property-slider" />
             </div>
             <div className="property-field">
               <span className="property-label">Roughness</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
+              <input type="range" min={0} max={1} step={0.05}
                 value={selectedShape.roughness ?? 0.7}
-                onChange={(e) =>
-                  updateShape(selectedShape.id, { roughness: parseFloat(e.target.value) })
-                }
-                className="property-slider"
-              />
+                onChange={(e) => updateShape(selectedShape.id, { roughness: parseFloat(e.target.value) })}
+                className="property-slider" />
             </div>
           </div>
         </div>
@@ -436,22 +380,13 @@ export const PropertiesPanel: React.FC = () => {
         <div className="property-group">
           <label>Options</label>
           <div className="toggle-row">
-            <button
-              className={`toggle-btn ${selectedShape.isHole ? 'active' : ''}`}
-              onClick={handleHoleToggle}
-            >
+            <button className={`toggle-btn ${selectedShape.isHole ? 'active' : ''}`} onClick={handleHoleToggle}>
               Hole
             </button>
-            <button
-              className={`toggle-btn ${selectedShape.visible ? 'active' : ''}`}
-              onClick={handleVisibilityToggle}
-            >
+            <button className={`toggle-btn ${selectedShape.visible ? 'active' : ''}`} onClick={handleVisibilityToggle}>
               Visible
             </button>
-            <button
-              className={`toggle-btn ${selectedShape.locked ? 'active' : ''}`}
-              onClick={handleLockToggle}
-            >
+            <button className={`toggle-btn ${selectedShape.locked ? 'active' : ''}`} onClick={handleLockToggle}>
               Locked
             </button>
           </div>

@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { use3DStore } from '../store/use3DStore';
 import { createShape, cloneShape, snapToGrid, snapPositionToGrid, generateShapeId } from '../utils/helpers';
 import { SHAPE_DEFINITIONS } from '../utils/constants';
-import { Shape3D, ShapeType } from '../types';
 
 // Mock IndexedDB
 const indexedDBMock = {
@@ -33,7 +32,6 @@ const indexedDBMock = {
   })),
 };
 
-// Mock window.indexedDB
 Object.defineProperty(window, 'indexedDB', {
   value: indexedDBMock,
   writable: true,
@@ -52,7 +50,6 @@ describe('Vision3D Helpers', () => {
   describe('createShape', () => {
     it('should create a box shape with default values', () => {
       const shape = createShape('box', [1, 2, 3]);
-
       expect(shape.type).toBe('box');
       expect(shape.position).toEqual([1, 2, 3]);
       expect(shape.rotation).toEqual([0, 0, 0]);
@@ -66,7 +63,6 @@ describe('Vision3D Helpers', () => {
 
     it('should create a sphere shape with default values', () => {
       const shape = createShape('sphere');
-
       expect(shape.type).toBe('sphere');
       expect(shape.radius).toBe(1);
       expect(shape.widthSegments).toBe(32);
@@ -75,7 +71,6 @@ describe('Vision3D Helpers', () => {
 
     it('should create a cylinder shape with default values', () => {
       const shape = createShape('cylinder');
-
       expect(shape.type).toBe('cylinder');
       expect(shape.radiusTop).toBe(1);
       expect(shape.radiusBottom).toBe(1);
@@ -84,7 +79,6 @@ describe('Vision3D Helpers', () => {
 
     it('should create a cone shape with default values', () => {
       const shape = createShape('cone');
-
       expect(shape.type).toBe('cone');
       expect(shape.coneRadius).toBe(1);
       expect(shape.coneHeight).toBe(2);
@@ -92,14 +86,13 @@ describe('Vision3D Helpers', () => {
 
     it('should create a torus shape with default values', () => {
       const shape = createShape('torus');
-
       expect(shape.type).toBe('torus');
       expect(shape.torusRadius).toBe(1);
       expect(shape.tubeRadius).toBe(0.4);
     });
 
     it('should throw error for unknown shape type', () => {
-      expect(() => createShape('unknown' as ShapeType)).toThrow('Unknown shape type: unknown');
+      expect(() => createShape('unknown')).toThrow('Unknown shape type: unknown');
     });
   });
 
@@ -107,7 +100,6 @@ describe('Vision3D Helpers', () => {
     it('should clone a shape with new ID', () => {
       const original = createShape('box', [1, 2, 3]);
       const clone = cloneShape(original);
-
       expect(clone.id).not.toBe(original.id);
       expect(clone.name).toBe(`${original.name}_copy`);
       expect(clone.position).toEqual(original.position);
@@ -118,7 +110,6 @@ describe('Vision3D Helpers', () => {
       const original = createShape('box');
       original.children = ['child1', 'child2'];
       const clone = cloneShape(original);
-
       expect(clone.children).toBeUndefined();
     });
   });
@@ -144,9 +135,8 @@ describe('Vision3D Helpers', () => {
 
   describe('snapPositionToGrid', () => {
     it('should snap all coordinates', () => {
-      const position: [number, number, number] = [0.3, 1.7, 2.4];
+      const position = [0.3, 1.7, 2.4];
       const snapped = snapPositionToGrid(position, 0.5);
-
       expect(snapped).toEqual([0.5, 1.5, 2.5]);
     });
   });
@@ -154,7 +144,6 @@ describe('Vision3D Helpers', () => {
 
 describe('Vision3D Store', () => {
   beforeEach(() => {
-    // Reset store before each test
     use3DStore.setState({
       shapes: [],
       selectedIds: [],
@@ -173,7 +162,6 @@ describe('Vision3D Store', () => {
     it('should add a shape to the store', () => {
       const { addShape } = use3DStore.getState();
       addShape('box', [1, 0, 1]);
-
       const { shapes, selectedIds } = use3DStore.getState();
       expect(shapes).toHaveLength(1);
       expect(shapes[0].type).toBe('box');
@@ -184,7 +172,6 @@ describe('Vision3D Store', () => {
       const { addShape, setGridSnap } = use3DStore.getState();
       setGridSnap(0.5);
       addShape('box', [0.3, 0, 0.7]);
-
       const { shapes } = use3DStore.getState();
       expect(shapes[0].position[0]).toBe(0.5);
       expect(shapes[0].position[2]).toBe(0.5);
@@ -197,9 +184,7 @@ describe('Vision3D Store', () => {
       addShape('box');
       const { shapes } = use3DStore.getState();
       const shapeId = shapes[0].id;
-
       removeShape(shapeId);
-
       const { shapes: updatedShapes } = use3DStore.getState();
       expect(updatedShapes).toHaveLength(0);
     });
@@ -210,9 +195,7 @@ describe('Vision3D Store', () => {
       const { shapes, selectedIds } = use3DStore.getState();
       const shapeId = shapes[0].id;
       expect(selectedIds).toContain(shapeId);
-
       removeShape(shapeId);
-
       const { selectedIds: updatedSelectedIds } = use3DStore.getState();
       expect(updatedSelectedIds).not.toContain(shapeId);
     });
@@ -224,9 +207,7 @@ describe('Vision3D Store', () => {
       addShape('box');
       addShape('sphere');
       const { shapes } = use3DStore.getState();
-
       selectShape(shapes[0].id);
-
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toEqual([shapes[0].id]);
     });
@@ -237,11 +218,9 @@ describe('Vision3D Store', () => {
       addShape('sphere');
       addShape('cone');
       const { shapes } = use3DStore.getState();
-
       selectShape(shapes[0].id);
       selectShape(shapes[1].id, true);
       selectShape(shapes[2].id, true);
-
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toHaveLength(3);
     });
@@ -251,11 +230,9 @@ describe('Vision3D Store', () => {
       addShape('box');
       addShape('sphere');
       const { shapes } = use3DStore.getState();
-
       selectShape(shapes[0].id);
       selectShape(shapes[1].id, true);
-      selectShape(shapes[1].id, true); // Toggle off
-
+      selectShape(shapes[1].id, true);
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toHaveLength(1);
       expect(selectedIds).toContain(shapes[0].id);
@@ -267,9 +244,7 @@ describe('Vision3D Store', () => {
       const { addShape, deselectAll } = use3DStore.getState();
       addShape('box');
       addShape('sphere');
-
       deselectAll();
-
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toHaveLength(0);
     });
@@ -281,9 +256,7 @@ describe('Vision3D Store', () => {
       addShape('box');
       const { shapes } = use3DStore.getState();
       const shapeId = shapes[0].id;
-
       updateShape(shapeId, { color: '#ff0000', isHole: true });
-
       const { shapes: updatedShapes } = use3DStore.getState();
       const updatedShape = updatedShapes.find((s) => s.id === shapeId);
       expect(updatedShape?.color).toBe('#ff0000');
@@ -297,10 +270,8 @@ describe('Vision3D Store', () => {
       addShape('box');
       const { shapes } = use3DStore.getState();
       const shapeId = shapes[0].id;
-
       selectShape(shapeId);
       duplicateShapes([shapeId]);
-
       const { shapes: updatedShapes } = use3DStore.getState();
       expect(updatedShapes).toHaveLength(2);
       expect(updatedShapes[1].name).toBe('Box_copy');
@@ -310,13 +281,10 @@ describe('Vision3D Store', () => {
   describe('setTool', () => {
     it('should change active tool', () => {
       const { setTool } = use3DStore.getState();
-
       setTool('move');
       expect(use3DStore.getState().activeTool).toBe('move');
-
       setTool('rotate');
       expect(use3DStore.getState().activeTool).toBe('rotate');
-
       setTool('scale');
       expect(use3DStore.getState().activeTool).toBe('scale');
     });
@@ -329,9 +297,7 @@ describe('Vision3D Store', () => {
       addShape('sphere', [2, 0, 0]);
       const { shapes } = use3DStore.getState();
       const ids = shapes.map((s) => s.id);
-
       groupShapes(ids);
-
       const { shapes: updatedShapes } = use3DStore.getState();
       const group = updatedShapes.find((s) => s.type === 'group');
       expect(group).toBeDefined();
@@ -342,9 +308,7 @@ describe('Vision3D Store', () => {
       const { addShape, groupShapes } = use3DStore.getState();
       addShape('box');
       const { shapes } = use3DStore.getState();
-
       groupShapes([shapes[0].id]);
-
       const { shapes: updatedShapes } = use3DStore.getState();
       expect(updatedShapes.find((s) => s.type === 'group')).toBeUndefined();
     });
@@ -357,9 +321,7 @@ describe('Vision3D Store', () => {
       addShape('sphere', [4, 0, 0]);
       const { shapes } = use3DStore.getState();
       const ids = shapes.map((s) => s.id);
-
       alignShapes(ids, 'x', 'center');
-
       const { shapes: updatedShapes } = use3DStore.getState();
       const xPositions = updatedShapes
         .filter((s) => ids.includes(s.id))
@@ -374,9 +336,7 @@ describe('Vision3D Store', () => {
       pushHistory();
       addShape('box');
       pushHistory();
-
       undo();
-
       const { shapes } = use3DStore.getState();
       expect(shapes).toHaveLength(0);
     });
@@ -386,10 +346,8 @@ describe('Vision3D Store', () => {
       pushHistory();
       addShape('box');
       pushHistory();
-
       undo();
       redo();
-
       const { shapes } = use3DStore.getState();
       expect(shapes).toHaveLength(1);
     });
@@ -401,9 +359,7 @@ describe('Vision3D Store', () => {
       addShape('box');
       addShape('sphere');
       addShape('cone');
-
       clearScene();
-
       const { shapes, selectedIds } = use3DStore.getState();
       expect(shapes).toHaveLength(0);
       expect(selectedIds).toHaveLength(0);
@@ -415,7 +371,6 @@ describe('Vision3D Shape Definitions', () => {
   it('should have definitions for all basic shapes', () => {
     const basicShapes = SHAPE_DEFINITIONS.filter((d) => d.category === 'basic');
     expect(basicShapes.length).toBeGreaterThanOrEqual(5);
-
     const types = basicShapes.map((d) => d.type);
     expect(types).toContain('box');
     expect(types).toContain('cylinder');
@@ -427,7 +382,6 @@ describe('Vision3D Shape Definitions', () => {
   it('should have definitions for extended shapes', () => {
     const extendedShapes = SHAPE_DEFINITIONS.filter((d) => d.category === 'extended');
     expect(extendedShapes.length).toBeGreaterThanOrEqual(5);
-
     const types = extendedShapes.map((d) => d.type);
     expect(types).toContain('dodecahedron');
     expect(types).toContain('icosahedron');

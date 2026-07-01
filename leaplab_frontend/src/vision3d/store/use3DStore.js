@@ -4,58 +4,13 @@
  */
 
 import { create } from 'zustand';
-import { Shape3D, ActiveTool, EditorState, Project3D } from '../types';
-import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
-import { ShapeType } from '../types';
+import { createShape, cloneShape, snapPositionToGrid } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { log, debug, warn, error } from '../utils/logger';
 
-interface StoreState extends EditorState {
-  project: Project3D | null;
-  isProjectDirty: boolean;
-
-  // Shape actions
-  addShape: (type: ShapeType, position?: [number, number, number]) => string;
-  removeShape: (id: string) => void;
-  removeShapes: (ids: string[]) => void;
-  selectShape: (id: string | null, multi?: boolean) => void;
-  selectShapes: (ids: string[]) => void;
-  deselectAll: () => void;
-  updateShape: (id: string, updates: Partial<Shape3D>) => void;
-  updateShapes: (ids: string[], updates: Partial<Shape3D>) => void;
-  duplicateShapes: (ids: string[]) => string[];
-
-  // Tool actions
-  setTool: (tool: ActiveTool) => void;
-  setGridSnap: (size: number) => void;
-  setShowGrid: (show: boolean) => void;
-  setShowAxes: (show: boolean) => void;
-
-  // Group actions
-  groupShapes: (ids: string[]) => void;
-  ungroupShape: (id: string) => void;
-
-  // Align actions
-  alignShapes: (ids: string[], axis: 'x' | 'y' | 'z', mode: 'min' | 'center' | 'max') => void;
-
-  // History actions
-  undo: () => void;
-  redo: () => void;
-  pushHistory: () => void;
-
-  // Project actions
-  setProject: (project: Project3D) => void;
-  loadProjectFromDB: (projectId: string) => Promise<void>;
-  autoSaveProject: () => void;
-
-  // Bulk actions
-  setShapes: (shapes: Shape3D[]) => void;
-  clearScene: () => void;
-}
-
 const MAX_HISTORY = 50;
 
-export const use3DStore = create<StoreState>((set, get) => ({
+export const use3DStore = create((set, get) => ({
   // Initial state
   shapes: [],
   selectedIds: [],
@@ -82,7 +37,6 @@ export const use3DStore = create<StoreState>((set, get) => ({
       isProjectDirty: true,
     }));
 
-    // Auto-save
     setTimeout(() => get().autoSaveProject(), 100);
 
     return newShape.id;
@@ -165,7 +119,6 @@ export const use3DStore = create<StoreState>((set, get) => ({
     const shapesToDuplicate = state.shapes.filter((s) => ids.includes(s.id));
     const newShapes = shapesToDuplicate.map((s) => {
       const clone = cloneShape(s);
-      // Offset slightly
       clone.position = [
         clone.position[0] + 2,
         clone.position[1],
@@ -211,12 +164,10 @@ export const use3DStore = create<StoreState>((set, get) => ({
 
     if (shapesToGroup.length < 2) return;
 
-    // Create a group shape
     const groupShape = createShape('group', [0, 0, 0]);
     groupShape.name = 'Group';
     groupShape.children = ids;
 
-    // Calculate group center
     const centerX =
       shapesToGroup.reduce((sum, s) => sum + s.position[0], 0) /
       shapesToGroup.length;
@@ -229,7 +180,6 @@ export const use3DStore = create<StoreState>((set, get) => ({
 
     groupShape.position = [centerX, centerY, centerZ];
 
-    // Update children to reference parent
     const updatedShapes = state.shapes.map((s) => {
       if (ids.includes(s.id)) {
         return { ...s, parentId: groupShape.id };
@@ -273,7 +223,7 @@ export const use3DStore = create<StoreState>((set, get) => ({
 
     if (shapesToAlign.length < 2) return;
 
-    let targetValue: number;
+    let targetValue;
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
 
     if (mode === 'min') {
@@ -293,7 +243,7 @@ export const use3DStore = create<StoreState>((set, get) => ({
     set((state) => ({
       shapes: state.shapes.map((s) => {
         if (ids.includes(s.id)) {
-          const newPosition: [number, number, number] = [...s.position];
+          const newPosition = [...s.position];
           newPosition[axisIndex] = targetValue;
           return { ...s, position: newPosition };
         }

@@ -5,18 +5,12 @@
 
 import React, { useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
-import { Shape3D } from '../types';
 import { createGeometry } from '../utils/helpers';
 import { use3DStore } from '../store/use3DStore';
 import { debug } from '../utils/logger';
 
-interface ShapeRendererProps {
-  shape: Shape3D;
-}
-
-export const ShapeRenderer: React.FC<ShapeRendererProps> = ({ shape }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+export const ShapeRenderer = ({ shape }) => {
+  const meshRef = useRef(null);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const selectShape = use3DStore((s) => s.selectShape);
   const activeTool = use3DStore((s) => s.activeTool);
@@ -68,7 +62,7 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({ shape }) => {
 
   if (!shape.visible) return null;
 
-  const handleClick = (e: any) => {
+  const handleClick = (e) => {
     e.stopPropagation();
     debug('ShapeRenderer: click id=' + shape.id + ' type=' + shape.type);
     if (activeTool === 'select') {
@@ -96,7 +90,6 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({ shape }) => {
       castShadow
       receiveShadow
     >
-      {/* Selection outline */}
       {isSelected && (
         <mesh scale={[1.02, 1.02, 1.02]}>
           <primitive object={geometry.clone()} attach="geometry" />

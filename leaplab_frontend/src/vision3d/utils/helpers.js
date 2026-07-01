@@ -4,27 +4,17 @@
  */
 
 import * as THREE from 'three';
-import { Shape3D, ShapeType } from '../types';
 import { SHAPE_DEFINITIONS } from './constants';
 import { debug } from './logger';
 
 let idCounter = 0;
 
-/**
- * Generate a unique ID for shapes
- */
-export function generateShapeId(): string {
+export function generateShapeId() {
   idCounter += 1;
   return `shape_${Date.now()}_${idCounter}`;
 }
 
-/**
- * Create a new shape with default values
- */
-export function createShape(
-  type: ShapeType,
-  position: [number, number, number] = [0, 0, 0]
-): Shape3D {
+export function createShape(type, position = [0, 0, 0]) {
   debug('createShape:', type, 'at', position);
   const definition = SHAPE_DEFINITIONS.find((d) => d.type === type);
   if (!definition) {
@@ -41,37 +31,37 @@ export function createShape(
     position,
     rotation: [0, 0, 0],
     scale: [1, 1, 1],
-    color: (defaults.color as string) || '#4F46E5',
+    color: defaults.color || '#4F46E5',
     isHole: false,
     visible: true,
     locked: false,
     // Box
-    width: defaults.width as number,
-    height: defaults.height as number,
-    depth: defaults.depth as number,
+    width: defaults.width,
+    height: defaults.height,
+    depth: defaults.depth,
     // Cylinder
-    radiusTop: defaults.radiusTop as number,
-    radiusBottom: defaults.radiusBottom as number,
-    cylinderHeight: defaults.cylinderHeight as number,
-    radialSegments: defaults.radialSegments as number,
+    radiusTop: defaults.radiusTop,
+    radiusBottom: defaults.radiusBottom,
+    cylinderHeight: defaults.cylinderHeight,
+    radialSegments: defaults.radialSegments,
     // Sphere
-    radius: defaults.radius as number,
-    widthSegments: defaults.widthSegments as number,
-    heightSegments: defaults.heightSegments as number,
+    radius: defaults.radius,
+    widthSegments: defaults.widthSegments,
+    heightSegments: defaults.heightSegments,
     // Cone
-    coneRadius: defaults.coneRadius as number,
-    coneHeight: defaults.coneHeight as number,
+    coneRadius: defaults.coneRadius,
+    coneHeight: defaults.coneHeight,
     // Torus
-    torusRadius: defaults.torusRadius as number,
-    tubeRadius: defaults.tubeRadius as number,
-    torusRadialSegments: defaults.torusRadialSegments as number,
-    torusTubularSegments: defaults.torusTubularSegments as number,
+    torusRadius: defaults.torusRadius,
+    tubeRadius: defaults.tubeRadius,
+    torusRadialSegments: defaults.torusRadialSegments,
+    torusTubularSegments: defaults.torusTubularSegments,
     // Ring
-    innerRadius: defaults.innerRadius as number,
-    outerRadius: defaults.outerRadius as number,
+    innerRadius: defaults.innerRadius,
+    outerRadius: defaults.outerRadius,
     // Text
-    text: defaults.text as string,
-    fontSize: defaults.fontSize as number,
+    text: defaults.text,
+    fontSize: defaults.fontSize,
     // Material
     metalness: 0.1,
     roughness: 0.7,
@@ -79,10 +69,7 @@ export function createShape(
   };
 }
 
-/**
- * Create Three.js geometry from shape data
- */
-export function createGeometry(shape: Shape3D): THREE.BufferGeometry {
+export function createGeometry(shape) {
   debug('createGeometry:', shape.type, shape.id);
   switch (shape.type) {
     case 'box':
@@ -149,35 +136,26 @@ export function createGeometry(shape: Shape3D): THREE.BufferGeometry {
   }
 }
 
-/**
- * Clone a shape with a new ID
- */
-export function cloneShape(shape: Shape3D): Shape3D {
+export function cloneShape(shape) {
   const newId = generateShapeId();
   debug('cloneShape:', shape.id, '->', newId);
   return {
     ...shape,
     id: newId,
     name: `${shape.name}_copy`,
-    position: [...shape.position] as [number, number, number],
-    rotation: [...shape.rotation] as [number, number, number],
-    scale: [...shape.scale] as [number, number, number],
+    position: [...shape.position],
+    rotation: [...shape.rotation],
+    scale: [...shape.scale],
     children: undefined,
     parentId: undefined,
   };
 }
 
-/**
- * Calculate bounding box for a shape
- */
-export function calculateBoundingBox(shape: Shape3D): {
-  min: THREE.Vector3;
-  max: THREE.Vector3;
-} {
+export function calculateBoundingBox(shape) {
   const geometry = createGeometry(shape);
   geometry.computeBoundingBox();
 
-  const bbox = geometry.boundingBox!;
+  const bbox = geometry.boundingBox;
   const scale = new THREE.Vector3(...shape.scale);
   const position = new THREE.Vector3(...shape.position);
 
@@ -189,10 +167,7 @@ export function calculateBoundingBox(shape: Shape3D): {
   return { min, max };
 }
 
-/**
- * Get center of multiple shapes
- */
-export function getShapesCenter(shapes: Shape3D[]): [number, number, number] {
+export function getShapesCenter(shapes) {
   if (shapes.length === 0) return [0, 0, 0];
 
   const sum = shapes.reduce(
@@ -207,10 +182,7 @@ export function getShapesCenter(shapes: Shape3D[]): [number, number, number] {
   return [sum[0] / shapes.length, sum[1] / shapes.length, sum[2] / shapes.length];
 }
 
-/**
- * Snap value to grid
- */
-export function snapToGrid(value: number, gridSize: number): number {
+export function snapToGrid(value, gridSize) {
   const result = Math.round(value / gridSize) * gridSize;
   if (Math.abs(result - value) > 0.001) {
     debug('snapToGrid:', value.toFixed(3), '->', result.toFixed(3), `(grid: ${gridSize})`);
@@ -218,13 +190,7 @@ export function snapToGrid(value: number, gridSize: number): number {
   return result;
 }
 
-/**
- * Snap position to grid
- */
-export function snapPositionToGrid(
-  position: [number, number, number],
-  gridSize: number
-): [number, number, number] {
+export function snapPositionToGrid(position, gridSize) {
   return [
     snapToGrid(position[0], gridSize),
     snapToGrid(position[1], gridSize),
@@ -232,10 +198,7 @@ export function snapPositionToGrid(
   ];
 }
 
-/**
- * Check if two shapes intersect (simple AABB check)
- */
-export function checkIntersection(shapeA: Shape3D, shapeB: Shape3D): boolean {
+export function checkIntersection(shapeA, shapeB) {
   const boxA = calculateBoundingBox(shapeA);
   const boxB = calculateBoundingBox(shapeB);
 
@@ -249,35 +212,23 @@ export function checkIntersection(shapeA: Shape3D, shapeB: Shape3D): boolean {
   );
 }
 
-/**
- * Get distance between two shapes
- */
-export function getDistance(shapeA: Shape3D, shapeB: Shape3D): number {
+export function getDistance(shapeA, shapeB) {
   const dx = shapeA.position[0] - shapeB.position[0];
   const dy = shapeA.position[1] - shapeB.position[1];
   const dz = shapeA.position[2] - shapeB.position[2];
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-/**
- * Convert hex color to Three.js color
- */
-export function hexToThreeColor(hex: string): THREE.Color {
+export function hexToThreeColor(hex) {
   return new THREE.Color(hex);
 }
 
-/**
- * Get opposite color for hole visualization
- */
-export function getHoleColor(originalColor: string): string {
+export function getHoleColor(originalColor) {
   return '#888888';
 }
 
-/**
- * Validate shape data
- */
-export function validateShape(shape: Partial<Shape3D>): string[] {
-  const errors: string[] = [];
+export function validateShape(shape) {
+  const errors = [];
 
   if (!shape.type) errors.push('Shape type is required');
   if (!shape.id) errors.push('Shape ID is required');

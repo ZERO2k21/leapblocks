@@ -4,37 +4,34 @@
  */
 
 import React, { useRef, useCallback, useEffect, Suspense } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, TransformControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { use3DStore } from '../store/use3DStore';
-import { Shape3D, ActiveTool } from '../types';
 import { snapPositionToGrid } from '../utils/helpers';
 import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
 import { log, debug } from '../utils/logger';
 
-// Drop zone handler component
-const DropHandler: React.FC = () => {
-  const { camera, gl, scene } = useThree();
+const DropHandler = () => {
+  const { camera, gl } = useThree();
   const addShape = use3DStore((s) => s.addShape);
   const gridSnap = use3DStore((s) => s.gridSnap);
 
   useEffect(() => {
     const canvas = gl.domElement;
 
-    const handleDragOver = (e: DragEvent) => {
+    const handleDragOver = (e) => {
       e.preventDefault();
-      e.dataTransfer!.dropEffect = 'copy';
+      e.dataTransfer.dropEffect = 'copy';
     };
 
-    const handleDrop = (e: DragEvent) => {
+    const handleDrop = (e) => {
       e.preventDefault();
       const shapeType = e.dataTransfer?.getData('shapeType');
       if (!shapeType) return;
       log('Canvas3D DropHandler: drop shapeType=' + shapeType);
 
-      // Calculate drop position
       const rect = canvas.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -42,7 +39,6 @@ const DropHandler: React.FC = () => {
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
 
-      // Intersect with the ground plane (y=0)
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(plane, intersection);
@@ -52,7 +48,7 @@ const DropHandler: React.FC = () => {
           [intersection.x, 1, intersection.z],
           gridSnap
         );
-        addShape(shapeType as any, snappedPos);
+        addShape(shapeType, snappedPos);
       }
     };
 
@@ -68,27 +64,21 @@ const DropHandler: React.FC = () => {
   return null;
 };
 
-// Transform controls wrapper
-const TransformController: React.FC = () => {
+const TransformController = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const activeTool = use3DStore((s) => s.activeTool);
   const updateShape = use3DStore((s) => s.updateShape);
-  const gridSnap = use3DStore((s) => s.gridSnap);
 
   const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
-  const transformRef = useRef<THREE.Group>(null);
+  const transformRef = useRef(null);
 
-  const getMode = useCallback((): 'translate' | 'rotate' | 'scale' => {
+  const getMode = useCallback(() => {
     switch (activeTool) {
-      case 'move':
-        return 'translate';
-      case 'rotate':
-        return 'rotate';
-      case 'scale':
-        return 'scale';
-      default:
-        return 'translate';
+      case 'move': return 'translate';
+      case 'rotate': return 'rotate';
+      case 'scale': return 'scale';
+      default: return 'translate';
     }
   }, [activeTool]);
 
@@ -96,21 +86,9 @@ const TransformController: React.FC = () => {
     if (!transformRef.current || !selectedShape) return;
 
     const obj = transformRef.current;
-    const position: [number, number, number] = [
-      obj.position.x,
-      obj.position.y,
-      obj.position.z,
-    ];
-    const rotation: [number, number, number] = [
-      obj.rotation.x,
-      obj.rotation.y,
-      obj.rotation.z,
-    ];
-    const scale: [number, number, number] = [
-      obj.scale.x,
-      obj.scale.y,
-      obj.scale.z,
-    ];
+    const position = [obj.position.x, obj.position.y, obj.position.z];
+    const rotation = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
+    const scale = [obj.scale.x, obj.scale.y, obj.scale.z];
 
     updateShape(selectedShape.id, { position, rotation, scale });
   }, [selectedShape, updateShape]);
@@ -133,15 +111,11 @@ const TransformController: React.FC = () => {
   );
 };
 
-// Scene content
-const SceneContent: React.FC = () => {
+const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
-  const showGrid = use3DStore((s) => s.showGrid);
-  const deselectAll = use3DStore((s) => s.deselectAll);
 
   return (
     <>
-      {/* Lighting */}
       <ambientLight intensity={0.4} />
       <directionalLight
         position={[10, 15, 10]}
@@ -153,21 +127,16 @@ const SceneContent: React.FC = () => {
       <directionalLight position={[-5, 10, -5]} intensity={0.3} />
       <hemisphereLight args={['#b1e1ff', '#000000', 0.3]} />
 
-      {/* Workplane */}
       <Workplane />
 
-      {/* Shapes */}
       {shapes.map((shape) => (
         <ShapeRenderer key={shape.id} shape={shape} />
       ))}
 
-      {/* Transform Controls */}
       <TransformController />
 
-      {/* Drop Handler */}
       <DropHandler />
 
-      {/* Orbit Controls */}
       <OrbitControls
         makeDefault
         enableDamping
@@ -177,7 +146,6 @@ const SceneContent: React.FC = () => {
         maxPolarAngle={Math.PI / 2}
       />
 
-      {/* Gizmo */}
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport
           axisColors={['#ef4444', '#22c55e', '#3b82f6']}
@@ -188,9 +156,8 @@ const SceneContent: React.FC = () => {
   );
 };
 
-// Main Canvas3D component
-export const Canvas3D: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export const Canvas3D = () => {
+  const containerRef = useRef(null);
   debug('Canvas3D: rendering');
 
   return (

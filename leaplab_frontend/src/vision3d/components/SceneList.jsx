@@ -5,41 +5,40 @@
 
 import React from 'react';
 import { use3DStore } from '../store/use3DStore';
-import { Shape3D } from '../types';
 import { log, debug } from '../utils/logger';
 
-const ShapeIcon: React.FC<{ type: Shape3D['type'] }> = ({ type }) => {
-  const iconMap: Record<string, string> = {
-    box: '□',
-    cylinder: '○',
-    sphere: '●',
-    cone: '△',
-    torus: '◎',
-    dodecahedron: '⬡',
-    icosahedron: '⬢',
-    octahedron: '◇',
-    tetrahedron: '△',
-    ring: '○',
-    plane: '▭',
+const ShapeIcon = ({ type }) => {
+  const iconMap = {
+    box: '\u25A1',
+    cylinder: '\u25CB',
+    sphere: '\u25CF',
+    cone: '\u25B3',
+    torus: '\u25CE',
+    dodecahedron: '\u2B21',
+    icosahedron: '\u2B22',
+    octahedron: '\u25C7',
+    tetrahedron: '\u25B3',
+    ring: '\u25CB',
+    plane: '\u25AD',
     text3d: 'T',
-    group: '⊞',
+    group: '\u229E',
   };
 
   return <span className="shape-list-icon">{iconMap[type] || '?'}</span>;
 };
 
-export const SceneList: React.FC = () => {
+export const SceneList = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const selectShape = use3DStore((s) => s.selectShape);
   const updateShape = use3DStore((s) => s.updateShape);
 
-  const handleShapeClick = (id: string, e: React.MouseEvent) => {
+  const handleShapeClick = (id, e) => {
     debug('SceneList: shapeClick id=' + id + ' shift=' + e.shiftKey);
     selectShape(id, e.shiftKey);
   };
 
-  const handleVisibilityToggle = (id: string, e: React.MouseEvent) => {
+  const handleVisibilityToggle = (id, e) => {
     e.stopPropagation();
     const shape = shapes.find((s) => s.id === id);
     if (shape) {
@@ -48,7 +47,7 @@ export const SceneList: React.FC = () => {
     }
   };
 
-  const handleLockToggle = (id: string, e: React.MouseEvent) => {
+  const handleLockToggle = (id, e) => {
     e.stopPropagation();
     const shape = shapes.find((s) => s.id === id);
     if (shape) {
@@ -57,7 +56,6 @@ export const SceneList: React.FC = () => {
     }
   };
 
-  // Sort shapes: groups first, then by name
   const sortedShapes = [...shapes].sort((a, b) => {
     if (a.type === 'group' && b.type !== 'group') return -1;
     if (a.type !== 'group' && b.type === 'group') return 1;
@@ -96,14 +94,14 @@ export const SceneList: React.FC = () => {
                     onClick={(e) => handleVisibilityToggle(shape.id, e)}
                     title={shape.visible ? 'Hide' : 'Show'}
                   >
-                    {shape.visible ? '👁' : '👁‍🗨'}
+                    {shape.visible ? '\uD83D\uDC41' : '\uD83D\uDC41\u200D\uD83D\uDDE3\uFE0F'}
                   </button>
                   <button
                     className={`shape-list-btn ${shape.locked ? 'locked' : ''}`}
                     onClick={(e) => handleLockToggle(shape.id, e)}
                     title={shape.locked ? 'Unlock' : 'Lock'}
                   >
-                    {shape.locked ? '🔒' : '🔓'}
+                    {shape.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
                   </button>
                 </div>
               </li>

@@ -4,14 +4,13 @@
  */
 
 import * as THREE from 'three';
-import { Shape3D, ExportOptions } from '../types';
 import { createGeometry } from '../utils/helpers';
 import { log } from '../utils/logger';
 
 /**
  * Create a Three.js mesh from shape data
  */
-function createMesh(shape: Shape3D): THREE.Mesh {
+function createMesh(shape) {
   const geometry = createGeometry(shape);
   const material = new THREE.MeshStandardMaterial({
     color: new THREE.Color(shape.color),
@@ -32,7 +31,7 @@ function createMesh(shape: Shape3D): THREE.Mesh {
 /**
  * Export shapes as STL
  */
-export async function exportSTL(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+export async function exportSTL(shapes, options) {
   log('exportSTL:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
@@ -44,16 +43,14 @@ export async function exportSTL(shapes: Shape3D[], options: ExportOptions): Prom
     scene.add(mesh);
   });
 
-  // Use Three.js STLExporter
   const { STLExporter } = await import('three/addons/exporters/STLExporter.js');
   const exporter = new STLExporter();
   const result = exporter.parse(scene, { binary: true });
 
-  // Cleanup
   scene.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
-      (child.material as THREE.Material).dispose();
+      child.material.dispose();
     }
   });
 
@@ -63,7 +60,7 @@ export async function exportSTL(shapes: Shape3D[], options: ExportOptions): Prom
 /**
  * Export shapes as OBJ
  */
-export async function exportOBJ(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+export async function exportOBJ(shapes, options) {
   log('exportOBJ:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
@@ -79,11 +76,10 @@ export async function exportOBJ(shapes: Shape3D[], options: ExportOptions): Prom
   const exporter = new OBJExporter();
   const result = exporter.parse(scene);
 
-  // Cleanup
   scene.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
-      (child.material as THREE.Material).dispose();
+      child.material.dispose();
     }
   });
 
@@ -93,7 +89,7 @@ export async function exportOBJ(shapes: Shape3D[], options: ExportOptions): Prom
 /**
  * Export shapes as GLTF
  */
-export async function exportGLTF(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+export async function exportGLTF(shapes, options) {
   log('exportGLTF:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
@@ -124,7 +120,7 @@ export async function exportGLTF(shapes: Shape3D[], options: ExportOptions): Pro
 /**
  * Export shapes as GLB (binary GLTF)
  */
-export async function exportGLB(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+export async function exportGLB(shapes, options) {
   log('exportGLB:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
@@ -143,7 +139,7 @@ export async function exportGLB(shapes: Shape3D[], options: ExportOptions): Prom
     exporter.parse(
       scene,
       (result) => {
-        resolve(new Blob([result as ArrayBuffer], { type: 'application/octet-stream' }));
+        resolve(new Blob([result], { type: 'application/octet-stream' }));
       },
       (error) => reject(error),
       { binary: true }
@@ -154,10 +150,7 @@ export async function exportGLB(shapes: Shape3D[], options: ExportOptions): Prom
 /**
  * Export shapes based on format
  */
-export async function exportShapes(
-  shapes: Shape3D[],
-  options: ExportOptions
-): Promise<Blob> {
+export async function exportShapes(shapes, options) {
   log('exportShapes: format=' + options.format + ', shapes=' + shapes.length);
   switch (options.format) {
     case 'stl':
@@ -176,7 +169,7 @@ export async function exportShapes(
 /**
  * Download exported file
  */
-export function downloadBlob(blob: Blob, filename: string): void {
+export function downloadBlob(blob, filename) {
   log('downloadBlob:', filename, '(' + blob.size + ' bytes)');
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -191,7 +184,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
 /**
  * Import STL file
  */
-export async function importSTL(file: File): Promise<THREE.BufferGeometry> {
+export async function importSTL(file) {
   log('importSTL:', file.name, '(' + file.size + ' bytes)');
   const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
   const loader = new STLLoader();
@@ -200,7 +193,7 @@ export async function importSTL(file: File): Promise<THREE.BufferGeometry> {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const result = loader.parse(event.target?.result as ArrayBuffer);
+        const result = loader.parse(event.target?.result);
         resolve(result);
       } catch (error) {
         reject(error);
@@ -214,7 +207,7 @@ export async function importSTL(file: File): Promise<THREE.BufferGeometry> {
 /**
  * Import OBJ file
  */
-export async function importOBJ(file: File): Promise<THREE.Group> {
+export async function importOBJ(file) {
   log('importOBJ:', file.name, '(' + file.size + ' bytes)');
   const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
   const loader = new OBJLoader();
@@ -223,7 +216,7 @@ export async function importOBJ(file: File): Promise<THREE.Group> {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const result = loader.parse(event.target?.result as string);
+        const result = loader.parse(event.target?.result);
         resolve(result);
       } catch (error) {
         reject(error);

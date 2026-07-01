@@ -3,17 +3,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import { ShapeType } from '../types';
-
-export interface ShapeDefinition {
-  type: ShapeType;
-  name: string;
-  icon: string;
-  category: 'basic' | 'extended' | 'text';
-  defaults: Record<string, number | string | boolean>;
-}
-
-export const SHAPE_DEFINITIONS: ShapeDefinition[] = [
+export const SHAPE_DEFINITIONS = [
   // Basic Shapes
   {
     type: 'box',
@@ -127,11 +117,11 @@ export const GRID_PRESETS = [0.1, 0.25, 0.5, 1.0, 2.5, 5.0];
 export const WORKPLANE_SIZE = 20;
 
 export const CAMERA_DEFAULTS = {
-  position: [8, 6, 8] as [number, number, number],
+  position: [8, 6, 8],
   fov: 50,
   near: 0.1,
   far: 1000,
-  target: [0, 0, 0] as [number, number, number],
+  target: [0, 0, 0],
 };
 
 export const SNAP_THRESHOLD = 0.05;
@@ -149,4 +139,4 @@ export const KEYBOARD_SHORTCUTS = {
   ROTATE_TOOL: ['r'],
   SCALE_TOOL: ['s'],
   SELECT_TOOL: ['v'],
-} as const;
+};

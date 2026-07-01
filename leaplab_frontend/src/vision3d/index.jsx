@@ -13,11 +13,7 @@ import { use3DStore } from './store/use3DStore';
 import './styles/Leap3D.css';
 import { log, debug } from './utils/logger';
 
-interface Vision3DAppProps {
-  onBack?: () => void;
-}
-
-const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
+const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
   log('Vision3DApp: mounted');
 
@@ -40,9 +36,8 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  // Keyboard shortcuts
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+    (e) => {
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -114,17 +109,7 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
       if (key === 's' && !e.ctrlKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
     },
-    [
-      selectedIds,
-      setTool,
-      undo,
-      redo,
-      duplicateShapes,
-      removeShapes,
-      groupShapes,
-      ungroupShape,
-      deselectAll,
-    ]
+    [selectedIds, setTool, undo, redo, duplicateShapes, removeShapes, groupShapes, ungroupShape, deselectAll]
   );
 
   useEffect(() => {
@@ -139,9 +124,8 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 font-[system-ui,-apple-system,sans-serif]">
-      {/* Top Bar */}
       <Topbar
-        onBack={onBack!}
+        onBack={onBack}
         title={projectName}
         onTitleChange={setProjectName}
         onSave={handleSave}
@@ -151,19 +135,15 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
         onRedo={redo}
       />
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Shapes */}
         <div className="flex flex-col bg-white border-r border-slate-200 overflow-y-auto w-60 shrink-0">
           <ShapePanel />
         </div>
 
-        {/* Center - 3D Canvas */}
         <div className="flex-1 relative overflow-hidden">
           <Canvas3D />
         </div>
 
-        {/* Right Panel - Properties & Scene */}
         <div className="flex flex-col bg-white border-l border-slate-200 w-72 shrink-0 overflow-y-auto">
           <div className="flex-1 min-h-0">
             <PropertiesPanel />
@@ -174,23 +154,14 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Status Bar */}
       <div className="flex items-center justify-between h-7 px-4 bg-white border-t border-slate-200 text-[11px] text-slate-500">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            Objects: {shapes.length}
-          </span>
-          <span className="flex items-center gap-1">
-            Selected: {selectedIds.length}
-          </span>
+          <span className="flex items-center gap-1">Objects: {shapes.length}</span>
+          <span className="flex items-center gap-1">Selected: {selectedIds.length}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            Grid: {use3DStore.getState().gridSnap}
-          </span>
-          <span className="opacity-60">
-            V: Select | G: Move | R: Rotate | S: Scale
-          </span>
+          <span className="flex items-center gap-1">Grid: {use3DStore.getState().gridSnap}</span>
+          <span className="opacity-60">V: Select | G: Move | R: Rotate | S: Scale</span>
         </div>
       </div>
     </div>

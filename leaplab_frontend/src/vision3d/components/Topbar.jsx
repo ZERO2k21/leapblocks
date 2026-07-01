@@ -24,7 +24,6 @@ import {
   Scissors,
   Copy,
   Clipboard,
-  Check,
   Menu,
   X,
   Loader2,
@@ -36,23 +35,10 @@ import LeapLabAuthButton from '../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../components/common/TopbarShareButton';
 import { use3DStore } from '../store/use3DStore';
 import { exportShapes, downloadBlob } from '../engine/ExportEngine';
-import { GRID_PRESETS } from '../utils/constants';
 import { ViewCube } from './ViewCube';
 import { log } from '../utils/logger';
 
-interface Vision3DTopbarProps {
-  onBack: () => void;
-  title: string;
-  onTitleChange: (val: string) => void;
-  onSave?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  isSaving?: boolean;
-}
-
-export const Topbar: React.FC<Vision3DTopbarProps> = ({
+export const Topbar = ({
   onBack,
   title,
   onTitleChange,
@@ -67,10 +53,10 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
   const [editMenuOpen, setEditMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const fileMenuRef = useRef<HTMLDivElement>(null);
-  const editMenuRef = useRef<HTMLDivElement>(null);
-  const viewMenuRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const fileMenuRef = useRef(null);
+  const editMenuRef = useRef(null);
+  const viewMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const {
     shapes,
@@ -99,16 +85,16 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
   const effectiveRedo = onRedo || redo;
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) setFileMenuOpen(false);
-      if (editMenuRef.current && !editMenuRef.current.contains(event.target as Node)) setEditMenuOpen(false);
-      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target as Node)) setViewMenuOpen(false);
+    const handleClickOutside = (event) => {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target)) setFileMenuOpen(false);
+      if (editMenuRef.current && !editMenuRef.current.contains(event.target)) setEditMenuOpen(false);
+      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target)) setViewMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside, true);
     return () => document.removeEventListener('mousedown', handleClickOutside, true);
   }, []);
 
-  const handleExport = async (format: 'stl' | 'obj' | 'gltf') => {
+  const handleExport = async (format) => {
     log('Topbar: export format=' + format);
     try {
       const visibleShapes = shapes.filter((s) => s.visible && s.type !== 'group');
@@ -139,7 +125,6 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
         style={{ paddingLeft: '2px' }}
         className="flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
       >
-        {/* ─── Left section ─── */}
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
             title="Back to Home"
@@ -156,32 +141,20 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
 
           <div className="h-5 w-px shrink-0 bg-[#bfdbfe]/28" />
 
-          {/* Logo + Brand */}
           <div className="flex items-center mr-2.5 shrink-0 filter drop-shadow-[0_0_14px_rgba(56,189,248,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-            <img
-              alt="LeapLab"
-              src="assets/leaplab_logo_transparent.png"
-              className="h-12 object-contain"
-            />
+            <img alt="LeapLab" src="assets/leaplab_logo_transparent.png" className="h-12 object-contain" />
             <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none">
-              <span className="text-[7px] font-black uppercase tracking-[0.18em] font-sans text-[#93c5fd]">
-                LEAPLAB
-              </span>
-              <span className="text-sm font-black tracking-[0.08em] font-sans text-white">
-                VISION 3D
-              </span>
+              <span className="text-[7px] font-black uppercase tracking-[0.18em] font-sans text-[#93c5fd]">LEAPLAB</span>
+              <span className="text-sm font-black tracking-[0.08em] font-sans text-white">VISION 3D</span>
             </div>
           </div>
 
-          {/* Desktop dropdown menus */}
           <div className="hidden xl:flex items-center gap-3 h-full">
-            {/* ── File Menu ── */}
+            {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
               <button
                 onClick={() => { setFileMenuOpen(!fileMenuOpen); setEditMenuOpen(false); setViewMenuOpen(false); }}
-                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${
-                  fileMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'
-                }`}
+                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${fileMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'}`}
               >
                 File
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${fileMenuOpen ? 'rotate-180' : ''}`} />
@@ -206,13 +179,11 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
               )}
             </div>
 
-            {/* ── Edit Menu ── */}
+            {/* Edit Menu */}
             <div ref={editMenuRef} className="relative">
               <button
                 onClick={() => { setEditMenuOpen(!editMenuOpen); setFileMenuOpen(false); setViewMenuOpen(false); }}
-                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${
-                  editMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'
-                }`}
+                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${editMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'}`}
               >
                 Edit
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${editMenuOpen ? 'rotate-180' : ''}`} />
@@ -236,13 +207,11 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
               )}
             </div>
 
-            {/* ── View Menu ── */}
+            {/* View Menu */}
             <div ref={viewMenuRef} className="relative">
               <button
                 onClick={() => { setViewMenuOpen(!viewMenuOpen); setFileMenuOpen(false); setEditMenuOpen(false); }}
-                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${
-                  viewMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'
-                }`}
+                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide text-white bg-transparent border-0 ${viewMenuOpen ? 'bg-white/18' : 'hover:bg-white/10'}`}
               >
                 View
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${viewMenuOpen ? 'rotate-180' : ''}`} />
@@ -267,15 +236,13 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
           </div>
         </div>
 
-        {/* ─── Center section — Project name + Save ─── */}
+        {/* Center section */}
         <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
           <div
             style={{ paddingLeft: '24px' }}
             className="flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 bg-[#08143a]/55 border-[#93c5fd]/20"
           >
-            <span className="text-[12px] opacity-45 font-bold tracking-[0.01em] hidden xl:inline text-white">
-              Folder
-            </span>
+            <span className="text-[12px] opacity-45 font-bold tracking-[0.01em] hidden xl:inline text-white">Folder</span>
             <input
               placeholder="My Project"
               type="text"
@@ -287,22 +254,15 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
               title="Save Project"
               onClick={onSave}
               disabled={isSaving}
-              className={`border-0 rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-all duration-200 shrink-0 scale-100 hover:scale-[1.08] hover:brightness-[1.08] bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white shadow-[0_4px_10px_-1px_rgba(8,47,123,0.45)] ${
-                isSaving ? 'opacity-80 cursor-wait' : ''
-              }`}
+              className={`border-0 rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-all duration-200 shrink-0 scale-100 hover:scale-[1.08] hover:brightness-[1.08] bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white shadow-[0_4px_10px_-1px_rgba(8,47,123,0.45)] ${isSaving ? 'opacity-80 cursor-wait' : ''}`}
             >
-              {isSaving ? (
-                <Loader2 size={12} strokeWidth={2.5} className="animate-spin" />
-              ) : (
-                <Save size={12} strokeWidth={2.5} />
-              )}
+              {isSaving ? <Loader2 size={12} strokeWidth={2.5} className="animate-spin" /> : <Save size={12} strokeWidth={2.5} />}
             </button>
           </div>
         </div>
 
-        {/* ─── Right section ─── */}
+        {/* Right section */}
         <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
-          {/* Quick actions — Desktop only */}
           <div className="hidden xl:flex items-center gap-3 pr-4 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
             <TopbarShareButton className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white" size={16} onSave={onSave} projectName={title} />
             <button title="Feedback" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
@@ -314,35 +274,23 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
             <button title="Settings" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
               <Settings size={16} strokeWidth={2.2} />
             </button>
-            <button
-              title="Help"
-              style={{ marginRight: '10px' }}
-              className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white"
-            >
+            <button title="Help" style={{ marginRight: '10px' }} className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
               <CircleHelp size={20} strokeWidth={2.2} />
             </button>
           </div>
 
-          {/* ViewCube — Desktop */}
           <div className="hidden lg:block w-10 h-10 shrink-0">
             <ViewCube />
           </div>
 
-          {/* Auth button */}
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
             <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
           </div>
 
-          {/* Creoleap brand logo — Large desktop */}
           <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
-            <img
-              alt="Leap into the AI Future"
-              src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-              className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]"
-            />
+            <img alt="Leap into the AI Future" src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg" className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]" />
           </div>
 
-          {/* Hamburger — Mobile */}
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
@@ -353,19 +301,16 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
         </div>
       </div>
 
-      {/* ─── Mobile backdrop ─── */}
+      {/* Mobile backdrop */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/60 z-[999] transition-opacity duration-300" onClick={() => setMobileMenuOpen(false)} />
       )}
 
-      {/* ─── Mobile slide-out drawer ─── */}
+      {/* Mobile slide-out drawer */}
       <div
         ref={mobileMenuRef}
-        className={`fixed top-0 right-0 h-full w-[290px] z-[1000] p-6 shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l bg-[#0b1b42] border-[#bfdbfe]/20 text-white ${
-          mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'
-        }`}
+        className={`fixed top-0 right-0 h-full w-[290px] z-[1000] p-6 shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l bg-[#0b1b42] border-[#bfdbfe]/20 text-white ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
       >
-        {/* Drawer Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">
             <img src="/assets/leaplabicon.ico" alt="LeapLab" className="w-6 h-6 rounded object-contain" />
@@ -379,9 +324,7 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
           </button>
         </div>
 
-        {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-6">
-          {/* File */}
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 text-[#93c5fd]/80">File</span>
             <MobileMenuItem icon={<FilePlus size={18} />} label="New Project" onClick={() => { clearScene(); setMobileMenuOpen(false); }} />
@@ -393,7 +336,6 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
             <MobileMenuItem icon={<Trash2 size={18} />} label="Clear Scene" onClick={() => { clearScene(); setMobileMenuOpen(false); }} />
           </div>
 
-          {/* Edit */}
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 text-[#93c5fd]/80">Edit</span>
             <MobileMenuItem icon={<Undo2 size={18} />} label="Undo" disabled={!effectiveCanUndo} onClick={() => { if (effectiveCanUndo) { effectiveUndo(); setMobileMenuOpen(false); } }} />
@@ -402,18 +344,16 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
             <MobileMenuItem icon={<Trash2 size={18} />} label="Delete" disabled={selectedIds.length === 0} onClick={() => { if (selectedIds.length > 0) { removeShapes(selectedIds); setMobileMenuOpen(false); } }} />
           </div>
 
-          {/* View */}
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 text-[#93c5fd]/80">View</span>
             <MobileMenuItem icon={<Grid3x3 size={18} />} label={showGrid ? 'Hide Grid' : 'Show Grid'} onClick={() => { setShowGrid(!showGrid); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<Ruler size={18} />} label={showAxes ? 'Hide Axes' : 'Show Axes'} onClick={() => { setShowAxes(!showAxes); setMobileMenuOpen(false); }} />
           </div>
 
-          {/* Additional */}
           <div className="flex flex-col gap-0.5 border-t border-white/10 pt-4">
             <MobileMenuItem icon={<BookOpen size={18} />} label="Tutorials" onClick={() => setMobileMenuOpen(false)} />
             <TopbarShareButton size={18} onSave={onSave} projectName={title}>
-              {({ onClick, loading }: { onClick: () => void; loading: boolean }) => (
+              {({ onClick, loading }) => (
                 <button className="flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer hover:bg-white/8 text-white/90 hover:text-white" onClick={onClick} disabled={loading}>
                   <Share2 size={18} strokeWidth={2} className="opacity-80 shrink-0" />
                   <span>Share project</span>
@@ -427,7 +367,6 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
           </div>
         </div>
 
-        {/* Drawer Footer */}
         <div className="border-t border-white/10 pt-5 flex flex-col gap-4">
           <LeapLabAuthButton variant="dark" size="sm" style={{ height: '40px', borderRadius: '8px', boxSizing: 'border-box', width: '100%', fontSize: '16px', fontWeight: 600 }} />
         </div>
@@ -436,25 +375,9 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
   );
 };
 
-/* ─── Sub-components ─── */
+/* Sub-components */
 
-function MenuItem({
-  icon,
-  iconColor,
-  label,
-  shortcut,
-  disabled,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  iconColor?: string;
-  label: string;
-  shortcut?: string;
-  disabled?: boolean;
-  active?: boolean;
-  onClick: () => void;
-}) {
+function MenuItem({ icon, iconColor, label, shortcut, disabled, active, onClick }) {
   return (
     <button
       disabled={disabled}
@@ -474,13 +397,7 @@ function MenuItem({
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.12s ease',
       }}
-      className={
-        disabled
-          ? 'opacity-40 text-[#374151]/40'
-          : active
-          ? 'text-[#7C3AED] font-semibold hover:bg-[#7C3AED]/8'
-          : 'text-[#374151] hover:bg-[#7C3AED]/8'
-      }
+      className={disabled ? 'opacity-40 text-[#374151]/40' : active ? 'text-[#7C3AED] font-semibold hover:bg-[#7C3AED]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span className={iconColor || 'text-[#7C3AED]/80'}>{icon}</span>
@@ -499,26 +416,12 @@ function MenuDivider() {
   return <div className="h-px bg-black/8 my-1 mx-3.5" />;
 }
 
-function MobileMenuItem({
-  icon,
-  label,
-  disabled,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
+function MobileMenuItem({ icon, label, disabled, onClick }) {
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${
-        disabled
-          ? 'opacity-35 cursor-not-allowed text-inherit'
-          : 'hover:bg-white/8 text-white/90 hover:text-white cursor-pointer'
-      }`}
+      className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${disabled ? 'opacity-35 cursor-not-allowed text-inherit' : 'hover:bg-white/8 text-white/90 hover:text-white cursor-pointer'}`}
     >
       <span className="opacity-80 shrink-0">{icon}</span>
       <span>{label}</span>

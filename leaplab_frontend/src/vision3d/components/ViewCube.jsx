@@ -5,23 +5,15 @@
 
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
 
-interface ViewCubeProps {
-  onCameraChange?: (position: [number, number, number]) => void;
-}
-
-const ViewCubeScene: React.FC<{ onCameraChange?: (position: [number, number, number]) => void }> = ({
-  onCameraChange,
-}) => {
+const ViewCubeScene = ({ onCameraChange }) => {
   const faces = [
-    { name: 'Front', position: [0, 0, 1] as [number, number, number], color: '#3b82f6' },
-    { name: 'Back', position: [0, 0, -1] as [number, number, number], color: '#6366f1' },
-    { name: 'Right', position: [1, 0, 0] as [number, number, number], color: '#22c55e' },
-    { name: 'Left', position: [-1, 0, 0] as [number, number, number], color: '#eab308' },
-    { name: 'Top', position: [0, 1, 0] as [number, number, number], color: '#ef4444' },
-    { name: 'Bottom', position: [0, -1, 0] as [number, number, number], color: '#f97316' },
+    { name: 'Front', position: [0, 0, 1], color: '#3b82f6' },
+    { name: 'Back', position: [0, 0, -1], color: '#6366f1' },
+    { name: 'Right', position: [1, 0, 0], color: '#22c55e' },
+    { name: 'Left', position: [-1, 0, 0], color: '#eab308' },
+    { name: 'Top', position: [0, 1, 0], color: '#ef4444' },
+    { name: 'Bottom', position: [0, -1, 0], color: '#f97316' },
   ];
 
   return (
@@ -35,7 +27,7 @@ const ViewCubeScene: React.FC<{ onCameraChange?: (position: [number, number, num
           position={face.position}
           onClick={() => {
             const scale = 10;
-            const newPos: [number, number, number] = [
+            const newPos = [
               face.position[0] * scale,
               face.position[1] * scale,
               face.position[2] * scale,
@@ -48,7 +40,6 @@ const ViewCubeScene: React.FC<{ onCameraChange?: (position: [number, number, num
         </mesh>
       ))}
 
-      {/* Axes arrows */}
       <mesh position={[0, 0, 1.5]} rotation={[0, 0, Math.PI / 2]}>
         <coneGeometry args={[0.1, 0.3, 16]} />
         <meshBasicMaterial color="#3b82f6" />
@@ -65,7 +56,7 @@ const ViewCubeScene: React.FC<{ onCameraChange?: (position: [number, number, num
   );
 };
 
-export const ViewCube: React.FC<ViewCubeProps> = ({ onCameraChange }) => {
+export const ViewCube = ({ onCameraChange }) => {
   return (
     <div className="view-cube">
       <Canvas

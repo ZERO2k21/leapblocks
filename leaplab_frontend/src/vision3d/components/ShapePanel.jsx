@@ -6,25 +6,23 @@
 import React from 'react';
 import { use3DStore } from '../store/use3DStore';
 import { SHAPE_DEFINITIONS } from '../utils/constants';
-import { ShapeType } from '../types';
 import { log } from '../utils/logger';
 
-export const ShapePanel: React.FC = () => {
+export const ShapePanel = () => {
   const addShape = use3DStore((s) => s.addShape);
 
   const basicShapes = SHAPE_DEFINITIONS.filter((s) => s.category === 'basic');
   const extendedShapes = SHAPE_DEFINITIONS.filter((s) => s.category === 'extended');
   const textShapes = SHAPE_DEFINITIONS.filter((s) => s.category === 'text');
 
-  const handleDragStart = (e: React.DragEvent, type: ShapeType) => {
+  const handleDragStart = (e, type) => {
     log('ShapePanel: dragStart type=' + type);
     e.dataTransfer.setData('shapeType', type);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleShapeClick = (type: ShapeType) => {
+  const handleShapeClick = (type) => {
     log('ShapePanel: shapeClick type=' + type);
-    // Add shape at a random position slightly offset from center
     const x = (Math.random() - 0.5) * 6;
     const z = (Math.random() - 0.5) * 6;
     addShape(type, [x, 1, z]);
@@ -37,7 +35,6 @@ export const ShapePanel: React.FC = () => {
       </div>
 
       <div className="shape-panel-content">
-        {/* Basic Shapes */}
         <div className="shape-section">
           <div className="shape-section-title">Basic</div>
           <div className="shape-grid">
@@ -57,7 +54,6 @@ export const ShapePanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Extended Shapes */}
         <div className="shape-section">
           <div className="shape-section-title">Extended</div>
           <div className="shape-grid">
@@ -77,7 +73,6 @@ export const ShapePanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Text Shapes */}
         <div className="shape-section">
           <div className="shape-section-title">Text</div>
           <div className="shape-grid">

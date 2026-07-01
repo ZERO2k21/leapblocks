@@ -5,7 +5,6 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { use3DStore } from '../store/use3DStore';
-import { Shape3D } from '../types';
 
 // Mock autoSave
 vi.mock('../utils/indexedDB', () => ({
@@ -34,7 +33,6 @@ describe('Vision3D Store - Shape Operations', () => {
     it('should create shape with correct default properties', () => {
       const { addShape } = use3DStore.getState();
       addShape('box');
-
       const { shapes } = use3DStore.getState();
       const shape = shapes[0];
 
@@ -68,7 +66,6 @@ describe('Vision3D Store - Shape Operations', () => {
 
       const { shapes: updatedShapes } = use3DStore.getState();
       const updatedShape = updatedShapes.find((s) => s.id === shapeId);
-
       expect(updatedShape?.color).toBe('#ff0000');
       expect(updatedShape?.metalness).toBe(0.5);
       expect(updatedShape?.roughness).toBe(0.3);
@@ -79,15 +76,12 @@ describe('Vision3D Store - Shape Operations', () => {
   describe('Multiple Shape Operations', () => {
     it('should handle adding multiple shapes', () => {
       const { addShape } = use3DStore.getState();
-
       addShape('box');
       addShape('sphere');
       addShape('cylinder');
       addShape('cone');
-
       const { shapes } = use3DStore.getState();
       expect(shapes).toHaveLength(4);
-
       const types = shapes.map((s) => s.type);
       expect(types).toContain('box');
       expect(types).toContain('sphere');
@@ -97,31 +91,23 @@ describe('Vision3D Store - Shape Operations', () => {
 
     it('should remove multiple shapes', () => {
       const { addShape, removeShapes } = use3DStore.getState();
-
       addShape('box');
       addShape('sphere');
       addShape('cylinder');
-
       const { shapes } = use3DStore.getState();
       const idsToRemove = shapes.slice(0, 2).map((s) => s.id);
-
       removeShapes(idsToRemove);
-
       const { shapes: updatedShapes } = use3DStore.getState();
       expect(updatedShapes).toHaveLength(1);
     });
 
     it('should update multiple shapes at once', () => {
       const { addShape, updateShapes } = use3DStore.getState();
-
       addShape('box');
       addShape('sphere');
-
       const { shapes } = use3DStore.getState();
       const ids = shapes.map((s) => s.id);
-
       updateShapes(ids, { isHole: true });
-
       const { shapes: updatedShapes } = use3DStore.getState();
       updatedShapes.forEach((shape) => {
         if (ids.includes(shape.id)) {
@@ -135,9 +121,7 @@ describe('Vision3D Store - Shape Operations', () => {
     it('should snap shapes to grid when adding', () => {
       const { addShape, setGridSnap } = use3DStore.getState();
       setGridSnap(0.5);
-
       addShape('box', [0.3, 0, 0.6]);
-
       const { shapes } = use3DStore.getState();
       expect(shapes[0].position[0]).toBe(0.5);
       expect(shapes[0].position[2]).toBe(0.5);
@@ -145,10 +129,8 @@ describe('Vision3D Store - Shape Operations', () => {
 
     it('should update grid snap setting', () => {
       const { setGridSnap } = use3DStore.getState();
-
       setGridSnap(0.25);
       expect(use3DStore.getState().gridSnap).toBe(0.25);
-
       setGridSnap(2.5);
       expect(use3DStore.getState().gridSnap).toBe(2.5);
     });
@@ -160,12 +142,9 @@ describe('Vision3D Store - Shape Operations', () => {
       addShape('box');
       const { shapes } = use3DStore.getState();
       const shapeId = shapes[0].id;
-
       expect(shapes[0].visible).toBe(true);
-
       updateShape(shapeId, { visible: false });
       expect(use3DStore.getState().shapes.find((s) => s.id === shapeId)?.visible).toBe(false);
-
       updateShape(shapeId, { visible: true });
       expect(use3DStore.getState().shapes.find((s) => s.id === shapeId)?.visible).toBe(true);
     });
@@ -175,9 +154,7 @@ describe('Vision3D Store - Shape Operations', () => {
       addShape('box');
       const { shapes } = use3DStore.getState();
       const shapeId = shapes[0].id;
-
       expect(shapes[0].locked).toBe(false);
-
       updateShape(shapeId, { locked: true });
       expect(use3DStore.getState().shapes.find((s) => s.id === shapeId)?.locked).toBe(true);
     });
@@ -186,9 +163,7 @@ describe('Vision3D Store - Shape Operations', () => {
   describe('Selection Edge Cases', () => {
     it('should handle selecting non-existent shape', () => {
       const { selectShape } = use3DStore.getState();
-
       selectShape('non-existent-id');
-
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toEqual(['non-existent-id']);
     });
@@ -198,10 +173,8 @@ describe('Vision3D Store - Shape Operations', () => {
       addShape('box');
       addShape('sphere');
       const { shapes } = use3DStore.getState();
-
       selectShape(shapes[0].id);
-      selectShape(shapes[0].id, true); // Toggle off
-
+      selectShape(shapes[0].id, true);
       const { selectedIds } = use3DStore.getState();
       expect(selectedIds).toHaveLength(0);
     });
@@ -210,7 +183,7 @@ describe('Vision3D Store - Shape Operations', () => {
   describe('Scene Management', () => {
     it('should set shapes directly', () => {
       const { setShapes } = use3DStore.getState();
-      const customShapes: Shape3D[] = [
+      const customShapes = [
         {
           id: 'custom-1',
           type: 'box',
@@ -224,9 +197,7 @@ describe('Vision3D Store - Shape Operations', () => {
           locked: false,
         },
       ];
-
       setShapes(customShapes);
-
       const { shapes } = use3DStore.getState();
       expect(shapes).toHaveLength(1);
       expect(shapes[0].id).toBe('custom-1');
@@ -234,11 +205,8 @@ describe('Vision3D Store - Shape Operations', () => {
 
     it('should track dirty state', () => {
       const { addShape } = use3DStore.getState();
-
       expect(use3DStore.getState().isProjectDirty).toBe(false);
-
       addShape('box');
-
       expect(use3DStore.getState().isProjectDirty).toBe(true);
     });
   });
