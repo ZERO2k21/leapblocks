@@ -7,7 +7,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
 import ActionBar from './components/neura/dashboard/ActionBar';
-import ProjectsTable from './components/neura/dashboard/ProjectsTable';
 import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
@@ -21,7 +20,7 @@ import TextClassifier from './components/neura/project-types/text-classifier/Tex
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
-import { listMyProjects, deleteCloudProject } from './services/cloudProjectApi';
+import { listMyProjects } from './services/cloudProjectApi';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
 import ClassifierErrorBoundary from './components/neura/common/ClassifierErrorBoundary';
 import { NeuraThemeProvider, useNeuraTheme } from './components/neura/common/NeuraThemeContext';
@@ -51,16 +50,7 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [showRenameModal, setShowRenameModal] = useState(false);
-    const [renamingProject, setRenamingProject] = useState<NeuraProject | null>(null);
-    const [renameValue, setRenameValue] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const filteredProjects = projects.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.type.replace(/-/g, ' ').toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     useEffect(() => {
         const loadProjects = async () => {
@@ -150,15 +140,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
         });
     };
 
-    const handleOpenProject = (project: NeuraProject) => {
-        navigateWithUnsavedCheck(async () => {
-            setCurrentProject(project);
-            setCurrentProjectType(project.type);
-            setHasUnsavedChanges(false);
-            setView('project');
-        });
-    };
-
     const handleSaveProject = async (): Promise<boolean> => {
         if (!currentProject) return false;
         setIsSaving(true);
@@ -191,9 +172,8 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
         try {
             const data = await fileService.loadProject(file);
-            const validation = fileService.validateProject(data, 'neura');
-            if (!validation.isValid) {
-                setSaveMessage({ type: 'error', text: validation.error || 'Invalid project file.' });
+            if (!data || typeof data !== 'object') {
+                setSaveMessage({ type: 'error', text: 'Invalid project file.' });
                 return;
             }
 
@@ -250,44 +230,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
         setCurrentProject(prev => prev ? { ...prev, projectData: { ...prev.projectData, ...data }, updatedAt: Date.now() } : null);
         setHasUnsavedChanges(true);
     }, []);
-
-    const handleDeleteProject = async (projectId: string) => {
-        try {
-            await deleteCloudProject(projectId);
-        } catch {
-            // Cloud delete failed — local state already updated
-        }
-        setProjects((prev) => prev.filter((p) => p.id !== projectId));
-        setSaveMessage({ type: 'success', text: 'Project deleted.' });
-    };
-
-    const handleRenameProject = (project: NeuraProject) => {
-        setRenamingProject(project);
-        setRenameValue(project.name);
-        setShowRenameModal(true);
-    };
-
-    const handleConfirmRename = () => {
-        if (!renamingProject || !renameValue.trim()) return;
-        const newName = renameValue.trim();
-        setProjects((prev) =>
-            prev.map((p) =>
-                p.id === renamingProject.id ? { ...p, name: newName, updatedAt: Date.now() } : p
-            )
-        );
-        if (currentProject?.id === renamingProject.id) {
-            setCurrentProject(prev => prev ? { ...prev, name: newName } : null);
-            setHasUnsavedChanges(true);
-        }
-        setShowRenameModal(false);
-        setRenamingProject(null);
-        setRenameValue('');
-        setSaveMessage({ type: 'success', text: 'Project renamed.' });
-    };
-
-    const handleDownloadFromTable = (project: NeuraProject) => {
-        fileService.saveProjectLocally(project.name || 'neura-project', 'neura', project);
-    };
 
     const renderProjectComponent = () => {
         const commonProps = { project: currentProject, onBack: handleBackToDashboard, onDataChange: handleProjectDataChange }
@@ -384,28 +326,14 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
                         <ActionBar
                             projectCount={projects.length}
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
                             onCreateNew={handleCreateNew}
                             onImport={handleImportProject}
                         />
 
-                        {projects.length > 0 && (
-                            <ProjectsTable
-                                projects={filteredProjects}
-                                onOpenProject={handleOpenProject}
-                                onDeleteProject={handleDeleteProject}
-                                onRenameProject={handleRenameProject}
-                                onDownloadProject={handleDownloadFromTable}
-                            />
-                        )}
-
-                        {projects.length === 0 && (
-                            <EmptyStateIllustration
-                                onCreateNew={handleCreateNew}
-                                onImport={handleImportProject}
-                            />
-                        )}
+                        <EmptyStateIllustration
+                            onCreateNew={handleCreateNew}
+                            onImport={handleImportProject}
+                        />
                     </div>
                 )}
 
@@ -431,35 +359,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 onDiscard={handleUnsavedDiscard}
                 onCancel={handleUnsavedCancel}
             />
-
-            {/* Rename Modal */}
-            {showRenameModal && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className={`${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100'} rounded-2xl w-full max-w-sm mx-4 shadow-2xl overflow-hidden animate-fade-in-scale border`}>
-                        <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between">
-                            <h2 className="text-white text-lg font-bold">Rename Project</h2>
-                            <button onClick={() => { setShowRenameModal(false); setRenamingProject(null); }} className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
-                                <svg width="18" height="18" viewBox="0 0 12 12" fill="none"><path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                            </button>
-                        </div>
-                        <div className="px-6 py-6">
-                            <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>New Name</label>
-                            <input
-                                type="text"
-                                value={renameValue}
-                                onChange={(e) => setRenameValue(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmRename(); if (e.key === 'Escape') { setShowRenameModal(false); setRenamingProject(null); } }}
-                                autoFocus
-                                className={`neura-input w-full px-4 py-3 text-sm ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
-                            />
-                        </div>
-                        <div className="px-6 pb-6 flex justify-end gap-3">
-                            <button onClick={() => { setShowRenameModal(false); setRenamingProject(null); }} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${isDark ? 'text-gray-400 bg-white/[0.06] hover:bg-white/[0.1]' : 'text-gray-500 bg-gray-100 hover:bg-gray-200'}`}>Cancel</button>
-                            <button onClick={handleConfirmRename} disabled={!renameValue.trim()} className="neura-button-primary px-5 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none">Rename</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

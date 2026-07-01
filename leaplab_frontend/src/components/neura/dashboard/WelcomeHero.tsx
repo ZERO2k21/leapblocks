@@ -54,23 +54,23 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-5">
                         <button
                             onClick={onCreateNew}
-                            className="neura-button-primary flex items-center gap-2 text-xs sm:text-sm"
+                            className="neura-button-primary flex items-center gap-2.5 text-xs sm:text-sm"
                         >
-                            <Plus size={15} strokeWidth={2.5} />
+                            <Plus size={18} strokeWidth={2.5} />
                             <span>New Project</span>
                         </button>
                         <button
                             onClick={onImportDataset}
-                            className="neura-button-secondary flex items-center gap-2 text-xs sm:text-sm"
+                            className="neura-button-secondary flex items-center gap-2.5 text-xs sm:text-sm"
                         >
-                            <Upload size={15} strokeWidth={2.2} />
+                            <Upload size={18} strokeWidth={2.2} />
                             <span>Import Dataset</span>
                         </button>
                         <button
                             onClick={onTutorials}
-                            className="neura-button-ghost flex items-center gap-2 text-xs sm:text-sm"
+                            className="neura-button-ghost flex items-center gap-2.5 text-xs sm:text-sm"
                         >
-                            <BookOpen size={15} strokeWidth={2.2} />
+                            <BookOpen size={18} strokeWidth={2.2} />
                             <span>Tutorials</span>
                         </button>
                     </div>
