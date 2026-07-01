@@ -73,8 +73,8 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
             </div>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-12 py-6 sm:py-8" onKeyDown={handleKeyDown}>
-                <div className="max-w-4xl mx-auto">
+            <div className="flex-1 overflow-y-auto flex items-center justify-center" onKeyDown={handleKeyDown}>
+                <div className="w-full max-w-4xl mx-auto px-6 sm:px-10 lg:px-16 py-8 sm:py-10">
                     {/* Project Details Section */}
                     <div className="mb-8 animate-slide-in-up">
                         <h3 className="neura-section-title">Enter Project Details:</h3>
@@ -104,7 +104,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                     {/* Project Type Section */}
                     <div className="mb-8 animate-slide-in-up stagger-2">
                         <h3 className="neura-section-title">Select Project Type:</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                             {projectTypes.map((type, idx) => (
                                 <div key={type.id} className={`animate-slide-in-up stagger-${(idx % 7) + 1}`}>
                                     <ProjectTypeCard

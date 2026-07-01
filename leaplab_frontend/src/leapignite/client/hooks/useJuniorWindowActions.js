@@ -38,9 +38,11 @@ export function useJuniorWindowActions({
 
         window.broadcastMessage = (message) => {
             console.log(`[useJuniorWindowActions] Broadcasting: ${message}`);
+            const prevSpriteId = window.activeSpriteId;
             window.dispatchEvent(new CustomEvent('leap-broadcast', {
                 detail: { message }
             }));
+            window.activeSpriteId = prevSpriteId;
             window.showFeedback?.(`📨 ${message}`);
         };
 
