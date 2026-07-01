@@ -12,6 +12,7 @@ export const PropertiesPanel = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const updateShape = use3DStore((s) => s.updateShape);
+  const deselectAll = use3DStore((s) => s.deselectAll);
 
   const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
 
@@ -19,7 +20,8 @@ export const PropertiesPanel = () => {
     return (
       <div className="properties-panel">
         <div className="properties-panel-header">
-          <h3>Properties</h3>
+          <h3>Inspector</h3>
+          <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close">x</button>
         </div>
         <div className="properties-empty">
           <p>Select an object to view its properties</p>
@@ -80,8 +82,11 @@ export const PropertiesPanel = () => {
   return (
     <div className="properties-panel">
       <div className="properties-panel-header">
-        <h3>Properties</h3>
-        <span className="shape-type-badge">{selectedShape.type}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3>Inspector</h3>
+          <span className="shape-type-badge">{selectedShape.type}</span>
+        </div>
+        <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close (Esc)">x</button>
       </div>
 
       <div className="properties-content">

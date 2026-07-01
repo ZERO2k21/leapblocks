@@ -6,9 +6,12 @@
 import { create } from 'zustand';
 import { createShape, cloneShape, snapPositionToGrid } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
+import { performCSG, isCSGValid } from '../engine/CSGEngine';
 import { log, debug, warn, error } from '../utils/logger';
 
 const MAX_HISTORY = 50;
+
+const GRID_PRESETS = [0, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0];
 
 export const use3DStore = create((set, get) => ({
   // Initial state
@@ -18,6 +21,8 @@ export const use3DStore = create((set, get) => ({
   gridSnap: 1.0,
   showGrid: true,
   showAxes: true,
+  showShapePanel: true,
+  showInspector: false,
   cameraPosition: [8, 6, 8],
   history: [[]],
   historyIndex: 0,
@@ -67,30 +72,32 @@ export const use3DStore = create((set, get) => ({
     debug('selectShape:', id, multi ? '(multi)' : '(single)');
     set((state) => {
       if (id === null) {
-        return { selectedIds: [] };
+        return { selectedIds: [], showInspector: false };
       }
 
       if (multi) {
         const isSelected = state.selectedIds.includes(id);
+        const newIds = isSelected
+          ? state.selectedIds.filter((sid) => sid !== id)
+          : [...state.selectedIds, id];
         return {
-          selectedIds: isSelected
-            ? state.selectedIds.filter((sid) => sid !== id)
-            : [...state.selectedIds, id],
+          selectedIds: newIds,
+          showInspector: newIds.length > 0,
         };
       }
 
-      return { selectedIds: [id] };
+      return { selectedIds: [id], showInspector: true };
     });
   },
 
   selectShapes: (ids) => {
     debug('selectShapes:', ids.length, 'shapes');
-    set({ selectedIds: ids });
+    set({ selectedIds: ids, showInspector: ids.length > 0 });
   },
 
   deselectAll: () => {
     debug('deselectAll');
-    set({ selectedIds: [] });
+    set({ selectedIds: [], showInspector: false });
   },
 
   updateShape: (id, updates) => {
@@ -147,6 +154,13 @@ export const use3DStore = create((set, get) => ({
     log('setGridSnap:', size);
     set({ gridSnap: size });
   },
+  cycleGridSnap: () => {
+    const current = get().gridSnap;
+    const idx = GRID_PRESETS.indexOf(current);
+    const next = GRID_PRESETS[(idx + 1) % GRID_PRESETS.length];
+    log('cycleGridSnap:', current, '->', next);
+    set({ gridSnap: next });
+  },
   setShowGrid: (show) => {
     log('setShowGrid:', show);
     set({ showGrid: show });
@@ -154,6 +168,81 @@ export const use3DStore = create((set, get) => ({
   setShowAxes: (show) => {
     log('setShowAxes:', show);
     set({ showAxes: show });
+  },
+  setShowShapePanel: (show) => set({ showShapePanel: show }),
+  setShowInspector: (show) => set({ showInspector: show }),
+
+  // Arrow key movement (TinkerCAD-style)
+  moveShapesByArrow: (ids, axis, direction, fast) => {
+    const state = get();
+    const gridSnap = state.gridSnap || 1.0;
+    const step = fast ? gridSnap * 10 : gridSnap;
+    const delta = direction * step;
+    const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+
+    log('moveShapesByArrow:', ids.length, 'shapes, axis:', axis, 'delta:', delta);
+
+    set((state) => ({
+      shapes: state.shapes.map((s) => {
+        if (ids.includes(s.id)) {
+          const newPos = [...s.position];
+          newPos[axisIndex] += delta;
+          return { ...s, position: newPos };
+        }
+        return s;
+      }),
+      isProjectDirty: true,
+    }));
+  },
+
+  // Hide/Show actions
+  hideShapes: (ids) => {
+    log('hideShapes:', ids.length, 'shapes');
+    set((state) => ({
+      shapes: state.shapes.map((s) =>
+        ids.includes(s.id) ? { ...s, visible: false } : s
+      ),
+      isProjectDirty: true,
+    }));
+  },
+
+  showAllHidden: () => {
+    log('showAllHidden');
+    set((state) => ({
+      shapes: state.shapes.map((s) =>
+        s.visible === false ? { ...s, visible: true } : s
+      ),
+      isProjectDirty: true,
+    }));
+  },
+
+  // Lock/Unlock
+  toggleLock: (ids) => {
+    log('toggleLock:', ids.length, 'shapes');
+    set((state) => ({
+      shapes: state.shapes.map((s) =>
+        ids.includes(s.id) ? { ...s, locked: !s.locked } : s
+      ),
+      isProjectDirty: true,
+    }));
+  },
+
+  // Fit selection to view (stores target for camera)
+  fitSelectionTarget: null,
+  setFitSelection: (ids) => {
+    const state = get();
+    const selected = state.shapes.filter((s) => ids.includes(s.id));
+    if (selected.length === 0) return;
+    const center = selected.reduce(
+      (acc, s) => [acc[0] + s.position[0], acc[1] + s.position[1], acc[2] + s.position[2]],
+      [0, 0, 0]
+    );
+    center[0] /= selected.length;
+    center[1] /= selected.length;
+    center[2] /= selected.length;
+    log('setFitSelection:', center);
+    set({ fitSelectionTarget: center });
+    setTimeout(() => set({ fitSelectionTarget: null }), 100);
   },
 
   // Group actions
@@ -375,5 +464,163 @@ export const use3DStore = create((set, get) => ({
       isProjectDirty: true,
     });
     setTimeout(() => get().autoSaveProject(), 100);
+  },
+
+  // ─── CSG Boolean Operations ───
+  csgOperation: (operation) => {
+    const state = get();
+    const ids = state.selectedIds;
+    if (ids.length < 2) {
+      warn('CSG: need at least 2 selected shapes');
+      return;
+    }
+
+    const shapes = state.shapes.filter((s) => ids.includes(s.id));
+    if (!isCSGValid(shapes)) {
+      warn('CSG: invalid selection (hidden or locked shapes)');
+      return;
+    }
+
+    log('CSG:', operation, 'on', ids.length, 'shapes');
+    const result = performCSG(shapes[0], shapes[1], operation);
+    if (!result) {
+      error('CSG: operation failed');
+      return;
+    }
+
+    // Remove originals, add result
+    set((state) => ({
+      shapes: [
+        ...state.shapes.filter((s) => !ids.includes(s.id)),
+        result,
+      ],
+      selectedIds: [result.id],
+      isProjectDirty: true,
+    }));
+
+    setTimeout(() => get().autoSaveProject(), 100);
+  },
+
+  // ─── Smart Duplicate with Repeat ───
+  lastDuplicateTransform: null,
+
+  smartDuplicate: (ids) => {
+    const state = get();
+    const shapesToDuplicate = state.shapes.filter((s) => ids.includes(s.id));
+
+    // If we have a last duplicate transform, repeat it
+    if (state.lastDuplicateTransform && state.lastDuplicateTransform.ids.length === ids.length) {
+      const t = state.lastDuplicateTransform;
+      const newShapes = shapesToDuplicate.map((s, i) => {
+        const clone = cloneShape(s);
+        clone.position = [
+          s.position[0] + t.deltaX,
+          s.position[1] + t.deltaY,
+          s.position[2] + t.deltaZ,
+        ];
+        clone.rotation = [
+          s.rotation[0] + t.rotDeltaX,
+          s.rotation[1] + t.rotDeltaY,
+          s.rotation[2] + t.rotDeltaZ,
+        ];
+        return clone;
+      });
+
+      const newIds = newShapes.map((s) => s.id);
+      set((state) => ({
+        shapes: [...state.shapes, ...newShapes],
+        selectedIds: newIds,
+        isProjectDirty: true,
+      }));
+      log('Smart duplicate: repeated transform');
+      return newIds;
+    }
+
+    // First duplicate - offset by 2 on X
+    const newShapes = shapesToDuplicate.map((s) => {
+      const clone = cloneShape(s);
+      clone.position = [s.position[0] + 2, s.position[1], s.position[2]];
+      return clone;
+    });
+
+    const newIds = newShapes.map((s) => s.id);
+    set((state) => ({
+      shapes: [...state.shapes, ...newShapes],
+      selectedIds: newIds,
+      lastDuplicateTransform: {
+        ids,
+        deltaX: 2,
+        deltaY: 0,
+        deltaZ: 0,
+        rotDeltaX: 0,
+        rotDeltaY: 0,
+        rotDeltaZ: 0,
+      },
+      isProjectDirty: true,
+    }));
+
+    log('Smart duplicate: first copy, offset +2 X');
+    return newIds;
+  },
+
+  // Record transform delta for smart duplicate repeat
+  recordTransformDelta: (ids, delta) => {
+    set({ lastDuplicateTransform: { ids, ...delta } });
+  },
+
+  // ─── Camera Mode ───
+  cameraMode: 'perspective',
+  setCameraMode: (mode) => {
+    log('setCameraMode:', mode);
+    set({ cameraMode: mode });
+  },
+  toggleCameraMode: () => {
+    const current = get().cameraMode;
+    const next = current === 'perspective' ? 'orthographic' : 'perspective';
+    log('toggleCameraMode:', current, '->', next);
+    set({ cameraMode: next });
+  },
+
+  // ─── Temporary Workplane ───
+  tempWorkplane: null,
+  setTempWorkplane: (wp) => {
+    log('setTempWorkplane:', wp);
+    set({ tempWorkplane: wp });
+  },
+  clearTempWorkplane: () => {
+    log('clearTempWorkplane');
+    set({ tempWorkplane: null });
+  },
+
+  // ─── Marquee Selection ───
+  marqueeActive: false,
+  marqueeStart: null,
+  marqueeEnd: null,
+
+  startMarquee: (point) => {
+    set({ marqueeActive: true, marqueeStart: point, marqueeEnd: point });
+  },
+  updateMarquee: (point) => {
+    set({ marqueeEnd: point });
+  },
+  endMarquee: () => {
+    set({ marqueeActive: false, marqueeStart: null, marqueeEnd: null });
+  },
+
+  // ─── Fit All ───
+  fitAllTarget: null,
+  setFitAll: () => {
+    const state = get();
+    if (state.shapes.length === 0) return;
+    const center = state.shapes.reduce(
+      (acc, s) => [acc[0] + s.position[0], acc[1] + s.position[1], acc[2] + s.position[2]],
+      [0, 0, 0]
+    );
+    center[0] /= state.shapes.length;
+    center[1] /= state.shapes.length;
+    center[2] /= state.shapes.length;
+    log('setFitAll:', center);
+    set({ fitAllTarget: center });
+    setTimeout(() => set({ fitAllTarget: null }), 100);
   },
 }));

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useMemo, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
 import { TransformControls } from '@react-three/drei';
 import { createGeometry } from '../utils/helpers';
@@ -19,7 +19,7 @@ export const ShapeRenderer = ({ shape }) => {
   const pushHistory = use3DStore((s) => s.pushHistory);
 
   const isSelected = selectedIds.includes(shape.id);
-  const isTransforming = isSelected && selectedIds.length === 1 && ['move', 'rotate', 'scale'].includes(activeTool);
+  const isTransforming = isSelected && selectedIds.length === 1;
 
   const geometry = useMemo(() => {
     return createGeometry(shape);
@@ -112,6 +112,7 @@ export const ShapeRenderer = ({ shape }) => {
       case 'move': return 'translate';
       case 'rotate': return 'rotate';
       case 'scale': return 'scale';
+      case 'select': return 'translate';
       default: return 'translate';
     }
   }, [activeTool]);

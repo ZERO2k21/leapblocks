@@ -13,6 +13,23 @@ import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
 import { log, debug } from '../utils/logger';
 
+const CameraController = () => {
+  const fitTarget = use3DStore((s) => s.fitSelectionTarget);
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if (fitTarget) {
+      const target = new THREE.Vector3(fitTarget[0], fitTarget[1], fitTarget[2]);
+      const distance = 12;
+      const direction = new THREE.Vector3(1, 0.75, 1).normalize();
+      camera.position.copy(target).addScaledVector(direction, distance);
+      camera.lookAt(target);
+    }
+  }, [fitTarget, camera]);
+
+  return null;
+};
+
 const DropHandler = () => {
   const { camera, gl } = useThree();
   const addShape = use3DStore((s) => s.addShape);
@@ -66,10 +83,6 @@ const DropHandler = () => {
 
 const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
-  const selectedIds = use3DStore((s) => s.selectedIds);
-  const activeTool = use3DStore((s) => s.activeTool);
-  const orbitRef = useRef(null);
-  const isTransforming = selectedIds.length === 1 && ['move', 'rotate', 'scale'].includes(activeTool);
 
   return (
     <>
@@ -94,15 +107,15 @@ const SceneContent = () => {
       <DropHandler />
 
       <OrbitControls
-        ref={orbitRef}
         makeDefault
         enableDamping
         dampingFactor={0.1}
         minDistance={2}
         maxDistance={100}
         maxPolarAngle={Math.PI / 2}
-        enabled={!isTransforming}
       />
+
+      <CameraController />
 
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport
