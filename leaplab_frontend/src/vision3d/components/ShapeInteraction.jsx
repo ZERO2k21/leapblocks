@@ -50,6 +50,12 @@ const ShapeInteraction = () => {
       const shape = allShapes.find((s) => s.id === hit.shapeId);
       if (!shape || shape.locked) return;
 
+      const tool = use3DStore.getState().activeTool;
+      if (tool !== 'move') {
+        selectShape(shape.id, e.shiftKey);
+        return;
+      }
+
       e.preventDefault();
 
       const shapeId = shape.id;

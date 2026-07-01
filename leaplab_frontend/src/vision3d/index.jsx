@@ -455,6 +455,24 @@ const Vision3DApp = ({ onBack }) => {
             </button>
           </div>
           <span className="v3d-toolbar-separator" />
+          <div className="v3d-toolbar-actions-group">
+            <button
+              className={`v3d-toolbar-btn ${rulerActive ? 'active' : ''}`}
+              onClick={toggleRuler}
+              title="Ruler / Measurement Tool (X)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+              Ruler
+            </button>
+            <button
+              className="v3d-toolbar-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import STL/OBJ file"
+            >
+              Import
+            </button>
+          </div>
+          <span className="v3d-toolbar-separator" />
           <div className="v3d-toolbar-group-label">Snap</div>
           <button
             className={`v3d-toolbar-btn ${gridSnap === 0 ? 'active' : ''}`}
@@ -473,19 +491,7 @@ const Vision3DApp = ({ onBack }) => {
               {v}
             </button>
           ))}
-          <span className="v3d-toolbar-separator" />
-          <div className="v3d-toolbar-group-label">Rot Snap</div>
-          {[5, 15, 30, 45].map((v) => (
-            <button
-              key={`rot-${v}`}
-              className={`v3d-toolbar-btn ${rotationSnap === v ? 'active' : ''}`}
-              onClick={() => setRotationSnap(v)}
-              title={`Rotation snap: ${v}°`}
-            >
-              {v}°
-            </button>
-          ))}
-          <span className="v3d-toolbar-separator" />
+
           <div className="v3d-toolbar-group-label">CSG</div>
           <button
             className="v3d-toolbar-btn"
@@ -559,23 +565,6 @@ const Vision3DApp = ({ onBack }) => {
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v16h22V4z"/><circle cx="12" cy="12" r="3"/></svg>
               {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
-            </button>
-          </div>
-          <span className="v3d-toolbar-separator" />
-          <div className="v3d-toolbar-actions-group">
-            <button
-              className={`v3d-toolbar-btn ${rulerActive ? 'active' : ''}`}
-              onClick={toggleRuler}
-              title="Ruler / Measurement Tool (X)"
-            >
-              Ruler
-            </button>
-            <button
-              className="v3d-toolbar-btn"
-              onClick={() => fileInputRef.current?.click()}
-              title="Import STL/OBJ file"
-            >
-              Import
             </button>
           </div>
           <input

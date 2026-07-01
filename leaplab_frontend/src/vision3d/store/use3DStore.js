@@ -32,18 +32,23 @@ export const use3DStore = create((set, get) => ({
   // ─── Ruler State ───
   rulerActive: false,
   rulerOrigin: null,
+  rulerTarget: null,
   rulerMeasurements: [],
   toggleRuler: () => {
     const active = !get().rulerActive;
     log('toggleRuler:', active);
-    set({ rulerActive: active, rulerOrigin: active ? get().rulerOrigin : null });
+    set({ rulerActive: active, rulerOrigin: null, rulerTarget: null });
   },
   setRulerOrigin: (pos) => {
     log('setRulerOrigin:', pos);
     set({ rulerOrigin: pos });
   },
+  setRulerTarget: (pos) => {
+    log('setRulerTarget:', pos);
+    set({ rulerTarget: pos });
+  },
   clearRuler: () => {
-    set({ rulerActive: false, rulerOrigin: null, rulerMeasurements: [] });
+    set({ rulerActive: false, rulerOrigin: null, rulerTarget: null, rulerMeasurements: [] });
   },
 
   // Shape actions
@@ -80,6 +85,7 @@ export const use3DStore = create((set, get) => ({
     set((state) => ({
       shapes: state.shapes.filter((s) => !ids.includes(s.id)),
       selectedIds: [],
+      showInspector: false,
       isProjectDirty: true,
     }));
     setTimeout(() => get().autoSaveProject(), 100);
@@ -670,7 +676,7 @@ export const use3DStore = create((set, get) => ({
   },
 
   // ─── Rotation Snap ───
-  rotationSnap: 15,
+  rotationSnap: 5,
   setRotationSnap: (deg) => {
     log('setRotationSnap:', deg);
     set({ rotationSnap: deg });

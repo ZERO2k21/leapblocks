@@ -16,6 +16,11 @@ export const PropertiesPanel = () => {
   const deselectAll = use3DStore((s) => s.deselectAll);
   const pushHistory = use3DStore((s) => s.pushHistory);
 
+  const handleClose = () => {
+    log('PropertiesPanel: close');
+    deselectAll();
+  };
+
   const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
 
   if (!selectedShape) {
@@ -23,7 +28,7 @@ export const PropertiesPanel = () => {
       <div className="properties-panel">
         <div className="properties-panel-header">
           <h3>Inspector</h3>
-          <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close">x</button>
+          <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close">x</button>
         </div>
         <div className="properties-empty">
           <p>Select an object to view its properties</p>
@@ -101,7 +106,7 @@ export const PropertiesPanel = () => {
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
           </button>
-          <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8', padding: '4px' }} title="Close (Esc)">x</button>
+          <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8', padding: '4px' }} title="Close (Esc)">x</button>
         </div>
       </div>
 

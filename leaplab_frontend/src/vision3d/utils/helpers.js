@@ -123,7 +123,6 @@ export function createGeometry(shape) {
         const hw = w / 2, hh = h / 2, hd = d / 2;
         const cr = Math.min(r, hw, hh, hd);
         const shape2d = new THREE.Shape();
-        const x = hw - cr, y = hh - cr;
         shape2d.moveTo(-hw + cr, -hh);
         shape2d.lineTo(hw - cr, -hh);
         shape2d.quadraticCurveTo(hw, -hh, hw, -hh + cr);
@@ -133,7 +132,9 @@ export function createGeometry(shape) {
         shape2d.quadraticCurveTo(-hw, hh, -hw, hh - cr);
         shape2d.lineTo(-hw, -hh + cr);
         shape2d.quadraticCurveTo(-hw, -hh, -hw + cr, -hh);
-        return new THREE.ExtrudeGeometry(shape2d, { depth: d, bevelEnabled: false });
+        const geo = new THREE.ExtrudeGeometry(shape2d, { depth: d, bevelEnabled: false });
+        geo.translate(0, 0, -hd);
+        return geo;
       }
       return new THREE.BoxGeometry(w, h, d);
     }

@@ -121,8 +121,8 @@ export const Topbar = ({
       `}</style>
 
       <div
-        style={{ paddingLeft: '2px' }}
-        className="flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
+        style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
+        className="flex items-center justify-between h-12 pr-[18px] z-[100] select-none border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
