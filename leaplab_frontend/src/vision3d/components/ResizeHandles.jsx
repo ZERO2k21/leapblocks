@@ -21,6 +21,7 @@ const ResizeHandles = () => {
   const selectedIds = use3DStore((s) => s.selectedIds);
   const shapes = use3DStore((s) => s.shapes);
   const updateShape = use3DStore((s) => s.updateShape);
+  const pushHistory = use3DStore((s) => s.pushHistory);
 
   const [hoveredHandle, setHoveredHandle] = useState(null);
   const [dragInfo, setDragInfo] = useState(null);
@@ -305,6 +306,7 @@ const ResizeHandles = () => {
         window.removeEventListener('pointerup', onUp);
         dragRef.current.active = false;
         setDragInfo(null);
+        if (activated) pushHistory();
         window.__gizmoActive = false;
         if (window.__externalOrbitRef?.current) window.__externalOrbitRef.current.enabled = true;
         canvas.style.cursor = 'auto';

@@ -12,6 +12,7 @@ import { use3DStore } from '../store/use3DStore';
 const ShapeInteraction = () => {
   const { camera, gl, scene } = useThree();
   const updateShape = use3DStore((s) => s.updateShape);
+  const pushHistory = use3DStore((s) => s.pushHistory);
   const selectShape = use3DStore((s) => s.selectShape);
   const activeRef = useRef(false);
   const rc = useRef(new THREE.Raycaster());
@@ -106,6 +107,8 @@ const ShapeInteraction = () => {
 
         if (!moved) {
           selectShape(shapeId, e.shiftKey);
+        } else {
+          pushHistory();
         }
 
         window.__gizmoActive = false;

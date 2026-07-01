@@ -76,9 +76,7 @@ const TransformGizmo = () => {
     const axisDir = AXIS_VEC[axis];
     const perp = new THREE.Vector3().crossVectors(viewDir, axisDir).normalize();
     if (perp.length() < 0.001) perp.set(1, 0, 0);
-    const perp2 = new THREE.Vector3().crossVectors(axisDir, perp).normalize();
-    const planeNormal = new THREE.Vector3().crossVectors(perp, perp2).normalize();
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormal, origin);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(perp, origin);
     const pt = new THREE.Vector3();
     const hit = rc.ray.intersectPlane(plane, pt);
     if (!hit) return null;
@@ -122,6 +120,8 @@ const TransformGizmo = () => {
       e.preventDefault();
       e.stopImmediatePropagation();
 
+      window.__gizmoActive = true;
+
       const store = use3DStore.getState();
       const curMode = store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : 'translate';
       const ids = store.selectedIds;
@@ -138,6 +138,7 @@ const TransformGizmo = () => {
       const snapVal = (v, s) => s > 0 ? Math.round(v / s) * s : v;
       const snapAng = (v, deg) => deg > 0 ? Math.round(v / (deg * Math.PI / 180)) * (deg * Math.PI / 180) : v;
       let activated = false;
+      let startProjected = 0;
 
       const onMove = (ev) => {
         const d = dragRef.current;
@@ -154,6 +155,7 @@ const TransformGizmo = () => {
           d.scales = startScale;
           d.startMouse = { x: startX, y: startY };
           d.lastDelta = 0;
+          startProjected = projectMouse(startX, startY, axis, origin) || 0;
           setDragInfo({ axis, mode: curMode, value: 0 });
           if (externalOrbitRef?.current) externalOrbitRef.current.enabled = false;
           canvas.style.cursor = 'grabbing';
@@ -163,8 +165,9 @@ const TransformGizmo = () => {
 
         const state = use3DStore.getState();
         if (curMode === 'translate') {
-          let delta = projectMouse(ev.clientX, ev.clientY, axis, origin);
-          if (delta === null) return;
+          let current = projectMouse(ev.clientX, ev.clientY, axis, origin);
+          if (current === null) return;
+          let delta = current - startProjected;
           delta = snapVal(delta, gSnap);
           d.lastDelta = delta;
           setDragInfo({ axis, mode: curMode, value: delta });
@@ -211,14 +214,12 @@ const TransformGizmo = () => {
           });
         }
       };
-
-      window.__gizmoActive = true;
-
       const onUp = () => {
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
         dragRef.current.active = false;
         setDragInfo(null);
+        if (activated) pushHistory();
         window.__gizmoActive = false;
         if (externalOrbitRef?.current) externalOrbitRef.current.enabled = true;
         canvas.style.cursor = 'auto';
