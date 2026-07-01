@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
-import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
+
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
 import ImageClassifier from './components/neura/project-types/image-classifier/ImageClassifier';
@@ -295,25 +295,15 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative flex flex-col">
+            <div className="flex-1 relative flex flex-col overflow-hidden">
                 {view === 'dashboard' && (
-                    <div className="animate-fade-in flex flex-col flex-1">
-                        {/* Top: WelcomeHero pinned below topbar */}
-                        <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 pt-4 sm:pt-6">
+                    <div className="animate-fade-in flex flex-col flex-1 min-h-0">
+                        {/* WelcomeHero - fills full remaining height */}
+                        <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 xl:px-16 pt-3 sm:pt-4 pb-3 sm:pb-4 min-h-0">
                             <WelcomeHero
                                 onCreateNew={handleCreateNew}
                                 onImportDataset={handleImportProject}
                             />
-                        </div>
-
-                        {/* Empty state */}
-                        <div className="flex-1 overflow-y-auto px-6 sm:px-10 lg:px-16 xl:px-24 pb-8">
-                            <div className="flex-1 flex items-center justify-center min-h-[400px]">
-                                <EmptyStateIllustration
-                                    onCreateNew={handleCreateNew}
-                                    onImport={handleImportProject}
-                                />
-                            </div>
                         </div>
                     </div>
                 )}
