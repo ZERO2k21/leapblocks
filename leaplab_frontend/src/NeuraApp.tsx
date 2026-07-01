@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
-import ActionBar from './components/neura/dashboard/ActionBar';
 import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
@@ -20,7 +19,7 @@ import TextClassifier from './components/neura/project-types/text-classifier/Tex
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
-import { listMyProjects } from './services/cloudProjectApi';
+import { useCloudProjectStore } from './store/cloudProjectStore';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
 import ClassifierErrorBoundary from './components/neura/common/ClassifierErrorBoundary';
 import { NeuraThemeProvider, useNeuraTheme } from './components/neura/common/NeuraThemeContext';
@@ -42,7 +41,6 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 function NeuraAppInner({ onBack }: NeuraAppProps) {
     const { isDark } = useNeuraTheme();
     const [view, setView] = useState<NeuraView>('dashboard');
-    const [projects, setProjects] = useState<NeuraProject[]>([]);
     const [currentProjectType, setCurrentProjectType] = useState<ProjectType | null>(null);
     const [currentProject, setCurrentProject] = useState<NeuraProject | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -52,53 +50,37 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        const loadProjects = async () => {
-            try {
-                const cached = localStorage.getItem('neura-projects-cache');
-                if (cached) {
-                    setProjects(JSON.parse(cached));
-                }
-            } catch { /* ignore cache read errors */ }
-
-            try {
-                const cloudProjects = await listMyProjects('neura');
-                const loaded: NeuraProject[] = cloudProjects.map((cp) => {
-                    const meta = cp.metadata ? JSON.parse(cp.metadata) : {};
-                    return {
-                        id: cp.id,
-                        type: (meta.type || 'image-classifier') as ProjectType,
-                        name: cp.name,
-                        classes: meta.classes || [],
-                        createdAt: cp.createdAt ? new Date(cp.createdAt).getTime() : Date.now(),
-                        updatedAt: cp.updatedAt ? new Date(cp.updatedAt).getTime() : Date.now(),
-                        modelTrained: meta.modelTrained || false,
-                        accuracy: meta.accuracy,
-                    };
-                });
-                setProjects(loaded);
-                try {
-                    localStorage.setItem('neura-projects-cache', JSON.stringify(loaded));
-                } catch { /* ignore quota errors */ }
-            } catch {
-                // Cloud failed — keep using cache if available
-            }
-        };
-        loadProjects();
-    }, []);
+    const pendingProject = useCloudProjectStore((state) => state.pendingProject);
+    const clearPendingProject = useCloudProjectStore((state) => state.clearPendingProject);
 
     useEffect(() => {
-        if (saveMessage) {
-            const timer = setTimeout(() => setSaveMessage(null), 3000);
-            return () => clearTimeout(timer);
-        }
+        if (!saveMessage) return;
+        const timer = setTimeout(() => setSaveMessage(null), 3000);
+        return () => clearTimeout(timer);
     }, [saveMessage]);
 
     useEffect(() => {
-        try {
-            localStorage.setItem('neura-projects-cache', JSON.stringify(projects));
-        } catch { /* ignore quota errors */ }
-    }, [projects]);
+        if (!pendingProject || pendingProject.mode !== 'neura') return;
+
+        const data = pendingProject.data || {};
+        const importedProject: NeuraProject = {
+            id: data.id || crypto.randomUUID(),
+            type: (data.type || 'image-classifier') as ProjectType,
+            name: data.projectName || data.name || 'Untitled Neura Project',
+            classes: data.classes || [],
+            createdAt: data.createdAt || Date.now(),
+            updatedAt: data.updatedAt || Date.now(),
+            modelTrained: data.modelTrained || false,
+            accuracy: data.accuracy,
+            projectData: data.projectData || {},
+        };
+
+        setCurrentProject(importedProject);
+        setCurrentProjectType(importedProject.type);
+        setHasUnsavedChanges(false);
+        setView('project');
+        clearPendingProject();
+    }, [pendingProject, clearPendingProject]);
 
     const navigateWithUnsavedCheck = useCallback((action: () => void) => {
         if (hasUnsavedChanges && currentProject) {
@@ -126,7 +108,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
         setCurrentProject(newProject);
         setCurrentProjectType(type);
-        setProjects((prev) => [newProject, ...prev]);
         setHasUnsavedChanges(false);
         setView('project');
     };
@@ -191,7 +172,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
             setCurrentProject(importedProject);
             setCurrentProjectType(importedProject.type);
-            setProjects((prev) => [importedProject, ...prev.filter((p) => p.id !== importedProject.id)]);
             setHasUnsavedChanges(false);
             setView('project');
             setSaveMessage({ type: 'success', text: 'Project imported successfully!' });
@@ -317,23 +297,33 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
 
             <div className="flex-1 overflow-y-auto relative flex flex-col">
                 {view === 'dashboard' && (
-                    <div className="pt-3 sm:pt-5 lg:pt-7 pb-5 sm:pb-8 lg:pb-10 px-4 sm:px-6 lg:px-10 xl:px-12 animate-fade-in">
-                        <WelcomeHero
-                            onCreateNew={handleCreateNew}
-                            onImportDataset={handleImportProject}
-                            onTutorials={() => console.log('Open tutorials')}
-                        />
+                    <div className="pt-3 sm:pt-5 lg:pt-7 pb-5 sm:pb-8 lg:pb-10 px-4 sm:px-6 lg:px-8 xl:px-10 animate-fade-in">
+                        <div className="mx-auto max-w-screen-2xl">
+                            <WelcomeHero
+                                onCreateNew={handleCreateNew}
+                                onImportDataset={handleImportProject}
+                                onTutorials={() => console.log('Open tutorials')}
+                            />
 
-                        <ActionBar
-                            projectCount={projects.length}
-                            onCreateNew={handleCreateNew}
-                            onImport={handleImportProject}
-                        />
+                            <div className="mx-auto w-full max-w-5xl rounded-[32px] border border-ml-border bg-ml-surface shadow-[0_24px_80px_rgba(15,23,42,0.08)] p-8 sm:p-10">
+                                <div className="max-w-3xl mx-auto text-center">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7c3aed] mb-3">Saved projects via MyProjects only</p>
+                                    <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>
+                                        Neura no longer exposes an internal project list
+                                    </h2>
+                                    <p className={`mt-4 text-sm leading-7 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+                                        Your saved Neura projects are available through the My Projects workspace. Use this space to create or import new AI workspaces, while saved projects stay managed centrally in MyProjects.
+                                    </p>
+                                </div>
+                            </div>
 
-                        <EmptyStateIllustration
-                            onCreateNew={handleCreateNew}
-                            onImport={handleImportProject}
-                        />
+                            <div className="mx-auto max-w-3xl mt-6">
+                                <EmptyStateIllustration
+                                    onCreateNew={handleCreateNew}
+                                    onImport={handleImportProject}
+                                />
+                            </div>
+                        </div>
                     </div>
                 )}
 

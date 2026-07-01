@@ -26,18 +26,21 @@ export default function ProjectListPanel({ projects, selectedProject, onSelectPr
     const { isDark } = useNeuraTheme();
 
     return (
-        <div className={`w-full lg:w-[320px] xl:w-[340px] shrink-0 rounded-2xl border shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col ${isDark ? 'bg-[#1a1d2e] border-white/[0.06]' : 'bg-white border-gray-100/80'}`}>
+        <div className={`w-full lg:w-[360px] xl:w-[380px] shrink-0 neura-card neura-card-glow overflow-hidden ${isDark ? 'bg-[#0f1222] border-white/[0.08]' : 'bg-white border-gray-100/80'}`}>
             {/* Header */}
-            <div className={`px-5 py-4 border-b ${isDark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className={`text-sm font-bold tracking-tight ${isDark ? 'text-gray-100' : 'text-[#0a015a]'}`}>My Projects</h3>
-                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                            {projects.length} project{projects.length !== 1 ? 's' : ''}
-                        </p>
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#0a015a]/5 flex items-center justify-center">
-                        <Brain size={14} className="text-[#0a015a]" strokeWidth={2.2} />
+            <div className={`px-5 py-6 border-b ${isDark ? 'border-white/[0.06]' : 'border-gray-100'}`}>
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <p className="text-[10px] uppercase tracking-[0.32em] font-semibold text-[#7c3aed] mb-2">Premium panel</p>
+                            <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>My Projects</h3>
+                            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+                                A polished Neura project panel with centered spacing, responsive layout, and premium card styling.
+                            </p>
+                        </div>
+                        <div className="w-11 h-11 rounded-3xl border border-[#0a015a]/15 flex items-center justify-center bg-[#0a015a]/5">
+                            <Brain size={16} className="text-[#0a015a]" strokeWidth={2.2} />
+                        </div>
                     </div>
                 </div>
             </div>
