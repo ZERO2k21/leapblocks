@@ -12,6 +12,7 @@ import { snapPositionToGrid } from '../utils/helpers';
 import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
 import { Ruler } from './Ruler';
+import TransformGizmo, { setOrbitRef } from './TransformGizmo';
 import { log, debug } from '../utils/logger';
 
 const CameraController = () => {
@@ -86,6 +87,11 @@ const DropHandler = () => {
 
 const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
+  const orbitRef = useRef();
+
+  useEffect(() => {
+    setOrbitRef(orbitRef);
+  }, []);
 
   return (
     <>
@@ -107,11 +113,14 @@ const SceneContent = () => {
         <ShapeRenderer key={shape.id} shape={shape} />
       ))}
 
+      <TransformGizmo />
+
       <Ruler />
 
       <DropHandler />
 
       <OrbitControls
+        ref={orbitRef}
         makeDefault
         enableDamping
         dampingFactor={0.1}
