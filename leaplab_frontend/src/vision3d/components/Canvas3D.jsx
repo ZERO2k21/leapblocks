@@ -13,6 +13,8 @@ import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
 import { Ruler } from './Ruler';
 import TransformGizmo, { setOrbitRef } from './TransformGizmo';
+import ResizeHandles from './ResizeHandles';
+import ShapeInteraction from './ShapeInteraction';
 import { log, debug } from '../utils/logger';
 
 const CameraController = () => {
@@ -91,6 +93,8 @@ const SceneContent = () => {
 
   useEffect(() => {
     setOrbitRef(orbitRef);
+    window.__externalOrbitRef = orbitRef;
+    return () => { window.__externalOrbitRef = null; };
   }, []);
 
   return (
@@ -114,6 +118,10 @@ const SceneContent = () => {
       ))}
 
       <TransformGizmo />
+
+      <ResizeHandles />
+
+      <ShapeInteraction />
 
       <Ruler />
 

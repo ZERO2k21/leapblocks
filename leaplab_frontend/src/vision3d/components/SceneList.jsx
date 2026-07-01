@@ -32,6 +32,8 @@ export const SceneList = () => {
   const selectedIds = use3DStore((s) => s.selectedIds);
   const selectShape = use3DStore((s) => s.selectShape);
   const updateShape = use3DStore((s) => s.updateShape);
+  const removeShapes = use3DStore((s) => s.removeShapes);
+  const pushHistory = use3DStore((s) => s.pushHistory);
 
   const handleShapeClick = (id, e) => {
     debug('SceneList: shapeClick id=' + id + ' shift=' + e.shiftKey);
@@ -54,6 +56,13 @@ export const SceneList = () => {
       log('SceneList: toggleLock id=' + id + ' locked=' + !shape.locked);
       updateShape(id, { locked: !shape.locked });
     }
+  };
+
+  const handleDeleteShape = (id, e) => {
+    e.stopPropagation();
+    log('SceneList: delete id=' + id);
+    pushHistory();
+    removeShapes([id]);
   };
 
   const sortedShapes = [...shapes].sort((a, b) => {
@@ -102,6 +111,17 @@ export const SceneList = () => {
                     title={shape.locked ? 'Unlock' : 'Lock'}
                   >
                     {shape.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                  </button>
+                  <button
+                    className="shape-list-btn"
+                    onClick={(e) => handleDeleteShape(shape.id, e)}
+                    title="Delete"
+                    style={{ color: '#ef4444' }}
+                  >
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
                   </button>
                 </div>
               </li>

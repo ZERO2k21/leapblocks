@@ -12,7 +12,9 @@ export const PropertiesPanel = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const updateShape = use3DStore((s) => s.updateShape);
+  const removeShapes = use3DStore((s) => s.removeShapes);
   const deselectAll = use3DStore((s) => s.deselectAll);
+  const pushHistory = use3DStore((s) => s.pushHistory);
 
   const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
 
@@ -74,6 +76,12 @@ export const PropertiesPanel = () => {
     updateShape(selectedShape.id, { locked: !selectedShape.locked });
   };
 
+  const handleDelete = () => {
+    log('PropertiesPanel: delete id=' + selectedShape.id);
+    pushHistory();
+    removeShapes([selectedShape.id]);
+  };
+
   const updateProp = (key, value) => {
     debug('PropertiesPanel: prop ' + key + '=' + value + ' id=' + selectedShape.id);
     updateShape(selectedShape.id, { [key]: value });
@@ -86,7 +94,15 @@ export const PropertiesPanel = () => {
           <h3>Inspector</h3>
           <span className="shape-type-badge">{selectedShape.type}</span>
         </div>
-        <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close (Esc)">x</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={handleDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: 4, color: '#ef4444', display: 'flex', alignItems: 'center' }} title="Delete (Del)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+          <button onClick={deselectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8', padding: '4px' }} title="Close (Esc)">x</button>
+        </div>
       </div>
 
       <div className="properties-content">
