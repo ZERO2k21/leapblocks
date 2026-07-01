@@ -29,6 +29,23 @@ export const use3DStore = create((set, get) => ({
   project: null,
   isProjectDirty: false,
 
+  // ─── Ruler State ───
+  rulerActive: false,
+  rulerOrigin: null,
+  rulerMeasurements: [],
+  toggleRuler: () => {
+    const active = !get().rulerActive;
+    log('toggleRuler:', active);
+    set({ rulerActive: active, rulerOrigin: active ? get().rulerOrigin : null });
+  },
+  setRulerOrigin: (pos) => {
+    log('setRulerOrigin:', pos);
+    set({ rulerOrigin: pos });
+  },
+  clearRuler: () => {
+    set({ rulerActive: false, rulerOrigin: null, rulerMeasurements: [] });
+  },
+
   // Shape actions
   addShape: (type, position = [0, 1, 0]) => {
     const state = get();
@@ -622,5 +639,57 @@ export const use3DStore = create((set, get) => ({
     log('setFitAll:', center);
     set({ fitAllTarget: center });
     setTimeout(() => set({ fitAllTarget: null }), 100);
+  },
+
+  // ─── Distribution Alignment ───
+  distributeShapes: (ids, axis) => {
+    const state = get();
+    const shapesToDistribute = state.shapes.filter((s) => ids.includes(s.id));
+    if (shapesToDistribute.length < 3) return;
+
+    const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+    const sorted = [...shapesToDistribute].sort((a, b) => a.position[axisIndex] - b.position[axisIndex]);
+    const min = sorted[0].position[axisIndex];
+    const max = sorted[sorted.length - 1].position[axisIndex];
+    const spacing = (max - min) / (sorted.length - 1);
+
+    log('distributeShapes:', ids.length, 'shapes on', axis, 'spacing:', spacing.toFixed(2));
+
+    set((state) => ({
+      shapes: state.shapes.map((s) => {
+        const idx = sorted.findIndex((ss) => ss.id === s.id);
+        if (idx >= 0) {
+          const newPos = [...s.position];
+          newPos[axisIndex] = min + idx * spacing;
+          return { ...s, position: newPos };
+        }
+        return s;
+      }),
+      isProjectDirty: true,
+    }));
+  },
+
+  // ─── Rotation Snap ───
+  rotationSnap: 45,
+  setRotationSnap: (deg) => {
+    log('setRotationSnap:', deg);
+    set({ rotationSnap: deg });
+  },
+
+  // ─── Import Shape from Geometry Data ───
+  importShape: (shapeData) => {
+    const newShape = createShape(shapeData.type || 'box', shapeData.position || [0, 1, 0]);
+    if (shapeData.name) newShape.name = shapeData.name;
+    if (shapeData.color) newShape.color = shapeData.color;
+    Object.assign(newShape, shapeData);
+    newShape.id = newShape.id;
+    log('importShape:', newShape.type, newShape.name);
+    set((state) => ({
+      shapes: [...state.shapes, newShape],
+      selectedIds: [newShape.id],
+      isProjectDirty: true,
+    }));
+    setTimeout(() => get().autoSaveProject(), 100);
+    return newShape.id;
   },
 }));

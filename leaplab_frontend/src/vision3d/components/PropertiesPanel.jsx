@@ -125,6 +125,14 @@ export const PropertiesPanel = () => {
                   className="property-input" />
               </div>
             </div>
+            <div className="property-row" style={{ marginTop: 4 }}>
+              <div className="property-field" style={{ flex: 1 }}>
+                <span className="property-label">Corner Radius</span>
+                <input type="number" value={selectedShape.cornerRadius ?? 0} min={0} step={0.1}
+                  onChange={(e) => updateProp('cornerRadius', Math.max(0, parseFloat(e.target.value) || 0))}
+                  className="property-input" />
+              </div>
+            </div>
           </div>
         )}
 
@@ -160,6 +168,14 @@ export const PropertiesPanel = () => {
                   onChange={(e) => updateProp('radialSegments', parseInt(e.target.value) || 3)}
                   className="property-input" />
               </div>
+              {selectedShape.type === 'cylinder' && (
+                <div className="property-field">
+                  <span className="property-label">Taper %</span>
+                  <input type="number" value={selectedShape.taper ?? 0} min={-90} max={90} step={1}
+                    onChange={(e) => updateProp('taper', parseFloat(e.target.value) || 0)}
+                    className="property-input" />
+                </div>
+              )}
             </div>
           </div>
         )}

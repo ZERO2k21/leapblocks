@@ -10,6 +10,7 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { Topbar } from './components/Topbar';
 import { SceneList } from './components/SceneList';
 import { use3DStore } from './store/use3DStore';
+import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
 import './styles/Leap3D.css';
 import { log, debug } from './utils/logger';
 
@@ -57,10 +58,39 @@ const Vision3DApp = ({ onBack }) => {
     clearTempWorkplane,
     tempWorkplane,
     alignShapes,
+    toggleRuler,
+    rulerActive,
+    distributeShapes,
+    importShape,
   } = use3DStore();
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+  const fileInputRef = useRef(null);
+
+  const handleImport = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !isImportableFile(file.name)) return;
+
+    log('Importing file:', file.name);
+    let result = null;
+    if (/\.stl$/i.test(file.name)) {
+      result = await importSTL(file);
+    } else if (/\.obj$/i.test(file.name)) {
+      result = await importOBJ(file);
+    }
+
+    if (result) {
+      importShape({
+        type: 'stl',
+        name: result.name,
+        color: result.color,
+        position: [0, 1, 0],
+        _customGeometry: result.geometry,
+      });
+    }
+    e.target.value = '';
+  }, [importShape]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -327,9 +357,36 @@ const Vision3DApp = ({ onBack }) => {
         if (tempWorkplane) {
           clearTempWorkplane();
         }
+        if (state.rulerActive) {
+          state.clearRuler();
+        }
+      }
+
+      // Ruler tool (X key)
+      if (key === 'x' && !e.ctrlKey) {
+        e.preventDefault();
+        log('Keyboard: X (ruler tool)');
+        toggleRuler();
+      }
+
+      // Distribution (Ctrl+Shift+D = distribute on X, Ctrl+Shift+E = distribute on Y, Ctrl+Shift+F = distribute on Z)
+      if (e.ctrlKey && e.shiftKey && key === 'd' && ids.length >= 3) {
+        e.preventDefault();
+        log('Keyboard: Ctrl+Shift+D (distribute X)');
+        distributeShapes(ids, 'x');
+      }
+      if (e.ctrlKey && e.shiftKey && key === 'e' && ids.length >= 3) {
+        e.preventDefault();
+        log('Keyboard: Ctrl+Shift+E (distribute Y)');
+        distributeShapes(ids, 'y');
+      }
+      if (e.ctrlKey && e.shiftKey && key === 'f' && ids.length >= 3) {
+        e.preventDefault();
+        log('Keyboard: Ctrl+Shift+F (distribute Z)');
+        distributeShapes(ids, 'z');
       }
     },
-    [selectedIds, setTool, undo, redo, smartDuplicate, removeShapes, groupShapes, ungroupShape, deselectAll, moveShapesByArrow, hideShapes, showAllHidden, toggleLock, dropToWorkplane, mirrorShapes, setShowGrid, csgOperation, toggleCameraMode, setFitAll, setFitSelection, tempWorkplane, clearTempWorkplane, alignShapes]
+    [selectedIds, setTool, undo, redo, smartDuplicate, removeShapes, groupShapes, ungroupShape, deselectAll, moveShapesByArrow, hideShapes, showAllHidden, toggleLock, dropToWorkplane, mirrorShapes, setShowGrid, csgOperation, toggleCameraMode, setFitAll, setFitSelection, tempWorkplane, clearTempWorkplane, alignShapes, toggleRuler, distributeShapes]
   );
 
   useEffect(() => {
@@ -415,15 +472,82 @@ const Vision3DApp = ({ onBack }) => {
           >
             Axes
           </button>
+          <span className="v3d-bottom-separator" />
+          <button
+            className="v3d-bottom-btn"
+            onClick={toggleCameraMode}
+            title="Toggle Perspective/Orthographic (P)"
+          >
+            {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
+          </button>
+          <span className="v3d-bottom-separator" />
+          <button
+            className="v3d-bottom-btn"
+            onClick={() => csgOperation('union')}
+            disabled={selectedIds.length < 2}
+            title="CSG Union (Ctrl+1)"
+          >
+            Union
+          </button>
+          <button
+            className="v3d-bottom-btn"
+            onClick={() => csgOperation('subtract')}
+            disabled={selectedIds.length < 2}
+            title="CSG Subtract (Ctrl+2)"
+          >
+            Subtract
+          </button>
+          <button
+            className="v3d-bottom-btn"
+            onClick={() => csgOperation('intersect')}
+            disabled={selectedIds.length < 2}
+            title="CSG Intersect (Ctrl+3)"
+          >
+            Intersect
+          </button>
+          <span className="v3d-bottom-separator" />
+          <button
+            className={`v3d-bottom-btn ${rulerActive ? 'active' : ''}`}
+            onClick={toggleRuler}
+            title="Ruler / Measurement Tool (X)"
+          >
+            Ruler
+          </button>
+          <button
+            className="v3d-bottom-btn"
+            onClick={() => fileInputRef.current?.click()}
+            title="Import STL/OBJ file"
+          >
+            Import
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".stl,.obj"
+            onChange={handleImport}
+            style={{ display: 'none' }}
+          />
         </div>
         <div className="v3d-bottom-center">
           <span>Objects: {shapes.length}</span>
           <span className="v3d-bottom-separator" />
           <span>Selected: {selectedIds.length}</span>
+          {tempWorkplane && (
+            <>
+              <span className="v3d-bottom-separator" />
+              <span style={{ color: '#f97316' }}>Workplane Active</span>
+            </>
+          )}
+          {rulerActive && (
+            <>
+              <span className="v3d-bottom-separator" />
+              <span style={{ color: '#ef4444' }}>Ruler Active</span>
+            </>
+          )}
         </div>
         <div className="v3d-bottom-right">
           <span className="v3d-shortcut-hint">
-            V: Select | G: Move | R: Rotate | S: Scale | D: Drop | M: Mirror | Arrows: Nudge | N: Snap Grid | F: Fit
+            V:Select G:Move R:Rotate S:Scale D:Drop M:Mirror X:Ruler F:Fit P:Camera Ctrl+1/2/3:CSG
           </span>
         </div>
       </div>

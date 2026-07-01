@@ -10,14 +10,14 @@ export const SHAPE_DEFINITIONS = [
     name: 'Box',
     icon: '□',
     category: 'basic',
-    defaults: { width: 2, height: 2, depth: 2, color: '#4F46E5' },
+    defaults: { width: 2, height: 2, depth: 2, color: '#4F46E5', cornerRadius: 0 },
   },
   {
     type: 'cylinder',
     name: 'Cylinder',
     icon: '○',
     category: 'basic',
-    defaults: { radiusTop: 1, radiusBottom: 1, cylinderHeight: 2, radialSegments: 32, color: '#14B8A6' },
+    defaults: { radiusTop: 1, radiusBottom: 1, cylinderHeight: 2, radialSegments: 32, color: '#14B8A6', taper: 0 },
   },
   {
     type: 'sphere',

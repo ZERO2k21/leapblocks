@@ -11,21 +11,24 @@ import { use3DStore } from '../store/use3DStore';
 import { snapPositionToGrid } from '../utils/helpers';
 import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
+import { Ruler } from './Ruler';
 import { log, debug } from '../utils/logger';
 
 const CameraController = () => {
   const fitTarget = use3DStore((s) => s.fitSelectionTarget);
+  const fitAll = use3DStore((s) => s.fitAllTarget);
   const { camera } = useThree();
 
   useEffect(() => {
-    if (fitTarget) {
-      const target = new THREE.Vector3(fitTarget[0], fitTarget[1], fitTarget[2]);
+    const target = fitTarget || fitAll;
+    if (target) {
+      const vec = new THREE.Vector3(target[0], target[1], target[2]);
       const distance = 12;
       const direction = new THREE.Vector3(1, 0.75, 1).normalize();
-      camera.position.copy(target).addScaledVector(direction, distance);
-      camera.lookAt(target);
+      camera.position.copy(vec).addScaledVector(direction, distance);
+      camera.lookAt(vec);
     }
-  }, [fitTarget, camera]);
+  }, [fitTarget, fitAll, camera]);
 
   return null;
 };
@@ -104,6 +107,8 @@ const SceneContent = () => {
         <ShapeRenderer key={shape.id} shape={shape} />
       ))}
 
+      <Ruler />
+
       <DropHandler />
 
       <OrbitControls
@@ -129,17 +134,20 @@ const SceneContent = () => {
 
 export const Canvas3D = () => {
   const containerRef = useRef(null);
-  debug('Canvas3D: rendering');
+  const cameraMode = use3DStore((s) => s.cameraMode);
+  debug('Canvas3D: rendering, camera:', cameraMode);
 
   return (
     <div ref={containerRef} className="canvas-3d-container">
       <Canvas
         shadows
+        orthographic={cameraMode === 'orthographic'}
         camera={{
           position: [8, 6, 8],
           fov: 50,
           near: 0.1,
           far: 1000,
+          zoom: cameraMode === 'orthographic' ? 50 : 1,
         }}
         gl={{
           antialias: true,

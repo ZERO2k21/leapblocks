@@ -17,11 +17,39 @@ export const ShapeRenderer = ({ shape }) => {
   const activeTool = use3DStore((s) => s.activeTool);
   const updateShape = use3DStore((s) => s.updateShape);
   const pushHistory = use3DStore((s) => s.pushHistory);
+  const rotationSnap = use3DStore((s) => s.rotationSnap);
+  const [shiftHeld, setShiftHeld] = useState(false);
+  const [altHeld, setAltHeld] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Shift') setShiftHeld(true);
+      if (e.key === 'Alt') setAltHeld(true);
+    };
+    const onKeyUp = (e) => {
+      if (e.key === 'Shift') setShiftHeld(false);
+      if (e.key === 'Alt') setAltHeld(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   const isSelected = selectedIds.includes(shape.id);
   const isTransforming = isSelected && selectedIds.length === 1;
 
   const geometry = useMemo(() => {
+    // CSG result shapes store their geometry directly
+    if (shape._csgGeometry) {
+      return shape._csgGeometry;
+    }
+    // Imported shapes with custom geometry
+    if (shape._customGeometry) {
+      return shape._customGeometry;
+    }
     return createGeometry(shape);
   }, [
     shape.type,
@@ -168,6 +196,9 @@ export const ShapeRenderer = ({ shape }) => {
         onObjectChange={handleObjectChange}
         onDraggingChanged={handleTransformStart}
         size={0.7}
+        rotationSnap={activeTool === 'rotate' && shiftHeld ? (rotationSnap * Math.PI) / 180 : null}
+        scaleSnap={activeTool === 'scale' && shiftHeld ? 0.25 : null}
+        space="world"
       >
         {mesh}
       </TransformControls>

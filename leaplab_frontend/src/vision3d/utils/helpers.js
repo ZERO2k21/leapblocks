@@ -39,11 +39,13 @@ export function createShape(type, position = [0, 0, 0]) {
     width: defaults.width,
     height: defaults.height,
     depth: defaults.depth,
+    cornerRadius: defaults.cornerRadius || 0,
     // Cylinder
     radiusTop: defaults.radiusTop,
     radiusBottom: defaults.radiusBottom,
     cylinderHeight: defaults.cylinderHeight,
     radialSegments: defaults.radialSegments,
+    taper: defaults.taper || 0,
     // Sphere
     radius: defaults.radius,
     widthSegments: defaults.widthSegments,
@@ -112,20 +114,47 @@ export function createShape(type, position = [0, 0, 0]) {
 export function createGeometry(shape) {
   debug('createGeometry:', shape.type, shape.id);
   switch (shape.type) {
-    case 'box':
-      return new THREE.BoxGeometry(
-        shape.width ?? 2,
-        shape.height ?? 2,
-        shape.depth ?? 2
-      );
+    case 'box': {
+      const w = shape.width ?? 2;
+      const h = shape.height ?? 2;
+      const d = shape.depth ?? 2;
+      const r = shape.cornerRadius ?? 0;
+      if (r > 0) {
+        const hw = w / 2, hh = h / 2, hd = d / 2;
+        const cr = Math.min(r, hw, hh, hd);
+        const shape2d = new THREE.Shape();
+        const x = hw - cr, y = hh - cr;
+        shape2d.moveTo(-hw + cr, -hh);
+        shape2d.lineTo(hw - cr, -hh);
+        shape2d.quadraticCurveTo(hw, -hh, hw, -hh + cr);
+        shape2d.lineTo(hw, hh - cr);
+        shape2d.quadraticCurveTo(hw, hh, hw - cr, hh);
+        shape2d.lineTo(-hw + cr, hh);
+        shape2d.quadraticCurveTo(-hw, hh, -hw, hh - cr);
+        shape2d.lineTo(-hw, -hh + cr);
+        shape2d.quadraticCurveTo(-hw, -hh, -hw + cr, -hh);
+        return new THREE.ExtrudeGeometry(shape2d, { depth: d, bevelEnabled: false });
+      }
+      return new THREE.BoxGeometry(w, h, d);
+    }
 
-    case 'cylinder':
-      return new THREE.CylinderGeometry(
-        shape.radiusTop ?? 1,
-        shape.radiusBottom ?? 1,
-        shape.cylinderHeight ?? 2,
-        shape.radialSegments ?? 32
-      );
+    case 'cylinder': {
+      const rTop = shape.radiusTop ?? 1;
+      const rBot = shape.radiusBottom ?? 1;
+      const taperAmount = shape.taper ?? 0;
+      const cylH = shape.cylinderHeight ?? 2;
+      const segs = shape.radialSegments ?? 32;
+      if (taperAmount !== 0) {
+        const t = taperAmount / 100;
+        return new THREE.CylinderGeometry(
+          rTop * (1 + t),
+          rBot * (1 - t),
+          cylH,
+          segs
+        );
+      }
+      return new THREE.CylinderGeometry(rTop, rBot, cylH, segs);
+    }
 
     case 'sphere':
       return new THREE.SphereGeometry(
