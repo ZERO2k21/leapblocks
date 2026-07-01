@@ -13,10 +13,10 @@
     --neura-glow: rgba(10, 1, 90, 0.35);
     --neura-glass-bg: rgba(255, 255, 255, 0.72);
     --neura-glass-border: rgba(255, 255, 255, 0.45);
-    --neura-shadow-sm: 0 1px 3px rgba(10, 1, 90, 0.04), 0 1px 2px rgba(10, 1, 90, 0.03);
-    --neura-shadow-md: 0 4px 12px rgba(10, 1, 90, 0.06), 0 2px 4px rgba(10, 1, 90, 0.04);
-    --neura-shadow-lg: 0 12px 40px rgba(10, 1, 90, 0.1), 0 4px 12px rgba(10, 1, 90, 0.06);
-    --neura-shadow-xl: 0 20px 60px rgba(10, 1, 90, 0.14), 0 8px 20px rgba(10, 1, 90, 0.08);
+    --neura-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --neura-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --neura-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+    --neura-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.14), 0 8px 20px rgba(0, 0, 0, 0.08);
     --neura-transition: cubic-bezier(0.4, 0, 0.2, 1);
     --neura-transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
@@ -40,8 +40,8 @@
     --ml-accent: #7c3aed;
     --ml-accent-light: #a78bfa;
     --ml-accent-muted: rgba(124, 58, 237, 0.1);
-    --ml-card-shadow: 0 1px 3px rgba(10, 1, 90, 0.04), 0 4px 12px rgba(10, 1, 90, 0.03);
-    --ml-card-shadow-hover: 0 4px 16px rgba(10, 1, 90, 0.08), 0 8px 32px rgba(10, 1, 90, 0.04);
+    --ml-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    --ml-card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -1526,4 +1526,30 @@
   .ml-flow-svg {
     display: none;
   }
+}
+
+/* ── ML Hover Utilities ─────────────────────────────────────────────────── */
+
+.ml-card-hover {
+  transition: border-color 0.2s var(--neura-transition), box-shadow 0.2s var(--neura-transition);
+}
+.ml-card-hover:hover {
+  border-color: var(--ml-border-strong);
+  box-shadow: var(--ml-card-shadow-hover);
+}
+
+.ml-action-hover {
+  transition: border-color 0.2s var(--neura-transition), background-color 0.2s var(--neura-transition);
+}
+.ml-action-hover:hover {
+  border-color: var(--ml-accent);
+  background-color: var(--ml-accent-muted);
+}
+
+.ml-btn-hover {
+  transition: border-color 0.2s var(--neura-transition), color 0.2s var(--neura-transition);
+}
+.ml-btn-hover:hover {
+  border-color: var(--ml-accent);
+  color: var(--ml-accent);
 }

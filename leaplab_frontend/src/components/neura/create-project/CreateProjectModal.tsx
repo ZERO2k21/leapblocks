@@ -104,7 +104,7 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                     {/* Project Type Section */}
                     <div className="mb-8 animate-slide-in-up stagger-2">
                         <h3 className="neura-section-title">Select Project Type:</h3>
-                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                             {projectTypes.map((type, idx) => (
                                 <div key={type.id} className={`animate-slide-in-up stagger-${(idx % 7) + 1}`}>
                                     <ProjectTypeCard

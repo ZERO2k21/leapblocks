@@ -31,7 +31,7 @@ export default function ClassSection({
     };
 
     return (
-        <div className="bg-white rounded-3xl p-6 shadow-md">
+        <div className="bg-ml-surface rounded-3xl p-6 shadow-md">
             {/* Class header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -40,9 +40,9 @@ export default function ClassSection({
                         type="text"
                         value={classData.name}
                         onChange={(e) => onRename?.(e.target.value)}
-                        className="text-lg font-semibold text-gray-800 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-300 rounded px-2"
+                        className="text-lg font-semibold text-ml-text-primary bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-ml-accent rounded px-2"
                     />
-                    <span className="text-sm text-gray-500">({classData.samples.length} samples)</span>
+                    <span className="text-sm text-ml-text-muted">({classData.samples.length} samples)</span>
                 </div>
                 <button
                     onClick={onDelete}
@@ -57,7 +57,7 @@ export default function ClassSection({
                 {classData.samples.map((sample) => (
                     <div
                         key={sample.id}
-                        className="relative group aspect-square bg-gray-100 rounded-xl overflow-hidden"
+                        className="relative group aspect-square bg-ml-well rounded-xl overflow-hidden"
                     >
                         <img
                             src={sample.data}
@@ -78,13 +78,13 @@ export default function ClassSection({
             <div className="flex gap-3">
                 <button
                     onClick={onAddSample}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-2xl text-gray-600 hover:border-purple-400 hover:text-purple-600 transition-colors font-medium"
+                    className="flex-1 py-3 border-2 border-dashed border-ml-border rounded-2xl text-ml-text-secondary hover:border-ml-accent hover:text-ml-accent transition-colors font-medium cursor-pointer"
                 >
                     📷 Webcam
                 </button>
                 <button
                     onClick={onAddSample}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-2xl text-gray-600 hover:border-purple-400 hover:text-purple-600 transition-colors font-medium"
+                    className="flex-1 py-3 border-2 border-dashed border-ml-border rounded-2xl text-ml-text-secondary hover:border-ml-accent hover:text-ml-accent transition-colors font-medium cursor-pointer"
                 >
                     📁 Upload
                 </button>

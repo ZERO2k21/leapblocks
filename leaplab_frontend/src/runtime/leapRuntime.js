@@ -442,10 +442,20 @@ class LeapRuntime {
                 const from = Number(await this.getInputValue(inputs.FROM, spriteId));
                 const to = Number(await this.getInputValue(inputs.TO, spriteId));
                 return Math.floor(Math.random() * (to - from + 1) + from);
-            case 'operator_gt':
-                return Number(await this.getInputValue(inputs.OPERAND1, spriteId)) > Number(await this.getInputValue(inputs.OPERAND2, spriteId));
-            case 'operator_lt':
-                return Number(await this.getInputValue(inputs.OPERAND1, spriteId)) < Number(await this.getInputValue(inputs.OPERAND2, spriteId));
+            case 'operator_gt': {
+                const v1 = await this.getInputValue(inputs.OPERAND1, spriteId);
+                const v2 = await this.getInputValue(inputs.OPERAND2, spriteId);
+                const n1 = Number(v1), n2 = Number(v2);
+                if (!isNaN(n1) && !isNaN(n2)) return n1 > n2;
+                return String(v1) > String(v2);
+            }
+            case 'operator_lt': {
+                const v1 = await this.getInputValue(inputs.OPERAND1, spriteId);
+                const v2 = await this.getInputValue(inputs.OPERAND2, spriteId);
+                const n1 = Number(v1), n2 = Number(v2);
+                if (!isNaN(n1) && !isNaN(n2)) return n1 < n2;
+                return String(v1) < String(v2);
+            }
             case 'operator_equals':
                 return String(await this.getInputValue(inputs.OPERAND1, spriteId)) === String(await this.getInputValue(inputs.OPERAND2, spriteId));
             case 'operator_and':

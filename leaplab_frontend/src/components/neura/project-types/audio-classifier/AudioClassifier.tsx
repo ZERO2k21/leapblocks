@@ -598,6 +598,7 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                     setEpochs={setEpochs}
                     trained={trained}
                     sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
+                    mlDescription="Using CNN-based audio feature extraction + KNN classifier. All computation runs in-browser — no data leaves your device."
                 />
 
                 {/* Divider */}

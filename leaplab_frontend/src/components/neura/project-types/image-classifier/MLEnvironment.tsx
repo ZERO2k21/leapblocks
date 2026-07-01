@@ -107,10 +107,10 @@ function WebcamModal({ classLabel, color, onCapture, onClose }: {
                                 onMouseDown={() => setCapturing(true)} onMouseUp={() => setCapturing(false)} onMouseLeave={() => setCapturing(false)}
                                 onTouchStart={() => setCapturing(true)} onTouchEnd={() => setCapturing(false)}
                                 className="flex-1 rounded-[10px] font-sans font-semibold text-sm cursor-pointer transition-all duration-150 ease-out"
-                                style={{ padding: "12px 0", background: capturing ? color.bg : "#1e1e30", border: `1.5px solid ${capturing ? color.bg : "var(--ml-border-strong)"}`, color: capturing ? "#fff" : "var(--ml-text-secondary)" }}>
+                                style={{ padding: "12px 0", background: capturing ? color.bg : "var(--ml-btn-idle)", border: `1.5px solid ${capturing ? color.bg : "var(--ml-border-strong)"}`, color: capturing ? "#fff" : "var(--ml-text-secondary)" }}>
                                 {capturing ? "● Recording…" : "Hold to Capture"}
                             </button>
-                            <button onClick={captureFrame} className="px-4 py-3 rounded-[10px] cursor-pointer" style={{ background: "#1e1e30", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)" }}>
+                            <button onClick={captureFrame} className="px-4 py-3 rounded-[10px] cursor-pointer" style={{ background: "var(--ml-btn-idle)", border: "1.5px solid var(--ml-border-strong)", color: "var(--ml-text-secondary)" }}>
                                 <Camera size={18} />
                             </button>
                         </div>
@@ -216,9 +216,9 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
                         <span className="block w-[3px] h-[3px] rounded-full bg-white opacity-80" />
                     </button>
                     {showMenu && (
-                        <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50" style={{ minWidth: 110 }}>
+                        <div className="absolute left-0 top-full mt-1 bg-ml-surface rounded-lg shadow-lg border border-ml-border py-1 z-50" style={{ minWidth: 110 }}>
                             <button onClick={() => { setEditing(true); setShowMenu(false); }}
-                                className="w-full px-3 py-1.5 text-left text-[12px] font-sans text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center gap-2" style={{ background: "none", border: "none" }}>
+                                className="w-full px-3 py-1.5 text-left text-[12px] font-sans text-ml-text-primary hover:bg-ml-well cursor-pointer flex items-center gap-2" style={{ background: "none", border: "none" }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                                 Rename
                             </button>
@@ -333,7 +333,7 @@ function TrainingCard({ classes, status, progress, accuracy, onTrain, showAdvanc
     const canTrain = classesWithData.length >= 2 && totalSamples >= 4 && status !== "training";
 
     return (
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid var(--ml-border)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+        <div className="bg-ml-surface rounded-2xl overflow-hidden" style={{ border: "1px solid var(--ml-border)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             {/* Purple header */}
             <div className="px-4 py-3 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -624,12 +624,12 @@ function TestingPanelContent({ trained, classes, predict }: {
             <div className="flex gap-2">
                 <button onClick={() => { stopCam(); setMode("idle"); setResult(null); setTestImg(null); fileRef.current?.click(); }}
                     className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
-                    style={{ padding: "9px 0", background: mode === "upload" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "upload" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "upload" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
+                    style={{ padding: "9px 0", background: mode === "upload" ? "var(--ml-btn-idle)" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "upload" ? "var(--ml-accent)" : "var(--ml-border-strong)"}`, color: mode === "upload" ? "var(--ml-accent)" : "var(--ml-text-secondary)" }}>
                     <Upload size={15} /><span>Upload</span>
                 </button>
                 <button onClick={() => mode === "webcam" ? (stopCam(), setMode("idle"), setResult(null)) : startCam()}
                     className="flex-1 rounded-[9px] font-sans text-[13px] cursor-pointer flex items-center justify-center gap-1.5"
-                    style={{ padding: "9px 0", background: mode === "webcam" ? "#1a1a3a" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "webcam" ? "#7c3aed" : "var(--ml-border-strong)"}`, color: mode === "webcam" ? "#a78bfa" : "var(--ml-text-secondary)" }}>
+                    style={{ padding: "9px 0", background: mode === "webcam" ? "var(--ml-btn-idle)" : "var(--ml-btn-idle)", border: `1.5px solid ${mode === "webcam" ? "var(--ml-accent)" : "var(--ml-border-strong)"}`, color: mode === "webcam" ? "var(--ml-accent)" : "var(--ml-text-secondary)" }}>
                     <Camera size={15} /><span>{mode === "webcam" ? "Stop Camera" : "Webcam"}</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -653,7 +653,7 @@ function TestingPanelContent({ trained, classes, predict }: {
                 <div className="flex flex-col gap-2">
                     {topLabel && (
                         <div className="bg-ml-well rounded-[10px] px-3.5 py-2.5 flex items-center justify-between">
-                            <span className="font-sans text-[13px] font-semibold" style={{ color: "#a78bfa" }}>Prediction</span>
+                            <span className="font-sans text-[13px] font-semibold" style={{ color: "var(--ml-accent)" }}>Prediction</span>
                             <span className="font-mono text-sm text-ml-success-dot font-bold">{topLabel[0]}</span>
                         </div>
                     )}
@@ -693,6 +693,8 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [epochs, setEpochs] = useState(30);
     const [restored, setRestored] = useState(false);
+    const [deletedClass, setDeletedClass] = useState<ClassType | null>(null);
+    const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const knnRef = useRef<KNNClassifier | null>(null);
     const mobileNetRef = useRef<any>(null);
 
@@ -757,8 +759,22 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     }, []);
 
     const deleteClass = useCallback((id: number) => {
+        const cls = classes.find(c => c.id === id);
+        if (!cls) return;
         setClasses(prev => prev.filter(c => c.id !== id));
-    }, []);
+        setDeletedClass(cls);
+        showToast(`"${cls.name}" deleted.`, 'info', 8000);
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        undoTimerRef.current = setTimeout(() => setDeletedClass(null), 8000);
+    }, [classes]);
+
+    const undoDeleteClass = useCallback(() => {
+        if (!deletedClass) return;
+        setClasses(prev => [...prev, deletedClass]);
+        setDeletedClass(null);
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        showToast(`"${deletedClass.name}" restored.`, 'success');
+    }, [deletedClass]);
 
     const renameClass = useCallback((id: number, name: string) => {
         setClasses(prev => prev.map(c => c.id === id ? { ...c, name } : c));
@@ -855,6 +871,28 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
     const trainingRef = useRef<HTMLDivElement>(null);
     const testingRef = useRef<HTMLDivElement>(null);
 
+    // TF.js loading skeleton
+    if (!tfReady && !tfError) {
+        return (
+            <ClassifierLayout project={project} onBack={onBack || (() => {})}>
+                <div className="ml-flow-container">
+                    <div className="ml-flow-columns">
+                        <div className="ml-flow-left">
+                            <div className="neura-skeleton" style={{ height: 200, borderRadius: 16 }} />
+                            <div className="neura-skeleton" style={{ height: 200, borderRadius: 16 }} />
+                        </div>
+                        <div className="ml-flow-center">
+                            <div className="neura-skeleton" style={{ height: 180, borderRadius: 16 }} />
+                        </div>
+                        <div className="ml-flow-right">
+                            <div className="neura-skeleton" style={{ height: 180, borderRadius: 16 }} />
+                        </div>
+                    </div>
+                </div>
+            </ClassifierLayout>
+        );
+    }
+
     return (
         <ClassifierLayout project={project} onBack={onBack || (() => {})}>
             <div className="ml-flow-container">
@@ -878,10 +916,8 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
 
                         {/* Upload Folder button */}
                         <button
-                            className="rounded-xl bg-ml-btn-idle border border-ml-border-strong text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-150"
+                            className="rounded-xl bg-ml-btn-idle border border-ml-border-strong text-ml-text-secondary font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-150 ml-btn-hover"
                             style={{ padding: "10px 16px" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#7c3aed"; (e.currentTarget as HTMLButtonElement).style.color = "#7c3aed"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border-strong)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}
                             onClick={() => {
                                 const el = document.createElement("input");
                                 el.type = "file";
@@ -924,6 +960,16 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         ))}
 
                         <AddClassButton onClick={addClass} />
+
+                        {/* Undo banner */}
+                        {deletedClass && (
+                            <div className="rounded-xl bg-ml-accent-muted border border-ml-accent/20 px-4 py-3 flex items-center justify-between gap-3 animate-slide-in-up">
+                                <span className="text-[13px] text-ml-text-primary font-sans">"{deletedClass.name}" deleted</span>
+                                <button onClick={undoDeleteClass} className="text-[12px] font-bold text-ml-accent hover:text-ml-accent-light transition-colors cursor-pointer bg-transparent border-0 p-0 font-sans">
+                                    Undo
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* MIDDLE: Training card */}
@@ -938,7 +984,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                             epochs={epochs} setEpochs={setEpochs} trained={trained} />
 
                         {trained && (
-                            <div className="mt-4 bg-white rounded-2xl border border-ml-border p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                            <div className="mt-4 bg-ml-surface rounded-2xl border border-ml-border p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
                                 <div className="text-[11px] font-bold text-ml-text-muted uppercase mb-3" style={{ letterSpacing: "0.05em" }}>Class distribution</div>
                                 {classes.map((c, i) => {
                                     const pct = totalSamples > 0 ? (c.samples.length / totalSamples) * 100 : 0;
@@ -965,7 +1011,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                             <div className="mt-3 text-sm font-semibold text-ml-text-primary">Predictions</div>
                             <div className="mt-2 text-[12px] text-ml-text-muted leading-5">Run live predictions once the model is trained and see results instantly.</div>
                         </div>
-                        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid var(--ml-border)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                        <div className="bg-ml-surface rounded-2xl overflow-hidden" style={{ border: "1px solid var(--ml-border)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
                             {/* Purple header */}
                             <div className="px-4 py-3 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)" }}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -998,15 +1044,13 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                         </div>
 
                         {trained && (
-                            <div className="mt-4 bg-white rounded-2xl border border-ml-border p-4 flex flex-col gap-2.5" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                            <div className="mt-4 bg-ml-surface rounded-2xl border border-ml-border p-4 flex flex-col gap-2.5" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
                                 <div className="text-[11px] font-bold text-ml-text-muted uppercase" style={{ letterSpacing: "0.05em" }}>Export model</div>
                                 {[
                                     { label: "Download as JSON", desc: "TensorFlow.js format", action: () => { const data = { type: "neura-ml-knn", classes: classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy, created: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "neura-model.json"; a.click(); } },
                                     { label: "Copy embed code", desc: "Use in your app", action: () => { try { navigator.clipboard?.writeText(`<!-- Neura ML Model -->\n<script>const model = ${JSON.stringify({ classes: classes.map(c => c.name) })}</script>`).then(() => showToast("Copied!", "success")).catch(() => showToast("Failed to copy. Please copy manually.", "error")); } catch (_) { showToast("Failed to copy. Please copy manually.", "error"); } } },
                                 ].map(({ label, desc, action }) => (
-                                    <button key={label} onClick={action} className="rounded-xl bg-ml-well border border-ml-border text-ml-text-secondary font-sans text-[12px] cursor-pointer text-left transition-all duration-150" style={{ padding: "10px 12px" }}
-                                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#7c3aed"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-primary)"; }}
-                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--ml-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--ml-text-secondary)"; }}>
+                                    <button key={label} onClick={action} className="rounded-xl bg-ml-well border border-ml-border text-ml-text-secondary font-sans text-[12px] cursor-pointer text-left transition-all duration-150 ml-btn-hover" style={{ padding: "10px 12px" }}>
                                         <div className="font-semibold text-[12px]">{label}</div>
                                         <div className="text-[10px] text-ml-text-muted" style={{ marginTop: 2 }}>{desc}</div>
                                     </button>

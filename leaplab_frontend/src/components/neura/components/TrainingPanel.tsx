@@ -13,6 +13,7 @@ type TrainingPanelProps = {
     setEpochs: (value: number) => void
     trained: boolean
     sampleCounts?: Record<string, number>
+    mlDescription?: string
 }
 
 export default function TrainingPanel({
@@ -27,6 +28,7 @@ export default function TrainingPanel({
     setEpochs,
     trained,
     sampleCounts = {},
+    mlDescription,
 }: TrainingPanelProps) {
     const totalSamples = Object.values(sampleCounts).reduce((s, c) => s + c, 0)
     const isReady = canTrain && status !== 'training'
@@ -191,7 +193,7 @@ export default function TrainingPanel({
                                 />
                             </div>
                             <div className="text-[11px] text-ml-text-muted leading-relaxed">
-                                Using MediaPipe hand landmarks + KNN classifier. All computation runs in-browser — no data leaves your device.
+                                {mlDescription || 'Using transfer learning + KNN classifier. All computation runs in-browser — no data leaves your device.'}
                             </div>
                         </div>
                     )}

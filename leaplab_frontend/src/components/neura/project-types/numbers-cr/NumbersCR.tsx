@@ -462,6 +462,7 @@ export default function NumbersCR({ project, onBack, onDataChange }: NumbersCRPr
                             sampleCounts={Object.fromEntries(
                                 Object.entries(sampleCounts).filter(([_, c]) => c > 0).map(([d, c]) => [`Digit ${d}`, c])
                             )}
+                            mlDescription="Using CNN-based digit recognition. All computation runs in-browser — no data leaves your device."
                         />
                     </div>
 
