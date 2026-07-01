@@ -8,7 +8,7 @@ import { Shape3D, ActiveTool, EditorState, Project3D } from '../types';
 import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
 import { ShapeType } from '../types';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
-import * as log from '../utils/logger';
+import { log, debug, warn, error } from '../utils/logger';
 
 interface StoreState extends EditorState {
   project: Project3D | null;

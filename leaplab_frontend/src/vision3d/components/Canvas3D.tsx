@@ -12,6 +12,7 @@ import { Shape3D, ActiveTool } from '../types';
 import { snapPositionToGrid } from '../utils/helpers';
 import { Workplane } from './Workplane';
 import { ShapeRenderer } from './ShapeRenderer';
+import { log, debug } from '../utils/logger';
 
 // Drop zone handler component
 const DropHandler: React.FC = () => {
@@ -31,6 +32,7 @@ const DropHandler: React.FC = () => {
       e.preventDefault();
       const shapeType = e.dataTransfer?.getData('shapeType');
       if (!shapeType) return;
+      log('Canvas3D DropHandler: drop shapeType=' + shapeType);
 
       // Calculate drop position
       const rect = canvas.getBoundingClientRect();
@@ -189,6 +191,7 @@ const SceneContent: React.FC = () => {
 // Main Canvas3D component
 export const Canvas3D: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  log.debug('Canvas3D: rendering');
 
   return (
     <div ref={containerRef} className="canvas-3d-container">

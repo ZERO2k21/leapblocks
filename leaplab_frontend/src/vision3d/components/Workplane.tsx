@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { use3DStore } from '../store/use3DStore';
+import { debug } from '../utils/logger';
 
 const WORKPLANE_SIZE = 20;
 
@@ -12,6 +13,7 @@ export const Workplane: React.FC = () => {
   const showGrid = use3DStore((s) => s.showGrid);
   const showAxes = use3DStore((s) => s.showAxes);
   const gridSnap = use3DStore((s) => s.gridSnap);
+  debug('Workplane: grid=' + showGrid + ' axes=' + showAxes + ' snap=' + gridSnap);
 
   if (!showGrid) return null;
 

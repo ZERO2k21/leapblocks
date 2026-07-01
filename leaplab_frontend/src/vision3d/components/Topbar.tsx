@@ -38,6 +38,7 @@ import { use3DStore } from '../store/use3DStore';
 import { exportShapes, downloadBlob } from '../engine/ExportEngine';
 import { GRID_PRESETS } from '../utils/constants';
 import { ViewCube } from './ViewCube';
+import { log } from '../utils/logger';
 
 interface Vision3DTopbarProps {
   onBack: () => void;
@@ -108,6 +109,7 @@ export const Topbar: React.FC<Vision3DTopbarProps> = ({
   }, []);
 
   const handleExport = async (format: 'stl' | 'obj' | 'gltf') => {
+    log('Topbar: export format=' + format);
     try {
       const visibleShapes = shapes.filter((s) => s.visible && s.type !== 'group');
       const blob = await exportShapes(visibleShapes, { format, includeGrid: false, includeHidden: false });

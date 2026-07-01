@@ -7,6 +7,7 @@ import React from 'react';
 import { use3DStore } from '../store/use3DStore';
 import { SHAPE_DEFINITIONS } from '../utils/constants';
 import { ShapeType } from '../types';
+import { log } from '../utils/logger';
 
 export const ShapePanel: React.FC = () => {
   const addShape = use3DStore((s) => s.addShape);
@@ -16,11 +17,13 @@ export const ShapePanel: React.FC = () => {
   const textShapes = SHAPE_DEFINITIONS.filter((s) => s.category === 'text');
 
   const handleDragStart = (e: React.DragEvent, type: ShapeType) => {
+    log('ShapePanel: dragStart type=' + type);
     e.dataTransfer.setData('shapeType', type);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
   const handleShapeClick = (type: ShapeType) => {
+    log('ShapePanel: shapeClick type=' + type);
     // Add shape at a random position slightly offset from center
     const x = (Math.random() - 0.5) * 6;
     const z = (Math.random() - 0.5) * 6;

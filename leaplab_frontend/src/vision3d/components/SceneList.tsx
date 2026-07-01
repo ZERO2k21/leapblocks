@@ -6,6 +6,7 @@
 import React from 'react';
 import { use3DStore } from '../store/use3DStore';
 import { Shape3D } from '../types';
+import { log, debug } from '../utils/logger';
 
 const ShapeIcon: React.FC<{ type: Shape3D['type'] }> = ({ type }) => {
   const iconMap: Record<string, string> = {
@@ -34,6 +35,7 @@ export const SceneList: React.FC = () => {
   const updateShape = use3DStore((s) => s.updateShape);
 
   const handleShapeClick = (id: string, e: React.MouseEvent) => {
+    debug('SceneList: shapeClick id=' + id + ' shift=' + e.shiftKey);
     selectShape(id, e.shiftKey);
   };
 
@@ -41,6 +43,7 @@ export const SceneList: React.FC = () => {
     e.stopPropagation();
     const shape = shapes.find((s) => s.id === id);
     if (shape) {
+      log('SceneList: toggleVisibility id=' + id + ' visible=' + !shape.visible);
       updateShape(id, { visible: !shape.visible });
     }
   };
@@ -49,6 +52,7 @@ export const SceneList: React.FC = () => {
     e.stopPropagation();
     const shape = shapes.find((s) => s.id === id);
     if (shape) {
+      log('SceneList: toggleLock id=' + id + ' locked=' + !shape.locked);
       updateShape(id, { locked: !shape.locked });
     }
   };

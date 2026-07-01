@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { Shape3D, ShapeType } from '../types';
 import { SHAPE_DEFINITIONS } from './constants';
-import * as log from './logger';
+import { debug } from './logger';
 
 let idCounter = 0;
 
@@ -25,6 +25,7 @@ export function createShape(
   type: ShapeType,
   position: [number, number, number] = [0, 0, 0]
 ): Shape3D {
+  debug('createShape:', type, 'at', position);
   const definition = SHAPE_DEFINITIONS.find((d) => d.type === type);
   if (!definition) {
     throw new Error(`Unknown shape type: ${type}`);
@@ -82,6 +83,7 @@ export function createShape(
  * Create Three.js geometry from shape data
  */
 export function createGeometry(shape: Shape3D): THREE.BufferGeometry {
+  debug('createGeometry:', shape.type, shape.id);
   switch (shape.type) {
     case 'box':
       return new THREE.BoxGeometry(
@@ -152,6 +154,7 @@ export function createGeometry(shape: Shape3D): THREE.BufferGeometry {
  */
 export function cloneShape(shape: Shape3D): Shape3D {
   const newId = generateShapeId();
+  debug('cloneShape:', shape.id, '->', newId);
   return {
     ...shape,
     id: newId,
@@ -208,7 +211,11 @@ export function getShapesCenter(shapes: Shape3D[]): [number, number, number] {
  * Snap value to grid
  */
 export function snapToGrid(value: number, gridSize: number): number {
-  return Math.round(value / gridSize) * gridSize;
+  const result = Math.round(value / gridSize) * gridSize;
+  if (Math.abs(result - value) > 0.001) {
+    debug('snapToGrid:', value.toFixed(3), '->', result.toFixed(3), `(grid: ${gridSize})`);
+  }
+  return result;
 }
 
 /**

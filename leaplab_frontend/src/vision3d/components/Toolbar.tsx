@@ -7,6 +7,7 @@ import React, { useRef } from 'react';
 import { use3DStore } from '../store/use3DStore';
 import { exportShapes, downloadBlob } from '../engine/ExportEngine';
 import { GRID_PRESETS } from '../utils/constants';
+import { log } from '../utils/logger';
 
 export const Toolbar: React.FC = () => {
   const {
@@ -33,18 +34,21 @@ export const Toolbar: React.FC = () => {
   } = use3DStore();
 
   const handleDelete = () => {
+    log('Toolbar: delete, selectedIds=' + selectedIds.length);
     if (selectedIds.length > 0) {
       removeShapes(selectedIds);
     }
   };
 
   const handleGroup = () => {
+    log('Toolbar: group, selectedIds=' + selectedIds.length);
     if (selectedIds.length >= 2) {
       groupShapes(selectedIds);
     }
   };
 
   const handleUngroup = () => {
+    log('Toolbar: ungroup, selectedIds=' + selectedIds.length);
     if (selectedIds.length === 1) {
       const shape = shapes.find((s) => s.id === selectedIds[0]);
       if (shape?.type === 'group') {
@@ -54,12 +58,14 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleDuplicate = () => {
+    log('Toolbar: duplicate, selectedIds=' + selectedIds.length);
     if (selectedIds.length > 0) {
       duplicateShapes(selectedIds);
     }
   };
 
   const handleExport = async (format: 'stl' | 'obj' | 'gltf' | 'glb') => {
+    log('Toolbar: export format=' + format);
     try {
       const blob = await exportShapes(shapes, {
         format,
@@ -74,6 +80,7 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleImport = () => {
+    log('Toolbar: import clicked');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.stl,.obj,.gltf,.glb';

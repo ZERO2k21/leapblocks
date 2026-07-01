@@ -9,6 +9,7 @@ import { useFrame } from '@react-three/fiber';
 import { Shape3D } from '../types';
 import { createGeometry } from '../utils/helpers';
 import { use3DStore } from '../store/use3DStore';
+import { debug } from '../utils/logger';
 
 interface ShapeRendererProps {
   shape: Shape3D;
@@ -69,6 +70,7 @@ export const ShapeRenderer: React.FC<ShapeRendererProps> = ({ shape }) => {
 
   const handleClick = (e: any) => {
     e.stopPropagation();
+    debug('ShapeRenderer: click id=' + shape.id + ' type=' + shape.type);
     if (activeTool === 'select') {
       selectShape(shape.id, e.shiftKey);
     }

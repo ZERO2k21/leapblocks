@@ -4,7 +4,7 @@
  */
 
 import { Shape3D, Project3D } from '../types';
-import * as log from './logger';
+import { log, debug, warn } from './logger';
 
 const DB_NAME = 'vision3d_db';
 const DB_VERSION = 1;
@@ -12,6 +12,7 @@ const PROJECTS_STORE = 'projects';
 const SHAPES_STORE = 'shapes';
 
 function openDB(): Promise<IDBDatabase> {
+  debug('openDB: opening', DB_NAME, 'v' + DB_VERSION);
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -39,6 +40,7 @@ function openDB(): Promise<IDBDatabase> {
  * Save a project to IndexedDB
  */
 export async function saveProject(project: Project3D): Promise<void> {
+  debug('saveProject:', project.id, project.name);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(PROJECTS_STORE, 'readwrite');
@@ -59,6 +61,7 @@ export async function saveProject(project: Project3D): Promise<void> {
  * Load a project from IndexedDB
  */
 export async function loadProject(projectId: string): Promise<Project3D | null> {
+  debug('loadProject:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(PROJECTS_STORE, 'readonly');
@@ -74,6 +77,7 @@ export async function loadProject(projectId: string): Promise<Project3D | null> 
  * Load all projects from IndexedDB
  */
 export async function loadAllProjects(): Promise<Project3D[]> {
+  debug('loadAllProjects');
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(PROJECTS_STORE, 'readonly');
@@ -89,6 +93,7 @@ export async function loadAllProjects(): Promise<Project3D[]> {
  * Delete a project from IndexedDB
  */
 export async function deleteProject(projectId: string): Promise<void> {
+  log('deleteProject:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(PROJECTS_STORE, 'readwrite');
@@ -107,6 +112,7 @@ export async function saveShapes(
   projectId: string,
   shapes: Shape3D[]
 ): Promise<void> {
+  debug('saveShapes:', shapes.length, 'shapes for project:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(SHAPES_STORE, 'readwrite');
@@ -138,6 +144,7 @@ export async function saveShapes(
  * Load shapes from IndexedDB
  */
 export async function loadShapes(projectId: string): Promise<Shape3D[]> {
+  debug('loadShapes: project:', projectId);
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(SHAPES_STORE, 'readonly');
@@ -194,6 +201,7 @@ export function importProjectFromJSON(jsonString: string): {
   project: Project3D;
   shapes: Shape3D[];
 } {
+  log('importProjectFromJSON');
   const data = JSON.parse(jsonString);
 
   if (!data.version || !data.project || !data.shapes) {

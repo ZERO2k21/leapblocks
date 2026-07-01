@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { Shape3D, ExportOptions } from '../types';
 import { createGeometry } from '../utils/helpers';
-import * as log from '../utils/logger';
+import { log } from '../utils/logger';
 
 /**
  * Create a Three.js mesh from shape data
@@ -33,6 +33,7 @@ function createMesh(shape: Shape3D): THREE.Mesh {
  * Export shapes as STL
  */
 export async function exportSTL(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+  log('exportSTL:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
     : shapes.filter((s) => s.visible && s.type !== 'group');
@@ -63,6 +64,7 @@ export async function exportSTL(shapes: Shape3D[], options: ExportOptions): Prom
  * Export shapes as OBJ
  */
 export async function exportOBJ(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+  log('exportOBJ:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
     : shapes.filter((s) => s.visible && s.type !== 'group');
@@ -92,6 +94,7 @@ export async function exportOBJ(shapes: Shape3D[], options: ExportOptions): Prom
  * Export shapes as GLTF
  */
 export async function exportGLTF(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+  log('exportGLTF:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
     : shapes.filter((s) => s.visible && s.type !== 'group');
@@ -122,6 +125,7 @@ export async function exportGLTF(shapes: Shape3D[], options: ExportOptions): Pro
  * Export shapes as GLB (binary GLTF)
  */
 export async function exportGLB(shapes: Shape3D[], options: ExportOptions): Promise<Blob> {
+  log('exportGLB:', shapes.length, 'shapes');
   const visibleShapes = options.includeHidden
     ? shapes
     : shapes.filter((s) => s.visible && s.type !== 'group');
@@ -154,6 +158,7 @@ export async function exportShapes(
   shapes: Shape3D[],
   options: ExportOptions
 ): Promise<Blob> {
+  log('exportShapes: format=' + options.format + ', shapes=' + shapes.length);
   switch (options.format) {
     case 'stl':
       return exportSTL(shapes, options);
@@ -172,6 +177,7 @@ export async function exportShapes(
  * Download exported file
  */
 export function downloadBlob(blob: Blob, filename: string): void {
+  log('downloadBlob:', filename, '(' + blob.size + ' bytes)');
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -186,6 +192,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
  * Import STL file
  */
 export async function importSTL(file: File): Promise<THREE.BufferGeometry> {
+  log('importSTL:', file.name, '(' + file.size + ' bytes)');
   const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
   const loader = new STLLoader();
 
@@ -208,6 +215,7 @@ export async function importSTL(file: File): Promise<THREE.BufferGeometry> {
  * Import OBJ file
  */
 export async function importOBJ(file: File): Promise<THREE.Group> {
+  log('importOBJ:', file.name, '(' + file.size + ' bytes)');
   const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
   const loader = new OBJLoader();
 

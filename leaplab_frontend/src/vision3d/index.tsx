@@ -11,6 +11,7 @@ import { Topbar } from './components/Topbar';
 import { SceneList } from './components/SceneList';
 import { use3DStore } from './store/use3DStore';
 import './styles/Leap3D.css';
+import { log, debug } from './utils/logger';
 
 interface Vision3DAppProps {
   onBack?: () => void;
@@ -18,6 +19,7 @@ interface Vision3DAppProps {
 
 const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
+  log('Vision3DApp: mounted');
 
   const {
     setTool,
@@ -54,6 +56,7 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         if (selectedIds.length > 0) {
+          log('Keyboard: Delete ' + selectedIds.length + ' shapes');
           removeShapes(selectedIds);
         }
       }
@@ -61,6 +64,7 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
       if (e.ctrlKey && key === 'g' && !e.shiftKey) {
         e.preventDefault();
         if (selectedIds.length >= 2) {
+          log('Keyboard: Ctrl+G (group) ' + selectedIds.length + ' shapes');
           groupShapes(selectedIds);
         }
       }
@@ -68,6 +72,7 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
       if (e.ctrlKey && key === 'g' && e.shiftKey) {
         e.preventDefault();
         if (selectedIds.length === 1) {
+          log('Keyboard: Ctrl+Shift+G (ungroup) ' + selectedIds[0]);
           ungroupShape(selectedIds[0]);
         }
       }
@@ -75,34 +80,39 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
       if (e.ctrlKey && key === 'd') {
         e.preventDefault();
         if (selectedIds.length > 0) {
+          log('Keyboard: Ctrl+D (duplicate) ' + selectedIds.length + ' shapes');
           duplicateShapes(selectedIds);
         }
       }
 
       if (e.ctrlKey && key === 'z' && !e.shiftKey) {
         e.preventDefault();
+        log('Keyboard: Ctrl+Z (undo)');
         undo();
       }
 
       if (e.ctrlKey && key === 'z' && e.shiftKey) {
         e.preventDefault();
+        log('Keyboard: Ctrl+Shift+Z (redo)');
         redo();
       }
 
       if (e.ctrlKey && key === 'a') {
         e.preventDefault();
+        log('Keyboard: Ctrl+A (select all)');
         const allIds = use3DStore.getState().shapes.map((s) => s.id);
         use3DStore.getState().selectShapes(allIds);
       }
 
       if (e.key === 'Escape') {
+        log('Keyboard: Escape (deselect)');
         deselectAll();
       }
 
-      if (key === 'v') setTool('select');
-      if (key === 'g' && !e.ctrlKey) setTool('move');
-      if (key === 'r' && !e.ctrlKey) setTool('rotate');
-      if (key === 's' && !e.ctrlKey) setTool('scale');
+      if (key === 'v') { log.debug('Keyboard: V (select tool)'); setTool('select'); }
+      if (key === 'g' && !e.ctrlKey) { log.debug('Keyboard: G (move tool)'); setTool('move'); }
+      if (key === 'r' && !e.ctrlKey) { log.debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
+      if (key === 's' && !e.ctrlKey) { log.debug('Keyboard: S (scale tool)'); setTool('scale'); }
     },
     [
       selectedIds,
@@ -123,6 +133,7 @@ const Vision3DApp: React.FC<Vision3DAppProps> = ({ onBack }) => {
   }, [handleKeyDown]);
 
   const handleSave = () => {
+    log('Vision3DApp: save triggered');
     autoSaveProject();
   };
 
