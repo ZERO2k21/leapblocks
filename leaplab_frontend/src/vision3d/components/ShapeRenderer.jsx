@@ -3,8 +3,9 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
+import { TransformControls } from '@react-three/drei';
 import { createGeometry } from '../utils/helpers';
 import { use3DStore } from '../store/use3DStore';
 import { debug } from '../utils/logger';
@@ -14,8 +15,11 @@ export const ShapeRenderer = ({ shape }) => {
   const selectedIds = use3DStore((s) => s.selectedIds);
   const selectShape = use3DStore((s) => s.selectShape);
   const activeTool = use3DStore((s) => s.activeTool);
+  const updateShape = use3DStore((s) => s.updateShape);
+  const pushHistory = use3DStore((s) => s.pushHistory);
 
   const isSelected = selectedIds.includes(shape.id);
+  const isTransforming = isSelected && selectedIds.length === 1 && ['move', 'rotate', 'scale'].includes(activeTool);
 
   const geometry = useMemo(() => {
     return createGeometry(shape);
@@ -39,6 +43,36 @@ export const ShapeRenderer = ({ shape }) => {
     shape.torusTubularSegments,
     shape.innerRadius,
     shape.outerRadius,
+    shape.roofWidth,
+    shape.roofDepth,
+    shape.roofHeight,
+    shape.roundRoofWidth,
+    shape.roundRoofDepth,
+    shape.roundRoofHeight,
+    shape.wedgeWidth,
+    shape.wedgeDepth,
+    shape.wedgeHeight,
+    shape.pyramidRadius,
+    shape.pyramidHeight,
+    shape.pyramidSides,
+    shape.halfSphereRadius,
+    shape.halfSphereSegments,
+    shape.paraboloidRadius,
+    shape.paraboloidHeight,
+    shape.paraboloidSegments,
+    shape.tubeOuterRadius,
+    shape.tubeInnerRadius,
+    shape.tubeHeight,
+    shape.tubeRadialSegments,
+    shape.starOuterRadius,
+    shape.starInnerRadius,
+    shape.starPoints,
+    shape.starHeight,
+    shape.heartSize,
+    shape.heartDepth,
+    shape.polygonRadius,
+    shape.polygonSides,
+    shape.polygonHeight,
   ]);
 
   const material = useMemo(() => {
@@ -60,6 +94,28 @@ export const ShapeRenderer = ({ shape }) => {
     };
   }, [geometry, material]);
 
+  const handleTransformStart = useCallback(() => {
+    pushHistory();
+  }, [pushHistory]);
+
+  const handleObjectChange = useCallback(() => {
+    if (!meshRef.current) return;
+    const obj = meshRef.current;
+    const position = [obj.position.x, obj.position.y, obj.position.z];
+    const rotation = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
+    const scale = [obj.scale.x, obj.scale.y, obj.scale.z];
+    updateShape(shape.id, { position, rotation, scale });
+  }, [shape.id, updateShape]);
+
+  const getTransformMode = useCallback(() => {
+    switch (activeTool) {
+      case 'move': return 'translate';
+      case 'rotate': return 'rotate';
+      case 'scale': return 'scale';
+      default: return 'translate';
+    }
+  }, [activeTool]);
+
   if (!shape.visible) return null;
 
   const handleClick = (e) => {
@@ -69,6 +125,53 @@ export const ShapeRenderer = ({ shape }) => {
       selectShape(shape.id, e.shiftKey);
     }
   };
+
+  const mesh = (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      material={material}
+      onClick={handleClick}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'auto';
+      }}
+      castShadow
+      receiveShadow
+    >
+      {isSelected && (
+        <mesh scale={[1.02, 1.02, 1.02]}>
+          <primitive object={geometry.clone()} attach="geometry" />
+          <meshBasicMaterial
+            color="#6366f1"
+            wireframe
+            transparent
+            opacity={0.5}
+          />
+        </mesh>
+      )}
+    </mesh>
+  );
+
+  if (isTransforming) {
+    return (
+      <TransformControls
+        mode={getTransformMode()}
+        position={shape.position}
+        rotation={shape.rotation}
+        scale={shape.scale}
+        onObjectChange={handleObjectChange}
+        onDraggingChanged={handleTransformStart}
+        size={0.7}
+      >
+        {mesh}
+      </TransformControls>
+    );
+  }
 
   return (
     <mesh

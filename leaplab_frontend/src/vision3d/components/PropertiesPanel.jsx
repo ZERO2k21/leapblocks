@@ -223,6 +223,256 @@ export const PropertiesPanel = () => {
           </div>
         )}
 
+        {selectedShape.type === 'roof' && (
+          <div className="property-group">
+            <label>Roof</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">W</span>
+                <input type="number" value={selectedShape.roofWidth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roofWidth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">D</span>
+                <input type="number" value={selectedShape.roofDepth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roofDepth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.roofHeight ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roofHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'roundRoof' && (
+          <div className="property-group">
+            <label>Round Roof</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">W</span>
+                <input type="number" value={selectedShape.roundRoofWidth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roundRoofWidth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">D</span>
+                <input type="number" value={selectedShape.roundRoofDepth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roundRoofDepth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.roundRoofHeight ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('roundRoofHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'wedge' && (
+          <div className="property-group">
+            <label>Wedge</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">W</span>
+                <input type="number" value={selectedShape.wedgeWidth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('wedgeWidth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">D</span>
+                <input type="number" value={selectedShape.wedgeDepth ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('wedgeDepth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.wedgeHeight ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('wedgeHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'pyramid' && (
+          <div className="property-group">
+            <label>Pyramid</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Radius</span>
+                <input type="number" value={selectedShape.pyramidRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('pyramidRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.pyramidHeight ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('pyramidHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Sides</span>
+                <input type="number" value={selectedShape.pyramidSides ?? 4} min={3} max={32} step={1}
+                  onChange={(e) => updateProp('pyramidSides', parseInt(e.target.value) || 3)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'halfSphere' && (
+          <div className="property-group">
+            <label>Half Sphere</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Radius</span>
+                <input type="number" value={selectedShape.halfSphereRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('halfSphereRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Segs</span>
+                <input type="number" value={selectedShape.halfSphereSegments ?? 32} min={4} max={64} step={1}
+                  onChange={(e) => updateProp('halfSphereSegments', parseInt(e.target.value) || 4)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'paraboloid' && (
+          <div className="property-group">
+            <label>Paraboloid</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Radius</span>
+                <input type="number" value={selectedShape.paraboloidRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('paraboloidRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.paraboloidHeight ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('paraboloidHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'tube' && (
+          <div className="property-group">
+            <label>Tube</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Outer R</span>
+                <input type="number" value={selectedShape.tubeOuterRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('tubeOuterRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Inner R</span>
+                <input type="number" value={selectedShape.tubeInnerRadius ?? 0.7} min={0.05} step={0.1}
+                  onChange={(e) => updateProp('tubeInnerRadius', parseFloat(e.target.value) || 0.05)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.tubeHeight ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('tubeHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'star' && (
+          <div className="property-group">
+            <label>Star</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Outer R</span>
+                <input type="number" value={selectedShape.starOuterRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('starOuterRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Inner R</span>
+                <input type="number" value={selectedShape.starInnerRadius ?? 0.5} min={0.05} step={0.1}
+                  onChange={(e) => updateProp('starInnerRadius', parseFloat(e.target.value) || 0.05)}
+                  className="property-input" />
+              </div>
+            </div>
+            <div className="property-row" style={{ marginTop: 4 }}>
+              <div className="property-field">
+                <span className="property-label">Points</span>
+                <input type="number" value={selectedShape.starPoints ?? 5} min={3} max={32} step={1}
+                  onChange={(e) => updateProp('starPoints', parseInt(e.target.value) || 3)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Depth</span>
+                <input type="number" value={selectedShape.starHeight ?? 0.5} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('starHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'heart' && (
+          <div className="property-group">
+            <label>Heart</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Size</span>
+                <input type="number" value={selectedShape.heartSize ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('heartSize', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Depth</span>
+                <input type="number" value={selectedShape.heartDepth ?? 0.5} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('heartDepth', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedShape.type === 'polygon' && (
+          <div className="property-group">
+            <label>Polygon</label>
+            <div className="property-row">
+              <div className="property-field">
+                <span className="property-label">Radius</span>
+                <input type="number" value={selectedShape.polygonRadius ?? 1} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('polygonRadius', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">Sides</span>
+                <input type="number" value={selectedShape.polygonSides ?? 6} min={3} max={32} step={1}
+                  onChange={(e) => updateProp('polygonSides', parseInt(e.target.value) || 3)}
+                  className="property-input" />
+              </div>
+              <div className="property-field">
+                <span className="property-label">H</span>
+                <input type="number" value={selectedShape.polygonHeight ?? 2} min={0.1} step={0.1}
+                  onChange={(e) => updateProp('polygonHeight', parseFloat(e.target.value) || 0.1)}
+                  className="property-input" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {selectedShape.type === 'ring' && (
           <div className="property-group">
             <label>Ring</label>

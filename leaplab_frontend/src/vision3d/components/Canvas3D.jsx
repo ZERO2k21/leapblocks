@@ -3,9 +3,9 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useCallback, useEffect, Suspense } from 'react';
+import React, { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, TransformControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { use3DStore } from '../store/use3DStore';
 import { snapPositionToGrid } from '../utils/helpers';
@@ -64,58 +64,16 @@ const DropHandler = () => {
   return null;
 };
 
-const TransformController = () => {
+const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
   const selectedIds = use3DStore((s) => s.selectedIds);
   const activeTool = use3DStore((s) => s.activeTool);
-  const updateShape = use3DStore((s) => s.updateShape);
-
-  const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
-  const transformRef = useRef(null);
-
-  const getMode = useCallback(() => {
-    switch (activeTool) {
-      case 'move': return 'translate';
-      case 'rotate': return 'rotate';
-      case 'scale': return 'scale';
-      default: return 'translate';
-    }
-  }, [activeTool]);
-
-  const handleObjectChange = useCallback(() => {
-    if (!transformRef.current || !selectedShape) return;
-
-    const obj = transformRef.current;
-    const position = [obj.position.x, obj.position.y, obj.position.z];
-    const rotation = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
-    const scale = [obj.scale.x, obj.scale.y, obj.scale.z];
-
-    updateShape(selectedShape.id, { position, rotation, scale });
-  }, [selectedShape, updateShape]);
-
-  if (!selectedShape || selectedIds.length !== 1) {
-    return null;
-  }
-
-  return (
-    <TransformControls
-      mode={getMode()}
-      position={selectedShape.position}
-      rotation={selectedShape.rotation}
-      scale={selectedShape.scale}
-      onObjectChange={handleObjectChange}
-      size={0.7}
-    >
-      <group ref={transformRef} />
-    </TransformControls>
-  );
-};
-
-const SceneContent = () => {
-  const shapes = use3DStore((s) => s.shapes);
+  const orbitRef = useRef(null);
+  const isTransforming = selectedIds.length === 1 && ['move', 'rotate', 'scale'].includes(activeTool);
 
   return (
     <>
+      <color attach="background" args={['#f8fafc']} />
       <ambientLight intensity={0.4} />
       <directionalLight
         position={[10, 15, 10]}
@@ -133,17 +91,17 @@ const SceneContent = () => {
         <ShapeRenderer key={shape.id} shape={shape} />
       ))}
 
-      <TransformController />
-
       <DropHandler />
 
       <OrbitControls
+        ref={orbitRef}
         makeDefault
         enableDamping
         dampingFactor={0.1}
         minDistance={2}
         maxDistance={100}
         maxPolarAngle={Math.PI / 2}
+        enabled={!isTransforming}
       />
 
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

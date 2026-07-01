@@ -31,6 +31,8 @@ const Vision3DApp = ({ onBack }) => {
     autoSaveProject,
     historyIndex,
     history,
+    mirrorShapes,
+    dropToWorkplane,
   } = use3DStore();
 
   const canUndo = historyIndex > 0;
@@ -108,6 +110,22 @@ const Vision3DApp = ({ onBack }) => {
       if (key === 'g' && !e.ctrlKey) { debug('Keyboard: G (move tool)'); setTool('move'); }
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
       if (key === 's' && !e.ctrlKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
+
+      if (key === 'd' && !e.ctrlKey) {
+        e.preventDefault();
+        if (selectedIds.length > 0) {
+          log('Keyboard: D (drop to workplane) ' + selectedIds.length + ' shapes');
+          dropToWorkplane(selectedIds);
+        }
+      }
+
+      if (key === 'm' && !e.ctrlKey) {
+        e.preventDefault();
+        if (selectedIds.length > 0) {
+          log('Keyboard: M (mirror X) ' + selectedIds.length + ' shapes');
+          mirrorShapes(selectedIds, 'x');
+        }
+      }
     },
     [selectedIds, setTool, undo, redo, duplicateShapes, removeShapes, groupShapes, ungroupShape, deselectAll]
   );
@@ -161,7 +179,7 @@ const Vision3DApp = ({ onBack }) => {
         </div>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">Grid: {use3DStore.getState().gridSnap}</span>
-          <span className="opacity-60">V: Select | G: Move | R: Rotate | S: Scale</span>
+          <span className="opacity-60">V: Select | G: Move | R: Rotate | S: Scale | D: Drop | M: Mirror</span>
         </div>
       </div>
     </div>

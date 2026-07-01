@@ -56,6 +56,46 @@ export function createShape(type, position = [0, 0, 0]) {
     tubeRadius: defaults.tubeRadius,
     torusRadialSegments: defaults.torusRadialSegments,
     torusTubularSegments: defaults.torusTubularSegments,
+    // Roof
+    roofWidth: defaults.roofWidth,
+    roofDepth: defaults.roofDepth,
+    roofHeight: defaults.roofHeight,
+    // Round Roof
+    roundRoofWidth: defaults.roundRoofWidth,
+    roundRoofDepth: defaults.roundRoofDepth,
+    roundRoofHeight: defaults.roundRoofHeight,
+    // Wedge
+    wedgeWidth: defaults.wedgeWidth,
+    wedgeDepth: defaults.wedgeDepth,
+    wedgeHeight: defaults.wedgeHeight,
+    // Pyramid
+    pyramidRadius: defaults.pyramidRadius,
+    pyramidHeight: defaults.pyramidHeight,
+    pyramidSides: defaults.pyramidSides,
+    // Half Sphere
+    halfSphereRadius: defaults.halfSphereRadius,
+    halfSphereSegments: defaults.halfSphereSegments,
+    // Paraboloid
+    paraboloidRadius: defaults.paraboloidRadius,
+    paraboloidHeight: defaults.paraboloidHeight,
+    paraboloidSegments: defaults.paraboloidSegments,
+    // Tube
+    tubeOuterRadius: defaults.tubeOuterRadius,
+    tubeInnerRadius: defaults.tubeInnerRadius,
+    tubeHeight: defaults.tubeHeight,
+    tubeRadialSegments: defaults.tubeRadialSegments,
+    // Star
+    starOuterRadius: defaults.starOuterRadius,
+    starInnerRadius: defaults.starInnerRadius,
+    starPoints: defaults.starPoints,
+    starHeight: defaults.starHeight,
+    // Heart
+    heartSize: defaults.heartSize,
+    heartDepth: defaults.heartDepth,
+    // Polygon
+    polygonRadius: defaults.polygonRadius,
+    polygonSides: defaults.polygonSides,
+    polygonHeight: defaults.polygonHeight,
     // Ring
     innerRadius: defaults.innerRadius,
     outerRadius: defaults.outerRadius,
@@ -108,6 +148,131 @@ export function createGeometry(shape) {
         shape.torusRadialSegments ?? 16,
         shape.torusTubularSegments ?? 32
       );
+
+    case 'roof': {
+      const w = shape.roofWidth ?? 2;
+      const d = shape.roofDepth ?? 2;
+      const h = shape.roofHeight ?? 1;
+      const geo = new THREE.BufferGeometry();
+      const hw = w / 2, hd = d / 2;
+      const vertices = new Float32Array([
+        -hw, 0, -hd,   hw, 0, -hd,   hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0,  hd,  -hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0, -hd,   0,  h,  0,
+         hw, 0, -hd,   hw, 0,  hd,   0,  h,  0,
+         hw, 0,  hd,  -hw, 0,  hd,   0,  h,  0,
+        -hw, 0,  hd,  -hw, 0, -hd,   0,  h,  0,
+      ]);
+      geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    case 'roundRoof': {
+      const w = shape.roundRoofWidth ?? 2;
+      const d = shape.roundRoofDepth ?? 2;
+      const h = shape.roundRoofHeight ?? 1;
+      const geo = new THREE.CylinderGeometry(d / 2, d / 2, w, 32, 1, false, 0, Math.PI);
+      geo.rotateZ(Math.PI / 2);
+      geo.scale(1, h / (d / 2), 1);
+      return geo;
+    }
+
+    case 'wedge': {
+      const w = shape.wedgeWidth ?? 2;
+      const d = shape.wedgeDepth ?? 2;
+      const h = shape.wedgeHeight ?? 2;
+      const geo = new THREE.BufferGeometry();
+      const hw = w / 2, hd = d / 2;
+      const vertices = new Float32Array([
+        -hw, 0, -hd,   hw, 0, -hd,   hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0,  hd,  -hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0, -hd,   hw,  h, -hd,
+        -hw, 0, -hd,   hw,  h, -hd,  -hw,  h, -hd,
+         hw, 0, -hd,   hw, 0,  hd,   hw,  h, -hd,
+        -hw, 0,  hd,  -hw,  h, -hd,   hw, 0,  hd,
+        -hw, 0, -hd,  -hw, 0,  hd,  -hw,  h, -hd,
+        -hw, 0,  hd,   hw, 0,  hd,   0,  h, -hd,
+      ]);
+      geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    case 'pyramid':
+      return new THREE.ConeGeometry(
+        shape.pyramidRadius ?? 1,
+        shape.pyramidHeight ?? 2,
+        shape.pyramidSides ?? 4
+      );
+
+    case 'halfSphere': {
+      const r = shape.halfSphereRadius ?? 1;
+      const segs = shape.halfSphereSegments ?? 32;
+      const geo = new THREE.SphereGeometry(r, segs, segs / 2, 0, Math.PI * 2, 0, Math.PI / 2);
+      return geo;
+    }
+
+    case 'paraboloid': {
+      const r = shape.paraboloidRadius ?? 1;
+      const h = shape.paraboloidHeight ?? 2;
+      const segs = shape.paraboloidSegments ?? 32;
+      const pts = [];
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
+        const y = t * h;
+        const radius = r * Math.sqrt(t);
+        pts.push(new THREE.Vector2(radius, y));
+      }
+      return new THREE.LatheGeometry(pts, segs);
+    }
+
+    case 'tube':
+      return new THREE.CylinderGeometry(
+        shape.tubeOuterRadius ?? 1,
+        shape.tubeOuterRadius ?? 1,
+        shape.tubeHeight ?? 2,
+        shape.tubeRadialSegments ?? 32,
+        1,
+        true,
+        0,
+        Math.PI * 2
+      );
+
+    case 'star': {
+      const outer = shape.starOuterRadius ?? 1;
+      const inner = shape.starInnerRadius ?? 0.5;
+      const points = shape.starPoints ?? 5;
+      const height = shape.starHeight ?? 0.5;
+      const shape2d = new THREE.Shape();
+      for (let i = 0; i < points * 2; i++) {
+        const angle = (i * Math.PI) / points - Math.PI / 2;
+        const r = i % 2 === 0 ? outer : inner;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) shape2d.moveTo(x, y);
+        else shape2d.lineTo(x, y);
+      }
+      shape2d.closePath();
+      return new THREE.ExtrudeGeometry(shape2d, { depth: height, bevelEnabled: false });
+    }
+
+    case 'heart': {
+      const s = shape.heartSize ?? 1;
+      const depth = shape.heartDepth ?? 0.5;
+      const shape2d = new THREE.Shape();
+      shape2d.moveTo(0, -s * 0.7);
+      shape2d.bezierCurveTo(-s * 1.0, -s * 0.3, -s * 1.0, s * 0.6, 0, s * 0.3);
+      shape2d.bezierCurveTo(s * 1.0, s * 0.6, s * 1.0, -s * 0.3, 0, -s * 0.7);
+      return new THREE.ExtrudeGeometry(shape2d, { depth, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 });
+    }
+
+    case 'polygon': {
+      const r = shape.polygonRadius ?? 1;
+      const sides = shape.polygonSides ?? 6;
+      const h = shape.polygonHeight ?? 2;
+      return new THREE.CylinderGeometry(r, r, h, sides);
+    }
 
     case 'dodecahedron':
       return new THREE.DodecahedronGeometry(shape.radius ?? 1);

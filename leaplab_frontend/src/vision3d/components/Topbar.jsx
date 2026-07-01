@@ -35,7 +35,6 @@ import LeapLabAuthButton from '../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../components/common/TopbarShareButton';
 import { use3DStore } from '../store/use3DStore';
 import { exportShapes, downloadBlob } from '../engine/ExportEngine';
-import { ViewCube } from './ViewCube';
 import { log } from '../utils/logger';
 
 export const Topbar = ({
@@ -277,10 +276,6 @@ export const Topbar = ({
             <button title="Help" style={{ marginRight: '10px' }} className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
               <CircleHelp size={20} strokeWidth={2.2} />
             </button>
-          </div>
-
-          <div className="hidden lg:block w-10 h-10 shrink-0">
-            <ViewCube />
           </div>
 
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">

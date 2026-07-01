@@ -253,6 +253,41 @@ export const use3DStore = create((set, get) => ({
     }));
   },
 
+  // Mirror actions
+  mirrorShapes: (ids, axis) => {
+    log('mirrorShapes:', ids.length, 'shapes, axis:', axis);
+    const state = get();
+    const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+
+    set((state) => ({
+      shapes: state.shapes.map((s) => {
+        if (ids.includes(s.id)) {
+          const newPosition = [...s.position];
+          newPosition[axisIndex] = -newPosition[axisIndex];
+          const newRotation = [...s.rotation];
+          newRotation[axisIndex] = -newRotation[axisIndex];
+          return { ...s, position: newPosition, rotation: newRotation };
+        }
+        return s;
+      }),
+      isProjectDirty: true,
+    }));
+  },
+
+  // Drop to workplane
+  dropToWorkplane: (ids) => {
+    log('dropToWorkplane:', ids.length, 'shapes');
+    set((state) => ({
+      shapes: state.shapes.map((s) => {
+        if (ids.includes(s.id)) {
+          return { ...s, position: [s.position[0], 0, s.position[2]] };
+        }
+        return s;
+      }),
+      isProjectDirty: true,
+    }));
+  },
+
   // History actions
   pushHistory: () => {
     debug('pushHistory');
