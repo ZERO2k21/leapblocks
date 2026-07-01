@@ -14,8 +14,6 @@ import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
 import './styles/Leap3D.css';
 import { log, debug } from './utils/logger';
 
-const GRID_PRESETS = [0, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0];
-
 const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
   log('Vision3DApp: mounted');
@@ -82,7 +80,7 @@ const Vision3DApp = ({ onBack }) => {
 
     if (result) {
       importShape({
-        type: 'stl',
+        type: result.type || 'stl',
         name: result.name,
         color: result.color,
         position: [0, 1, 0],
@@ -181,7 +179,7 @@ const Vision3DApp = ({ onBack }) => {
       if (key === 'v') { debug('Keyboard: V (select tool)'); setTool('select'); }
       if (key === 'g' && !e.ctrlKey) { debug('Keyboard: G (move tool)'); setTool('move'); }
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
-      if (key === 's' && !e.ctrlKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
+      if (key === 's' && !e.ctrlKey && !e.shiftKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
 
       // Drop to workplane (D)
       if (key === 'd' && !e.ctrlKey) {
@@ -225,12 +223,17 @@ const Vision3DApp = ({ onBack }) => {
       // Fit selection to view (F)
       if (key === 'f' && !e.ctrlKey) {
         e.preventDefault();
-        log('Keyboard: F (fit selection to view)');
-        use3DStore.getState().setFitSelection(ids);
+        if (ids.length > 0) {
+          log('Keyboard: F (fit selection to view)');
+          setFitSelection(ids);
+        } else {
+          log('Keyboard: F (fit all - nothing selected)');
+          setFitAll();
+        }
       }
 
       // Make hole (H)
-      if (key === 'h' && !e.ctrlKey && !e.ctrlKey) {
+      if (key === 'h' && !e.ctrlKey) {
         if (ids.length > 0) {
           log('Keyboard: H (make hole) ' + ids.length + ' shapes');
           state.updateShapes(ids, { isHole: true });
@@ -342,7 +345,7 @@ const Vision3DApp = ({ onBack }) => {
       }
 
       // Align (L key) - center on X, Y, Z
-      if (key === 'l' && !e.ctrlKey && !e.ctrlKey) {
+      if (key === 'l' && !e.ctrlKey) {
         if (ids.length >= 2) {
           e.preventDefault();
           log('Keyboard: L (align center)');

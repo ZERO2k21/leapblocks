@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useEffect, Suspense } from 'react';
+import React, { useRef, useEffect, Suspense, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -135,7 +135,34 @@ const SceneContent = () => {
 export const Canvas3D = () => {
   const containerRef = useRef(null);
   const cameraMode = use3DStore((s) => s.cameraMode);
+  const deselectAll = use3DStore((s) => s.deselectAll);
+  const deselectOnClick = use3DStore((s) => s.deselectOnClick);
   debug('Canvas3D: rendering, camera:', cameraMode);
+
+  // ResizeObserver to force R3F canvas re-measurement on container size changes
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          debug('Canvas3D: container resized', width, 'x', height);
+          window.dispatchEvent(new Event('resize'));
+        }
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleCanvasClick = useCallback((e) => {
+    // If click is on the canvas background (not on a shape), deselect
+    if (e.target === e.currentTarget || e.target.tagName === 'CANVAS') {
+      // This is handled by the R3F scene background click
+    }
+  }, []);
 
   return (
     <div ref={containerRef} className="canvas-3d-container">
@@ -155,6 +182,7 @@ export const Canvas3D = () => {
           powerPreference: 'high-performance',
         }}
         style={{ background: '#f8fafc' }}
+        onPointerMissed={() => deselectAll()}
       >
         <Suspense fallback={null}>
           <SceneContent />

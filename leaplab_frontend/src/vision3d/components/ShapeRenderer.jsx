@@ -150,10 +150,13 @@ export const ShapeRenderer = ({ shape }) => {
   const handleClick = (e) => {
     e.stopPropagation();
     debug('ShapeRenderer: click id=' + shape.id + ' type=' + shape.type);
-    if (activeTool === 'select') {
-      selectShape(shape.id, e.shiftKey);
-    }
+    selectShape(shape.id, e.shiftKey);
   };
+
+  const wireframeGeometry = useMemo(() => {
+    if (!isSelected) return null;
+    return geometry;
+  }, [isSelected, geometry]);
 
   const mesh = (
     <mesh
@@ -172,9 +175,8 @@ export const ShapeRenderer = ({ shape }) => {
       castShadow
       receiveShadow
     >
-      {isSelected && (
-        <mesh scale={[1.02, 1.02, 1.02]}>
-          <primitive object={geometry.clone()} attach="geometry" />
+      {isSelected && wireframeGeometry && (
+        <mesh scale={[1.02, 1.02, 1.02]} geometry={wireframeGeometry}>
           <meshBasicMaterial
             color="#6366f1"
             wireframe
@@ -195,10 +197,11 @@ export const ShapeRenderer = ({ shape }) => {
         scale={shape.scale}
         onObjectChange={handleObjectChange}
         onDraggingChanged={handleTransformStart}
-        size={0.7}
+        size={1.2}
         rotationSnap={activeTool === 'rotate' && shiftHeld ? (rotationSnap * Math.PI) / 180 : null}
         scaleSnap={activeTool === 'scale' && shiftHeld ? 0.25 : null}
         space="world"
+        draggingLimit={Infinity}
       >
         {mesh}
       </TransformControls>
@@ -225,9 +228,8 @@ export const ShapeRenderer = ({ shape }) => {
       castShadow
       receiveShadow
     >
-      {isSelected && (
-        <mesh scale={[1.02, 1.02, 1.02]}>
-          <primitive object={geometry.clone()} attach="geometry" />
+      {isSelected && wireframeGeometry && (
+        <mesh scale={[1.02, 1.02, 1.02]} geometry={wireframeGeometry}>
           <meshBasicMaterial
             color="#6366f1"
             wireframe

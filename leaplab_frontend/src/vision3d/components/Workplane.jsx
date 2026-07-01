@@ -20,7 +20,7 @@ export const Workplane = () => {
   return (
     <group>
       <gridHelper
-        args={[WORKPLANE_SIZE, WORKPLANE_SIZE / gridSnap, '#cbd5e1', '#e2e8f0']}
+        args={[WORKPLANE_SIZE, gridSnap > 0 ? WORKPLANE_SIZE / gridSnap : 20, '#cbd5e1', '#e2e8f0']}
         position={[0, 0, 0]}
       />
 
