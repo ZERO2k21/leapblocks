@@ -73,8 +73,6 @@ export function useSpriteSystem(initialScenes) {
     // Core Update Logic
     const updateSprite = useCallback((spriteId, updates) => {
         setScenes(prev => prev.map(scene => {
-            if (scene.id !== currentSceneId) return scene;
-
             return {
                 ...scene,
                 sprites: scene.sprites.map(sprite => {
@@ -106,7 +104,7 @@ export function useSpriteSystem(initialScenes) {
                 })
             };
         }));
-    }, [currentSceneId, captureInitialState]);
+    }, [captureInitialState]);
 
     // Actions exposed to Interpreter
     const actions = {

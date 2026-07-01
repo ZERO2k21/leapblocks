@@ -315,9 +315,9 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative flex flex-col px-4 sm:px-6 lg:px-10 xl:px-12">
+            <div className="flex-1 overflow-y-auto relative flex flex-col">
                 {view === 'dashboard' && (
-                    <div className="pt-3 sm:pt-5 lg:pt-7 pb-5 sm:pb-8 lg:pb-10 animate-fade-in">
+                    <div className="pt-3 sm:pt-5 lg:pt-7 pb-5 sm:pb-8 lg:pb-10 px-4 sm:px-6 lg:px-10 xl:px-12 animate-fade-in">
                         <WelcomeHero
                             onCreateNew={handleCreateNew}
                             onImportDataset={handleImportProject}
@@ -338,7 +338,7 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 )}
 
                 {view === 'create' && (
-                    <div className="animate-fade-in">
+                    <div className="animate-fade-in h-full w-full">
                         <CreateProjectModal
                             onClose={handleBackToDashboard}
                             onCreateProject={handleCreateProjectFromModal}
@@ -347,7 +347,7 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 )}
 
                 {view === 'project' && (
-                    <div className="animate-fade-in flex flex-col flex-1" style={{ background: "var(--ml-bg)" }}>
+                    <div className="animate-fade-in flex flex-col flex-1 min-h-0" style={{ background: "var(--ml-bg)" }}>
                         {renderProjectComponent()}
                     </div>
                 )}

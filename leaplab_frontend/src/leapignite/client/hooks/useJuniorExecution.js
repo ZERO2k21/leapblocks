@@ -47,18 +47,21 @@ export function useJuniorExecution({
         if (!interpreterRef.current) return;
 
         interpreterRef.current.setupBroadcastListener(() => {
-            const currentScene = scenes.find(scene => scene.id === currentSceneId);
-            if (!currentScene) return [];
-
             const currentActiveId = activeSpriteIdRef?.current || activeSpriteId;
 
-            return currentScene.sprites.map(sprite => ({
-                spriteId: sprite.id,
-                blocks:
-                    sprite.id === currentActiveId && workspaceRef.current
-                        ? Blockly.serialization.workspaces.save(workspaceRef.current)
-                        : spriteWorkspacesRef?.current?.get(sprite.id) || sprite.blocks || {}
-            }));
+            const allEntries = [];
+            for (const scene of scenes) {
+                for (const sprite of scene.sprites) {
+                    allEntries.push({
+                        spriteId: sprite.id,
+                        blocks:
+                            sprite.id === currentActiveId && workspaceRef.current
+                                ? Blockly.serialization.workspaces.save(workspaceRef.current)
+                                : spriteWorkspacesRef?.current?.get(sprite.id) || sprite.blocks || {}
+                    });
+                }
+            }
+            return allEntries;
         }, Blockly);
     }, [scenes, currentSceneId, activeSpriteIdRef, activeSpriteId, spriteWorkspacesRef, workspaceRef]);
 
