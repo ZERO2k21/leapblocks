@@ -10,7 +10,7 @@ import './components/my-projects/my-projects.css';
 // JSZip lazy-loaded only when Lottie animation needs to be parsed
 
 interface LandingPageProps {
-  onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | any) => void;
+  onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | 'vision3d' | any) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
@@ -827,7 +827,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 6 VISION3D */}
-              <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Vision3D'))}>
+              <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
                 <div className="tc-icon">
                   <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
                 </div>

@@ -23,6 +23,7 @@ export default defineConfig({
             'src/modules/electra/engine/__tests__/**/*.test.ts',
             'src/Electra/Client/Src/engine/esp32c3/tests/**/*.test.ts',
             'src/Electra/Client/Src/simulation/**/*.test.ts',
+            'src/vision3d/__tests__/**/*.test.ts',
             'test/**/*.test.ts',
           ],
           globals: true,
