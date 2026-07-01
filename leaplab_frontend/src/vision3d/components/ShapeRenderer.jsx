@@ -23,7 +23,7 @@ export const ShapeRenderer = ({ shape }) => {
     if (shape._customGeometry) return shape._customGeometry;
     return createGeometry(shape);
   }, [
-    shape.type, shape.width, shape.height, shape.depth,
+    shape.type, shape.width, shape.height, shape.depth, shape.cornerRadius,
     shape.radiusTop, shape.radiusBottom, shape.cylinderHeight, shape.radialSegments,
     shape.radius, shape.widthSegments, shape.heightSegments,
     shape.coneRadius, shape.coneHeight,

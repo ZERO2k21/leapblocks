@@ -663,6 +663,20 @@ export const PropertiesPanel = () => {
           </div>
         </div>
 
+        {/* Edge Smoothness */}
+        <div className="property-group">
+          <label>Edge Smoothness</label>
+          <div className="property-row">
+            <div className="property-field" style={{ flex: 1 }}>
+              <input type="range" min={0} max={1} step={0.01}
+                value={selectedShape.cornerRadius ?? 0}
+                onChange={(e) => updateShape(selectedShape.id, { cornerRadius: parseFloat(e.target.value) })}
+                className="property-slider" />
+            </div>
+            <span className="property-value">{((selectedShape.cornerRadius ?? 0) * 100).toFixed(0)}%</span>
+          </div>
+        </div>
+
         {/* Toggles */}
         <div className="property-group">
           <label>Options</label>

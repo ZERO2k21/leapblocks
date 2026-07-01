@@ -89,63 +89,101 @@
 }
 
 /* ─── Bottom Bar ─── */
-.v3d-bottom-bar {
+.v3d-toolbar-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
+  height: 44px;
   padding: 0 12px;
   background: white;
-  border-top: 1px solid #e2e8f0;
-  font-size: 11px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
   color: #64748b;
   flex-shrink: 0;
   gap: 8px;
+  overflow-x: auto;
+  position: relative;
+  z-index: 10;
 }
 
-.v3d-bottom-left,
-.v3d-bottom-center,
-.v3d-bottom-right {
+.v3d-toolbar-left,
+.v3d-toolbar-center,
+.v3d-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-.v3d-bottom-btn {
-  padding: 2px 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
+.v3d-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
   background: #f8fafc;
-  font-size: 10px;
-  font-weight: 500;
-  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
   cursor: pointer;
   transition: all 0.15s;
   line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
 }
 
-.v3d-bottom-btn:hover {
+.v3d-toolbar-btn:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
 
-.v3d-bottom-btn.active {
+.v3d-toolbar-btn.active {
   background: #6366f1;
   border-color: #6366f1;
   color: white;
 }
 
-.v3d-bottom-separator {
-  width: 1px;
-  height: 16px;
-  background: #e2e8f0;
-  margin: 0 4px;
+.v3d-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
-.v3d-shortcut-hint {
-  opacity: 0.6;
-  white-space: nowrap;
+.v3d-toolbar-separator {
+  width: 1px;
+  height: 22px;
+  background: #e2e8f0;
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+.v3d-toolbar-group-label {
   font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin: 0 4px;
+  user-select: none;
+}
+
+.v3d-toolbar-mode-group,
+.v3d-toolbar-view-group,
+.v3d-toolbar-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.v3d-toolbar-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  user-select: none;
 }
 
 /* ─── Shape Panel ─── */
@@ -362,6 +400,15 @@
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.property-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  min-width: 32px;
+  text-align: right;
+  user-select: none;
 }
 
 /* ─── Color Picker ─── */

@@ -61,7 +61,7 @@ const TransformGizmo = () => {
     return Math.max(0.5, Math.min(3, camera.position.distanceTo(gizmoCenter) * 0.08));
   }, [gizmoCenter, camera.position]);
 
-  const mode = activeTool === 'rotate' ? 'rotate' : activeTool === 'scale' ? 'scale' : 'translate';
+  const mode = activeTool === 'move' ? 'translate' : activeTool === 'rotate' ? 'rotate' : activeTool === 'scale' ? 'scale' : null;
 
   const projectMouse = useCallback((clientX, clientY, axis, origin) => {
     const rect = gl.domElement.getBoundingClientRect();
@@ -74,9 +74,20 @@ const TransformGizmo = () => {
     const viewDir = new THREE.Vector3();
     camera.getWorldDirection(viewDir);
     const axisDir = AXIS_VEC[axis];
-    const perp = new THREE.Vector3().crossVectors(viewDir, axisDir).normalize();
-    if (perp.length() < 0.001) perp.set(1, 0, 0);
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(perp, origin);
+    const perp = new THREE.Vector3().crossVectors(viewDir, axisDir);
+    if (perp.lengthSq() < 0.0001) {
+      const fallback = new THREE.Vector3(1, 0, 0);
+      if (Math.abs(axisDir.dot(fallback)) > 0.9) fallback.set(0, 0, 1);
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        new THREE.Vector3().crossVectors(axisDir, fallback).normalize(), origin
+      );
+      const pt = new THREE.Vector3();
+      const hit = rc.ray.intersectPlane(plane, pt);
+      if (!hit) return null;
+      return pt.clone().sub(origin).dot(axisDir);
+    }
+    const perp2 = new THREE.Vector3().crossVectors(axisDir, perp).normalize();
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(perp2, origin);
     const pt = new THREE.Vector3();
     const hit = rc.ray.intersectPlane(plane, pt);
     if (!hit) return null;
@@ -123,15 +134,13 @@ const TransformGizmo = () => {
       window.__gizmoActive = true;
 
       const store = use3DStore.getState();
-      const curMode = store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : 'translate';
+      const curMode = store.activeTool === 'move' ? 'translate' : store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : null;
+      if (!curMode) return;
       const ids = store.selectedIds;
       const allShapes = store.shapes;
       const sel = allShapes.filter((s) => ids.includes(s.id));
       const gSnap = store.gridSnap;
       const rSnap = store.rotationSnap;
-      const startPos = sel.map((s) => [...s.position]);
-      const startRot = sel.map((s) => [...s.rotation]);
-      const startScale = sel.map((s) => [...s.scale]);
       const origin = currentGizmoCenter.clone();
       const startX = e.clientX;
       const startY = e.clientY;
@@ -139,6 +148,14 @@ const TransformGizmo = () => {
       const snapAng = (v, deg) => deg > 0 ? Math.round(v / (deg * Math.PI / 180)) * (deg * Math.PI / 180) : v;
       let activated = false;
       let startProjected = 0;
+      const startPosMap = new Map();
+      const startRotMap = new Map();
+      const startScaleMap = new Map();
+      sel.forEach((s) => {
+        startPosMap.set(s.id, [...s.position]);
+        startRotMap.set(s.id, [...s.rotation]);
+        startScaleMap.set(s.id, [...s.scale]);
+      });
 
       const onMove = (ev) => {
         const d = dragRef.current;
@@ -150,9 +167,6 @@ const TransformGizmo = () => {
           d.axis = axis;
           d.mode = curMode;
           d.origin = origin;
-          d.positions = startPos;
-          d.rotations = startRot;
-          d.scales = startScale;
           d.startMouse = { x: startX, y: startY };
           d.lastDelta = 0;
           startProjected = projectMouse(startX, startY, axis, origin) || 0;
@@ -173,12 +187,12 @@ const TransformGizmo = () => {
           setDragInfo({ axis, mode: curMode, value: delta });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
           const curIds = state.selectedIds;
-          curIds.forEach((id, i) => {
-            if (startPos[i]) {
-              const p = [...startPos[i]];
-              p[idx] = startPos[i][idx] + delta;
-              updateShape(id, { position: p });
-            }
+          curIds.forEach((id) => {
+            const s = startPosMap.get(id);
+            if (!s) return;
+            const p = [...s];
+            p[idx] = s[idx] + delta;
+            updateShape(id, { position: p });
           });
         } else if (curMode === 'rotate') {
           const sv = projectMouse(startX, startY, axis, origin);
@@ -190,27 +204,29 @@ const TransformGizmo = () => {
           setDragInfo({ axis, mode: curMode, value: (angle * 180) / Math.PI });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
           const curIds = state.selectedIds;
-          curIds.forEach((id, i) => {
-            if (startRot[i]) {
-              const r = [...startRot[i]];
-              r[idx] = startRot[i][idx] + angle;
-              updateShape(id, { rotation: r });
-            }
+          curIds.forEach((id) => {
+            const s = startRotMap.get(id);
+            if (!s) return;
+            const r = [...s];
+            r[idx] = s[idx] + angle;
+            updateShape(id, { rotation: r });
           });
         } else if (curMode === 'scale') {
-          const dx = ev.clientX - startX;
-          let factor = Math.max(0.05, 1 + dx * 0.005);
+          const movement = axis === 'y'
+            ? -(ev.clientY - startY)
+            : ev.clientX - startX;
+          let factor = Math.max(0.05, 1 + movement * 0.005);
           factor = Math.max(0.25, Math.round(factor / 0.25) * 0.25);
           d.lastDelta = factor;
           setDragInfo({ axis, mode: curMode, value: factor });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
           const curIds = state.selectedIds;
-          curIds.forEach((id, i) => {
-            if (startScale[i]) {
-              const sc = [...startScale[i]];
-              sc[idx] = Math.max(0.01, startScale[i][idx] * factor);
-              updateShape(id, { scale: sc });
-            }
+          curIds.forEach((id) => {
+            const startS = startScaleMap.get(id);
+            if (!startS || startS.length <= idx) return;
+            const sc = [...startS];
+            sc[idx] = Math.max(0.01, startS[idx] * factor);
+            updateShape(id, { scale: sc });
           });
         }
       };

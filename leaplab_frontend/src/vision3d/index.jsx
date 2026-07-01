@@ -19,6 +19,7 @@ const Vision3DApp = ({ onBack }) => {
   log('Vision3DApp: mounted');
 
   const {
+    activeTool,
     setTool,
     undo,
     redo,
@@ -40,6 +41,8 @@ const Vision3DApp = ({ onBack }) => {
     toggleLock,
     gridSnap,
     setGridSnap,
+    rotationSnap,
+    setRotationSnap,
     showGrid,
     setShowGrid,
     showAxes,
@@ -415,6 +418,176 @@ const Vision3DApp = ({ onBack }) => {
         onRedo={redo}
       />
 
+      <div className="v3d-toolbar-bar">
+        <div className="v3d-toolbar-left">
+          <div className="v3d-toolbar-mode-group">
+            <button
+              className={`v3d-toolbar-btn ${activeTool === 'select' ? 'active' : ''}`}
+              onClick={() => setTool('select')}
+              title="Select (V)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+              Select
+            </button>
+            <button
+              className={`v3d-toolbar-btn ${activeTool === 'move' ? 'active' : ''}`}
+              onClick={() => setTool('move')}
+              title="Move (G)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+              Move
+            </button>
+            <button
+              className={`v3d-toolbar-btn ${activeTool === 'rotate' ? 'active' : ''}`}
+              onClick={() => setTool('rotate')}
+              title="Rotate (R)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              Rotate
+            </button>
+            <button
+              className={`v3d-toolbar-btn ${activeTool === 'scale' ? 'active' : ''}`}
+              onClick={() => setTool('scale')}
+              title="Scale (S)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3l-7 7M21 3v5M21 3h-5M3 21l7-7M3 21v-5M3 21h5"/></svg>
+              Scale
+            </button>
+          </div>
+          <span className="v3d-toolbar-separator" />
+          <div className="v3d-toolbar-group-label">Snap</div>
+          <button
+            className={`v3d-toolbar-btn ${gridSnap === 0 ? 'active' : ''}`}
+            onClick={() => setGridSnap(0)}
+            title="Snap: Off (free movement)"
+          >
+            Off
+          </button>
+          {[0.1, 0.25, 0.5, 1.0, 2.5, 5.0].map((v) => (
+            <button
+              key={v}
+              className={`v3d-toolbar-btn ${gridSnap === v ? 'active' : ''}`}
+              onClick={() => setGridSnap(v)}
+              title={`Snap: ${v}mm`}
+            >
+              {v}
+            </button>
+          ))}
+          <span className="v3d-toolbar-separator" />
+          <div className="v3d-toolbar-group-label">Rot Snap</div>
+          {[5, 15, 30, 45].map((v) => (
+            <button
+              key={`rot-${v}`}
+              className={`v3d-toolbar-btn ${rotationSnap === v ? 'active' : ''}`}
+              onClick={() => setRotationSnap(v)}
+              title={`Rotation snap: ${v}°`}
+            >
+              {v}°
+            </button>
+          ))}
+          <span className="v3d-toolbar-separator" />
+          <div className="v3d-toolbar-group-label">CSG</div>
+          <button
+            className="v3d-toolbar-btn"
+            onClick={() => csgOperation('union')}
+            disabled={selectedIds.length < 2}
+            title="CSG Union (Ctrl+1)"
+          >
+            Union
+          </button>
+          <button
+            className="v3d-toolbar-btn"
+            onClick={() => csgOperation('subtract')}
+            disabled={selectedIds.length < 2}
+            title="CSG Subtract (Ctrl+2)"
+          >
+            Subtract
+          </button>
+          <button
+            className="v3d-toolbar-btn"
+            onClick={() => csgOperation('intersect')}
+            disabled={selectedIds.length < 2}
+            title="CSG Intersect (Ctrl+3)"
+          >
+            Intersect
+          </button>
+        </div>
+        <div className="v3d-toolbar-center">
+          <div className="v3d-toolbar-info-item" title="Objects in scene">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            {shapes.length}
+          </div>
+          <div className="v3d-toolbar-info-item" title="Selected shapes">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            {selectedIds.length}
+          </div>
+          {tempWorkplane && (
+            <div className="v3d-toolbar-info-item" style={{ color: '#f97316' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+              Workplane
+            </div>
+          )}
+          {rulerActive && (
+            <div className="v3d-toolbar-info-item" style={{ color: '#ef4444' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+              Ruler
+            </div>
+          )}
+        </div>
+        <div className="v3d-toolbar-right">
+          <div className="v3d-toolbar-view-group">
+            <button
+              className={`v3d-toolbar-btn ${showGrid ? 'active' : ''}`}
+              onClick={() => setShowGrid(!showGrid)}
+              title="Toggle Grid"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
+              Grid
+            </button>
+            <button
+              className={`v3d-toolbar-btn ${showAxes ? 'active' : ''}`}
+              onClick={() => setShowAxes(!showAxes)}
+              title="Toggle Axes"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20"/></svg>
+              Axes
+            </button>
+            <button
+              className="v3d-toolbar-btn"
+              onClick={toggleCameraMode}
+              title="Toggle Perspective/Orthographic (P)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v16h22V4z"/><circle cx="12" cy="12" r="3"/></svg>
+              {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
+            </button>
+          </div>
+          <span className="v3d-toolbar-separator" />
+          <div className="v3d-toolbar-actions-group">
+            <button
+              className={`v3d-toolbar-btn ${rulerActive ? 'active' : ''}`}
+              onClick={toggleRuler}
+              title="Ruler / Measurement Tool (X)"
+            >
+              Ruler
+            </button>
+            <button
+              className="v3d-toolbar-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import STL/OBJ file"
+            >
+              Import
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".stl,.obj"
+            onChange={handleImport}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
+
       <div className="v3d-workspace">
         {/* Canvas (center, fills remaining) */}
         <div className="v3d-canvas-area">
@@ -439,123 +612,7 @@ const Vision3DApp = ({ onBack }) => {
           </div>
         </div>
       </div>
-
-      {/* Bottom Bar */}
-      <div className="v3d-bottom-bar">
-        <div className="v3d-bottom-left">
-          <button
-            className={`v3d-bottom-btn ${gridSnap === 0 ? 'active' : ''}`}
-            onClick={() => setGridSnap(0)}
-            title="Snap: Off (free movement)"
-          >
-            Free
-          </button>
-          {[0.1, 0.25, 0.5, 1.0, 2.5, 5.0].map((v) => (
-            <button
-              key={v}
-              className={`v3d-bottom-btn ${gridSnap === v ? 'active' : ''}`}
-              onClick={() => setGridSnap(v)}
-              title={`Snap: ${v}mm`}
-            >
-              {v}
-            </button>
-          ))}
-          <span className="v3d-bottom-separator" />
-          <button
-            className={`v3d-bottom-btn ${showGrid ? 'active' : ''}`}
-            onClick={() => setShowGrid(!showGrid)}
-            title="Toggle Grid"
-          >
-            Grid
-          </button>
-          <button
-            className={`v3d-bottom-btn ${showAxes ? 'active' : ''}`}
-            onClick={() => setShowAxes(!showAxes)}
-            title="Toggle Axes"
-          >
-            Axes
-          </button>
-          <span className="v3d-bottom-separator" />
-          <button
-            className="v3d-bottom-btn"
-            onClick={toggleCameraMode}
-            title="Toggle Perspective/Orthographic (P)"
-          >
-            {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
-          </button>
-          <span className="v3d-bottom-separator" />
-          <button
-            className="v3d-bottom-btn"
-            onClick={() => csgOperation('union')}
-            disabled={selectedIds.length < 2}
-            title="CSG Union (Ctrl+1)"
-          >
-            Union
-          </button>
-          <button
-            className="v3d-bottom-btn"
-            onClick={() => csgOperation('subtract')}
-            disabled={selectedIds.length < 2}
-            title="CSG Subtract (Ctrl+2)"
-          >
-            Subtract
-          </button>
-          <button
-            className="v3d-bottom-btn"
-            onClick={() => csgOperation('intersect')}
-            disabled={selectedIds.length < 2}
-            title="CSG Intersect (Ctrl+3)"
-          >
-            Intersect
-          </button>
-          <span className="v3d-bottom-separator" />
-          <button
-            className={`v3d-bottom-btn ${rulerActive ? 'active' : ''}`}
-            onClick={toggleRuler}
-            title="Ruler / Measurement Tool (X)"
-          >
-            Ruler
-          </button>
-          <button
-            className="v3d-bottom-btn"
-            onClick={() => fileInputRef.current?.click()}
-            title="Import STL/OBJ file"
-          >
-            Import
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".stl,.obj"
-            onChange={handleImport}
-            style={{ display: 'none' }}
-          />
-        </div>
-        <div className="v3d-bottom-center">
-          <span>Objects: {shapes.length}</span>
-          <span className="v3d-bottom-separator" />
-          <span>Selected: {selectedIds.length}</span>
-          {tempWorkplane && (
-            <>
-              <span className="v3d-bottom-separator" />
-              <span style={{ color: '#f97316' }}>Workplane Active</span>
-            </>
-          )}
-          {rulerActive && (
-            <>
-              <span className="v3d-bottom-separator" />
-              <span style={{ color: '#ef4444' }}>Ruler Active</span>
-            </>
-          )}
-        </div>
-        <div className="v3d-bottom-right">
-          <span className="v3d-shortcut-hint">
-            V:Select G:Move R:Rotate S:Scale D:Drop M:Mirror X:Ruler F:Fit P:Camera Ctrl+1/2/3:CSG
-          </span>
-        </div>
-      </div>
     </div>
   );
 };
-
 export default Vision3DApp;
