@@ -726,6 +726,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
                     setEpochs={setEpochs}
                     trained={trained}
                     sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
+                    mlDescription="Using MediaPipe hand landmarks + KNN classifier. All computation runs in-browser — no data leaves your device."
                 />
 
                 {/* Divider */}

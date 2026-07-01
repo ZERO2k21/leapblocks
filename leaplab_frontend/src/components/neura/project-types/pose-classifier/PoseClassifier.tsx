@@ -802,7 +802,8 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
                 <TrainingPanel status={status} progress={progress} accuracy={accuracy} canTrain={canTrain}
                     onTrain={handleTrain} showAdvanced={showAdv} setShowAdvanced={setShowAdv}
                     epochs={epochs} setEpochs={setEpochs} trained={trained}
-                    sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))} />
+                    sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
+                    mlDescription="Using MoveNet pose estimation + KNN classifier. All computation runs in-browser — no data leaves your device." />
 
                 {/* Divider */}
                 <div style={{ width: 32, display: 'flex', alignItems: 'self-stretch', paddingTop: 64 }}>

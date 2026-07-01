@@ -231,19 +231,8 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
 
     return (
         <ClassifierLayout project={project} onBack={onBack}>
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');
-                @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
-                @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-                @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-                * { box-sizing: border-box; }
-                ::-webkit-scrollbar { width: 6px; }
-                ::-webkit-scrollbar-track { background: var(--ml-bg); }
-                ::-webkit-scrollbar-thumb { background: var(--ml-border-strong); border-radius: 3px; }
-            `}</style>
-
             <div className="flex-1 text-ml-text-primary font-sans min-h-0">
-                <div className="mx-auto py-6 px-7 flex flex-col gap-5" style={{ maxWidth: 900 }}>
+                <div className="w-full py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-5 max-w-[900px] mx-auto">
 
                     {/* Header */}
                     <div className="flex items-center gap-3">
@@ -272,7 +261,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                     {!modelReady && (
                         <div className="bg-ml-surface border border-ml-border rounded-2xl p-10 flex flex-col items-center gap-4 animate-fade-in-scale neura-card-glow">
                             {/* Crosshair SVG */}
-                            <div className="relative w-25 h-25 mb-2">
+                            <div className="relative w-[100px] h-[100px] mb-2">
                                 <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
                                     {/* Outer ring pulse */}
                                     <circle cx="50" cy="50" r="40" stroke="#F97316" strokeWidth="1.5" opacity="0.2">
@@ -384,9 +373,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
 
                                 {running && (
                                     <button onClick={captureSnapshot}
-                                        className="px-5 py-[11px] rounded-xl border border-ml-border-strong bg-ml-btn-idle text-ml-text-secondary font-sans font-semibold text-[13px] cursor-pointer flex items-center gap-1.5 transition-all duration-200"
-                                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#F97316'; (e.currentTarget as HTMLButtonElement).style.color = '#F97316'; }}
-                                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ml-border-strong)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ml-text-secondary)'; }}>
+                                        className="px-5 py-[11px] rounded-xl border border-ml-border-strong bg-ml-btn-idle text-ml-text-secondary font-sans font-semibold text-[13px] cursor-pointer flex items-center gap-1.5 transition-all duration-200 ml-btn-hover">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                             <circle cx="12" cy="13" r="4" />
@@ -465,9 +452,7 @@ export default function ObjectDetection({ project, onBack, onDataChange }: Objec
                                             const color = getClassColor(d.class)
                                             const pct = Math.round(d.score * 100)
                                             return (
-                                                <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-ml-well" style={{ transition: 'background 0.15s' }}
-                                                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--ml-btn-idle)'}
-                                                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--ml-well)'}>
+                                                <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-ml-well transition-colors duration-150 hover:bg-ml-btn-idle">
                                                     <div className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: color }} />
                                                     <span className="text-[13px] font-semibold text-ml-text-primary capitalize" style={{ minWidth: 80 }}>{d.class}</span>
                                                     <div className="flex-1 h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'var(--ml-border)' }}>

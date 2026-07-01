@@ -2318,24 +2318,24 @@ export const animationToolbox = {
                     kind: 'block',
                     type: 'operator_gt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_lt',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 {
                     kind: 'block',
                     type: 'operator_equals',
                     inputs: {
-                        OPERAND1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        OPERAND2: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
                     },
                 },
                 { kind: 'label', text: '── Logic ──' },

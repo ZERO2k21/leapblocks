@@ -505,6 +505,7 @@ export default function TextClassifier({ project, onBack, onDataChange }: TextCl
                         setEpochs={setEpochs}
                         trained={trained}
                         sampleCounts={Object.fromEntries(classes.map(c => [c.name, c.samples.length]))}
+                        mlDescription="Using Universal Sentence Encoder + KNN classifier. All computation runs in-browser — no data leaves your device."
                     />
                 </div>
 

@@ -84,8 +84,8 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                             <Image size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
-                            <p className="text-[11px] font-bold text-gray-800">Image</p>
-                            <p className="text-[9px] text-gray-400">.jpg .png .bmp</p>
+                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Image</p>
+                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.jpg .png .bmp</p>
                         </div>
                     </div>
 
@@ -95,8 +95,8 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                             <FileText size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
-                            <p className="text-[11px] font-bold text-gray-800">Text</p>
-                            <p className="text-[9px] text-gray-400">.txt .csv .doc</p>
+                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Text</p>
+                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.txt .csv .doc</p>
                         </div>
                     </div>
 
@@ -106,8 +106,8 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                             <AudioLines size={16} className="text-white" strokeWidth={2} />
                         </div>
                         <div>
-                            <p className="text-[11px] font-bold text-gray-800">Audio</p>
-                            <p className="text-[9px] text-gray-400">.mp3 .wav .asc</p>
+                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Audio</p>
+                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.mp3 .wav .asc</p>
                         </div>
                     </div>
 

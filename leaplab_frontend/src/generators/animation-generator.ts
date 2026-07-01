@@ -92,14 +92,24 @@ export class AnimationCompiler {
                 return () => false;
             }
             case 'operator_gt': {
-                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
-                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
-                return () => op1Func() > op2Func();
+                const op1Func = this.compileStringValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileStringValue(conditionBlock, 'OPERAND2');
+                return () => {
+                    const v1 = op1Func(), v2 = op2Func();
+                    const n1 = Number(v1), n2 = Number(v2);
+                    if (!isNaN(n1) && !isNaN(n2)) return n1 > n2;
+                    return v1 > v2;
+                };
             }
             case 'operator_lt': {
-                const op1Func = this.compileNumberValue(conditionBlock, 'OPERAND1');
-                const op2Func = this.compileNumberValue(conditionBlock, 'OPERAND2');
-                return () => op1Func() < op2Func();
+                const op1Func = this.compileStringValue(conditionBlock, 'OPERAND1');
+                const op2Func = this.compileStringValue(conditionBlock, 'OPERAND2');
+                return () => {
+                    const v1 = op1Func(), v2 = op2Func();
+                    const n1 = Number(v1), n2 = Number(v2);
+                    if (!isNaN(n1) && !isNaN(n2)) return n1 < n2;
+                    return v1 < v2;
+                };
             }
             case 'operator_equals': {
                 const op1Func = this.compileStringValue(conditionBlock, 'OPERAND1');
