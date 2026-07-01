@@ -89,16 +89,6 @@ export const projectTypeConfig: Record<ProjectType, ProjectTypeConfig> = {
         badgeText: 'text-sky-700',
         badgeBorder: 'border-sky-200',
     },
-    'face-detection': {
-        icon: Bot,
-        label: 'Face Detection',
-        accentBorder: '#ec4899',
-        gradient: 'from-pink-400 to-fuchsia-500',
-        glow: 'shadow-fuchsia-500/25',
-        badgeBg: 'bg-pink-50',
-        badgeText: 'text-pink-700',
-        badgeBorder: 'border-pink-200',
-    },
 };
 
 export const fallbackConfig: ProjectTypeConfig = {

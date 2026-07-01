@@ -16,7 +16,6 @@ import HandPoseClassifier from './components/neura/project-types/hand-pose-class
 import AudioClassifier from './components/neura/project-types/audio-classifier/AudioClassifier';
 import NumbersCR from './components/neura/project-types/numbers-cr/NumbersCR';
 import TextClassifier from './components/neura/project-types/text-classifier/TextClassifier';
-import FaceDetection from './components/neura/project-types/face-detection/FaceDetection';
 import { NeuraProject, ProjectType } from './types/neura.types';
 import './styles/neura-theme.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
@@ -236,9 +235,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 break
             case 'text-classifier':
                 component = <TextClassifier {...commonProps} />
-                break
-            case 'face-detection':
-                component = <FaceDetection {...commonProps} />
                 break
             default:
                 return null
