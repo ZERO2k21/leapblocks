@@ -27,7 +27,7 @@ function formatDateFull(ts: number): string {
 
 function DetailCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string; color: string }) {
     return (
-        <div className="bg-ml-well rounded-xl p-4 border border-ml-border">
+        <div className="rounded-xl p-4 border border-ml-border bg-ml-well/90 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-1.5">
                 <Icon size={13} style={{ color }} strokeWidth={2.2} />
                 <span className="text-[10px] font-semibold text-ml-text-muted uppercase tracking-wider">{label}</span>
@@ -54,11 +54,11 @@ export default function ProjectDetailsPanel({ project, onOpenProject, onDeletePr
     const Icon = config.icon;
 
     return (
-        <div className="flex-1 bg-ml-surface rounded-2xl border border-ml-border shadow-[0_2px_16px_rgba(10,1,90,0.04)] overflow-hidden flex flex-col min-h-[400px]">
+        <div className="flex-1 neura-card neura-card-glow border border-[#0a015a]/10 shadow-lg overflow-hidden flex flex-col min-h-[400px] bg-white/95">
             {/* Header with gradient accent */}
             <div className="relative px-6 pt-6 pb-5 border-b border-ml-border">
                 <div
-                    className="absolute top-0 left-0 right-0 h-1 opacity-60"
+                    className="absolute top-0 left-0 right-0 h-1 opacity-80"
                     style={{ background: `linear-gradient(90deg, ${config.accentBorder}, ${config.accentBorder}80)` }}
                 />
 

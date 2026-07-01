@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import ProjectTypeCard from './ProjectTypeCard';
 import { ProjectTypeInfo, ProjectType } from '../../../types/neura.types';
-import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, ArrowLeft } from 'lucide-react';
+import { Image, ScanSearch, PersonStanding, Hand, AudioLines, Calculator, FileText, ArrowLeft, Smile } from 'lucide-react';
 import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 const projectTypes: ProjectTypeInfo[] = [
@@ -19,6 +19,7 @@ const projectTypes: ProjectTypeInfo[] = [
     { id: 'audio-classifier', name: 'Audio Classifier', icon: '🎵', Icon: AudioLines, color: 'from-rose-400 to-red-500', description: 'Classify sounds and audio' },
     { id: 'numbers-cr', name: 'Numbers CR', icon: '🔢', Icon: Calculator, color: 'from-violet-400 to-purple-500', description: 'Classify numerical data' },
     { id: 'text-classifier', name: 'Text Classifier', icon: '📝', Icon: FileText, color: 'from-sky-400 to-blue-500', description: 'Analyze text sentiment' },
+    { id: 'face-detection', name: 'Face Detection', icon: '😊', Icon: Smile, color: 'from-pink-400 to-fuchsia-500', description: 'Detect faces and expressions' },
 ];
 
 interface CreateProjectModalProps {

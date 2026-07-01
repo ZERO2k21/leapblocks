@@ -669,9 +669,9 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
 
     return (
         <ClassifierLayout project={project} onBack={onBack || (() => {})}>
-            <div className="flex gap-5 items-stretch flex-1 min-h-0">
+            <div className="flex gap-5 items-stretch flex-1 min-h-0 mx-auto w-fit max-w-full">
                 {/* Left: Data Collection */}
-                <div className="flex-1 flex flex-col gap-3.5">
+                <div className="flex-1 flex flex-col gap-3.5 bg-ml-surface border border-ml-border rounded-2xl p-4 min-w-0">
                     <StepIndicator
                         number={1}
                         label="Collect"
@@ -728,14 +728,14 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                 </div>
 
                 {/* Middle: Training */}
-                <div className="flex flex-col gap-3.5 w-[280px] shrink-0">
+                <div className="flex flex-col gap-3.5 w-[280px] shrink-0 bg-ml-surface border border-ml-border rounded-2xl p-4">
                     <StepIndicator number={2} label="Train" title="Model" />
                     <TrainingPanel classes={classes} status={trainStatus} progress={progress} accuracy={accuracy}
                         onTrain={handleTrain} showAdvanced={showAdvanced} setShowAdvanced={setShowAdvanced}
                         epochs={epochs} setEpochs={setEpochs} trained={trained} />
 
                     {trained && (
-                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-4">
+                        <div className="bg-ml-well border border-ml-border rounded-xl p-3">
                             <div className="text-xs font-bold text-ml-text-muted uppercase mb-3" style={{ letterSpacing: "0.05em" }}>Class distribution</div>
                             {classes.map((c, i) => {
                                 const pct = totalSamples > 0 ? (c.samples.length / totalSamples) * 100 : 0;
@@ -756,7 +756,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                 </div>
 
                 {/* Right: Testing */}
-                <div className="flex flex-col gap-3.5 w-[280px] shrink-0">
+                <div className="flex flex-col gap-3.5 w-[280px] shrink-0 bg-ml-surface border border-ml-border rounded-2xl p-4">
                     <StepIndicator number={3} label="Test" title="Predictions" />
                     <ProjectTestingPanel
                         icon={<ImageIcon size={16} className="text-white" />}
@@ -778,7 +778,7 @@ export default function MLEnvironment({ project, onBack, onDataChange }: { proje
                     </ProjectTestingPanel>
 
                     {trained && (
-                        <div className="bg-ml-surface border border-ml-border rounded-2xl p-4 flex flex-col gap-2.5">
+                        <div className="bg-ml-well border border-ml-border rounded-xl p-3 flex flex-col gap-2.5">
                             <div className="text-xs font-bold text-ml-text-muted uppercase" style={{ letterSpacing: "0.05em" }}>Export model</div>
                             {[
                                 { label: "Download as JSON", desc: "TensorFlow.js format", action: () => { const data = { type: "neura-ml-knn", classes: classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy, created: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "neura-model.json"; a.click(); } },

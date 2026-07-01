@@ -183,7 +183,21 @@ export default function ProjectsTable({ projects, onOpenProject, onDeleteProject
     const { isDark } = useNeuraTheme();
 
     return (
-        <div>
+        <div className="neura-card neura-card-glow p-4 sm:p-6 border border-[#0a015a]/10 bg-white/95 dark:bg-slate-950/90">
+            <div className="mb-6 px-1 sm:px-0">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7c3aed] mb-1">Premium project panel</p>
+                        <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>
+                            Your Neura projects
+                        </h3>
+                    </div>
+                    <p className={`max-w-xl text-sm leading-6 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+                        Browse and manage every project in a premium data panel with centered layout, refined spacing and responsive presentation.
+                    </p>
+                </div>
+            </div>
+
             {/* Mobile: Card list */}
             <div className="sm:hidden flex flex-col gap-3">
                 {projects.map((project) => (

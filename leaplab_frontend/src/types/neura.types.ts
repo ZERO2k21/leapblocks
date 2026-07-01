@@ -10,7 +10,8 @@ export type ProjectType =
     | 'hand-pose-classifier'
     | 'audio-classifier'
     | 'numbers-cr'
-    | 'text-classifier';
+    | 'text-classifier'
+    | 'face-detection';
 
 export interface ProjectTypeInfo {
     id: ProjectType;
