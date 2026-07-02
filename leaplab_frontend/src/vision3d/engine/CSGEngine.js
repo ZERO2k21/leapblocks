@@ -30,13 +30,13 @@ function createBrush(shape) {
   const geometry = buildGeometry(shape);
   const matrix = new THREE.Matrix4();
 
-  matrix.compose(
+    matrix.compose(
     new THREE.Vector3(...shape.position),
     new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
-        (shape.rotation?.[0] || 0) * Math.PI / 180,
-        (shape.rotation?.[1] || 0) * Math.PI / 180,
-        (shape.rotation?.[2] || 0) * Math.PI / 180
+        shape.rotation?.[0] || 0,
+        shape.rotation?.[1] || 0,
+        shape.rotation?.[2] || 0
       )
     ),
     new THREE.Vector3(...(shape.scale || [1, 1, 1]))
@@ -97,11 +97,7 @@ export function performCSG(shapeA, shapeB, operation) {
       id: generateShapeId(),
       type: 'csg_result',
       name: `CSG ${operation}`,
-      position: [
-        shapeA.position[0] + center.x,
-        shapeA.position[1] + center.y,
-        shapeA.position[2] + center.z,
-      ],
+      position: [center.x, center.y, center.z],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
       color: shapeA.color || '#6366f1',

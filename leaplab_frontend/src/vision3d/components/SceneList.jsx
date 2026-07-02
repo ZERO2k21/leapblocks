@@ -36,8 +36,9 @@ export const SceneList = () => {
   const pushHistory = use3DStore((s) => s.pushHistory);
 
   const handleShapeClick = (id, e) => {
-    debug('SceneList: shapeClick id=' + id + ' shift=' + e.shiftKey);
-    selectShape(id, e.shiftKey);
+    const multi = e.shiftKey || e.ctrlKey;
+    debug('SceneList: shapeClick id=' + id + ' multi=' + multi);
+    selectShape(id, multi);
   };
 
   const handleVisibilityToggle = (id, e) => {

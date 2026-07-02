@@ -64,6 +64,7 @@ export const use3DStore = create((set, get) => ({
       isProjectDirty: true,
     }));
 
+    get().pushHistory();
     setTimeout(() => get().autoSaveProject(), 100);
 
     return newShape.id;
@@ -492,10 +493,17 @@ export const use3DStore = create((set, get) => ({
   // ─── CSG Boolean Operations ───
   csgOperation: (operation) => {
     const state = get();
-    const ids = state.selectedIds;
+    let ids = state.selectedIds;
     if (ids.length < 2) {
-      warn('CSG: need at least 2 selected shapes');
-      return;
+      const allShapes = state.shapes;
+      if (allShapes.length >= 2) {
+        ids = allShapes.slice(-2).map((s) => s.id);
+        log(`CSG: auto-selecting last 2 shapes: ${ids.join(', ')}`);
+        set({ selectedIds: ids });
+      } else {
+        warn('CSG: need at least 2 shapes in scene');
+        return;
+      }
     }
 
     const shapes = state.shapes.filter((s) => ids.includes(s.id));

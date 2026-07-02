@@ -332,20 +332,16 @@ describe('Vision3D Store', () => {
 
   describe('undo/redo', () => {
     it('should undo last action', () => {
-      const { addShape, pushHistory, undo } = use3DStore.getState();
-      pushHistory();
+      const { addShape, undo } = use3DStore.getState();
       addShape('box');
-      pushHistory();
       undo();
       const { shapes } = use3DStore.getState();
       expect(shapes).toHaveLength(0);
     });
 
     it('should redo undone action', () => {
-      const { addShape, pushHistory, undo, redo } = use3DStore.getState();
-      pushHistory();
+      const { addShape, undo, redo } = use3DStore.getState();
       addShape('box');
-      pushHistory();
       undo();
       redo();
       const { shapes } = use3DStore.getState();
