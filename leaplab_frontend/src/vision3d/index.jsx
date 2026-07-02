@@ -108,7 +108,7 @@ const Vision3DApp = ({ onBack }) => {
 
   const handleOpenProjectFile = useCallback(async (e) => {
     const file = e.target.files?.[0];
-    if (!file || !/\.json$/i.test(file.name)) return;
+    if (!file || !/\.(json|leap)$/i.test(file.name)) return;
 
     log('Opening project file:', file.name);
     try {
@@ -118,8 +118,9 @@ const Vision3DApp = ({ onBack }) => {
         clearScene();
         data.shapes.forEach((shape) => importShape(shape));
       }
-      if (data.project?.name) {
-        setProjectName(data.project.name);
+      const name = data.projectName || data.project?.name;
+      if (name) {
+        setProjectName(name);
       }
       log('Project opened:', file.name);
     } catch (err) {
@@ -456,6 +457,33 @@ const Vision3DApp = ({ onBack }) => {
     }
   };
 
+  const handleDownload = useCallback(() => {
+    log('Vision3DApp: download triggered');
+    const project = use3DStore.getState().project || {
+      id: `project_${Date.now()}`,
+      name: projectName,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    const payload = {
+      version: "1.0",
+      projectName,
+      mode: "vision3d",
+      timestamp: Date.now(),
+      project,
+      shapes
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [projectName, shapes]);
+
   useEffect(() => {
     if (loadedRef.current) return;
     const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
@@ -480,6 +508,7 @@ const Vision3DApp = ({ onBack }) => {
         onTitleChange={setProjectName}
         onSave={handleSave}
         onOpenProject={handleOpenProject}
+        onDownload={handleDownload}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}
@@ -640,7 +669,7 @@ const Vision3DApp = ({ onBack }) => {
               <input
                 ref={openProjectInputRef}
                 type="file"
-                accept=".json"
+                accept=".json,.leap"
                 onChange={handleOpenProjectFile}
                 style={{ display: 'none' }}
               />

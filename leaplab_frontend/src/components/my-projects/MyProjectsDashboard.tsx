@@ -3,6 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import React, { useEffect, useState, useRef } from 'react';
+import * as THREE from 'three';
 import {
     ArrowLeft,
     Trash2,
@@ -393,6 +394,169 @@ interface SavedProjectCardVisualProps {
     accent: string;
 }
 
+const Vision3DCardVisual: React.FC<{ shapes: any[]; accent: string }> = ({ shapes, accent }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!containerRef.current || !shapes || !Array.isArray(shapes) || shapes.length === 0) return;
+
+        const container = containerRef.current;
+        const width = container.clientWidth || 200;
+        const height = container.clientHeight || 110;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Scene
+        const scene = new THREE.Scene();
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+        dirLight.position.set(8, 12, 10);
+        scene.add(dirLight);
+
+        // Group to hold all shapes for bounding box calculations
+        const group = new THREE.Group();
+
+        // Build meshes
+        const meshes: THREE.Mesh[] = [];
+        shapes.forEach((shape: any) => {
+            if (shape.visible === false || shape.type === 'group') return;
+
+            let geometry: THREE.BufferGeometry;
+            const w = shape.width ?? 2;
+            const h = shape.height ?? shape.cylinderHeight ?? shape.coneHeight ?? shape.pyramidHeight ?? shape.tubeHeight ?? shape.polygonHeight ?? 2;
+            const d = shape.depth ?? 2;
+
+            switch (shape.type) {
+                case 'box':
+                    geometry = new THREE.BoxGeometry(w, h, d);
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(shape.radiusTop ?? 1, shape.radiusBottom ?? 1, h, 16);
+                    break;
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(shape.radius ?? 1, 16, 12);
+                    break;
+                case 'cone':
+                    geometry = new THREE.ConeGeometry(shape.coneRadius ?? 1, h, 16);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(shape.torusRadius ?? 1, shape.tubeRadius ?? 0.4, 8, 24);
+                    break;
+                case 'pyramid':
+                    geometry = new THREE.ConeGeometry(shape.pyramidRadius ?? 1, h, shape.pyramidSides ?? 4);
+                    break;
+                case 'halfSphere':
+                    geometry = new THREE.SphereGeometry(shape.halfSphereRadius ?? 1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                    break;
+                case 'tube':
+                    geometry = new THREE.CylinderGeometry(shape.tubeOuterRadius ?? 1, shape.tubeOuterRadius ?? 1, h, 16);
+                    break;
+                case 'ring':
+                    geometry = new THREE.RingGeometry(shape.innerRadius ?? 0.5, shape.outerRadius ?? 1, 16);
+                    break;
+                default:
+                    geometry = new THREE.BoxGeometry(w, h, d);
+                    break;
+            }
+
+            // Material
+            const isHole = shape.isHole === true;
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(isHole ? '#cbd5e1' : (shape.color || accent)),
+                metalness: shape.metalness ?? 0.1,
+                roughness: shape.roughness ?? 0.7,
+                transparent: isHole || (shape.opacity ?? 1) < 1,
+                opacity: isHole ? 0.35 : (shape.opacity ?? 1),
+                wireframe: isHole
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(shape.position?.[0] || 0, shape.position?.[1] || 0, shape.position?.[2] || 0);
+            mesh.rotation.set(shape.rotation?.[0] || 0, shape.rotation?.[1] || 0, shape.rotation?.[2] || 0);
+            mesh.scale.set(shape.scale?.[0] || 1, shape.scale?.[1] || 1, shape.scale?.[2] || 1);
+
+            group.add(mesh);
+            meshes.push(mesh);
+        });
+
+        scene.add(group);
+
+        // Center and compute bounding box to frame the camera
+        const box = new THREE.Box3().setFromObject(group);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        // Move group center to origin for rendering consistency
+        group.position.sub(center);
+
+        // Camera positioning (isometric style view)
+        const maxDim = Math.max(size.x, size.y, size.z, 2);
+        const fov = 45;
+        const cameraValue = maxDim * 1.5;
+        
+        const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 1000);
+        camera.position.set(cameraValue, cameraValue * 0.8, cameraValue);
+        camera.lookAt(0, 0, 0);
+
+        // Grid helper for Tinkercad workspace feel
+        const gridHelper = new THREE.GridHelper(Math.max(maxDim * 3, 10), 10, new THREE.Color(accent), new THREE.Color('#e2e8f0'));
+        gridHelper.position.y = -size.y / 2 - 0.01;
+        scene.add(gridHelper);
+
+        // Single static render
+        renderer.render(scene, camera);
+
+        // Cleanup
+        return () => {
+            if (container.contains(renderer.domElement)) {
+                container.removeChild(renderer.domElement);
+            }
+            meshes.forEach(mesh => {
+                mesh.geometry.dispose();
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach(m => m.dispose());
+                } else {
+                    mesh.material.dispose();
+                }
+            });
+            gridHelper.geometry.dispose();
+            if (Array.isArray(gridHelper.material)) {
+                gridHelper.material.forEach(m => m.dispose());
+            } else {
+                gridHelper.material.dispose();
+            }
+            renderer.dispose();
+        };
+    }, [shapes, accent]);
+
+    return (
+        <div 
+            ref={containerRef} 
+            className="project-card-visual actual-vision3d-canvas"
+            style={{ 
+                width: '100%', 
+                height: '110px', 
+                position: 'relative', 
+                backgroundColor: 'rgba(99, 102, 241, 0.04)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '8px'
+            }}
+        />
+    );
+};
+
 const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ projectId, fileUrl, mode, projectName, accent }) => {
     const [loading, setLoading] = useState(true);
     const [projectContent, setProjectContent] = useState<any | null>(null);
@@ -692,6 +856,14 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
                     </div>
                 </div>
             </div>
+        );
+    }
+
+    // ── Mode 6: Vision3D (3D WebGL Canvas View) ──
+    if (mode === 'vision3d') {
+        const shapes = projectContent.shapes || [];
+        return (
+            <Vision3DCardVisual shapes={shapes} accent={accent} />
         );
     }
 

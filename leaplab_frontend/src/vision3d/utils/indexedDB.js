@@ -168,12 +168,19 @@ export function importProjectFromJSON(jsonString) {
   log('importProjectFromJSON');
   const data = JSON.parse(jsonString);
 
-  if (!data.version || !data.project || !data.shapes) {
+  if (!data.version || !data.shapes) {
     throw new Error('Invalid project file format');
   }
 
+  const project = data.project || {
+    id: `project_${Date.now()}`,
+    name: data.projectName || data.name || 'Imported Project',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
   return {
-    project: data.project,
+    project,
     shapes: data.shapes,
   };
 }
