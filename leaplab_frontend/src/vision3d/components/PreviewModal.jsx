@@ -1,21 +1,42 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { createGeometry } from '../utils/helpers';
 import { use3DStore } from '../store/use3DStore';
 
-const SceneShapes = () => {
+const SceneShapes = ({ exploded, explosionFactor }) => {
   const shapes = use3DStore((s) => s.shapes);
 
-  const visible = shapes.filter((s) => s.visible && s.type !== 'group');
+  const visible = useMemo(
+    () => shapes.filter((s) => s.visible && s.type !== 'group'),
+    [shapes]
+  );
+
+  const center = useMemo(() => {
+    if (visible.length === 0) return new THREE.Vector3();
+    const bbox = new THREE.Box3();
+    visible.forEach((s) => {
+      const p = new THREE.Vector3(...(s.position || [0, 0, 0]));
+      bbox.expandByPoint(p);
+    });
+    const c = new THREE.Vector3();
+    bbox.getCenter(c);
+    return c;
+  }, [visible]);
 
   return visible.map((shape) => (
-    <PreviewShape key={shape.id} shape={shape} />
+    <PreviewShape
+      key={shape.id}
+      shape={shape}
+      exploded={exploded}
+      explosionFactor={explosionFactor}
+      center={center}
+    />
   ));
 };
 
-const PreviewShape = React.memo(({ shape }) => {
+const PreviewShape = React.memo(({ shape, exploded, explosionFactor, center }) => {
   const [geoCache, setGeoCache] = useState(null);
 
   useEffect(() => {
@@ -29,23 +50,50 @@ const PreviewShape = React.memo(({ shape }) => {
     return () => geo.dispose();
   }, [shape]);
 
+  const position = useMemo(() => {
+    const pos = new THREE.Vector3(...(shape.position || [0, 0, 0]));
+    if (exploded) {
+      const dir = pos.clone().sub(center);
+      if (dir.length() < 0.01) {
+        dir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+      }
+      dir.normalize();
+      pos.add(dir.multiplyScalar(explosionFactor * 4));
+    }
+    return [pos.x, pos.y, pos.z];
+  }, [shape.position, exploded, explosionFactor, center]);
+
   if (!geoCache) return null;
 
   return (
-    <mesh
-      position={shape.position}
-      rotation={shape.rotation}
-      geometry={geoCache}
-    >
-      <meshStandardMaterial
-        color={shape.color || '#4F46E5'}
-        metalness={shape.metalness ?? 0.1}
-        roughness={shape.roughness ?? 0.7}
-        transparent={(shape.opacity ?? 1) < 1}
-        opacity={shape.opacity ?? 1}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <group position={position} rotation={shape.rotation}>
+      <mesh geometry={geoCache}>
+        <meshStandardMaterial
+          color={shape.color || '#4F46E5'}
+          metalness={shape.metalness ?? 0.1}
+          roughness={shape.roughness ?? 0.7}
+          transparent={(shape.opacity ?? 1) < 1}
+          opacity={shape.opacity ?? 1}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {exploded && explosionFactor > 0.3 && (
+        <Html distanceFactor={15} style={{ pointerEvents: 'none' }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.75)',
+            color: '#fff',
+            padding: '2px 8px',
+            borderRadius: 4,
+            fontSize: 12,
+            fontFamily: 'sans-serif',
+            whiteSpace: 'nowrap',
+            transform: 'translateY(-20px)',
+          }}>
+            {shape.name || shape.type}
+          </div>
+        </Html>
+      )}
+    </group>
   );
 });
 
@@ -69,6 +117,37 @@ const PreviewControls = () => {
 };
 
 const PreviewModal = ({ open, onClose }) => {
+  const [exploded, setExploded] = useState(false);
+  const [explosionFactor, setExplosionFactor] = useState(0);
+  const animationRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) {
+      setExploded(false);
+      setExplosionFactor(0);
+    }
+  }, [open]);
+
+  const toggleExplode = useCallback(() => {
+    setExploded((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    const target = exploded ? 1 : 0;
+    const animate = () => {
+      setExplosionFactor((prev) => {
+        const diff = target - prev;
+        if (Math.abs(diff) < 0.01) return target;
+        animationRef.current = requestAnimationFrame(animate);
+        return prev + diff * 0.08;
+      });
+    };
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [exploded]);
+
   if (!open) return null;
 
   return (
@@ -98,8 +177,42 @@ const PreviewModal = ({ open, onClose }) => {
         <directionalLight position={[-5, 10, -5]} intensity={0.5} />
         <hemisphereLight args={['#b1e1ff', '#2a2a3e', 0.6]} />
         <PreviewControls />
-        <SceneShapes />
+        <SceneShapes exploded={exploded} explosionFactor={explosionFactor} />
       </Canvas>
+
+      <div style={{
+        position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', alignItems: 'center', gap: 12, zIndex: 10000,
+        background: 'rgba(0,0,0,0.6)', padding: '10px 20px', borderRadius: 12,
+        backdropFilter: 'blur(8px)',
+      }}>
+        <button
+          onClick={toggleExplode}
+          style={{
+            background: exploded ? '#6366f1' : 'rgba(255,255,255,0.15)',
+            border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 8,
+            cursor: 'pointer', fontSize: 13, fontFamily: 'sans-serif',
+            fontWeight: 600, whiteSpace: 'nowrap',
+          }}
+        >
+          {exploded ? 'Assemble' : 'Explode'}
+        </button>
+
+        {exploded && (
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={explosionFactor}
+            onChange={(e) => {
+              setExplosionFactor(parseFloat(e.target.value));
+              setExploded(true);
+            }}
+            style={{ width: 140, accentColor: '#6366f1' }}
+          />
+        )}
+      </div>
     </div>
   );
 };

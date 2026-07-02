@@ -70,6 +70,7 @@ const Vision3DApp = ({ onBack }) => {
     rulerActive,
     distributeShapes,
     importShape,
+    clearScene,
   } = use3DStore();
 
   const canUndo = historyIndex > 0;
@@ -100,6 +101,32 @@ const Vision3DApp = ({ onBack }) => {
     }
     e.target.value = '';
   }, [importShape]);
+
+  const handleOpenProject = useCallback(() => {
+    openProjectInputRef.current?.click();
+  }, []);
+
+  const handleOpenProjectFile = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !/\.json$/i.test(file.name)) return;
+
+    log('Opening project file:', file.name);
+    try {
+      const text = await file.text();
+      const data = importProjectFromJSON(text);
+      if (data.shapes) {
+        clearScene();
+        data.shapes.forEach((shape) => importShape(shape));
+      }
+      if (data.project?.name) {
+        setProjectName(data.project.name);
+      }
+      log('Project opened:', file.name);
+    } catch (err) {
+      error('Failed to open project:', err);
+    }
+    e.target.value = '';
+  }, [clearScene, importShape, setProjectName]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -149,6 +176,13 @@ const Vision3DApp = ({ onBack }) => {
           log('Keyboard: Ctrl+D (smart duplicate) ' + ids.length + ' shapes');
           smartDuplicate(ids);
         }
+      }
+
+      // Open Project (Ctrl+O)
+      if (e.ctrlKey && key === 'o') {
+        e.preventDefault();
+        log('Keyboard: Ctrl+O (open project)');
+        handleOpenProject();
       }
 
       // Undo (Ctrl+Z)
@@ -400,7 +434,7 @@ const Vision3DApp = ({ onBack }) => {
         distributeShapes(ids, 'z');
       }
     },
-    [selectedIds, setTool, undo, redo, smartDuplicate, removeShapes, groupShapes, ungroupShape, deselectAll, moveShapesByArrow, hideShapes, showAllHidden, toggleLock, dropToWorkplane, mirrorShapes, setShowGrid, csgOperation, toggleCameraMode, setFitAll, setFitSelection, tempWorkplane, clearTempWorkplane, alignShapes, toggleRuler, distributeShapes]
+    [selectedIds, setTool, undo, redo, smartDuplicate, removeShapes, groupShapes, ungroupShape, deselectAll, moveShapesByArrow, hideShapes, showAllHidden, toggleLock, dropToWorkplane, mirrorShapes, setShowGrid, csgOperation, toggleCameraMode, setFitAll, setFitSelection, tempWorkplane, clearTempWorkplane, alignShapes, toggleRuler, distributeShapes, handleOpenProject]
   );
 
   useEffect(() => {
@@ -445,6 +479,7 @@ const Vision3DApp = ({ onBack }) => {
         title={projectName}
         onTitleChange={setProjectName}
         onSave={handleSave}
+        onOpenProject={handleOpenProject}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}
@@ -616,6 +651,13 @@ const Vision3DApp = ({ onBack }) => {
                 type="file"
                 accept=".stl,.obj"
                 onChange={handleImport}
+                style={{ display: 'none' }}
+              />
+              <input
+                ref={openProjectInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleOpenProjectFile}
                 style={{ display: 'none' }}
               />
             </div>
