@@ -4,8 +4,14 @@
  */
 
 import * as THREE from 'three';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { SHAPE_DEFINITIONS } from './constants';
 import { debug } from './logger';
+import helvetikerFont from '../assets/helvetiker_regular.typeface.json';
+
+const fontLoader = new FontLoader();
+const defaultFont = fontLoader.parse(helvetikerFont);
 
 let idCounter = 0;
 
@@ -28,9 +34,9 @@ export function createShape(type, position = [0, 0, 0]) {
     id,
     type,
     name: definition.name,
-    position,
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
+    position: defaults.position || position,
+    rotation: defaults.rotation || [0, 0, 0],
+    scale: defaults.scale || [1, 1, 1],
     color: defaults.color || '#4F46E5',
     isHole: false,
     visible: true,
@@ -104,6 +110,7 @@ export function createShape(type, position = [0, 0, 0]) {
     // Text
     text: defaults.text,
     fontSize: defaults.fontSize,
+    textDepth: defaults.textDepth,
     // Material
     metalness: 0.1,
     roughness: 0.7,
@@ -315,6 +322,25 @@ export function createGeometry(shape) {
 
     case 'tetrahedron':
       return new THREE.TetrahedronGeometry(shape.radius ?? 1);
+
+    case 'text3d': {
+      const text = shape.text || 'Hello';
+      const size = shape.fontSize ?? 1;
+      const depth = shape.textDepth ?? 0.5;
+      const geo = new TextGeometry(text, {
+        font: defaultFont,
+        size,
+        height: depth,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelSegments: 5,
+      });
+      geo.computeBoundingBox();
+      geo.center();
+      return geo;
+    }
 
     case 'ring':
       return new THREE.RingGeometry(

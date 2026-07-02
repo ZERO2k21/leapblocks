@@ -548,6 +548,12 @@ export const PropertiesPanel = () => {
                   onChange={(e) => updateProp('fontSize', parseFloat(e.target.value) || 0.1)}
                   className="property-input" />
               </div>
+              <div className="property-field">
+                <span className="property-label">Depth</span>
+                <input type="number" value={selectedShape.textDepth ?? 0.5} min={0.05} step={0.1}
+                  onChange={(e) => updateProp('textDepth', parseFloat(e.target.value) || 0.05)}
+                  className="property-input" />
+              </div>
             </div>
           </div>
         )}
