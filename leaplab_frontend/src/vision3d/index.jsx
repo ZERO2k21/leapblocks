@@ -477,7 +477,8 @@ const Vision3DApp = ({ onBack }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
+    const cleanName = (projectName || '').trim() || 'project';
+    link.download = `${cleanName.replace(/\s+/g, '_')}.leap`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

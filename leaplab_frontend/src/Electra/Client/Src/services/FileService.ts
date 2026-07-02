@@ -217,7 +217,8 @@ class FileService {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${projectName.replace(/\s+/g, '_')}.leap`;
+        const cleanName = (projectName || '').trim() || 'project';
+        link.download = `${cleanName.replace(/\s+/g, '_')}.leap`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -234,7 +235,8 @@ class FileService {
         };
 
         const jsonStr = JSON.stringify(projectData, null, 2);
-        const fileName = `${projectName.replace(/\s+/g, '_')}.leap`;
+        const cleanName = (projectName || '').trim() || 'project';
+        const fileName = `${cleanName.replace(/\s+/g, '_')}.leap`;
         const file = new File([jsonStr], fileName, { type: 'application/json' });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
