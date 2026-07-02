@@ -219,7 +219,7 @@ export default function NeuraHeader({ onBack, onSave, projectName, onProjectName
                 }}>
                     <img
                         alt="Leap into the AI Future"
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                        src="/assets/logo - creoleap.png"
                         style={{ height: '160px', objectFit: 'contain', filter: 'brightness(1.2) contrast(1.1) drop-shadow(rgba(255, 255, 255, 0.2) 0px 0px 2px)' }}
                     />
                 </div>
