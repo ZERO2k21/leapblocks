@@ -11,7 +11,16 @@ import { log } from '../utils/logger';
  * Create a Three.js mesh from shape data
  */
 function createMesh(shape) {
-  const geometry = createGeometry(shape);
+  let geometry;
+  if (shape.type === 'csg_result' && shape._csgGeometry) {
+    // Clone and convert to non-indexed for proper export
+    geometry = shape._csgGeometry.clone();
+    if (geometry.index) {
+      geometry = geometry.toNonIndexed();
+    }
+  } else {
+    geometry = createGeometry(shape);
+  }
   const material = new THREE.MeshStandardMaterial({
     color: new THREE.Color(shape.color),
     metalness: shape.metalness ?? 0.1,

@@ -41,6 +41,12 @@ export const SceneList = () => {
     selectShape(id, multi);
   };
 
+  const handleCheckboxChange = (id) => {
+    selectShape(id, true);
+    // Also show inspector
+    use3DStore.setState({ showInspector: true });
+  };
+
   const handleVisibilityToggle = (id, e) => {
     e.stopPropagation();
     const shape = shapes.find((s) => s.id === id);
@@ -94,6 +100,13 @@ export const SceneList = () => {
                 onClick={(e) => handleShapeClick(shape.id, e)}
               >
                 <div className="shape-list-info">
+                  <input
+                    type="checkbox"
+                    className="shape-list-checkbox"
+                    checked={selectedIds.includes(shape.id)}
+                    onChange={() => handleCheckboxChange(shape.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <ShapeIcon type={shape.type} />
                   <span className="shape-list-name">{shape.name}</span>
                 </div>

@@ -7,9 +7,8 @@
  */
 
 import * as THREE from 'three';
-import { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION } from 'three-bvh-csg';
-import { createGeometry } from '../utils/helpers';
-import { generateShapeId } from '../utils/helpers';
+import { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION, HOLLOW_SUBTRACTION } from 'three-bvh-csg';
+import { createGeometry, generateShapeId } from '../utils/helpers';
 import { log, debug, error } from '../utils/logger';
 
 const evaluator = new Evaluator();
@@ -66,7 +65,7 @@ export function performCSG(shapeA, shapeB, operation) {
     let csgOp;
     switch (operation) {
       case 'union': csgOp = ADDITION; break;
-      case 'subtract': csgOp = SUBTRACTION; break;
+      case 'subtract': csgOp = HOLLOW_SUBTRACTION; break;
       case 'intersect': csgOp = INTERSECTION; break;
       default:
         error('CSG: unknown operation:', operation);
@@ -80,9 +79,14 @@ export function performCSG(shapeA, shapeB, operation) {
       return null;
     }
 
-    const resultGeometry = result.geometry;
-    resultGeometry.computeBoundingBox();
-    resultGeometry.computeBoundingSphere();
+    // Convert geometry to remove drawRange issues for exporters
+    const finalGeometry = result.geometry.toNonIndexed();
+    finalGeometry.computeVertexNormals();
+    finalGeometry.computeBoundingBox();
+    finalGeometry.computeBoundingSphere();
+
+    // Store geometry for export and rendering
+    const resultGeometry = finalGeometry;
 
     // Calculate center offset
     const bbox = resultGeometry.boundingBox;

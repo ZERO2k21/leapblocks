@@ -574,6 +574,15 @@
   gap: 6px;
 }
 
+.shape-list-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #6366f1;
+  flex-shrink: 0;
+  margin: 0;
+}
+
 .shape-list-icon {
   font-size: 13px;
 }
