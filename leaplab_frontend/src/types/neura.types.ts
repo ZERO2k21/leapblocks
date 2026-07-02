@@ -30,7 +30,7 @@ export interface ClassData {
 
 export interface Sample {
     id: string;
-    type: 'image' | 'audio' | 'text';
+    type: 'image' | 'audio' | 'text' | 'keypoints';
     data: string; // base64 or URL
     timestamp: number;
 }

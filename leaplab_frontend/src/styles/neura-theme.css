@@ -286,6 +286,33 @@
   }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @keyframes fade-in-scale {
   from {
     opacity: 0;
@@ -1243,7 +1270,7 @@
   --ml-text-primary: #e0e0f0;
   --ml-text-secondary: #7070a0;
   --ml-text-muted: #555;
-  --ml-text-disabled: #333;
+  --ml-text-disabled: #555;
   --ml-success-bg: #0d1f14;
   --ml-success-border: #1a3a25;
   --ml-success-text: #4ade80;
@@ -1552,4 +1579,18 @@
 .ml-btn-hover:hover {
   border-color: var(--ml-accent);
   color: var(--ml-accent);
+}
+
+/* Object Detection card shadow */
+.od-card-shadow {
+  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Object Detection accent line shimmer */
+@keyframes accent-shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.od-accent-line {
+  animation: accent-shimmer 3s ease-in-out infinite;
 }
