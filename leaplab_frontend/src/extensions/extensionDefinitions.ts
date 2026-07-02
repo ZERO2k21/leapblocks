@@ -553,7 +553,7 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 { type: 'hp_guess_sign', message0: 'guess sign', previousStatement: null, nextStatement: null, colour: '#D43D41' },
                 {
                     type: 'hp_when_sign', message0: 'when hand sign %1',
-                    args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] }],
+                    args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up'], ['No Hand', 'no_hand']] }],
                     nextStatement: true, colour: '#D43D41',
                     hat: 'event'
                 },

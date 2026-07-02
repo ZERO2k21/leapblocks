@@ -142,6 +142,13 @@ export class HandPoseRuntime {
                     if (results.landmarks && results.landmarks.length > 0) {
                         this._landmarks = results.landmarks;
                         this.processLandmarks();
+                    } else {
+                        // Hand disappeared from camera
+                        this._landmarks = [];
+                        if (this._lastSign !== 'no_hand') {
+                            this._lastSign = 'no_hand';
+                            this.triggerGesture('no_hand');
+                        }
                     }
                 } catch (_e) {
                     // Ignore MediaPipe timestamp/processing errors — retry next frame
@@ -418,7 +425,8 @@ export const handPoseBlocks = [
             options: [
                 ['Peace', '2'],
                 ['Open', '5'],
-                ['Thumbs Up', 'thumbs_up']
+                ['Thumbs Up', 'thumbs_up'],
+                ['No Hand', 'no_hand']
             ]
         }],
         nextStatement: true,
