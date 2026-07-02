@@ -35,7 +35,7 @@ export interface VMContext {
 }
 
 export interface CompiledScript {
-    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure' | 'physics_collision';
+    trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'hand_sign' | 'procedure' | 'physics_collision';
     triggerKey?: string;
     spriteId: string;
     hatBlockId?: string; // Unique identifier for the hat block that started this script
@@ -300,6 +300,8 @@ export class AnimationVM {
     // Greater-than trigger polling
     private greaterThanPollingId: ReturnType<typeof setInterval> | null = null;
     private greaterThanFired: Set<string> = new Set(); // Track which hat blocks have already fired
+    private handSignPollingId: ReturnType<typeof setInterval> | null = null;
+    private handSignFired: Set<string> = new Set(); // Track which hand sign hat blocks have fired
 
     constructor() {
         // Initialize sound manager
@@ -701,6 +703,9 @@ export class AnimationVM {
         // Start polling for greater_than triggers (e.g. "when timer > 5")
         this.startGreaterThanPolling();
 
+        // Start polling for hand sign triggers (e.g. "when hand sign Thumbs Up")
+        this.startHandSignPolling();
+
         if (flagScripts === 0) {
             this.checkAllFinished();
         }
@@ -795,6 +800,9 @@ export class AnimationVM {
 
         // Stop greater_than trigger polling
         this.stopGreaterThanPolling();
+
+        // Stop hand sign trigger polling
+        this.stopHandSignPolling();
 
         // Resolve any pending pause so aborted scripts can exit cleanly
         if (this.isPaused && this.resolvePause) {
@@ -1610,21 +1618,6 @@ export class AnimationVM {
                 }
                 break;
             }
-            case 'hp_when_sign' as any: {
-                // Event-style block: check if current hand sign matches
-                const targetSign = (step as any).sign || '2';
-                if (typeof window !== 'undefined' && (window as any).runtime?.handPose) {
-                    const currentSign = (window as any).runtime.handPose.getSign();
-                    const signMap: Record<string, string> = { '2': 'Peace', '5': 'Open', 'thumbs_up': 'Thumbs Up' };
-                    const targetName = signMap[targetSign] || targetSign;
-                    if (currentSign === targetName) {
-                        vmLog.info(`Hand sign matched: ${targetName}`);
-                    }
-                }
-                break;
-            }
-
-
 
             // Body Detection extension steps (smooth interval-based)
             case 'bd_action' as any: {
@@ -2884,6 +2877,73 @@ export class AnimationVM {
             this.greaterThanPollingId = null;
         }
         this.greaterThanFired.clear();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HAND SIGN TRIGGER POLLING
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private startHandSignPolling(): void {
+        this.stopHandSignPolling();
+        this.handSignFired.clear();
+
+        const allSprites = spriteManager.getAllSprites();
+        const allScripts: CompiledScript[] = [];
+
+        for (const sprite of allSprites) {
+            const scripts = (sprite.scripts as CompiledScript[]) || [];
+            for (const script of scripts) {
+                if (script.trigger === 'hand_sign') {
+                    allScripts.push(script);
+                }
+            }
+        }
+        for (const script of this.stageScripts) {
+            if (script.trigger === 'hand_sign') {
+                allScripts.push(script);
+            }
+        }
+
+        if (allScripts.length === 0) return;
+
+        vmLog.info(`Starting hand_sign polling for ${allScripts.length} script(s)`);
+
+        this.handSignPollingId = setInterval(() => {
+            if (!this.isRunning) return;
+
+            for (const script of allScripts) {
+                if (!script.triggerKey) continue;
+
+                // detectGesture() returns raw values: '2', '5', 'thumbs_up', 'none'
+                // script.triggerKey comes from the dropdown and matches these values directly
+                let currentSign = '';
+                if (typeof window !== 'undefined' && (window as any).runtime?.handPose) {
+                    currentSign = (window as any).runtime.handPose.getSign() || '';
+                }
+
+                const conditionMet = currentSign === script.triggerKey;
+                const hatId = script.hatBlockId || script.triggerKey;
+
+                if (conditionMet && !this.handSignFired.has(hatId)) {
+                    this.handSignFired.add(hatId);
+                    this.setRunning(true);
+                    this.stopScriptByHat(script.spriteId, hatId);
+                    this.runScript(script).catch(err => {
+                        vmLog.error('Error in hand_sign trigger script', err);
+                    });
+                } else if (!conditionMet) {
+                    this.handSignFired.delete(hatId);
+                }
+            }
+        }, 100);
+    }
+
+    private stopHandSignPolling(): void {
+        if (this.handSignPollingId !== null) {
+            clearInterval(this.handSignPollingId);
+            this.handSignPollingId = null;
+        }
+        this.handSignFired.clear();
     }
 
     // ═══════════════════════════════════════════════════════════════════════

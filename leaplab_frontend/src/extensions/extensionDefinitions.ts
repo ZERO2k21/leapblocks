@@ -554,7 +554,8 @@ export const EXTENSIONS: Record<string, ExtensionDef> = {
                 {
                     type: 'hp_when_sign', message0: 'when hand sign %1',
                     args0: [{ type: 'field_dropdown', name: 'SIGN', options: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] }],
-                    nextStatement: true, colour: '#D43D41'
+                    nextStatement: true, colour: '#D43D41',
+                    hat: 'event'
                 },
                 {
                     type: 'hp_finger_x', message0: '%1 x position',
