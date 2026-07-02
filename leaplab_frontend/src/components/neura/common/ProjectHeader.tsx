@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon } from 'lucide-react';
+import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon, Search } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import { useNeuraTheme } from './NeuraThemeContext';
 import TopbarShareButton from '../../common/TopbarShareButton';
@@ -81,7 +81,7 @@ export default function ProjectHeader({
 
             {/* ── MIDDLE SECTION ──────────────────────────────────────────────────────── */}
             <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 flex-[1_1_auto]">
-                {(showMiddleSection && title) && (
+                {showMiddleSection && title ? (
                     <div className="flex items-center h-10 bg-black/25 rounded-2xl pl-[18px] pr-1.5 border border-white/8 gap-2 transition-all duration-200 hover:bg-black/30 focus-within:bg-black/30 focus-within:border-white/15">
                         <span className="text-sm opacity-45">{icon || '🧠'}</span>
                         <input
@@ -109,6 +109,15 @@ export default function ProjectHeader({
                                 <Download size={16} strokeWidth={2.8} />
                             </button>
                         )}
+                    </div>
+                ) : (
+                    <div className="flex items-center h-10 bg-black/20 rounded-xl px-4 border border-white/[0.08] gap-2.5 transition-all duration-200 hover:bg-black/25 focus-within:bg-black/25 focus-within:border-white/15 w-full max-w-[420px]">
+                        <Search size={16} className="text-white/40 shrink-0" strokeWidth={2} />
+                        <input
+                            placeholder="Search projects, models, datasets..."
+                            type="text"
+                            className="bg-transparent border-none text-white text-sm font-normal font-['Segoe_UI',Inter,sans-serif] w-full outline-none tracking-[0.01em] placeholder:text-white/35"
+                        />
                     </div>
                 )}
             </div>

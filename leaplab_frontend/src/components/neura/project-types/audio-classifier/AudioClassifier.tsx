@@ -2,7 +2,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import StepIndicator from '../../components/StepIndicator'
 import AddClassButton from '../../components/AddClassButton'
 import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { AudioModel, blobToMelSpectrogram } from './AudioModel'
@@ -537,6 +536,8 @@ export default function AudioClassifier({ project, onBack, onDataChange }: Audio
                                                 e.currentTarget.style.background = 'var(--ml-well)'
                                             }
                                         }}
+                                        onTouchStart={() => startRecording(cls.id)}
+                                        onTouchEnd={stopRecording}
                                         style={{
                                             width: '100%',
                                             padding: '10px 0',

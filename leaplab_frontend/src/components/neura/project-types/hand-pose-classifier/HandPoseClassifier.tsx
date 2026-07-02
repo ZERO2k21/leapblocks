@@ -2,7 +2,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import StepIndicator from '../../components/StepIndicator'
 import AddClassButton from '../../components/AddClassButton'
 import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
@@ -455,7 +454,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
             })
         }, 500)
         return () => clearTimeout(timer)
-    }, [classes, trained, nextId, epochs])
+    }, [classes, trained, nextId, epochs, onDataChange])
 
     // Load MediaPipe Hands detector on demand (first camera open)
     const ensureDetector = useCallback(async () => {
@@ -491,7 +490,7 @@ export default function HandPoseClassifier({ project, onBack, onDataChange }: Ha
         const minY = Math.min(...ys), maxY = Math.max(...ys)
         const rangeX = (maxX - minX) || 1
         const rangeY = (maxY - minY) || 1
-        return landmarks.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2]]).flat()
+        return landmarks.map(k => [(k[0] - minX) / rangeX, (k[1] - minY) / rangeY, k[2] ?? 0]).flat()
     }, [])
 
     const handleTrain = async () => {

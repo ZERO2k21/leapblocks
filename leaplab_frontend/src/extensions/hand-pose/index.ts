@@ -11,7 +11,7 @@ export class HandPoseExtension extends Extension {
                 { opcode: 'hp_analyze', blockType: 'command', text: '[ACTION] hand', arguments: { ACTION: { type: 'dropdown', defaultValue: 'analyze', menu: [['analyze', 'analyze'], ['show detection', 'show'], ['hide detection', 'hide']] } } },
                 { opcode: 'hp_move_with', blockType: 'command', text: 'move sprite with [FINGER]', arguments: { FINGER: { type: 'dropdown', defaultValue: 'thumb', menu: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] } } },
                 { opcode: 'hp_guess_sign', blockType: 'command', text: 'guess sign' },
-                { opcode: 'hp_when_sign', blockType: 'hat', text: 'when hand sign [SIGN]', arguments: { SIGN: { type: 'dropdown', defaultValue: '2', menu: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up']] } } },
+                { opcode: 'hp_when_sign', blockType: 'hat', text: 'when hand sign [SIGN]', arguments: { SIGN: { type: 'dropdown', defaultValue: '2', menu: [['Peace', '2'], ['Open', '5'], ['Thumbs Up', 'thumbs_up'], ['No Hand', 'no_hand']] } } },
                 { opcode: 'hp_finger_x', blockType: 'reporter', text: '[FINGER] x position', arguments: { FINGER: { type: 'dropdown', defaultValue: 'thumb', menu: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] } } },
                 { opcode: 'hp_finger_y', blockType: 'reporter', text: '[FINGER] y position', arguments: { FINGER: { type: 'dropdown', defaultValue: 'thumb', menu: [['Thumb', 'thumb'], ['Index', 'index'], ['Middle', 'middle'], ['Ring', 'ring'], ['Pinky', 'pinky'], ['Base', 'base']] } } },
             ]
