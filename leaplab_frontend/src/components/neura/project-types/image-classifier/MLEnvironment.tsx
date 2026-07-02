@@ -174,70 +174,45 @@ function ClassCard({ cls, color, onAddSamples, onWebcam, onDelete, onRename, sam
             onMouseLeave={() => setHovered(false)}
         >
             {/* Left colored sidebar */}
-            <div className="flex flex-col items-center py-4 px-2 gap-2" style={{
-                width: 72,
+            <div className="flex flex-col items-center justify-between py-4 px-2" style={{
+                width: 56,
                 background: `linear-gradient(180deg, ${color.bg} 0%, ${color.lighter} 100%)`,
                 flexShrink: 0,
             }}>
-                {/* Activity icon */}
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.25)" }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="5" r="3" />
-                        <path d="M6.5 8l4-1.5 3.5 2 4-1.5" />
-                        <path d="M6.5 13l4-1.5 3.5 2 4-1.5" />
-                        <path d="M6.5 18l4-1.5 3.5 2 4-1.5" />
-                    </svg>
+                {/* Visual indicator (Number) */}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]" style={{ background: "rgba(255,255,255,0.2)" }}>
+                    <span className="text-white font-bold font-mono text-[13px]">{cls.id}</span>
                 </div>
 
-                {/* Class name */}
-                {editing ? (
-                    <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && commitRename()} autoFocus
-                        className="rounded font-sans text-[11px] font-bold w-full text-center outline-none"
-                        style={{ background: "rgba(0,0,0,0.2)", border: "none", padding: "2px 4px", color: "#fff" }} />
-                ) : (
-                    <span className="text-white font-sans text-[11px] font-bold truncate w-full text-center" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
-                        {cls.name}
-                    </span>
-                )}
-
-                {/* Edit icon */}
-                <button onClick={() => setEditing(true)} className="cursor-pointer flex items-center justify-center" style={{ background: "none", border: "none", padding: 2 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                {/* Delete button at the bottom */}
+                <button onClick={() => onDelete(cls.id)} className="cursor-pointer flex items-center justify-center w-8 h-8 rounded-lg hover:bg-black/15 transition-all text-white/90 hover:text-white" style={{ background: "none", border: "none" }} title="Delete Class">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
                     </svg>
                 </button>
-
-                {/* Three-dot menu */}
-                <div className="relative" ref={menuRef}>
-                    <button onClick={() => setShowMenu(!showMenu)} className="cursor-pointer flex flex-col items-center gap-[3px]" style={{ background: "none", border: "none", padding: "2px 4px" }}>
-                        <span className="block w-[3px] h-[3px] rounded-full bg-white opacity-80" />
-                        <span className="block w-[3px] h-[3px] rounded-full bg-white opacity-80" />
-                        <span className="block w-[3px] h-[3px] rounded-full bg-white opacity-80" />
-                    </button>
-                    {showMenu && (
-                        <div className="absolute left-0 top-full mt-1 bg-ml-surface rounded-lg shadow-lg border border-ml-border py-1 z-50" style={{ minWidth: 110 }}>
-                            <button onClick={() => { setEditing(true); setShowMenu(false); }}
-                                className="w-full px-3 py-1.5 text-left text-[12px] font-sans text-ml-text-primary hover:bg-ml-well cursor-pointer flex items-center gap-2" style={{ background: "none", border: "none" }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                                Rename
-                            </button>
-                            <button onClick={() => { onDelete(cls.id); setShowMenu(false); }}
-                                className="w-full px-3 py-1.5 text-left text-[12px] font-sans text-red-500 hover:bg-red-50 cursor-pointer flex items-center gap-2" style={{ background: "none", border: "none" }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /></svg>
-                                Delete
-                            </button>
-                        </div>
-                    )}
-                </div>
             </div>
 
             {/* Right body */}
             <div className="flex-1 px-5 py-4 flex flex-col gap-3 min-w-0">
-                {/* Top row: label + sample count */}
-                <div className="flex items-center justify-between">
-                    <span className="font-sans text-[13px] font-semibold text-ml-text-primary">Add Image Samples</span>
-                    <span className="font-sans text-[12px] font-bold" style={{ color: color.bg }}>
+                {/* Top row: editable class name + sample count */}
+                <div className="flex items-center justify-between gap-4">
+                    {editing ? (
+                        <input value={name} onChange={e => setName(e.target.value)} onBlur={commitRename} onKeyDown={e => e.key === "Enter" && commitRename()} autoFocus
+                            className="rounded font-sans text-[14px] font-bold px-2 py-0.5 outline-none border border-ml-accent/30 w-full max-w-[220px]"
+                            style={{ background: "var(--ml-well)", color: "var(--ml-text-primary)" }} />
+                    ) : (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-sans text-[14px] font-bold text-ml-text-primary truncate cursor-pointer hover:text-ml-accent transition-colors" onClick={() => setEditing(true)}>
+                                {cls.name}
+                            </span>
+                            <button onClick={() => setEditing(true)} className="cursor-pointer text-ml-text-muted hover:text-ml-text-primary transition-colors p-0.5 border-none bg-transparent">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+                    <span className="font-sans text-[11px] font-bold shrink-0 px-2.5 py-0.5 rounded-full" style={{ background: color.bg + "12", color: color.bg }}>
                         {sampleCount} Sample{sampleCount !== 1 ? "s" : ""}
                     </span>
                 </div>
