@@ -457,6 +457,44 @@
   to { stroke-dashoffset: -24; }
 }
 
+@keyframes hero-stagger-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-scale-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow-ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes brain-glow-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.15), 0 0 80px rgba(124,58,237,0.05); }
+  50% { box-shadow: 0 0 60px rgba(124,58,237,0.3), 0 0 120px rgba(124,58,237,0.1); }
+}
+
+@keyframes chip-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mesh-shift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 50% 0%; }
+  50% { background-position: 100% 50%; }
+  75% { background-position: 50% 100%; }
+}
+
 /* ── Animation Utility Classes ─────────────────────────────────────────── */
 
 .animate-fade-in {
@@ -495,6 +533,44 @@
 
 .animate-dot-pulse {
   animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-hero-stagger {
+  animation: hero-stagger-in 0.6s var(--neura-transition) both;
+}
+
+.animate-hero-scale {
+  animation: hero-scale-in 0.7s var(--neura-transition-spring) both;
+}
+
+.animate-glow-ring-rotate {
+  animation: glow-ring-rotate 20s linear infinite;
+}
+
+.animate-brain-glow {
+  animation: brain-glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradient-flow 6s ease infinite;
+}
+
+.animate-mesh-shift {
+  background-size: 400% 400%;
+  animation: mesh-shift 15s ease infinite;
+}
+
+.hero-chip-scan::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  animation: chip-scan 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 /* ── Stagger Delays ────────────────────────────────────────────────────── */
@@ -632,12 +708,19 @@
   .animate-slide-in-up,
   .animate-fade-in-scale,
   .animate-celebration,
-  .animate-dot-pulse {
+  .animate-dot-pulse,
+  .animate-hero-stagger,
+  .animate-hero-scale,
+  .animate-glow-ring-rotate,
+  .animate-brain-glow,
+  .animate-gradient-flow,
+  .animate-mesh-shift {
     animation: none;
   }
   .neura-shimmer::after,
   .neura-progress-premium .neura-progress-fill,
-  .neura-progress-premium .neura-progress-fill::after {
+  .neura-progress-premium .neura-progress-fill::after,
+  .hero-chip-scan::after {
     animation: none;
   }
 }
