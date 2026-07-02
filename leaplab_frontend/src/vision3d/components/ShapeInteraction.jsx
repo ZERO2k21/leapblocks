@@ -52,7 +52,7 @@ const ShapeInteraction = () => {
 
       const tool = use3DStore.getState().activeTool;
       if (tool !== 'move') {
-        selectShape(shape.id, e.shiftKey);
+        selectShape(shape.id, e.shiftKey || e.ctrlKey);
         return;
       }
 
@@ -112,7 +112,7 @@ const ShapeInteraction = () => {
         activeRef.current = false;
 
         if (!moved) {
-          selectShape(shapeId, e.shiftKey);
+          selectShape(shapeId, e.shiftKey || e.ctrlKey);
         } else {
           pushHistory();
         }

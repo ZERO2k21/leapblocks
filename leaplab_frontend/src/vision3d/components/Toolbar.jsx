@@ -56,34 +56,6 @@ export const Toolbar = () => {
     }
   };
 
-  const handleImport = () => {
-    log('Toolbar: import clicked');
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.stl,.obj,.gltf,.glb';
-    input.onchange = async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      try {
-        const { importSTL, importOBJ } = await import('../engine/ExportEngine');
-        const extension = file.name.split('.').pop()?.toLowerCase();
-        if (extension === 'stl') {
-          const geometry = await importSTL(file);
-          console.log('Imported STL geometry:', geometry);
-        } else if (extension === 'obj') {
-          const group = await importOBJ(file);
-          console.log('Imported OBJ group:', group);
-        } else {
-          alert('Unsupported file format');
-        }
-      } catch (err) {
-        console.error('Import failed:', err);
-        alert('Import failed. Please try again.');
-      }
-    };
-    input.click();
-  };
-
   return (
     <div className="toolbar">
       <div className="toolbar-section">
@@ -258,13 +230,6 @@ export const Toolbar = () => {
         <div className="toolbar-divider" />
 
         <div className="toolbar-group">
-          <button className="toolbar-btn" onClick={handleImport} title="Import">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </button>
           <div className="export-dropdown">
             <button className="toolbar-btn" title="Export">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">

@@ -89,6 +89,13 @@ const MODULES: Record<string, ModuleMeta> = {
         gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(244, 114, 182, 0.1) 100%)',
         darkAccent: '#BE185D',
     },
+    vision3d: {
+        label: 'Vision3D',
+        icon: 'assets/vision3d_icon.png',
+        accent: '#6366F1',
+        gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(129, 140, 248, 0.1) 100%)',
+        darkAccent: '#4338CA',
+    },
 };
 
 // Generates a modern abstract SVG representing the project's domain instead of repeating the logo
@@ -167,6 +174,26 @@ const renderCardVisual = (mode: string, projectName: string) => {
                         <circle cx="140" cy="55" r="8" fill="#E979F9" />
                         <circle cx="140" cy="55" r="12" stroke="#E979F9" strokeWidth="0.75" strokeDasharray="3 3" opacity="0.8" />
                         <Brain size={14} color="#FFF" style={{ position: 'absolute', left: '133px', top: '48px' }} />
+                    </svg>
+                </div>
+            );
+        case 'vision3d':
+            return (
+                <div className="project-card-visual visual-vision3d">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(99, 102, 241, 0.02)" rx="8" />
+                        {/* 3D cube */}
+                        <g transform="translate(60, 25)">
+                            <path d="M0 30 L40 0 L80 30 L40 60 Z" fill="rgba(99, 102, 241, 0.15)" stroke={accent} strokeWidth="1.5" strokeLinejoin="round" />
+                            <path d="M0 30 L0 70 L40 100 L40 60 Z" fill="rgba(99, 102, 241, 0.1)" stroke={accent} strokeWidth="1.2" strokeLinejoin="round" />
+                            <path d="M40 60 L40 100 L80 70 L80 30 Z" fill="rgba(99, 102, 241, 0.08)" stroke={accent} strokeWidth="1.2" strokeLinejoin="round" />
+                            <circle cx="40" cy="50" r="2.5" fill={accent} />
+                            <circle cx="60" cy="20" r="2" fill={accent} />
+                            <circle cx="25" cy="66" r="2" fill={accent} />
+                        </g>
+                        {/* Orbit path */}
+                        <ellipse cx="100" cy="85" rx="35" ry="8" stroke={accent} strokeWidth="0.75" strokeDasharray="2 3" fill="none" opacity="0.3" />
+                        <circle cx="135" cy="85" r="2" fill={accent} opacity="0.5" />
                     </svg>
                 </div>
             );
@@ -989,7 +1016,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         return acc;
     }, {} as Record<string, CloudProject[]>);
 
-    const sortedModes = ['junior', 'intermediate', 'python', 'neura', 'electra', 'creova'];
+    const sortedModes = ['junior', 'intermediate', 'python', 'neura', 'electra', 'vision3d', 'creova'];
 
     if (!isAuthenticated) {
         return (

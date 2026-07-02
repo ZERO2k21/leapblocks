@@ -21,12 +21,21 @@
   position: relative;
 }
 
+.v3d-canvas-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
 .v3d-canvas-area {
   flex: 1;
   position: relative;
   overflow: hidden;
   min-width: 0;
   min-height: 0;
+  width: 100%;
 }
 
 .canvas-3d-container {
@@ -105,7 +114,6 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  min-width: 100vw;
   box-sizing: border-box;
 }
 
@@ -564,6 +572,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.shape-list-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #6366f1;
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .shape-list-icon {
