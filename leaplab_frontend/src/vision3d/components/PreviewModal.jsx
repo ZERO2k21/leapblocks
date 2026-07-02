@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { createGeometry } from '../utils/helpers';
 import { use3DStore } from '../store/use3DStore';
 
-const SceneShapes = ({ exploded, explosionFactor }) => {
+const SceneShapes = ({ explosionFactor }) => {
   const shapes = use3DStore((s) => s.shapes);
 
   const visible = useMemo(
@@ -25,18 +25,32 @@ const SceneShapes = ({ exploded, explosionFactor }) => {
     return c;
   }, [visible]);
 
-  return visible.map((shape) => (
+  const directions = useMemo(() => {
+    const count = visible.length;
+    if (count === 0) return [];
+    if (count === 1) return [new THREE.Vector3(0, 1, 0)];
+
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    return visible.map((s, i) => {
+      const theta = goldenAngle * i;
+      const y = 1 - (2 * i) / (count - 1);
+      const r = Math.sqrt(1 - y * y);
+      return new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)).normalize();
+    });
+  }, [visible]);
+
+  return visible.map((shape, index) => (
     <PreviewShape
       key={shape.id}
       shape={shape}
-      exploded={exploded}
       explosionFactor={explosionFactor}
       center={center}
+      dir={directions[index]}
     />
   ));
 };
 
-const PreviewShape = React.memo(({ shape, exploded, explosionFactor, center }) => {
+const PreviewShape = React.memo(({ shape, explosionFactor, center, dir }) => {
   const [geoCache, setGeoCache] = useState(null);
 
   useEffect(() => {
@@ -52,16 +66,11 @@ const PreviewShape = React.memo(({ shape, exploded, explosionFactor, center }) =
 
   const position = useMemo(() => {
     const pos = new THREE.Vector3(...(shape.position || [0, 0, 0]));
-    if (exploded) {
-      const dir = pos.clone().sub(center);
-      if (dir.length() < 0.01) {
-        dir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-      }
-      dir.normalize();
-      pos.add(dir.multiplyScalar(explosionFactor * 4));
+    if (explosionFactor > 0 && dir) {
+      pos.add(dir.clone().multiplyScalar(explosionFactor * 5));
     }
     return [pos.x, pos.y, pos.z];
-  }, [shape.position, exploded, explosionFactor, center]);
+  }, [shape.position, explosionFactor, dir]);
 
   if (!geoCache) return null;
 
@@ -77,7 +86,7 @@ const PreviewShape = React.memo(({ shape, exploded, explosionFactor, center }) =
           side={THREE.DoubleSide}
         />
       </mesh>
-      {exploded && explosionFactor > 0.3 && (
+      {explosionFactor > 0.3 && (
         <Html distanceFactor={15} style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(0,0,0,0.75)',
@@ -117,36 +126,13 @@ const PreviewControls = () => {
 };
 
 const PreviewModal = ({ open, onClose }) => {
-  const [exploded, setExploded] = useState(false);
-  const [explosionFactor, setExplosionFactor] = useState(0);
-  const animationRef = useRef(null);
+  const [explosionFactor, setExplosionFactor] = useState(1);
 
   useEffect(() => {
     if (!open) {
-      setExploded(false);
-      setExplosionFactor(0);
+      setExplosionFactor(1);
     }
   }, [open]);
-
-  const toggleExplode = useCallback(() => {
-    setExploded((prev) => !prev);
-  }, []);
-
-  useEffect(() => {
-    const target = exploded ? 1 : 0;
-    const animate = () => {
-      setExplosionFactor((prev) => {
-        const diff = target - prev;
-        if (Math.abs(diff) < 0.01) return target;
-        animationRef.current = requestAnimationFrame(animate);
-        return prev + diff * 0.08;
-      });
-    };
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [exploded]);
 
   if (!open) return null;
 
@@ -177,41 +163,26 @@ const PreviewModal = ({ open, onClose }) => {
         <directionalLight position={[-5, 10, -5]} intensity={0.5} />
         <hemisphereLight args={['#b1e1ff', '#2a2a3e', 0.6]} />
         <PreviewControls />
-        <SceneShapes exploded={exploded} explosionFactor={explosionFactor} />
+        <SceneShapes explosionFactor={explosionFactor} />
       </Canvas>
 
       <div style={{
         position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', alignItems: 'center', gap: 12, zIndex: 10000,
-        background: 'rgba(0,0,0,0.6)', padding: '10px 20px', borderRadius: 12,
+        display: 'flex', alignItems: 'center', gap: 16, zIndex: 10000,
+        background: 'rgba(0,0,0,0.6)', padding: '10px 24px', borderRadius: 12,
         backdropFilter: 'blur(8px)',
       }}>
-        <button
-          onClick={toggleExplode}
-          style={{
-            background: exploded ? '#6366f1' : 'rgba(255,255,255,0.15)',
-            border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 8,
-            cursor: 'pointer', fontSize: 13, fontFamily: 'sans-serif',
-            fontWeight: 600, whiteSpace: 'nowrap',
-          }}
-        >
-          {exploded ? 'Assemble' : 'Explode'}
-        </button>
-
-        {exploded && (
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={explosionFactor}
-            onChange={(e) => {
-              setExplosionFactor(parseFloat(e.target.value));
-              setExploded(true);
-            }}
-            style={{ width: 140, accentColor: '#6366f1' }}
-          />
-        )}
+        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'sans-serif', fontWeight: 600 }}>ASSEMBLED</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={explosionFactor}
+          onChange={(e) => setExplosionFactor(parseFloat(e.target.value))}
+          style={{ width: 200, accentColor: '#6366f1', cursor: 'pointer' }}
+        />
+        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'sans-serif', fontWeight: 600 }}>EXPLODED</span>
       </div>
     </div>
   );
