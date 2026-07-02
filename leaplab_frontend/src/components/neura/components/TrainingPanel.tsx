@@ -34,7 +34,7 @@ export default function TrainingPanel({
     const isReady = canTrain && status !== 'training'
 
     return (
-        <div className="bg-ml-surface border border-ml-border rounded-2xl w-[288px] overflow-hidden font-sans">
+        <div className="bg-ml-surface border border-ml-border rounded-2xl w-[330px] overflow-hidden font-sans">
             {/* Header with status indicator */}
             <div className="px-5 py-4 flex items-center gap-2.5">
                 <div

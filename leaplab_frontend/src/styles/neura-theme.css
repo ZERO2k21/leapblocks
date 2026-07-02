@@ -1,7 +1,9 @@
 /**
- * Neura ML Theme - Premium Deep Navy aesthetics matching the Topbar
- * Enhanced with glass-morphism, micro-interactions, and refined shadows
+ * Neura ML Theme — Tailwind CSS v4 compatible
+ * Only includes classes and variables actively used by neura components.
  */
+
+/* ── CSS Variables ─────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
@@ -45,67 +47,7 @@
   }
 }
 
-/* ── Neura Gradient ─────────────────────────────────────────────────────── */
-
-.neura-gradient {
-  background: linear-gradient(135deg, #0a015a 0%, #080a25 100%);
-}
-
-/* ── Glass Morphism ─────────────────────────────────────────────────────── */
-
-.neura-glass {
-  background: var(--neura-glass-bg);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border: 1px solid var(--neura-glass-border);
-  box-shadow: var(--neura-shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.neura-glass:hover {
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: var(--neura-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-/* ── Premium Card ───────────────────────────────────────────────────────── */
-
-.neura-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
-  border-radius: 1.25rem;
-  box-shadow: var(--neura-shadow-sm);
-  transition: all 0.35s var(--neura-transition);
-  border: 1px solid rgba(10, 1, 90, 0.06);
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  background: linear-gradient(135deg, rgba(10, 1, 90, 0.02) 0%, transparent 60%);
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-
-.neura-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--neura-shadow-xl);
-  border-color: rgba(10, 1, 90, 0.12);
-}
-
-.neura-card:hover::after {
-  opacity: 1;
-}
-
-.neura-card:active {
-  transform: translateY(-2px) scale(0.99);
-  transition-duration: 0.1s;
-}
-
-/* ── Premium Buttons ────────────────────────────────────────────────────── */
+/* ── Buttons ───────────────────────────────────────────────────────────── */
 
 .neura-button-primary {
   position: relative;
@@ -220,7 +162,7 @@
   transition-duration: 0.1s;
 }
 
-/* ── Premium Input ──────────────────────────────────────────────────────── */
+/* ── Input ─────────────────────────────────────────────────────────────── */
 
 .neura-input {
   border: 2px solid #e2e8f0;
@@ -242,947 +184,7 @@
   box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1), 0 2px 8px rgba(10, 1, 90, 0.06);
 }
 
-/* ── Dashboard Animations ────────────────────────────────────────────────── */
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes wave {
-  0% { transform: rotate(0deg); }
-  10% { transform: rotate(14deg); }
-  20% { transform: rotate(-8deg); }
-  30% { transform: rotate(14deg); }
-  40% { transform: rotate(-4deg); }
-  50% { transform: rotate(10deg); }
-  60% { transform: rotate(0deg); }
-  100% { transform: rotate(0deg); }
-}
-
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-}
-
-@keyframes shimmer-slide {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(10, 1, 90, 0.15); }
-  50% { box-shadow: 0 0 35px rgba(10, 1, 90, 0.3); }
-}
-
-@keyframes slide-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes fade-in-scale {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-4px); }
-  40% { transform: translateX(4px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-wave {
-  animation: wave 2.5s ease-in-out infinite;
-  transform-origin: 70% 70%;
-  display: inline-block;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 4s ease-in-out infinite;
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-.animate-slide-in-up {
-  animation: slide-in-up 0.4s var(--neura-transition) both;
-}
-
-.animate-fade-in-scale {
-  animation: fade-in-scale 0.3s var(--neura-transition) both;
-}
-
-.animate-gradient-shift {
-  background-size: 200% 200%;
-  animation: gradient-shift 6s ease infinite;
-}
-
-/* Staggered entrance delays */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
-.stagger-7 { animation-delay: 0.35s; }
-
-/* ── Gradient Utilities ────────────────────────────────────────────────── */
-
-.bg-gradient-radial {
-  background-image: radial-gradient(var(--tw-gradient-stops));
-}
-
-.neura-gradient-text {
-  background: linear-gradient(135deg, #0a015a, #4338ca, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Premium Template Cards ─────────────────────────────────────────────── */
-
-.neura-template-card {
-  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
-  border: 1px solid rgba(10, 1, 90, 0.06);
-  border-radius: 1rem;
-  box-shadow: var(--neura-shadow-sm);
-  transition: all 0.35s var(--neura-transition);
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-template-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent-from, #0a015a), var(--accent-to, #15027a));
-  opacity: 0.35;
-  transition: opacity 0.3s ease, box-shadow 0.3s ease;
-}
-
-.neura-template-card:hover::before {
-  opacity: 1;
-  box-shadow: 0 2px 12px var(--accent-glow, rgba(10, 1, 90, 0.3));
-}
-
-.neura-template-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--neura-shadow-lg);
-  border-color: rgba(10, 1, 90, 0.12);
-}
-
-/* ── Premium Template Cards (Enhanced) ───────────────────────────────────── */
-
-.neura-premium-card {
-  background: white;
-  border-radius: 20px;
-  padding: 32px 28px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1),
-              0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.08);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.neura-premium-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent-from, #6d28d9), var(--accent-to, #8b5cf6));
-  opacity: 0.35;
-  transition: opacity 0.3s ease, box-shadow 0.3s ease;
-}
-
-.neura-premium-card:hover::before {
-  opacity: 1;
-  box-shadow: 0 2px 12px var(--accent-glow, rgba(139, 92, 246, 0.3));
-}
-
-.neura-premium-card:hover {
-  transform: translateY(-12px);
-  box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.25);
-  border-color: rgba(139, 92, 246, 0.3);
-}
-
-.neura-icon-wrapper {
-  width: 76px;
-  height: 76px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  transition: all 0.4s ease;
-  color: white;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.neura-premium-card:hover .neura-icon-wrapper {
-  transform: scale(1.12) rotate(6deg);
-}
-
-.neura-category-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #6b7280;
-  background: #f1f5f9;
-  padding: 3px 12px;
-  border-radius: 9999px;
-  display: inline-block;
-  margin-bottom: 16px;
-  width: fit-content;
-}
-
-.neura-card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e2937;
-  line-height: 1.3;
-  margin: 0 0 12px;
-}
-
-.neura-card-desc {
-  color: #64748b;
-  line-height: 1.6;
-  flex-grow: 1;
-  margin-bottom: 28px;
-  font-size: 14px;
-}
-
-.neura-use-btn {
-  position: relative;
-  background: linear-gradient(90deg, #6d28d9, #8b5cf6);
-  color: white;
-  border: none;
-  padding: 14px 32px;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 13px;
-  width: 100%;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-  cursor: pointer;
-  overflow: hidden;
-  font-family: 'DM Sans', sans-serif;
-}
-
-.neura-use-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.neura-use-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
-}
-
-.neura-use-btn:hover::before {
-  left: 100%;
-}
-
-.neura-popular-badge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: linear-gradient(135deg, #f59e0b, #f97316);
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
-  z-index: 2;
-}
-
-/* ── Premium Badge ──────────────────────────────────────────────────────── */
-
-.neura-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.neura-badge-success {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-  box-shadow: 0 1px 3px rgba(22, 101, 52, 0.12);
-}
-
-.neura-badge-warning {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
-  box-shadow: 0 1px 3px rgba(146, 64, 14, 0.12);
-}
-
-.neura-badge-info {
-  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-  color: #3730a3;
-  box-shadow: 0 1px 3px rgba(55, 48, 163, 0.12);
-}
-
-/* ── Sidebar Styles ──────────────────────────────────────────────────────── */
-
-.neura-sidebar-card {
-  background-color: white;
-  border-radius: 1rem;
-  box-shadow: var(--neura-shadow-sm);
-  border: 1px solid rgba(10, 1, 90, 0.06);
-}
-
-/* ── Tooltip ─────────────────────────────────────────────────────────────── */
-
-.neura-tooltip {
-  position: relative;
-}
-
-.neura-tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: #0a015a;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.2s var(--neura-transition);
-  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.3);
-  z-index: 100;
-}
-
-.neura-tooltip:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ── Premium Enhanced Animations ──────────────────────────────────────────── */
-
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer-border {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes rotate-gradient {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes particle-float {
-  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
-  25% { transform: translateY(-12px) translateX(6px) scale(1.1); opacity: 0.8; }
-  50% { transform: translateY(-6px) translateX(-4px) scale(0.95); opacity: 0.5; }
-  75% { transform: translateY(-16px) translateX(2px) scale(1.05); opacity: 0.7; }
-}
-
-@keyframes progress-fill {
-  from { width: 0%; }
-}
-
-@keyframes glow-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
-}
-
-@keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes border-glow {
-  0%, 100% { border-color: rgba(124, 58, 237, 0.2); }
-  50% { border-color: rgba(124, 58, 237, 0.5); }
-}
-
-@keyframes dot-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.5; }
-}
-
-@keyframes sweep-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-@keyframes celebration-pop {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.animate-count-up {
-  animation: count-up 0.5s var(--neura-transition) both;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.4s var(--neura-transition) both;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.4s var(--neura-transition) both;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.3s var(--neura-transition-spring) both;
-}
-
-.animate-glow-ring {
-  animation: glow-ring 2s ease-in-out infinite;
-}
-
-.animate-dot-pulse {
-  animation: dot-pulse 1.5s ease-in-out infinite;
-}
-
-.animate-celebration {
-  animation: celebration-pop 0.5s var(--neura-transition-spring) both;
-}
-
-/* ── Premium Glass Utilities ─────────────────────────────────────────────── */
-
-.neura-glass-premium {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 32px rgba(10, 1, 90, 0.08),
-              0 2px 8px rgba(10, 1, 90, 0.04),
-              inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.neura-glass-premium:hover {
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 12px 40px rgba(10, 1, 90, 0.12),
-              0 4px 12px rgba(10, 1, 90, 0.06),
-              inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.neura-glass-dark {
-  background: rgba(20, 20, 40, 0.65);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* ── Premium Card Hover Effects ──────────────────────────────────────────── */
-
-.neura-card-3d {
-  transition: all 0.4s var(--neura-transition);
-  transform-style: preserve-3d;
-  perspective: 1000px;
-}
-
-.neura-card-3d:hover {
-  transform: translateY(-6px) rotateX(2deg) rotateY(-1deg);
-  box-shadow: 0 20px 50px rgba(10, 1, 90, 0.15),
-              0 8px 20px rgba(10, 1, 90, 0.08);
-}
-
-.neura-card-glow {
-  position: relative;
-}
-
-.neura-card-glow::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: -1;
-  filter: blur(8px);
-}
-
-.neura-card-glow:hover::before {
-  opacity: 1;
-}
-
-/* ── Animated Border Gradient ────────────────────────────────────────────── */
-
-.neura-animated-border {
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-animated-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(135deg, #7c3aed, #6366f1, #a855f7, #7c3aed);
-  background-size: 300% 300%;
-  animation: shimmer-border 4s ease infinite;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.neura-animated-border:hover::before {
-  opacity: 1;
-}
-
-/* ── Shimmer Overlay ─────────────────────────────────────────────────────── */
-
-.neura-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-  animation: sweep-shimmer 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* ── Premium Progress Bar ────────────────────────────────────────────────── */
-
-.neura-progress-premium {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(124, 58, 237, 0.1);
-  overflow: hidden;
-  position: relative;
-}
-
-.neura-progress-premium .neura-progress-fill {
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd);
-  background-size: 200% 100%;
-  animation: shimmer-border 2s ease infinite;
-  transition: width 0.6s var(--neura-transition);
-  position: relative;
-}
-
-.neura-progress-premium .neura-progress-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: sweep-shimmer 1.5s ease-in-out infinite;
-}
-
-/* ── Premium Status Dot ──────────────────────────────────────────────────── */
-
-.neura-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: relative;
-}
-
-.neura-status-dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  opacity: 0.3;
-  animation: glow-ring 2s ease-in-out infinite;
-}
-
-.neura-status-dot-active {
-  background: #22c55e;
-  color: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
-}
-
-/* ── Premium Badge Enhanced ──────────────────────────────────────────────── */
-
-.neura-badge-premium {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-badge-premium::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: sweep-shimmer 2s ease-in-out infinite;
-}
-
-/* ── Premium Upload Zone ─────────────────────────────────────────────────── */
-
-.neura-upload-zone {
-  border: 2px dashed rgba(124, 58, 237, 0.3);
-  border-radius: 1rem;
-  padding: 2rem;
-  text-align: center;
-  transition: all 0.3s var(--neura-transition);
-  position: relative;
-  overflow: hidden;
-}
-
-.neura-upload-zone:hover {
-  border-color: rgba(124, 58, 237, 0.6);
-  background: rgba(124, 58, 237, 0.03);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08);
-}
-
-.neura-upload-zone::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(124, 58, 237, 0.05) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.neura-upload-zone:hover::before {
-  opacity: 1;
-}
-
-/* ── Premium Tooltip ─────────────────────────────────────────────────────── */
-
-.neura-tooltip-premium {
-  position: relative;
-}
-
-.neura-tooltip-premium::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  background: linear-gradient(135deg, #0a015a, #15027a);
-  color: white;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.25s var(--neura-transition);
-  box-shadow: 0 8px 24px rgba(10, 1, 90, 0.35);
-  z-index: 100;
-}
-
-.neura-tooltip-premium:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ── Premium Focus Ring ──────────────────────────────────────────────────── */
-
-.neura-focus-ring:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5),
-              0 0 0 4px rgba(124, 58, 237, 0.15);
-}
-
-/* ── Skeleton Loading ────────────────────────────────────────────────────── */
-
-.neura-skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer-border 1.5s ease-in-out infinite;
-  border-radius: 8px;
-}
-
-.neura-dark .neura-skeleton {
-  background: linear-gradient(90deg, #1a1a2a 25%, #252540 50%, #1a1a2a 75%);
-  background-size: 200% 100%;
-}
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-
-@media (max-width: 1280px) {
-  .neura-sidebar-card {
-    display: none;
-  }
-}
-
-/* ── Dashboard Action Bar ──────────────────────────────────────────────── */
-
-.neura-action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 22px;
-  background: var(--ml-surface);
-  border: 1px solid var(--ml-border);
-  border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-@media (max-width: 640px) {
-  .neura-action-bar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 14px 16px;
-  }
-}
-
-/* ── Clean Table System ────────────────────────────────────────────────── */
-
-.neura-table-wrap {
-  border-radius: 16px;
-  border: 1px solid var(--ml-border);
-  background: var(--ml-surface);
-  overflow: visible;
-}
-
-.neura-table-wrap .neura-table thead th:first-child { border-top-left-radius: 15px; }
-.neura-table-wrap .neura-table thead th:last-child { border-top-right-radius: 15px; }
-.neura-table-wrap .neura-table tbody tr:last-child td:first-child { border-bottom-left-radius: 15px; }
-.neura-table-wrap .neura-table tbody tr:last-child td:last-child { border-bottom-right-radius: 15px; }
-
-.neura-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.neura-table thead th {
-  padding: 14px 24px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: left;
-  border-bottom: 1px solid var(--ml-border);
-}
-
-.neura-table thead th:not(:last-child) {
-  border-right: 1px solid var(--ml-border);
-}
-
-.neura-table tbody td {
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--ml-border);
-  transition: background-color 0.15s ease;
-}
-
-.neura-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.neura-table tbody tr {
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.neura-table tbody tr:hover {
-  background-color: var(--ml-surface-alt);
-}
-
-.neura-table tbody tr:active {
-  background-color: var(--ml-well);
-}
-
-@media (max-width: 640px) {
-  .neura-table thead th,
-  .neura-table tbody td {
-    padding: 12px 16px;
-  }
-}
-
-/* ── Mobile Premium Card ───────────────────────────────────────────────── */
-
-.neura-mobile-project-card {
-  border-radius: 14px;
-  border: 1px solid var(--ml-border);
-  background: var(--ml-surface);
-  padding: 16px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: visible;
-}
-
-.neura-mobile-project-card:active {
-  transform: scale(0.98);
-}
-
-.neura-mobile-project-card:hover {
-  border-color: var(--ml-border-strong);
-  box-shadow: 0 4px 16px rgba(10, 1, 90, 0.06);
-}
-
-/* ── Pipeline Layout ───────────────────────────────────────────────────── */
-
-.neura-pipeline-layout {
-  display: flex;
-  gap: 24px;
-  align-items: stretch;
-  flex: 1;
-  min-height: 0;
-}
-
-.neura-pipeline-col {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.neura-pipeline-divider {
-  width: 1px;
-  background: linear-gradient(180deg, transparent 0%, var(--ml-border) 20%, var(--ml-border) 80%, transparent 100%);
-  align-self: stretch;
-  flex-shrink: 0;
-}
-
-@media (max-width: 1024px) {
-  .neura-pipeline-layout {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .neura-pipeline-divider {
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--ml-border) 20%, var(--ml-border) 80%, transparent 100%);
-  }
-}
-
-/* ── Centered Workspace Card ───────────────────────────────────────────── */
-
-.neura-workspace-card {
-  max-width: 56rem;
-  margin: 0 auto;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(10, 1, 90, 0.08), 0 2px 8px rgba(10, 1, 90, 0.04);
-  border: 1px solid var(--ml-border);
-  background: var(--ml-surface);
-}
-
-@media (max-width: 640px) {
-  .neura-workspace-card {
-    border-radius: 16px;
-    margin: 0 8px;
-  }
-}
-
-/* ── Form Input Styles ─────────────────────────────────────────────────── */
+/* ── Form Input ────────────────────────────────────────────────────────── */
 
 .neura-form-input {
   width: 100%;
@@ -1211,11 +213,93 @@
   color: var(--ml-text-muted);
 }
 
-.neura-dark .neura-form-input {
-  color: var(--ml-text-primary);
+/* ── Badge ─────────────────────────────────────────────────────────────── */
+
+.neura-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* ── Section Header ────────────────────────────────────────────────────── */
+.neura-badge-info {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #3730a3;
+  box-shadow: 0 1px 3px rgba(55, 48, 163, 0.12);
+}
+
+/* ── Gradient Text ─────────────────────────────────────────────────────── */
+
+.neura-gradient-text {
+  background: linear-gradient(135deg, #0a015a, #4338ca, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Shimmer Overlay ───────────────────────────────────────────────────── */
+
+.neura-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: sweep-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────── */
+
+.neura-progress-premium {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(124, 58, 237, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd);
+  background-size: 200% 100%;
+  animation: shimmer-border 2s ease infinite;
+  transition: width 0.6s var(--neura-transition);
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: sweep-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Skeleton Loading ──────────────────────────────────────────────────── */
+
+.neura-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer-border 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Section Title ─────────────────────────────────────────────────────── */
 
 .neura-section-title {
   font-size: 13px;
@@ -1225,31 +309,205 @@
   letter-spacing: 0.02em;
 }
 
-/* ── Reduced Motion ────────────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .animate-float,
-  .animate-wave,
-  .animate-pulse-slow,
-  .animate-glow-pulse,
-  .animate-shake,
-  .animate-gradient-shift,
-  .animate-count-up,
-  .animate-slide-in-left,
-  .animate-slide-in-right,
-  .animate-scale-in,
-  .animate-glow-ring,
-  .animate-dot-pulse,
-  .animate-celebration {
-    animation: none;
+/* ── Connector Line ────────────────────────────────────────────────────── */
+
+.neura-connector-line {
+  stroke-dasharray: 8 4;
+  animation: dash-flow 1.2s linear infinite;
+}
+
+/* ── ML Flow Layout ────────────────────────────────────────────────────── */
+
+.ml-flow-container {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.ml-flow-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  height: 100%;
+  padding: 0 16px;
+}
+
+.ml-flow-left {
+  flex: 1.3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  max-width: 520px;
+}
+
+.ml-flow-center {
+  flex: 1;
+  min-width: 320px;
+  max-width: 350px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.ml-flow-right {
+  flex: 1;
+  min-width: 320px;
+  max-width: 350px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.ml-flow-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── ML Hover Utility ──────────────────────────────────────────────────── */
+
+.ml-btn-hover {
+  transition: border-color 0.2s var(--neura-transition), color 0.2s var(--neura-transition);
+}
+.ml-btn-hover:hover {
+  border-color: var(--ml-accent);
+  color: var(--ml-accent);
+}
+
+/* ── Keyframe Animations ───────────────────────────────────────────────── */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
-  .neura-shimmer::after,
-  .neura-animated-border::before,
-  .neura-badge-premium::after {
-    animation: none;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* ── Dark Theme ──────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes sweep-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes celebration-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -24; }
+}
+
+/* ── Animation Utility Classes ─────────────────────────────────────────── */
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-wave {
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+  display: inline-block;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s var(--neura-transition) both;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.3s var(--neura-transition) both;
+}
+
+.animate-celebration {
+  animation: celebration-pop 0.5s var(--neura-transition-spring) both;
+}
+
+.animate-dot-pulse {
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Stagger Delays ────────────────────────────────────────────────────── */
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+
+/* ── Dark Theme ────────────────────────────────────────────────────────── */
 
 .neura-dark {
   --neura-glass-bg: rgba(20, 20, 40, 0.72);
@@ -1281,28 +539,6 @@
   --ml-accent-muted: rgba(124, 58, 237, 0.1);
   --ml-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
   --ml-card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.neura-dark .neura-glass {
-  background: var(--neura-glass-bg);
-  border: 1px solid var(--neura-glass-border);
-  box-shadow: var(--neura-shadow-md);
-}
-
-.neura-dark .neura-glass:hover {
-  background: rgba(30, 30, 55, 0.82);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.neura-dark .neura-card {
-  background: linear-gradient(180deg, #1a1d2e 0%, #141627 100%);
-  box-shadow: var(--neura-shadow-sm);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.neura-dark .neura-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: var(--neura-shadow-xl);
 }
 
 .neura-dark .neura-button-primary {
@@ -1353,42 +589,8 @@
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.neura-dark .neura-premium-card {
-  background: #1a1d2e;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-}
-
-.neura-dark .neura-premium-card:hover {
-  box-shadow: 0 25px 50px -12px rgba(124, 58, 237, 0.2);
-  border-color: rgba(124, 58, 237, 0.3);
-}
-
-.neura-dark .neura-card-title {
-  color: #f1f5f9;
-}
-
-.neura-dark .neura-card-desc {
-  color: #94a3b8;
-}
-
-.neura-dark .neura-category-badge {
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.neura-dark .neura-sidebar-card {
-  background-color: #1a1d2e;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.neura-dark .neura-template-card {
-  background: linear-gradient(180deg, #1a1d2e 0%, #141627 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.neura-dark .neura-template-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+.neura-dark .neura-form-input {
+  color: var(--ml-text-primary);
 }
 
 .neura-dark .neura-gradient-text {
@@ -1398,146 +600,12 @@
   background-clip: text;
 }
 
-/* ── Responsive Breakpoints ────────────────────────────────────────────── */
-
-@media (max-width: 1024px) {
-  .neura-card-3d {
-    transform: none;
-  }
-
-  .neura-card-3d:hover {
-    transform: translateY(-2px);
-  }
-
-  .neura-animated-border::before {
-    animation: none;
-  }
-
-  .neura-shimmer::before {
-    animation: none;
-  }
-
-  .neura-progress-fill {
-    transition: width 0.3s ease;
-  }
+.neura-dark .neura-skeleton {
+  background: linear-gradient(90deg, #1a1a2a 25%, #252540 50%, #1a1a2a 75%);
+  background-size: 200% 100%;
 }
 
-@media (max-width: 768px) {
-  .neura-glass-premium {
-    backdrop-filter: blur(8px);
-  }
-
-  .neura-card-glow {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .neura-card-glow:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .neura-status-dot {
-    width: 6px;
-    height: 6px;
-  }
-
-  .neura-badge-premium {
-    padding: 2px 6px;
-    font-size: 10px;
-  }
-
-  .neura-focus-ring:focus {
-    outline: none;
-  }
-
-  .neura-premium-card {
-    padding: 20px 16px;
-    border-radius: 16px;
-  }
-
-  .neura-icon-wrapper {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    margin-bottom: 16px;
-  }
-
-  .neura-card-title {
-    font-size: 1.1rem;
-  }
-
-  .neura-card-desc {
-    font-size: 13px;
-    margin-bottom: 20px;
-  }
-
-  .neura-use-btn {
-    padding: 12px 24px;
-    font-size: 12px;
-  }
-}
-
-/* ── Flow Connector Animations ─────────────────────────────────────────── */
-
-@keyframes dash-flow {
-  to { stroke-dashoffset: -24; }
-}
-
-.neura-connector-line {
-  stroke-dasharray: 8 4;
-  animation: dash-flow 1.2s linear infinite;
-}
-
-@keyframes connector-dot-travel {
-  0% { offset-distance: 0%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-
-.neura-flow-dot {
-  offset-rotate: 0deg;
-  animation: connector-dot-travel 2.5s linear infinite;
-}
-
-/* ── ML Flow Layout ────────────────────────────────────────────────────── */
-
-.ml-flow-container {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-.ml-flow-columns {
-  display: flex;
-  align-items: flex-start;
-  gap: 40px;
-  height: 100%;
-  padding: 0 16px;
-}
-
-.ml-flow-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-.ml-flow-center,
-.ml-flow-right {
-  width: 280px;
-  flex-shrink: 0;
-  align-self: center;
-}
-
-.ml-flow-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
+/* ── Responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
   .ml-flow-columns {
@@ -1555,42 +623,21 @@
   }
 }
 
-/* ── ML Hover Utilities ─────────────────────────────────────────────────── */
+/* ── Reduced Motion ────────────────────────────────────────────────────── */
 
-.ml-card-hover {
-  transition: border-color 0.2s var(--neura-transition), box-shadow 0.2s var(--neura-transition);
-}
-.ml-card-hover:hover {
-  border-color: var(--ml-border-strong);
-  box-shadow: var(--ml-card-shadow-hover);
-}
-
-.ml-action-hover {
-  transition: border-color 0.2s var(--neura-transition), background-color 0.2s var(--neura-transition);
-}
-.ml-action-hover:hover {
-  border-color: var(--ml-accent);
-  background-color: var(--ml-accent-muted);
-}
-
-.ml-btn-hover {
-  transition: border-color 0.2s var(--neura-transition), color 0.2s var(--neura-transition);
-}
-.ml-btn-hover:hover {
-  border-color: var(--ml-accent);
-  color: var(--ml-accent);
-}
-
-/* Object Detection card shadow */
-.od-card-shadow {
-  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-/* Object Detection accent line shimmer */
-@keyframes accent-shimmer {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-.od-accent-line {
-  animation: accent-shimmer 3s ease-in-out infinite;
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-wave,
+  .animate-pulse-slow,
+  .animate-slide-in-up,
+  .animate-fade-in-scale,
+  .animate-celebration,
+  .animate-dot-pulse {
+    animation: none;
+  }
+  .neura-shimmer::after,
+  .neura-progress-premium .neura-progress-fill,
+  .neura-progress-premium .neura-progress-fill::after {
+    animation: none;
+  }
 }

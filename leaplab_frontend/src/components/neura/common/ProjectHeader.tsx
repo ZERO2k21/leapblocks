@@ -42,7 +42,7 @@ export default function ProjectHeader({
             }} />
 
             {/* ── LEFT SECTION ────────────────────────────────────────────────────────── */}
-            <div className="relative flex items-center gap-2 sm:gap-3 flex-[1_1_0%] min-w-0">
+            <div className="relative flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 {onBack && (
                     <button
                         title="Back to Dashboard"
@@ -80,14 +80,14 @@ export default function ProjectHeader({
             </div>
 
             {/* ── MIDDLE SECTION ──────────────────────────────────────────────────────── */}
-            <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 flex-[1_1_auto]">
+            <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 shrink-0">
                 {showMiddleSection && title ? (
                     <div className="flex items-center h-10 bg-black/25 rounded-2xl pl-[18px] pr-1.5 border border-white/8 gap-2 transition-all duration-200 hover:bg-black/30 focus-within:bg-black/30 focus-within:border-white/15">
                         <span className="text-sm opacity-45">{icon || '🧠'}</span>
                         <input
                             placeholder={title}
                             type="text"
-                            value={projectName || title}
+                            value={projectName || title || ''}
                             onChange={(e) => onProjectNameChange && onProjectNameChange(e.target.value)}
                             className="bg-transparent border-none text-white text-sm font-bold font-['Segoe_UI',Inter,sans-serif] w-[120px] sm:w-[170px] text-center outline-none tracking-[0.01em] placeholder:text-white/40"
                         />
@@ -123,7 +123,7 @@ export default function ProjectHeader({
             </div>
 
             {/* ── RIGHT SECTION ───────────────────────────────────────────────────────── */}
-            <div className="relative flex items-center justify-end gap-4 sm:gap-6 flex-[1_1_0%] min-w-0">
+            <div className="relative flex items-center justify-end gap-4 sm:gap-6 flex-1 min-w-0">
                 {onUploadFolder && (
                     <button
                         onClick={onUploadFolder}
@@ -174,7 +174,7 @@ export default function ProjectHeader({
 
                 <LeapLabAuthButton variant="dark" style={{ height: '34px', borderRadius: '8px', boxSizing: 'border-box', fontSize: '13px' }} />
 
-                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-8 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <img
                         alt="Leap into the AI Future"
                         src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"

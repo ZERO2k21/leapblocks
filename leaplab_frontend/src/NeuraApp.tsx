@@ -299,7 +299,7 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 {view === 'dashboard' && (
                     <div className="animate-fade-in flex flex-col flex-1 min-h-0">
                         {/* WelcomeHero - fills full remaining height */}
-                        <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 xl:px-16 pt-3 sm:pt-4 pb-3 sm:pb-4 min-h-0">
+                        <div className="flex-1 w-full min-h-0">
                             <WelcomeHero
                                 onCreateNew={handleCreateNew}
                                 onImportDataset={handleImportProject}
