@@ -18,7 +18,7 @@ export const use3DStore = create((set, get) => ({
   shapes: [],
   selectedIds: [],
   activeTool: 'select',
-  gridSnap: 1.0,
+  gridSnap: 0.5,
   showGrid: true,
   showAxes: true,
   showShapePanel: true,

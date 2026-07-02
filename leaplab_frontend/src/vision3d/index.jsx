@@ -543,25 +543,6 @@ const Vision3DApp = ({ onBack }) => {
                 </button>
               </div>
               <span className="v3d-toolbar-separator" />
-              <div className="v3d-toolbar-group-label">Snap</div>
-              <button
-                className={`v3d-toolbar-btn ${gridSnap === 0 ? 'active' : ''}`}
-                onClick={() => setGridSnap(0)}
-                title="Snap: Off (free movement)"
-              >
-                Off
-              </button>
-              {[0.1, 0.25, 0.5, 1.0, 2.5, 5.0].map((v) => (
-                <button
-                  key={v}
-                  className={`v3d-toolbar-btn ${gridSnap === v ? 'active' : ''}`}
-                  onClick={() => setGridSnap(v)}
-                  title={`Snap: ${v}mm`}
-                >
-                  {v}
-                </button>
-              ))}
-
               <div className="v3d-toolbar-group-label">CSG</div>
               <button
                 className="v3d-toolbar-btn"
@@ -569,6 +550,7 @@ const Vision3DApp = ({ onBack }) => {
                 disabled={selectedIds.length < 2}
                 title="CSG Union (Ctrl+1)"
               >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
                 Union
               </button>
               <button
@@ -577,6 +559,7 @@ const Vision3DApp = ({ onBack }) => {
                 disabled={selectedIds.length < 2}
                 title="CSG Subtract (Ctrl+2)"
               >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
                 Subtract
               </button>
               <button
@@ -585,6 +568,7 @@ const Vision3DApp = ({ onBack }) => {
                 disabled={selectedIds.length < 2}
                 title="CSG Intersect (Ctrl+3)"
               >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
                 Intersect
               </button>
             </div>
