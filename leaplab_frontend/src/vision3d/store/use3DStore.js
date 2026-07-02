@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { createShape, cloneShape, snapPositionToGrid } from '../utils/helpers';
+import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { performCSG, isCSGValid } from '../engine/CSGEngine';
 import { log, debug, warn, error } from '../utils/logger';
@@ -692,11 +692,33 @@ export const use3DStore = create((set, get) => ({
 
   // ─── Import Shape from Geometry Data ───
   importShape: (shapeData) => {
-    const newShape = createShape(shapeData.type || 'box', shapeData.position || [0, 1, 0]);
-    if (shapeData.name) newShape.name = shapeData.name;
-    if (shapeData.color) newShape.color = shapeData.color;
-    Object.assign(newShape, shapeData);
-    newShape.id = newShape.id;
+    const isImported = shapeData.type === 'stl' || shapeData.type === 'obj';
+
+    let newShape;
+    if (isImported) {
+      newShape = {
+        id: generateShapeId(),
+        type: shapeData.type,
+        name: shapeData.name || 'Imported',
+        position: shapeData.position || [0, 1, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: shapeData.color || '#4F46E5',
+        metalness: 0.1,
+        roughness: 0.7,
+        opacity: 1,
+        isHole: false,
+        visible: true,
+        locked: false,
+        _customGeometry: shapeData._customGeometry || shapeData.geometry,
+      };
+    } else {
+      newShape = createShape(shapeData.type || 'box', shapeData.position || [0, 1, 0]);
+      if (shapeData.name) newShape.name = shapeData.name;
+      if (shapeData.color) newShape.color = shapeData.color;
+      Object.assign(newShape, shapeData);
+      newShape.id = newShape.id;
+    }
     log('importShape:', newShape.type, newShape.name);
     set((state) => ({
       shapes: [...state.shapes, newShape],

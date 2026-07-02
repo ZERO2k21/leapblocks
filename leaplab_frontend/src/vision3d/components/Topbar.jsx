@@ -42,6 +42,7 @@ export const Topbar = ({
   title,
   onTitleChange,
   onSave,
+  onOpenProject,
   canUndo = false,
   canRedo = false,
   onUndo,
@@ -165,7 +166,7 @@ export const Topbar = ({
                   className="animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
                 >
                   <MenuItem icon={<FilePlus size={14} />} iconColor="text-[#7C3AED]/80" label="New Project" shortcut="Ctrl+N" onClick={() => { clearScene(); closeAllMenus(); }} />
-                  <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="Open Project" shortcut="Ctrl+O" onClick={closeAllMenus} />
+                  <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="Open Project" shortcut="Ctrl+O" onClick={() => { onOpenProject?.(); closeAllMenus(); }} />
                   <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="My Projects" onClick={() => { onBack?.(); closeAllMenus(); }} />
                   <MenuDivider />
                   <MenuItem icon={<Download size={14} />} iconColor="text-[#7C3AED]/80" label="Export as STL" onClick={() => handleExport('stl')} />
@@ -324,7 +325,7 @@ export const Topbar = ({
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 text-[#93c5fd]/80">File</span>
             <MobileMenuItem icon={<FilePlus size={18} />} label="New Project" onClick={() => { clearScene(); setMobileMenuOpen(false); }} />
-            <MobileMenuItem icon={<FolderOpen size={18} />} label="Open Project" onClick={() => setMobileMenuOpen(false)} />
+            <MobileMenuItem icon={<FolderOpen size={18} />} label="Open Project" onClick={() => { onOpenProject?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<FolderOpen size={18} />} label="My Projects" onClick={() => { onBack?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<FileText size={18} />} label="Save As..." onClick={() => { onSave?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<Download size={18} />} label="Export as STL" onClick={() => { handleExport('stl'); setMobileMenuOpen(false); }} />

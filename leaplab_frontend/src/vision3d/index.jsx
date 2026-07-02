@@ -14,6 +14,7 @@ import { use3DStore } from './store/use3DStore';
 import { useCloudProjectStore } from '../store/cloudProjectStore';
 import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
 import { saveVision3DProject } from './utils/cloudSave';
+import { importProjectFromJSON } from './utils/indexedDB';
 import './styles/Leap3D.css';
 import { log, debug } from './utils/logger';
 
@@ -74,6 +75,7 @@ const Vision3DApp = ({ onBack }) => {
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
   const fileInputRef = useRef(null);
+  const openProjectInputRef = useRef(null);
 
   const handleImport = useCallback(async (e) => {
     const file = e.target.files?.[0];
