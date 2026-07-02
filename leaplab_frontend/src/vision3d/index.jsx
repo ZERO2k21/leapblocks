@@ -11,13 +11,17 @@ import { Topbar } from './components/Topbar';
 import { SceneList } from './components/SceneList';
 import PreviewModal from './components/PreviewModal';
 import { use3DStore } from './store/use3DStore';
+import { useCloudProjectStore } from '../store/cloudProjectStore';
 import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
+import { saveVision3DProject } from './utils/cloudSave';
 import './styles/Leap3D.css';
 import { log, debug } from './utils/logger';
 
 const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
+  const loadedRef = useRef(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [cloudProjectId, setCloudProjectId] = useState(null);
   log('Vision3DApp: mounted');
 
   const {
@@ -402,10 +406,35 @@ const Vision3DApp = ({ onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     log('Vision3DApp: save triggered');
     autoSaveProject();
+    try {
+      const result = await saveVision3DProject(projectName, shapes, use3DStore.getState().project, cloudProjectId);
+      if (result?.id && !cloudProjectId) {
+        setCloudProjectId(result.id);
+        useCloudProjectStore.getState().setActiveProjectId(result.id);
+      }
+    } catch (err) {
+      log('Cloud save failed (offline mode):', err);
+    }
   };
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+    if (pendingProject && pendingProject.mode === 'vision3d') {
+      loadedRef.current = true;
+      const data = pendingProject.data;
+      log('Vision3DApp: loading cloud project', pendingProject.projectName);
+      if (data.projectName) setProjectName(data.projectName);
+      if (data.shapes) use3DStore.getState().setShapes(data.shapes);
+      if (data.project) use3DStore.getState().setProject(data.project);
+      const activeId = useCloudProjectStore.getState().activeProjectId;
+      if (activeId) setCloudProjectId(activeId);
+      clearPendingProject();
+    }
+  }, []);
 
   return (
     <div className="v3d-root">
