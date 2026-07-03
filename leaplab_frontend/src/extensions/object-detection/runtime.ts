@@ -73,7 +73,8 @@ export class ObjectDetectionRuntime {
                         'suitcase': 'bag',
                         'bicycle': 'bike',
                         'motorcycle': 'bike',
-                        'laptop': 'computer'
+                        'laptop': 'computer',
+                        'sports ball': 'ball'
                     };
                     
                     if (labelMap[label]) {
