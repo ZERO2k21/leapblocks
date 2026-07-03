@@ -684,7 +684,7 @@ export const use3DStore = create((set, get) => ({
   },
 
   // ─── Rotation Snap ───
-  rotationSnap: 5,
+  rotationSnap: 1,
   setRotationSnap: (deg) => {
     log('setRotationSnap:', deg);
     set({ rotationSnap: deg });

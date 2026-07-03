@@ -221,9 +221,9 @@ const Vision3DApp = ({ onBack }) => {
 
       // --- TinkerCAD-style shortcuts ---
 
-      // Tool switching (V, G, R, S)
+      // Tool switching (V, M, R, S)
       if (key === 'v') { debug('Keyboard: V (select tool)'); setTool('select'); }
-      if (key === 'g' && !e.ctrlKey) { debug('Keyboard: G (move tool)'); setTool('move'); }
+      if (key === 'm' && !e.ctrlKey) { debug('Keyboard: M (move tool)'); setTool('move'); }
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
       if (key === 's' && !e.ctrlKey && !e.shiftKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
 
@@ -236,11 +236,11 @@ const Vision3DApp = ({ onBack }) => {
         }
       }
 
-      // Mirror (M)
-      if (key === 'm' && !e.ctrlKey) {
+      // Mirror (G)
+      if (key === 'g' && !e.ctrlKey) {
         e.preventDefault();
         if (ids.length > 0) {
-          log('Keyboard: M (mirror X) ' + ids.length + ' shapes');
+          log('Keyboard: G (mirror X) ' + ids.length + ' shapes');
           mirrorShapes(ids, 'x');
         }
       }

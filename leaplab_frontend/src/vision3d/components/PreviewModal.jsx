@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -46,11 +46,13 @@ const SceneShapes = ({ explosionFactor }) => {
       explosionFactor={explosionFactor}
       center={center}
       dir={directions[index]}
+      index={index}
+      total={visible.length}
     />
   ));
 };
 
-const PreviewShape = React.memo(({ shape, explosionFactor, center, dir }) => {
+const PreviewShape = React.memo(({ shape, explosionFactor, center, dir, index, total }) => {
   const [geoCache, setGeoCache] = useState(null);
 
   useEffect(() => {
@@ -64,29 +66,56 @@ const PreviewShape = React.memo(({ shape, explosionFactor, center, dir }) => {
     return () => geo.dispose();
   }, [shape]);
 
+  const t = explosionFactor;
+
   const position = useMemo(() => {
     const pos = new THREE.Vector3(...(shape.position || [0, 0, 0]));
-    if (explosionFactor > 0 && dir) {
-      pos.add(dir.clone().multiplyScalar(explosionFactor * 5));
+    if (t > 0 && dir) {
+      pos.add(dir.clone().multiplyScalar(t * 5));
     }
     return [pos.x, pos.y, pos.z];
-  }, [shape.position, explosionFactor, dir]);
+  }, [shape.position, t, dir]);
+
+  const rotation = useMemo(() => {
+    const base = shape.rotation || [0, 0, 0];
+    if (t <= 0) return base;
+    const spinAngle = t * Math.PI * 0.5;
+    const axisOffset = (index / Math.max(total, 1)) * Math.PI * 2;
+    return [
+      base[0] + Math.sin(spinAngle + axisOffset) * 0.4,
+      base[1] + spinAngle,
+      base[2] + Math.cos(spinAngle + axisOffset) * 0.4,
+    ];
+  }, [shape.rotation, t, index, total]);
+
+  const scale = useMemo(() => {
+    const base = new THREE.Vector3(...(shape.scale || [1, 1, 1]));
+    if (t <= 0) return [base.x, base.y, base.z];
+    const pulse = 1 + Math.sin(t * Math.PI) * 0.08;
+    return [base.x * pulse, base.y * pulse, base.z * pulse];
+  }, [shape.scale, t]);
+
+  const opacity = useMemo(() => {
+    const base = shape.opacity ?? 1;
+    if (t <= 0) return base;
+    return base * (1 - t * 0.15);
+  }, [shape.opacity, t]);
 
   if (!geoCache) return null;
 
   return (
-    <group position={position} rotation={shape.rotation}>
+    <group position={position} rotation={rotation} scale={scale}>
       <mesh geometry={geoCache}>
         <meshStandardMaterial
           color={shape.color || '#4F46E5'}
           metalness={shape.metalness ?? 0.1}
           roughness={shape.roughness ?? 0.7}
-          transparent={(shape.opacity ?? 1) < 1}
-          opacity={shape.opacity ?? 1}
+          transparent={opacity < 1 || t > 0}
+          opacity={opacity}
           side={THREE.DoubleSide}
         />
       </mesh>
-      {explosionFactor > 0.3 && (
+      {t > 0.3 && (
         <Html distanceFactor={15} style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(0,0,0,0.75)',
@@ -97,6 +126,7 @@ const PreviewShape = React.memo(({ shape, explosionFactor, center, dir }) => {
             fontFamily: 'sans-serif',
             whiteSpace: 'nowrap',
             transform: 'translateY(-20px)',
+            opacity: Math.min(1, (t - 0.3) / 0.3),
           }}>
             {shape.name || shape.type}
           </div>

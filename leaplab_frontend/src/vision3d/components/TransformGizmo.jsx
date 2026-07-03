@@ -1,7 +1,6 @@
 /**
- * Vision3D - Custom Blender-Style Transform Gizmo
- * Uses DOM raycasting to bypass OrbitControls event capture.
- * Hit meshes positioned at same location as visual meshes.
+ * Vision3D - Blender-Style Transform Gizmo (Zero-Lag)
+ * Directly mutates Three.js objects during drag, commits to store on pointerup.
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
@@ -26,14 +25,12 @@ const setAxisRef = (axis) => (mesh) => {
 };
 
 const TransformGizmo = () => {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const selectedIds = use3DStore((s) => s.selectedIds);
   const shapes = use3DStore((s) => s.shapes);
   const updateShape = use3DStore((s) => s.updateShape);
   const pushHistory = use3DStore((s) => s.pushHistory);
   const activeTool = use3DStore((s) => s.activeTool);
-  const gridSnap = use3DStore((s) => s.gridSnap);
-  const rotationSnap = use3DStore((s) => s.rotationSnap);
 
   const [hoveredAxis, setHoveredAxis] = useState(null);
   const [dragInfo, setDragInfo] = useState(null);
@@ -116,8 +113,9 @@ const TransformGizmo = () => {
 
   useEffect(() => {
     if (!gl) return;
-
     const canvas = gl.domElement;
+
+    const renderFrame = () => { gl.render(scene, camera); };
 
     const handleDown = (e) => {
       const currentGizmoCenter = gizmoCenterRef.current;
@@ -130,12 +128,18 @@ const TransformGizmo = () => {
 
       e.preventDefault();
       e.stopImmediatePropagation();
-
       window.__gizmoActive = true;
+
+      // ── Take over rendering ──────────────────────────────
+      gl.setAnimationLoop(null);
+      const prevPixelRatio = gl.getPixelRatio();
+      gl.setPixelRatio(1);
+      const prevShadowEnabled = gl.shadowMap?.enabled;
+      if (gl.shadowMap) gl.shadowMap.enabled = false;
 
       const store = use3DStore.getState();
       const curMode = store.activeTool === 'move' ? 'translate' : store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : null;
-      if (!curMode) return;
+      if (!curMode) { restoreState(); return; }
       const ids = store.selectedIds;
       const allShapes = store.shapes;
       const sel = allShapes.filter((s) => ids.includes(s.id));
@@ -146,16 +150,37 @@ const TransformGizmo = () => {
       const startY = e.clientY;
       const snapVal = (v, s) => s > 0 ? Math.round(v / s) * s : v;
       const snapAng = (v, deg) => deg > 0 ? Math.round(v / (deg * Math.PI / 180)) * (deg * Math.PI / 180) : v;
-      let activated = false;
-      let startProjected = 0;
+
+      // Snapshot + find meshes
       const startPosMap = new Map();
       const startRotMap = new Map();
       const startScaleMap = new Map();
+      const meshes = [];
+      const meshIdx = new Map();
+      let idx = 0;
+
+      scene?.traverse?.((child) => {
+        if (child.isMesh && child.userData.shapeId && ids.includes(child.userData.shapeId)) {
+          meshes.push(child);
+          meshIdx.set(child.userData.shapeId, idx++);
+        }
+      });
+
       sel.forEach((s) => {
         startPosMap.set(s.id, [...s.position]);
         startRotMap.set(s.id, [...s.rotation]);
         startScaleMap.set(s.id, [...s.scale]);
       });
+
+      let activated = false;
+      let startProjected = 0;
+      let renderQueued = false;
+      const queueRender = () => {
+        if (!renderQueued) {
+          renderQueued = true;
+          requestAnimationFrame(() => { renderQueued = false; renderFrame(); });
+        }
+      };
 
       const onMove = (ev) => {
         const d = dragRef.current;
@@ -177,68 +202,94 @@ const TransformGizmo = () => {
 
         if (!d.active) return;
 
-        const state = use3DStore.getState();
         if (curMode === 'translate') {
           let current = projectMouse(ev.clientX, ev.clientY, axis, origin);
           if (current === null) return;
           let delta = current - startProjected;
-          delta = snapVal(delta, gSnap);
           d.lastDelta = delta;
-          setDragInfo({ axis, mode: curMode, value: delta });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
-          const curIds = state.selectedIds;
-          curIds.forEach((id) => {
-            const s = startPosMap.get(id);
-            if (!s) return;
-            const p = [...s];
-            p[idx] = s[idx] + delta;
-            updateShape(id, { position: p });
-          });
+          for (let i = 0; i < meshes.length; i++) {
+            const mesh = meshes[i];
+            const id = mesh.userData.shapeId;
+            const sp = startPosMap.get(id);
+            if (!sp) return;
+            const val = sp[idx] + delta;
+            if (idx === 0) mesh.position.x = val;
+            else if (idx === 1) mesh.position.y = val;
+            else mesh.position.z = val;
+          }
         } else if (curMode === 'rotate') {
           const sv = projectMouse(startX, startY, axis, origin);
           const cv = projectMouse(ev.clientX, ev.clientY, axis, origin);
           if (sv === null || cv === null) return;
-          let angle = cv - sv;
-          angle = snapAng(angle, rSnap);
+          let angle = snapAng(cv - sv, rSnap);
           d.lastDelta = angle;
-          setDragInfo({ axis, mode: curMode, value: (angle * 180) / Math.PI });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
-          const curIds = state.selectedIds;
-          curIds.forEach((id) => {
-            const s = startRotMap.get(id);
-            if (!s) return;
-            const r = [...s];
-            r[idx] = s[idx] + angle;
-            updateShape(id, { rotation: r });
-          });
+          for (let i = 0; i < meshes.length; i++) {
+            const mesh = meshes[i];
+            const id = mesh.userData.shapeId;
+            const sr = startRotMap.get(id);
+            if (!sr) return;
+            const val = sr[idx] + angle;
+            if (idx === 0) mesh.rotation.x = val;
+            else if (idx === 1) mesh.rotation.y = val;
+            else mesh.rotation.z = val;
+          }
         } else if (curMode === 'scale') {
-          const movement = axis === 'y'
-            ? -(ev.clientY - startY)
-            : ev.clientX - startX;
-          let factor = Math.max(0.05, 1 + movement * 0.005);
-          factor = Math.max(0.25, Math.round(factor / 0.25) * 0.25);
+          const movement = axis === 'y' ? -(ev.clientY - startY) : ev.clientX - startX;
+          let factor = Math.round(Math.max(0.05, 1 + movement * 0.003) / 0.05) * 0.05;
           d.lastDelta = factor;
-          setDragInfo({ axis, mode: curMode, value: factor });
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
-          const curIds = state.selectedIds;
-          curIds.forEach((id) => {
-            const startS = startScaleMap.get(id);
-            if (!startS || startS.length <= idx) return;
-            const sc = [...startS];
-            sc[idx] = Math.max(0.01, startS[idx] * factor);
-            updateShape(id, { scale: sc });
-          });
+          for (let i = 0; i < meshes.length; i++) {
+            const mesh = meshes[i];
+            const id = mesh.userData.shapeId;
+            const ss = startScaleMap.get(id);
+            if (!ss || ss.length <= idx) return;
+            const val = Math.max(0.01, ss[idx] * factor);
+            if (idx === 0) mesh.scale.x = val;
+            else if (idx === 1) mesh.scale.y = val;
+            else mesh.scale.z = val;
+          }
         }
+
+        queueRender();
       };
+
+      function restoreState() {
+        gl.setPixelRatio(prevPixelRatio);
+        if (gl.shadowMap) gl.shadowMap.enabled = prevShadowEnabled;
+      }
+
       const onUp = () => {
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
         dragRef.current.active = false;
         setDragInfo(null);
-        if (activated) pushHistory();
         window.__gizmoActive = false;
         if (externalOrbitRef?.current) externalOrbitRef.current.enabled = true;
         canvas.style.cursor = 'auto';
+
+        if (activated) {
+          // Commit final state to store (with snap)
+          const curStore = use3DStore.getState();
+          for (let i = 0; i < meshes.length; i++) {
+            const mesh = meshes[i];
+            const id = mesh.userData.shapeId;
+            curStore.updateShape(id, {
+              position: [
+                snapVal(mesh.position.x, gSnap),
+                mesh.position.y,
+                snapVal(mesh.position.z, gSnap),
+              ],
+              rotation: [mesh.rotation.x, mesh.rotation.y, mesh.rotation.z],
+              scale: [mesh.scale.x, mesh.scale.y, mesh.scale.z],
+            });
+          }
+          pushHistory();
+        }
+
+        restoreState();
+        renderFrame();
       };
 
       window.addEventListener('pointermove', onMove);
@@ -247,7 +298,7 @@ const TransformGizmo = () => {
 
     canvas.addEventListener('pointerdown', handleDown, { capture: true });
     return () => canvas.removeEventListener('pointerdown', handleDown, { capture: true });
-  }, [gl]);
+  }, [gl, scene, camera, hitTestGizmo, projectMouse, pushHistory, updateShape]);
 
   useEffect(() => () => {
     if (externalOrbitRef?.current) externalOrbitRef.current.enabled = true;
@@ -280,7 +331,6 @@ const TransformGizmo = () => {
   const axisRot = (ax) => ax === 'x' ? [0, 0, -Math.PI / 2] : ax === 'z' ? [Math.PI / 2, 0, 0] : [0, 0, 0];
   const shaftPos = (ax) => ax === 'x' ? [arrowLen / 2, 0, 0] : ax === 'y' ? [0, arrowLen / 2, 0] : [0, 0, arrowLen / 2];
   const headPos = (ax) => ax === 'x' ? [arrowLen, 0, 0] : ax === 'y' ? [0, arrowLen, 0] : [0, 0, arrowLen];
-  const axisIdx = (ax) => ax === 'x' ? 0 : ax === 'y' ? 1 : 2;
 
   const hitProps = (ax) => ({
     ref: setAxisRef(ax),
@@ -293,7 +343,6 @@ const TransformGizmo = () => {
     const rot = axisRot(ax);
     const hp = headPos(ax);
     const sp = shaftPos(ax);
-    const i = axisIdx(ax);
     return (
       <group key={ax}>
         <mesh position={hp} rotation={rot}>

@@ -202,11 +202,16 @@ export function createGeometry(shape) {
       const geo = new THREE.BufferGeometry();
       const hw = w / 2, hd = d / 2;
       const vertices = new Float32Array([
-        -hw, 0, -hd,   hw, 0, -hd,   hw, 0,  hd,
-        -hw, 0, -hd,   hw, 0,  hd,  -hw, 0,  hd,
+        // base (bottom face, facing down)
+        -hw, 0, -hd,  -hw, 0,  hd,   hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0,  hd,   hw, 0, -hd,
+        // front face
         -hw, 0, -hd,   hw, 0, -hd,   0,  h,  0,
+        // right face
          hw, 0, -hd,   hw, 0,  hd,   0,  h,  0,
+        // back face
          hw, 0,  hd,  -hw, 0,  hd,   0,  h,  0,
+        // left face
         -hw, 0,  hd,  -hw, 0, -hd,   0,  h,  0,
       ]);
       geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -233,14 +238,19 @@ export function createGeometry(shape) {
       const geo = new THREE.BufferGeometry();
       const hw = w / 2, hd = d / 2;
       const vertices = new Float32Array([
-        -hw, 0, -hd,   hw, 0, -hd,   hw, 0,  hd,
-        -hw, 0, -hd,   hw, 0,  hd,  -hw, 0,  hd,
-        -hw, 0, -hd,   hw, 0, -hd,   hw,  h, -hd,
-        -hw, 0, -hd,   hw,  h, -hd,  -hw,  h, -hd,
+        // base (bottom face, facing down)
+        -hw, 0, -hd,  -hw, 0,  hd,   hw, 0,  hd,
+        -hw, 0, -hd,   hw, 0,  hd,   hw, 0, -hd,
+        // front face (triangular, facing forward)
+        -hw, 0, -hd,   hw, 0, -hd,  -hw,  h, -hd,
+         hw, 0, -hd,   hw,  h, -hd, -hw,  h, -hd,
+        // right side face
          hw, 0, -hd,   hw, 0,  hd,   hw,  h, -hd,
-        -hw, 0,  hd,  -hw,  h, -hd,   hw, 0,  hd,
-        -hw, 0, -hd,  -hw, 0,  hd,  -hw,  h, -hd,
-        -hw, 0,  hd,   hw, 0,  hd,   0,  h, -hd,
+        // left side face
+        -hw, 0,  hd,  -hw, 0, -hd,  -hw,  h, -hd,
+        // top face (connecting front-top edge to back-bottom)
+        -hw,  h, -hd,   hw,  h, -hd,   hw, 0,  hd,
+        -hw,  h, -hd,   hw, 0,  hd,  -hw, 0,  hd,
       ]);
       geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
       geo.computeVertexNormals();
