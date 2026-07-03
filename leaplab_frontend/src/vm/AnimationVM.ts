@@ -1694,14 +1694,8 @@ export class AnimationVM {
                 break;
             }
             case 'object_when_detected' as any: {
-                // Event-style block - check if object is detected
-                const objectType = (step as any).objectType;
-                if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
-                    const isDetected = (window as any).runtime.objectDetection.isObjectDetected(objectType);
-                    if (isDetected) {
-                        vmLog.info(`Object detected: ${objectType}`);
-                    }
-                }
+                // Now compiled as 'if' step with condition checking isObjectDetected()
+                // This case is kept as a no-op for backward compatibility
                 break;
             }
 
