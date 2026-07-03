@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLeapLabAuthStore } from '../auth/leaplabAuthStore';
-import { LMS_API_BASE } from '../auth/api';
+import { useLeapLabAuthStore } from './auth/leaplabAuthStore';
+import { LMS_API_BASE } from './auth/api';
 
 // ─── Types ─────────────────────────────────────────────────────
 
