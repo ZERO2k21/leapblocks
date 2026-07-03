@@ -6219,55 +6219,50 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     {/* Workspace content */}
 
-                    {/* Show Blockly if:
+                    {/* Blockly div — ALWAYS mounted to preserve workspace state across tab switches.
+                        Hidden via display:none when not on blocks tab, instead of unmounting,
+                        which would orphan the Blockly workspace SVG and lose all blocks. */}
+                    <div
+                        ref={blocklyDiv}
+                        className={editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}
+                        style={{
+                            ...styles.blockly,
+                            display: ((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') ? undefined : 'none'
+                        }}
+                    />
 
-                        1. In Stage mode AND 'blocks' tab is active
-
-                        2. In Upload mode (always shows blocks)
-
-                    */}
-
+                    {/* Overlay controls — only visible when blocks tab is active */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-
                         <>
-
-                            <div
-                                ref={blocklyDiv}
-                                className={editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}
-                                style={styles.blockly}
-                            />
-
                             {/* Add Extension Button - Premium integrated design */}
-                            {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                                <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
-                                    <button
-                                        onClick={() => setShowExtensionLibrary(true)}
-                                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                                        style={{
-                                            width: '52px',
-                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            backdropFilter: 'blur(10px)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.width = '180px';
-                                            e.currentTarget.style.paddingRight = '16px';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.width = '52px';
-                                            e.currentTarget.style.paddingRight = '12px';
-                                        }}
-                                        title="Add Extension"
-                                    >
-                                        <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
-                                            <Library size={20} strokeWidth={2.5} />
-                                        </div>
-                                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
-                                            <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
-                                            <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
-                                        </div>
-                                    </button>
-                                </div>
-                            )}
+                            <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
+                                <button
+                                    onClick={() => setShowExtensionLibrary(true)}
+                                    className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                                    style={{
+                                        width: '52px',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        backdropFilter: 'blur(10px)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.width = '180px';
+                                        e.currentTarget.style.paddingRight = '16px';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.width = '52px';
+                                        e.currentTarget.style.paddingRight = '12px';
+                                    }}
+                                    title="Add Extension"
+                                >
+                                    <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
+                                        <Library size={20} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+                                        <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
+                                        <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
+                                    </div>
+                                </button>
+                            </div>
 
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
                                 const flyout = workspaceRef.current?.getFlyout() as any;
@@ -6277,9 +6272,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             }} style={undefined} />
 
                             <WorkspaceTrash workspaceRef={workspaceRef} />
-
                         </>
-
                     )}
 
 
@@ -7218,8 +7211,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 newSprite.addSound(defaultSound.name, defaultSound.src);
                             }
 
-                            // Initialize empty workspace for the new sprite
+                            // Save current sprite's blocks before switching to new sprite
+                            saveCurrentSpriteWorkspace();
 
+                            // Initialize empty workspace for the new sprite
                             spriteWorkspacesRef.current.set(id, {});
 
 
