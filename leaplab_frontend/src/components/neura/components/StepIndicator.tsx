@@ -13,10 +13,10 @@ export default function StepIndicator({ number, label, title, accentColor, actio
     return (
         <div className="flex items-center justify-between mb-0.5">
             <div>
-                <div className="text-[13px] font-bold text-ml-text-secondary uppercase mb-0.5" style={{ letterSpacing: '0.06em' }}>
+                <div className="text-[14px] font-bold uppercase mb-1" style={{ letterSpacing: '0.1em', color: accentColor || 'var(--ml-accent)' }}>
                     {num} — {label}
                 </div>
-                <div className="text-lg font-bold text-ml-text-primary" style={{ letterSpacing: '-0.02em' }}>
+                <div className="text-[19px] font-bold text-ml-text-primary" style={{ letterSpacing: '-0.02em' }}>
                     {title}
                 </div>
             </div>

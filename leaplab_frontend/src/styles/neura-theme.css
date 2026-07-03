@@ -22,6 +22,11 @@
     --neura-transition: cubic-bezier(0.4, 0, 0.2, 1);
     --neura-transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+    /* Premium card shadows */
+    --ml-card-premium: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --ml-card-premium-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --ml-card-premium-active: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08);
+
     /* ML palette - Light theme */
     --ml-bg: #f0f2f7;
     --ml-surface: #ffffff;
@@ -42,8 +47,8 @@
     --ml-accent: #7c3aed;
     --ml-accent-light: #a78bfa;
     --ml-accent-muted: rgba(124, 58, 237, 0.1);
-    --ml-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-    --ml-card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04);
+    --ml-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+    --ml-card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.1), 0 12px 40px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -322,39 +327,45 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  align-items: center;
 }
 
 .ml-flow-columns {
   display: flex;
-  align-items: flex-start;
-  gap: 40px;
-  height: 100%;
-  padding: 0 16px;
+  align-items: stretch;
+  gap: 48px;
+  width: 100%;
+  padding: 24px 32px;
 }
 
 .ml-flow-left {
-  flex: 1.3;
+  flex: 1.4;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
-  max-width: 520px;
+  max-width: 580px;
 }
 
 .ml-flow-center {
   flex: 1;
-  min-width: 320px;
-  max-width: 350px;
+  min-width: 340px;
+  max-width: 400px;
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
 .ml-flow-right {
   flex: 1;
-  min-width: 320px;
-  max-width: 350px;
+  min-width: 340px;
+  max-width: 400px;
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
 .ml-flow-svg {
@@ -374,6 +385,28 @@
 .ml-btn-hover:hover {
   border-color: var(--ml-accent);
   color: var(--ml-accent);
+}
+
+/* ── Premium Card Utility ──────────────────────────────────────────────── */
+
+.ml-card-premium {
+  background: var(--ml-surface);
+  border: 1px solid var(--ml-border);
+  border-radius: 16px;
+  box-shadow: var(--ml-card-premium);
+  transition: box-shadow 0.3s var(--neura-transition), border-color 0.3s var(--neura-transition);
+}
+
+.ml-card-premium:hover {
+  box-shadow: var(--ml-card-premium-hover);
+  border-color: var(--ml-border-strong);
+}
+
+.ml-card-premium-inner {
+  background: var(--ml-surface);
+  border: 1px solid var(--ml-border);
+  border-radius: 16px;
+  box-shadow: var(--ml-card-premium);
 }
 
 /* ── Keyframe Animations ───────────────────────────────────────────────── */
@@ -457,6 +490,44 @@
   to { stroke-dashoffset: -24; }
 }
 
+@keyframes hero-stagger-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-scale-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow-ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes brain-glow-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.15), 0 0 80px rgba(124,58,237,0.05); }
+  50% { box-shadow: 0 0 60px rgba(124,58,237,0.3), 0 0 120px rgba(124,58,237,0.1); }
+}
+
+@keyframes chip-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mesh-shift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 50% 0%; }
+  50% { background-position: 100% 50%; }
+  75% { background-position: 50% 100%; }
+}
+
 /* ── Animation Utility Classes ─────────────────────────────────────────── */
 
 .animate-fade-in {
@@ -497,6 +568,44 @@
   animation: dot-pulse 1.5s ease-in-out infinite;
 }
 
+.animate-hero-stagger {
+  animation: hero-stagger-in 0.6s var(--neura-transition) both;
+}
+
+.animate-hero-scale {
+  animation: hero-scale-in 0.7s var(--neura-transition-spring) both;
+}
+
+.animate-glow-ring-rotate {
+  animation: glow-ring-rotate 20s linear infinite;
+}
+
+.animate-brain-glow {
+  animation: brain-glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradient-flow 6s ease infinite;
+}
+
+.animate-mesh-shift {
+  background-size: 400% 400%;
+  animation: mesh-shift 15s ease infinite;
+}
+
+.hero-chip-scan::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  animation: chip-scan 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* ── Stagger Delays ────────────────────────────────────────────────────── */
 
 .stagger-1 { animation-delay: 0.05s; }
@@ -516,6 +625,11 @@
   --neura-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
   --neura-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
   --neura-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.35);
+
+  /* Premium card shadows - Dark */
+  --ml-card-premium: 0 2px 8px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --ml-card-premium-hover: 0 4px 16px rgba(0, 0, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --ml-card-premium-active: 0 1px 4px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.5);
 
   /* ML palette - Dark theme */
   --ml-bg: #0a0a12;
@@ -537,8 +651,8 @@
   --ml-accent: #7c3aed;
   --ml-accent-light: #a78bfa;
   --ml-accent-muted: rgba(124, 58, 237, 0.1);
-  --ml-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
-  --ml-card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3);
+  --ml-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --ml-card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.5), 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .neura-dark .neura-button-primary {
@@ -607,15 +721,34 @@
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 
+@media (max-width: 1280px) {
+  .ml-flow-columns {
+    gap: 32px;
+    padding: 20px 24px;
+  }
+  .ml-flow-left {
+    max-width: 520px;
+  }
+  .ml-flow-center,
+  .ml-flow-right {
+    min-width: 300px;
+    max-width: 360px;
+  }
+}
+
 @media (max-width: 1024px) {
   .ml-flow-columns {
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
+    padding: 16px;
   }
+  .ml-flow-left,
   .ml-flow-center,
   .ml-flow-right {
     width: 100%;
+    max-width: none;
+    min-width: 0;
     align-self: stretch;
   }
   .ml-flow-svg {
@@ -632,12 +765,19 @@
   .animate-slide-in-up,
   .animate-fade-in-scale,
   .animate-celebration,
-  .animate-dot-pulse {
+  .animate-dot-pulse,
+  .animate-hero-stagger,
+  .animate-hero-scale,
+  .animate-glow-ring-rotate,
+  .animate-brain-glow,
+  .animate-gradient-flow,
+  .animate-mesh-shift {
     animation: none;
   }
   .neura-shimmer::after,
   .neura-progress-premium .neura-progress-fill,
-  .neura-progress-premium .neura-progress-fill::after {
+  .neura-progress-premium .neura-progress-fill::after,
+  .hero-chip-scan::after {
     animation: none;
   }
 }
