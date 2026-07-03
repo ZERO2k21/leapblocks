@@ -7745,9 +7745,9 @@ const styles: { [key: string]: React.CSSProperties } = {
 
         display: 'flex',
 
-        alignItems: 'center',
+        flexDirection: 'column',
 
-        justifyContent: 'center',
+        overflow: 'hidden',
 
         backgroundColor: '#f9f9f9',
 
