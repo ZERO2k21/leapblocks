@@ -112,14 +112,67 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     }
     componentDidCatch(error: any, errorInfo: any) {
         console.error("ErrorBoundary caught:", error, errorInfo);
+        // Notify parent frame if embedded
+        try {
+            if (window !== window.parent) {
+                window.parent.postMessage({ type: 'leaplab-error', error: error?.message || String(error) }, '*');
+            }
+        } catch {}
     }
     render() {
         if (this.state.hasError) {
+            const isEmbedded = window !== window.parent;
+            if (isEmbedded) {
+                // Compact inline error bar for embed context — does not cover the whole page
+                return (
+                    <div style={{
+                        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 99999,
+                        background: '#2a1a1a', color: '#ff6b6b', fontFamily: 'monospace',
+                        padding: '10px 16px', display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between', borderTop: '2px solid #f44336',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                            <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Error:</span>
+                            <span style={{ fontSize: 12, opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {this.state.error?.message || String(this.state.error)}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                            <button
+                                onClick={() => this.setState({ hasError: false, error: null })}
+                                style={{
+                                    padding: '4px 12px', borderRadius: 4, border: '1px solid #555',
+                                    background: 'transparent', color: '#ccc', cursor: 'pointer', fontSize: 11,
+                                }}
+                            >
+                                Dismiss
+                            </button>
+                            <button
+                                onClick={() => window.location.reload()}
+                                style={{
+                                    padding: '4px 12px', borderRadius: 4, border: 'none',
+                                    background: '#f44336', color: '#fff', cursor: 'pointer', fontSize: 11,
+                                }}
+                            >
+                                Reload
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+            // Full-page error for non-embedded context
             return (
                 <div style={{ padding: 20, background: '#fff', color: '#f44336', fontFamily: 'monospace' }}>
                     <h1>Something went wrong.</h1>
                     <pre>{this.state.error?.toString()}</pre>
-                    <button onClick={() => window.location.reload()}>Reload</button>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                        <button onClick={() => this.setState({ hasError: false, error: null })} style={{ padding: '6px 14px', cursor: 'pointer' }}>
+                            Dismiss
+                        </button>
+                        <button onClick={() => window.location.reload()} style={{ padding: '6px 14px', cursor: 'pointer' }}>
+                            Reload
+                        </button>
+                    </div>
                 </div>
             );
         }

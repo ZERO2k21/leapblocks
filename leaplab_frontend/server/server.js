@@ -95,6 +95,39 @@ app.use((req, res, next) => {
 
 app.use('/apks', express.static(APK_PUBLIC_DIR));
 
+// Serve frontend build output (Vite) with correct MIME types and SPA fallback
+const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'build');
+if (fs.existsSync(FRONTEND_BUILD_DIR)) {
+    // Serve hashed assets (JS, CSS, WASM, images) with immutable cache
+    app.use('/assets', express.static(path.join(FRONTEND_BUILD_DIR, 'assets'), {
+        immutable: true,
+        maxAge: '1y',
+    }));
+    // Serve other static files from build (favicon, manifest, etc.)
+    app.use(express.static(FRONTEND_BUILD_DIR, {
+        index: false, // Don't serve index.html for directory requests
+    }));
+    // SPA fallback: return index.html for non-API, non-file routes
+    app.get('*', (req, res, next) => {
+        // Skip API routes and requests that look like they want a specific file
+        if (req.path.startsWith('/compile') || req.path.startsWith('/build') ||
+            req.path.startsWith('/transpile') || req.path.startsWith('/firmware') ||
+            req.path.startsWith('/libraries') || req.path.startsWith('/apks') ||
+            req.path.startsWith('/relay') || req.path.startsWith('/logs') ||
+            req.path.startsWith('/health') || req.path.startsWith('/status') ||
+            req.path.startsWith('/download') || req.path.startsWith('/job') ||
+            req.path.includes('.')) {
+            return next();
+        }
+        const indexPath = path.join(FRONTEND_BUILD_DIR, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            return res.sendFile(indexPath);
+        }
+        next();
+    });
+    console.log(`[SERVER] Frontend static serving enabled from ${FRONTEND_BUILD_DIR}`);
+}
+
 function sanitizeApkName(name) {
   return (name || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
 }
