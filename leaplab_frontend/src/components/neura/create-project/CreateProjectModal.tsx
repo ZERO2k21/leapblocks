@@ -47,12 +47,12 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
     return (
         <div className={`w-full h-full flex flex-col relative overflow-hidden ${isDark ? 'bg-[#0f1117]' : 'bg-gradient-to-br from-[#f5f7ff] via-white to-[#eef1ff]'}`}>
             {/* Background ambient glows */}
-            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} />
-            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none animate-pulse-slow ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} style={{ animationDelay: '1s' }} />
+            <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-br from-violet-500/[0.04] to-transparent' : 'bg-gradient-to-br from-indigo-400/[0.06] to-transparent'}`} style={{ animation: 'neura-pulse-slow 4s ease-in-out infinite' }} />
+            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none ${isDark ? 'bg-gradient-to-tr from-purple-500/[0.03] to-transparent' : 'bg-gradient-to-tr from-purple-400/[0.05] to-transparent'}`} style={{ animation: 'neura-pulse-slow 4s ease-in-out infinite', animationDelay: '1s' }} />
 
             {/* Header bar */}
-            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0 neura-shimmer">
-                <div className="absolute inset-0 opacity-10" style={{
+            <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between shrink-0 overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
                     backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)'
                 }} />
                 <div className="flex items-center gap-3">
@@ -76,8 +76,8 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
             <div className="flex-1 overflow-y-auto flex items-center justify-center" onKeyDown={handleKeyDown}>
                 <div className="w-full max-w-4xl mx-auto px-6 sm:px-10 lg:px-16 py-8 sm:py-10">
                     {/* Project Details Section */}
-                    <div className="mb-8 animate-slide-in-up">
-                        <h3 className="neura-section-title">Enter Project Details:</h3>
+                    <div className="mb-8" style={{ animation: 'neura-slide-in-up 0.4s cubic-bezier(0.4,0,0.2,1) both' }}>
+                        <h3 className="text-[13px] font-bold text-[var(--ml-accent)] mb-4 tracking-[0.02em]">Enter Project Details:</h3>
                         <div className="space-y-4">
                             <div>
                                 <input
@@ -86,7 +86,8 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                     onChange={(e) => setProjectName(e.target.value)}
                                     placeholder="Enter Project Name"
                                     autoFocus
-                                    className="neura-form-input"
+                                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--ml-accent)]/30 focus:border-[var(--ml-accent)]"
+                                    style={{ border: '2px solid var(--ml-border)', background: 'var(--ml-well)', color: 'var(--ml-text-primary)' }}
                                 />
                             </div>
                             <div>
@@ -95,18 +96,19 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                                     value={projectDescription}
                                     onChange={(e) => setProjectDescription(e.target.value)}
                                     placeholder="Enter Project Description (optional)"
-                                    className="neura-form-input"
+                                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--ml-accent)]/30 focus:border-[var(--ml-accent)]"
+                                    style={{ border: '2px solid var(--ml-border)', background: 'var(--ml-well)', color: 'var(--ml-text-primary)' }}
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* Project Type Section */}
-                    <div className="mb-8 animate-slide-in-up stagger-2">
-                        <h3 className="neura-section-title">Select Project Type:</h3>
+                    <div className="mb-8" style={{ animation: 'neura-slide-in-up 0.4s cubic-bezier(0.4,0,0.2,1) both', animationDelay: '0.1s' }}>
+                        <h3 className="text-[13px] font-bold text-[var(--ml-accent)] mb-4 tracking-[0.02em]">Select Project Type:</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                             {projectTypes.map((type, idx) => (
-                                <div key={type.id} className={`animate-slide-in-up stagger-${(idx % 7) + 1}`}>
+                                <div key={type.id} style={{ animation: `neura-slide-in-up 0.4s cubic-bezier(0.4,0,0.2,1) both`, animationDelay: `${idx * 0.05}s` }}>
                                     <ProjectTypeCard
                                         type={type}
                                         selected={selectedType === type.id}
@@ -124,7 +126,11 @@ export default function CreateProjectModal({ onClose, onCreateProject }: CreateP
                 <button
                     onClick={handleCreate}
                     disabled={!canCreate}
-                    className="neura-button-primary px-8 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                    className="px-8 py-3 rounded-2xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                    style={{
+                        background: 'linear-gradient(135deg, #0a015a 0%, #15027a 50%, #0a015a 100%)',
+                        boxShadow: '0 4px 14px rgba(10,1,90,0.25)',
+                    }}
                 >
                     Create Project
                 </button>

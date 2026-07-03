@@ -19,7 +19,7 @@ export default function ProjectTestingPanel({
     children,
 }: ProjectTestingPanelProps) {
     return (
-        <div className="w-[330px] bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0 flex flex-col">
+        <div className="w-[330px] rounded-2xl overflow-hidden shrink-0 flex flex-col" style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border)' }}>
             {/* Header */}
             <div
                 className="px-4 py-3.5 flex items-center gap-2"
@@ -41,7 +41,7 @@ export default function ProjectTestingPanel({
                                 <text x="62" y="28" fontSize="16" fill={accentColor} opacity="0.5" fontWeight="bold">?</text>
                             </svg>
                         )}
-                        <p className="font-sans text-xs text-ml-text-muted leading-relaxed m-0">
+                        <p className="font-sans text-xs leading-relaxed m-0" style={{ color: 'var(--ml-text-muted)' }}>
                             {emptyText}
                         </p>
                     </div>

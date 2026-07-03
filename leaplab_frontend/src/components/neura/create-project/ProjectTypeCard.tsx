@@ -17,24 +17,19 @@ interface ProjectTypeCardProps {
 export default function ProjectTypeCard({ type, selected, onClick }: ProjectTypeCardProps) {
     const { isDark } = useNeuraTheme();
 
-    const cardClass = selected
-        ? `border-2 shadow-[0_0_0_3px_rgba(10,1,90,0.1),0_8px_30px_rgba(10,1,90,0.12)] scale-[1.02] ${
-            isDark ? 'border-[#7c3aed] bg-white/[0.05]' : 'border-[#0a015a] bg-[#f8f9ff]'
-          }`
-        : `border-2 border-dashed ${
-            isDark
-              ? 'border-white/[0.1] bg-[#13131f] hover:border-[#7c3aed]/40 hover:bg-white/[0.03] hover:shadow-[0_8px_30px_rgba(124,58,237,0.08)]'
-              : 'border-gray-200 bg-white hover:border-[#0a015a]/40 hover:bg-[#fafbff] hover:shadow-[0_8px_30px_rgba(10,1,90,0.08)]'
-          } hover:scale-[1.01]`;
-
     return (
         <div
             onClick={onClick}
-            className={`relative cursor-pointer rounded-2xl p-3.5 sm:p-4 flex flex-col items-center text-center transition-all duration-300 group h-full min-h-[160px] sm:min-h-[180px] ${cardClass}`}
+            className={`relative cursor-pointer rounded-2xl p-3.5 sm:p-4 flex flex-col items-center text-center transition-all duration-300 group h-full min-h-[160px] sm:min-h-[180px] ${
+                selected
+                    ? `border-2 scale-[1.02] ${isDark ? 'border-[#7c3aed] bg-white/[0.05]' : 'border-[#0a015a] bg-[#f8f9ff]'}`
+                    : `border-2 border-dashed ${isDark ? 'border-white/[0.1] bg-[#13131f]' : 'border-gray-200 bg-white'}`
+            } ${!selected ? (isDark ? 'hover:border-[#7c3aed]/40 hover:bg-white/[0.03]' : 'hover:border-[#0a015a]/40 hover:bg-[#fafbff]') : ''} hover:scale-[1.01]`}
+            style={!selected ? { boxShadow: 'none' } : { boxShadow: '0 0 0 3px rgba(10,1,90,0.1), 0 8px 30px rgba(10,1,90,0.12)' }}
         >
             {/* Selected checkmark */}
             {selected && (
-                <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-[#0a015a] to-[#15027a] flex items-center justify-center shadow-lg animate-fade-in-scale z-10">
+                <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-[#0a015a] to-[#15027a] flex items-center justify-center shadow-lg z-10" style={{ animation: 'neura-fade-in-scale 0.3s cubic-bezier(0.4,0,0.2,1) both' }}>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

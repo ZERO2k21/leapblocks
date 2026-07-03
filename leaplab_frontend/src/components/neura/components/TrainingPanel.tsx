@@ -34,13 +34,14 @@ export default function TrainingPanel({
     const isReady = canTrain && status !== 'training'
 
     return (
-        <div className="bg-ml-surface border border-ml-border rounded-2xl w-[330px] overflow-hidden font-sans">
+        <div className="rounded-2xl w-[330px] overflow-hidden font-sans" style={{ background: 'var(--ml-surface)', border: '1px solid var(--ml-border)' }}>
             {/* Header with status indicator */}
             <div className="px-5 py-4 flex items-center gap-2.5">
                 <div
-                    className={`w-2.5 h-2.5 rounded-full transition-all duration-400 ${trained ? 'bg-ml-success-dot shadow-[0_0_8px_var(--ml-success-dot)]' : 'bg-ml-text-muted'}`}
+                    className={`w-2.5 h-2.5 rounded-full transition-all duration-400 ${trained ? '' : ''}`}
+                    style={trained ? { background: 'var(--ml-success-dot)', boxShadow: '0 0 8px var(--ml-success-dot)' } : { background: 'var(--ml-text-muted)' }}
                 />
-                <span className="text-ml-text-primary font-bold text-[15px]">Training</span>
+                <span className="font-bold text-[15px]" style={{ color: 'var(--ml-text-primary)' }}>Training</span>
             </div>
 
             <div className="px-5 pb-5 flex flex-col gap-3.5">
@@ -86,7 +87,7 @@ export default function TrainingPanel({
                             <line x1="65" y1="58" x2="95" y2="25" stroke="#a78bfa" strokeWidth="0.8" opacity="0.2" />
                             <line x1="65" y1="58" x2="95" y2="45" stroke="#a78bfa" strokeWidth="0.8" opacity="0.3" />
                         </svg>
-                        <div className="text-[13px] text-ml-text-muted leading-relaxed text-center">
+                        <div className="text-[13px] leading-relaxed text-center" style={{ color: 'var(--ml-text-muted)' }}>
                             {!canTrain ? 'Add samples to at least 2 classes to begin.' : 'Ready to train.'}
                         </div>
                     </div>
@@ -110,18 +111,18 @@ export default function TrainingPanel({
                                 </defs>
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="font-mono text-xs font-bold text-ml-accent-light">{Math.round(progress)}%</span>
+                                <span className="font-mono text-xs font-bold" style={{ color: 'var(--ml-accent-light)' }}>{Math.round(progress)}%</span>
                             </div>
                         </div>
-                        <span className="text-xs text-ml-text-secondary">Extracting features…</span>
+                        <span className="text-xs" style={{ color: 'var(--ml-text-secondary)' }}>Extracting features…</span>
                     </div>
                 )}
 
                 {/* Trained state: Success message */}
                 {trained && (
-                    <div className="bg-ml-success-bg border border-ml-success-border rounded-[10px] px-3.5 py-2.5 animate-celebration">
-                        <div className="text-xs text-ml-success-text font-semibold mb-1">✓ Model trained successfully</div>
-                        <div className="font-mono text-[11px] text-ml-text-secondary">
+                    <div className="rounded-[10px] px-3.5 py-2.5" style={{ animation: 'neura-celebration 0.5s cubic-bezier(0.34,1.56,0.64,1) both', background: 'var(--ml-success-bg)', border: '1px solid var(--ml-success-border)' }}>
+                        <div className="text-xs font-semibold mb-1" style={{ color: 'var(--ml-success-text)' }}>✓ Model trained successfully</div>
+                        <div className="font-mono text-[11px]" style={{ color: 'var(--ml-text-secondary)' }}>
                             Accuracy: {Math.round(accuracy * 100)}% · {totalSamples} samples · {Object.keys(sampleCounts).length} classes
                         </div>
                     </div>
@@ -130,11 +131,11 @@ export default function TrainingPanel({
                 {/* Sample counts grid */}
                 {Object.keys(sampleCounts).length > 0 && (
                     <div className="flex flex-col gap-2">
-                        <div className="text-[10px] text-ml-text-secondary uppercase tracking-[0.18em] font-semibold">Samples</div>
+                        <div className="text-[10px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'var(--ml-text-secondary)' }}>Samples</div>
                         <div className="grid grid-cols-2 gap-2">
                             {Object.entries(sampleCounts).map(([name, count]) => (
-                                <div key={name} className="bg-ml-well rounded-[10px] px-3 py-2 text-[11px] text-ml-text-secondary">
-                                    {name}: <span className="font-bold text-ml-text-primary">{count}</span>
+                                <div key={name} className="rounded-[10px] px-3 py-2 text-[11px]" style={{ background: 'var(--ml-well)', color: 'var(--ml-text-secondary)' }}>
+                                    {name}: <span className="font-bold" style={{ color: 'var(--ml-text-primary)' }}>{count}</span>
                                 </div>
                             ))}
                         </div>
@@ -146,11 +147,17 @@ export default function TrainingPanel({
                     type="button"
                     onClick={onTrain}
                     disabled={!canTrain || status === 'training'}
-                    className={`w-full py-3.5 rounded-[11px] border-none font-sans font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 tracking-[-0.01em] ${
-                        isReady
-                            ? 'bg-gradient-to-br from-ml-accent to-[#a855f7] text-white cursor-pointer shadow-[0_4px_14px_rgba(124,58,237,0.25)]'
-                            : 'bg-ml-btn-idle text-ml-text-disabled cursor-not-allowed shadow-none'
-                    }`}
+                    className="w-full py-3.5 rounded-[11px] border-none font-sans font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 tracking-[-0.01em]"
+                    style={isReady ? {
+                        background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(124,58,237,0.25)',
+                    } : {
+                        background: 'var(--ml-btn-idle)',
+                        color: 'var(--ml-text-disabled)',
+                        cursor: 'not-allowed',
+                    }}
                 >
                     <Zap size={15} />
                     {status === 'training' ? 'Training…' : trained ? 'Retrain Model' : 'Train Model'}
@@ -161,18 +168,19 @@ export default function TrainingPanel({
                     <button
                         type="button"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="bg-transparent border-none text-ml-text-muted font-sans text-[13px] cursor-pointer flex items-center gap-1.5 p-0 w-full"
+                        className="bg-transparent border-none font-sans text-[13px] cursor-pointer flex items-center gap-1.5 p-0 w-full"
+                        style={{ color: 'var(--ml-text-muted)' }}
                     >
                         <Settings size={13} />
                         <span>Advanced settings</span>
                         <span className="ml-auto transition-transform duration-200" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none' }}>▾</span>
                     </button>
                     {showAdvanced && (
-                        <div className="mt-2.5 bg-ml-well rounded-[10px] p-3.5 flex flex-col gap-3">
+                        <div className="mt-2.5 rounded-[10px] p-3.5 flex flex-col gap-3" style={{ background: 'var(--ml-well)' }}>
                             <div>
                                 <div className="flex justify-between mb-1">
-                                    <span className="text-xs text-ml-text-secondary">Epochs</span>
-                                    <span className="font-mono text-xs text-ml-accent-light font-semibold">{epochs}</span>
+                                    <span className="text-xs" style={{ color: 'var(--ml-text-secondary)' }}>Epochs</span>
+                                    <span className="font-mono text-xs font-semibold" style={{ color: 'var(--ml-accent-light)' }}>{epochs}</span>
                                 </div>
                                 <input
                                     type="range"
@@ -181,10 +189,11 @@ export default function TrainingPanel({
                                     step={5}
                                     value={epochs}
                                     onChange={(e) => setEpochs(Number(e.target.value))}
-                                    className="w-full accent-ml-accent"
+                                    className="w-full"
+                                    style={{ accentColor: '#7c3aed' }}
                                 />
                             </div>
-                            <div className="text-[11px] text-ml-text-muted leading-relaxed">
+                            <div className="text-[11px] leading-relaxed" style={{ color: 'var(--ml-text-muted)' }}>
                                 {mlDescription || 'Using transfer learning + KNN classifier. All computation runs in-browser — no data leaves your device.'}
                             </div>
                         </div>
@@ -193,7 +202,7 @@ export default function TrainingPanel({
 
                 {/* Accuracy badge */}
                 {trained && (
-                    <div className="bg-gradient-to-br from-ml-accent/10 to-[#a855f7]/10 border border-ml-accent/20 rounded-[10px] py-2.5 px-3.5 text-xs text-ml-accent-light font-semibold text-center">
+                    <div className="rounded-[10px] py-2.5 px-3.5 text-xs font-semibold text-center" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(168,85,247,0.1))', border: '1px solid rgba(124,58,237,0.2)', color: 'var(--ml-accent-light)' }}>
                         Accuracy: {Math.round(accuracy * 100)}%
                     </div>
                 )}

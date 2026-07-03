@@ -6,114 +6,49 @@
 import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { ToastProvider } from './leapignite/client/components/Toast';
 
-const APP_LOAD_START = performance.now();
-const logAppTiming = (label: string) => {
-    const elapsed = (performance.now() - APP_LOAD_START).toFixed(2);
-    console.log(`[APP TIMING] ${elapsed}ms - ${label}`);
-};
-
-logAppTiming('App.tsx module loaded');
-
 import Loader from './components/Loader';
 import { getSharedProject, fetchCloudProjectContent } from './services/cloudProjectApi';
 import { useCloudProjectStore } from './store/cloudProjectStore';
-logAppTiming('Loader imported');
 
-const LandingPage = lazy(() => {
-    logAppTiming('LandingPage lazy load started');
-    return import('./LandingPage').then(module => {
-        logAppTiming('LandingPage lazy load completed');
-        return module;
-    });
-});
+const LandingPage = lazy(() => import('./LandingPage'));
 
 const IntermediateApp = lazy(() => {
-    logAppTiming('IntermediateApp lazy load started');
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
-    return import('./IntermediateApp').then(module => {
-        logAppTiming('IntermediateApp lazy load completed');
-        return module;
-    });
+    return import('./IntermediateApp');
 });
 
 // @ts-ignore
 const JuniorApp = lazy(() => {
-    logAppTiming('JuniorApp lazy load started');
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
-    return import('./leapignite/client/JuniorApp').then(module => {
-        logAppTiming('JuniorApp lazy load completed');
-        return module;
-    });
+    return import('./leapignite/client/JuniorApp');
 });
 
 // @ts-ignore
-const PythonApp = lazy(() => {
-    logAppTiming('PythonApp lazy load started');
-    return import('./leaplogix/client/LogixApp').then(module => {
-        logAppTiming('PythonApp lazy load completed');
-        return module;
-    });
-});
+const PythonApp = lazy(() => import('./leaplogix/client/LogixApp'));
 
 // @ts-ignore
-const PythonNotebook = lazy(() => {
-    logAppTiming('PythonNotebook lazy load started');
-    return import('./python/PythonNotebook').then(module => {
-        logAppTiming('PythonNotebook lazy load completed');
-        return module;
-    });
-});
+const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
 
 // @ts-ignore
 const AppInventor = lazy(() => {
-    logAppTiming('AppInventor lazy load started');
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
-    return import('./creova').then(module => {
-        logAppTiming('AppInventor lazy load completed');
-        return module;
-    });
+    return import('./creova');
 });
 
 // @ts-ignore
-const ElectraWorkspace = lazy(() => {
-    logAppTiming('ElectraWorkspace lazy load started');
-    return import('./Electra/Client/Src/ElectraWorkspace').then(module => {
-        logAppTiming('ElectraWorkspace lazy load completed');
-        return module;
-    });
-});
+const ElectraWorkspace = lazy(() => import('./Electra/Client/Src/ElectraWorkspace'));
 
-const NeuraApp = lazy(() => {
-    logAppTiming('NeuraApp lazy load started');
-    return import('./NeuraApp').then(module => {
-        logAppTiming('NeuraApp lazy load completed');
-        return module;
-    });
-});
+const NeuraApp = lazy(() => import('./NeuraApp'));
 
-const Leap3DApp = lazy(() => {
-    logAppTiming('Leap3DApp lazy load started');
-    return import('./vision3d').then(module => {
-        logAppTiming('Leap3DApp lazy load completed');
-        return module;
-    });
-});
+const Leap3DApp = lazy(() => import('./vision3d'));
 
-const PulseApp = lazy(() => {
-    logAppTiming('PulseApp lazy load started');
-    return import('./PulseApp').then(module => {
-        logAppTiming('PulseApp lazy load completed');
-        return module;
-    });
-});
-
-logAppTiming('All lazy components defined');
+const PulseApp = lazy(() => import('./PulseApp'));
 
 type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'creova' | 'appforge' | 'electra' | 'neura' | 'vision3d' | 'pulse';
 
@@ -197,8 +132,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 export default function App() {
-    logAppTiming('App component function called');
-
     // Check for ?project=<url> query param — auto-open in correct mode
     const params = new URLSearchParams(window.location.search);
     const projectUrl = params.get('project') || params.get('projectUrl') || null;
@@ -239,7 +172,6 @@ export default function App() {
                     data.mode === 'junior' ? 'junior' :
                     isElectraPayload ? 'electra' :
                     'intermediate';
-                logAppTiming(`Project mode detected: ${detectedMode}`);
 
                 if (detectedMode === 'electra') {
                     useCloudProjectStore.getState().setPendingProject({
@@ -267,7 +199,6 @@ export default function App() {
         let cancelled = false;
         (async () => {
             try {
-                logAppTiming(`Loading shared project: ${shareId}`);
                 const project = await getSharedProject(shareId);
                 if (!project.fileUrl) throw new Error('Shared project file URL is missing');
 
@@ -302,7 +233,6 @@ export default function App() {
                     project.mode === 'neura' ? 'neura' :
                     'intermediate';
 
-                logAppTiming(`Shared project mode detected: ${detectedMode}`);
                 setMode(detectedMode);
             } catch (err: any) {
                 console.error('Failed to load shared project:', err);
@@ -334,16 +264,6 @@ export default function App() {
         }
         setMode(newMode);
     }, [cleanBlocklyStyles]);
-
-    // Log when component mounts
-    React.useEffect(() => {
-        logAppTiming('App component mounted');
-    }, []);
-
-    // Log when mode changes
-    React.useEffect(() => {
-        logAppTiming(`Mode changed to: ${mode}`);
-    }, [mode]);
 
     // Defer Blockly custom field registration to idle time — doesn't block first paint
     // REMOVED: Only load when user actually navigates to Blockly mode
