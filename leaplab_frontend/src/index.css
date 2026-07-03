@@ -4,25 +4,7 @@
   --color-brand-primary: #100051;
   --color-brand-secondary: #4F46E5;
 
-  /* ML workspace colors — auto-switch with .neura-dark via CSS vars */
-  --color-ml-bg: var(--ml-bg);
-  --color-ml-surface: var(--ml-surface);
-  --color-ml-surface-alt: var(--ml-surface-alt);
-  --color-ml-border: var(--ml-border);
-  --color-ml-border-strong: var(--ml-border-strong);
-  --color-ml-well: var(--ml-well);
-  --color-ml-btn-idle: var(--ml-btn-idle);
-  --color-ml-text-primary: var(--ml-text-primary);
-  --color-ml-text-secondary: var(--ml-text-secondary);
-  --color-ml-text-muted: var(--ml-text-muted);
-  --color-ml-text-disabled: var(--ml-text-disabled);
-  --color-ml-success-bg: var(--ml-success-bg);
-  --color-ml-success-border: var(--ml-success-border);
-  --color-ml-success-text: var(--ml-success-text);
-  --color-ml-success-dot: var(--ml-success-dot);
-  --color-ml-error-text: var(--ml-error-text);
-  --color-ml-accent: var(--ml-accent);
-  --color-ml-accent-light: var(--ml-accent-light);
+
 
   /* Fonts */
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;

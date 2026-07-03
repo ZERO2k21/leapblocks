@@ -17,7 +17,7 @@ import AudioClassifier from './components/neura/project-types/audio-classifier/A
 import NumbersCR from './components/neura/project-types/numbers-cr/NumbersCR';
 import TextClassifier from './components/neura/project-types/text-classifier/TextClassifier';
 import { NeuraProject, ProjectType } from './types/neura.types';
-import './styles/neura-theme.css';
+import './styles/neura-tailwind.css';
 import { fileService } from './Electra/Client/Src/services/FileService';
 import { useCloudProjectStore } from './store/cloudProjectStore';
 import NeuraUnsavedWarningModal from './components/neura/common/NeuraUnsavedWarningModal';
