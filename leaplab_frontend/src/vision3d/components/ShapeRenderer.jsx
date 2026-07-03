@@ -42,16 +42,17 @@ export const ShapeRenderer = ({ shape }) => {
   ]);
 
   const material = useMemo(() => {
-    const color = shape.isHole ? '#888888' : shape.color;
+    const isHole = shape.isHole;
+    const color = isHole ? '#888888' : shape.color;
     const isCSG = shape.type === 'csg_result' || !!shape._csgGeometry;
     return new THREE.MeshStandardMaterial({
       color: new THREE.Color(color),
       metalness: shape.metalness ?? 0.1,
       roughness: shape.roughness ?? 0.7,
-      transparent: (shape.opacity ?? 1) < 1,
-      opacity: shape.opacity ?? 1,
+      transparent: isHole || (shape.opacity ?? 1) < 1,
+      opacity: isHole ? 0.4 : (shape.opacity ?? 1),
       side: isCSG ? THREE.DoubleSide : THREE.FrontSide,
-      wireframe: false,
+      wireframe: isHole,
     });
   }, [shape.color, shape.isHole, shape.metalness, shape.roughness, shape.opacity, shape.type, shape._csgGeometry]);
 

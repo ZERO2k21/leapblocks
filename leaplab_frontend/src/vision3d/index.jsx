@@ -56,6 +56,7 @@ const Vision3DApp = ({ onBack }) => {
     setShowAxes,
     showInspector,
     updateShape,
+    updateShapes,
     csgOperation,
     smartDuplicate,
     toggleCameraMode,
@@ -600,6 +601,29 @@ const Vision3DApp = ({ onBack }) => {
               >
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
                 Intersect
+              </button>
+              <span className="v3d-toolbar-separator" />
+              <button
+                className={`v3d-toolbar-btn ${(() => {
+                  if (selectedIds.length === 0) return '';
+                  const sel = shapes.filter((s) => selectedIds.includes(s.id));
+                  const anyHole = sel.some((s) => s.isHole);
+                  return anyHole ? 'active' : '';
+                })()}`}
+                onClick={() => {
+                  if (selectedIds.length === 0) return;
+                  const sel = shapes.filter((s) => selectedIds.includes(s.id));
+                  const anyHole = sel.some((s) => s.isHole);
+                  updateShapes(selectedIds, { isHole: !anyHole });
+                }}
+                disabled={selectedIds.length === 0}
+                title="Toggle Solid/Hollow (H)"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="9"/>
+                  <circle cx="12" cy="12" r="5" fill="currentColor" opacity={selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 0 : 0.3}/>
+                </svg>
+                {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Solid' : 'Hollow'}
               </button>
             </div>
             <div className="v3d-toolbar-center">

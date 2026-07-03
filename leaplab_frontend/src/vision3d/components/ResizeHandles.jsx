@@ -199,7 +199,7 @@ const ResizeHandles = () => {
           const factor = projLen / oldLen;
 
           const finalFactor = Math.max(0.05, Math.min(10, factor));
-          const newScale = initialScale.map((s) => Math.max(0.01, s * finalFactor));
+          const newScale = initialScale.map((s) => Math.max(0.001, s * finalFactor));
 
           const newVisW = baseW * newScale[0];
           const newVisH = baseH * newScale[1];
@@ -273,7 +273,7 @@ const ResizeHandles = () => {
                                baseD * initialScale[2] / 2;
 
           const newScaleVal = (clampedProj / oldFaceOffset) * initialScale[axis];
-          const finalScaleVal = Math.max(0.01, Math.min(10, newScaleVal));
+          const finalScaleVal = Math.max(0.001, Math.min(10, newScaleVal));
           const newScale = [...initialScale];
           newScale[axis] = Math.round(finalScaleVal * 100) / 100;
 

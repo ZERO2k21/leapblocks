@@ -38,7 +38,6 @@ const ShapeInteraction = () => {
 
       const store = use3DStore.getState();
       const tool = store.activeTool;
-      const ids = store.selectedIds;
       const isCtrl = e.ctrlKey || e.metaKey;
 
       // ── Shape selection by raycasting ─────────────────────
@@ -74,20 +73,16 @@ const ShapeInteraction = () => {
           // Normal click: select only this shape (always select, never toggle off)
           selectShape(clickedShapeId, false);
         }
-        // Don't start drag on click — only on drag
-        return;
       }
 
-      // Clicked on empty space — deselect (if not Ctrl)
-      if (!isCtrl && ids.length > 0) {
-        deselectAll();
-        return;
-      }
+      // ── Transform drag on shapes (works for click+drag on shapes or empty space) ──
+      // Re-read state after selection
+      const postStore = use3DStore.getState();
+      const postIds = postStore.selectedIds;
+      if (postIds.length === 0) return;
+      if (tool === 'select') return;
 
-      // ── Transform drag on already-selected shapes ─────────
-      if (ids.length === 0) return;
-
-      const sel = store.shapes.filter((s) => ids.includes(s.id));
+      const sel = postStore.shapes.filter((s) => postIds.includes(s.id));
       if (sel.length === 0) return;
 
       // ── Take over rendering (Blender-style) ──────────────
@@ -136,7 +131,7 @@ const ShapeInteraction = () => {
       const meshIdx = new Map();
       let idx = 0;
       scene?.traverse?.((child) => {
-        if (child.isMesh && child.userData.shapeId && ids.includes(child.userData.shapeId)) {
+        if (child.isMesh && child.userData.shapeId && postIds.includes(child.userData.shapeId)) {
           meshes.push(child);
           meshIdx.set(child.userData.shapeId, idx++);
         }
@@ -144,7 +139,7 @@ const ShapeInteraction = () => {
       if (meshes.length === 0) { restoreState(); return; }
 
       let startProjX = 0, startProjZ = 0;
-      let startAngleDist = 0, startScaleDist = 0;
+      let startScaleDist = 0;
       let activated = false;
 
       const intersectYPlane = (clientX, clientY, yLevel) => {
@@ -182,8 +177,6 @@ const ShapeInteraction = () => {
             if (intersectYPlane(startX, startY, _center.y)) {
               startProjX = _intersection.x; startProjZ = _intersection.z;
             }
-          } else if (tool === 'rotate') {
-            startAngleDist = Math.atan2(startY - rectCy, startX - rectCx);
           } else if (tool === 'scale') {
             const dx = startX - rectCx, dy = startY - rectCy;
             startScaleDist = Math.sqrt(dx * dx + dy * dy);
@@ -201,10 +194,26 @@ const ShapeInteraction = () => {
             mesh.position.z = startPos[i3 + 2] + dz;
           }
         } else if (tool === 'rotate') {
-          const d = snapAng(Math.atan2(ev.clientY - rectCy, ev.clientX - rectCx) - startAngleDist, rSnap);
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          const angle = snapAng((dx + dy) * 0.01, rSnap);
+          // Rotate around camera view axis (perpendicular to screen)
+          const viewDir = new THREE.Vector3();
+          camera.getWorldDirection(viewDir);
           for (let i = 0; i < meshes.length; i++) {
             const mesh = meshes[i];
-            mesh.rotation.y = startRot[meshIdx.get(mesh.userData.shapeId) * 3 + 1] + d;
+            const i3 = meshIdx.get(mesh.userData.shapeId) * 3;
+            // Apply rotation around view axis using quaternion
+            const quat = new THREE.Quaternion();
+            quat.setFromAxisAngle(viewDir, angle);
+            const currentQuat = new THREE.Quaternion().setFromEuler(
+              new THREE.Euler(startRot[i3], startRot[i3 + 1], startRot[i3 + 2])
+            );
+            currentQuat.premultiply(quat);
+            const euler = new THREE.Euler().setFromQuaternion(currentQuat);
+            mesh.rotation.x = euler.x;
+            mesh.rotation.y = euler.y;
+            mesh.rotation.z = euler.z;
           }
         } else if (tool === 'scale') {
           const dx = ev.clientX - rectCx, dy = ev.clientY - rectCy;
@@ -213,9 +222,9 @@ const ShapeInteraction = () => {
           for (let i = 0; i < meshes.length; i++) {
             const mesh = meshes[i];
             const i3 = meshIdx.get(mesh.userData.shapeId) * 3;
-            mesh.scale.x = Math.max(0.01, startScale[i3] * sf);
-            mesh.scale.y = Math.max(0.01, startScale[i3 + 1] * sf);
-            mesh.scale.z = Math.max(0.01, startScale[i3 + 2] * sf);
+            mesh.scale.x = Math.max(0.001, startScale[i3] * sf);
+            mesh.scale.y = Math.max(0.001, startScale[i3 + 1] * sf);
+            mesh.scale.z = Math.max(0.001, startScale[i3 + 2] * sf);
           }
         }
 

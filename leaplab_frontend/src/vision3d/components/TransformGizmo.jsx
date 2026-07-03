@@ -245,7 +245,7 @@ const TransformGizmo = () => {
             const id = mesh.userData.shapeId;
             const ss = startScaleMap.get(id);
             if (!ss || ss.length <= idx) return;
-            const val = Math.max(0.01, ss[idx] * factor);
+            const val = Math.max(0.001, ss[idx] * factor);
             if (idx === 0) mesh.scale.x = val;
             else if (idx === 1) mesh.scale.y = val;
             else mesh.scale.z = val;

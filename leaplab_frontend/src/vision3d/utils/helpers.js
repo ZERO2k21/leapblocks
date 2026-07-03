@@ -283,26 +283,29 @@ export function createGeometry(shape) {
       for (let i = 0; i <= 20; i++) {
         const t = i / 20;
         const y = t * h;
-        const radius = r * Math.sqrt(t);
+        const radius = r * (1 - t * t);
         pts.push(new THREE.Vector2(radius, y));
       }
       return new THREE.LatheGeometry(pts, segs);
     }
 
     case 'tube': {
-      const smooth = shape.cornerRadius ?? 0;
-      const segs = Math.round((shape.tubeRadialSegments ?? 32) * (1 + smooth * 2));
-      const heightSegs = Math.round(1 + smooth * 4);
-      return new THREE.CylinderGeometry(
-        shape.tubeOuterRadius ?? 1,
-        shape.tubeOuterRadius ?? 1,
-        shape.tubeHeight ?? 2,
-        segs,
-        heightSegs,
-        true,
-        0,
-        Math.PI * 2
-      );
+      const outerR = shape.tubeOuterRadius ?? 1;
+      const innerR = shape.tubeInnerRadius ?? 0.7;
+      const h = shape.tubeHeight ?? 2;
+      const halfH = h / 2;
+      const pts = [];
+      // Bottom: outer to inner
+      pts.push(new THREE.Vector2(outerR, -halfH));
+      pts.push(new THREE.Vector2(innerR, -halfH));
+      // Inner wall up
+      pts.push(new THREE.Vector2(innerR, halfH));
+      // Top: inner to outer
+      pts.push(new THREE.Vector2(outerR, halfH));
+      // Close back to start
+      pts.push(new THREE.Vector2(outerR, -halfH));
+      const segs = shape.tubeRadialSegments ?? 32;
+      return new THREE.LatheGeometry(pts, segs);
     }
 
     case 'star': {
@@ -374,13 +377,32 @@ export function createGeometry(shape) {
     }
 
     case 'ring': {
-      const smooth = shape.cornerRadius ?? 0;
-      const segs = Math.round(32 * (1 + smooth * 2));
-      return new THREE.RingGeometry(
-        shape.innerRadius ?? 0.5,
-        shape.outerRadius ?? 1,
-        segs
-      );
+      const innerR = shape.innerRadius ?? 0.5;
+      const outerR = shape.outerRadius ?? 1;
+      const thickness = (outerR - innerR) * 0.5;
+      const midR = (innerR + outerR) / 2;
+      const pts = [];
+      const steps = 12;
+      // Bottom outer to bottom inner
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const r = outerR - t * (outerR - innerR);
+        const y = -thickness / 2;
+        pts.push(new THREE.Vector2(r, y));
+      }
+      // Inner wall up
+      pts.push(new THREE.Vector2(innerR, thickness / 2));
+      // Top inner to top outer
+      for (let i = steps; i >= 0; i--) {
+        const t = i / steps;
+        const r = outerR - t * (outerR - innerR);
+        const y = thickness / 2;
+        pts.push(new THREE.Vector2(r, y));
+      }
+      // Close the profile back to start
+      pts.push(new THREE.Vector2(outerR, -thickness / 2));
+      const segs = 48;
+      return new THREE.LatheGeometry(pts, segs);
     }
 
     case 'plane':
