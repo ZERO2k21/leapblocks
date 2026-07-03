@@ -30,6 +30,8 @@ export const objectDetectionBlocks = [
                 ['ball', 'ball']
             ]
         }],
+        message1: 'do %1',
+        args1: [{ type: 'input_statement', name: 'DO' }],
         previousStatement: null,
         nextStatement: null,
         colour: '#3dba7e',
@@ -176,7 +178,8 @@ export class ObjectDetectionRuntime {
                         'suitcase': 'bag',
                         'bicycle': 'bike',
                         'motorcycle': 'bike',
-                        'laptop': 'computer'
+                        'laptop': 'computer',
+                        'sports ball': 'ball'
                     };
                     
                     if (labelMap[label]) {

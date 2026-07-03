@@ -1574,7 +1574,17 @@ export class AnimationCompiler {
                 break;
             case 'object_when_detected': {
                 const objectType = block.getFieldValue('OBJECT') || 'cat';
-                step = { type: 'object_when_detected', objectType } as any;
+                step = {
+                    type: 'if',
+                    blockId: block.id,
+                    condition: () => {
+                        if (typeof window !== 'undefined' && (window as any).runtime?.objectDetection) {
+                            return (window as any).runtime.objectDetection.isObjectDetected(objectType);
+                        }
+                        return false;
+                    },
+                    body: this.compileStatementInput(block, 'DO')
+                };
                 break;
             }
 
