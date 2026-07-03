@@ -851,7 +851,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 8 PULSE */}
-              <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => (window as any).showComingSoon('Quiz'))}>
+              <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
                 <div className="tc-icon">
                   <img src="assets/quiz_icon.png" alt="Quiz Icon" />
                 </div>

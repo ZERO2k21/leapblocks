@@ -14,6 +14,7 @@ export interface LeapLabAuthState {
     institutionId: string | null;
     credentialId: string | null;
     token: string | null;
+    role: string | null;
     isLoading: boolean;
     error: string | null;
     signIn: (username: string, password: string) => Promise<boolean>;
@@ -30,6 +31,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
             institutionId: null,
             credentialId: null,
             token: null,
+            role: null,
             isLoading: false,
             error: null,
 
@@ -52,7 +54,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                         return false;
                     }
 
-                    const { id, username: verifiedUsername, institutionName, institutionId, token } = data.data;
+                    const { id, username: verifiedUsername, institutionName, institutionId, token, role } = data.data;
 
                     set({
                         isAuthenticated: true,
@@ -61,6 +63,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                         institutionId,
                         credentialId: id ?? null,
                         token: token ?? null,
+                        role: role ?? null,
                         isLoading: false,
                         error: null,
                     });
@@ -82,6 +85,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                     institutionId: null,
                     credentialId: null,
                     token: null,
+                    role: null,
                     error: null,
                 });
             },
@@ -97,6 +101,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                 institutionId: state.institutionId,
                 credentialId: state.credentialId,
                 token: state.token,
+                role: state.role,
             }),
             onRehydrateStorage: () => (state) => {
                 // Old sessions persisted before token support won't have a token.
@@ -108,6 +113,7 @@ export const useLeapLabAuthStore = create<LeapLabAuthState>()(
                     state.institutionId = null;
                     state.credentialId = null;
                     state.token = null;
+                    state.role = null;
                 }
             },
         },

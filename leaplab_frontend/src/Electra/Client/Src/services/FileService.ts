@@ -156,6 +156,10 @@ class FileService {
             throw new Error('Please sign in to save projects to the cloud.');
         }
 
+        if (authState.role === 'trainer') {
+            throw new Error('Trainers are not allowed to save projects to the cloud.');
+        }
+
         let activeProjectId = useCloudProjectStore.getState().activeProjectId;
         const metadata = payload?.board ? { board: payload.board } : undefined;
 

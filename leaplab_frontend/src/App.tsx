@@ -105,9 +105,17 @@ const Leap3DApp = lazy(() => {
     });
 });
 
+const PulseApp = lazy(() => {
+    logAppTiming('PulseApp lazy load started');
+    return import('./PulseApp').then(module => {
+        logAppTiming('PulseApp lazy load completed');
+        return module;
+    });
+});
+
 logAppTiming('All lazy components defined');
 
-type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'creova' | 'appforge' | 'electra' | 'neura' | 'vision3d';
+type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'creova' | 'appforge' | 'electra' | 'neura' | 'vision3d' | 'pulse';
 
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
@@ -411,6 +419,7 @@ export default function App() {
                     />}
                     {mode === 'neura' && <NeuraApp onBack={requestExit} />}
                     {mode === 'vision3d' && <Leap3DApp onBack={requestExit} />}
+                    {mode === 'pulse' && <PulseApp onBack={requestExit} />}
                     {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
                 </Suspense>
 
