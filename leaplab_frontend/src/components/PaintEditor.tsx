@@ -11,7 +11,7 @@ import {
     ChevronDown, ArrowUp, ArrowDown,
     Plus, Search, MousePointer,
     MoveUp, MoveDown, Layers, Image as ImageIcon,
-    Combine, Ungroup, Download, Sparkles
+    Combine, Ungroup, Download, Sparkles, Check
 } from 'lucide-react';
 import { ActionMenu } from '../stage/ActionMenu';
 import { CostumeLibrary } from './CostumeLibrary';
@@ -259,7 +259,7 @@ function PaintEditor({
     // Update costume name when spriteName changes (e.g., switching between sprite and stage)
     useEffect(() => {
         setCostumeName(spriteName);
-    }, [spriteName]);
+    }, [spriteName, activeCostumeIndex]);
 
     // Tool Management
     useEffect(() => {
@@ -622,16 +622,40 @@ function PaintEditor({
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{title === 'Backdrop Editor' ? 'Backdrop' : 'Costume'}</span>
-                                <input
-                                    type="text"
-                                    value={costumeName}
-                                    onChange={(e) => {
-                                        const newName = e.target.value;
-                                        setCostumeName(newName);
-                                        if (onRenameCostume) onRenameCostume(activeCostumeIndex, newName);
-                                    }}
-                                    className="bg-white border rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] focus:ring-2 focus:ring-purple-100 w-32 shadow-sm transition-all"
-                                />
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="text"
+                                        value={costumeName}
+                                        onChange={(e) => {
+                                            setCostumeName(e.target.value);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && onRenameCostume) {
+                                                onRenameCostume(activeCostumeIndex, costumeName);
+                                            }
+                                            if (e.key === 'Escape') {
+                                                setCostumeName(spriteName);
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            if (costumeName !== spriteName && onRenameCostume) {
+                                                onRenameCostume(activeCostumeIndex, costumeName);
+                                            }
+                                        }}
+                                        className="bg-white border rounded-full px-4 py-1.5 text-sm font-semibold text-gray-600 outline-none focus:border-[#855CD6] focus:ring-2 focus:ring-purple-100 w-32 shadow-sm transition-all"
+                                    />
+                                    {costumeName !== spriteName && (
+                                        <button
+                                            onClick={() => {
+                                                if (onRenameCostume) onRenameCostume(activeCostumeIndex, costumeName);
+                                            }}
+                                            className="text-green-500 hover:text-green-600 transition-colors p-1 rounded-full hover:bg-green-50"
+                                            title="Save name"
+                                        >
+                                            <Check size={14} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="h-6 w-px bg-gray-200" />

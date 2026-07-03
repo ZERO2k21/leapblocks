@@ -211,7 +211,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                 <PaintEditor
                     mode="intermediate"
                     title="Backdrop Editor"
-                    spriteName="Stage"
+                    spriteName={stageManager.getAllBackdrops()[stageManager.getCurrentBackdropIndex()]?.name || 'Stage'}
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
                     onSave={async (imageData: string, svgData?: string, name?: string) => {
@@ -233,6 +233,14 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     onDuplicateSound={(index: number) => {
                         stageManager.duplicateBackdrop(index);
                         addLog(`Duplicated backdrop on Stage`);
+                    }}
+                    onRenameCostume={(index: number, newName: string) => {
+                        if (newName.trim()) {
+                            const backdrop = stageManager.getAllBackdrops()[index];
+                            if (backdrop) {
+                                stageManager.updateBackdrop(index, newName.trim(), backdrop.src);
+                            }
+                        }
                     }}
                     onClose={onClose}
                     onOpenLibrary={onOpenLibrary}
@@ -345,13 +353,22 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             key={`editor-${activeCostumeIndex}-${refreshTick}`}
                             mode="intermediate"
                             title="Costume Editor"
-                            spriteName={selectedSprite.name}
+                            spriteName={selectedSprite.costumes[activeCostumeIndex]?.name || selectedSprite.name}
                             initialImage={currentCostume}
                             costumes={[allCostumes[activeCostumeIndex]].filter(Boolean)}
                             onSave={updateCurrentCostumeFromEditor}
                             onDeleteSound={() => deleteCostume(activeCostumeIndex)}
                             onDuplicateSound={() => duplicateCostume(activeCostumeIndex)}
-                            onClose={() => { }}
+                            onRenameCostume={(index: number, newName: string) => {
+                                if (!newName.trim()) return;
+                                const target = selectedSprite.costumes[activeCostumeIndex];
+                                if (target) {
+                                    target.name = newName.trim();
+                                    selectedSprite.switchCostume(selectedSprite.currentCostumeIndex);
+                                    refresh();
+                                }
+                            }}
+                            onClose={() => {}}
                             hideCostumeSidebar={true}
                         />
                     </div>
