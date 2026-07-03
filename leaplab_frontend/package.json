@@ -7,7 +7,7 @@
   "workspaces": [
     "server",
     "src/Electra/server",
-    "neura-ml"
+    "src/neura-ml"
   ],
   "scripts": {
     "start": "npm run dev:full",

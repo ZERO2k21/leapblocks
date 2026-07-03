@@ -11,7 +11,7 @@ export default function ClassifierLayout({ project, onBack, children }: Classifi
     const { isDark } = useNeuraTheme()
 
     return (
-        <div className="flex-1 w-full min-h-screen px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 xl:py-12 max-w-[1600px] mx-auto flex flex-col justify-center bg-ml-bg animate-fade-in">
+        <div className="flex-1 w-full h-full overflow-y-auto px-6 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 xl:py-12 max-w-[1600px] mx-auto flex flex-col bg-ml-bg animate-fade-in">
             {/* Subtle dot pattern */}
             <div className="fixed inset-0 opacity-[0.018] pointer-events-none" style={{
                 backgroundImage: `radial-gradient(circle, var(--ml-accent) 1px, transparent 1px)`,

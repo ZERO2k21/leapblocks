@@ -194,7 +194,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               src="assets/leaplab_logo_transparent.png"
               className="h-12 object-contain"
             />
-            <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none">
+            <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none gap-0.5">
               <span className={`text-[7px] font-black uppercase tracking-[0.18em] font-sans ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]'}`}>
                 LEAPLAB
               </span>
