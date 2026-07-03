@@ -27,8 +27,8 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 
     return (
         <div ref={menuRef} style={{ position: 'relative' }}>
-            <button 
-                onClick={onToggle} 
+            <button
+                onClick={onToggle}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 style={{
@@ -36,8 +36,8 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     border: 'none', color: '#fff', fontSize: 15, fontWeight: 500,
                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", cursor: 'pointer',
                     borderRadius: 6, transition: 'all 0.2s ease',
-                    background: isOpen 
-                        ? 'rgba(255,255,255,0.18)' 
+                    background: isOpen
+                        ? 'rgba(255,255,255,0.18)'
                         : (isHovered ? 'rgba(255,255,255,0.1)' : 'transparent'),
                 }}
             >
@@ -167,7 +167,7 @@ export default function TopBar() {
                     ]} />
 
                 {showMenuItems && ["Board", "Connect"].map((menuLabel) => (
-                    <button key={menuLabel} 
+                    <button key={menuLabel}
                         style={{
                             background: "transparent",
                             border: "none",
@@ -195,41 +195,41 @@ export default function TopBar() {
             <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-                <div style={{ 
-                    background: "rgba(255, 255, 255, 0.08)", 
+                <div style={{
+                    background: "rgba(255, 255, 255, 0.08)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
-                    padding: "6px 12px", 
-                    borderRadius: 8, 
-                    display: "flex", 
-                    alignItems: "center", 
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
                     gap: 8,
                     height: 34,
                     boxSizing: "border-box"
                 }}>
                     <span style={{ fontSize: 14, opacity: 0.5 }}>📁</span>
                     <input value={ctx.projectName} onChange={(e) => ctx.setProjectName(e.target.value)}
-                        style={{ 
-                            background: "transparent", 
-                            border: "none", 
-                            color: "#fff", 
-                            width: 100, 
-                            outline: "none", 
-                            fontSize: 13, 
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#fff",
+                            width: 100,
+                            outline: "none",
+                            fontSize: 13,
                             fontWeight: 600,
                             fontFamily: "inherit"
                         }} />
-                    <Save size={14} style={{ opacity: 0.8, cursor: "pointer", transition: "transform 0.15s ease" }} 
-                        onClick={ctx.handleSaveProject} 
+                    <Save size={14} style={{ opacity: 0.8, cursor: "pointer", transition: "transform 0.15s ease" }}
+                        onClick={ctx.handleSaveProject}
                         title="Save Project"
                         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
                         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
                 </div>
 
-                <div style={{ 
-                    display: "flex", 
-                    background: "rgba(0, 0, 0, 0.28)", 
+                <div style={{
+                    display: "flex",
+                    background: "rgba(0, 0, 0, 0.28)",
                     border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: 20, 
+                    borderRadius: 20,
                     padding: 3,
                     alignItems: "center",
                     height: 34,
@@ -238,19 +238,19 @@ export default function TopBar() {
                     <div style={{ padding: "0 8px 0 10px", color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</div>
                     {["ide", "stage", "upload"].map(mode => (
                         <button key={mode} onClick={() => ctx.setWorkflowMode(mode)} style={{
-                            padding: "6px 12px", 
+                            padding: "6px 12px",
                             border: "none",
                             borderRadius: 16,
                             background: ctx.workflowMode === mode ? "linear-gradient(135deg, #7C3AED, #4F46E5)" : "transparent",
                             color: ctx.workflowMode === mode ? "#fff" : "rgba(255,255,255,0.7)",
-                            fontSize: 12, 
-                            fontWeight: 700, 
-                            cursor: "pointer", 
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
                             transition: "all 0.2s ease",
                             textTransform: "capitalize",
                         }}
-                        onMouseEnter={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                            onMouseEnter={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
                         >{mode === "ide" ? "IDE" : mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
                     ))}
                 </div>
@@ -263,8 +263,8 @@ export default function TopBar() {
                         boxShadow: "0 2px 10px rgba(239, 68, 68, 0.35)",
                         transition: "all 0.2s ease"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(239, 68, 68, 0.45)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(239, 68, 68, 0.35)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(239, 68, 68, 0.45)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(239, 68, 68, 0.35)"; }}
                     >
                         <Square size={12} fill="#fff" stroke="none" /> Stop
                     </button>
@@ -276,17 +276,17 @@ export default function TopBar() {
                         boxShadow: "0 2px 10px rgba(16, 185, 129, 0.35)",
                         transition: "all 0.2s ease"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(16, 185, 129, 0.45)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(16, 185, 129, 0.35)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(16, 185, 129, 0.45)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(16, 185, 129, 0.35)"; }}
                     >
                         <Play size={12} fill="#fff" stroke="none" /> Run
                     </button>
                 )}
 
                 <button onClick={() => { if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload"); else ctx.handleUploadFirmware(); }}
-                    style={{ 
-                        display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", 
-                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", 
+                    style={{
+                        display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
+                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
                         borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#fff", height: 34,
                         transition: "all 0.2s ease"
                     }}
@@ -315,7 +315,7 @@ export default function TopBar() {
                         overflow: 'hidden',
                     }}>
                         <img
-                            src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                            src="/assets/logo - creoleap.png"
                             alt="CREOLEAP"
                             style={{
                                 width: '145px',

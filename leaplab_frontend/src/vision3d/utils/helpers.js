@@ -4,8 +4,14 @@
  */
 
 import * as THREE from 'three';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { SHAPE_DEFINITIONS } from './constants';
 import { debug } from './logger';
+import helvetikerFont from '../assets/helvetiker_regular.typeface.json';
+
+const fontLoader = new FontLoader();
+const defaultFont = fontLoader.parse(helvetikerFont);
 
 let idCounter = 0;
 
@@ -28,9 +34,9 @@ export function createShape(type, position = [0, 0, 0]) {
     id,
     type,
     name: definition.name,
-    position,
-    rotation: [0, 0, 0],
-    scale: [1, 1, 1],
+    position: defaults.position || position,
+    rotation: defaults.rotation || [0, 0, 0],
+    scale: defaults.scale || [1, 1, 1],
     color: defaults.color || '#4F46E5',
     isHole: false,
     visible: true,
@@ -104,6 +110,7 @@ export function createShape(type, position = [0, 0, 0]) {
     // Text
     text: defaults.text,
     fontSize: defaults.fontSize,
+    textDepth: defaults.textDepth,
     // Material
     metalness: 0.1,
     roughness: 0.7,
@@ -144,40 +151,49 @@ export function createGeometry(shape) {
       const rBot = shape.radiusBottom ?? 1;
       const taperAmount = shape.taper ?? 0;
       const cylH = shape.cylinderHeight ?? 2;
-      const segs = shape.radialSegments ?? 32;
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round((shape.radialSegments ?? 32) * (1 + smooth * 2));
+      const heightSegs = Math.round(1 + smooth * 4);
       if (taperAmount !== 0) {
         const t = taperAmount / 100;
         return new THREE.CylinderGeometry(
           rTop * (1 + t),
           rBot * (1 - t),
           cylH,
-          segs
+          segs, 1, false, 0, Math.PI * 2
         );
       }
-      return new THREE.CylinderGeometry(rTop, rBot, cylH, segs);
+      return new THREE.CylinderGeometry(rTop, rBot, cylH, segs, heightSegs);
     }
 
-    case 'sphere':
-      return new THREE.SphereGeometry(
-        shape.radius ?? 1,
-        shape.widthSegments ?? 32,
-        shape.heightSegments ?? 16
-      );
+    case 'sphere': {
+      const smooth = shape.cornerRadius ?? 0;
+      const sw = Math.round((shape.widthSegments ?? 32) * (1 + smooth * 2));
+      const sh = Math.round((shape.heightSegments ?? 16) * (1 + smooth * 2));
+      return new THREE.SphereGeometry(shape.radius ?? 1, sw, sh);
+    }
 
-    case 'cone':
+    case 'cone': {
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round((shape.radialSegments ?? 32) * (1 + smooth * 2));
       return new THREE.ConeGeometry(
         shape.coneRadius ?? 1,
         shape.coneHeight ?? 2,
-        shape.radialSegments ?? 32
+        segs
       );
+    }
 
-    case 'torus':
+    case 'torus': {
+      const smooth = shape.cornerRadius ?? 0;
+      const rSegs = Math.round((shape.torusRadialSegments ?? 16) * (1 + smooth * 2));
+      const tSegs = Math.round((shape.torusTubularSegments ?? 32) * (1 + smooth * 2));
       return new THREE.TorusGeometry(
         shape.torusRadius ?? 1,
         shape.tubeRadius ?? 0.4,
-        shape.torusRadialSegments ?? 16,
-        shape.torusTubularSegments ?? 32
+        rSegs,
+        tSegs
       );
+    }
 
     case 'roof': {
       const w = shape.roofWidth ?? 2;
@@ -202,7 +218,9 @@ export function createGeometry(shape) {
       const w = shape.roundRoofWidth ?? 2;
       const d = shape.roundRoofDepth ?? 2;
       const h = shape.roundRoofHeight ?? 1;
-      const geo = new THREE.CylinderGeometry(d / 2, d / 2, w, 32, 1, false, 0, Math.PI);
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round(32 * (1 + smooth * 2));
+      const geo = new THREE.CylinderGeometry(d / 2, d / 2, w, segs, 1, false, 0, Math.PI);
       geo.rotateZ(Math.PI / 2);
       geo.scale(1, h / (d / 2), 1);
       return geo;
@@ -229,17 +247,21 @@ export function createGeometry(shape) {
       return geo;
     }
 
-    case 'pyramid':
+    case 'pyramid': {
+      const smooth = shape.cornerRadius ?? 0;
+      const sides = Math.round((shape.pyramidSides ?? 4) + smooth * 12);
       return new THREE.ConeGeometry(
         shape.pyramidRadius ?? 1,
         shape.pyramidHeight ?? 2,
-        shape.pyramidSides ?? 4
+        sides
       );
+    }
 
     case 'halfSphere': {
       const r = shape.halfSphereRadius ?? 1;
-      const segs = shape.halfSphereSegments ?? 32;
-      const geo = new THREE.SphereGeometry(r, segs, segs / 2, 0, Math.PI * 2, 0, Math.PI / 2);
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round((shape.halfSphereSegments ?? 32) * (1 + smooth * 2));
+      const geo = new THREE.SphereGeometry(r, segs, Math.round(segs / 2), 0, Math.PI * 2, 0, Math.PI / 2);
       return geo;
     }
 
@@ -257,17 +279,21 @@ export function createGeometry(shape) {
       return new THREE.LatheGeometry(pts, segs);
     }
 
-    case 'tube':
+    case 'tube': {
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round((shape.tubeRadialSegments ?? 32) * (1 + smooth * 2));
+      const heightSegs = Math.round(1 + smooth * 4);
       return new THREE.CylinderGeometry(
         shape.tubeOuterRadius ?? 1,
         shape.tubeOuterRadius ?? 1,
         shape.tubeHeight ?? 2,
-        shape.tubeRadialSegments ?? 32,
-        1,
+        segs,
+        heightSegs,
         true,
         0,
         Math.PI * 2
       );
+    }
 
     case 'star': {
       const outer = shape.starOuterRadius ?? 1;
@@ -301,7 +327,9 @@ export function createGeometry(shape) {
       const r = shape.polygonRadius ?? 1;
       const sides = shape.polygonSides ?? 6;
       const h = shape.polygonHeight ?? 2;
-      return new THREE.CylinderGeometry(r, r, h, sides);
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round(sides * (1 + smooth * 4));
+      return new THREE.CylinderGeometry(r, r, h, segs);
     }
 
     case 'dodecahedron':
@@ -316,12 +344,34 @@ export function createGeometry(shape) {
     case 'tetrahedron':
       return new THREE.TetrahedronGeometry(shape.radius ?? 1);
 
-    case 'ring':
+    case 'text3d': {
+      const text = shape.text || 'Hello';
+      const size = shape.fontSize ?? 1;
+      const depth = shape.textDepth ?? 0.5;
+      const geo = new TextGeometry(text, {
+        font: defaultFont,
+        size,
+        height: depth,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelSegments: 5,
+      });
+      geo.computeBoundingBox();
+      geo.center();
+      return geo;
+    }
+
+    case 'ring': {
+      const smooth = shape.cornerRadius ?? 0;
+      const segs = Math.round(32 * (1 + smooth * 2));
       return new THREE.RingGeometry(
         shape.innerRadius ?? 0.5,
         shape.outerRadius ?? 1,
-        32
+        segs
       );
+    }
 
     case 'plane':
       return new THREE.PlaneGeometry(2, 2);

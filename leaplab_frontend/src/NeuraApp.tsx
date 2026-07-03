@@ -6,9 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ProjectHeader from './components/neura/common/ProjectHeader';
 import WelcomeHero from './components/neura/dashboard/WelcomeHero';
-import EmptyStateIllustration from './components/neura/dashboard/EmptyStateIllustration';
-import ProjectsTable from './components/neura/dashboard/ProjectsTable';
-import StatsCards from './components/neura/dashboard/StatsCards';
+
 
 import CreateProjectModal from './components/neura/create-project/CreateProjectModal';
 import ImageClassifier from './components/neura/project-types/image-classifier/ImageClassifier';
@@ -50,7 +48,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [projects, setProjects] = useState<NeuraProject[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const pendingProject = useCloudProjectStore((state) => state.pendingProject);
@@ -112,10 +109,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
         setCurrentProject(newProject);
         setCurrentProjectType(type);
         setHasUnsavedChanges(false);
-        setProjects(prev => {
-            const exists = prev.some(p => p.id === newProject.id);
-            return exists ? prev : [...prev, newProject];
-        });
         setView('project');
     };
 
@@ -180,10 +173,6 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
             setCurrentProject(importedProject);
             setCurrentProjectType(importedProject.type);
             setHasUnsavedChanges(false);
-            setProjects(prev => {
-                const exists = prev.some(p => p.id === importedProject.id);
-                return exists ? prev : [...prev, importedProject];
-            });
             setView('project');
             setSaveMessage({ type: 'success', text: 'Project imported successfully!' });
         } catch (err: unknown) {
@@ -306,42 +295,15 @@ function NeuraAppInner({ onBack }: NeuraAppProps) {
                 style={{ display: 'none' }}
             />
 
-            <div className="flex-1 overflow-y-auto relative flex flex-col">
+            <div className="flex-1 relative flex flex-col overflow-hidden">
                 {view === 'dashboard' && (
-                    <div className="animate-fade-in flex flex-col flex-1">
-                        {/* Top: WelcomeHero pinned below topbar */}
-                        <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-24 pt-4 sm:pt-6">
+                    <div className="animate-fade-in flex flex-col flex-1 min-h-0">
+                        {/* WelcomeHero - fills full remaining height */}
+                        <div className="flex-1 w-full min-h-0">
                             <WelcomeHero
                                 onCreateNew={handleCreateNew}
                                 onImportDataset={handleImportProject}
                             />
-                        </div>
-
-                        {/* Content: project list or empty state */}
-                        <div className="flex-1 overflow-y-auto px-6 sm:px-10 lg:px-16 xl:px-24 pb-8">
-                            {projects.length > 0 ? (
-                                <div className="mt-6">
-                                    <StatsCards projects={projects} />
-                                    <ProjectsTable
-                                        projects={projects}
-                                        onOpenProject={(p) => {
-                                            setCurrentProject(p);
-                                            setCurrentProjectType(p.type);
-                                            setView('project');
-                                        }}
-                                        onDeleteProject={(id) => setProjects(prev => prev.filter(p => p.id !== id))}
-                                        onRenameProject={(p) => setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, name: p.name } : proj))}
-                                        onDownloadProject={(p) => fileService.saveProjectLocally(p.name || 'neura-project', 'neura', p)}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="flex-1 flex items-center justify-center min-h-[400px]">
-                                    <EmptyStateIllustration
-                                        onCreateNew={handleCreateNew}
-                                        onImport={handleImportProject}
-                                    />
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}

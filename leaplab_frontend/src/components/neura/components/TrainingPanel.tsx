@@ -34,21 +34,13 @@ export default function TrainingPanel({
     const isReady = canTrain && status !== 'training'
 
     return (
-        <div className="bg-ml-surface border border-ml-border rounded-2xl w-[288px] overflow-hidden font-sans">
+        <div className="bg-ml-surface border border-ml-border rounded-2xl w-[330px] overflow-hidden font-sans">
             {/* Header with status indicator */}
             <div className="px-5 py-4 flex items-center gap-2.5">
                 <div
                     className={`w-2.5 h-2.5 rounded-full transition-all duration-400 ${trained ? 'bg-ml-success-dot shadow-[0_0_8px_var(--ml-success-dot)]' : 'bg-ml-text-muted'}`}
                 />
                 <span className="text-ml-text-primary font-bold text-[15px]">Training</span>
-                <div className="ml-auto flex gap-1 bg-ml-well rounded-lg py-[3px] px-1">
-                    {['JS', 'PY'].map(m => (
-                        <div
-                            key={m}
-                            className={`px-2.5 py-[3px] rounded-md text-[11px] font-bold font-mono transition-all duration-200 ${m === 'JS' ? 'bg-ml-accent text-white' : 'bg-transparent text-ml-text-muted'}`}
-                        >{m}</div>
-                    ))}
-                </div>
             </div>
 
             <div className="px-5 pb-5 flex flex-col gap-3.5">
@@ -200,9 +192,11 @@ export default function TrainingPanel({
                 </div>
 
                 {/* Accuracy badge */}
-                <div className="bg-gradient-to-br from-ml-accent/10 to-[#a855f7]/10 border border-ml-accent/20 rounded-[10px] py-2.5 px-3.5 text-xs text-ml-accent-light font-semibold text-center">
-                    Accuracy: {Math.round(accuracy * 100)}%
-                </div>
+                {trained && (
+                    <div className="bg-gradient-to-br from-ml-accent/10 to-[#a855f7]/10 border border-ml-accent/20 rounded-[10px] py-2.5 px-3.5 text-xs text-ml-accent-light font-semibold text-center">
+                        Accuracy: {Math.round(accuracy * 100)}%
+                    </div>
+                )}
             </div>
         </div>
     )

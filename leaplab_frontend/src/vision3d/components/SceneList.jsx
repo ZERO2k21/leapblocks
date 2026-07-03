@@ -36,8 +36,15 @@ export const SceneList = () => {
   const pushHistory = use3DStore((s) => s.pushHistory);
 
   const handleShapeClick = (id, e) => {
-    debug('SceneList: shapeClick id=' + id + ' shift=' + e.shiftKey);
-    selectShape(id, e.shiftKey);
+    const multi = e.shiftKey || e.ctrlKey;
+    debug('SceneList: shapeClick id=' + id + ' multi=' + multi);
+    selectShape(id, multi);
+  };
+
+  const handleCheckboxChange = (id) => {
+    selectShape(id, true);
+    // Also show inspector
+    use3DStore.setState({ showInspector: true });
   };
 
   const handleVisibilityToggle = (id, e) => {
@@ -93,6 +100,13 @@ export const SceneList = () => {
                 onClick={(e) => handleShapeClick(shape.id, e)}
               >
                 <div className="shape-list-info">
+                  <input
+                    type="checkbox"
+                    className="shape-list-checkbox"
+                    checked={selectedIds.includes(shape.id)}
+                    onChange={() => handleCheckboxChange(shape.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <ShapeIcon type={shape.type} />
                   <span className="shape-list-name">{shape.name}</span>
                 </div>

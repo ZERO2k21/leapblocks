@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon } from 'lucide-react';
+import { Home, Save, Download, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning, Sun, Moon, Search } from 'lucide-react';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import { useNeuraTheme } from './NeuraThemeContext';
 import TopbarShareButton from '../../common/TopbarShareButton';
@@ -42,7 +42,7 @@ export default function ProjectHeader({
             }} />
 
             {/* ── LEFT SECTION ────────────────────────────────────────────────────────── */}
-            <div className="relative flex items-center gap-2 sm:gap-3 flex-[1_1_0%] min-w-0">
+            <div className="relative flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 {onBack && (
                     <button
                         title="Back to Dashboard"
@@ -80,14 +80,14 @@ export default function ProjectHeader({
             </div>
 
             {/* ── MIDDLE SECTION ──────────────────────────────────────────────────────── */}
-            <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 flex-[1_1_auto]">
-                {(showMiddleSection && title) && (
+            <div className="relative hidden sm:flex items-center justify-center gap-4 px-4 shrink-0">
+                {showMiddleSection && title ? (
                     <div className="flex items-center h-10 bg-black/25 rounded-2xl pl-[18px] pr-1.5 border border-white/8 gap-2 transition-all duration-200 hover:bg-black/30 focus-within:bg-black/30 focus-within:border-white/15">
                         <span className="text-sm opacity-45">{icon || '🧠'}</span>
                         <input
                             placeholder={title}
                             type="text"
-                            value={projectName || title}
+                            value={projectName || title || ''}
                             onChange={(e) => onProjectNameChange && onProjectNameChange(e.target.value)}
                             className="bg-transparent border-none text-white text-sm font-bold font-['Segoe_UI',Inter,sans-serif] w-[120px] sm:w-[170px] text-center outline-none tracking-[0.01em] placeholder:text-white/40"
                         />
@@ -110,11 +110,20 @@ export default function ProjectHeader({
                             </button>
                         )}
                     </div>
+                ) : (
+                    <div className="flex items-center h-10 bg-black/20 rounded-xl px-4 border border-white/[0.08] gap-2.5 transition-all duration-200 hover:bg-black/25 focus-within:bg-black/25 focus-within:border-white/15 w-full max-w-[420px]">
+                        <Search size={16} className="text-white/40 shrink-0" strokeWidth={2} />
+                        <input
+                            placeholder="Search projects, models, datasets..."
+                            type="text"
+                            className="bg-transparent border-none text-white text-sm font-normal font-['Segoe_UI',Inter,sans-serif] w-full outline-none tracking-[0.01em] placeholder:text-white/35"
+                        />
+                    </div>
                 )}
             </div>
 
             {/* ── RIGHT SECTION ───────────────────────────────────────────────────────── */}
-            <div className="relative flex items-center justify-end gap-4 sm:gap-6 flex-[1_1_0%] min-w-0">
+            <div className="relative flex items-center justify-end gap-4 sm:gap-6 flex-1 min-w-0">
                 {onUploadFolder && (
                     <button
                         onClick={onUploadFolder}
@@ -165,10 +174,10 @@ export default function ProjectHeader({
 
                 <LeapLabAuthButton variant="dark" style={{ height: '34px', borderRadius: '8px', boxSizing: 'border-box', fontSize: '13px' }} />
 
-                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-8 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <img
                         alt="Leap into the AI Future"
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                        src="/assets/logo - creoleap.png"
                         className="w-[145px] h-auto object-contain block shrink-0 brightness-120 contrast-110 drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
                     />
                 </div>

@@ -19,7 +19,7 @@ export default function ProjectTestingPanel({
     children,
 }: ProjectTestingPanelProps) {
     return (
-        <div className="w-72 bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0 flex flex-col">
+        <div className="w-[330px] bg-ml-surface border border-ml-border rounded-2xl overflow-hidden shrink-0 flex flex-col">
             {/* Header */}
             <div
                 className="px-4 py-3.5 flex items-center gap-2"

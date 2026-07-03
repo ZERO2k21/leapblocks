@@ -618,7 +618,7 @@ export default function MenuBar({
                         overflow: 'hidden',
                     }}>
                         <img
-                            src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                            src="/assets/logo - creoleap.png"
                             alt="CREOLEAP"
                             style={{
                                 width: '145px',

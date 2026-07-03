@@ -7,9 +7,8 @@
  */
 
 import * as THREE from 'three';
-import { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION } from 'three-bvh-csg';
-import { createGeometry } from '../utils/helpers';
-import { generateShapeId } from '../utils/helpers';
+import { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION, HOLLOW_SUBTRACTION } from 'three-bvh-csg';
+import { createGeometry, generateShapeId } from '../utils/helpers';
 import { log, debug, error } from '../utils/logger';
 
 const evaluator = new Evaluator();
@@ -30,13 +29,13 @@ function createBrush(shape) {
   const geometry = buildGeometry(shape);
   const matrix = new THREE.Matrix4();
 
-  matrix.compose(
+    matrix.compose(
     new THREE.Vector3(...shape.position),
     new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
-        (shape.rotation?.[0] || 0) * Math.PI / 180,
-        (shape.rotation?.[1] || 0) * Math.PI / 180,
-        (shape.rotation?.[2] || 0) * Math.PI / 180
+        shape.rotation?.[0] || 0,
+        shape.rotation?.[1] || 0,
+        shape.rotation?.[2] || 0
       )
     ),
     new THREE.Vector3(...(shape.scale || [1, 1, 1]))
@@ -66,7 +65,7 @@ export function performCSG(shapeA, shapeB, operation) {
     let csgOp;
     switch (operation) {
       case 'union': csgOp = ADDITION; break;
-      case 'subtract': csgOp = SUBTRACTION; break;
+      case 'subtract': csgOp = HOLLOW_SUBTRACTION; break;
       case 'intersect': csgOp = INTERSECTION; break;
       default:
         error('CSG: unknown operation:', operation);
@@ -80,9 +79,14 @@ export function performCSG(shapeA, shapeB, operation) {
       return null;
     }
 
-    const resultGeometry = result.geometry;
-    resultGeometry.computeBoundingBox();
-    resultGeometry.computeBoundingSphere();
+    // Convert geometry to remove drawRange issues for exporters
+    const finalGeometry = result.geometry.toNonIndexed();
+    finalGeometry.computeVertexNormals();
+    finalGeometry.computeBoundingBox();
+    finalGeometry.computeBoundingSphere();
+
+    // Store geometry for export and rendering
+    const resultGeometry = finalGeometry;
 
     // Calculate center offset
     const bbox = resultGeometry.boundingBox;
@@ -97,11 +101,7 @@ export function performCSG(shapeA, shapeB, operation) {
       id: generateShapeId(),
       type: 'csg_result',
       name: `CSG ${operation}`,
-      position: [
-        shapeA.position[0] + center.x,
-        shapeA.position[1] + center.y,
-        shapeA.position[2] + center.z,
-      ],
+      position: [center.x, center.y, center.z],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
       color: shapeA.color || '#6366f1',

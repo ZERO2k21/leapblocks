@@ -538,30 +538,30 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                 onSelectSound={handleSelectFromLibrary}
             />
             {/* 1. LEFT SIDEBAR (Sounds Panel) */}
-            <div className="w-[100px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden relative">
-                <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-3 no-scrollbar pb-20">
+            <div className="w-[80px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden relative">
+                <div className="flex-1 overflow-y-auto p-1.5 flex flex-col gap-2 no-scrollbar pb-16">
                     {sounds.map((s, i) => (
                         <div key={i} className="relative group">
                             <div
                                 onClick={() => setActiveSoundIndex(i)}
-                                className={`w-[80px] h-[80px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeSoundIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
+                                className={`w-[64px] h-[64px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeSoundIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
                             >
-                                <span className="absolute top-1 left-1.5 text-[10px] text-gray-400 font-bold">{i + 1}</span>
+                                <span className="absolute top-0.5 left-1 text-[9px] text-gray-400 font-bold">{i + 1}</span>
                                 <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
                                     {sidebarBuffers.has(i) ? (
                                         <MiniWaveform
                                             buffer={sidebarBuffers.get(i)!}
-                                            width={60}
-                                            height={40}
+                                            width={48}
+                                            height={32}
                                             color={activeSoundIndex === i ? '#855CD6' : '#999'}
                                         />
                                     ) : (
-                                        <div className="w-10 h-10 bg-[#f0f0f0] rounded-lg flex items-center justify-center text-gray-300">
-                                            <Volume2 size={24} />
+                                        <div className="w-8 h-8 bg-[#f0f0f0] rounded-lg flex items-center justify-center text-gray-300">
+                                            <Volume2 size={18} />
                                         </div>
                                     )}
                                 </div>
-                                <div className="w-full text-[10px] text-center truncate text-gray-500 font-bold px-0.5 mt-0.5" title={s.name}>{s.name}</div>
+                                <div className="w-full text-[9px] text-center truncate text-gray-500 font-bold px-0.5 mt-0.5" title={s.name}>{s.name}</div>
                             </div>
 
                             {/* Context Actions (Hover) */}
@@ -616,37 +616,37 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                 {activeSound ? (
                     <>
                         {/* TOP TOOLBAR */}
-                        <div className="h-14 px-6 border-b border-gray-200 flex items-center bg-white justify-between">
-                            <div className="flex items-center gap-6">
-                                <div className="text-sm font-bold text-gray-400">Edit Sound</div>
-                            </div>
+                        <div className="h-10 px-4 border-b border-gray-200 flex items-center bg-white justify-between">
                             <div className="flex items-center gap-4">
+                                <div className="text-xs font-bold text-gray-400">Edit Sound</div>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <button
-                                    className={`p-2 rounded-lg transition-colors ${historyIndex > 0 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
+                                    className={`p-1.5 rounded-lg transition-colors ${historyIndex > 0 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
                                     onClick={handleUndo}
                                     disabled={historyIndex <= 0}
                                     title="Undo"
                                 >
-                                    <Undo size={20} />
+                                    <Undo size={16} />
                                 </button>
                                 <button
-                                    className={`p-2 rounded-lg transition-colors ${historyIndex < history.length - 1 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
+                                    className={`p-1.5 rounded-lg transition-colors ${historyIndex < history.length - 1 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
                                     onClick={handleRedo}
                                     disabled={historyIndex >= history.length - 1}
                                     title="Redo"
                                 >
-                                    <Redo size={20} />
+                                    <Redo size={16} />
                                 </button>
-                                <div className="w-px h-6 bg-gray-200 mx-1" />
-                                <ToolBtnHorizontal onClick={copyToClipboard} icon={<Copy size={18} />} label="Copy" disabled={selectionStart === selectionEnd} />
-                                <ToolBtnHorizontal onClick={pasteFromClipboard} icon={<ClipboardIcon size={18} />} label="Paste" disabled={!clipboardBuffer} />
-                                <ToolBtnHorizontal onClick={copyToNew} icon={<MusicIcon size={18} />} label="Copy to New" disabled={selectionStart === selectionEnd} />
+                                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+                                <ToolBtnHorizontal onClick={copyToClipboard} icon={<Copy size={16} />} label="Copy" disabled={selectionStart === selectionEnd} />
+                                <ToolBtnHorizontal onClick={pasteFromClipboard} icon={<ClipboardIcon size={16} />} label="Paste" disabled={!clipboardBuffer} />
+                                <ToolBtnHorizontal onClick={copyToNew} icon={<MusicIcon size={16} />} label="Copy to New" disabled={selectionStart === selectionEnd} />
                                 <button
                                     onClick={deleteSelection}
                                     disabled={selectionStart === selectionEnd}
-                                    className={`flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${selectionStart === selectionEnd ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <div className="text-[#855CD6]"><Scissors size={18} /></div>
-                                    <span className="text-[10px] font-bold text-gray-400 capitalize">Delete</span>
+                                    className={`flex flex-col items-center gap-0 px-2 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${selectionStart === selectionEnd ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <div className="text-[#855CD6]"><Scissors size={16} /></div>
+                                    <span className="text-[9px] font-bold text-gray-400 capitalize">Delete</span>
                                 </button>
                             </div>
                         </div>
@@ -654,19 +654,19 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                         {/* EDITOR CONTENT AREA (Waveform + Properties) */}
                         <div className="flex-1 flex flex-row overflow-hidden">
                             {/* WAVEFORM & CONTROLS */}
-                            <div className="flex-1 flex flex-col p-8 relative overflow-y-auto">
+                            <div className="flex-1 flex flex-col px-4 py-3 relative overflow-y-auto">
                                 {/* Playback Control Button */}
-                                <div className="absolute top-8 left-8 z-10">
+                                <div className="absolute top-3 left-3 z-10">
                                     <button
                                         onClick={handlePlayPause}
-                                        className="w-16 h-16 rounded-full bg-[#855CD6] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all outline-none"
+                                        className="w-11 h-11 rounded-full bg-[#855CD6] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all outline-none"
                                     >
-                                        {isPlaying ? <Square size={28} fill="white" /> : <Play size={32} fill="white" className="ml-2" />}
+                                        {isPlaying ? <Square size={20} fill="white" /> : <Play size={22} fill="white" className="ml-1" />}
                                     </button>
                                 </div>
 
                                 {/* Waveform Visualization */}
-                                <div className="flex-1 bg-white rounded-2xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-20 mb-8 mx-auto w-full max-w-4xl">
+                                <div className="flex-1 bg-white rounded-xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-12 mb-2 mx-auto w-full max-w-4xl">
                                     <div className="absolute inset-0 flex items-center group w-full">
                                         <Waveform
                                             buffer={audioBuffer}
@@ -682,24 +682,24 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                 </div>
 
                                 {/* Audio Effect Tools */}
-                                <div className="h-24 bg-white border border-gray-200 rounded-2xl shadow-sm flex items-center justify-around px-4 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
-                                    <EffectTool icon={<ArrowUpFromLine size={24} />} onClick={() => applyEffect('faster')} label="Faster" />
-                                    <EffectTool icon={<ArrowDownToLine size={24} />} onClick={() => applyEffect('slower')} label="Slower" />
-                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                    <EffectTool icon={<Volume2 size={24} />} onClick={() => applyEffect('louder')} label="Louder" />
-                                    <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('softer')} label="Softer" />
-                                    <EffectTool icon={<VolumeX size={24} />} onClick={() => applyEffect('mute')} label="Mute" />
-                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                    <EffectTool icon={<ArrowLeftRight size={24} />} onClick={() => applyEffect('fade in')} label="Fade in" />
-                                    <EffectTool icon={<ArrowRightLeft size={24} />} onClick={() => applyEffect('fade out')} label="Fade out" />
-                                    <EffectTool icon={<RotateCcw size={24} />} onClick={() => applyEffect('reverse')} label="Reverse" />
-                                    <div className="w-px h-12 bg-gray-200 mx-1 flex-shrink-0" />
-                                    <EffectTool icon={<MusicIcon size={24} />} onClick={() => applyEffect('robot')} label="Robot" />
+                                <div className="h-16 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center justify-around px-3 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
+                                    <EffectTool icon={<ArrowUpFromLine size={18} />} onClick={() => applyEffect('faster')} label="Faster" />
+                                    <EffectTool icon={<ArrowDownToLine size={18} />} onClick={() => applyEffect('slower')} label="Slower" />
+                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
+                                    <EffectTool icon={<Volume2 size={18} />} onClick={() => applyEffect('louder')} label="Louder" />
+                                    <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('softer')} label="Softer" />
+                                    <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('mute')} label="Mute" />
+                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
+                                    <EffectTool icon={<ArrowLeftRight size={18} />} onClick={() => applyEffect('fade in')} label="Fade in" />
+                                    <EffectTool icon={<ArrowRightLeft size={18} />} onClick={() => applyEffect('fade out')} label="Fade out" />
+                                    <EffectTool icon={<RotateCcw size={18} />} onClick={() => applyEffect('reverse')} label="Reverse" />
+                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
+                                    <EffectTool icon={<MusicIcon size={18} />} onClick={() => applyEffect('robot')} label="Robot" />
                                 </div>
                             </div>
 
                             {/* 3. PROPERTIES PANEL (Right Sidebar) */}
-                            <div className="w-64 border-l border-gray-200 bg-white p-6 flex flex-col gap-8 shadow-sm">
+                            <div className="w-52 min-w-[200px] border-l border-gray-200 bg-white p-4 flex flex-col gap-5 shadow-sm overflow-y-auto">
                                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Properties</h3>
 
                                 {/* Sound Name */}
@@ -745,9 +745,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                 </div>
 
                                 {/* Info Box */}
-                                <div className="mt-auto bg-[#f8f6ff] border border-[#e0d6ff] rounded-xl p-4">
-                                    <p className="text-[11px] text-[#855CD6] font-medium leading-relaxed">
-                                        You can edit, trim, and apply effects to your sounds here. Use the Action Menu below the sound list to add more!
+                                <div className="mt-auto bg-[#f8f6ff] border border-[#e0d6ff] rounded-lg p-3">
+                                    <p className="text-[10px] text-[#855CD6] font-medium leading-relaxed">
+                                        Edit, trim, and apply effects to your sounds here.
                                     </p>
                                 </div>
                             </div>
@@ -766,18 +766,18 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 };
 
 const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-[#855CD6]", disabled = false }: any) => (
-    <button onClick={onClick} disabled={disabled} className={`flex flex-col items-center gap-0.5 px-3 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+    <button onClick={onClick} disabled={disabled} className={`flex flex-col items-center gap-0 px-2 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         <div className={color}>{icon}</div>
-        <span className="text-[10px] font-bold text-gray-400 capitalize">{label}</span>
+        <span className="text-[9px] font-bold text-gray-400 capitalize">{label}</span>
     </button>
 );
 
 const EffectTool = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: () => void }) => (
-    <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 p-2 w-20 rounded-xl hover:bg-[#EDF1F7] text-[#855CD6] transition-colors group">
-        <div className="bg-[#f8f6ff] p-3 rounded-full group-hover:bg-white shadow-sm border border-transparent group-hover:border-[#e0d6ff] transition-all">
+    <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 p-1.5 w-14 rounded-lg hover:bg-[#EDF1F7] text-[#855CD6] transition-colors group">
+        <div className="bg-[#f8f6ff] p-2 rounded-full group-hover:bg-white shadow-sm border border-transparent group-hover:border-[#e0d6ff] transition-all">
             {icon}
         </div>
-        <span className="text-xs font-bold text-gray-500 group-hover:text-[#855CD6]">{label}</span>
+        <span className="text-[10px] font-bold text-gray-500 group-hover:text-[#855CD6]">{label}</span>
     </button>
 );
 

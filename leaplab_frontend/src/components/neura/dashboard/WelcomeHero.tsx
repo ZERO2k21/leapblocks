@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Plus, Upload, BookOpen, Brain, Image, FileText, AudioLines, Sparkles } from 'lucide-react';
+import { Plus, Upload, BookOpen, Brain, Image, FileText, AudioLines, Sparkles, Zap, Layers, Target } from 'lucide-react';
 import { useNeuraTheme } from '../common/NeuraThemeContext';
 
 interface WelcomeHeroProps {
@@ -17,58 +17,124 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
     const { isDark } = useNeuraTheme();
 
     return (
-        <div className={`relative overflow-hidden rounded-2xl px-5 py-4 sm:px-8 sm:py-6 lg:px-8 lg:py-6 mb-5 sm:mb-6 border neura-shimmer ${
-            isDark
-                ? 'bg-gradient-to-br from-[#1a1d2e] via-[#141627] to-[#1e2035] border-white/[0.06]'
-                : 'bg-gradient-to-br from-[#f0f0ff] via-white to-[#e8ecff] border-[#0a015a]/[0.04]'
-        }`}>
-            {/* Background subtle dot pattern */}
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: 'radial-gradient(circle, #0a015a 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-            }} />
+        <div className={`relative overflow-hidden h-full ${isDark ? 'bg-[#07050f]' : 'bg-gradient-to-br from-[#FBF9FF] via-[#F3EEFF] to-[#FCEEF7]'}`}>
 
-            {/* Ambient glow orbs */}
-            <div className="absolute -top-16 -right-16 w-56 h-56 bg-gradient-to-br from-[#7C3AED]/[0.08] to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
-            <div className="absolute -bottom-12 -left-12 w-44 h-44 bg-gradient-to-tr from-[#4F46E5]/[0.06] to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-slow" style={{ animationDelay: '1s' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-[#A855F7]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+            {/* ── Animated Mesh Gradient Background ───────────────────────── */}
+            <div
+                className="absolute inset-0 pointer-events-none animate-mesh-shift opacity-70"
+                style={{
+                    backgroundImage: isDark
+                        ? 'radial-gradient(ellipse 80% 60% at 20% 40%, rgba(124,58,237,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 70%, rgba(236,72,153,0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 40% at 50% 20%, rgba(59,130,246,0.06) 0%, transparent 50%)'
+                        : 'radial-gradient(ellipse 80% 60% at 20% 40%, rgba(124,58,237,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 70%, rgba(236,72,153,0.04) 0%, transparent 50%), radial-gradient(ellipse 50% 40% at 50% 20%, rgba(59,130,246,0.03) 0%, transparent 50%)',
+                    backgroundSize: '400% 400%',
+                }}
+            />
 
-            <div className="relative flex items-center justify-between gap-6">
-                {/* Left: Text content */}
+            {/* ── Dot Grid Pattern ────────────────────────────────────────── */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    backgroundImage: isDark
+                        ? 'radial-gradient(rgba(124,58,237,0.25) 1px, transparent 1px)'
+                        : 'radial-gradient(rgba(123,63,228,0.18) 1.2px, transparent 1.2px)',
+                    backgroundSize: isDark ? '20px 20px' : '18px 18px',
+                    maskImage: 'linear-gradient(180deg, black 0%, transparent 70%)',
+                    WebkitMaskImage: 'linear-gradient(180deg, black 0%, transparent 70%)',
+                    opacity: 0.5,
+                }}
+            />
+
+            {/* ── Soft Orbs ───────────────────────────────────────────────── */}
+            <div className="absolute top-[-10%] right-[10%] w-[500px] h-[500px] rounded-full pointer-events-none"
+                style={{
+                    background: isDark
+                        ? 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)'
+                        : 'radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%)',
+                }}
+            />
+            <div className="absolute bottom-[-5%] left-[5%] w-[400px] h-[400px] rounded-full pointer-events-none"
+                style={{
+                    background: isDark
+                        ? 'radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 70%)'
+                        : 'radial-gradient(circle, rgba(236,72,153,0.03) 0%, transparent 70%)',
+                }}
+            />
+
+            {/* ── Main Content ────────────────────────────────────────────── */}
+            <div className="relative flex items-center justify-between gap-6 px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 xl:py-20 h-full">
+
+                {/* ── Left: Text Content ──────────────────────────────────── */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center animate-glow-ring ${isDark ? 'bg-gradient-to-br from-violet-500/20 to-indigo-500/10' : 'bg-gradient-to-br from-[#7C3AED]/15 to-[#4F46E5]/8'}`}>
-                            <Brain size={20} className={isDark ? 'text-violet-400' : 'text-[#7C3AED]'} strokeWidth={2} />
+
+                    {/* Brain Icon + Welcome Heading */}
+                    <div className="flex items-center gap-3 sm:gap-4 mb-3 animate-hero-stagger" style={{ animationDelay: '0.1s' }}>
+                        <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${isDark ? 'bg-[#7C3AED]/20 shadow-[0_0_20px_rgba(124,58,237,0.2)]' : 'bg-[#7C3AED]/10 shadow-[0_4px_16px_rgba(124,58,237,0.12)]'}`}>
+                            <Brain size={26} className="text-[#7C3AED]" strokeWidth={2} />
+                            <div className="absolute inset-0 rounded-2xl border border-[#7C3AED]/20 animate-pulse-slow" />
                         </div>
-                        <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#0a015a]'}`}>
-                            Welcome Back, <span className="neura-gradient-text">Explorer!</span>{' '}
+                        <h1 className={`text-2xl sm:text-3xl lg:text-4xl xl:text-[2.75rem] font-extrabold tracking-tight leading-[1.15] ${isDark ? 'text-white' : 'text-[#1A1440]'}`}>
+                            Welcome Back,{' '}
+                            <span className="neura-gradient-text">Explorer!</span>{' '}
                             <span className="inline-block animate-wave">&#x1F44B;</span>
                         </h1>
                     </div>
-                    <p className={`text-sm sm:text-base mt-1 sm:mt-1.5 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-                        Build, train and deploy AI models without coding.{' '}
-                        <span className={`font-medium ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>No code. Just creativity.</span>
+
+                    {/* Subtitle */}
+                    <p className={`text-sm sm:text-base lg:text-lg mt-1 sm:mt-2 max-w-lg leading-relaxed animate-hero-stagger ${isDark ? 'text-gray-400' : 'text-[#6B6483]'}`}
+                       style={{ animationDelay: '0.25s' }}>
+                        Build, train and deploy AI models without coding.
+                        <span className="block mt-1.5">
+                            <span className={`font-bold ${isDark ? 'text-violet-400' : 'text-[#1A1440]'}`}>No code.</span>{' '}
+                            <span className={`font-bold ${isDark ? 'text-pink-400' : 'text-[#EC4899]'}`}>Just creativity.</span>
+                        </span>
                     </p>
 
-                    {/* Action buttons */}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-5">
+                    {/* Quick Stats Row */}
+                    <div className="flex items-center gap-4 sm:gap-6 mt-5 sm:mt-6 animate-hero-stagger" style={{ animationDelay: '0.35s' }}>
+                        <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl ${isDark ? 'bg-white/[0.04] border border-white/[0.06]' : 'bg-white/60 border border-[#7C3AED]/[0.08]'}`}>
+                            <Layers size={14} className="text-[#7C3AED]" strokeWidth={2.5} />
+                            <span className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-[#4a4464]'}`}>3 Projects</span>
+                        </div>
+                        <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl ${isDark ? 'bg-white/[0.04] border border-white/[0.06]' : 'bg-white/60 border border-[#EC4899]/[0.08]'}`}>
+                            <Zap size={14} className="text-[#EC4899]" strokeWidth={2.5} />
+                            <span className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-[#4a4464]'}`}>12 Models</span>
+                        </div>
+                        <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl ${isDark ? 'bg-white/[0.04] border border-white/[0.06]' : 'bg-white/60 border border-[#22c55e]/[0.08]'}`}>
+                            <Target size={14} className="text-[#22c55e]" strokeWidth={2.5} />
+                            <span className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-[#4a4464]'}`}>89% Accuracy</span>
+                        </div>
+                    </div>
+
+                    {/* Inspirational Quote */}
+                    <div className={`mt-6 sm:mt-8 max-w-md border-l-[3px] pl-4 animate-hero-stagger ${isDark ? 'border-violet-500/40' : 'border-[#7C3AED]/30'}`}
+                         style={{ animationDelay: '0.4s' }}>
+                        <p className={`text-sm sm:text-base italic leading-relaxed ${isDark ? 'text-gray-400' : 'text-[#847E9C]'}`}>
+                            "The best way to predict the future is to create it."
+                        </p>
+                        <p className={`text-xs mt-1 font-medium ${isDark ? 'text-gray-500' : 'text-[#A29CB8]'}`}>
+                            — Peter Drucker
+                        </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-6 sm:mt-8 lg:mt-10 animate-hero-stagger" style={{ animationDelay: '0.5s' }}>
                         <button
                             onClick={onCreateNew}
-                            className="neura-button-primary flex items-center gap-2.5 text-xs sm:text-sm"
+                            className="neura-button-primary flex items-center gap-2.5 text-sm sm:text-base px-6 sm:px-7 py-3 sm:py-3.5 active:scale-[0.97]"
                         >
-                            <Plus size={18} strokeWidth={2.5} />
+                            <Plus size={20} strokeWidth={2.5} />
                             <span>New Project</span>
                         </button>
                         <button
                             onClick={onImportDataset}
-                            className="neura-button-secondary flex items-center gap-2.5 text-xs sm:text-sm"
+                            className="neura-button-secondary flex items-center gap-2.5 text-sm sm:text-base px-6 sm:px-7 py-3 sm:py-3.5 active:scale-[0.97]"
                         >
-                            <Upload size={18} strokeWidth={2.2} />
+                            <Upload size={20} strokeWidth={2.2} />
                             <span>Import Dataset</span>
                         </button>
                         <button
                             onClick={onTutorials}
-                            className="neura-button-ghost flex items-center gap-2.5 text-xs sm:text-sm"
+                            className="neura-button-ghost flex items-center gap-2.5 text-sm sm:text-base px-6 sm:px-7 py-3 sm:py-3.5 active:scale-[0.97]"
                         >
                             <BookOpen size={18} strokeWidth={2.2} />
                             <span>Tutorials</span>
@@ -76,61 +142,122 @@ export default function WelcomeHero({ onCreateNew, onImportDataset, onTutorials 
                     </div>
                 </div>
 
-                {/* Right: Decorative illustration area */}
-                <div className="relative hidden lg:flex items-center justify-center w-full max-w-[380px] flex-shrink-0">
-                    {/* Glass data-type cards with enhanced animations */}
-                    <div className="absolute top-0 left-4 neura-glass-premium rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20">
-                            <Image size={16} className="text-white" strokeWidth={2} />
+                {/* ── Right: Brain Centerpiece ───────────────────────────── */}
+                <div className="hidden lg:flex relative items-center justify-center w-full max-w-[460px] xl:max-w-[540px] flex-shrink-0 h-[320px] animate-hero-scale" style={{ animationDelay: '0.3s' }}>
+
+                    {/* Background Glow */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className={`w-[320px] h-[320px] xl:w-[380px] xl:h-[380px] rounded-full animate-pulse-slow ${
+                            isDark
+                                ? 'bg-gradient-to-br from-[#7C3AED]/[0.20] to-[#4F46E5]/[0.08]'
+                                : 'bg-gradient-to-br from-[#7C3AED]/[0.12] to-[#4F46E5]/[0.05]'
+                        } blur-3xl`} />
+                    </div>
+
+                    {/* Rotating Glow Ring (outer) */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className={`w-[300px] h-[300px] xl:w-[350px] xl:h-[350px] rounded-full border border-dashed animate-glow-ring-rotate ${
+                            isDark ? 'border-[#7C3AED]/[0.12]' : 'border-[#7C3AED]/[0.08]'
+                        }`} />
+                    </div>
+
+                    {/* Pulsing Glow Ring (middle) */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className={`w-[240px] h-[240px] xl:w-[280px] xl:h-[280px] rounded-full border animate-pulse-slow ${
+                            isDark ? 'border-[#7C3AED]/[0.18]' : 'border-[#7C3AED]/[0.12]'
+                        }`} style={{ animationDelay: '0.5s' }} />
+                    </div>
+
+                    {/* Inner Glow Ring */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className={`w-[180px] h-[180px] xl:w-[220px] xl:h-[220px] rounded-full border animate-pulse-slow ${
+                            isDark ? 'border-[#A855F7]/[0.15]' : 'border-[#A855F7]/[0.08]'
+                        }`} style={{ animationDelay: '1s' }} />
+                    </div>
+
+                    {/* Brain Image */}
+                    <div className="relative z-10 animate-float" style={{ animationDuration: '6s' }}>
+                        <div className="animate-brain-glow rounded-full">
+                            <img
+                                src="/Brain.png"
+                                alt="AI Brain"
+                                className={`w-[240px] xl:w-[300px] h-auto object-contain ${
+                                    isDark
+                                        ? 'drop-shadow-[0_20px_60px_rgba(124,58,237,0.5)]'
+                                        : 'drop-shadow-[0_20px_60px_rgba(124,58,237,0.3)]'
+                                }`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* ── Floating Data Chips ──────────────────────────────── */}
+
+                    {/* Image Chip - top left */}
+                    <div
+                        className="absolute top-4 -left-6 backdrop-blur-md border rounded-xl px-4 py-3 flex items-center gap-3 animate-float hero-chip-scan shadow-[0_8px_30px_-8px_rgba(60,40,120,0.18)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_-8px_rgba(59,130,246,0.25)] cursor-default"
+                        style={{
+                            animationDelay: '0s',
+                            background: isDark ? 'rgba(20,20,40,0.8)' : 'rgba(255,255,255,0.85)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(229,231,235,0.6)',
+                        }}
+                    >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#2563EB] flex items-center justify-center shadow-[0_4px_8px_rgba(59,130,246,0.3)]">
+                            <Image size={15} className="text-white" strokeWidth={2.2} />
                         </div>
                         <div>
-                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Image</p>
-                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.jpg .png .bmp</p>
+                            <p className={`text-xs font-bold leading-tight ${isDark ? 'text-gray-200' : 'text-[#1A1440]'}`}>Image</p>
+                            <p className={`text-[10px] leading-tight font-medium ${isDark ? 'text-gray-500' : 'text-[#A9A3BE]'}`}>.jpg .png .bmp</p>
                         </div>
                     </div>
 
-                    {/* Text card */}
-                    <div className="absolute bottom-2 left-0 neura-glass-premium rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0.4s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md shadow-orange-500/20">
-                            <FileText size={16} className="text-white" strokeWidth={2} />
+                    {/* Text Chip - bottom left */}
+                    <div
+                        className="absolute bottom-8 -left-2 backdrop-blur-md border rounded-xl px-4 py-3 flex items-center gap-3 animate-float hero-chip-scan shadow-[0_8px_30px_-8px_rgba(60,40,120,0.18)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_-8px_rgba(249,115,22,0.25)] cursor-default"
+                        style={{
+                            animationDelay: '0.4s',
+                            background: isDark ? 'rgba(20,20,40,0.8)' : 'rgba(255,255,255,0.85)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(229,231,235,0.6)',
+                        }}
+                    >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F97316] to-[#EA580C] flex items-center justify-center shadow-[0_4px_8px_rgba(249,115,22,0.3)]">
+                            <FileText size={15} className="text-white" strokeWidth={2.2} />
                         </div>
                         <div>
-                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Text</p>
-                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.txt .csv .doc</p>
+                            <p className={`text-xs font-bold leading-tight ${isDark ? 'text-gray-200' : 'text-[#1A1440]'}`}>Text</p>
+                            <p className={`text-[10px] leading-tight font-medium ${isDark ? 'text-gray-500' : 'text-[#A9A3BE]'}`}>.txt .csv .doc</p>
                         </div>
                     </div>
 
-                    {/* Audio card */}
-                    <div className="absolute top-0 right-0 neura-glass-premium rounded-xl px-3 py-2.5 flex items-center gap-2.5 animate-float" style={{ animationDelay: '0.2s' }}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md shadow-pink-500/20">
-                            <AudioLines size={16} className="text-white" strokeWidth={2} />
+                    {/* Audio Chip - right */}
+                    <div
+                        className="absolute top-16 -right-6 backdrop-blur-md border rounded-xl px-4 py-3 flex items-center gap-3 animate-float hero-chip-scan shadow-[0_8px_30px_-8px_rgba(60,40,120,0.18)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_-8px_rgba(236,72,153,0.25)] cursor-default"
+                        style={{
+                            animationDelay: '0.2s',
+                            background: isDark ? 'rgba(20,20,40,0.8)' : 'rgba(255,255,255,0.85)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(229,231,235,0.6)',
+                        }}
+                    >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#EC4899] to-[#DB2777] flex items-center justify-center shadow-[0_4px_8px_rgba(236,72,153,0.3)]">
+                            <AudioLines size={15} className="text-white" strokeWidth={2.2} />
                         </div>
                         <div>
-                            <p className={`text-[11px] font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Audio</p>
-                            <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>.mp3 .wav .asc</p>
+                            <p className={`text-xs font-bold leading-tight ${isDark ? 'text-gray-200' : 'text-[#1A1440]'}`}>Audio</p>
+                            <p className={`text-[10px] leading-tight font-medium ${isDark ? 'text-gray-500' : 'text-[#A9A3BE]'}`}>.mp3 .wav .aac</p>
                         </div>
                     </div>
 
-                    {/* Central brain illustration with glow - Brain.png NOT modified */}
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#7C3AED]/[0.08] to-[#4F46E5]/[0.04] rounded-full blur-2xl scale-110 animate-pulse-slow" />
-                        <img src="/Brain.png" alt="" className="relative w-full max-w-[260px] h-auto object-cover object-top opacity-90 pointer-events-none drop-shadow-2xl" />
-                    </div>
-                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-5 bg-gradient-to-t from-[#7C3AED]/10 via-[#7C3AED]/4 to-transparent rounded-full blur-sm" />
-                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-32 h-2.5 bg-gradient-to-t from-[#7C3AED]/12 to-transparent rounded-full" />
-
-                    {/* Sparkle accent with particle dots */}
-                    <div className="absolute -bottom-2 right-2 animate-float" style={{ animationDelay: '0.6s' }}>
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-[#7C3AED]/20 rounded-full blur-lg scale-150" />
-                            <Sparkles size={36} className="relative text-[#7C3AED] drop-shadow-md" strokeWidth={1.5} />
-                        </div>
+                    {/* Sparkle Accent */}
+                    <div className="absolute bottom-4 right-8 animate-float" style={{ animationDelay: '0.6s' }}>
+                        <Sparkles size={22} className={`${isDark ? 'text-pink-400' : 'text-[#EC4899]'} opacity-70`} strokeWidth={1.5} />
                     </div>
 
-                    {/* Floating particle dots */}
-                    <div className="absolute top-8 left-12 w-1.5 h-1.5 rounded-full bg-[#7C3AED]/40 animate-float" style={{ animationDelay: '0.8s' }} />
-                    <div className="absolute bottom-12 right-12 w-1 h-1 rounded-full bg-[#4F46E5]/50 animate-float" style={{ animationDelay: '1.2s' }} />
-                    <div className="absolute top-16 right-16 w-1 h-1 rounded-full bg-[#A855F7]/40 animate-float" style={{ animationDelay: '0.3s' }} />
+                    {/* ── Floating Particle Dots ──────────────────────────── */}
+                    <div className="absolute top-16 left-12 w-2 h-2 rounded-full bg-[#7C3AED]/40 animate-float" style={{ animationDelay: '0.8s' }} />
+                    <div className="absolute bottom-24 right-14 w-1.5 h-1.5 rounded-full bg-[#4F46E5]/50 animate-float" style={{ animationDelay: '1.2s' }} />
+                    <div className="absolute top-12 right-20 w-1.5 h-1.5 rounded-full bg-[#A855F7]/40 animate-float" style={{ animationDelay: '0.3s' }} />
+                    <div className="absolute bottom-16 left-20 w-1 h-1 rounded-full bg-[#EC4899]/30 animate-float" style={{ animationDelay: '1.5s' }} />
+                    <div className="absolute top-32 left-28 w-1 h-1 rounded-full bg-[#3B82F6]/30 animate-float" style={{ animationDelay: '0.9s' }} />
+                    <div className="absolute bottom-32 right-28 w-1.5 h-1.5 rounded-full bg-[#7C3AED]/25 animate-float" style={{ animationDelay: '1.8s' }} />
                 </div>
             </div>
         </div>

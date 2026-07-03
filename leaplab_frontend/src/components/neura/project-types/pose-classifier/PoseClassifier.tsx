@@ -2,7 +2,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import ClassifierLayout from '../../components/ClassifierLayout'
 import TrainingPanel from '../../components/TrainingPanel'
-import StepIndicator from '../../components/StepIndicator'
 import AddClassButton from '../../components/AddClassButton'
 import ProjectTestingPanel from '../../components/ProjectTestingPanel'
 import { KNNClassifier } from '../../ml/KNNClassifier'
@@ -499,7 +498,7 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
             })
         }, 500)
         return () => clearTimeout(timer)
-    }, [classes, trained, nextId, epochs])
+    }, [classes, trained, nextId, epochs, onDataChange])
 
     // Load MoveNet on demand (first camera open)
     const ensureDetector = useCallback(async () => {
@@ -534,7 +533,10 @@ export default function PoseClassifier({ project, onBack, onDataChange }: PoseCl
     }, [])
 
     const handleTrain = async () => {
-        if (!poseDetReady) return
+        if (!poseDetReady) {
+            showToast('Pose detector is still loading. Please try again in a moment.', 'error')
+            return
+        }
         setStatus('training')
         setProgress(0)
         try {

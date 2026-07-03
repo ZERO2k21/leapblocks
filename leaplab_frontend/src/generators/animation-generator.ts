@@ -1105,7 +1105,7 @@ export class AnimationCompiler {
     }
 
     private compileTopBlock(block: Blockly.Block): CompiledScript | null {
-        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'procedure' | 'physics_collision';
+        let trigger: 'flag' | 'sprite_click' | 'key' | 'clone' | 'broadcast_receive' | 'backdrop_switch' | 'greater_than' | 'hand_sign' | 'procedure' | 'physics_collision';
         let triggerKey: string | undefined;
 
         compilerLog.block(block.type, 'checking trigger type...');
@@ -1173,6 +1173,11 @@ export class AnimationCompiler {
                 trigger = 'key';
                 triggerKey = block.getFieldValue('KEY') || 'space';
                 compilerLog.info(`  Trigger: makey makey key (${triggerKey})`);
+                break;
+            case 'hp_when_sign':
+                trigger = 'hand_sign';
+                triggerKey = block.getFieldValue('SIGN') || '2';
+                compilerLog.info(`  Trigger: hand sign (${triggerKey})`);
                 break;
             default:
                 compilerLog.info(`  Not an event block (type: ${block.type}), returning null`);
