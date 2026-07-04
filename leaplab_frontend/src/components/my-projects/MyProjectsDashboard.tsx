@@ -366,6 +366,39 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                     </svg>
                 </div>
             );
+        case 'vision3d':
+            return (
+                <div className="my-projects-header-bg-visual">
+                    <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="header-grad-vision3d" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="rgba(99, 102, 241, 0.01)" />
+                                <stop offset="100%" stopColor="rgba(99, 102, 241, 0.12)" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#header-grad-vision3d)" />
+                        {/* 3D wireframe cube */}
+                        <path d="M 560 40 L 590 25 L 630 25 L 630 65 L 600 80 L 560 80 Z" stroke={accent} strokeWidth="1" opacity="0.2" fill="none" />
+                        <path d="M 590 25 L 590 65 L 560 80" stroke={accent} strokeWidth="1" opacity="0.15" fill="none" />
+                        <path d="M 590 65 L 630 65" stroke={accent} strokeWidth="1" opacity="0.15" fill="none" />
+                        {/* 3D axes */}
+                        <line x1="680" y1="90" x2="720" y2="90" stroke={accent} strokeWidth="1.2" opacity="0.3" />
+                        <line x1="680" y1="90" x2="680" y2="50" stroke={accent} strokeWidth="1.2" opacity="0.3" />
+                        <line x1="680" y1="90" x2="710" y2="70" stroke={accent} strokeWidth="1.2" opacity="0.3" />
+                        <circle cx="680" cy="90" r="3" fill={accent} opacity="0.35" />
+                        <circle cx="720" cy="90" r="2.5" fill={accent} opacity="0.3" />
+                        <circle cx="680" cy="50" r="2.5" fill={accent} opacity="0.3" />
+                        <circle cx="710" cy="70" r="2.5" fill={accent} opacity="0.3" />
+                        {/* Grid dots */}
+                        <circle cx="500" cy="100" r="1.5" fill={accent} opacity="0.15" />
+                        <circle cx="520" cy="100" r="1.5" fill={accent} opacity="0.15" />
+                        <circle cx="540" cy="100" r="1.5" fill={accent} opacity="0.15" />
+                        <circle cx="560" cy="100" r="1.5" fill={accent} opacity="0.15" />
+                        <circle cx="580" cy="100" r="1.5" fill={accent} opacity="0.15" />
+                    </svg>
+                </div>
+            );
         default:
             return (
                 <div className="my-projects-header-bg-visual">
