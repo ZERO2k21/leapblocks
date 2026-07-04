@@ -102,7 +102,7 @@ interface SpriteLibraryProps {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BACKGROUND REMOVAL UTIL
+// BACKGROUND REMOVAL UTIL — flood-fill from edges
 // ═══════════════════════════════════════════════════════════════════════════
 const removeWhiteBackground = (dataUrl: string): Promise<string> => {
     return new Promise((resolve) => {
@@ -116,18 +116,63 @@ const removeWhiteBackground = (dataUrl: string): Promise<string> => {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const w = canvas.width;
+            const h = canvas.height;
+            const imageData = ctx.getImageData(0, 0, w, h);
             const data = imageData.data;
 
-            // Simple threshold to remove near-white background
-            const threshold = 240;
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                // If the pixel is very light/white, make it transparent
-                if (r > threshold && g > threshold && b > threshold) {
-                    data[i + 3] = 0; // Alpha 0
+            // Color-distance threshold for flood-fill
+            const tolerance = 40;
+
+            const colorMatch = (idx: number, refR: number, refG: number, refB: number): boolean => {
+                const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                const dr = r - refR, dg = g - refG, db = b - refB;
+                return Math.sqrt(dr * dr + dg * dg + db * db) < tolerance;
+            };
+
+            const markTransparent = (idx: number) => { data[idx + 3] = 0; };
+
+            const visited = new Uint8Array(w * h);
+            const queue: number[] = [];
+
+            const enqueue = (x: number, y: number) => {
+                if (x < 0 || x >= w || y < 0 || y >= h) return;
+                const pi = y * w + x;
+                if (visited[pi]) return;
+                const idx = pi * 4;
+                if (data[idx + 3] === 0) return; // already transparent
+                visited[pi] = 1;
+                queue.push(x, y);
+            };
+
+            // Sample reference colors from corners and mid-edges
+            const corners: [number, number][] = [
+                [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1],
+                [Math.floor(w / 2), 0], [Math.floor(w / 2), h - 1],
+                [0, Math.floor(h / 2)], [w - 1, Math.floor(h / 2)],
+            ];
+
+            for (const [cx, cy] of corners) {
+                const ci = (cy * w + cx) * 4;
+                const refR = data[ci], refG = data[ci + 1], refB = data[ci + 2];
+                if (data[ci + 3] === 0) continue;
+
+                queue.length = 0;
+                enqueue(cx, cy);
+
+                while (queue.length > 0) {
+                    const y = queue.pop()!;
+                    const x = queue.pop()!;
+                    const pi = y * w + x;
+                    const idx = pi * 4;
+
+                    if (!colorMatch(idx, refR, refG, refB)) continue;
+
+                    markTransparent(idx);
+                    enqueue(x + 1, y);
+                    enqueue(x - 1, y);
+                    enqueue(x, y + 1);
+                    enqueue(x, y - 1);
                 }
             }
 

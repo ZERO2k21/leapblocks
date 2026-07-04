@@ -4,6 +4,12 @@
   "framework": "vite",
   "headers": [
     {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
       "source": "/assets/(.*\\.js)",
       "headers": [
         { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
@@ -27,6 +33,6 @@
   ],
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }

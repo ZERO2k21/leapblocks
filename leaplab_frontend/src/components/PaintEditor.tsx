@@ -65,6 +65,10 @@ function PaintEditor({
 }: PaintEditorProps) {
     const canvasRef = useRef<fabric.Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const eraserDrawingRef = useRef(false);
+    const eraserBaseRef = useRef('');
+    const eraserPointsRef = useRef<{ x: number; y: number; }[]>([]);
+    const eraserHandlersRef = useRef<{ down: any; move: any; up: any; } | null>(null);
     const [activeTool, setActiveTool] = useState<string>('select');
     const [fillColor, setFillColor] = useState('#855CD6');
     const [outlineColor, setOutlineColor] = useState('#000000');
@@ -97,14 +101,11 @@ function PaintEditor({
         const canvas = canvasRef.current;
         if (!canvas || isRemovingBg) return;
 
-        // If there's an active selected object that is an image, we could theoretically just remove its bg.
-        // But for a generalized approach, we remove the background of the ENTIRE canvas content.
-
         setIsRemovingBg(true);
-        // Get high quality PNG of current canvas
-        const dataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
 
         if (window.electronAPI) {
+            // Electron: ML-based background removal
+            const dataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
             try {
                 const result = await window.electronAPI.removeBackground(dataUrl);
                 if (result.success && (result as any).base64) {
@@ -137,6 +138,94 @@ function PaintEditor({
             } catch (err) {
                 console.error("Auto BG IPC Failed:", err);
             }
+        } else {
+            // Web fallback: flood-fill based background removal
+            const cw = canvas.getWidth();
+            const ch = canvas.getHeight();
+            const currentDataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
+
+            const img = new Image();
+            img.onload = () => {
+                const offscreen = document.createElement('canvas');
+                offscreen.width = img.width;
+                offscreen.height = img.height;
+                const offCtx = offscreen.getContext('2d');
+                if (!offCtx) { setIsRemovingBg(false); return; }
+
+                offCtx.drawImage(img, 0, 0);
+                const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+                const data = imageData.data;
+                const w = offscreen.width;
+                const h = offscreen.height;
+
+                const tolerance = 40;
+                const colorMatch = (idx: number, r0: number, g0: number, b0: number) => {
+                    const dr = data[idx] - r0, dg = data[idx + 1] - g0, db = data[idx + 2] - b0;
+                    return Math.sqrt(dr * dr + dg * dg + db * db) < tolerance;
+                };
+
+                const visited = new Uint8Array(w * h);
+                const queue: number[] = [];
+
+                const enqueue = (x: number, y: number) => {
+                    if (x < 0 || x >= w || y < 0 || y >= h) return;
+                    const pi = y * w + x;
+                    if (visited[pi] || data[pi * 4 + 3] === 0) return;
+                    visited[pi] = 1;
+                    queue.push(x, y);
+                };
+
+                const corners: [number, number][] = [
+                    [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1],
+                    [Math.floor(w / 2), 0], [Math.floor(w / 2), h - 1],
+                    [0, Math.floor(h / 2)], [w - 1, Math.floor(h / 2)],
+                ];
+
+                for (const [cx, cy] of corners) {
+                    const ci = (cy * w + cx) * 4;
+                    if (data[ci + 3] === 0) continue;
+                    const refR = data[ci], refG = data[ci + 1], refB = data[ci + 2];
+                    queue.length = 0;
+                    enqueue(cx, cy);
+                    while (queue.length > 0) {
+                        const y = queue.pop()!;
+                        const x = queue.pop()!;
+                        const pi = y * w + x;
+                        const idx = pi * 4;
+                        if (!colorMatch(idx, refR, refG, refB)) continue;
+                        data[idx + 3] = 0;
+                        enqueue(x + 1, y); enqueue(x - 1, y);
+                        enqueue(x, y + 1); enqueue(x, y - 1);
+                    }
+                }
+
+                offCtx.putImageData(imageData, 0, 0);
+                const resultDataUrl = offscreen.toDataURL('image/png');
+
+                canvas.clear();
+                fabric.Image.fromURL(resultDataUrl, {}).then((erasedImg: fabric.FabricImage) => {
+                    erasedImg.set({
+                        left: cw / 2,
+                        top: ch / 2,
+                        originX: 'center',
+                        originY: 'center',
+                    });
+                    const pad = isBackdropMode ? 0 : 60;
+                    const scale = Math.min(
+                        (cw - pad) / (erasedImg.width! || 1),
+                        (ch - pad) / (erasedImg.height! || 1)
+                    );
+                    if (scale < 1) erasedImg.scale(scale);
+                    canvas.renderAll();
+                    saveState();
+                }).catch((err) => {
+                    console.error('Failed to load erased image (web fallback):', err);
+                });
+                setIsRemovingBg(false);
+            };
+            img.onerror = () => setIsRemovingBg(false);
+            img.src = currentDataUrl;
+            return; // early return since setIsRemovingBg is handled in img.onload
         }
         setIsRemovingBg(false);
     };
@@ -261,42 +350,8 @@ function PaintEditor({
         setCostumeName(spriteName);
     }, [spriteName, activeCostumeIndex]);
 
-    // Tool Management
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        canvas.isDrawingMode = false;
-        canvas.selection = activeTool === 'select';
-
-        if (activeTool === 'brush') {
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.color = outlineColor;
-            canvas.freeDrawingBrush.width = strokeWidth;
-        } else if (activeTool === 'eraser') {
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.color = '#ffffff';
-            canvas.freeDrawingBrush.width = strokeWidth * 2;
-        }
-
-        const handleMouseDown = (opt: any) => {
-            if (activeTool === 'fill' && opt.target) {
-                opt.target.set('fill', fillColor);
-                canvas.renderAll();
-                saveState();
-            }
-        };
-
-        canvas.on('mouse:down', handleMouseDown);
-        return () => {
-            canvas.off('mouse:down', handleMouseDown);
-        };
-    }, [activeTool, outlineColor, fillColor, strokeWidth]);
-
     const saveState = () => {
-        if (isRestoring.current) return;
+        if (isRestoring.current || eraserDrawingRef.current) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
         const json = JSON.stringify(canvas.toJSON());
@@ -311,6 +366,180 @@ function PaintEditor({
             return newIndex;
         });
     };
+
+    // Tool Management
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        canvas.isDrawingMode = false;
+        canvas.selection = activeTool === 'select';
+
+        // Clean up previous eraser handlers
+        if (eraserHandlersRef.current) {
+            canvas.off('mouse:down', eraserHandlersRef.current.down);
+            canvas.off('mouse:move', eraserHandlersRef.current.move);
+            canvas.off('mouse:up', eraserHandlersRef.current.up);
+            eraserHandlersRef.current = null;
+        }
+
+        if (activeTool === 'brush') {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.color = outlineColor;
+            canvas.freeDrawingBrush.width = strokeWidth;
+        } else if (activeTool === 'eraser') {
+            canvas.isDrawingMode = false;
+            canvas.selection = false;
+
+            const cw = canvas.getWidth();
+            const ch = canvas.getHeight();
+            const eraserRadius = () => strokeWidth * 2;
+
+            const handleEraserMouseDown = (opt: any) => {
+                if (activeTool !== 'eraser') return;
+                eraserDrawingRef.current = true;
+                eraserPointsRef.current = [];
+
+                // Flatten canvas to single bitmap before first erase
+                const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
+                eraserBaseRef.current = dataUrl;
+
+                const pointer = canvas.getScenePoint(opt.e);
+                eraserPointsRef.current.push({ x: pointer.x, y: pointer.y });
+            };
+
+            const handleEraserMouseMove = (opt: any) => {
+                if (!eraserDrawingRef.current || activeTool !== 'eraser') return;
+                const pointer = canvas.getScenePoint(opt.e);
+                eraserPointsRef.current.push({ x: pointer.x, y: pointer.y });
+
+                // Live preview on upper canvas
+                const ctx = canvas.contextTop;
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
+                ctx.beginPath();
+                ctx.arc(pointer.x, pointer.y, eraserRadius(), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            };
+
+            const handleEraserMouseUp = () => {
+                if (!eraserDrawingRef.current || activeTool !== 'eraser') return;
+                eraserDrawingRef.current = false;
+
+                // Clear upper canvas preview
+                canvas.clearContext(canvas.contextTop);
+
+                const points = [...eraserPointsRef.current];
+                eraserPointsRef.current = [];
+                if (points.length === 0) return;
+
+                const baseDataUrl = eraserBaseRef.current;
+                if (!baseDataUrl) return;
+
+                const loadImg = (src: string): Promise<HTMLImageElement> =>
+                    new Promise((resolve, reject) => {
+                        const i = new Image();
+                        i.onload = () => resolve(i);
+                        i.onerror = reject;
+                        i.src = src;
+                    });
+
+                loadImg(baseDataUrl).then((baseImg) => {
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = cw;
+                    offscreen.height = ch;
+                    const offCtx = offscreen.getContext('2d');
+                    if (!offCtx) return;
+
+                    // Draw base bitmap
+                    offCtx.drawImage(baseImg, 0, 0);
+
+                    // Erase along the recorded path
+                    offCtx.globalCompositeOperation = 'destination-out';
+                    offCtx.fillStyle = 'black';
+                    offCtx.lineWidth = eraserRadius() * 2;
+                    offCtx.lineCap = 'round';
+                    offCtx.lineJoin = 'round';
+
+                    if (points.length === 1) {
+                        // Single tap — draw one circle
+                        offCtx.beginPath();
+                        offCtx.arc(points[0].x, points[0].y, eraserRadius(), 0, Math.PI * 2);
+                        offCtx.fill();
+                    } else {
+                        // Draw connected eraser stroke
+                        offCtx.beginPath();
+                        offCtx.moveTo(points[0].x, points[0].y);
+                        for (let i = 1; i < points.length; i++) {
+                            offCtx.lineTo(points[i].x, points[i].y);
+                        }
+                        offCtx.stroke();
+                        // Draw circles at each point for full coverage
+                        for (const pt of points) {
+                            offCtx.beginPath();
+                            offCtx.arc(pt.x, pt.y, eraserRadius(), 0, Math.PI * 2);
+                            offCtx.fill();
+                        }
+                    }
+
+                    offCtx.globalCompositeOperation = 'source-over';
+
+                    const resultUrl = offscreen.toDataURL('image/png');
+
+                    // Clear canvas and replace with erased bitmap
+                    canvas.clear();
+                    canvas.backgroundColor = 'transparent';
+
+                    return fabric.Image.fromURL(resultUrl, {}).then((resultImg: fabric.FabricImage) => {
+                        resultImg.set({
+                            left: cw / 2,
+                            top: ch / 2,
+                            originX: 'center',
+                            originY: 'center',
+                            selectable: false,
+                            evented: false,
+                            hoverCursor: 'crosshair',
+                        });
+                        canvas.add(resultImg);
+                        canvas.renderAll();
+                        saveState();
+                    });
+                }).catch((err) => {
+                    console.error('Eraser compositing failed:', err);
+                });
+            };
+
+            canvas.on('mouse:down', handleEraserMouseDown);
+            canvas.on('mouse:move', handleEraserMouseMove);
+            canvas.on('mouse:up', handleEraserMouseUp);
+            eraserHandlersRef.current = {
+                down: handleEraserMouseDown,
+                move: handleEraserMouseMove,
+                up: handleEraserMouseUp,
+            };
+        }
+
+        const handleMouseDown = (opt: any) => {
+            if (activeTool === 'fill' && opt.target) {
+                opt.target.set('fill', fillColor);
+                canvas.renderAll();
+                saveState();
+            }
+        };
+
+        canvas.on('mouse:down', handleMouseDown);
+        return () => {
+            canvas.off('mouse:down', handleMouseDown);
+            if (eraserHandlersRef.current) {
+                canvas.off('mouse:down', eraserHandlersRef.current.down);
+                canvas.off('mouse:move', eraserHandlersRef.current.move);
+                canvas.off('mouse:up', eraserHandlersRef.current.up);
+                eraserHandlersRef.current = null;
+            }
+        };
+    }, [activeTool, outlineColor, fillColor, strokeWidth, saveState]);
 
     const undo = () => {
         if (historyIndex > 0) {
