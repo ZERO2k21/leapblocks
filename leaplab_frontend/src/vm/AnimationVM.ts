@@ -3170,7 +3170,17 @@ export class AnimationVM {
     }
 
     getSpeechResult(): string {
-        return (this.variables.get('speech') as string) || '';
+        // First check the 'speech' variable (set by speech_on_result handler)
+        const variableResult = this.variables.get('speech');
+        if (variableResult !== undefined && variableResult !== '') {
+            return variableResult as string;
+        }
+        // Fall back to Web Speech API's _lastResult (set by start listening)
+        // This bridges the gap when user blocks use start listening without speech_on_result
+        if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+            return (window as any).runtime.speech.getLastResult() || '';
+        }
+        return '';
     }
 }
 
