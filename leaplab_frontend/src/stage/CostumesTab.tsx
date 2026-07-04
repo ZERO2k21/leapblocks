@@ -214,6 +214,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     spriteName={stageManager.getAllBackdrops()[stageManager.getCurrentBackdropIndex()]?.name || 'Stage'}
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
+                    onSwitchCostume={(index: number) => {
+                        stageManager.setBackdrop(index);
+                    }}
                     onSave={async (imageData: string, svgData?: string, name?: string) => {
                         const idx = stageManager.getCurrentBackdropIndex();
                         const backdropName = name || stageManager.getAllBackdrops()[idx]?.name || 'custom';

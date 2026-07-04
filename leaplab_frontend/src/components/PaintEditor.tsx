@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
 import {
     Undo, Redo, Copy, Clipboard, Trash2, Square, Circle, Pen, Eraser,
@@ -69,6 +69,8 @@ function PaintEditor({
     const eraserBaseRef = useRef('');
     const eraserPointsRef = useRef<{ x: number; y: number; }[]>([]);
     const eraserHandlersRef = useRef<{ down: any; move: any; up: any; } | null>(null);
+    const isDirtyRef = useRef(false);
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [activeTool, setActiveTool] = useState<string>('select');
     const [fillColor, setFillColor] = useState('#855CD6');
     const [outlineColor, setOutlineColor] = useState('#000000');
@@ -252,6 +254,64 @@ function PaintEditor({
             };
         }
     }, []); // Only run once to create the canvas
+
+    // Track dirty state and trigger auto-save
+    const markDirty = useCallback(() => { isDirtyRef.current = true; }, []);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const handler = () => {
+            markDirty();
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = setTimeout(() => {
+                try {
+                    const json = JSON.stringify(canvas.toJSON());
+                    const key = `paintEditor_draft_${title || 'unknown'}`;
+                    localStorage.setItem(key, json);
+                } catch (_) {}
+            }, 1500);
+        };
+        canvas.on('object:added', handler);
+        canvas.on('object:modified', handler);
+        canvas.on('object:removed', handler);
+        canvas.on('path:created', handler);
+        return () => {
+            canvas.off('object:added', handler);
+            canvas.off('object:modified', handler);
+            canvas.off('object:removed', handler);
+            canvas.off('path:created', handler);
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [title, markDirty]);
+
+    // Restore draft on mount
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const key = `paintEditor_draft_${title || 'unknown'}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            try {
+                canvas.loadFromJSON(JSON.parse(saved), () => {
+                    canvas.renderAll();
+                    saveState();
+                });
+            } catch (_) {}
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Warn before navigating away with unsaved changes
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (isDirtyRef.current) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, []);
 
     // Load image when activeImage changes
     useEffect(() => {
@@ -720,6 +780,8 @@ function PaintEditor({
         }
 
         onSave(imageData, svgDataUrl, costumeName);
+        isDirtyRef.current = false;
+        localStorage.removeItem(`paintEditor_draft_${title || 'unknown'}`);
         onClose();
     };
 
@@ -1091,7 +1153,12 @@ function PaintEditor({
                             <div className="absolute bottom-6 left-6">
                                 {/* Junior-style Back/Exit Button */}
                                 <button
-                                    onClick={onClose}
+                                    onClick={() => {
+                                        if (isDirtyRef.current) {
+                                            if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) return;
+                                        }
+                                        onClose();
+                                    }}
                                     className="w-14 h-14 bg-[#7B4FC4] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all border-4 border-white"
                                     title="Exit without saving"
                                 >
