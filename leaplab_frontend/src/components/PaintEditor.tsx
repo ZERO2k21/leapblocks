@@ -692,16 +692,32 @@ function PaintEditor({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Export as SVG data URL (vibrant and sharp)
         const svgString = canvas.toSVG();
         const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
 
-        // Export as PNG (backup/preview)
-        const imageData = canvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 1
-        });
+        const objects = canvas.getObjects();
+        let imageData: string;
+
+        if (objects.length > 0) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            objects.forEach(obj => {
+                const br = obj.getBoundingRect();
+                minX = Math.min(minX, br.left);
+                minY = Math.min(minY, br.top);
+                maxX = Math.max(maxX, br.left + br.width);
+                maxY = Math.max(maxY, br.top + br.height);
+            });
+
+            const pad = 10;
+            const left = Math.max(0, Math.floor(minX - pad));
+            const top = Math.max(0, Math.floor(minY - pad));
+            const width = Math.min(canvas.width! - left, Math.ceil(maxX - minX + pad * 2));
+            const height = Math.min(canvas.height! - top, Math.ceil(maxY - minY + pad * 2));
+
+            imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1, left, top, width, height });
+        } else {
+            imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+        }
 
         onSave(imageData, svgDataUrl, costumeName);
         onClose();

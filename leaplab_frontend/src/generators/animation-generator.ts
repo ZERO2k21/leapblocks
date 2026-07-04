@@ -290,6 +290,13 @@ export class AnimationCompiler {
                     return isNaN(num) ? ans : num;
                 };
             }
+            case 'sensing_speech': {
+                return () => {
+                    const text = animationVM.getSpeechResult();
+                    const num = Number(text);
+                    return isNaN(num) ? text : num;
+                };
+            }
             default: {
                 const outputChecks = valueBlock.outputConnection?.getCheck() || [];
                 if (outputChecks.includes('Number')) {
@@ -411,6 +418,9 @@ export class AnimationCompiler {
             }
             case 'sensing_answer': {
                 return () => animationVM.getAnswer();
+            }
+            case 'sensing_speech': {
+                return () => animationVM.getSpeechResult();
             }
             case 'looks_costume_name': {
                 const sprite = animationVM.getSprite(this.spriteId);
@@ -848,6 +858,13 @@ export class AnimationCompiler {
                 return () => {
                     const ans = animationVM.getAnswer();
                     const num = Number(ans);
+                    return isNaN(num) ? 0 : num;
+                };
+            }
+            case 'sensing_speech': {
+                return () => {
+                    const text = animationVM.getSpeechResult();
+                    const num = Number(text);
                     return isNaN(num) ? 0 : num;
                 };
             }
