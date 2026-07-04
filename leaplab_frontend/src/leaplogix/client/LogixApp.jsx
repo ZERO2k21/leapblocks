@@ -55,7 +55,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         handleNewProject, handleSaveProject, handleDownloadProject, handleOpenProject, handleShareProject,
         handleDeleteFile, handleCreateNewFile, handleCreateNewTextFile,
         handleRenameFile, handleOpenPythonFile,
-    } = useFileManager({ addLog, setSprites, setSelectedSpriteId, setBackdropImg, resetStage });
+    } = useFileManager({ addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage });
 
     // ── Python Execution ────────────────────────────────────────────────────
     const {

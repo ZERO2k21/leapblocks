@@ -475,7 +475,9 @@ function JuniorAppInner({ onBack, projectUrl }) {
         saveCurrentWorkspace,
         spriteWorkspacesRef,
         isLoadingWorkspaceRef,
-        audioEngine
+        audioEngine,
+        installedExtensionsRef: wp.installedExtensionsRef,
+        restoreExtensions: wp.restoreExtensions
     });
 
     // Auto-load project from URL parameter (?project=<url>)

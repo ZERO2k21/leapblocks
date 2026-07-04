@@ -652,15 +652,56 @@ export function useJuniorWorkspace({
         };
     }, []);
 
+    const restoreExtensions = (extensionIds) => {
+        if (!Array.isArray(extensionIds) || extensionIds.length === 0) return;
+
+        let nextCategories = [...categories];
+        let nextCategoryBlocks = { ...categoryBlocks };
+
+        for (const extId of extensionIds) {
+            if (installedExtensionsRef.current.has(extId)) continue;
+
+            const ext = getIgniteExtension(extId) || EXTENSIONS[extId];
+            if (!ext) continue;
+
+            // Register blocks and generators
+            registerExtensions(Blockly, [extId]);
+            if (EXTENSIONS[extId]?.registerIgniteBlocks) {
+                EXTENSIONS[extId].registerIgniteBlocks(Blockly);
+            }
+
+            // Track installed extension
+            installedExtensionsRef.current = new Set([...installedExtensionsRef.current, extId]);
+
+            // Add to categories and toolbox state
+            const newCategory = {
+                id: extId,
+                name: ext.name,
+                color: ext.color,
+                icon: <span>{ext.icon || '🧩'}</span>
+            };
+            nextCategories = [...nextCategories, newCategory];
+            nextCategoryBlocks = { ...nextCategoryBlocks, [extId]: ext.getToolbox() };
+        }
+
+        setCategories(nextCategories);
+        setCategoryBlocks(nextCategoryBlocks);
+    };
+
     return {
         activeCategory,
         categories,
+        setCategories,
+        categoryBlocks,
+        setCategoryBlocks,
         flyoutHeight,
         handleCategoryClick,
         resetFlyoutScale,
         isExtensionLibraryOpen,
         setIsExtensionLibraryOpen,
         handleAddExtension,
+        installedExtensionsRef,
+        restoreExtensions,
         showPicker,
         setShowPicker,
         pickerCallback,

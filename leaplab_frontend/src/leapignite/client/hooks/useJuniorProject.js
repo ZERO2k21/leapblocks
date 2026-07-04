@@ -24,7 +24,9 @@ export function useJuniorProject({
     saveCurrentWorkspace,
     spriteWorkspacesRef,
     isLoadingWorkspaceRef,
-    audioEngine
+    audioEngine,
+    installedExtensionsRef,
+    restoreExtensions
 }) {
     const fileInputRef = useRef(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
@@ -103,7 +105,8 @@ export function useJuniorProject({
             const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
             const payload = {
                 scenes: scenes,
-                recordedSounds: recordedSounds
+                recordedSounds: recordedSounds,
+                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
             };
             try {
                 await fileService.saveProject(projectName, 'junior', payload);
@@ -124,7 +127,8 @@ export function useJuniorProject({
             const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
             const payload = {
                 scenes: scenes,
-                recordedSounds: recordedSounds
+                recordedSounds: recordedSounds,
+                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
             };
             fileService.saveProjectLocally(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project downloaded: ${projectName}`);
@@ -135,7 +139,11 @@ export function useJuniorProject({
         saveCurrentWorkspace();
         setTimeout(() => {
             const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
-            const payload = { scenes, recordedSounds };
+            const payload = {
+                scenes,
+                recordedSounds,
+                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
+            };
             fileService.shareProject(projectName, 'junior', payload);
             console.log(`[JuniorApp] Project shared: ${projectName}`);
         }, 50);
@@ -218,6 +226,12 @@ export function useJuniorProject({
                 audioEngine.soundBank.restoreRecordedSound(name, samples, sampleRate);
             }
             console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
+        }
+
+        // Restore installed extensions (must happen before workspace load so block definitions exist)
+        if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0 && restoreExtensions) {
+            restoreExtensions(data.installedExtensions);
+            console.log(`[JuniorProject] Restored ${data.installedExtensions.length} extension(s): ${data.installedExtensions.join(', ')}`);
         }
 
         const firstScene = data.scenes[0];

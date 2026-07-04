@@ -3177,11 +3177,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
-                tables: tableMonitors
+                tables: tableMonitors,
+                sensing: sensingMonitors
             },
             installedExtensions: Array.from(installedExtensionsRef.current)
         };
-    }, [sprites, variableMonitors, listMonitors, tableMonitors]);
+    }, [sprites, variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
 
     const handleSaveProject = useCallback(async (isSilent = false) => {
         const payload = buildProjectPayload();
@@ -3378,6 +3379,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
                     setTableMonitors(data.monitors.tables || []);
+                    if (data.monitors.sensing) {
+                        setSensingMonitors(data.monitors.sensing);
+                    }
                 } else {
                     setVariableMonitors([]);
                     setListMonitors([]);
@@ -3522,6 +3526,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                 setListMonitors(data.monitors.lists || []);
                 setTableMonitors(data.monitors.tables || []);
+                if (data.monitors.sensing) {
+                    setSensingMonitors(data.monitors.sensing);
+                }
             } else {
                 setVariableMonitors([]);
                 setListMonitors([]);
