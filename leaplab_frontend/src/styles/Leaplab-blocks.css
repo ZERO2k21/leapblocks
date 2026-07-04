@@ -537,6 +537,18 @@
   color: #fff !important;
 }
 
+/* Ensure Blockly context menu is not clipped by overflow:hidden on parent containers */
+.blocklyWidgetDiv .blocklyContextMenu {
+  border-radius: 4px;
+  max-height: 100%;
+  z-index: 100000 !important;
+}
+
+/* Prevent workspace overflow from clipping absolutely-positioned widgets (context menus, tooltips) */
+.injectionDiv {
+  overflow: visible !important;
+}
+
 /* Ensure consistency in flyout — dropdowns should also have white bg */
 .blocklyFlyout .blocklyDropdownText+.blocklyFieldRect,
 .blocklyFlyout .blocklyDropdownTextParent>rect,
