@@ -24,7 +24,6 @@ const Vision3DApp = ({ onBack }) => {
   const loadedRef = useRef(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [netOpen, setNetOpen] = useState(false);
-  const [netFoldProgress, setNetFoldProgress] = useState(0);
   const [cloudProjectId, setCloudProjectId] = useState(null);
   log('Vision3DApp: mounted');
 
@@ -576,25 +575,26 @@ const Vision3DApp = ({ onBack }) => {
                 >
                   Import
                 </button>
-                <button
-                  className="v3d-toolbar-btn"
-                  onClick={() => {
-                    if (selectedIds.length === 1) {
-                      setNetOpen(true);
-                      setNetFoldProgress(0);
-                    }
-                  }}
-                  disabled={selectedIds.length !== 1}
-                  title="Show 2D Net of selected shape"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
-                    <path d="M14 14h7v7M14 17.5h3.5M17.5 14v3.5"/>
-                  </svg>
-                  Net
-                </button>
+                {(() => {
+                  const NET_SUPPORTED = ['cube','box','cylinder','cone','tetrahedron','pyramid'];
+                  const selShape = selectedIds.length === 1 ? shapes.find((s) => s.id === selectedIds[0]) : null;
+                  const hasNet = selShape && NET_SUPPORTED.includes(selShape.type);
+                  return (
+                    <button
+                      className="v3d-toolbar-btn"
+                      onClick={() => {
+                        if (hasNet) setNetOpen(true);
+                      }}
+                      disabled={!hasNet}
+                      title={hasNet ? "Show how this shape is constructed from its net" : "Net animation not available for this shape"}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="5,3 19,12 5,21"/>
+                      </svg>
+                      Animate
+                    </button>
+                  );
+                })()}
                 <button
                   className="v3d-toolbar-btn"
                   onClick={() => {
@@ -787,9 +787,7 @@ const Vision3DApp = ({ onBack }) => {
         return (
           <ShapeNet
             shape={selectedShape}
-            foldProgress={netFoldProgress}
-            onClose={() => { setNetOpen(false); setNetFoldProgress(0); }}
-            onFoldChange={setNetFoldProgress}
+            onClose={() => { setNetOpen(false); }}
           />
         );
       })()}
