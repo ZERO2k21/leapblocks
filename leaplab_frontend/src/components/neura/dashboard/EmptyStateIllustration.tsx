@@ -34,14 +34,22 @@ export default function EmptyStateIllustration({ onCreateNew, onImport }: EmptyS
             <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                 <button
                     onClick={onCreateNew}
-                    className="neura-button-primary flex items-center gap-2"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm sm:text-base font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                    style={{
+                        background: 'linear-gradient(135deg, #0a015a 0%, #15027a 50%, #0a015a 100%)',
+                        boxShadow: '0 4px 14px rgba(10,1,90,0.25)',
+                    }}
                 >
                     <Plus size={18} strokeWidth={2.5} />
                     <span>New Project</span>
                 </button>
                 <button
                     onClick={onImport}
-                    className="neura-button-secondary flex items-center gap-2"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm sm:text-base font-semibold transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                    style={{
+                        border: '1.5px solid rgba(10,1,90,0.25)',
+                        color: '#0a015a',
+                    }}
                 >
                     <Upload size={18} strokeWidth={2.2} />
                     <span>Import Dataset</span>

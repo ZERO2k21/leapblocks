@@ -177,7 +177,7 @@ export default function ProjectHeader({
                 <div className="hidden lg:flex ml-3.5 items-center shrink-0 h-8 overflow-hidden filter drop-shadow-[0_0_14px_rgba(255,255,255,0.15)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
                     <img
                         alt="Leap into the AI Future"
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
+                        src="/assets/logo - creoleap.png"
                         className="w-[145px] h-auto object-contain block shrink-0 brightness-120 contrast-110 drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
                     />
                 </div>

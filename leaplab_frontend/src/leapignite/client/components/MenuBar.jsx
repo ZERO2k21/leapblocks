@@ -326,6 +326,14 @@ export default function MenuBar({
     onSave,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+
+    useEffect(() => {
+        const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const isConnected = connectionStatus === 'connected';
 
     const toggleMenu = (menu) => setOpenMenu(openMenu === menu ? null : menu);
@@ -600,34 +608,35 @@ export default function MenuBar({
 
                 <LeapLabAuthButton variant="dark" size="sm" />
 
-                {/* CREOLEAP SVG — full H vector + text, premium premium */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    paddingLeft: 4,
-                    height: '60px',
-                    overflow: 'hidden',
-                }}>
-                    <img
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        alt="CREOLEAP"
-                        style={{
-                            width: '145px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: [
-                                'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                'brightness(1.2)',
-                                'contrast(1.06)',
-                            ].join(' '),
-                        }}
-                    />
-                </div>
+                {showCreoleap && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        paddingLeft: 4,
+                        height: '60px',
+                        overflow: 'hidden',
+                    }}>
+                        <img
+                            src="/assets/logo - creoleap.png"
+                            alt="CREOLEAP"
+                            style={{
+                                width: '145px',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                display: 'block',
+                                flexShrink: 0,
+                                filter: [
+                                    'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                                    'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                                    'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                                    'brightness(1.2)',
+                                    'contrast(1.06)',
+                                ].join(' '),
+                            }}
+                        />
+                    </div>
+                )}
 
             </div>
         </div>

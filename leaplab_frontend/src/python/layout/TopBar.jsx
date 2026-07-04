@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
@@ -20,6 +20,14 @@ const C = {
 };
 
 export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide, mode, setMode }) {
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+
+    useEffect(() => {
+        const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
         <header style={{
             height: 54,
@@ -293,29 +301,30 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
 
-                {/* CREOLEAP Right Logo */}
-                <div style={{
-                    marginLeft: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    height: '40px',
-                    overflow: 'hidden',
-                    filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-                }}>
-                    <img
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        alt="CREOLEAP"
-                        style={{
-                            width: '145px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: 'brightness(1.2) contrast(1.06)',
-                        }}
-                    />
-                </div>
+                {showCreoleap && (
+                    <div style={{
+                        marginLeft: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        height: '40px',
+                        overflow: 'hidden',
+                        filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+                    }}>
+                        <img
+                            src="/assets/logo - creoleap.png"
+                            alt="CREOLEAP"
+                            style={{
+                                width: '145px',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                display: 'block',
+                                flexShrink: 0,
+                                filter: 'brightness(1.2) contrast(1.06)',
+                            }}
+                        />
+                    </div>
+                )}
             </div>
         </header>
     );

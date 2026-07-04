@@ -151,21 +151,58 @@ export default function ForgeElectra({
   };
 
   // Save current state to history
-  const saveToHistory = () => {
-    const newState = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)), code };
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newState);
-    // Limit history to 50 states
-    if (newHistory.length > 50) newHistory.shift();
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+  const saveToHistory = (overrideNodes?: any[], overrideEdges?: any[], overrideCode?: string) => {
+    const storeState = useForgeStore.getState();
+    const currentNodes = overrideNodes || storeState.nodes;
+    const currentEdges = overrideEdges || storeState.edges;
+    const currentCode = overrideCode !== undefined ? overrideCode : code;
+
+    // Do not save empty state before board is initialized
+    if (currentNodes.length === 0) return;
+
+    const newState = {
+      nodes: JSON.parse(JSON.stringify(currentNodes)),
+      edges: JSON.parse(JSON.stringify(currentEdges)),
+      code: currentCode
+    };
+
+    setHistory(prevHistory => {
+      const newHistory = prevHistory.slice(0, historyIndex + 1);
+      if (newHistory.length > 0) {
+        const last = newHistory[newHistory.length - 1];
+        if (
+          JSON.stringify(last.nodes) === JSON.stringify(newState.nodes) &&
+          JSON.stringify(last.edges) === JSON.stringify(newState.edges) &&
+          last.code === newState.code
+        ) {
+          return prevHistory;
+        }
+      }
+      newHistory.push(newState);
+      if (newHistory.length > 50) newHistory.shift();
+      return newHistory;
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, 49));
   };
 
   // Undo operation
   const handleUndo = () => {
     if (historyIndex > 0) {
       const prevState = history[historyIndex - 1];
-      setNodes(prevState.nodes);
+      const currentStore = useForgeStore.getState();
+      
+      const boardNodeInPrev = prevState.nodes.find((n: any) => ['esp32-c3', 'esp32', 'arduino-uno'].includes(n.data?.type));
+      let restoredNodes = [...prevState.nodes];
+
+      // If board node is somehow missing from target history state, restore current board node
+      if (!boardNodeInPrev) {
+        const currentBoardNode = currentStore.nodes.find((n: any) => ['esp32-c3', 'esp32', 'arduino-uno'].includes(n.data?.type));
+        if (currentBoardNode) {
+          restoredNodes.unshift(currentBoardNode);
+        }
+      }
+
+      setNodes(restoredNodes);
       setEdges(prevState.edges);
       setCode(prevState.code);
       setHistoryIndex(historyIndex - 1);
@@ -176,7 +213,19 @@ export default function ForgeElectra({
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const nextState = history[historyIndex + 1];
-      setNodes(nextState.nodes);
+      const currentStore = useForgeStore.getState();
+
+      const boardNodeInNext = nextState.nodes.find((n: any) => ['esp32-c3', 'esp32', 'arduino-uno'].includes(n.data?.type));
+      let restoredNodes = [...nextState.nodes];
+
+      if (!boardNodeInNext) {
+        const currentBoardNode = currentStore.nodes.find((n: any) => ['esp32-c3', 'esp32', 'arduino-uno'].includes(n.data?.type));
+        if (currentBoardNode) {
+          restoredNodes.unshift(currentBoardNode);
+        }
+      }
+
+      setNodes(restoredNodes);
       setEdges(nextState.edges);
       setCode(nextState.code);
       setHistoryIndex(historyIndex + 1);
@@ -192,23 +241,15 @@ export default function ForgeElectra({
     };
   }, []);
 
-  // Initialize history on mount
-  useEffect(() => {
-    if (history.length === 0) {
-      saveToHistory();
-    }
-  }, []);
-
-
-
   // Save to history when nodes, edges, or code changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (history.length > 0) {
         const lastState = history[historyIndex];
+        const storeState = useForgeStore.getState();
         const hasChanged =
-          JSON.stringify(lastState?.nodes) !== JSON.stringify(nodes) ||
-          JSON.stringify(lastState?.edges) !== JSON.stringify(edges) ||
+          JSON.stringify(lastState?.nodes) !== JSON.stringify(storeState.nodes) ||
+          JSON.stringify(lastState?.edges) !== JSON.stringify(storeState.edges) ||
           lastState?.code !== code;
 
         if (hasChanged) {
@@ -322,6 +363,9 @@ export default function ForgeElectra({
         label: initialBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'
       });
       console.log('[FORGE ELECTRA] Board added. New nodes count:', useForgeStore.getState().nodes.length);
+      setTimeout(() => {
+        saveToHistory();
+      }, 50);
     }
   }, [initialBoard]); // Run when initialBoard changes
 

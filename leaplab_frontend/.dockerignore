@@ -15,7 +15,7 @@ out/
 .storybook/
 arduino-cli/
 cp210x_drivers/
-neura-ml/
+src/neura-ml/
 public/
 scripts/
 storybook-static/

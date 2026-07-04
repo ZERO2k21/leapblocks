@@ -113,6 +113,23 @@ function migrateESP32LedcAPI(code: string): string {
     return result;
 }
 
+function preprocessOledCode(code: string): string {
+    let processed = code;
+    const oledVarMatch = processed.match(/Adafruit_SSD1306\s+(\w+)\b/);
+    if (oledVarMatch) {
+        const varName = oledVarMatch[1];
+        const hasSetTextColor = new RegExp(`${varName}\\.setTextColor\\b`).test(processed);
+        if (!hasSetTextColor) {
+            const beginRegex = new RegExp(`(${varName}\\.begin\\s*\\([^)]+\\)\\s*;)`);
+            if (beginRegex.test(processed)) {
+                processed = processed.replace(beginRegex, `$1\n  ${varName}.setTextColor(1);`);
+                console.log(`[FORGE PREPROCESS] Injected ${varName}.setTextColor(1); after begin()`);
+            }
+        }
+    }
+    return processed;
+}
+
 export class ArduinoUploader {
     private mainWindow: BrowserWindow | null = null;
 
@@ -378,7 +395,7 @@ directories:
 
             // ── ESP32 sketch preprocessing ────────────────────────────────────
             // Replace AVR-only libraries and deprecated APIs with ESP32 core v3 equivalents
-            let processedCode = code;
+            let processedCode = preprocessOledCode(code);
             if (isESP32) {
                 // 0. Ensure ESP32 core is installed (uses both Espressif CDN + GitHub URLs)
                 await this.ensureESP32Core(arduinoCliPath);
@@ -560,6 +577,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             // Preprocess code
             let processedCode = code.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
             processedCode = migrateESP32LedcAPI(processedCode);
+            processedCode = preprocessOledCode(processedCode);
             // Add a comment-only helper for common Stepper.h wiring mistakes (28BYJ-48).
             // We inject only when a Stepper constructor with 5 args is detected.
             if (/\bStepper\s+(myStepper|stepper)\b/.test(processedCode)) {

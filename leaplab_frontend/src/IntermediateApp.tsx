@@ -548,6 +548,9 @@ function extractBroadcastValues(workspaceJson: { blocks?: { blocks?: any[] } }, 
 
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds'; projectUrl?: string | null }> = ({ onBack, onOpenPython, openTab = 'blocks', projectUrl }) => {
 
+    // Detect embed mode (iframe)
+    const isEmbedMode = typeof window !== 'undefined' && window !== window.parent;
+
     // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
     initBlocklyOnce();
 
@@ -2659,6 +2662,18 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
+    // Handle sound changes — refresh Blockly toolbox so sound block dropdowns update
+    const handleSoundChange = useCallback(() => {
+        if (workspaceRef.current) {
+            try {
+                // Force Blockly to re-evaluate dynamic dropdown options
+                workspaceRef.current.refreshToolboxSelection?.();
+            } catch {}
+        }
+    }, []);
+
+
+
     // Handle workspace tab switching (Blocks, Python, Costumes, etc.)
 
     const handleWorkspaceTabChange = useCallback((newTab: 'blocks' | 'python' | 'costumes' | 'sounds') => {
@@ -2760,7 +2775,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         if (t.includes('sports') || t.includes('sport')) return { name: 'Boing', src: 'assets/sounds/53a3c2e27d1fb5fdb14aaf0cb41e7889.wav' };
 
         // Built-in sprite types
-        if (n.includes('robot')) return { name: 'Meow', src: 'assets/sounds/meow.wav' };
+        if (n.includes('robot')) return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
 
         // Default: Pop
         return { name: 'Pop', src: 'assets/sounds/83a9787d4cb6f3b7632b4ddfebf74367.wav' };
@@ -2881,12 +2896,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             workspaceRef.current.clear();
 
             Blockly.Events.enable();
-
-            setTimeout(() => {
-
-                isLoadingWorkspaceRef.current = false;
-
-            }, 50);
+            isLoadingWorkspaceRef.current = false;
 
         }
 
@@ -6335,6 +6345,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     onClose={() => handleWorkspaceTabChange('blocks')}
 
+                                    isEmbedMode={isEmbedMode}
+
+                                    onSelectSprite={handleSpriteSelect}
+
+                                    onSoundChange={handleSoundChange}
+
                                 />
                             </SuspenseTab>
                         </div>
@@ -6345,8 +6361,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                {/* Right Panel */}
-
+                {/* Right Panel — hidden in embed mode when sounds tab is active (full-screen sound editor) */}
+                {(isEmbedMode && workspaceTab === 'sounds') ? null : (
                 <div style={{
 
                     ...styles.rightPanel,
@@ -6719,6 +6735,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     )}
 
                 </div>
+                )}
 
             </div>
 

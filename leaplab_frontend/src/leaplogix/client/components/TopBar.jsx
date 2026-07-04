@@ -27,8 +27,8 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 
     return (
         <div ref={menuRef} style={{ position: 'relative' }}>
-            <button 
-                onClick={onToggle} 
+            <button
+                onClick={onToggle}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 style={{
@@ -36,8 +36,8 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     border: 'none', color: '#fff', fontSize: 15, fontWeight: 500,
                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", cursor: 'pointer',
                     borderRadius: 6, transition: 'all 0.2s ease',
-                    background: isOpen 
-                        ? 'rgba(255,255,255,0.18)' 
+                    background: isOpen
+                        ? 'rgba(255,255,255,0.18)'
                         : (isHovered ? 'rgba(255,255,255,0.1)' : 'transparent'),
                 }}
             >
@@ -82,6 +82,18 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 export default function TopBar() {
     const ctx = useLogix();
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+
+    const [showMenuItems, setShowMenuItems] = useState(window.innerWidth >= 1100);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setShowCreoleap(window.innerWidth >= 1400);
+            setShowMenuItems(window.innerWidth >= 1100);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     return (
         <header style={{
@@ -91,7 +103,7 @@ export default function TopBar() {
             boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
                 <button onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
@@ -104,15 +116,27 @@ export default function TopBar() {
                 }} title="Back to Home">
                     <Home size={19} strokeWidth={2.2} />
                 </button>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => {
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, cursor: 'pointer' }} onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     ctx.onBack();
                 }}>
                     <Logo height={48} />
-                    <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em" }}>Logix</span>
+                    <div style={{
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                        borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 8,
+                    }}>
+                        <span style={{
+                            color: '#FFD500', fontSize: 8, fontWeight: 900,
+                            textTransform: 'uppercase', letterSpacing: '0.18em', lineHeight: 1.1,
+                        }}>LEAPLAB</span>
+                        <span style={{
+                            color: '#fff', fontSize: 15, fontWeight: 900,
+                            letterSpacing: '0.08em', lineHeight: 1.2,
+                        }}>Logix</span>
+                    </div>
                 </div>
-                <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
+                <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
 
                 <DropdownMenu label="File" isOpen={openMenuId === 'file'} onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')} onClose={() => setOpenMenuId(null)}
                     items={[
@@ -142,8 +166,8 @@ export default function TopBar() {
                         { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
                     ]} />
 
-                {["Tutorials", "Board", "Connect"].map((menuLabel) => (
-                    <button key={menuLabel} 
+                {showMenuItems && ["Board", "Connect"].map((menuLabel) => (
+                    <button key={menuLabel}
                         style={{
                             background: "transparent",
                             border: "none",
@@ -168,42 +192,44 @@ export default function TopBar() {
                 ))}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ 
-                    background: "rgba(255, 255, 255, 0.08)", 
+            <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+                <div style={{
+                    background: "rgba(255, 255, 255, 0.08)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
-                    padding: "6px 12px", 
-                    borderRadius: 8, 
-                    display: "flex", 
-                    alignItems: "center", 
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
                     gap: 8,
                     height: 34,
                     boxSizing: "border-box"
                 }}>
                     <span style={{ fontSize: 14, opacity: 0.5 }}>📁</span>
                     <input value={ctx.projectName} onChange={(e) => ctx.setProjectName(e.target.value)}
-                        style={{ 
-                            background: "transparent", 
-                            border: "none", 
-                            color: "#fff", 
-                            width: 100, 
-                            outline: "none", 
-                            fontSize: 13, 
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#fff",
+                            width: 100,
+                            outline: "none",
+                            fontSize: 13,
                             fontWeight: 600,
                             fontFamily: "inherit"
                         }} />
-                    <Save size={14} style={{ opacity: 0.8, cursor: "pointer", transition: "transform 0.15s ease" }} 
-                        onClick={ctx.handleSaveProject} 
+                    <Save size={14} style={{ opacity: 0.8, cursor: "pointer", transition: "transform 0.15s ease" }}
+                        onClick={ctx.handleSaveProject}
                         title="Save Project"
                         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
                         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
                 </div>
 
-                <div style={{ 
-                    display: "flex", 
-                    background: "rgba(0, 0, 0, 0.28)", 
+                <div style={{
+                    display: "flex",
+                    background: "rgba(0, 0, 0, 0.28)",
                     border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: 20, 
+                    borderRadius: 20,
                     padding: 3,
                     alignItems: "center",
                     height: 34,
@@ -212,19 +238,19 @@ export default function TopBar() {
                     <div style={{ padding: "0 8px 0 10px", color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</div>
                     {["ide", "stage", "upload"].map(mode => (
                         <button key={mode} onClick={() => ctx.setWorkflowMode(mode)} style={{
-                            padding: "4px 12px", 
+                            padding: "6px 12px",
                             border: "none",
                             borderRadius: 16,
                             background: ctx.workflowMode === mode ? "linear-gradient(135deg, #7C3AED, #4F46E5)" : "transparent",
                             color: ctx.workflowMode === mode ? "#fff" : "rgba(255,255,255,0.7)",
-                            fontSize: 12, 
-                            fontWeight: 700, 
-                            cursor: "pointer", 
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
                             transition: "all 0.2s ease",
                             textTransform: "capitalize",
                         }}
-                        onMouseEnter={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                            onMouseEnter={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
                         >{mode === "ide" ? "IDE" : mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
                     ))}
                 </div>
@@ -237,8 +263,8 @@ export default function TopBar() {
                         boxShadow: "0 2px 10px rgba(239, 68, 68, 0.35)",
                         transition: "all 0.2s ease"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(239, 68, 68, 0.45)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(239, 68, 68, 0.35)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(239, 68, 68, 0.45)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(239, 68, 68, 0.35)"; }}
                     >
                         <Square size={12} fill="#fff" stroke="none" /> Stop
                     </button>
@@ -250,17 +276,17 @@ export default function TopBar() {
                         boxShadow: "0 2px 10px rgba(16, 185, 129, 0.35)",
                         transition: "all 0.2s ease"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(16, 185, 129, 0.45)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(16, 185, 129, 0.35)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(16, 185, 129, 0.45)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(16, 185, 129, 0.35)"; }}
                     >
                         <Play size={12} fill="#fff" stroke="none" /> Run
                     </button>
                 )}
 
                 <button onClick={() => { if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload"); else ctx.handleUploadFirmware(); }}
-                    style={{ 
-                        display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", 
-                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", 
+                    style={{
+                        display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
+                        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
                         borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#fff", height: 34,
                         transition: "all 0.2s ease"
                     }}
@@ -271,7 +297,7 @@ export default function TopBar() {
                 </button>
 
                 <TopbarShareButton
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 10px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
                     size={18}
                     onSave={ctx.handleSaveProject}
                     projectName={ctx.projectName}
@@ -279,33 +305,35 @@ export default function TopBar() {
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    paddingLeft: 4,
-                    height: '44px',
-                    overflow: 'hidden',
-                }}>
-                    <img
-                        src="assets/Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg"
-                        alt="CREOLEAP"
-                        style={{
-                            width: '145px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: [
-                                'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                'brightness(1.14)',
-                                'contrast(1.05)',
-                            ].join(' '),
-                        }}
-                    />
-                </div>
+                {showCreoleap && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        paddingLeft: 4,
+                        height: '44px',
+                        overflow: 'hidden',
+                    }}>
+                        <img
+                            src="/assets/logo - creoleap.png"
+                            alt="CREOLEAP"
+                            style={{
+                                width: '145px',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                display: 'block',
+                                flexShrink: 0,
+                                filter: [
+                                    'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                                    'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                                    'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                                    'brightness(1.14)',
+                                    'contrast(1.05)',
+                                ].join(' '),
+                            }}
+                        />
+                    </div>
+                )}
             </div>
         </header>
     );

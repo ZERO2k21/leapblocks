@@ -137,6 +137,7 @@ interface SoundEditorProps {
     onDuplicateSound?: (index: number) => void;
     onClose: () => void;
     mode?: 'junior' | 'intermediate';
+    onSoundChange?: () => void;
 }
 
 // ─── Lazy initialization to avoid TDZ errors in production builds ─────────
@@ -198,7 +199,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     onDeleteSound,
     onDuplicateSound,
     onClose,
-    mode = 'intermediate'
+    mode = 'intermediate',
+    onSoundChange
 }) => {
     const [activeSoundIndex, setActiveSoundIndex] = useState<number>(0);
     const [soundName, setSoundName] = useState<string>('');
@@ -489,6 +491,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             onAddSound(sound.name, sound.src);
         }
         setIsLibraryOpen(false);
+        onSoundChange?.();
     };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -510,6 +513,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
         const name = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
         await onAddSound(name, url);
+        onSoundChange?.();
 
         // Reset input
         if (fileInputRef.current) {
@@ -570,7 +574,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                     <button
                                         className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-rose-500 rounded-full flex items-center justify-center shadow-md transition-colors"
                                         title="Delete"
-                                        onClick={(e) => { e.stopPropagation(); onDeleteSound(i); }}
+                                        onClick={(e) => { e.stopPropagation(); onDeleteSound(i); onSoundChange?.(); }}
                                     >
                                         <Trash2 size={12} />
                                     </button>
@@ -579,7 +583,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                     <button
                                         className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-[#855CD6] rounded-full flex items-center justify-center shadow-md transition-colors"
                                         title="Duplicate"
-                                        onClick={(e) => { e.stopPropagation(); onDuplicateSound(i); }}
+                                        onClick={(e) => { e.stopPropagation(); onDuplicateSound(i); onSoundChange?.(); }}
                                     >
                                         <Copy size={12} />
                                     </button>
@@ -602,6 +606,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                     const surprises = ['meow', 'bark', 'grunt', 'pop', 'boing'];
                                     const s = surprises[Math.floor(Math.random() * surprises.length)];
                                     if (onAddSound) onAddSound(s, '');
+                                    onSoundChange?.();
                                 }
                             },
                             { id: 'record', icon: '🎤', label: 'Record', onClick: () => console.log('Record Sound') },

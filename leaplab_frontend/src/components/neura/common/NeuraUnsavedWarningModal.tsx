@@ -20,7 +20,7 @@ export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, on
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className={`rounded-2xl w-[400px] shadow-2xl overflow-hidden animate-fade-in-scale border ${isDark ? 'bg-[#1a1d2e] border-white/[0.08]' : 'bg-white border-gray-100'}`}>
+            <div className={`rounded-2xl w-[400px] shadow-2xl overflow-hidden animate-fade-in-scale ${isDark ? 'bg-[#1a1d2e] border border-white/[0.08]' : 'bg-white border border-gray-100'}`}>
                 {/* Header */}
                 <div className="relative bg-gradient-to-r from-[#0a015a] to-[#15027a] px-6 py-4 flex items-center justify-between overflow-hidden">
                     <div className="absolute inset-0 opacity-10" style={{
@@ -35,7 +35,7 @@ export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, on
                 <div className="px-6 py-8 text-center">
                     {/* Warning icon with pulsing glow */}
                     <div className="relative inline-flex items-center justify-center mb-4">
-                        <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-xl scale-150 animate-pulse-slow" />
+                        <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-xl scale-150" style={{ animation: 'neura-pulse-slow 4s ease-in-out infinite' }} />
                         <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-50 to-amber-100 rounded-full border border-amber-200/50">
                             <AlertTriangle size={30} className="text-amber-500" strokeWidth={2} />
                         </div>
@@ -47,7 +47,11 @@ export default function NeuraUnsavedWarningModal({ isOpen, onSave, onDiscard, on
                 <div className="px-6 pb-6 flex justify-center gap-3">
                     <button
                         onClick={onSave}
-                        className="neura-button-primary px-6 py-2.5 text-sm"
+                        className="px-6 py-2.5 rounded-2xl text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                        style={{
+                            background: 'linear-gradient(135deg, #0a015a 0%, #15027a 50%, #0a015a 100%)',
+                            boxShadow: '0 4px 14px rgba(10,1,90,0.25)',
+                        }}
                     >
                         Save
                     </button>

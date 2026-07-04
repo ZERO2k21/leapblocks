@@ -3,6 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import React, { useEffect, useState, useRef } from 'react';
+import * as THREE from 'three';
 import {
     ArrowLeft,
     Trash2,
@@ -32,6 +33,7 @@ import ShareProjectModal from './ShareProjectModal';
 import { useLeapLabAuthStore } from '../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../store/cloudProjectStore';
 import { isPacked, unpack } from '../../Electra/Client/utlis/compress';
+import '../../Electra/Client/utlis/elements/leap-elements';
 
 interface MyProjectsDashboardProps {
     onOpenProject: (mode: string) => void;
@@ -87,6 +89,13 @@ const MODULES: Record<string, ModuleMeta> = {
         accent: '#EC4899',
         gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(244, 114, 182, 0.1) 100%)',
         darkAccent: '#BE185D',
+    },
+    vision3d: {
+        label: 'Vision3D',
+        icon: 'assets/vision3d_icon.png',
+        accent: '#6366F1',
+        gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(129, 140, 248, 0.1) 100%)',
+        darkAccent: '#4338CA',
     },
 };
 
@@ -166,6 +175,26 @@ const renderCardVisual = (mode: string, projectName: string) => {
                         <circle cx="140" cy="55" r="8" fill="#E979F9" />
                         <circle cx="140" cy="55" r="12" stroke="#E979F9" strokeWidth="0.75" strokeDasharray="3 3" opacity="0.8" />
                         <Brain size={14} color="#FFF" style={{ position: 'absolute', left: '133px', top: '48px' }} />
+                    </svg>
+                </div>
+            );
+        case 'vision3d':
+            return (
+                <div className="project-card-visual visual-vision3d">
+                    <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="rgba(99, 102, 241, 0.02)" rx="8" />
+                        {/* 3D cube */}
+                        <g transform="translate(60, 25)">
+                            <path d="M0 30 L40 0 L80 30 L40 60 Z" fill="rgba(99, 102, 241, 0.15)" stroke={accent} strokeWidth="1.5" strokeLinejoin="round" />
+                            <path d="M0 30 L0 70 L40 100 L40 60 Z" fill="rgba(99, 102, 241, 0.1)" stroke={accent} strokeWidth="1.2" strokeLinejoin="round" />
+                            <path d="M40 60 L40 100 L80 70 L80 30 Z" fill="rgba(99, 102, 241, 0.08)" stroke={accent} strokeWidth="1.2" strokeLinejoin="round" />
+                            <circle cx="40" cy="50" r="2.5" fill={accent} />
+                            <circle cx="60" cy="20" r="2" fill={accent} />
+                            <circle cx="25" cy="66" r="2" fill={accent} />
+                        </g>
+                        {/* Orbit path */}
+                        <ellipse cx="100" cy="85" rx="35" ry="8" stroke={accent} strokeWidth="0.75" strokeDasharray="2 3" fill="none" opacity="0.3" />
+                        <circle cx="135" cy="85" r="2" fill={accent} opacity="0.5" />
                     </svg>
                 </div>
             );
@@ -357,7 +386,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
     }
 };
 
-interface SavedProjectCircuitVisualProps {
+interface SavedProjectCardVisualProps {
     projectId: string;
     fileUrl: string | null;
     mode: string;
@@ -365,9 +394,172 @@ interface SavedProjectCircuitVisualProps {
     accent: string;
 }
 
-const SavedProjectCircuitVisual: React.FC<SavedProjectCircuitVisualProps> = ({ projectId, fileUrl, mode, projectName, accent }) => {
+const Vision3DCardVisual: React.FC<{ shapes: any[]; accent: string }> = ({ shapes, accent }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!containerRef.current || !shapes || !Array.isArray(shapes) || shapes.length === 0) return;
+
+        const container = containerRef.current;
+        const width = container.clientWidth || 200;
+        const height = container.clientHeight || 110;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Scene
+        const scene = new THREE.Scene();
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+        dirLight.position.set(8, 12, 10);
+        scene.add(dirLight);
+
+        // Group to hold all shapes for bounding box calculations
+        const group = new THREE.Group();
+
+        // Build meshes
+        const meshes: THREE.Mesh[] = [];
+        shapes.forEach((shape: any) => {
+            if (shape.visible === false || shape.type === 'group') return;
+
+            let geometry: THREE.BufferGeometry;
+            const w = shape.width ?? 2;
+            const h = shape.height ?? shape.cylinderHeight ?? shape.coneHeight ?? shape.pyramidHeight ?? shape.tubeHeight ?? shape.polygonHeight ?? 2;
+            const d = shape.depth ?? 2;
+
+            switch (shape.type) {
+                case 'box':
+                    geometry = new THREE.BoxGeometry(w, h, d);
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(shape.radiusTop ?? 1, shape.radiusBottom ?? 1, h, 16);
+                    break;
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(shape.radius ?? 1, 16, 12);
+                    break;
+                case 'cone':
+                    geometry = new THREE.ConeGeometry(shape.coneRadius ?? 1, h, 16);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(shape.torusRadius ?? 1, shape.tubeRadius ?? 0.4, 8, 24);
+                    break;
+                case 'pyramid':
+                    geometry = new THREE.ConeGeometry(shape.pyramidRadius ?? 1, h, shape.pyramidSides ?? 4);
+                    break;
+                case 'halfSphere':
+                    geometry = new THREE.SphereGeometry(shape.halfSphereRadius ?? 1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                    break;
+                case 'tube':
+                    geometry = new THREE.CylinderGeometry(shape.tubeOuterRadius ?? 1, shape.tubeOuterRadius ?? 1, h, 16);
+                    break;
+                case 'ring':
+                    geometry = new THREE.RingGeometry(shape.innerRadius ?? 0.5, shape.outerRadius ?? 1, 16);
+                    break;
+                default:
+                    geometry = new THREE.BoxGeometry(w, h, d);
+                    break;
+            }
+
+            // Material
+            const isHole = shape.isHole === true;
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(isHole ? '#cbd5e1' : (shape.color || accent)),
+                metalness: shape.metalness ?? 0.1,
+                roughness: shape.roughness ?? 0.7,
+                transparent: isHole || (shape.opacity ?? 1) < 1,
+                opacity: isHole ? 0.35 : (shape.opacity ?? 1),
+                wireframe: isHole
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(shape.position?.[0] || 0, shape.position?.[1] || 0, shape.position?.[2] || 0);
+            mesh.rotation.set(shape.rotation?.[0] || 0, shape.rotation?.[1] || 0, shape.rotation?.[2] || 0);
+            mesh.scale.set(shape.scale?.[0] || 1, shape.scale?.[1] || 1, shape.scale?.[2] || 1);
+
+            group.add(mesh);
+            meshes.push(mesh);
+        });
+
+        scene.add(group);
+
+        // Center and compute bounding box to frame the camera
+        const box = new THREE.Box3().setFromObject(group);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        // Move group center to origin for rendering consistency
+        group.position.sub(center);
+
+        // Camera positioning (isometric style view)
+        const maxDim = Math.max(size.x, size.y, size.z, 2);
+        const fov = 45;
+        const cameraValue = maxDim * 1.5;
+        
+        const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 1000);
+        camera.position.set(cameraValue, cameraValue * 0.8, cameraValue);
+        camera.lookAt(0, 0, 0);
+
+        // Grid helper for Tinkercad workspace feel
+        const gridHelper = new THREE.GridHelper(Math.max(maxDim * 3, 10), 10, new THREE.Color(accent), new THREE.Color('#e2e8f0'));
+        gridHelper.position.y = -size.y / 2 - 0.01;
+        scene.add(gridHelper);
+
+        // Single static render
+        renderer.render(scene, camera);
+
+        // Cleanup
+        return () => {
+            if (container.contains(renderer.domElement)) {
+                container.removeChild(renderer.domElement);
+            }
+            meshes.forEach(mesh => {
+                mesh.geometry.dispose();
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach(m => m.dispose());
+                } else {
+                    mesh.material.dispose();
+                }
+            });
+            gridHelper.geometry.dispose();
+            if (Array.isArray(gridHelper.material)) {
+                gridHelper.material.forEach(m => m.dispose());
+            } else {
+                gridHelper.material.dispose();
+            }
+            renderer.dispose();
+        };
+    }, [shapes, accent]);
+
+    return (
+        <div 
+            ref={containerRef} 
+            className="project-card-visual actual-vision3d-canvas"
+            style={{ 
+                width: '100%', 
+                height: '110px', 
+                position: 'relative', 
+                backgroundColor: 'rgba(99, 102, 241, 0.04)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '8px'
+            }}
+        />
+    );
+};
+
+const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ projectId, fileUrl, mode, projectName, accent }) => {
     const [loading, setLoading] = useState(true);
-    const [circuitData, setCircuitData] = useState<{ nodes: any[]; edges: any[] } | null>(null);
+    const [projectContent, setProjectContent] = useState<any | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -396,17 +588,15 @@ const SavedProjectCircuitVisual: React.FC<SavedProjectCircuitVisualProps> = ({ p
                 try {
                     content = isPacked(text) ? unpack<any>(text) : JSON.parse(text);
                 } catch (parseErr) {
-                    console.error('[SavedProjectCircuitVisual] Failed to parse content:', parseErr);
+                    console.error('[SavedProjectCardVisual] Failed to parse content:', parseErr);
                     content = null;
                 }
 
                 if (content && !cancelled) {
-                    const loadedNodes = content.nodes || content.circuit?.nodes || [];
-                    const loadedEdges = content.edges || content.circuit?.edges || [];
-                    setCircuitData({ nodes: loadedNodes, edges: loadedEdges });
+                    setProjectContent(content);
                 }
             } catch (err) {
-                console.error('[SavedProjectCircuitVisual] Failed to load circuit:', err);
+                console.error('[SavedProjectCardVisual] Failed to load content:', err);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -423,237 +613,408 @@ const SavedProjectCircuitVisual: React.FC<SavedProjectCircuitVisualProps> = ({ p
         );
     }
 
-    if (!circuitData || !Array.isArray(circuitData.nodes) || circuitData.nodes.length === 0) {
+    if (!projectContent) {
         return renderCardVisual(mode, projectName);
     }
 
-    const { nodes, edges } = circuitData;
+    // ── Mode 1: Electra (Circuit Canvas) ──
+    if (mode === 'electra') {
+        const nodes = projectContent.nodes || projectContent.circuit?.nodes || [];
+        const edges = projectContent.edges || projectContent.circuit?.edges || [];
+        if (!Array.isArray(nodes) || nodes.length === 0) {
+            return renderCardVisual(mode, projectName);
+        }
 
-    // Calculate bounding box
-    const padding = 50;
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
+        const padding = 50;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        nodes.forEach((n: any) => {
+            const x = n.position?.x ?? 0;
+            const y = n.position?.y ?? 0;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        });
 
-    nodes.forEach((n: any) => {
-        const x = n.position?.x ?? 0;
-        const y = n.position?.y ?? 0;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-    });
+        if (minX === Infinity || maxX === -Infinity || minY === Infinity || maxY === -Infinity) {
+            minX = 0; maxX = 800; minY = 0; maxY = 600;
+        }
 
-    if (minX === Infinity || maxX === -Infinity || minY === Infinity || maxY === -Infinity) {
-        minX = 0;
-        maxX = 800;
-        minY = 0;
-        maxY = 600;
-    }
+        const width = Math.max(maxX - minX + padding * 2, 200);
+        const height = Math.max(maxY - minY + padding * 2, 110);
+        const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
 
-    const width = Math.max(maxX - minX + padding * 2, 200);
-    const height = Math.max(maxY - minY + padding * 2, 110);
-    const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
+        return (
+            <div className="project-card-visual actual-circuit-render">
+                <svg viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="actual-circuit-svg">
+                    <defs>
+                        <pattern id="card-circuit-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect x={minX - padding} y={minY - padding} width={width} height={height} fill="url(#card-circuit-grid)" />
 
-    return (
-        <div className="project-card-visual actual-circuit-render">
-            <svg viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="actual-circuit-svg">
-                <defs>
-                    <pattern id="card-circuit-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-                        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="0.5"/>
-                    </pattern>
-                </defs>
-                <rect x={minX - padding} y={minY - padding} width={width} height={height} fill="url(#card-circuit-grid)" />
+                    {Array.isArray(edges) && edges.map((edge: any) => {
+                        const srcNode = nodes.find((n: any) => n.id === edge.source);
+                        const tgtNode = nodes.find((n: any) => n.id === edge.target?.replace('__target', ''));
+                        if (!srcNode || !tgtNode) return null;
 
-                {/* Draw wires (edges) */}
-                {Array.isArray(edges) && edges.map((edge: any) => {
-                    const srcNode = nodes.find((n: any) => n.id === edge.source);
-                    const tgtNode = nodes.find((n: any) => n.id === edge.target?.replace('__target', ''));
-                    if (!srcNode || !tgtNode) return null;
+                        const waypoints = edge.data?.waypoints || [];
+                        const color = edge.data?.color || accent;
 
-                    const waypoints = edge.data?.waypoints || [];
-                    const color = edge.data?.color || accent;
+                        if (Array.isArray(waypoints) && waypoints.length > 0) {
+                            const pointsString = [
+                                { x: srcNode.position?.x ?? 0, y: srcNode.position?.y ?? 0 },
+                                ...waypoints,
+                                { x: tgtNode.position?.x ?? 0, y: tgtNode.position?.y ?? 0 }
+                            ].map(pt => `${pt.x},${pt.y}`).join(' ');
 
-                    if (Array.isArray(waypoints) && waypoints.length > 0) {
-                        const pointsString = [
-                            { x: srcNode.position?.x ?? 0, y: srcNode.position?.y ?? 0 },
-                            ...waypoints,
-                            { x: tgtNode.position?.x ?? 0, y: tgtNode.position?.y ?? 0 }
-                        ].map(pt => `${pt.x},${pt.y}`).join(' ');
+                            return (
+                                <polyline
+                                    key={edge.id}
+                                    points={pointsString}
+                                    stroke={color}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    opacity="0.8"
+                                />
+                            );
+                        }
 
                         return (
-                            <polyline
+                            <line
                                 key={edge.id}
-                                points={pointsString}
+                                x1={srcNode.position?.x ?? 0}
+                                y1={srcNode.position?.y ?? 0}
+                                x2={tgtNode.position?.x ?? 0}
+                                y2={tgtNode.position?.y ?? 0}
                                 stroke={color}
                                 strokeWidth="2"
                                 strokeLinecap="round"
-                                strokeLinejoin="round"
                                 opacity="0.8"
                             />
                         );
-                    }
+                    })}
 
-                    return (
-                        <line
-                            key={edge.id}
-                            x1={srcNode.position?.x ?? 0}
-                            y1={srcNode.position?.y ?? 0}
-                            x2={tgtNode.position?.x ?? 0}
-                            y2={tgtNode.position?.y ?? 0}
-                            stroke={color}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            opacity="0.8"
-                        />
-                    );
-                })}
+                    {nodes.map((node: any) => {
+                        const x = node.position?.x ?? 0;
+                        const y = node.position?.y ?? 0;
+                        const rawType = node.data?.type || 'resistor';
+                        const elementType = rawType === 'lcd1602-i2c' ? 'lcd1602' : rawType === 'lcd2004-i2c' ? 'lcd2004' : rawType;
+                        const TagName = `leap-${elementType}`;
+                        const rotation = node.data?.rotation || 0;
 
-                {/* Draw components (nodes) */}
-                {nodes.map((node: any) => {
-                    const x = node.position?.x ?? 0;
-                    const y = node.position?.y ?? 0;
-                    const isBoard = ['arduino-uno', 'esp32-c3', 'esp32'].includes(node.data?.type);
-                    const label = node.data?.label || node.data?.type || 'Component';
+                        let compWidth = 120, compHeight = 120;
+                        if (['arduino-uno', 'arduino-mega'].includes(elementType)) {
+                            compWidth = 280; compHeight = 210;
+                        } else if (['esp32-c3', 'esp32', 'nano-rp2040-connect', 'arduino-nano'].includes(elementType)) {
+                            compWidth = 160; compHeight = 160;
+                        } else if (['lcd1602', 'lcd2004', 'ili9341', 'ili9341-touch', 'membrane-keypad', 'led-ring', 'neopixel-matrix'].includes(elementType)) {
+                            compWidth = 220; compHeight = 180;
+                        }
 
-                    if (isBoard) {
+                        const mappedProps: any = { ...node.data, simulating: false };
+                        if (elementType === 'led') {
+                            mappedProps.value = node.data.brightness ? true : false;
+                            mappedProps.color = node.data.color || 'red';
+                        } else if (elementType === 'servo' || elementType === 'stepper-motor') {
+                            mappedProps.angle = node.data.angle ?? 0;
+                        } else if (['potentiometer', 'slide-potentiometer'].includes(elementType)) {
+                            mappedProps.value = node.data.sensorValues?.value ?? 0;
+                        } else if (['dc-motor', 'motor', 'stepper-motor'].includes(elementType)) {
+                            mappedProps.speed = 0;
+                            mappedProps.animating = false;
+                        }
+
                         return (
-                            <g key={node.id}>
-                                <rect
-                                    x={x - 40}
-                                    y={y - 25}
-                                    width="80"
-                                    height="50"
-                                    rx="5"
-                                    fill="#0F172A"
-                                    stroke={accent}
-                                    strokeWidth="1.5"
-                                />
-                                <text
-                                    x={x}
-                                    y={y + 4}
-                                    fill="#FFFFFF"
-                                    fontSize="8"
-                                    fontWeight="bold"
-                                    textAnchor="middle"
-                                    fontFamily="monospace"
-                                >
-                                    {label.substring(0, 10)}
-                                </text>
-                            </g>
-                        );
-                    }
-
-                    const type = node.data?.type?.toLowerCase() || '';
-                    
-                    let iconVisual = null;
-                    if (type === 'led') {
-                        iconVisual = (
-                            <>
-                                <circle cx={x} cy={y} r="7" fill={node.data?.color || '#EF4444'} opacity="0.9" />
-                                <path d={`M ${x-4} ${y-4} L ${x+4} ${y+4} M ${x+4} ${y-4} L ${x-4} ${y+4}`} stroke="#FFFFFF" strokeWidth="1" opacity="0.5" />
-                            </>
-                        );
-                    } else if (type === 'resistor') {
-                        iconVisual = <path d={`M ${x-10} ${y} H ${x-6} L ${x-4} ${y-3} L ${x-2} ${y+3} L ${x} ${y-3} L ${x+2} ${y+3} L ${x+4} ${y-3} L ${x+6} ${y} H ${x+10}`} stroke="#F59E0B" strokeWidth="1" fill="none" />;
-                    } else if (['servo', 'servo-motor', 'stepper-motor', 'dc-motor', 'biaxial-stepper'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <circle cx={x} cy={y} r="10" fill="#334155" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-                                <circle cx={x} cy={y} r="3" fill="#E2E8F0" />
-                                <line x1={x} y1={y} x2={x+8} y2={y-4} stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
-                            </>
-                        );
-                    } else if (['joystick', 'analog-joystick'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <circle cx={x} cy={y} r="11" stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" />
-                                <circle cx={x-2} cy={y-2} r="5" fill="#64748B" stroke="#FFFFFF" strokeWidth="1" />
-                            </>
-                        );
-                    } else if (['potentiometer', 'slide-potentiometer'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <circle cx={x} cy={y} r="9" stroke="#E2E8F0" strokeWidth="1.5" fill="none" />
-                                <line x1={x} y1={y} x2={x+6} y2={y+6} stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
-                            </>
-                        );
-                    } else if (['buzzer', 'speaker'].some(t => type.includes(t))) {
-                        iconVisual = <path d={`M ${x-8} ${y-5} H ${x-3} L ${x+4} ${y-9} V ${y+9} L ${x-3} ${y+5} H ${x-8} Z`} fill="#475569" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />;
-                    } else if (['hc-sr04', 'ultrasonic'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <circle cx={x-7} cy={y} r="6" fill="#1E293B" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-                                <circle cx={x-7} cy={y} r="3" fill="#64748B" />
-                                <circle cx={x+7} cy={y} r="6" fill="#1E293B" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-                                <circle cx={x+7} cy={y} r="3" fill="#64748B" />
-                            </>
-                        );
-                    } else if (['dht', 'temperature', 'humidity'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <rect x={x-10} y={y-10} width="20" height="20" rx="2" fill="#0EA5E9" opacity="0.8" />
-                                <line x1={x-6} y1={y-6} x2={x+6} y2={y-6} stroke="#FFFFFF" strokeWidth="1" />
-                                <line x1={x-6} y1={y-2} x2={x+6} y2={y-2} stroke="#FFFFFF" strokeWidth="1" />
-                                <line x1={x-6} y1={y+2} x2={x+6} y2={y+2} stroke="#FFFFFF" strokeWidth="1" />
-                                <line x1={x-6} y1={y+6} x2={x+6} y2={y+6} stroke="#FFFFFF" strokeWidth="1" />
-                            </>
-                        );
-                    } else if (['pushbutton', 'button'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <circle cx={x} cy={y} r="7" fill="#EF4444" stroke="#FFFFFF" strokeWidth="1" />
-                                <rect x={x-11} y={y-11} width="22" height="22" rx="2" stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
-                            </>
-                        );
-                    } else if (['lcd', 'screen', 'oled', 'ssd1306', 'ili9341'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <rect x={x-14} y={y-8} width="28" height="16" rx="1" fill="#1E3A8A" stroke="#3B82F6" strokeWidth="1.5" />
-                                <line x1={x-10} y1={y-4} x2={x+10} y2={y-4} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
-                                <line x1={x-10} y1={y} x2={x+10} y2={y} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
-                                <line x1={x-10} y1={y+4} x2={x+10} y2={y+4} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
-                            </>
-                        );
-                    } else if (['battery', 'power'].some(t => type.includes(t))) {
-                        iconVisual = (
-                            <>
-                                <rect x={x-10} y={y-6} width="20" height="12" rx="1" fill="#10B981" stroke="#FFFFFF" strokeWidth="1" />
-                                <rect x={x+10} y={y-2} width="2" height="4" fill="#FFFFFF" />
-                            </>
-                        );
-                    } else {
-                        iconVisual = <circle cx={x} cy={y} r="5" fill={accent} opacity="0.6" />;
-                    }
-
-                    return (
-                        <g key={node.id}>
-                            <rect
-                                x={x - 18}
-                                y={y - 18}
-                                width="36"
-                                height="36"
-                                rx="4"
-                                fill="#1E293B"
-                                stroke="rgba(255,255,255,0.2)"
-                                strokeWidth="1"
-                            />
-                            {iconVisual}
-                            <text
-                                x={x}
-                                y={y + 24}
-                                fill="rgba(15, 23, 42, 0.6)"
-                                fontSize="6"
-                                textAnchor="middle"
-                                fontFamily="sans-serif"
+                            <foreignObject
+                                key={node.id}
+                                x={x - compWidth / 2}
+                                y={y - compHeight / 2}
+                                width={compWidth}
+                                height={compHeight}
+                                style={{ overflow: 'visible', pointerEvents: 'none' }}
                             >
-                                {label.substring(0, 8)}
-                            </text>
-                        </g>
-                    );
-                })}
-            </svg>
+                                <div style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: `rotate(${rotation}deg)`,
+                                    transformOrigin: 'center center'
+                                }}>
+                                    {React.createElement(TagName, mappedProps)}
+                                </div>
+                            </foreignObject>
+                        );
+                    })}
+                </svg>
+            </div>
+        );
+    }
+
+    // ── Mode 2: Logix / Python (Code Session View) ──
+    if (mode === 'python') {
+        let rawCode = projectContent.code || '';
+        if (!rawCode && projectContent.projectFiles) {
+            const files = projectContent.projectFiles;
+            rawCode = files['main.py'] || Object.values(files)[0] || '';
+        }
+        if (!rawCode) rawCode = `# ${projectName}\nimport time\n\ndef main():\n    print("System active")\n    time.sleep(1)\n\nif __name__ == "__main__":\n    main()`;
+
+        const codeLines = rawCode.split('\n').slice(0, 6);
+
+        return (
+            <div className="project-card-visual actual-code-session">
+                <div className="code-session-header">
+                    <span className="dot dot-red" />
+                    <span className="dot dot-yellow" />
+                    <span className="dot dot-green" />
+                    <span className="code-filename">{projectContent.activeFile || 'main.py'}</span>
+                </div>
+                <div className="code-session-body">
+                    {codeLines.map((line: string, i: number) => {
+                        const formatted = line.replace(/(import|from|def|class|return|if|else|elif|while|for|in|print|True|False|None|async|await)/g, '<span class="kw">$1</span>');
+                        return (
+                            <div key={i} className="code-line">
+                                <span className="line-num">{i + 1}</span>
+                                <span className="line-text" dangerouslySetInnerHTML={{ __html: formatted }} />
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    }
+
+    // ── Mode 3: Creova (Phone Canvas View) ──
+    if (mode === 'creova') {
+        const screens = projectContent.screens || [];
+        const activeScreen = screens[0] || {};
+        const components = activeScreen.components || [];
+        const appTitle = projectContent.appName || activeScreen.name || projectName;
+
+        return (
+            <div className="project-card-visual actual-creova-phone">
+                <div className="phone-frame">
+                    <div className="phone-notch" />
+                    <div className="phone-screen" style={{ backgroundColor: activeScreen.backgroundColor || '#F8FAFC' }}>
+                        <div className="phone-app-bar" style={{ backgroundColor: activeScreen.titleBarColor || accent }}>
+                            <span>{appTitle}</span>
+                        </div>
+                        <div className="phone-components-container">
+                            {components.length > 0 ? (
+                                components.slice(0, 4).map((comp: any, idx: number) => {
+                                    const type = comp.type || comp.componentType || 'Label';
+                                    const text = comp.text || comp.props?.text || comp.name || type;
+                                    
+                                    if (type.includes('Button')) {
+                                        return (
+                                            <div key={idx} className="phone-comp-button" style={{ backgroundColor: comp.props?.backgroundColor || accent }}>
+                                                {text}
+                                            </div>
+                                        );
+                                    }
+                                    if (type.includes('TextBox') || type.includes('Input')) {
+                                        return (
+                                            <div key={idx} className="phone-comp-input">
+                                                <span>{text}</span>
+                                            </div>
+                                        );
+                                    }
+                                    if (type.includes('Slider')) {
+                                        return (
+                                            <div key={idx} className="phone-comp-slider">
+                                                <div className="slider-track" />
+                                                <div className="slider-thumb" style={{ backgroundColor: accent }} />
+                                            </div>
+                                        );
+                                    }
+                                    if (type.includes('Switch') || type.includes('Toggle')) {
+                                        return (
+                                            <div key={idx} className="phone-comp-switch">
+                                                <span>{text}</span>
+                                                <div className="switch-pill" />
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div key={idx} className="phone-comp-label" style={{ color: comp.props?.textColor || '#1E293B' }}>
+                                            {text}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="phone-empty-canvas">
+                                    <div className="phone-mock-btn" style={{ backgroundColor: accent }}>Welcome</div>
+                                    <div className="phone-mock-input">Enter details...</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Mode 6: Vision3D (3D WebGL Canvas View) ──
+    if (mode === 'vision3d') {
+        const shapes = projectContent.shapes || [];
+        return (
+            <Vision3DCardVisual shapes={shapes} accent={accent} />
+        );
+    }
+
+    // ── Mode 4 & 5: Junior (Ignite) & Intermediate (Embed) (Workspace Stage View) ──
+    const scene = projectContent.scenes?.[0] || projectContent;
+    const spritesList = scene.sprites || projectContent.sprites || [];
+    const backdropName = scene.backdropName || scene.name || (mode === 'junior' ? 'Ignite Stage' : 'Embed Stage');
+
+    return (
+        <div className="project-card-visual actual-workspace-stage">
+            <div className="stage-bg-grid" />
+            
+            {/* Stage Top Controls Bar */}
+            <div className="stage-top-bar">
+                <div className="stage-flag-controls">
+                    <span className="mini-flag-btn" title="Run script">🚩</span>
+                    <span className="mini-stop-btn" title="Stop">🛑</span>
+                </div>
+                <span className="stage-title-tag">{backdropName}</span>
+            </div>
+
+            <div className="stage-workspace-split">
+                {/* Left Column: Visual Blockly Script Preview Stack */}
+                <div className="stage-blocks-stack">
+                    <div className="block-chip block-event">when 🚩 clicked</div>
+                    <div className="block-chip block-motion">move 10 steps</div>
+                    <div className="block-chip block-looks">say Hello!</div>
+                </div>
+
+                {/* Right Column: Character Sprites Stage Canvas */}
+                <div className="stage-sprites-canvas">
+                    {Array.isArray(spritesList) && spritesList.length > 0 ? (
+                        spritesList.slice(0, 2).map((sprite: any, idx: number) => {
+                            const name = sprite.name || `Sprite ${idx + 1}`;
+                            const costumeSrc = sprite.costumeUrl || sprite.icon || (typeof sprite.costumes === 'object' ? (sprite.costumes[sprite.currentCostume] || sprite.costumes.default) : null);
+                            const finalSrc = costumeSrc && !costumeSrc.startsWith('http') && !costumeSrc.startsWith('/') ? `/${costumeSrc}` : costumeSrc;
+
+                            return (
+                                <div key={idx} className="stage-sprite-character">
+                                    {finalSrc ? (
+                                        <img src={finalSrc} alt={name} className="sprite-char-img" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                                    ) : (
+                                        <div className="sprite-avatar-badge" style={{ backgroundColor: accent }}>
+                                            <Cpu size={18} color="#FFF" />
+                                        </div>
+                                    )}
+                                    <span className="sprite-char-name">{name}</span>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="stage-sprite-character">
+                            <div className="sprite-avatar-badge" style={{ backgroundColor: accent }}>
+                                <Cpu size={20} color="#FFF" />
+                            </div>
+                            <span className="sprite-char-name">Robot</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface ProjectBoardBadgeProps {
+    project: CloudProject;
+}
+
+const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
+    const [board, setBoard] = useState<string | null>(() => {
+        if (project.metadata) {
+            try {
+                const parsed = typeof project.metadata === 'string' ? JSON.parse(project.metadata) : project.metadata;
+                if (parsed?.board) return parsed.board;
+            } catch (e) {}
+        }
+        return null;
+    });
+
+    useEffect(() => {
+        if (board) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                if (!project.fileUrl) return;
+                const fullUrl = project.fileUrl.startsWith('http')
+                    ? project.fileUrl
+                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.fileUrl}`;
+                const res = await fetch(fullUrl);
+                if (!res.ok) return;
+                const text = await res.text();
+                const content = isPacked(text) ? unpack<any>(text) : JSON.parse(text);
+                const loadedNodes = content.nodes || content.circuit?.nodes || [];
+                const detectedBoard = content.board || (loadedNodes.some((n: any) => n.data?.type === 'esp32-c3' || n.data?.type === 'esp32') ? 'esp32-c3' : 'arduino-uno');
+                if (!cancelled && detectedBoard) {
+                    setBoard(detectedBoard);
+                }
+            } catch (err) {}
+        })();
+        return () => { cancelled = true; };
+    }, [project.fileUrl, project.metadata, board]);
+
+    if (project.mode !== 'electra' && project.mode !== 'intermediate') return null;
+    const targetBoard = board || 'arduino-uno';
+
+    const displayLabel = (targetBoard === 'esp32-c3' || targetBoard === 'esp32') ? 'ESP32-C3' : 'Arduino Uno';
+    const isEsp32 = targetBoard === 'esp32-c3' || targetBoard === 'esp32';
+
+    return (
+        <span className={`my-project-board-tag ${isEsp32 ? 'tag-esp32' : 'tag-arduino'}`}>
+            <Cpu size={12} style={{ marginRight: '4px' }} />
+            {displayLabel}
+        </span>
+    );
+};
+
+interface DeleteConfirmationModalProps {
+    projectName: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
+const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ projectName, onConfirm, onCancel }) => {
+    return (
+        <div className="custom-modal-overlay" onClick={onCancel}>
+            <div className="custom-delete-modal" onClick={(e) => e.stopPropagation()}>
+                <button className="modal-close-btn" onClick={onCancel} title="Close">
+                    <X size={18} />
+                </button>
+                
+                <div className="delete-modal-icon-wrapper">
+                    <div className="delete-modal-icon">
+                        <AlertTriangle size={28} color="#EF4444" />
+                    </div>
+                </div>
+
+                <h3 className="delete-modal-title">Delete Project</h3>
+                <p className="delete-modal-description">
+                    Are you sure you want to delete <strong className="delete-modal-project-name">"{projectName}"</strong>? This action cannot be undone.
+                </p>
+
+                <div className="delete-modal-actions">
+                    <button className="delete-modal-cancel-btn" onClick={onCancel}>
+                        Cancel
+                    </button>
+                    <button className="delete-modal-confirm-btn" onClick={onConfirm}>
+                        <Trash2 size={16} style={{ marginRight: '6px' }} />
+                        Delete Project
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -664,6 +1025,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<CloudProject | null>(null);
     const [openingId, setOpeningId] = useState<string | null>(null);
     const [sharingProject, setSharingProject] = useState<CloudProject | null>(null);
     const [selectedMode, setSelectedMode] = useState<string | null>(() => {
@@ -739,9 +1101,15 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         }
     };
 
-    const handleDeleteProject = async (e: React.MouseEvent, project: CloudProject) => {
+    const handleDeleteProject = (e: React.MouseEvent, project: CloudProject) => {
         e.stopPropagation();
-        if (!window.confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
+        setProjectToDelete(project);
+    };
+
+    const confirmDeleteProject = async () => {
+        if (!projectToDelete) return;
+        const project = projectToDelete;
+        setProjectToDelete(null);
         setDeletingId(project.id);
         try {
             await deleteCloudProject(project.id);
@@ -820,7 +1188,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         return acc;
     }, {} as Record<string, CloudProject[]>);
 
-    const sortedModes = ['junior', 'intermediate', 'python', 'neura', 'electra', 'creova'];
+    const sortedModes = ['junior', 'intermediate', 'python', 'neura', 'electra', 'vision3d', 'creova'];
 
     if (!isAuthenticated) {
         return (
@@ -1036,11 +1404,14 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                     />
                                 </div>
                             ) : (
-                                renderCardVisual(selectedMode, project.name)
+                                <SavedProjectCardVisual projectId={project.id} fileUrl={project.fileUrl} mode={project.mode || selectedMode} projectName={project.name} accent={meta?.accent || '#6366F1'} />
                             )}
 
                             <div className="my-project-card-content">
-                                <h4 className="my-project-card-name" title={project.name}>{highlightMatch(project.name, searchQuery)}</h4>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                                    <h4 className="my-project-card-name" title={project.name} style={{ margin: 0, flex: 1 }}>{highlightMatch(project.name, searchQuery)}</h4>
+                                    <ProjectBoardBadge project={project} />
+                                </div>
                                 <div className="my-project-card-footer-row">
                                     <div className="my-project-card-date">
                                         <Calendar size={14} style={{ marginRight: '4px', opacity: 0.7 }} />
@@ -1087,6 +1458,14 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                     project={sharingProject}
                     onClose={() => setSharingProject(null)}
                     onUpdate={handleShareUpdate}
+                />
+            )}
+
+            {projectToDelete && (
+                <DeleteConfirmationModal
+                    projectName={projectToDelete.name}
+                    onConfirm={confirmDeleteProject}
+                    onCancel={() => setProjectToDelete(null)}
                 />
             )}
         </div>

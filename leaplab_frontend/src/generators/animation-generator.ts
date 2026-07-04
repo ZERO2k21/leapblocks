@@ -1649,22 +1649,22 @@ export class AnimationCompiler {
                 break;
             }
             case 'tts_set_voice': {
-                const voice = block.getFieldValue('VOICE') || '';
+                const voice = this.compileStringValue(block, 'VOICE');
                 step = { type: 'tts_set_voice', voice } as any;
                 break;
             }
             case 'tts_set_rate': {
-                const rate = Number(block.getFieldValue('RATE') || 1);
+                const rate = this.compileNumberValue(block, 'RATE');
                 step = { type: 'tts_set_rate', rate } as any;
                 break;
             }
             case 'tts_set_volume': {
-                const volume = Number(block.getFieldValue('VOLUME') || 1);
+                const volume = this.compileNumberValue(block, 'VOLUME');
                 step = { type: 'tts_set_volume', volume } as any;
                 break;
             }
             case 'tts_set_pitch': {
-                const pitch = Number(block.getFieldValue('PITCH') || 1);
+                const pitch = this.compileNumberValue(block, 'PITCH');
                 step = { type: 'tts_set_pitch', pitch } as any;
                 break;
             }
