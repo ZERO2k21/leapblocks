@@ -1,0 +1,760 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Neura ML — Single Tailwind CSS File
+   Covers all 36 components: buttons, inputs, progress, layout, dark theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── SECTION 1: CSS Custom Properties (Design Tokens) ──────────────────── */
+
+@layer base {
+  :root {
+    /* Accent */
+    --ml-accent: #7c3aed;
+    --ml-accent-light: #a78bfa;
+    --ml-accent-muted: rgba(124, 58, 237, 0.1);
+
+    /* Backgrounds */
+    --ml-bg: #f0f2f7;
+    --ml-surface: #ffffff;
+    --ml-well: #f4f5f9;
+    --ml-btn-idle: #ebedf3;
+
+    /* Borders */
+    --ml-border: #e8ebf2;
+    --ml-border-strong: #d5dae6;
+
+    /* Text */
+    --ml-text-primary: #1a1d2e;
+    --ml-text-secondary: #6b7280;
+    --ml-text-muted: #9ca3af;
+    --ml-text-disabled: #c0c4cc;
+
+    /* Feedback */
+    --ml-error-text: #ef4444;
+    --ml-success-bg: #f0fdf4;
+    --ml-success-border: #bbf7d0;
+    --ml-success-dot: #22c55e;
+    --ml-success-text: #16a34a;
+
+    /* Shadows */
+    --ml-card-premium: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+    --ml-card-premium-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.1);
+    --ml-card-premium-active: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08);
+
+    /* Transitions */
+    --neura-transition: cubic-bezier(0.4, 0, 0.2, 1);
+    --neura-transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .neura-dark {
+    --ml-bg: #0f1117;
+    --ml-surface: #1a1d2e;
+    --ml-well: #13151f;
+    --ml-btn-idle: #252836;
+    --ml-border: #2a2d3e;
+    --ml-border-strong: #3a3d4e;
+    --ml-text-primary: #f1f5f9;
+    --ml-text-secondary: #94a3b8;
+    --ml-text-muted: #64748b;
+    --ml-text-disabled: #475569;
+    --ml-error-text: #f87171;
+    --ml-success-bg: rgba(34, 197, 94, 0.1);
+    --ml-success-border: rgba(34, 197, 94, 0.2);
+    --ml-success-dot: #4ade80;
+    --ml-success-text: #4ade80;
+    --ml-card-premium: 0 2px 8px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --ml-card-premium-hover: 0 4px 16px rgba(0, 0, 0, 0.3), 0 16px 48px rgba(0, 0, 0, 0.4);
+    --ml-card-premium-active: 0 1px 4px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ── SECTION 2: Tailwind @theme Tokens ─────────────────────────────────── */
+
+@theme {
+  /* Color tokens — mapped to CSS variables */
+  --color-ml-bg: var(--ml-bg);
+  --color-ml-surface: var(--ml-surface);
+  --color-ml-well: var(--ml-well);
+  --color-ml-btn-idle: var(--ml-btn-idle);
+  --color-ml-border: var(--ml-border);
+  --color-ml-border-strong: var(--ml-border-strong);
+  --color-ml-text-primary: var(--ml-text-primary);
+  --color-ml-text-secondary: var(--ml-text-secondary);
+  --color-ml-text-muted: var(--ml-text-muted);
+  --color-ml-text-disabled: var(--ml-text-disabled);
+  --color-ml-error-text: var(--ml-error-text);
+  --color-ml-success-bg: var(--ml-success-bg);
+  --color-ml-success-border: var(--ml-success-border);
+  --color-ml-success-dot: var(--ml-success-dot);
+  --color-ml-success-text: var(--ml-success-text);
+  --color-ml-accent: var(--ml-accent);
+  --color-ml-accent-light: var(--ml-accent-light);
+  --color-ml-accent-muted: var(--ml-accent-muted);
+
+  /* Shadow tokens */
+  --shadow-ml-card: var(--ml-card-premium);
+  --shadow-ml-card-hover: var(--ml-card-premium-hover);
+  --shadow-modal: 0 32px 80px rgba(0, 0, 0, 0.6);
+
+  /* Animation tokens */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-fade-in-scale: fade-in-scale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-slide-in-up: slide-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-celebration: celebration 0.5s ease-out;
+  --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
+  --animate-dot-pulse: dot-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── SECTION 3: Custom Component Classes ───────────────────────────────── */
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+.neura-button-primary {
+  position: relative;
+  background: linear-gradient(135deg, #0a015a 0%, #15027a 50%, #0a015a 100%);
+  background-size: 200% 200%;
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 14px rgba(10, 1, 90, 0.25), 0 1px 3px rgba(10, 1, 90, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.35s var(--neura-transition);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.neura-button-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.neura-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10, 1, 90, 0.35), 0 2px 6px rgba(10, 1, 90, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background-position: 100% 0;
+}
+
+.neura-button-primary:hover::before {
+  left: 100%;
+}
+
+.neura-button-primary:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 8px rgba(10, 1, 90, 0.3);
+  transition-duration: 0.1s;
+}
+
+.neura-button-secondary {
+  background-color: transparent;
+  color: #0a015a;
+  padding: 0.75rem 1.75rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1.5px solid rgba(10, 1, 90, 0.25);
+  transition: all 0.3s var(--neura-transition);
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  position: relative;
+}
+
+.neura-button-secondary::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(10, 1, 90, 0.1), rgba(21, 2, 122, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.neura-button-secondary:hover {
+  border-color: rgba(10, 1, 90, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.1);
+}
+
+.neura-button-secondary:hover::after {
+  opacity: 1;
+}
+
+.neura-button-secondary:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
+}
+
+.neura-button-ghost {
+  color: #0a015a;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid rgba(10, 1, 90, 0.1);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s var(--neura-transition);
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+}
+
+.neura-button-ghost:hover {
+  background: white;
+  border-color: rgba(10, 1, 90, 0.2);
+  box-shadow: 0 4px 12px rgba(10, 1, 90, 0.1);
+  transform: translateY(-1px);
+}
+
+.neura-button-ghost:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+
+.neura-input {
+  border: 2px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.3s var(--neura-transition);
+  background-color: #f8fafc;
+  font-size: 14px;
+}
+
+.neura-input:hover {
+  border-color: #cbd5e1;
+}
+
+.neura-input:focus {
+  border-color: var(--ml-accent);
+  background-color: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 1, 90, 0.1), 0 2px 8px rgba(10, 1, 90, 0.06);
+}
+
+.neura-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--ml-border);
+  background: var(--ml-well);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ml-text-primary);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.neura-form-input:hover {
+  border-color: var(--ml-border-strong);
+}
+
+.neura-form-input:focus {
+  border-color: var(--ml-accent);
+  background: var(--ml-surface);
+  box-shadow: 0 0 0 3px var(--ml-accent-muted);
+}
+
+.neura-form-input::placeholder {
+  color: var(--ml-text-muted);
+}
+
+/* ── Badge ─────────────────────────────────────────────────────────────── */
+
+.neura-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.neura-badge-info {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #3730a3;
+  box-shadow: 0 1px 3px rgba(55, 48, 163, 0.12);
+}
+
+/* ── Gradient Text ─────────────────────────────────────────────────────── */
+
+.neura-gradient-text {
+  background: linear-gradient(135deg, #0a015a, #4338ca, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Shimmer Overlay ───────────────────────────────────────────────────── */
+
+.neura-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.neura-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: sweep-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────── */
+
+.neura-progress-premium {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(124, 58, 237, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill,
+.neura-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd);
+  background-size: 200% 100%;
+  animation: shimmer-border 2s ease infinite;
+  transition: width 0.6s var(--neura-transition);
+  position: relative;
+}
+
+.neura-progress-premium .neura-progress-fill::after,
+.neura-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: sweep-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Skeleton Loading ──────────────────────────────────────────────────── */
+
+.neura-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer-border 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.neura-dark .neura-skeleton {
+  background: linear-gradient(90deg, #1a1d2e 25%, #252836 50%, #1a1d2e 75%);
+  background-size: 200% 100%;
+}
+
+/* ── Section Title ─────────────────────────────────────────────────────── */
+
+.neura-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ml-accent);
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Connector Line (SVG) ──────────────────────────────────────────────── */
+
+.neura-connector-line {
+  stroke-dasharray: 8 4;
+  animation: dash-flow 1.2s linear infinite;
+}
+
+/* ── SECTION 4: ML Layout Classes ──────────────────────────────────────── */
+
+.ml-flow-container {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+}
+
+.ml-flow-columns {
+  display: flex;
+  align-items: stretch;
+  gap: 48px;
+  width: 100%;
+  padding: 24px 32px;
+}
+
+.ml-flow-left {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  max-width: 580px;
+}
+
+.ml-flow-center {
+  flex: 1;
+  min-width: 340px;
+  max-width: 400px;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.ml-flow-right {
+  flex: 1;
+  min-width: 340px;
+  max-width: 400px;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.ml-flow-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ml-card-premium {
+  background: var(--ml-surface);
+  border: 1px solid var(--ml-border);
+  border-radius: 16px;
+  box-shadow: var(--ml-card-premium);
+  transition: box-shadow 0.3s var(--neura-transition), border-color 0.3s var(--neura-transition);
+}
+
+.ml-card-premium:hover {
+  box-shadow: var(--ml-card-premium-hover);
+  border-color: var(--ml-border-strong);
+}
+
+.ml-card-premium-inner {
+  background: var(--ml-surface);
+  border: 1px solid var(--ml-border);
+  border-radius: 16px;
+  box-shadow: var(--ml-card-premium);
+}
+
+.ml-btn-hover {
+  transition: border-color 0.2s var(--neura-transition), color 0.2s var(--neura-transition);
+}
+
+.ml-btn-hover:hover {
+  border-color: var(--ml-accent);
+  color: var(--ml-accent);
+}
+
+/* ── SECTION 5: Keyframe Animations ────────────────────────────────────── */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes celebration {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(124, 58, 237, 0.6);
+  }
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes sweep-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes shimmer-border {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+@keyframes mesh-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes hero-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow-ring-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes brain-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.6));
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-8deg);
+  }
+  30% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes hero-chip-scan {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(400%);
+    opacity: 0;
+  }
+}
+
+/* ── Stagger Utilities ─────────────────────────────────────────────────── */
+
+@utility stagger-1 {
+  animation-delay: 0.1s;
+}
+
+@utility stagger-2 {
+  animation-delay: 0.2s;
+}
+
+@utility stagger-3 {
+  animation-delay: 0.3s;
+}
+
+@utility stagger-4 {
+  animation-delay: 0.4s;
+}
+
+@utility stagger-5 {
+  animation-delay: 0.5s;
+}
+
+@utility stagger-6 {
+  animation-delay: 0.6s;
+}
+
+@utility stagger-7 {
+  animation-delay: 0.7s;
+}
+
+/* ── Utility: animate-mesh-shift ───────────────────────────────────────── */
+
+@utility animate-mesh-shift {
+  animation: mesh-shift 8s ease-in-out infinite;
+}
+
+@utility animate-hero-stagger {
+  animation: hero-stagger 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@utility animate-hero-scale {
+  animation: hero-scale 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@utility animate-glow-ring-rotate {
+  animation: glow-ring-rotate 12s linear infinite;
+}
+
+@utility animate-brain-glow {
+  animation: brain-glow 3s ease-in-out infinite;
+}
+
+@utility animate-wave {
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
