@@ -38,6 +38,7 @@ interface SpritePanelProps {
   onRemoveBackground?: (spriteId: string) => void;
   onOpenSpriteLibrary?: () => void;
   onOpenBackdropLibrary?: () => void;
+  onUploadSprite?: () => void;
   stageManager: StageManager;
   backdropVersion?: number;
   isFullscreen?: boolean;
@@ -52,6 +53,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onDeleteSprite,
   onOpenSpriteLibrary,
   onOpenBackdropLibrary,
+  onUploadSprite,
   stageManager,
   backdropVersion: _backdropVersion,
   isFullscreen = false,
@@ -327,7 +329,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                     </svg>
                   ),
                   label: "Upload",
-                  onClick: () => { },
+                  onClick: () => onUploadSprite?.(),
                 },
                 {
                   id: "surprise",

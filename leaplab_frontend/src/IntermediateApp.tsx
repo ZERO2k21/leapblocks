@@ -645,6 +645,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // Drag-tracking refs for block-to-sprite copying
     const draggedBlockStateRef = useRef<any>(null);
+
+    // Upload sprite file input ref
+    const uploadSpriteFileRef = useRef<HTMLInputElement>(null);
     const lastPointerPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
     // Hardware
@@ -2931,6 +2934,69 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         addLog(`Added sprite: ${name}`);
 
+    }, [sprites, addLog, triggerUpdate, saveCurrentSpriteWorkspace]);
+
+    // Handle upload sprite from file
+    const handleUploadSprite = useCallback(() => {
+        uploadSpriteFileRef.current?.click();
+    }, []);
+
+    const handleUploadSpriteFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const src = String(event.target?.result || '');
+            const name = file.name.replace(/\.[^/.]+$/, '');
+
+            saveCurrentSpriteWorkspace();
+
+            const id = `sprite_${Date.now()}`;
+            const newSprite = new Sprite(id, name, triggerUpdate, 'cat');
+
+            // Position the new sprite
+            const spreadPositions = [
+                { x: 120, y: 0 }, { x: -120, y: 0 }, { x: 0, y: 80 },
+                { x: 0, y: -80 }, { x: -160, y: 100 }, { x: 160, y: 100 },
+            ];
+            const MIN_DIST = 80;
+            let assigned = false;
+            for (const pos of spreadPositions) {
+                const tooClose = sprites.some(s => Math.abs(s.x - pos.x) < MIN_DIST && Math.abs(s.y - pos.y) < MIN_DIST);
+                if (!tooClose) { newSprite.setX(pos.x); newSprite.setY(pos.y); assigned = true; break; }
+            }
+            if (!assigned) {
+                newSprite.setX(Math.floor(Math.random() * 60) - 30);
+                newSprite.setY(Math.floor(Math.random() * 60) - 30);
+            }
+
+            await newSprite.addCostume(name, src);
+            newSprite.switchCostume(name);
+
+            const defaultSound = getDefaultSoundForSprite([], name);
+            await newSprite.addSound(defaultSound.name, defaultSound.src);
+
+            animationVM.registerSprite(newSprite);
+            spriteWorkspacesRef.current.set(id, {});
+
+            if (workspaceRef.current) {
+                isLoadingWorkspaceRef.current = true;
+                Blockly.Events.disable();
+                workspaceRef.current.clear();
+                Blockly.Events.enable();
+                setTimeout(() => { isLoadingWorkspaceRef.current = false; }, 50);
+            }
+
+            activeSpriteIdRef.current = id;
+            setSelectedSpriteId(id);
+            triggerUpdate();
+            addLog(`Uploaded sprite: ${name}`);
+        };
+        reader.readAsDataURL(file);
+
+        // Reset the input so the same file can be selected again
+        if (uploadSpriteFileRef.current) uploadSpriteFileRef.current.value = '';
     }, [sprites, addLog, triggerUpdate, saveCurrentSpriteWorkspace]);
 
 
@@ -6219,6 +6285,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
+            {/* Hidden file input for sprite upload */}
+            <input
+                ref={uploadSpriteFileRef}
+                type="file"
+                accept="image/*,.svg"
+                style={{ display: 'none' }}
+                onChange={handleUploadSpriteFile}
+            />
+
             {/* Sprite Library Modal */}
             {showSpriteLibrary && (
                 <React.Suspense fallback={<Loader />}>
@@ -6643,6 +6718,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                 onRemoveBackground={handleRemoveBackground}
                                                 onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
                                                 onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                onUploadSprite={handleUploadSprite}
                                                 stageManager={stageManager}
                                                 backdropVersion={backdropRefresh}
                                                 isFullscreen={isFullscreen}
