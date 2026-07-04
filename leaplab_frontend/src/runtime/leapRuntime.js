@@ -130,9 +130,13 @@ class LeapRuntime {
                     await new Promise(resolve => setTimeout(resolve, saySecs * 1000));
                     sprite.say(''); // Clear
                     break;
-                case 'looks_switchcostumeto':
-                    costumeEngine.setCostume(sprite, fields.COSTUME ? fields.COSTUME.value : await this.getInputValue(inputs.COSTUME, spriteId));
+                case 'looks_switchcostumeto': {
+                    const costumeVal = fields.COSTUME ? fields.COSTUME.value : await this.getInputValue(inputs.COSTUME, spriteId);
+                    if (costumeVal && typeof costumeVal === 'string') {
+                        costumeEngine.setCostume(sprite, costumeVal);
+                    }
                     break;
+                }
                 case 'looks_nextcostume':
                     costumeEngine.nextCostume(sprite);
                     break;

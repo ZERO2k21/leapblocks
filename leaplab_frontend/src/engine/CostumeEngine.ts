@@ -7,6 +7,18 @@ import { Sprite } from '../stage/Sprite';
 
 class CostumeEngine {
     setCostume(sprite: Sprite, nameOrIndex: string | number) {
+        // Validate costume exists before switching to prevent silent failures
+        if (typeof nameOrIndex === 'string') {
+            const costumeNames = sprite.costumes.map((c: any) => c.name);
+            const found = costumeNames.some((n: string) => n.toLowerCase() === nameOrIndex.toLowerCase());
+            if (!found) {
+                console.warn(`[CostumeEngine] Costume "${nameOrIndex}" not found on sprite "${sprite.name}", falling back to first costume`);
+                if (sprite.costumes.length > 0) {
+                    sprite.switchCostume(sprite.costumes[0].name);
+                }
+                return;
+            }
+        }
         sprite.switchCostume(nameOrIndex);
     }
 
