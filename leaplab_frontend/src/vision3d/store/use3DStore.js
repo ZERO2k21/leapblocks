@@ -51,6 +51,125 @@ export const use3DStore = create((set, get) => ({
     set({ rulerActive: false, rulerOrigin: null, rulerTarget: null, rulerMeasurements: [] });
   },
 
+  // ─── Edit Mode State (Blender-like mesh editing) ───
+  editMode: 'object', // 'object' | 'vertex' | 'edge' | 'face'
+  editShapeId: null,   // shape currently being edited in component mode
+  selectedVertices: [], // [{shapeId, index}] — selected vertex indices
+  selectedEdges: [],    // [{shapeId, a, b}] — selected edge pairs (vertex indices)
+  selectedFaces: [],    // [{shapeId, index}] — selected face indices
+  editTool: null,       // null | 'extrude' | 'bevel' | 'inset' | 'merge' | 'knife'
+  geometryCache: {},    // { [shapeId]: THREE.BufferGeometry } — cached live geometry
+
+  setEditMode: (mode) => {
+    const state = get();
+    log('setEditMode:', mode, state.editMode, '->', mode);
+    if (mode === state.editMode) return;
+    // Exiting edit mode clears component selection
+    if (mode === 'object') {
+      set({
+        editMode: 'object',
+        editShapeId: null,
+        selectedVertices: [],
+        selectedEdges: [],
+        selectedFaces: [],
+        editTool: null,
+      });
+    } else {
+      // Entering edit mode — require exactly one selected shape
+      const shapeId = state.selectedIds.length === 1 ? state.selectedIds[0] : null;
+      set({
+        editMode: mode,
+        editShapeId: shapeId,
+        selectedVertices: [],
+        selectedEdges: [],
+        selectedFaces: [],
+        editTool: null,
+      });
+    }
+  },
+
+  setEditTool: (tool) => {
+    log('setEditTool:', tool);
+    set({ editTool: tool });
+  },
+
+  selectVertex: (shapeId, index, multi = false) => {
+    set((state) => {
+      if (multi) {
+        const exists = state.selectedVertices.find(v => v.shapeId === shapeId && v.index === index);
+        return {
+          selectedVertices: exists
+            ? state.selectedVertices.filter(v => !(v.shapeId === shapeId && v.index === index))
+            : [...state.selectedVertices, { shapeId, index }],
+        };
+      }
+      return { selectedVertices: [{ shapeId, index }] };
+    });
+  },
+
+  selectEdge: (shapeId, a, b, multi = false) => {
+    set((state) => {
+      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
+      const newEdge = { shapeId, a: Math.min(a, b), b: Math.max(a, b) };
+      if (multi) {
+        const exists = state.selectedEdges.find(e => key(e) === key(newEdge));
+        return {
+          selectedEdges: exists
+            ? state.selectedEdges.filter(e => key(e) !== key(newEdge))
+            : [...state.selectedEdges, newEdge],
+        };
+      }
+      return { selectedEdges: [newEdge] };
+    });
+  },
+
+  selectFace: (shapeId, index, multi = false) => {
+    set((state) => {
+      if (multi) {
+        const exists = state.selectedFaces.find(f => f.shapeId === shapeId && f.index === index);
+        return {
+          selectedFaces: exists
+            ? state.selectedFaces.filter(f => !(f.shapeId === shapeId && f.index === index))
+            : [...state.selectedFaces, { shapeId, index }],
+        };
+      }
+      return { selectedFaces: [{ shapeId, index }] };
+    });
+  },
+
+  clearComponentSelection: () => {
+    set({ selectedVertices: [], selectedEdges: [], selectedFaces: [] });
+  },
+
+  cacheGeometry: (shapeId, geometry) => {
+    set((state) => ({
+      geometryCache: { ...state.geometryCache, [shapeId]: geometry },
+    }));
+  },
+
+  removeCachedGeometry: (shapeId) => {
+    set((state) => {
+      const cache = { ...state.geometryCache };
+      delete cache[shapeId];
+      return { geometryCache: cache };
+    });
+  },
+
+  applyGeometryEdit: (shapeId, newGeometry) => {
+    // Apply mutated geometry back to the shape as _customGeometry
+    // and clear parametric cache so it renders from the raw geometry
+    const state = get();
+    const shape = state.shapes.find(s => s.id === shapeId);
+    if (!shape) return;
+    set((s) => ({
+      shapes: s.shapes.map(sh =>
+        sh.id === shapeId ? { ...sh, _customGeometry: newGeometry } : sh
+      ),
+      isProjectDirty: true,
+    }));
+    get().pushHistory();
+  },
+
   // Shape actions
   addShape: (type, position = [0, 1, 0]) => {
     const state = get();

@@ -14,6 +14,8 @@ import { ShapeRenderer } from './ShapeRenderer';
 import { Ruler } from './Ruler';
 import TransformGizmo, { setOrbitRef } from './TransformGizmo';
 import ShapeInteraction from './ShapeInteraction';
+import { MeshEditor } from './MeshEditor';
+import { MeshEditOverlay } from './MeshEditOverlay';
 import { log, debug } from '../utils/logger';
 
 const CameraController = () => {
@@ -119,6 +121,9 @@ const SceneContent = () => {
       <TransformGizmo />
 
       <ShapeInteraction />
+
+      <MeshEditor />
+      <MeshEditOverlay />
 
       <Ruler />
 

@@ -37,6 +37,9 @@ const ShapeInteraction = () => {
       if (e.button !== 0) return;
 
       const store = use3DStore.getState();
+      // Skip object-level interaction when in edit mode (MeshEditor handles it)
+      if (store.editMode !== 'object') return;
+
       const tool = store.activeTool;
       const isCtrl = e.ctrlKey || e.metaKey;
 

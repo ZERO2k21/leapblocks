@@ -75,6 +75,15 @@ const Vision3DApp = ({ onBack }) => {
     distributeShapes,
     importShape,
     clearScene,
+    editMode,
+    setEditMode,
+    editShapeId,
+    editTool,
+    setEditTool,
+    selectedVertices,
+    selectedEdges,
+    selectedFaces,
+    clearComponentSelection,
   } = use3DStore();
 
   const canUndo = historyIndex > 0;
@@ -217,19 +226,68 @@ const Vision3DApp = ({ onBack }) => {
         state.selectShapes(allIds);
       }
 
-      // Escape (deselect)
+      // Escape (deselect / exit edit mode)
       if (e.key === 'Escape') {
-        log('Keyboard: Escape (deselect)');
-        deselectAll();
+        const st = use3DStore.getState();
+        if (st.editMode !== 'object') {
+          log('Keyboard: Escape (exit edit mode)');
+          setEditMode('object');
+        } else {
+          log('Keyboard: Escape (deselect)');
+          deselectAll();
+        }
       }
 
       // --- TinkerCAD-style shortcuts ---
 
       // Tool switching (V, M, R, S)
       if (key === 'v') { debug('Keyboard: V (select tool)'); setTool('select'); }
-      if (key === 'm' && !e.ctrlKey) { debug('Keyboard: M (move tool)'); setTool('move'); }
+      if (key === 'm' && !e.ctrlKey && state.editMode === 'object') { debug('Keyboard: M (move tool)'); setTool('move'); }
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
       if (key === 's' && !e.ctrlKey && !e.shiftKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
+
+      // Edit Mode switching (Tab, 1, 2, 3)
+      if (key === 'tab') {
+        e.preventDefault();
+        if (state.editMode !== 'object') {
+          debug('Keyboard: Tab (exit edit mode)');
+          setEditMode('object');
+        } else if (ids.length === 1) {
+          debug('Keyboard: Tab (enter vertex edit)');
+          setEditMode('vertex');
+        }
+      }
+      if (key === '1' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 1 (vertex edit)');
+        setEditMode(state.editMode === 'vertex' ? 'object' : 'vertex');
+      }
+      if (key === '2' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 2 (edge edit)');
+        setEditMode(state.editMode === 'edge' ? 'object' : 'edge');
+      }
+      if (key === '3' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 3 (face edit)');
+        setEditMode(state.editMode === 'face' ? 'object' : 'face');
+      }
+
+      // Edit tools (E, B, I) — only in edit mode
+      if (state.editMode !== 'object') {
+        if (key === 'e' && state.editMode === 'face' && state.selectedFaces.length > 0) {
+          e.preventDefault();
+          debug('Keyboard: E (extrude face)');
+          setEditTool('extrude');
+        }
+        if (key === 'b' && state.editMode === 'edge' && state.selectedEdges.length > 0) {
+          e.preventDefault();
+          debug('Keyboard: B (bevel edge)');
+          setEditTool('bevel');
+        }
+        if (key === 'i' && state.editMode === 'face' && state.selectedFaces.length > 0) {
+          e.preventDefault();
+          debug('Keyboard: I (inset face)');
+          setEditTool('inset');
+        }
+      }
 
       // Drop to workplane (D)
       if (key === 'd' && !e.ctrlKey) {
@@ -559,6 +617,97 @@ const Vision3DApp = ({ onBack }) => {
                 </button>
               </div>
               <span className="v3d-toolbar-separator" />
+              {/* Edit Mode Group (Blender-like) */}
+              <div className="v3d-toolbar-mode-group">
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'vertex' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'vertex' ? 'object' : 'vertex')}
+                  disabled={selectedIds.length !== 1}
+                  title="Vertex Edit (1)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+                  Vert
+                </button>
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'edge' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'edge' ? 'object' : 'edge')}
+                  disabled={selectedIds.length !== 1}
+                  title="Edge Edit (2)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/></svg>
+                  Edge
+                </button>
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'face' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'face' ? 'object' : 'face')}
+                  disabled={selectedIds.length !== 1}
+                  title="Face Edit (3)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,3 3,21 21,21"/></svg>
+                  Face
+                </button>
+              </div>
+              {/* Edit Tools (shown when in edit mode) */}
+              {editMode !== 'object' && (
+                <>
+                  <span className="v3d-toolbar-separator" />
+                  <div className="v3d-toolbar-actions-group">
+                    {editMode === 'face' && (
+                      <>
+                        <button
+                          className="v3d-toolbar-btn"
+                          onClick={() => setEditTool('extrude')}
+                          disabled={selectedFaces.length === 0}
+                          title="Extrude Face (E)"
+                        >
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
+                          Extrude
+                        </button>
+                        <button
+                          className="v3d-toolbar-btn"
+                          onClick={() => setEditTool('inset')}
+                          disabled={selectedFaces.length === 0}
+                          title="Inset Face (I)"
+                        >
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                          Inset
+                        </button>
+                      </>
+                    )}
+                    {editMode === 'edge' && (
+                      <button
+                        className="v3d-toolbar-btn"
+                        onClick={() => setEditTool('bevel')}
+                        disabled={selectedEdges.length === 0}
+                        title="Bevel Edge (B)"
+                      >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20L20 4"/><path d="M4 20h6l-6-6z" fill="currentColor" opacity="0.2"/></svg>
+                        Bevel
+                      </button>
+                    )}
+                    {editMode === 'vertex' && (
+                      <button
+                        className="v3d-toolbar-btn"
+                        onClick={() => setEditTool('merge')}
+                        disabled={selectedVertices.length < 2}
+                        title="Merge Vertices (M)"
+                      >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 10l4 4"/></svg>
+                        Merge
+                      </button>
+                    )}
+                    <button
+                      className="v3d-toolbar-btn"
+                      onClick={() => clearComponentSelection()}
+                      title="Deselect Components (Escape)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                      Clear
+                    </button>
+                  </div>
+                </>
+              )}
+              <span className="v3d-toolbar-separator" />
               <div className="v3d-toolbar-actions-group">
                 <button
                   className={`v3d-toolbar-btn ${rulerActive ? 'active' : ''}`}
@@ -701,6 +850,12 @@ const Vision3DApp = ({ onBack }) => {
                 <div className="v3d-toolbar-info-item" style={{ color: '#ef4444' }}>
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Ruler
+                </div>
+              )}
+              {editMode !== 'object' && (
+                <div className="v3d-toolbar-info-item" style={{ color: '#a855f7' }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
+                  {editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}
                 </div>
               )}
             </div>

@@ -16,7 +16,10 @@ const setShapeIdRef = (id) => (mesh) => {
 
 export const ShapeRenderer = ({ shape }) => {
   const selectedIds = use3DStore((s) => s.selectedIds);
+  const editMode = use3DStore((s) => s.editMode);
+  const editShapeId = use3DStore((s) => s.editShapeId);
   const isSelected = selectedIds.includes(shape.id);
+  const isEdited = editMode !== 'object' && editShapeId === shape.id;
 
   const geometry = useMemo(() => {
     if (shape._csgGeometry) return shape._csgGeometry;
@@ -73,7 +76,7 @@ export const ShapeRenderer = ({ shape }) => {
       castShadow
       receiveShadow
     >
-      {isSelected && (
+      {isSelected && !isEdited && (
         <mesh scale={[1.02, 1.02, 1.02]} geometry={geometry}>
           <meshBasicMaterial color="#6366f1" wireframe transparent opacity={0.5} />
         </mesh>
