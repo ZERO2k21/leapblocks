@@ -546,6 +546,43 @@ function extractBroadcastValues(workspaceJson: { blocks?: { blocks?: any[] } }, 
     blocks.forEach(scanBlock);
 }
 
+/**
+ * Validate and fix costume dropdown values in workspace JSON before loading.
+ * When a looks_switch_costume block references a costume name that doesn't exist
+ * in the sprite's costume list, Blockly logs a warning. This function replaces
+ * invalid costume names with the first costume in the sprite's list.
+ */
+function fixCostumeDropdownValues(workspaceJson: { blocks?: { blocks?: any[] } }, spriteId: string): void {
+    const blocks = workspaceJson?.blocks?.blocks || [];
+    const sprite = (spriteManager as any).getSprite?.(spriteId) || (spriteManager as any).sprites?.find?.((s: any) => s.id === spriteId);
+    if (!sprite || !sprite.costumes || sprite.costumes.length === 0) return;
+
+    const validCostumeNames = sprite.costumes.map((c: any) => c.name);
+    const firstCostume = validCostumeNames[0];
+
+    const scanBlock = (block: any): void => {
+        if (!block) return;
+        if (block.type === 'looks_switch_costume' && block.fields?.COSTUME) {
+            const currentVal = typeof block.fields.COSTUME === 'string' ? block.fields.COSTUME : block.fields.COSTUME[0];
+            const normalized = String(currentVal);
+            const isValid = validCostumeNames.some((n: string) => n.toLowerCase() === normalized.toLowerCase());
+            if (!isValid) {
+                console.warn(`[fixCostumeDropdownValues] Block ${block.id}: costume "${normalized}" not found in sprite "${sprite.name}", using "${firstCostume}"`);
+                block.fields.COSTUME = [firstCostume];
+            }
+        }
+        if (block.inputs) {
+            for (const key of Object.keys(block.inputs)) {
+                const input = block.inputs[key];
+                if (input?.block) scanBlock(input.block);
+                if (input?.shadow) scanBlock(input.shadow);
+            }
+        }
+        if (block.next?.block) scanBlock(block.next.block);
+    };
+    blocks.forEach(scanBlock);
+}
+
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds'; projectUrl?: string | null }> = ({ onBack, onOpenPython, openTab = 'blocks', projectUrl }) => {
 
     // Detect embed mode (iframe)
@@ -3779,6 +3816,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // Pre-register any broadcast values in the workspace JSON so Blockly
                     // dropdown validation doesn't silently fall back to a wrong value.
                     extractBroadcastValues(migratedSavedJson as any, animationVM);
+                    // Fix costume dropdown values that reference unavailable costumes
+                    fixCostumeDropdownValues(migratedSavedJson as any, s.id);
                     Blockly.serialization.workspaces.load(migratedSavedJson, tempWs);
                     Blockly.Events.enable();
                     compileWs = tempWs;
@@ -3817,10 +3856,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     syncAllWorkspacesRef.current = syncAllWorkspaces;
 
     useEffect(() => {
-        animationVM.onBeforeBroadcast = (message) => {
-            console.log(`[APP] Intercepted broadcast "${message}" - Triggering global synchronization.`);
-            syncAllWorkspaces();
-        };
+        // NOTE: Removed onBeforeBroadcast re-sync. Broadcasts are runtime events
+        // and workspaces are already synced when the user edits them. Re-syncing
+        // on every broadcast caused Blockly dropdown validation warnings for
+        // costume fields that referenced unavailable costume names.
 
         // Bridge leapRuntime broadcasts to AnimationVM for global reach
         (leapRuntime as any)._onBroadcast = (message: string) => {
@@ -3833,11 +3872,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         };
 
         return () => {
-            animationVM.onBeforeBroadcast = undefined;
             (leapRuntime as any)._onBroadcast = undefined;
             (leapRuntime as any)._onBroadcastAndWait = undefined;
         };
-    }, [syncAllWorkspaces]);
+    }, []);
 
     // ═══════════════════════════════════════════════════════════════════════
     // ANIMATION CONTROLS

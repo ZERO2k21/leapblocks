@@ -1189,15 +1189,10 @@ export class AnimationVM {
             }
 
             case 'switch_costume': {
-                // Validate costume name exists on the sprite before switching
+                // CostumeEngine handles validation, fuzzy matching, and fallback
                 const costumeName = step.costume;
-                if (costumeName && typeof costumeName === 'string' && sprite.costumes) {
-                    const found = sprite.costumes.some((c: any) => c.name.toLowerCase() === costumeName.toLowerCase());
-                    if (found) {
-                        costumeEngine.setCostume(sprite, costumeName);
-                    } else {
-                        console.warn(`[AnimationVM] Costume "${costumeName}" not found on sprite "${sprite.name}", skipping switch`);
-                    }
+                if (costumeName && typeof costumeName === 'string') {
+                    costumeEngine.setCostume(sprite, costumeName);
                 }
                 break;
             }
