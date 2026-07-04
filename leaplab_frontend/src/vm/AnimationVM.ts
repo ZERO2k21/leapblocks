@@ -1833,20 +1833,19 @@ export class AnimationVM {
             case 'speech_on_result' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
                     const bodySteps = (step as any).body as ScriptStep[];
-                    (window as any).runtime.speech.onResult((_text: string, _conf: number) => {
+                    (window as any).runtime.speech.onResult(async (text: string, _conf: number) => {
+                        this.setVariable('speech', text);
                         if (bodySteps && bodySteps.length > 0) {
-                            bodySteps.forEach((s: any) => {
-                                if (s.type === 'tts_speak') {
-                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
-                                    (window as any).runtime?.tts?.speak(msg);
-                                } else if (s.type === 'say') {
-                                    const msg = typeof s.message === 'function' ? s.message() : s.message;
-                                    if (sprite) sprite.say(msg);
-                                } else if (s.type === 'data_setvariableto') {
-                                    const val = typeof s.value === 'function' ? s.value() : s.value;
-                                    this.setVariable(s.variable, val);
-                                }
-                            });
+                            const ctx: VMContext = {
+                                sprite,
+                                isRunning: true,
+                                keysPressed: this.keysPressed,
+                                mouseX: this.mouseX,
+                                mouseY: this.mouseY,
+                                stopAll: () => this.stopAll(),
+                            };
+                            const ctrl = new AbortController();
+                            await this.executeSteps(bodySteps, ctx, ctrl.signal);
                         }
                     });
                     vmLog.info('Registered speech result handler');
@@ -3173,6 +3172,10 @@ export class AnimationVM {
 
     getAnswer(): string {
         return this.currentAnswer || '';
+    }
+
+    getSpeechResult(): string {
+        return (this.variables.get('speech') as string) || '';
     }
 }
 

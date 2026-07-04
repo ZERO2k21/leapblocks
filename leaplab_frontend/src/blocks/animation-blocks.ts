@@ -994,6 +994,14 @@ export const animationBlocks = [
         helpUrl: '',
     },
     {
+        type: 'sensing_speech',
+        message0: 'speech',
+        output: ['String', 'Number'],
+        colour: COLORS.sensing,
+        tooltip: 'The last recognized speech text',
+        helpUrl: '',
+    },
+    {
         type: 'sensing_mouse_down',
         message0: 'mouse down?',
         output: 'Boolean',

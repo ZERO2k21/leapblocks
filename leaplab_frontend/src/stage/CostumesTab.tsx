@@ -410,7 +410,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexDirection: 'column',
         backgroundColor: '#f9f9f9',
         overflow: 'hidden',
-        height: '100%',
+        minHeight: 0,
         width: '100%'
     },
     placeholder: {
@@ -426,7 +426,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     splitLayout: {
         display: 'flex',
         height: '100%',
-        width: '100%'
+        width: '100%',
+        minHeight: 0,
     },
     leftPanel: {
         width: '180px',
@@ -565,7 +566,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     rightPanel: {
         flex: 1,
-        minWidth: 0
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
     },
     contextMenu: {
         position: 'fixed',
