@@ -14,7 +14,7 @@ const DEFAULT_FILES = {
     [DEFAULT_ACTIVE_FILE]: 'print("Hello from LeapBlocks Python!")\n',
 };
 
-export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBackdropImg, resetStage }) {
+export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage }) {
     const [projectName, setProjectName] = useState("My Project");
     const [activeFile, setActiveFile] = useState(DEFAULT_ACTIVE_FILE);
     const [projectFiles, setProjectFiles] = useState(DEFAULT_FILES);
@@ -31,6 +31,8 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         const payload = {
             projectFiles,
             activeFile,
+            sprites,
+            backdrop,
         };
         try {
             await fileService.saveProject(projectName, "python", payload);
@@ -39,15 +41,17 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
             console.error('[useFileManager] Failed to save project:', err);
             alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
         }
-    }, [projectName, projectFiles, activeFile]);
+    }, [projectName, projectFiles, activeFile, sprites, backdrop]);
 
     const handleDownloadProject = useCallback(() => {
         const payload = {
             projectFiles,
             activeFile,
+            sprites,
+            backdrop,
         };
         fileService.saveProjectLocally(projectName, "python", payload);
-    }, [projectName, projectFiles, activeFile]);
+    }, [projectName, projectFiles, activeFile, sprites, backdrop]);
 
     const loadProjectData = useCallback((data) => {
         try {
@@ -116,9 +120,11 @@ export function useFileManager({ addLog, setSprites, setSelectedSpriteId, setBac
         const payload = {
             projectFiles,
             activeFile,
+            sprites,
+            backdrop,
         };
         fileService.shareProject(projectName, "python", payload);
-    }, [projectName, projectFiles, activeFile]);
+    }, [projectName, projectFiles, activeFile, sprites, backdrop]);
 
     const handleDeleteFile = useCallback((file) => {
         if (Object.keys(projectFiles).length <= 1) return;

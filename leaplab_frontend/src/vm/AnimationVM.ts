@@ -1188,9 +1188,19 @@ export class AnimationVM {
                 break;
             }
 
-            case 'switch_costume':
-                costumeEngine.setCostume(sprite, step.costume);
+            case 'switch_costume': {
+                // Validate costume name exists on the sprite before switching
+                const costumeName = step.costume;
+                if (costumeName && typeof costumeName === 'string' && sprite.costumes) {
+                    const found = sprite.costumes.some((c: any) => c.name.toLowerCase() === costumeName.toLowerCase());
+                    if (found) {
+                        costumeEngine.setCostume(sprite, costumeName);
+                    } else {
+                        console.warn(`[AnimationVM] Costume "${costumeName}" not found on sprite "${sprite.name}", skipping switch`);
+                    }
+                }
                 break;
+            }
 
             case 'switch_backdrop':
                 stageManager.setBackdrop(step.backdrop);

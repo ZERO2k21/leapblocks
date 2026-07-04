@@ -2576,6 +2576,25 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 const migratedJson = migrateWorkspaceBlocks(json);
                 Blockly.serialization.workspaces.load(migratedJson, workspaceRef.current);
                 console.log('[APP] Successfully loaded workspace for target:', spriteId);
+
+                // Fix: Validate looks_switch_costume dropdown values against current sprite's costumes.
+                // Blockly rejects values not in the dynamic dropdown options, setting them to null.
+                // We fix this by setting invalid fields to the sprite's first costume.
+                if (sprite && sprite.costumes && sprite.costumes.length > 0) {
+                    const costumeNames = sprite.costumes.map((c: any) => c.name);
+                    const defaultCostume = costumeNames[0] || '';
+                    const allBlocks = workspaceRef.current.getAllBlocks(false);
+                    for (const block of allBlocks) {
+                        if (block.type === 'looks_switch_costume' || block.type === 'looks_switchcostumeto') {
+                            const val = block.getFieldValue('COSTUME');
+                            if (!val || !costumeNames.includes(val)) {
+                                if (defaultCostume) {
+                                    block.setFieldValue(defaultCostume, 'COSTUME');
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 console.log('[APP] Initialized empty workspace for target:', spriteId);
             }
@@ -3177,11 +3196,12 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             monitors: {
                 variables: variableMonitors,
                 lists: listMonitors,
-                tables: tableMonitors
+                tables: tableMonitors,
+                sensing: sensingMonitors
             },
             installedExtensions: Array.from(installedExtensionsRef.current)
         };
-    }, [sprites, variableMonitors, listMonitors, tableMonitors]);
+    }, [sprites, variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
 
     const handleSaveProject = useCallback(async (isSilent = false) => {
         const payload = buildProjectPayload();
@@ -3378,6 +3398,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                     setListMonitors(data.monitors.lists || []);
                     setTableMonitors(data.monitors.tables || []);
+                    if (data.monitors.sensing) {
+                        setSensingMonitors(data.monitors.sensing);
+                    }
                 } else {
                     setVariableMonitors([]);
                     setListMonitors([]);
@@ -3522,6 +3545,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 setVariableMonitors((data.monitors.variables || []).map((monitor: VariableMonitorState, index: number) => normalizeVariableMonitor(monitor, index)));
                 setListMonitors(data.monitors.lists || []);
                 setTableMonitors(data.monitors.tables || []);
+                if (data.monitors.sensing) {
+                    setSensingMonitors(data.monitors.sensing);
+                }
             } else {
                 setVariableMonitors([]);
                 setListMonitors([]);
