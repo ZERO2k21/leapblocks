@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
+import { IgniteTopbar } from '../../../../Electra/Client/Src/components/Layout/Topbar'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ObjectDetector, DetectionResult } from '../../ml/classifiers/ObjectDetector'
 
 interface ObjectDetectorPanelProps {
     mode: UseNeuraProjectReturn
+    onBack?: () => void
 }
 
 const CCO_LABELS = [
@@ -22,13 +24,19 @@ const CCO_LABELS = [
     'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
-export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) {
+export default function ObjectDetectorPanel({ mode, onBack }: ObjectDetectorPanelProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayRef = useRef<HTMLCanvasElement>(null)
     const detectorRef = useRef(new ObjectDetector())
     const animFrameRef = useRef<number>(0)
     const projectName = mode.project?.name || 'Object Detector'
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleSave = React.useCallback(() => {}, [])
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleTitleChange = React.useCallback(() => {}, [])
+    const handleBack = React.useCallback(() => onBack?.(), [onBack])
 
     const [isLoading, setIsLoading] = useState(true)
     const [isDetecting, setIsDetecting] = useState(false)
@@ -133,23 +141,21 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         .sort(([, a], [, b]) => b.length - a.length)
 
     return (
-        <div className="flex flex-col h-full bg-gray-50">
-            {/* Header */}
-            <div className="px-6 py-4 bg-white border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800">{projectName}</h2>
-                        <p className="text-sm text-gray-400">
-                            {isLoading ? 'Loading AI model...' : 'Detecting 80 different objects in real-time'}
-                        </p>
-                    </div>
+        <div className="h-screen flex flex-col bg-gray-50">
+            <IgniteTopbar
+                title={projectName}
+                onBack={handleBack}
+                onSave={handleSave}
+                onTitleChange={handleTitleChange}
+                brandName="NEURA"
+                rightContent={
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl">
-                            <span className="text-xs font-medium text-gray-500">Auto-detect</span>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-xl">
+                            <span className="text-xs font-medium text-white/70">Auto</span>
                             <button
                                 onClick={() => setAutoDetect(!autoDetect)}
                                 className={`relative w-10 h-6 rounded-full transition-colors duration-200 ${
-                                    autoDetect ? 'bg-emerald-500' : 'bg-gray-300'
+                                    autoDetect ? 'bg-emerald-500' : 'bg-white/30'
                                 }`}
                             >
                                 <div
@@ -162,20 +168,20 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         <button
                             onClick={runDetection}
                             disabled={isDetecting || isLoading}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-200 ${
                                 isDetecting || isLoading
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 active:scale-95 shadow-md shadow-emerald-200'
+                                    ? 'bg-white/20 text-white/50 cursor-not-allowed'
+                                    : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 active:scale-95 shadow-md'
                             }`}
                         >
                             {isDetecting ? (
                                 <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     Scanning...
                                 </>
                             ) : (
                                 <>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="11" cy="11" r="8" />
                                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                                     </svg>
@@ -184,8 +190,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             )}
                         </button>
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">

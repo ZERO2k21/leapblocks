@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
+import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topbar'
 import type { ProjectType } from '../../../types/neura.types'
+import type { ClassifierMode } from '../hooks/useNeuraProject'
 import { useNeuraProject } from '../hooks/useNeuraProject'
-import TopBar from './components/TopBar'
 import ClassCard from './components/ClassCard'
 
 interface ProjectWorkspaceProps {
@@ -12,10 +13,72 @@ interface ProjectWorkspaceProps {
     }) => React.ReactNode
 }
 
+function ModeSwitcher({ mode, onModeChange, canTrain }: { mode: ClassifierMode; onModeChange: (m: ClassifierMode) => void; canTrain: boolean }) {
+    return (
+        <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1">
+            <button
+                onClick={() => onModeChange('collect')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                    mode === 'collect'
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`}
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v8M8 12h8" />
+                </svg>
+                Collect
+            </button>
+            <button
+                onClick={() => canTrain && onModeChange('train')}
+                disabled={!canTrain}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                    mode === 'train'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : canTrain
+                            ? 'text-white/70 hover:text-white hover:bg-white/10'
+                            : 'text-white/30 cursor-not-allowed'
+                }`}
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+                Train
+            </button>
+            <button
+                onClick={() => onModeChange('test')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                    mode === 'test'
+                        ? 'bg-emerald-500 text-white shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`}
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 11l3 3L22 4" />
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                </svg>
+                Test
+            </button>
+        </div>
+    )
+}
+
 export default function ProjectWorkspace({ type, onBack, children }: ProjectWorkspaceProps) {
     const mode = useNeuraProject(type)
     const [newClassName, setNewClassName] = useState('')
     const [showAddClass, setShowAddClass] = useState(false)
+
+    const canTrain = mode.project
+        ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2
+        : false
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleSave = React.useCallback(() => {}, [])
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleTitleChange = React.useCallback(() => {}, [])
 
     const handleAddClass = () => {
         if (newClassName.trim()) {
@@ -27,13 +90,19 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
 
     return (
         <div className="h-screen flex flex-col bg-gray-50">
-            <TopBar
+            <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
-                mode={mode.mode}
-                onModeChange={mode.setMode}
                 onBack={onBack}
-                totalSamples={mode.getTotalSamples()}
-                canTrain={mode.project ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2 : false}
+                onSave={handleSave}
+                onTitleChange={handleTitleChange}
+                brandName="NEURA"
+                rightContent={
+                    <ModeSwitcher
+                        mode={mode.mode}
+                        onModeChange={mode.setMode}
+                        canTrain={canTrain}
+                    />
+                }
             />
 
             <div className="flex-1 flex overflow-hidden">
