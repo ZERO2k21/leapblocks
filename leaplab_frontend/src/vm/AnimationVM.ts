@@ -1189,15 +1189,10 @@ export class AnimationVM {
             }
 
             case 'switch_costume': {
-                // Validate costume name exists on the sprite before switching
+                // CostumeEngine handles validation, fuzzy matching, and fallback
                 const costumeName = step.costume;
-                if (costumeName && typeof costumeName === 'string' && sprite.costumes) {
-                    const found = sprite.costumes.some((c: any) => c.name.toLowerCase() === costumeName.toLowerCase());
-                    if (found) {
-                        costumeEngine.setCostume(sprite, costumeName);
-                    } else {
-                        console.warn(`[AnimationVM] Costume "${costumeName}" not found on sprite "${sprite.name}", skipping switch`);
-                    }
+                if (costumeName && typeof costumeName === 'string') {
+                    costumeEngine.setCostume(sprite, costumeName);
                 }
                 break;
             }
@@ -3175,7 +3170,17 @@ export class AnimationVM {
     }
 
     getSpeechResult(): string {
-        return (this.variables.get('speech') as string) || '';
+        // First check the 'speech' variable (set by speech_on_result handler)
+        const variableResult = this.variables.get('speech');
+        if (variableResult !== undefined && variableResult !== '') {
+            return variableResult as string;
+        }
+        // Fall back to Web Speech API's _lastResult (set by start listening)
+        // This bridges the gap when user blocks use start listening without speech_on_result
+        if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
+            return (window as any).runtime.speech.getLastResult() || '';
+        }
+        return '';
     }
 }
 

@@ -6,8 +6,7 @@
   "main": "dist/main/index.js",
   "workspaces": [
     "server",
-    "src/Electra/server",
-    "src/neura-ml"
+    "src/Electra/server"
   ],
   "scripts": {
     "start": "npm run dev:full",

@@ -10,7 +10,23 @@ class CostumeEngine {
         // Validate costume exists before switching to prevent silent failures
         if (typeof nameOrIndex === 'string') {
             const costumeNames = sprite.costumes.map((c: any) => c.name);
+
+            // 1. Exact case-insensitive match
             const found = costumeNames.some((n: string) => n.toLowerCase() === nameOrIndex.toLowerCase());
+
+            // 2. Partial match: costume name contains the search term (e.g., "light off" matches "Light Off")
+            if (!found) {
+                const match = costumeNames.find((n: string) =>
+                    n.toLowerCase().includes(nameOrIndex.toLowerCase()) ||
+                    nameOrIndex.toLowerCase().includes(n.toLowerCase())
+                );
+                if (match) {
+                    console.info(`[CostumeEngine] Costume "${nameOrIndex}" partially matched to "${match}" on sprite "${sprite.name}"`);
+                    sprite.switchCostume(match);
+                    return;
+                }
+            }
+
             if (!found) {
                 console.warn(`[CostumeEngine] Costume "${nameOrIndex}" not found on sprite "${sprite.name}", falling back to first costume`);
                 if (sprite.costumes.length > 0) {
