@@ -59,6 +59,15 @@ const CLASSIFIER_TYPES: {
         color: '#EC4899',
         gradient: 'from-pink-400 to-rose-500',
         shadow: 'shadow-pink-200'
+    },
+    {
+        type: 'object-detection',
+        name: 'Objects',
+        description: 'Find and locate objects in the real world!',
+        emoji: '🔍',
+        color: '#14B8A6',
+        gradient: 'from-teal-400 to-cyan-500',
+        shadow: 'shadow-teal-200'
     }
 ]
 

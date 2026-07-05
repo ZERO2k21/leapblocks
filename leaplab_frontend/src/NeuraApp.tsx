@@ -15,6 +15,7 @@ const AudioClassifierPanel = lazy(() => import('./components/neura/ui/panels/Aud
 const PoseClassifierPanel = lazy(() => import('./components/neura/ui/panels/PoseClassifierPanel'))
 const TextClassifierPanel = lazy(() => import('./components/neura/ui/panels/TextClassifierPanel'))
 const NumberClassifierPanel = lazy(() => import('./components/neura/ui/panels/NumberClassifierPanel'))
+const ObjectDetectorPanel = lazy(() => import('./components/neura/ui/panels/ObjectDetectorPanel'))
 
 interface NeuraAppProps {
     onBack?: () => void
@@ -45,6 +46,8 @@ function getClassifierPanel(type: ProjectType) {
             return TextClassifierPanel
         case 'numbers-cr':
             return NumberClassifierPanel
+        case 'object-detection':
+            return ObjectDetectorPanel
         default:
             return ImageClassifierPanel
     }

@@ -12,7 +12,8 @@ export class ImageClassifier {
 
     private async ensureModel() {
         if (this.mobilenetModel) return this.mobilenetModel
-        this.mobilenetModel = await ensureMobileNet()
+        const mobilenet = await ensureMobileNet()
+        this.mobilenetModel = await mobilenet.load()
         return this.mobilenetModel
     }
 

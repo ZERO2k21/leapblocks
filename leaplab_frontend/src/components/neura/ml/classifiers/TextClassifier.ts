@@ -12,7 +12,8 @@ export class TextClassifier {
 
     private async ensureModel() {
         if (this.useModel) return this.useModel
-        this.useModel = await ensureUSE()
+        const use = await ensureUSE()
+        this.useModel = await use.load()
         return this.useModel
     }
 

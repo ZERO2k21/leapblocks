@@ -1,4 +1,5 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
+import { ensurePoseDetection } from '../loadScript'
 
 export interface PosePrediction {
     label: string
@@ -18,7 +19,7 @@ export class PoseClassifier {
 
     private async ensureModel() {
         if (this.poseModel) return this.poseModel
-        const poseDetection = await import('@tensorflow-models/pose-detection')
+        const poseDetection = await ensurePoseDetection()
         await ensureTf()
         this.poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
             modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
