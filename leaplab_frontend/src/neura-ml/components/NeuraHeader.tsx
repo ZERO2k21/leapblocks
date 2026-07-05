@@ -1,6 +1,5 @@
 /**
- * NeuraHeader — Top navigation bar.
- * Converted from 200+ inline styles to Tailwind + neura-styles.css classes.
+ * NeuraHeader — Top navigation bar. (Pure Tailwind)
  */
 import React from 'react';
 import { Home, Save, Settings, HelpCircle, BookOpen, Trophy, MessageSquareWarning } from 'lucide-react';
@@ -16,15 +15,15 @@ export default function NeuraHeader({
   showProjectInput = false,
 }: NeuraHeaderProps): React.JSX.Element {
   return (
-    <header className="neura-header">
+    <header className="flex items-center justify-between h-14 bg-[#0a015a]/95 backdrop-blur-xl border-b border-white/10 px-4 shrink-0">
       {/* LEFT */}
-      <div className="neura-header-section flex-1">
+      <div className="flex items-center gap-3 flex-1">
         {onBack && (
-          <button title="Back to Home" onClick={onBack} className="neura-header-btn ml-1">
+          <button title="Back to Home" onClick={onBack} className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors ml-1">
             <Home size={18} strokeWidth={2.2} />
           </button>
         )}
-        <div className="neura-header-divider" />
+        <div className="w-px h-6 bg-white/15 mx-1" />
         <div className="flex items-center gap-2.5 mr-3 shrink-0">
           <img
             alt="LeapLab"
@@ -36,16 +35,16 @@ export default function NeuraHeader({
             <span className="text-sm font-black tracking-wide text-white">NEURA ML</span>
           </div>
         </div>
-        <button className="neura-ghost flex items-center gap-1.5 px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg text-xs font-semibold transition-all">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg text-xs font-semibold transition-all">
           <BookOpen size={14} strokeWidth={2.2} />
           Tutorials
         </button>
       </div>
 
       {/* MIDDLE */}
-      <div className="neura-header-section">
+      <div className="flex items-center gap-3">
         {showProjectInput && (
-          <div className="neura-project-input-wrap">
+          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 border border-white/10">
             <span className="text-sm opacity-40">🧠</span>
             <input
               placeholder="My ML Project"
@@ -54,10 +53,10 @@ export default function NeuraHeader({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onProjectNameChange?.(e.target.value)
               }
-              className="neura-project-input"
+              className="bg-transparent text-white text-sm font-medium placeholder-white/40 outline-none w-40"
             />
             {onSave && (
-              <button title="Save Project" onClick={onSave} className="neura-save-btn">
+              <button title="Save Project" onClick={onSave} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
                 <Save size={16} strokeWidth={2.8} />
               </button>
             )}
@@ -66,7 +65,7 @@ export default function NeuraHeader({
       </div>
 
       {/* RIGHT */}
-      <div className="neura-header-section flex-1 justify-end">
+      <div className="flex items-center gap-3 flex-1 justify-end">
         <div className="flex items-center gap-3 pr-4 border-r border-white/10 h-6 shrink-0">
           <TopbarShareButton
             className="text-white/45 hover:text-white transition-colors cursor-pointer"
@@ -74,16 +73,16 @@ export default function NeuraHeader({
             onSave={onSave}
             projectName={projectName}
           />
-          <button title="Feedback" className="neura-header-icon-btn">
+          <button title="Feedback" className="p-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/10 transition-colors">
             <MessageSquareWarning size={18} strokeWidth={2.2} />
           </button>
-          <button title="Achievements" className="neura-header-icon-btn">
+          <button title="Achievements" className="p-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/10 transition-colors">
             <Trophy size={18} strokeWidth={2.2} />
           </button>
-          <button title="Settings" className="neura-header-icon-btn">
+          <button title="Settings" className="p-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/10 transition-colors">
             <Settings size={18} strokeWidth={2.2} />
           </button>
-          <button title="Help" className="neura-header-icon-btn">
+          <button title="Help" className="p-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/10 transition-colors">
             <HelpCircle size={18} strokeWidth={2.2} />
           </button>
         </div>

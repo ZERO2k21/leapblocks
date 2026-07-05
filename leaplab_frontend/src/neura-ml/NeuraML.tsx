@@ -5,7 +5,6 @@ import { useState } from 'react';
 import MyProjectsPage from './pages/MyProjectsPage';
 import CreateProjectPage from './pages/CreateProjectPage';
 import ClassifierRouter from './pages/ClassifierRouter';
-import './neura-styles.css';
 import type { Project } from './types';
 
 type Screen = 'projects' | 'create' | 'classifier';

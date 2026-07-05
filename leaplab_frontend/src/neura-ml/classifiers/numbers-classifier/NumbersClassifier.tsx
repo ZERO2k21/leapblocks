@@ -1,22 +1,13 @@
 /**
- * NumbersClassifier — Upload CSV, train k-NN, test predictions.
+ * NumbersClassifier — Upload CSV, train k-NN. (Pure Tailwind)
  */
 import { useState } from 'react';
 import ClassifierLayout from '../../components/ClassifierLayout';
-import type {
-  ClassifierBaseProps,
-  TrainingStatus,
-  PredictionResult,
-} from '../../types';
+import type { ClassifierBaseProps, TrainingStatus, PredictionResult } from '../../types';
 
-interface CsvRow {
-  [key: string]: string;
-}
+interface CsvRow { [key: string]: string; }
 
-export default function NumbersClassifier({
-  project,
-  onBack,
-}: ClassifierBaseProps): React.JSX.Element {
+export default function NumbersClassifier({ project, onBack }: ClassifierBaseProps): React.JSX.Element {
   const [csvData, setCsvData] = useState<CsvRow[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [labelCol, setLabelCol] = useState<string>('');
@@ -28,300 +19,108 @@ export default function NumbersClassifier({
   const [testResult, setTestResult] = useState<PredictionResult | null>(null);
 
   const handleCSV = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev: ProgressEvent<FileReader>) => {
-      const text = ev.target?.result as string;
-      const lines = text.trim().split('\n');
+      const text = ev.target?.result as string; const lines = text.trim().split('\n');
       const hdrs = lines[0].split(',').map((h: string) => h.trim());
-      const rows: CsvRow[] = lines.slice(1).map((line: string) => {
-        const vals = line.split(',');
-        return Object.fromEntries(
-          hdrs.map((h: string, i: number) => [h, vals[i]?.trim() || ''])
-        );
-      });
-      setHeaders(hdrs);
-      setCsvData(rows);
-      setLabelCol(hdrs[hdrs.length - 1]);
+      const rows: CsvRow[] = lines.slice(1).map((line: string) => { const vals = line.split(','); return Object.fromEntries(hdrs.map((h: string, i: number) => [h, vals[i]?.trim() || ''])); });
+      setHeaders(hdrs); setCsvData(rows); setLabelCol(hdrs[hdrs.length - 1]);
     };
-    reader.readAsText(file);
-    e.target.value = '';
+    reader.readAsText(file); e.target.value = '';
   };
 
-  const handleTrain = async (): Promise<void> => {
-    setStatus('training');
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise((r) => setTimeout(r, 120));
-      setProgress(i);
-    }
-    setTrained(true);
-    setStatus('done');
-  };
-
+  const handleTrain = async (): Promise<void> => { setStatus('training'); for (let i = 0; i <= 100; i += 10) { await new Promise((r) => setTimeout(r, 120)); setProgress(i); } setTrained(true); setStatus('done'); };
   const handlePredict = (): void => {
-    if (!trained) return;
-    const labels = [...new Set(csvData.map((r: CsvRow) => r[labelCol]))];
+    if (!trained) return; const labels = [...new Set(csvData.map((r: CsvRow) => r[labelCol]))];
     const result = labels[Math.floor(Math.random() * labels.length)];
-    const conf: Record<string, number> = {};
-    labels.forEach((l: string, i: number) => {
-      conf[l] =
-        i === labels.indexOf(result)
-          ? 0.75 + Math.random() * 0.2
-          : Math.random() * 0.2;
-    });
+    const conf: Record<string, number> = {}; labels.forEach((l: string, i: number) => { conf[l] = i === labels.indexOf(result) ? 0.75 + Math.random() * 0.2 : Math.random() * 0.2; });
     setTestResult({ label: result, confidences: conf });
   };
-
   const featureCols = headers.filter((h: string) => h !== labelCol);
 
   return (
     <ClassifierLayout project={project} onBack={onBack}>
-      <div className="max-w-4xl mx-auto space-y-5 p-6">
+      <div className="max-w-4xl mx-auto space-y-5 p-6 overflow-y-auto h-full">
         {/* Mode selector */}
-        <div className="neura-card p-4 animate-neura-slide-up">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-            Mode
-          </h3>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 animate-neura-slide-up">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Mode</h3>
           <div className="flex gap-2">
-            {(['classification', 'regression'] as const).map(
-              (m: 'classification' | 'regression') => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`px-5 py-2 rounded-xl text-sm font-semibold capitalize transition-all duration-200 ${
-                    mode === m
-                      ? 'bg-violet-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                  }`}
-                >
-                  {m}
-                </button>
-              )
-            )}
+            {(['classification', 'regression'] as const).map((m) => (
+              <button key={m} onClick={() => setMode(m)} className={`px-5 py-2 rounded-xl text-sm font-semibold capitalize transition-all duration-200 ${mode === m ? 'bg-violet-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{m}</button>
+            ))}
           </div>
         </div>
 
         {/* Upload */}
-        <div className="neura-card p-5 animate-neura-slide-up neura-delay-1">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-            1. Upload Training Data (CSV)
-          </h3>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 animate-neura-slide-up [animation-delay:100ms]">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">1. Upload Training Data (CSV)</h3>
           <div className="flex gap-3 items-center mb-4">
-            <label className="neura-btn-secondary cursor-pointer text-sm">
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
-                />
-              </svg>
-              Upload CSV
-              <input
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleCSV}
-              />
+            <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-violet-300 hover:text-violet-600 transition-colors cursor-pointer">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
+              Upload CSV<input type="file" accept=".csv" className="hidden" onChange={handleCSV} />
             </label>
-            {csvData.length > 0 && (
-              <span className="text-xs text-gray-500">
-                {csvData.length} rows, {headers.length} columns
-              </span>
-            )}
+            {csvData.length > 0 && <span className="text-xs text-gray-500">{csvData.length} rows, {headers.length} columns</span>}
           </div>
           {headers.length > 0 && (
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-semibold text-gray-500">
-                Label column:
-              </span>
-              <select
-                value={labelCol}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setLabelCol(e.target.value)
-                }
-                className="neura-input w-auto text-xs py-1.5 px-3"
-              >
-                {headers.map((h: string) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
+              <span className="text-xs font-semibold text-gray-500">Label column:</span>
+              <select value={labelCol} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLabelCol(e.target.value)} className="px-3 py-1.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-xs focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/10 outline-none transition-all w-auto">
+                {headers.map((h: string) => <option key={h} value={h}>{h}</option>)}
               </select>
-              <span className="text-[11px] text-gray-400">
-                Features: {featureCols.join(', ')}
-              </span>
+              <span className="text-[11px] text-gray-400">Features: {featureCols.join(', ')}</span>
             </div>
           )}
           {csvData.length > 0 && (
             <div className="mt-4 overflow-x-auto">
               <table className="text-xs w-full border-collapse">
-                <thead>
-                  <tr>
-                    {headers.map((h: string) => (
-                      <th
-                        key={h}
-                        className={`px-3 py-2 text-left border border-gray-100 font-bold ${
-                          h === labelCol
-                            ? 'bg-violet-50 text-violet-700'
-                            : 'bg-gray-50 text-gray-500'
-                        }`}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {csvData.slice(0, 5).map((row: CsvRow, i: number) => (
-                    <tr key={i}>
-                      {headers.map((h: string) => (
-                        <td
-                          key={h}
-                          className="px-3 py-2 border border-gray-100 text-gray-600"
-                        >
-                          {row[h]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
+                <thead><tr>{headers.map((h: string) => <th key={h} className={`px-3 py-2 text-left border border-gray-100 font-bold ${h === labelCol ? 'bg-violet-50 text-violet-700' : 'bg-gray-50 text-gray-500'}`}>{h}</th>)}</tr></thead>
+                <tbody>{csvData.slice(0, 5).map((row: CsvRow, i: number) => <tr key={i}>{headers.map((h: string) => <td key={h} className="px-3 py-2 border border-gray-100 text-gray-600">{row[h]}</td>)}</tr>)}</tbody>
               </table>
-              {csvData.length > 5 && (
-                <p className="text-[11px] text-gray-400 mt-2">
-                  …and {csvData.length - 5} more rows
-                </p>
-              )}
+              {csvData.length > 5 && <p className="text-[11px] text-gray-400 mt-2">…and {csvData.length - 5} more rows</p>}
             </div>
           )}
         </div>
 
         {/* Train */}
-        <div className="neura-card p-5 flex gap-4 items-center animate-neura-slide-up neura-delay-2">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex gap-4 items-center animate-neura-slide-up [animation-delay:200ms]">
           <div className="flex-1">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-              2. Train Model
-            </h3>
-            <p className="text-[11px] text-gray-400">
-              k-NN classifier on normalized features. No deep learning needed.
-            </p>
-            {status === 'training' && (
-              <div className="mt-3">
-                <div className="neura-progress">
-                  <div
-                    className="neura-progress-fill"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-            {trained && (
-              <div className="flex items-center gap-1.5 mt-2 text-green-600 text-xs font-semibold">
-                <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                  >
-                    <path
-                      d="M2 6L5 9L10 3"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                Model trained
-              </div>
-            )}
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">2. Train Model</h3>
+            <p className="text-[11px] text-gray-400">k-NN classifier on normalized features. No deep learning needed.</p>
+            {status === 'training' && <div className="mt-3"><div className="h-2 rounded-full bg-violet-100 overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-500" style={{ width: `${progress}%` }} /></div></div>}
+            {trained && <div className="flex items-center gap-1.5 mt-2 text-green-600 text-xs font-semibold"><div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" /></svg></div>Model trained</div>}
           </div>
-          <button
-            onClick={handleTrain}
-            disabled={csvData.length === 0 || status === 'training'}
-            className="neura-btn-primary shrink-0"
-          >
-            {status === 'training'
-              ? 'Training…'
-              : trained
-                ? 'Retrain'
-                : 'Train Model'}
+          <button onClick={handleTrain} disabled={csvData.length === 0 || status === 'training'} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#0a015a] to-[#15027a] text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+            {status === 'training' ? 'Training…' : trained ? 'Retrain' : 'Train Model'}
           </button>
         </div>
 
         {/* Test */}
         {trained && (
-          <div className="neura-card p-5 animate-neura-scale">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-              3. Test Prediction
-            </h3>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 animate-neura-scale">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">3. Test Prediction</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {featureCols.map((col: string) => (
                 <div key={col}>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
-                    {col}
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={testRow[col] || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setTestRow((p) => ({ ...p, [col]: e.target.value }))
-                    }
-                    className="neura-input text-sm"
-                  />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">{col}</label>
+                  <input type="number" placeholder="0" value={testRow[col] || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestRow((p) => ({ ...p, [col]: e.target.value }))}
+                    className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/10 outline-none transition-all" />
                 </div>
               ))}
             </div>
-            <button
-              onClick={handlePredict}
-              className="neura-btn-primary px-6 py-2.5"
-            >
-              Predict
-            </button>
+            <button onClick={handlePredict} className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#0a015a] to-[#15027a] text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">Predict</button>
             {testResult && (
               <div className="mt-4 space-y-2 animate-neura-fade">
                 <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-2.5 flex justify-between">
-                  <span className="text-sm font-semibold text-violet-700">
-                    Prediction
-                  </span>
-                  <span className="text-sm font-bold text-violet-900">
-                    {testResult.label}
-                  </span>
+                  <span className="text-sm font-semibold text-violet-700">Prediction</span>
+                  <span className="text-sm font-bold text-violet-900">{testResult.label}</span>
                 </div>
-                {Object.entries(testResult.confidences).map(
-                  ([label, conf]: [string, number], i: number) => (
-                    <div key={label}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-600 truncate mr-2">
-                          {label}
-                        </span>
-                        <span className="font-bold text-gray-700 shrink-0">
-                          {Math.round(conf * 100)}%
-                        </span>
-                      </div>
-                      <div className="neura-confidence-bar">
-                        <div
-                          className={`neura-confidence-fill ${
-                            i === 0
-                              ? 'bg-violet-500'
-                              : i === 1
-                                ? 'bg-teal-500'
-                                : 'bg-orange-400'
-                          }`}
-                          style={{ width: `${conf * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                )}
+                {Object.entries(testResult.confidences).map(([label, conf]: [string, number], i: number) => (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1"><span className="text-gray-600 truncate mr-2">{label}</span><span className="font-bold text-gray-700 shrink-0">{Math.round(conf * 100)}%</span></div>
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${i === 0 ? 'bg-violet-500' : i === 1 ? 'bg-teal-500' : 'bg-orange-400'}`} style={{ width: `${conf * 100}%` }} /></div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

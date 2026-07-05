@@ -180,7 +180,7 @@ export interface ClassifierBaseProps {
   onBack: () => void;
 }
 
-// ── Color Constants ─────────────────────────────────────────────────────────
+// ── Color Constants (Inline Tailwind) ──────────────────────────────────────
 
 export interface ColorDef {
   header: string;
@@ -190,12 +190,12 @@ export interface ColorDef {
 }
 
 export const CLASS_COLORS: ColorDef[] = [
-  { header: 'neura-color-0', light: 'neura-color-light-0', border: 'border-red-200', text: 'text-red-700' },
-  { header: 'neura-color-1', light: 'neura-color-light-1', border: 'border-teal-200', text: 'text-teal-700' },
-  { header: 'neura-color-2', light: 'neura-color-light-2', border: 'border-violet-200', text: 'text-violet-700' },
-  { header: 'neura-color-3', light: 'neura-color-light-3', border: 'border-orange-200', text: 'text-orange-700' },
-  { header: 'neura-color-4', light: 'neura-color-light-4', border: 'border-pink-200', text: 'text-pink-700' },
-  { header: 'neura-color-5', light: 'neura-color-light-5', border: 'border-blue-200', text: 'text-blue-700' },
+  { header: 'bg-gradient-to-r from-red-500 to-rose-500', light: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' },
+  { header: 'bg-gradient-to-r from-teal-500 to-emerald-500', light: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700' },
+  { header: 'bg-gradient-to-r from-violet-500 to-purple-500', light: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' },
+  { header: 'bg-gradient-to-r from-orange-400 to-amber-500', light: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
+  { header: 'bg-gradient-to-r from-pink-400 to-rose-400', light: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
+  { header: 'bg-gradient-to-r from-blue-400 to-indigo-500', light: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
 ];
 
 export const BAR_COLORS: string[] = [
@@ -208,12 +208,12 @@ export const BAR_COLORS: string[] = [
 ];
 
 export const WEBCAM_COLORS: string[] = [
-  'neura-color-0',
-  'neura-color-1',
-  'neura-color-2',
-  'neura-color-3',
-  'neura-color-4',
-  'neura-color-5',
+  'bg-gradient-to-r from-red-500 to-rose-500',
+  'bg-gradient-to-r from-teal-500 to-emerald-500',
+  'bg-gradient-to-r from-violet-500 to-purple-500',
+  'bg-gradient-to-r from-orange-400 to-amber-500',
+  'bg-gradient-to-r from-pink-400 to-rose-400',
+  'bg-gradient-to-r from-blue-400 to-indigo-500',
 ];
 
 export const TYPE_ICONS: Record<string, string> = {

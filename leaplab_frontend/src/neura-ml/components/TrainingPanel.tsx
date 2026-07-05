@@ -1,5 +1,5 @@
 /**
- * TrainingPanel — Model training controls with premium progress bar.
+ * TrainingPanel — Model training controls. (Pure Tailwind)
  */
 import { useState } from 'react';
 import type { TrainingPanelProps } from '../types';
@@ -29,21 +29,14 @@ export default function TrainingPanel({
 
   const actualStatus = status || (isTraining ? 'training' : modelTrained ? 'trained' : 'idle');
   const actualTrained = trained || modelTrained || actualStatus === 'trained';
-  const totalSamples = Object.values(sampleCounts).reduce(
-    (s: number, v: number) => s + v,
-    0
-  );
+  const totalSamples = Object.values(sampleCounts).reduce((s: number, v: number) => s + v, 0);
 
   return (
-    <div className="neura-side-panel animate-neura-slide-up neura-delay-2">
+    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm animate-neura-slide-up [animation-delay:200ms]">
       {/* Header */}
-      <div className="neura-side-panel-header bg-gradient-to-r from-[#7c3aed] to-[#6d28d9]">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white text-xs font-bold">
         <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full transition-colors ${
-              actualTrained ? 'bg-green-400' : 'bg-white/25'
-            }`}
-          />
+          <div className={`w-2 h-2 rounded-full transition-colors ${actualTrained ? 'bg-green-400' : 'bg-white/25'}`} />
           <span>Training</span>
         </div>
         <div className="flex items-center gap-1.5 bg-black/30 rounded-md px-2 py-0.5">
@@ -61,47 +54,28 @@ export default function TrainingPanel({
           <div className="animate-neura-fade">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-gray-500">Extracting features…</span>
-              <span className="text-violet-600 font-bold">
-                {Math.round(progress)}%
-              </span>
+              <span className="text-violet-600 font-bold">{Math.round(progress)}%</span>
             </div>
-            <div className="neura-progress">
-              <div
-                className="neura-progress-fill"
-                style={{ width: `${progress}%` }}
-              />
+            <div className="h-2 rounded-full bg-violet-100 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-500" style={{ width: `${progress}%` }} />
             </div>
           </div>
         ) : actualTrained ? (
           <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 animate-neura-bounce">
             <div className="flex items-center gap-1.5 mb-0.5">
               <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M2 6L5 9L10 3"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <span className="text-green-700 text-xs font-bold">
-                Model trained
-              </span>
+              <span className="text-green-700 text-xs font-bold">Model trained</span>
             </div>
             <div className="text-green-600 text-[11px] pl-6">
-              {accuracy > 0
-                ? `${Math.round(accuracy * 100)}% accuracy`
-                : 'Ready to test'}
+              {accuracy > 0 ? `${Math.round(accuracy * 100)}% accuracy` : 'Ready to test'}
               {totalSamples > 0 && ` · ${totalSamples} samples`}
             </div>
           </div>
         ) : (
           <div className="text-[11px] text-gray-400 leading-relaxed">
-            {!canTrain
-              ? 'Add samples to at least 2 classes to train.'
-              : 'Ready to train your model.'}
+            {!canTrain ? 'Add samples to at least 2 classes to train.' : 'Ready to train your model.'}
           </div>
         )}
 
@@ -109,16 +83,12 @@ export default function TrainingPanel({
         <button
           onClick={onTrain}
           disabled={!canTrain || actualStatus === 'training'}
-          className="neura-btn-primary w-full"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#0a015a] to-[#15027a] text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full"
         >
           {actualStatus === 'training' && (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-neura-spin" />
           )}
-          {actualStatus === 'training'
-            ? 'Training…'
-            : actualTrained
-              ? 'Retrain Model'
-              : 'Train Model'}
+          {actualStatus === 'training' ? 'Training…' : actualTrained ? 'Retrain Model' : 'Train Model'}
         </button>
 
         {/* Advanced */}
@@ -127,15 +97,7 @@ export default function TrainingPanel({
           className="flex items-center gap-1 text-violet-600 text-xs font-semibold hover:text-violet-700 transition-colors"
         >
           <span>Advanced</span>
-          <svg
-            width="12"
-            height="12"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            className={`transition-transform duration-200 ${
-              showAdvanced ? 'rotate-180' : ''
-            }`}
-          >
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" className={`transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`}>
             <path d="M7 10l5 5 5-5H7z" />
           </svg>
         </button>
@@ -148,20 +110,13 @@ export default function TrainingPanel({
                 <span className="text-violet-600 font-bold">{epochs}</span>
               </div>
               <input
-                type="range"
-                min={5}
-                max={100}
-                step={5}
-                value={epochs}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEpochs(+e.target.value)
-                }
+                type="range" min={5} max={100} step={5} value={epochs}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEpochs(+e.target.value)}
                 className="w-full accent-violet-600 h-1.5"
               />
             </div>
             <p className="text-[10px] text-gray-400 leading-relaxed">
-              In-browser via TF.js · MobileNet transfer learning · No data
-              leaves your device.
+              In-browser via TF.js · MobileNet transfer learning · No data leaves your device.
             </p>
           </div>
         )}

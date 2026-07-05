@@ -1,5 +1,5 @@
 /**
- * MyProjectsPage — Premium project dashboard with glass-morphism empty state.
+ * MyProjectsPage — Premium project dashboard. (Pure Tailwind)
  */
 import { useState } from 'react';
 import NeuraHeader from '../components/NeuraHeader';
@@ -13,41 +13,25 @@ export default function MyProjectsPage({
   onOpenProject,
 }: MyProjectsPageProps): React.JSX.Element {
   const [search, setSearch] = useState<string>('');
-  const filtered = projects.filter((p: Project) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = projects.filter((p: Project) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="neura-app">
+    <div className="flex flex-col h-screen bg-[#f0f2f7]">
       <NeuraHeader onBack={onBack} showProjectInput={false} />
 
       {/* Toolbar */}
-      <div className="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-violet-100 px-6 py-3 flex items-center gap-4 flex-wrap">
+      <div className="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-violet-100 px-6 py-3 flex items-center gap-4 flex-wrap shrink-0">
         <h1 className="text-lg font-bold text-violet-900 mr-2">My Projects</h1>
         <div className="relative">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
-          <input
-            type="text"
-            placeholder="Search projects…"
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearch(e.target.value)
-            }
-            className="neura-input pl-9 pr-4 py-2 w-52 text-sm"
+          <input type="text" placeholder="Search projects…" value={search}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 w-52 text-sm rounded-xl border-2 border-gray-200 bg-gray-50 focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/10 outline-none transition-all"
           />
         </div>
-        <button
-          onClick={onCreateNew}
-          className="neura-btn-primary text-sm px-5 py-2"
-        >
+        <button onClick={onCreateNew} className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-[#0a015a] to-[#15027a] text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
           + New Project
         </button>
       </div>
@@ -56,54 +40,37 @@ export default function MyProjectsPage({
       <div className="flex-1 min-h-0 overflow-y-auto p-6">
         {filtered.length === 0 ? (
           /* Empty State */
-          <div className="neura-empty-state animate-neura-fade">
-            {/* Floating brain icon */}
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-neura-fade">
             <div className="relative w-40 h-40 mb-6">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full bg-violet-50 border-2 border-dashed border-violet-200 flex items-center justify-center animate-neura-float">
                   <span className="text-4xl">🧠</span>
                 </div>
               </div>
-              {/* Floating chips */}
-              <div className="absolute top-0 right-4 animate-neura-float neura-delay-1">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-lg shadow-sm border border-purple-200">
-                  📝
-                </div>
+              <div className="absolute top-0 right-4 animate-neura-float [animation-delay:100ms]">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-lg shadow-sm border border-purple-200">📝</div>
               </div>
-              <div className="absolute bottom-2 left-0 animate-neura-float neura-delay-3">
-                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-lg shadow-sm border border-teal-200">
-                  🖐️
-                </div>
+              <div className="absolute bottom-2 left-0 animate-neura-float [animation-delay:300ms]">
+                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-lg shadow-sm border border-teal-200">🖐️</div>
               </div>
-              <div className="absolute top-4 left-0 animate-neura-float neura-delay-5">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg shadow-sm border border-blue-200">
-                  🎙️
-                </div>
+              <div className="absolute top-4 left-0 animate-neura-float [animation-delay:500ms]">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg shadow-sm border border-blue-200">🎙️</div>
               </div>
-              <div className="absolute bottom-4 right-0 animate-neura-float neura-delay-2">
-                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shadow-sm border border-green-200">
-                  🔍
-                </div>
+              <div className="absolute bottom-4 right-0 animate-neura-float [animation-delay:200ms]">
+                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg shadow-sm border border-green-200">🔍</div>
               </div>
             </div>
-
-            <h2 className="text-lg font-bold text-gray-700 mb-1">
-              No projects yet
-            </h2>
+            <h2 className="text-lg font-bold text-gray-700 mb-1">No projects yet</h2>
             <p className="text-sm text-gray-400 mb-6 max-w-xs">
-              Create your first ML project to start training image classifiers,
-              object detectors, and more.
+              Create your first ML project to start training image classifiers, object detectors, and more.
             </p>
-            <button
-              onClick={onCreateNew}
-              className="neura-btn-primary px-8 py-3 text-sm"
-            >
+            <button onClick={onCreateNew} className="flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-[#0a015a] to-[#15027a] text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
               + Create Your First Project
             </button>
           </div>
         ) : (
           /* Project Table */
-          <div className="neura-card overflow-hidden animate-neura-fade">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-neura-fade">
             <div className="grid grid-cols-5 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs font-bold uppercase tracking-wider px-6 py-3">
               <span>Project</span>
               <span className="text-center">Type</span>
@@ -124,35 +91,19 @@ export default function MyProjectsPage({
                       {TYPE_ICONS[project.type] || '🤖'}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-gray-800 text-sm truncate">
-                        {project.name}
-                      </div>
+                      <div className="font-semibold text-gray-800 text-sm truncate">{project.name}</div>
                       {project.description && (
-                        <div className="text-[11px] text-gray-400 truncate max-w-[160px]">
-                          {project.description}
-                        </div>
+                        <div className="text-[11px] text-gray-400 truncate max-w-[160px]">{project.description}</div>
                       )}
                     </div>
                   </div>
-                  <div className="text-center text-xs text-gray-600 font-medium">
-                    {project.type}
-                  </div>
-                  <div className="text-center text-xs text-gray-600 font-medium">
-                    {project.classes}
-                  </div>
+                  <div className="text-center text-xs text-gray-600 font-medium">{project.type}</div>
+                  <div className="text-center text-xs text-gray-600 font-medium">{project.classes}</div>
                   <div className="text-center text-[11px] text-gray-400">
-                    {new Date(project.lastUpdated).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
+                    {new Date(project.lastUpdated).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </div>
                   <div className="flex justify-center">
-                    <span
-                      className={`neura-tag border ${
-                        STATUS_STYLES[project.status] || STATUS_STYLES['Untrained']
-                      }`}
-                    >
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${STATUS_STYLES[project.status] || STATUS_STYLES['Untrained']}`}>
                       {project.status}
                     </span>
                   </div>
