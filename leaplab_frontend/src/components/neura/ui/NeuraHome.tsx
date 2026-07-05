@@ -1,4 +1,5 @@
 import React from 'react'
+import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topbar'
 import type { ProjectType } from '../../../types/neura.types'
 
 interface NeuraHomeProps {
@@ -72,23 +73,20 @@ const CLASSIFIER_TYPES: {
 ]
 
 export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleSave = React.useCallback(() => {}, [])
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const handleTitleChange = React.useCallback(() => {}, [])
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-violet-50/30 flex flex-col">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-4">
-                <button
-                    onClick={onBack}
-                    className="flex items-center justify-center w-10 h-10 rounded-xl bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-800 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Neura</h1>
-                    <p className="text-sm text-gray-400">AI & Machine Learning</p>
-                </div>
-            </div>
+        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-violet-50/30">
+            <IgniteTopbar
+                title="NEURA"
+                onBack={onBack}
+                onSave={handleSave}
+                onTitleChange={handleTitleChange}
+                brandName="NEURA"
+            />
 
             {/* Content */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
