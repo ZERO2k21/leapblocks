@@ -25,3 +25,28 @@ export { default as HandPoseClassifier } from './classifiers/hand-pose-classifie
 export { default as ObjectDetection } from './classifiers/object-detection/ObjectDetection';
 export { default as TextClassifier } from './classifiers/text-classifier/TextClassifier';
 export { default as NumbersClassifier } from './classifiers/numbers-classifier/NumbersClassifier';
+
+// Types
+export type {
+  Project,
+  ProjectType,
+  ProjectStatus,
+  ClassData,
+  Sample,
+  TrainingStatus,
+  Prediction,
+  PredictionResult,
+  Detection,
+  TFClassifierReturn,
+  ProjectTypeOption,
+  NeuraHeaderProps,
+  ClassifierLayoutProps,
+  ClassCardProps,
+  TrainingPanelProps,
+  TestingPanelProps,
+  WebcamModalProps,
+  CreateProjectPageProps,
+  MyProjectsPageProps,
+  ClassifierRouterProps,
+  ClassifierBaseProps,
+} from './types';
