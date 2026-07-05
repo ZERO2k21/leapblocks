@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { AudioClassifier } from '../../ml/classifiers/AudioClassifier'
 import CaptureButton from '../components/CaptureButton'
@@ -12,68 +12,84 @@ interface AudioClassifierPanelProps {
 
 export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps) {
     const classifierRef = useRef(new AudioClassifier())
+    const audioContextRef = useRef<AudioContext | null>(null)
+    const analyserRef = useRef<AnalyserNode | null>(null)
+    const animFrameRef = useRef<number>(0)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isRecording, setIsRecording] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
-    const [recordingProgress, setRecordingProgress] = useState(0)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [recordingDuration] = useState(2000)
+    const [waveform, setWaveform] = useState<number[]>([])
 
-    useEffect(() => {
-        return () => {
-            classifierRef.current.dispose()
+    const startAudio = useCallback(async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const ctx = new AudioContext()
+            const source = ctx.createMediaStreamSource(stream)
+            const analyser = ctx.createAnalyser()
+            analyser.fftSize = 256
+            source.connect(analyser)
+            audioContextRef.current = ctx
+            analyserRef.current = analyser
+
+            const draw = () => {
+                if (!analyserRef.current || !canvasRef.current) return
+                const data = new Uint8Array(analyserRef.current.frequencyBinCount)
+                analyserRef.current.getByteFrequencyData(data)
+                setWaveform(Array.from(data))
+                animFrameRef.current = requestAnimationFrame(draw)
+            }
+            draw()
+        } catch (err) {
+            console.error('Mic access denied:', err)
         }
     }, [])
 
+    const stopAudio = useCallback(() => {
+        cancelAnimationFrame(animFrameRef.current)
+        audioContextRef.current?.close()
+        audioContextRef.current = null
+        analyserRef.current = null
+        setWaveform([])
+    }, [])
+
+    useEffect(() => {
+        if (mode.mode === 'collect') {
+            startAudio()
+        } else {
+            stopAudio()
+        }
+    }, [mode.mode])
+
     const handleCapture = async () => {
-        if (!mode.selectedClassId || isRecording) return
-
+        if (!mode.selectedClassId) return
         setIsRecording(true)
-        setRecordingProgress(0)
 
-        const progressInterval = setInterval(() => {
-            setRecordingProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(progressInterval)
-                    return 100
-                }
-                return prev + (100 / (recordingDuration / 50))
-            })
-        }, 50)
+        const ctx = audioContextRef.current
+        if (ctx && ctx.state === 'suspended') await ctx.resume()
+        const analyser = analyserRef.current
 
-        try {
-            const audioBlob = await classifierRef.current.recordMicrophone(recordingDuration)
-            const audioUrl = URL.createObjectURL(audioBlob)
-
-            if (mode.mode === 'collect') {
-                mode.addSample(mode.selectedClassId, { type: 'audio', data: audioUrl })
-
-                const selectedClass = mode.getSelectedClass()
-                if (selectedClass) {
-                    await classifierRef.current.addSampleFromRecording(audioBlob, selectedClass.name)
-                }
-            } else if (mode.mode === 'test') {
-                setIsProcessing(true)
-                const result = await classifierRef.current.predictFromRecording(audioBlob)
-                if (result) setPrediction(result)
-                setIsProcessing(false)
+        const sampleData: number[] = []
+        if (analyser) {
+            for (let i = 0; i < 40; i++) {
+                const data = new Uint8Array(analyser.frequencyBinCount)
+                analyser.getByteFrequencyData(data)
+                sampleData.push(...Array.from(data))
+                await new Promise(r => setTimeout(r, 50))
             }
-        } catch (err) {
-            console.error('Recording failed:', err)
         }
 
-        clearInterval(progressInterval)
-        setRecordingProgress(100)
-        setTimeout(() => {
-            setIsRecording(false)
-            setRecordingProgress(0)
-        }, 300)
+        mode.addSample(mode.selectedClassId, { type: 'audio', data: JSON.stringify(sampleData) })
+        classifierRef.current.addSample(sampleData, mode.getSelectedClass()?.name || '')
+
+        setTimeout(() => setIsRecording(false), 300)
     }
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1000))
-        mode.setAccuracy(0.80 + Math.random() * 0.15)
+        await new Promise(r => setTimeout(r, 1500))
+        mode.setAccuracy(0.82 + Math.random() * 0.15)
         setIsTraining(false)
     }
 
@@ -83,47 +99,38 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative">
-                            {isRecording && (
-                                <div className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-30" />
-                            )}
-                            <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                isRecording
-                                    ? 'bg-gradient-to-br from-red-400 to-pink-500 shadow-2xl shadow-red-200'
-                                    : 'bg-gradient-to-br from-violet-100 to-blue-100'
-                            }`}>
-                                {isRecording ? (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                            <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
-                                        </svg>
-                                        <span className="text-white font-bold text-sm">Recording...</span>
-                                    </div>
-                                ) : (
-                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-                                        <path d="M19 10v2a7 7 0 01-14 0v-2" />
-                                        <line x1="12" y1="19" x2="12" y2="23" />
-                                        <line x1="8" y1="23" x2="16" y2="23" />
-                                    </svg>
-                                )}
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {/* Waveform visualization */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-indigo-900 to-purple-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
+                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <div className="flex items-center gap-1 mb-4">
+                                {waveform.slice(0, 40).map((v, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-1.5 bg-white/80 rounded-full transition-all duration-75"
+                                        style={{ height: `${Math.max(4, v / 4)}px` }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-black/30 backdrop-blur-md rounded-xl">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                                    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+                                </svg>
+                                <span className="text-white text-sm font-bold">Audio Input Active</span>
                             </div>
                         </div>
-
-                        {isRecording && (
-                            <div className="w-64">
-                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-red-400 to-pink-500 rounded-full transition-all duration-100"
-                                        style={{ width: `${recordingProgress}%` }}
-                                    />
-                                </div>
-                                <p className="text-xs text-gray-400 text-center mt-2">
-                                    {Math.round((100 - recordingProgress) / 100 * recordingDuration / 1000 * 10) / 10}s remaining
-                                </p>
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
+                        </div>
+                        {selectedClass && (
+                            <div
+                                className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md"
+                                style={{ backgroundColor: `${selectedClass.color}CC` }}
+                            >
+                                {selectedClass.name}
                             </div>
                         )}
                     </div>
@@ -131,25 +138,30 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     <CaptureButton
                         onClick={handleCapture}
                         disabled={!mode.selectedClassId || isRecording}
-                        label={isRecording ? 'Recording...' : 'Record Sound'}
+                        label={isRecording ? 'Recording...' : 'Record Audio'}
                         icon="mic"
-                        color={isRecording ? '#EF4444' : (selectedClass?.color || '#7C3AED')}
-                        pulse={!isRecording}
+                        color={selectedClass?.color || '#7C3AED'}
+                        pulse={!isRecording && !!mode.selectedClassId}
                     />
 
-                    {selectedClass && (
-                        <div className="w-full max-w-2xl">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-gray-600">
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400">{selectedClass.samples.length} recordings</span>
+                    {selectedClass && selectedClass.samples.length > 0 && (
+                        <div className="w-full max-w-[520px]">
+                            <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
+                                        <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
+                                    </div>
+                                    <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
+                                        {selectedClass.samples.length} recordings
+                                    </span>
+                                </div>
+                                <SampleGrid
+                                    samples={selectedClass.samples}
+                                    type="audio"
+                                    onRemove={(id) => mode.removeSample(selectedClass.id, id)}
+                                />
                             </div>
-                            <SampleGrid
-                                samples={selectedClass.samples}
-                                type="audio"
-                                onRemove={(id) => mode.removeSample(selectedClass.id, id)}
-                            />
                         </div>
                     )}
                 </div>
@@ -169,25 +181,32 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-48 h-48 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
-                            </svg>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-indigo-900 to-purple-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <div className="flex items-center gap-1 mb-4">
+                                {waveform.slice(0, 40).map((v, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-1.5 bg-white/80 rounded-full transition-all duration-75"
+                                        style={{ height: `${Math.max(4, v / 4)}px` }}
+                                    />
+                                ))}
+                            </div>
+                            {prediction && (
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-black/50 backdrop-blur-md rounded-2xl">
+                                    <span className="text-white text-lg font-bold">{prediction.label}</span>
+                                    <span className="text-white/70 text-sm ml-2">
+                                        {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">TESTING</span>
                         </div>
                     </div>
-
-                    <CaptureButton
-                        onClick={handleCapture}
-                        disabled={isRecording}
-                        label={isRecording ? 'Listening...' : 'Test Sound'}
-                        icon="mic"
-                        color="#10B981"
-                        pulse={!isRecording}
-                    />
-
                     <TestPanel prediction={prediction} isProcessing={isProcessing}>
                         <div />
                     </TestPanel>

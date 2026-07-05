@@ -93,7 +93,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1000))
+        await new Promise(r => setTimeout(r, 1500))
         mode.setAccuracy(0.85 + Math.random() * 0.12)
         setIsTraining(false)
     }
@@ -104,52 +104,78 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900" style={{ maxWidth: 640 }}>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {/* Camera feed - centered and prominent */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
                         <video
                             ref={videoRef}
                             autoPlay
                             playsInline
                             muted
-                            className="w-full rounded-3xl"
+                            className="w-full h-full object-cover rounded-3xl"
                             style={{ transform: 'scaleX(-1)' }}
                         />
+                        {/* Capture flash */}
                         {isCapturing && (
-                            <div className="absolute inset-0 bg-white/30 animate-pulse rounded-3xl" />
+                            <div className="absolute inset-0 bg-white/50 animate-[flash_0.3s_ease-out] rounded-3xl" />
                         )}
+                        {/* LIVE badge */}
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
+                        </div>
+                        {/* Class badge */}
                         {selectedClass && (
                             <div
-                                className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg"
-                                style={{ backgroundColor: selectedClass.color }}
+                                className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md"
+                                style={{ backgroundColor: `${selectedClass.color}CC` }}
                             >
                                 {selectedClass.name}
+                            </div>
+                        )}
+                        {/* Sample count */}
+                        {selectedClass && (
+                            <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                                <span className="text-white text-xs font-bold">
+                                    {selectedClass.samples.length} samples
+                                </span>
                             </div>
                         )}
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
 
+                    {/* Capture button */}
                     <CaptureButton
                         onClick={handleCapture}
                         disabled={!mode.selectedClassId || isCapturing}
                         label={isCapturing ? 'Captured!' : 'Take Photo'}
                         icon="camera"
                         color={selectedClass?.color || '#7C3AED'}
-                        pulse={!isCapturing}
+                        pulse={!isCapturing && !!mode.selectedClassId}
                     />
 
-                    {selectedClass && (
-                        <div className="w-full max-w-2xl">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-gray-600">
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400">{selectedClass.samples.length} photos</span>
+                    {/* Samples section */}
+                    {selectedClass && selectedClass.samples.length > 0 && (
+                        <div className="w-full max-w-[520px]">
+                            <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-2.5 h-2.5 rounded-full"
+                                            style={{ backgroundColor: selectedClass.color }}
+                                        />
+                                        <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
+                                    </div>
+                                    <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
+                                        {selectedClass.samples.length} photos
+                                    </span>
+                                </div>
+                                <SampleGrid
+                                    samples={selectedClass.samples}
+                                    type="image"
+                                    onRemove={(id) => mode.removeSample(selectedClass.id, id)}
+                                />
                             </div>
-                            <SampleGrid
-                                samples={selectedClass.samples}
-                                type="image"
-                                onRemove={(id) => mode.removeSample(selectedClass.id, id)}
-                            />
                         </div>
                     )}
                 </div>
@@ -169,16 +195,29 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900" style={{ maxWidth: 640 }}>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {/* Camera feed for testing */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
                         <video
                             ref={videoRef}
                             autoPlay
                             playsInline
                             muted
-                            className="w-full rounded-3xl"
+                            className="w-full h-full object-cover rounded-3xl"
                             style={{ transform: 'scaleX(-1)' }}
                         />
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">TESTING</span>
+                        </div>
+                        {prediction && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-black/50 backdrop-blur-md rounded-2xl">
+                                <span className="text-white text-lg font-bold">{prediction.label}</span>
+                                <span className="text-white/70 text-sm ml-2">
+                                    {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <TestPanel prediction={prediction} isProcessing={isProcessing}>

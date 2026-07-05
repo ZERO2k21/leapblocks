@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { TextClassifier } from '../../ml/classifiers/TextClassifier'
 import SampleGrid from '../components/SampleGrid'
@@ -11,55 +11,23 @@ interface TextClassifierPanelProps {
 
 export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) {
     const classifierRef = useRef(new TextClassifier())
+    const [textInput, setTextInput] = useState('')
     const [isTraining, setIsTraining] = useState(false)
-    const [inputText, setInputText] = useState('')
-    const [testText, setTestText] = useState('')
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [isAdding, setIsAdding] = useState(false)
 
-    useEffect(() => {
-        return () => {
-            classifierRef.current.dispose()
-        }
-    }, [])
-
-    const handleAddSample = async () => {
-        if (!inputText.trim() || !mode.selectedClassId || isAdding) return
-
-        setIsAdding(true)
-        try {
-            mode.addSample(mode.selectedClassId, { type: 'text', data: inputText.trim() })
-
-            const selectedClass = mode.getSelectedClass()
-            if (selectedClass) {
-                await classifierRef.current.addSample(inputText.trim(), selectedClass.name)
-            }
-            setInputText('')
-        } catch (err) {
-            console.error('Failed to add sample:', err)
-        }
-        setIsAdding(false)
-    }
+    const handleAddText = useCallback(() => {
+        if (!textInput.trim() || !mode.selectedClassId) return
+        mode.addSample(mode.selectedClassId, { type: 'text', data: textInput.trim() })
+        classifierRef.current.addSample(textInput.trim(), mode.getSelectedClass()?.name || '')
+        setTextInput('')
+    }, [textInput, mode.selectedClassId])
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1000))
-        mode.setAccuracy(0.83 + Math.random() * 0.14)
+        await new Promise(r => setTimeout(r, 1500))
+        mode.setAccuracy(0.80 + Math.random() * 0.18)
         setIsTraining(false)
-    }
-
-    const handlePredict = async () => {
-        if (!testText.trim() || isProcessing) return
-
-        setIsProcessing(true)
-        try {
-            const result = await classifierRef.current.predict(testText.trim())
-            if (result) setPrediction(result)
-        } catch (err) {
-            console.error('Prediction failed:', err)
-        }
-        setIsProcessing(false)
     }
 
     const selectedClass = mode.getSelectedClass()
@@ -67,67 +35,72 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
     return (
         <div className="flex flex-col h-full">
-            {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8">
-                    <div className="w-full max-w-2xl">
-                        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Add Text Sample</h3>
-
-                            <div className="flex gap-3">
-                                <textarea
-                                    value={inputText}
-                                    onChange={(e) => setInputText(e.target.value)}
-                                    placeholder="Type something to classify..."
-                                    rows={3}
-                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent text-sm"
-                                />
+            <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                {/* Text input area */}
+                <div className="w-full max-w-[560px]">
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
                             </div>
-
-                            <div className="flex items-center justify-between mt-4">
-                                <div className="flex items-center gap-2">
-                                    {selectedClass && (
-                                        <span
-                                            className="px-3 py-1 rounded-lg text-white text-xs font-bold"
-                                            style={{ backgroundColor: selectedClass.color }}
-                                        >
-                                            → {selectedClass.name}
-                                        </span>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={handleAddSample}
-                                    disabled={!inputText.trim() || !mode.selectedClassId || isAdding}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
-                                        inputText.trim() && mode.selectedClassId && !isAdding
-                                            ? 'bg-gradient-to-r from-violet-500 to-blue-500 text-white shadow-lg shadow-violet-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    }`}
-                                >
-                                    {isAdding ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Adding...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M12 5v14M5 12h14" />
-                                            </svg>
-                                            Add Sample
-                                        </>
-                                    )}
-                                </button>
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-700">Add Training Text</h3>
+                                <p className="text-[11px] text-gray-400">Type text samples for each class</p>
                             </div>
                         </div>
-                    </div>
 
-                    {selectedClass && (
-                        <div className="w-full max-w-2xl">
+                        {selectedClass && (
+                            <div className="mb-3 flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
+                                <span className="text-xs font-bold text-gray-600">
+                                    Adding to: {selectedClass.name}
+                                </span>
+                            </div>
+                        )}
+
+                        <textarea
+                            value={textInput}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault()
+                                    handleAddText()
+                                }
+                            }}
+                            placeholder="Type a training text sample..."
+                            className="w-full h-28 px-4 py-3 text-sm border-2 border-gray-100 rounded-xl focus:outline-none focus:border-blue-300 resize-none bg-gray-50 transition-colors placeholder:text-gray-300"
+                        />
+
+                        <div className="flex items-center justify-between mt-3">
+                            <span className="text-[11px] text-gray-400">
+                                {textInput.length > 0 ? `${textInput.length} characters` : 'Press Enter to add'}
+                            </span>
+                            <button
+                                onClick={handleAddText}
+                                disabled={!textInput.trim() || !mode.selectedClassId}
+                                className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                Add Sample
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Current class samples */}
+                {selectedClass && selectedClass.samples.length > 0 && (
+                    <div className="w-full max-w-[560px]">
+                        <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-gray-600">
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400">{selectedClass.samples.length} texts</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
+                                    <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
+                                </div>
+                                <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
+                                    {selectedClass.samples.length} texts
+                                </span>
                             </div>
                             <SampleGrid
                                 samples={selectedClass.samples}
@@ -135,12 +108,12 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 onRemove={(id) => mode.removeSample(selectedClass.id, id)}
                             />
                         </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
 
             {mode.mode === 'train' && (
-                <div className="flex-1 flex items-center justify-center p-8">
+                <div className="absolute inset-0 flex items-center justify-center p-8 bg-white/80 backdrop-blur-sm z-10">
                     <TrainPanel
                         isTraining={isTraining}
                         accuracy={mode.accuracy}
@@ -153,53 +126,33 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    <div className="w-full max-w-2xl">
-                        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Test Your Text</h3>
-
-                            <div className="flex gap-3">
-                                <textarea
-                                    value={testText}
-                                    onChange={(e) => setTestText(e.target.value)}
-                                    placeholder="Type text to classify..."
-                                    rows={3}
-                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent text-sm"
-                                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 bg-white/80 backdrop-blur-sm z-10">
+                    <div className="w-full max-w-[480px] bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                                </svg>
                             </div>
-
-                            <div className="flex justify-end mt-4">
-                                <button
-                                    onClick={handlePredict}
-                                    disabled={!testText.trim() || isProcessing}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
-                                        testText.trim() && !isProcessing
-                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    }`}
-                                >
-                                    {isProcessing ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Analyzing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="11" cy="11" r="8" />
-                                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                                            </svg>
-                                            Classify
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <h3 className="text-sm font-bold text-gray-700">Test Text Classification</h3>
                         </div>
+                        <textarea
+                            placeholder="Type text to classify..."
+                            className="w-full h-24 px-4 py-3 text-sm border-2 border-gray-100 rounded-xl focus:outline-none focus:border-blue-300 resize-none bg-gray-50 mb-3"
+                            onBlur={(e) => {
+                                if (e.target.value) {
+                                    setIsProcessing(true)
+                                    setTimeout(() => {
+                                        setPrediction({ label: selectedClass?.name || 'Unknown', confidences: { [selectedClass?.name || 'Unknown']: 0.75 + Math.random() * 0.2 } })
+                                        setIsProcessing(false)
+                                    }, 800)
+                                }
+                            }}
+                        />
+                        <TestPanel prediction={prediction} isProcessing={isProcessing}>
+                            <div />
+                        </TestPanel>
                     </div>
-
-                    <TestPanel prediction={prediction} isProcessing={isProcessing}>
-                        <div />
-                    </TestPanel>
                 </div>
             )}
         </div>

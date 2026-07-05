@@ -47,12 +47,20 @@ export class PoseClassifier {
         return normalized
     }
 
+    async addSample(features: Float32Array, label: string) {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(features)
+        await this.knn.addExample(embedding, label)
+        embedding.dispose()
+    }
+
     async addSampleFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, label: string) {
         const detector = await this.ensureModel()
         const estimation = await detector.estimatePoses(imageElement)
         if (estimation.length > 0) {
             const keypoints = estimation[0].keypoints as Keypoint[]
             const features = this.normalizeKeypoints(keypoints)
+            const tf = await ensureTf()
             const embedding = tf.tensor1d(features)
             await this.knn.addExample(embedding, label)
             embedding.dispose()
@@ -76,7 +84,15 @@ export class PoseClassifier {
         return []
     }
 
-    async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<PosePrediction | null> {
+    async predict(features: Float32Array, k = 3): Promise<PosePrediction | null> {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(features)
+        const result = await this.knn.predictClass(embedding, k)
+        embedding.dispose()
+        return result
+    }
+
+    async predictFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<PosePrediction | null> {
         const tf = await ensureTf()
         const keypoints = await this.detectPose(imageElement)
         if (keypoints.length === 0) return null

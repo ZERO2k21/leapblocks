@@ -19,9 +19,13 @@ export class AudioClassifier {
     private async extractFeatures(audioBuffer: AudioBuffer): Promise<Float32Array> {
         const rawData = audioBuffer.getChannelData(0)
         const targetLength = 22050
-        const samples = rawData.length > targetLength
-            ? rawData.slice(0, targetLength)
-            : new Float32Array(targetLength).set(rawData)
+        let samples: Float32Array
+        if (rawData.length > targetLength) {
+            samples = rawData.slice(0, targetLength)
+        } else {
+            samples = new Float32Array(targetLength)
+            samples.set(rawData)
+        }
 
         const fftSize = 1024
         const numFrames = Math.floor((samples.length - fftSize) / (fftSize / 2))
@@ -74,6 +78,13 @@ export class AudioClassifier {
         return featureVector
     }
 
+    async addSample(features: number[], label: string) {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(new Float32Array(features))
+        await this.knn.addExample(embedding, label)
+        embedding.dispose()
+    }
+
     async addSampleFromBuffer(audioBuffer: AudioBuffer, label: string) {
         const features = await this.extractFeatures(audioBuffer)
         const tf = await ensureTf()
@@ -87,6 +98,14 @@ export class AudioClassifier {
         const arrayBuffer = await audioBlob.arrayBuffer()
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
         await this.addSampleFromBuffer(audioBuffer, label)
+    }
+
+    async predict(features: number[], k = 3): Promise<AudioPrediction | null> {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(new Float32Array(features))
+        const result = await this.knn.predictClass(embedding, k)
+        embedding.dispose()
+        return result
     }
 
     async predictFromBuffer(audioBuffer: AudioBuffer, k = 3): Promise<AudioPrediction | null> {
