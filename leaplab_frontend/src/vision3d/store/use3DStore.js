@@ -4,9 +4,10 @@
  */
 
 import { create } from 'zustand';
-import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
+import { createShape, cloneShape, snapPositionToGrid, generateShapeId, serializeGeometry, deserializeGeometry } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { performCSG, isCSGValid } from '../engine/CSGEngine';
+import * as THREE from 'three';
 import { log, debug, warn, error } from '../utils/logger';
 
 const MAX_HISTORY = 50;
@@ -49,6 +50,154 @@ export const use3DStore = create((set, get) => ({
   },
   clearRuler: () => {
     set({ rulerActive: false, rulerOrigin: null, rulerTarget: null, rulerMeasurements: [] });
+  },
+
+  // ─── Edit Mode State (Blender-like mesh editing) ───
+  editMode: 'object', // 'object' | 'vertex' | 'edge' | 'face'
+  editShapeId: null,   // shape currently being edited in component mode
+  selectedVertices: [], // [{shapeId, index}] — selected vertex indices
+  selectedEdges: [],    // [{shapeId, a, b}] — selected edge pairs (vertex indices)
+  selectedFaces: [],    // [{shapeId, index}] — selected face indices
+  editTool: null,       // null | 'extrude' | 'inset' | 'merge' | 'knife' | 'exclude' | 'include'
+  geometryCache: {},    // { [shapeId]: THREE.BufferGeometry } — cached live geometry
+  geometryVersion: 0,   // incremented on every cacheGeometry call to force re-renders
+  proportionalRadius: 2.0, // radius for proportional editing (Include mode)
+
+  setEditMode: (mode) => {
+    const state = get();
+    log('setEditMode:', mode, state.editMode, '->', mode);
+    if (mode === state.editMode) return;
+    // Exiting edit mode clears component selection and geometry cache
+    if (mode === 'object') {
+      set({
+        editMode: 'object',
+        editShapeId: null,
+        selectedVertices: [],
+        selectedEdges: [],
+        selectedFaces: [],
+        editTool: null,
+        geometryCache: {},
+      });
+    } else {
+      // Entering edit mode — require exactly one selected shape
+      const wasInEdit = state.editMode !== 'object';
+      const shapeId = state.selectedIds.length === 1 ? state.selectedIds[0] : null;
+      set({
+        editMode: mode,
+        editShapeId: shapeId,
+        selectedVertices: wasInEdit ? state.selectedVertices : [],
+        selectedEdges: wasInEdit ? state.selectedEdges : [],
+        selectedFaces: wasInEdit ? state.selectedFaces : [],
+        editTool: null,
+        // Don't clear geometryCache here — MeshEditor will populate it
+      });
+    }
+  },
+
+  setEditTool: (tool) => {
+    log('setEditTool:', tool);
+    set({ editTool: tool });
+  },
+
+  setProportionalRadius: (radius) => {
+    set({ proportionalRadius: Math.max(0.1, radius) });
+  },
+
+  selectVertex: (shapeId, index, multi = false) => {
+    set((state) => {
+      if (multi) {
+        const exists = state.selectedVertices.find(v => v.shapeId === shapeId && v.index === index);
+        return {
+          selectedVertices: exists
+            ? state.selectedVertices.filter(v => !(v.shapeId === shapeId && v.index === index))
+            : [...state.selectedVertices, { shapeId, index }],
+        };
+      }
+      return { selectedVertices: [{ shapeId, index }] };
+    });
+  },
+
+  selectEdge: (shapeId, a, b, multi = false) => {
+    set((state) => {
+      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
+      const newEdge = { shapeId, a: Math.min(a, b), b: Math.max(a, b) };
+      if (multi) {
+        const exists = state.selectedEdges.find(e => key(e) === key(newEdge));
+        return {
+          selectedEdges: exists
+            ? state.selectedEdges.filter(e => key(e) !== key(newEdge))
+            : [...state.selectedEdges, newEdge],
+        };
+      }
+      return { selectedEdges: [newEdge] };
+    });
+  },
+
+  selectEdges: (edges, append = false) => {
+    set((state) => {
+      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
+      const formatted = edges.map(e => ({
+        shapeId: e.shapeId,
+        a: Math.min(e.a, e.b),
+        b: Math.max(e.a, e.b)
+      }));
+      if (append) {
+        const existingKeys = new Set(state.selectedEdges.map(key));
+        const newEdges = formatted.filter(e => !existingKeys.has(key(e)));
+        return { selectedEdges: [...state.selectedEdges, ...newEdges] };
+      }
+      return { selectedEdges: formatted };
+    });
+  },
+
+  selectFace: (shapeId, index, multi = false) => {
+    set((state) => {
+      if (multi) {
+        const exists = state.selectedFaces.find(f => f.shapeId === shapeId && f.index === index);
+        return {
+          selectedFaces: exists
+            ? state.selectedFaces.filter(f => !(f.shapeId === shapeId && f.index === index))
+            : [...state.selectedFaces, { shapeId, index }],
+        };
+      }
+      return { selectedFaces: [{ shapeId, index }] };
+    });
+  },
+
+  clearComponentSelection: () => {
+    set({ selectedVertices: [], selectedEdges: [], selectedFaces: [] });
+  },
+
+  cacheGeometry: (shapeId, geometry) => {
+    set((state) => ({
+      geometryCache: { ...state.geometryCache, [shapeId]: geometry },
+      geometryVersion: state.geometryVersion + 1,
+    }));
+  },
+
+  removeCachedGeometry: (shapeId) => {
+    set((state) => {
+      const cache = { ...state.geometryCache };
+      delete cache[shapeId];
+      return { geometryCache: cache };
+    });
+  },
+
+  applyGeometryEdit: (shapeId, newGeometry) => {
+    // Apply mutated geometry back to the shape as _customGeometry
+    // and clear parametric cache so it renders from the raw geometry
+    const state = get();
+    const shape = state.shapes.find(s => s.id === shapeId);
+    if (!shape) return;
+    set((s) => ({
+      shapes: s.shapes.map(sh =>
+        sh.id === shapeId ? { ...sh, _customGeometry: newGeometry } : sh
+      ),
+      geometryCache: { ...s.geometryCache, [shapeId]: newGeometry },
+      geometryVersion: s.geometryVersion + 1,
+      isProjectDirty: true,
+    }));
+    get().pushHistory();
   },
 
   // Shape actions
@@ -300,7 +449,7 @@ export const use3DStore = create((set, get) => ({
       return s;
     });
 
-    set((state) => ({
+    set(() => ({
       shapes: [...updatedShapes, groupShape],
       selectedIds: [groupShape.id],
       isProjectDirty: true,
@@ -369,7 +518,6 @@ export const use3DStore = create((set, get) => ({
   // Mirror actions
   mirrorShapes: (ids, axis) => {
     log('mirrorShapes:', ids.length, 'shapes, axis:', axis);
-    const state = get();
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
 
     set((state) => ({
@@ -406,7 +554,12 @@ export const use3DStore = create((set, get) => ({
     debug('pushHistory');
     const state = get();
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    newHistory.push(JSON.parse(JSON.stringify(state.shapes)));
+    // Serialize geometry for history storage
+    newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
+      if (key === '_csgGeometry' && val && val.attributes) return serializeGeometry(val);
+      if (key === '_customGeometry' && val && val.attributes) return serializeGeometry(val);
+      return val;
+    })));
 
     if (newHistory.length > MAX_HISTORY) {
       newHistory.shift();
@@ -423,8 +576,18 @@ export const use3DStore = create((set, get) => ({
     if (state.historyIndex > 0) {
       log('undo: index', state.historyIndex, '->', state.historyIndex - 1);
       const newIndex = state.historyIndex - 1;
+      const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
+      // Deserialize geometries back to BufferGeometry
+      for (const sh of restoredShapes) {
+        if (sh._customGeometry && sh._customGeometry.attributes) {
+          sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+        if (sh._csgGeometry && sh._csgGeometry.attributes) {
+          sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
+        }
+      }
       set({
-        shapes: JSON.parse(JSON.stringify(state.history[newIndex])),
+        shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
       });
@@ -436,8 +599,18 @@ export const use3DStore = create((set, get) => ({
     if (state.historyIndex < state.history.length - 1) {
       log('redo: index', state.historyIndex, '->', state.historyIndex + 1);
       const newIndex = state.historyIndex + 1;
+      const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
+      // Deserialize geometries back to BufferGeometry
+      for (const sh of restoredShapes) {
+        if (sh._customGeometry && sh._customGeometry.attributes) {
+          sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+        if (sh._csgGeometry && sh._csgGeometry.attributes) {
+          sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
+        }
+      }
       set({
-        shapes: JSON.parse(JSON.stringify(state.history[newIndex])),
+        shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
       });
@@ -477,7 +650,16 @@ export const use3DStore = create((set, get) => ({
   // Bulk actions
   setShapes: (shapes) => {
     log('setShapes:', shapes.length, 'shapes');
-    set({ shapes, isProjectDirty: true });
+    const deserialized = shapes.map((sh) => {
+      if (sh._customGeometry && !sh._customGeometry.isBufferGeometry) {
+        sh._customGeometry = deserializeGeometry(sh._customGeometry);
+      }
+      if (sh._csgGeometry && !sh._csgGeometry.isBufferGeometry) {
+        sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
+      }
+      return sh;
+    });
+    set({ shapes: deserialized, isProjectDirty: true });
   },
 
   clearScene: () => {
@@ -542,7 +724,7 @@ export const use3DStore = create((set, get) => ({
     // If we have a last duplicate transform, repeat it
     if (state.lastDuplicateTransform && state.lastDuplicateTransform.ids.length === ids.length) {
       const t = state.lastDuplicateTransform;
-      const newShapes = shapesToDuplicate.map((s, i) => {
+      const newShapes = shapesToDuplicate.map((s) => {
         const clone = cloneShape(s);
         clone.position = [
           s.position[0] + t.deltaX,
@@ -717,8 +899,15 @@ export const use3DStore = create((set, get) => ({
       if (shapeData.name) newShape.name = shapeData.name;
       if (shapeData.color) newShape.color = shapeData.color;
       Object.assign(newShape, shapeData);
-      newShape.id = newShape.id;
     }
+
+    if (newShape._customGeometry && !newShape._customGeometry.isBufferGeometry) {
+      newShape._customGeometry = deserializeGeometry(newShape._customGeometry);
+    }
+    if (newShape._csgGeometry && !newShape._csgGeometry.isBufferGeometry) {
+      newShape._csgGeometry = deserializeGeometry(newShape._csgGeometry);
+    }
+
     log('importShape:', newShape.type, newShape.name);
     set((state) => ({
       shapes: [...state.shapes, newShape],

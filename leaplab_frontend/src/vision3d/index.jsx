@@ -17,16 +17,15 @@ import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
 import { saveVision3DProject } from './utils/cloudSave';
 import { importProjectFromJSON } from './utils/indexedDB';
 import './styles/Leap3D.css';
-import { log, debug } from './utils/logger';
+import { log, debug, error } from './utils/logger';
+import { serializeGeometry } from './utils/helpers';
 
 const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
   const loadedRef = useRef(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [netOpen, setNetOpen] = useState(false);
-  const [netFoldProgress, setNetFoldProgress] = useState(0);
   const [cloudProjectId, setCloudProjectId] = useState(null);
-  log('Vision3DApp: mounted');
 
   const {
     activeTool,
@@ -76,7 +75,18 @@ const Vision3DApp = ({ onBack }) => {
     distributeShapes,
     importShape,
     clearScene,
+    editMode,
+    setEditMode,
+    editShapeId,
+    editTool,
+    setEditTool,
+    selectedVertices,
+    selectedEdges,
+    selectedFaces,
+    clearComponentSelection,
   } = use3DStore();
+
+  useEffect(() => { log('Vision3DApp: mounted'); }, []);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -218,19 +228,297 @@ const Vision3DApp = ({ onBack }) => {
         state.selectShapes(allIds);
       }
 
-      // Escape (deselect)
+      // Deselect All (Alt+A — Blender convention)
+      if (e.altKey && key === 'a') {
+        e.preventDefault();
+        log('Keyboard: Alt+A (deselect all)');
+        if (state.editMode !== 'object') {
+          state.clearComponentSelection();
+        } else {
+          deselectAll();
+        }
+      }
+
+      // Invert Selection (Ctrl+I — Blender convention)
+      if (e.ctrlKey && key === 'i' && !e.shiftKey) {
+        e.preventDefault();
+        log('Keyboard: Ctrl+I (invert selection)');
+        if (state.editMode !== 'object') {
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const pos = geo.attributes.position;
+            const index = geo.index;
+            if (state.editMode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const verts = [];
+              for (let i = 0; i < pos.count; i++) {
+                if (!selected.has(i)) verts.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedVertices: verts });
+            } else if (state.editMode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const edgeSet = new Set();
+              const edges = [];
+              const addEdge = (a, b) => {
+                const k = edgeKey(a, b);
+                if (!edgeSet.has(k)) {
+                  edgeSet.add(k);
+                  if (!selected.has(k)) edges.push({ shapeId: state.editShapeId, a: Math.min(a, b), b: Math.max(a, b) });
+                }
+              };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  addEdge(index.getX(i), index.getX(i + 1));
+                  addEdge(index.getX(i + 1), index.getX(i + 2));
+                  addEdge(index.getX(i + 2), index.getX(i));
+                }
+              } else {
+                for (let i = 0; i < pos.count; i += 3) { addEdge(i, i + 1); addEdge(i + 1, i + 2); addEdge(i + 2, i); }
+              }
+              use3DStore.setState({ selectedEdges: edges });
+            } else if (state.editMode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const faceCount = index ? index.count / 3 : pos.count / 3;
+              const faces = [];
+              for (let i = 0; i < faceCount; i++) {
+                if (!selected.has(i)) faces.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedFaces: faces });
+            }
+          }
+        } else {
+          const selectedSet = new Set(state.selectedIds);
+          const allIds = state.shapes.map(s => s.id);
+          const inverted = allIds.filter(id => !selectedSet.has(id));
+          state.selectShapes(inverted);
+        }
+      }
+
+      // Escape (deselect / exit edit mode)
       if (e.key === 'Escape') {
-        log('Keyboard: Escape (deselect)');
-        deselectAll();
+        const st = use3DStore.getState();
+        if (st.editMode !== 'object') {
+          log('Keyboard: Escape (exit edit mode)');
+          setEditMode('object');
+        } else {
+          log('Keyboard: Escape (deselect)');
+          deselectAll();
+        }
       }
 
       // --- TinkerCAD-style shortcuts ---
 
       // Tool switching (V, M, R, S)
       if (key === 'v') { debug('Keyboard: V (select tool)'); setTool('select'); }
-      if (key === 'm' && !e.ctrlKey) { debug('Keyboard: M (move tool)'); setTool('move'); }
+      if (key === 'm' && !e.ctrlKey && state.editMode === 'object') { debug('Keyboard: M (move tool)'); setTool('move'); }
       if (key === 'r' && !e.ctrlKey) { debug('Keyboard: R (rotate tool)'); setTool('rotate'); }
       if (key === 's' && !e.ctrlKey && !e.shiftKey) { debug('Keyboard: S (scale tool)'); setTool('scale'); }
+
+      // Edit Mode switching (Tab, 1, 2, 3)
+      if (key === 'tab') {
+        e.preventDefault();
+        if (state.editMode !== 'object') {
+          debug('Keyboard: Tab (exit edit mode)');
+          setEditMode('object');
+        } else if (ids.length === 1) {
+          debug('Keyboard: Tab (enter vertex edit)');
+          setEditMode('vertex');
+        }
+      }
+      if (key === '1' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 1 (vertex edit)');
+        setEditMode(state.editMode === 'vertex' ? 'object' : 'vertex');
+      }
+      if (key === '2' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 2 (edge edit)');
+        setEditMode(state.editMode === 'edge' ? 'object' : 'edge');
+      }
+      if (key === '3' && !e.ctrlKey && !e.altKey && ids.length === 1) {
+        debug('Keyboard: 3 (face edit)');
+        setEditMode(state.editMode === 'face' ? 'object' : 'face');
+      }
+
+      // Edit tools — only in edit mode
+      if (state.editMode !== 'object') {
+        const mode = state.editMode;
+
+        // E key: Exclude — move only selected components (tear effect)
+        if (key === 'e' && !e.ctrlKey) {
+          e.preventDefault();
+          debug('Keyboard: E (exclude ' + mode + ')');
+          setEditTool('exclude');
+        }
+
+        // I key: Include — move selected + connected components (smooth deformation)
+        if (key === 'i' && !e.ctrlKey && !e.shiftKey) {
+          e.preventDefault();
+          debug('Keyboard: I (include ' + mode + ')');
+          setEditTool('include');
+        }
+
+        // Expand Selection (Ctrl+Numpad Plus or Ctrl+=)
+        if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd')) {
+          e.preventDefault();
+          debug('Keyboard: Ctrl++ (expand selection)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const index = geo.index;
+            if (mode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const edges = new Set();
+              const addEdge = (a, b) => { edges.add(Math.min(a, b) + '-' + Math.max(a, b)); };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(a) || selected.has(b)) addEdge(a, b);
+                  if (selected.has(b) || selected.has(c)) addEdge(b, c);
+                  if (selected.has(c) || selected.has(a)) addEdge(c, a);
+                }
+              }
+              const newVerts = new Set(selected);
+              edges.forEach(k => { const [a, b] = k.split('-').map(Number); newVerts.add(a); newVerts.add(b); });
+              use3DStore.setState({ selectedVertices: [...newVerts].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            } else if (mode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const neighborEdges = new Set();
+              const allEdges = new Set();
+              const addAllEdges = (a, b) => { allEdges.add(edgeKey(a, b)); };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  addAllEdges(a, b); addAllEdges(b, c); addAllEdges(c, a);
+                  if (selected.has(edgeKey(a, b))) { neighborEdges.add(edgeKey(b, c)); neighborEdges.add(edgeKey(c, a)); }
+                  if (selected.has(edgeKey(b, c))) { neighborEdges.add(edgeKey(a, b)); neighborEdges.add(edgeKey(c, a)); }
+                  if (selected.has(edgeKey(c, a))) { neighborEdges.add(edgeKey(a, b)); neighborEdges.add(edgeKey(b, c)); }
+                }
+              }
+              const newEdges = new Set(selected);
+              neighborEdges.forEach(k => { if (!newEdges.has(k)) newEdges.add(k); });
+              use3DStore.setState({ selectedEdges: [...newEdges].map(k => { const [a, b] = k.split('-').map(Number); return { shapeId: state.editShapeId, a, b }; }) });
+            } else if (mode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const neighborFaces = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const fi = Math.floor(i / 3);
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(fi)) {
+                    for (let j = 0; j < index.count; j += 3) {
+                      if (Math.floor(j / 3) === fi) continue;
+                      const na = index.getX(j), nb = index.getX(j + 1), nc = index.getX(j + 2);
+                      if ((a === na || a === nb || a === nc || b === na || b === nb || b === nc || c === na || c === nb || c === nc)) {
+                        neighborFaces.add(Math.floor(j / 3));
+                      }
+                    }
+                  }
+                }
+              }
+              const newFaces = new Set(selected);
+              neighborFaces.forEach(f => newFaces.add(f));
+              use3DStore.setState({ selectedFaces: [...newFaces].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            }
+          }
+        }
+
+        // Contract Selection (Ctrl+Numpad Minus or Ctrl+-)
+        if (e.ctrlKey && (e.key === '-' || e.code === 'NumpadSubtract')) {
+          e.preventDefault();
+          debug('Keyboard: Ctrl+- (contract selection)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const index = geo.index;
+            if (mode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const boundary = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(a) && selected.has(b) && selected.has(c)) {
+                    boundary.add(a); boundary.add(b); boundary.add(c);
+                  }
+                }
+              }
+              use3DStore.setState({ selectedVertices: [...boundary].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            } else if (mode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const interior = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(edgeKey(a, b)) && selected.has(edgeKey(b, c)) && selected.has(edgeKey(c, a))) {
+                    interior.add(edgeKey(a, b)); interior.add(edgeKey(b, c)); interior.add(edgeKey(c, a));
+                  }
+                }
+              }
+              use3DStore.setState({ selectedEdges: [...interior].map(k => { const [a, b] = k.split('-').map(Number); return { shapeId: state.editShapeId, a, b }; }) });
+            } else if (mode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const interior = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const fi = Math.floor(i / 3);
+                  if (!selected.has(fi)) continue;
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  let fullyShared = true;
+                  for (let j = 0; j < index.count; j += 3) {
+                    if (Math.floor(j / 3) === fi) continue;
+                    const na = index.getX(j), nb = index.getX(j + 1), nc = index.getX(j + 2);
+                    const shared = [a, b, c].filter(v => v === na || v === nb || v === nc).length;
+                    if (shared >= 2 && !selected.has(Math.floor(j / 3))) { fullyShared = false; break; }
+                  }
+                  if (fullyShared) interior.add(fi);
+                }
+              }
+              use3DStore.setState({ selectedFaces: [...interior].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            }
+          }
+        }
+
+        // Select All in edit mode (A key)
+        if (key === 'a' && !e.ctrlKey) {
+          e.preventDefault();
+          debug('Keyboard: A (select all ' + state.editMode + 's)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const pos = geo.attributes.position;
+            const index = geo.index;
+            if (state.editMode === 'vertex') {
+              const verts = [];
+              for (let i = 0; i < pos.count; i++) {
+                verts.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedVertices: verts });
+            } else if (state.editMode === 'edge') {
+              const edgeSet = new Set();
+              const edges = [];
+              const addEdge = (a, b) => {
+                const k = Math.min(a, b) + '-' + Math.max(a, b);
+                if (!edgeSet.has(k)) { edgeSet.add(k); edges.push({ shapeId: state.editShapeId, a: Math.min(a, b), b: Math.max(a, b) }); }
+              };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  addEdge(index.getX(i), index.getX(i + 1));
+                  addEdge(index.getX(i + 1), index.getX(i + 2));
+                  addEdge(index.getX(i + 2), index.getX(i));
+                }
+              } else {
+                for (let i = 0; i < pos.count; i += 3) { addEdge(i, i + 1); addEdge(i + 1, i + 2); addEdge(i + 2, i); }
+              }
+              use3DStore.setState({ selectedEdges: edges });
+            } else if (state.editMode === 'face') {
+              const faces = [];
+              const faceCount = index ? index.count / 3 : pos.count / 3;
+              for (let i = 0; i < faceCount; i++) {
+                faces.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedFaces: faces });
+            }
+          }
+        }
+      }
 
       // Drop to workplane (D)
       if (key === 'd' && !e.ctrlKey) {
@@ -478,7 +766,13 @@ const Vision3DApp = ({ onBack }) => {
       project,
       shapes
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const replacer = (key, val) => {
+      if ((key === '_customGeometry' || key === '_csgGeometry') && val && val.attributes) {
+        return serializeGeometry(val);
+      }
+      return val;
+    };
+    const blob = new Blob([JSON.stringify(payload, replacer, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -525,7 +819,7 @@ const Vision3DApp = ({ onBack }) => {
         <div className="v3d-canvas-wrapper">
           <div className="v3d-toolbar-bar">
             <div className="v3d-toolbar-left">
-              <div className="v3d-toolbar-mode-group">
+              <div className="v3d-toolbar-mode-group v3d-group-transform">
                 <button
                   className={`v3d-toolbar-btn ${activeTool === 'select' ? 'active' : ''}`}
                   onClick={() => setTool('select')}
@@ -556,9 +850,83 @@ const Vision3DApp = ({ onBack }) => {
                   title="Scale (S)"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3l-7 7M21 3v5M21 3h-5M3 21l7-7M3 21v-5M3 21h5"/></svg>
-                  Scale
+                  Resize
                 </button>
               </div>
+              <span className="v3d-toolbar-separator" />
+              {/* Edit Mode Group (Blender-like) */}
+              <div className="v3d-toolbar-mode-group v3d-group-modes">
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'vertex' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'vertex' ? 'object' : 'vertex')}
+                  disabled={selectedIds.length !== 1}
+                  title="Vertex Edit (1)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+                  Points
+                </button>
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'edge' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'edge' ? 'object' : 'edge')}
+                  disabled={selectedIds.length !== 1}
+                  title="Edge Edit (2)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/></svg>
+                  Lines
+                </button>
+                <button
+                  className={`v3d-toolbar-btn ${editMode === 'face' ? 'active' : ''}`}
+                  onClick={() => setEditMode(editMode === 'face' ? 'object' : 'face')}
+                  disabled={selectedIds.length !== 1}
+                  title="Face Edit (3)"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,3 3,21 21,21"/></svg>
+                  Sides
+                </button>
+              </div>
+              {/* Edit Tools (shown when in edit mode) */}
+              {editMode !== 'object' && (
+                <>
+                  <span className="v3d-toolbar-separator" />
+                  <div className="v3d-toolbar-actions-group v3d-group-edit-actions">
+                    <button
+                      className={`v3d-toolbar-btn ${editTool === 'exclude' ? 'active' : ''}`}
+                      onClick={() => setEditTool('exclude')}
+                      title="Move only selected (E)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
+                      Move Selected
+                    </button>
+                    <button
+                      className={`v3d-toolbar-btn ${editTool === 'include' ? 'active' : ''}`}
+                      onClick={() => setEditTool('include')}
+                      title="Move selected + connected (I)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                      Stretch Shape
+                    </button>
+                    {editMode === 'vertex' && (
+                      <button
+                        className="v3d-toolbar-btn"
+                        onClick={() => setEditTool('merge')}
+                        disabled={selectedVertices.length < 2}
+                        title="Merge Vertices (M)"
+                      >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 10l4 4"/></svg>
+                        Join
+                      </button>
+                    )}
+                    <button
+                      className="v3d-toolbar-btn"
+                      onClick={() => clearComponentSelection()}
+                      title="Deselect Components (Escape)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                      Clear
+                    </button>
+                  </div>
+                </>
+              )}
               <span className="v3d-toolbar-separator" />
               <div className="v3d-toolbar-actions-group">
                 <button
@@ -576,25 +944,26 @@ const Vision3DApp = ({ onBack }) => {
                 >
                   Import
                 </button>
-                <button
-                  className="v3d-toolbar-btn"
-                  onClick={() => {
-                    if (selectedIds.length === 1) {
-                      setNetOpen(true);
-                      setNetFoldProgress(0);
-                    }
-                  }}
-                  disabled={selectedIds.length !== 1}
-                  title="Show 2D Net of selected shape"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
-                    <path d="M14 14h7v7M14 17.5h3.5M17.5 14v3.5"/>
-                  </svg>
-                  Net
-                </button>
+                {(() => {
+                  const NET_SUPPORTED = ['cube','box','cylinder','cone','tetrahedron','pyramid'];
+                  const selShape = selectedIds.length === 1 ? shapes.find((s) => s.id === selectedIds[0]) : null;
+                  const hasNet = selShape && NET_SUPPORTED.includes(selShape.type);
+                  return (
+                    <button
+                      className="v3d-toolbar-btn"
+                      onClick={() => {
+                        if (hasNet) setNetOpen(true);
+                      }}
+                      disabled={!hasNet}
+                      title={hasNet ? "Show how this shape is constructed from its net" : "Net animation not available for this shape"}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="5,3 19,12 5,21"/>
+                      </svg>
+                      Animate
+                    </button>
+                  );
+                })()}
                 <button
                   className="v3d-toolbar-btn"
                   onClick={() => {
@@ -630,34 +999,36 @@ const Vision3DApp = ({ onBack }) => {
                 </button>
               </div>
               <span className="v3d-toolbar-separator" />
-              <div className="v3d-toolbar-group-label">CSG</div>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('union')}
-                disabled={selectedIds.length < 2}
-                title="CSG Union (Ctrl+1)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
-                Union
-              </button>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('subtract')}
-                disabled={selectedIds.length < 2}
-                title="CSG Subtract (Ctrl+2)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
-                Subtract
-              </button>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('intersect')}
-                disabled={selectedIds.length < 2}
-                title="CSG Intersect (Ctrl+3)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
-                Intersect
-              </button>
+              <div className="v3d-toolbar-group-label">Combine</div>
+              <div className="v3d-toolbar-actions-group v3d-group-combine">
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('union')}
+                  disabled={selectedIds.length < 2}
+                  title="Glue shapes together (Ctrl+1)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
+                  Glue
+                </button>
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('subtract')}
+                  disabled={selectedIds.length < 2}
+                  title="Cut one shape from another (Ctrl+2)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
+                  Cut
+                </button>
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('intersect')}
+                  disabled={selectedIds.length < 2}
+                  title="Keep only the overlapping part (Ctrl+3)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
+                  Overlap
+                </button>
+              </div>
               <span className="v3d-toolbar-separator" />
               <button
                 className={`v3d-toolbar-btn ${(() => {
@@ -679,7 +1050,7 @@ const Vision3DApp = ({ onBack }) => {
                   <circle cx="12" cy="12" r="9"/>
                   <circle cx="12" cy="12" r="5" fill="currentColor" opacity={selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 0 : 0.3}/>
                 </svg>
-                {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Solid' : 'Hollow'}
+                {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Make Solid' : 'Make Hole'}
               </button>
             </div>
             <div className="v3d-toolbar-center">
@@ -701,6 +1072,12 @@ const Vision3DApp = ({ onBack }) => {
                 <div className="v3d-toolbar-info-item" style={{ color: '#ef4444' }}>
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Ruler
+                </div>
+              )}
+              {editMode !== 'object' && (
+                <div className="v3d-toolbar-info-item" style={{ color: '#a855f7' }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
+                  {editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}
                 </div>
               )}
             </div>
@@ -787,9 +1164,7 @@ const Vision3DApp = ({ onBack }) => {
         return (
           <ShapeNet
             shape={selectedShape}
-            foldProgress={netFoldProgress}
-            onClose={() => { setNetOpen(false); setNetFoldProgress(0); }}
-            onFoldChange={setNetFoldProgress}
+            onClose={() => { setNetOpen(false); }}
           />
         );
       })()}

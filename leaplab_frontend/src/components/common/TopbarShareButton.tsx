@@ -110,7 +110,8 @@ export default function TopbarShareButton({
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
+                        background: 'rgba(15, 23, 42, 0.3)',
+                        backdropFilter: 'blur(4px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -120,20 +121,20 @@ export default function TopbarShareButton({
                 >
                     <div
                         style={{
-                            background: '#1e1e2e',
+                            background: '#ffffff',
                             borderRadius: 16,
                             padding: '28px 32px',
                             maxWidth: 400,
                             width: '90%',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-                            border: '1px solid rgba(255,255,255,0.08)',
+                            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.15)',
+                            border: '1px solid #e2e8f0',
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 style={{ color: '#fff', margin: '0 0 8px', fontSize: 18, fontWeight: 600 }}>
+                        <h3 style={{ color: '#1e293b', margin: '0 0 8px', fontSize: 18, fontWeight: 700 }}>
                             Save Project First
                         </h3>
-                        <p style={{ color: 'rgba(255,255,255,0.6)', margin: '0 0 24px', fontSize: 14, lineHeight: 1.5 }}>
+                        <p style={{ color: '#64748b', margin: '0 0 24px', fontSize: 14, lineHeight: 1.5, fontWeight: 500 }}>
                             You need to save your project to the cloud before sharing.
                             {projectName ? ` "${projectName}"` : ''} Save now?
                         </p>
@@ -143,12 +144,21 @@ export default function TopbarShareButton({
                                 style={{
                                     padding: '8px 20px',
                                     borderRadius: 8,
-                                    border: '1px solid rgba(255,255,255,0.15)',
-                                    background: 'transparent',
-                                    color: 'rgba(255,255,255,0.7)',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#ffffff',
+                                    color: '#475569',
                                     cursor: 'pointer',
                                     fontSize: 14,
-                                    fontWeight: 500,
+                                    fontWeight: 700,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    e.currentTarget.style.color = '#0f172a';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#ffffff';
+                                    e.currentTarget.style.color = '#475569';
                                 }}
                             >
                                 Cancel
@@ -160,12 +170,26 @@ export default function TopbarShareButton({
                                     padding: '8px 20px',
                                     borderRadius: 8,
                                     border: 'none',
-                                    background: 'linear-gradient(135deg, #6c3fc5, #4f46e5)',
+                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                                     color: '#fff',
                                     cursor: 'pointer',
                                     fontSize: 14,
-                                    fontWeight: 600,
+                                    fontWeight: 700,
                                     opacity: loading ? 0.7 : 1,
+                                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5, #4338ca)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.3)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.2)';
+                                    }
                                 }}
                             >
                                 {loading ? 'Saving...' : 'Save & Share'}

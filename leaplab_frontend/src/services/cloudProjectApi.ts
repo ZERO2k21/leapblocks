@@ -184,6 +184,7 @@ export async function updateCloudProject(
 
     const formData = new FormData();
     formData.append('name', payload.projectName);
+    formData.append('mode', payload.mode);
     formData.append('file', file);
 
     if (payload.description) {

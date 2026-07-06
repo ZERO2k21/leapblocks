@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useEffect, Suspense, useCallback } from 'react';
+import React, { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -14,12 +14,25 @@ import { ShapeRenderer } from './ShapeRenderer';
 import { Ruler } from './Ruler';
 import TransformGizmo, { setOrbitRef } from './TransformGizmo';
 import ShapeInteraction from './ShapeInteraction';
+import { MeshEditor } from './MeshEditor';
+import { MeshEditOverlay } from './MeshEditOverlay';
+import SelectionTools from './SelectionTools';
 import { log, debug } from '../utils/logger';
+
+// Global refs for Three.js objects (used by SelectionTools outside Canvas)
+window.__r3fRefs = { scene: null, camera: null, gl: null };
 
 const CameraController = () => {
   const fitTarget = use3DStore((s) => s.fitSelectionTarget);
   const fitAll = use3DStore((s) => s.fitAllTarget);
-  const { camera } = useThree();
+  const { camera, gl, scene } = useThree();
+
+  // Store refs globally for SelectionTools (outside Canvas)
+  useEffect(() => {
+    window.__r3fRefs.scene = scene;
+    window.__r3fRefs.camera = camera;
+    window.__r3fRefs.gl = gl;
+  }, [scene, camera, gl]);
 
   useEffect(() => {
     const target = fitTarget || fitAll;
@@ -89,12 +102,54 @@ const DropHandler = () => {
 const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
   const orbitRef = useRef();
+  const { gl, camera, scene } = useThree();
 
   useEffect(() => {
     setOrbitRef(orbitRef);
     window.__externalOrbitRef = orbitRef;
     return () => { window.__externalOrbitRef = null; };
   }, []);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleCaptureDown = (e) => {
+      if (e.button !== 0) return;
+      if (window.__gizmoActive) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+
+      const allMeshes = [];
+      scene.traverse((child) => {
+        if (child.isMesh && child.userData.shapeId && !child.userData.gizmoAxis) {
+          allMeshes.push(child);
+        }
+      });
+
+      const hits = raycaster.intersectObjects(allMeshes, false);
+      if (hits.length > 0) {
+        const orbit = orbitRef.current;
+        if (orbit) {
+          orbit.enabled = false;
+          const reEnable = () => {
+            orbit.enabled = true;
+            window.removeEventListener('pointerup', reEnable);
+          };
+          window.addEventListener('pointerup', reEnable);
+        }
+      }
+    };
+
+    canvas.addEventListener('pointerdown', handleCaptureDown, { capture: true });
+    return () => {
+      canvas.removeEventListener('pointerdown', handleCaptureDown, { capture: true });
+    };
+  }, [gl, camera, scene]);
 
   return (
     <>
@@ -119,6 +174,9 @@ const SceneContent = () => {
       <TransformGizmo />
 
       <ShapeInteraction />
+
+      <MeshEditor />
+      <MeshEditOverlay />
 
       <Ruler />
 
@@ -150,7 +208,6 @@ export const Canvas3D = () => {
   const containerRef = useRef(null);
   const cameraMode = use3DStore((s) => s.cameraMode);
   const deselectAll = use3DStore((s) => s.deselectAll);
-  const deselectOnClick = use3DStore((s) => s.deselectOnClick);
   debug('Canvas3D: rendering, camera:', cameraMode);
 
   // ResizeObserver to force R3F canvas re-measurement on container size changes
@@ -171,17 +228,10 @@ export const Canvas3D = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleCanvasClick = useCallback((e) => {
-    // If click is on the canvas background (not on a shape), deselect
-    if (e.target === e.currentTarget || e.target.tagName === 'CANVAS') {
-      // This is handled by the R3F scene background click
-    }
-  }, []);
-
   return (
     <div ref={containerRef} className="canvas-3d-container">
       <Canvas
-        shadows
+        shadows={THREE.PCFShadowMap}
         orthographic={cameraMode === 'orthographic'}
         camera={{
           position: [8, 6, 8],
@@ -202,6 +252,7 @@ export const Canvas3D = () => {
           <SceneContent />
         </Suspense>
       </Canvas>
+      <SelectionTools />
     </div>
   );
 };

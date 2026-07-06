@@ -4,6 +4,7 @@
  */
 
 import { log, debug, warn } from './logger';
+import { serializeGeometry } from './helpers';
 
 const DB_NAME = 'vision3d_db';
 const DB_VERSION = 1;
@@ -108,7 +109,12 @@ export async function saveShapes(projectId, shapes) {
         cursor.delete();
         cursor.continue();
       } else {
-        shapes.forEach((shape) => {
+        const serializedShapes = JSON.parse(JSON.stringify(shapes, (key, val) => {
+          if (key === '_csgGeometry' && val && val.attributes) return serializeGeometry(val);
+          if (key === '_customGeometry' && val && val.attributes) return serializeGeometry(val);
+          return val;
+        }));
+        serializedShapes.forEach((shape) => {
           store.put({ ...shape, projectId });
         });
       }

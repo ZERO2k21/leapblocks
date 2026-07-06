@@ -14,69 +14,37 @@ interface ProjectWorkspaceProps {
 }
 
 function ModeSwitcher({ mode, onModeChange, canTrain }: { mode: ClassifierMode; onModeChange: (m: ClassifierMode) => void; canTrain: boolean }) {
+    const modes = [
+        { id: 'collect' as const, label: 'Collect', icon: 'M12 8v8M8 12h8' },
+        { id: 'train' as const, label: 'Train', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+        { id: 'test' as const, label: 'Test', icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11' }
+    ]
+
     return (
-        <div className="flex items-center gap-2 rounded-2xl p-1.5" style={{
-            background: 'rgba(255,255,255,0.2)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.25)'
-        }}>
-            <button
-                onClick={() => onModeChange('collect')}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                style={mode === 'collect' ? {
-                    background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
-                    color: 'white',
-                    boxShadow: '0 4px 16px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
-                } : {
-                    color: 'rgba(255,255,255,0.7)'
-                }}
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v8M8 12h8" />
-                </svg>
-                Collect
-            </button>
-            <button
-                onClick={() => canTrain && onModeChange('train')}
-                disabled={!canTrain}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                style={mode === 'train' ? {
-                    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-                    color: 'white',
-                    boxShadow: '0 4px 16px rgba(59,130,246,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
-                } : canTrain ? {
-                    color: 'rgba(255,255,255,0.7)'
-                } : {
-                    color: 'rgba(255,255,255,0.3)',
-                    cursor: 'not-allowed'
-                }}
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                </svg>
-                Train
-            </button>
-            <button
-                onClick={() => onModeChange('test')}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                style={mode === 'test' ? {
-                    background: 'linear-gradient(135deg, #10B981, #14B8A6)',
-                    color: 'white',
-                    boxShadow: '0 4px 16px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
-                } : {
-                    color: 'rgba(255,255,255,0.7)'
-                }}
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                </svg>
-                Test
-            </button>
+        <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+            {modes.map((m) => {
+                const isActive = mode === m.id
+                const isDisabled = m.id === 'train' && !canTrain
+                return (
+                    <button
+                        key={m.id}
+                        onClick={() => !isDisabled && onModeChange(m.id)}
+                        disabled={isDisabled}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                            isActive
+                                ? 'bg-white text-[#0b1b42] shadow-md'
+                                : isDisabled
+                                    ? 'text-white/30 cursor-not-allowed'
+                                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                        }`}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d={m.icon} />
+                        </svg>
+                        {m.label}
+                    </button>
+                )
+            })}
         </div>
     )
 }
@@ -90,11 +58,6 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
         ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2
         : false
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const handleSave = React.useCallback(() => {}, [])
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const handleTitleChange = React.useCallback(() => {}, [])
-
     const handleAddClass = () => {
         if (newClassName.trim()) {
             mode.addClass(newClassName.trim())
@@ -103,6 +66,8 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
         }
     }
 
+    const totalSamples = mode.getTotalSamples()
+
     return (
         <div className="h-screen flex flex-col" style={{
             background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)'
@@ -110,8 +75,10 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
                 onBack={onBack}
-                onSave={handleSave}
-                onTitleChange={handleTitleChange}
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                onSave={() => {}}
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                onTitleChange={() => {}}
                 brandName="NEURA"
                 rightContent={
                     <ModeSwitcher
@@ -123,33 +90,25 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
             />
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Left sidebar: Classes */}
-                <div className="w-72 flex flex-col relative" style={{
-                    background: 'rgba(255,255,255,0.5)',
-                    backdropFilter: 'blur(24px)',
-                    WebkitBackdropFilter: 'blur(24px)',
-                    borderRight: '1px solid rgba(255,255,255,0.6)'
-                }}>
-                    <div className="px-4 py-4" style={{
-                        borderBottom: '1px solid rgba(139,92,246,0.1)'
-                    }}>
+                {/* Sidebar */}
+                <div className="w-80 bg-white border-r border-gray-100 flex flex-col shadow-sm">
+                    {/* Sidebar header */}
+                    <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white">
+                        <div className="flex items-center justify-between mb-1">
+                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Classes</h2>
+                            <span className="text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">
+                                {mode.project?.classes.length || 0}
+                            </span>
+                        </div>
                         <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-sm font-black text-gray-800 uppercase tracking-wider">Classes</h2>
-                                <div className="w-8 h-0.5 mt-1 rounded-full" style={{
-                                    background: 'linear-gradient(90deg, #7C3AED, #A855F7)'
-                                }} />
-                            </div>
+                            <p className="text-[11px] text-gray-400">
+                                {totalSamples} total samples
+                            </p>
                             <button
                                 onClick={() => setShowAddClass(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95"
-                                style={{
-                                    background: 'rgba(124,58,237,0.1)',
-                                    color: '#7C3AED',
-                                    border: '1px solid rgba(124,58,237,0.2)'
-                                }}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-[11px] font-bold hover:shadow-lg hover:shadow-violet-200 transition-all duration-200 hover:scale-105 active:scale-95"
                             >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 5v14M5 12h14" />
                                 </svg>
                                 Add
@@ -157,9 +116,10 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {/* Class list */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
                         {showAddClass && (
-                            <div className="flex gap-2 animate-fade-in">
+                            <div className="flex gap-2 animate-[slideUp_0.2s_ease-out]">
                                 <input
                                     autoFocus
                                     value={newClassName}
@@ -168,62 +128,65 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
                                         if (e.key === 'Enter') handleAddClass()
                                         if (e.key === 'Escape') setShowAddClass(false)
                                     }}
-                                    placeholder="Class name..."
-                                    className="flex-1 px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.7)',
-                                        border: '1px solid rgba(124,58,237,0.3)',
-                                        backdropFilter: 'blur(8px)'
-                                    }}
+                                    placeholder="Enter class name..."
+                                    className="flex-1 px-4 py-2.5 text-sm border-2 border-violet-200 rounded-xl focus:outline-none focus:border-violet-400 bg-white transition-colors"
                                 />
                                 <button
                                     onClick={handleAddClass}
-                                    className="px-3 py-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-300"
+                                    className="px-4 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-xl text-sm font-bold hover:shadow-lg transition-all"
                                 >
-                                    ✓
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 6L9 17l-5-5" />
+                                    </svg>
                                 </button>
                             </div>
                         )}
 
                         {mode.project?.classes.map((classData) => (
-                            <div key={classData.id} className="group">
-                                <ClassCard
-                                    classData={classData}
-                                    isSelected={classData.id === mode.selectedClassId}
-                                    onSelect={() => mode.setSelectedClassId(classData.id)}
-                                    onRemove={() => mode.removeClass(classData.id)}
-                                    onRename={(name) => mode.renameClass(classData.id, name)}
-                                />
-                                {classData.id === mode.selectedClassId && mode.mode === 'collect' && (
-                                    <div className="mt-2 ml-2 text-xs text-gray-400 font-medium">
-                                        {classData.samples.length} samples
-                                    </div>
-                                )}
-                            </div>
+                            <ClassCard
+                                key={classData.id}
+                                classData={classData}
+                                isSelected={classData.id === mode.selectedClassId}
+                                onSelect={() => mode.setSelectedClassId(classData.id)}
+                                onRemove={() => mode.removeClass(classData.id)}
+                                onRename={(name) => mode.renameClass(classData.id, name)}
+                            />
                         ))}
 
                         {mode.project && mode.project.classes.length === 0 && (
-                            <div className="flex flex-col items-center py-12 text-gray-300">
-                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{
-                                    background: 'rgba(124,58,237,0.05)',
-                                    border: '2px dashed rgba(124,58,237,0.15)'
-                                }}>
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="flex flex-col items-center py-12 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center mb-4">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="12" cy="12" r="10" />
                                         <path d="M12 8v8M8 12h8" />
                                     </svg>
                                 </div>
-                                <p className="text-sm font-bold text-gray-400">No classes yet</p>
-                                <p className="text-xs text-gray-300 mt-1">Add classes to start training</p>
+                                <p className="text-sm font-bold text-gray-600 mb-1">No classes yet</p>
+                                <p className="text-xs text-gray-400">Click "Add" to create your first class</p>
                             </div>
                         )}
                     </div>
+
+                    {/* Sidebar footer stats */}
+                    {mode.project && mode.project.classes.length > 0 && (
+                        <div className="px-5 py-3 border-t border-gray-50 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-gray-400 font-medium">
+                                    {mode.project.classes.length} classes
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span className="text-gray-500 font-semibold">
+                                        {totalSamples} samples
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main content area */}
-                <div className="flex-1 overflow-y-auto" style={{
-                    background: 'linear-gradient(180deg, rgba(248,247,255,0.5) 0%, rgba(255,255,255,0.3) 100%)'
-                }}>
+                <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-gray-50">
                     {children({ mode })}
                 </div>
             </div>

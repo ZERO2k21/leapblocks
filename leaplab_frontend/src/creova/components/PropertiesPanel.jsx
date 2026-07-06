@@ -630,55 +630,183 @@ export default function PropertiesPanel({ appState }) {
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           style={{
-            backgroundColor: 'rgba(2, 6, 23, 0.65)',
-            backdropFilter: 'blur(12px) saturate(140%)',
-            animation: 'fadeIn 0.2s ease-out',
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
           }}
           onClick={() => setDeleteConfirm(null)}
         >
           <div
-            style={{ animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
-            className="w-full max-w-[380px] bg-white rounded-2xl shadow-xl"
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              width: '420px',
+              maxWidth: '90vw',
+              margin: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              border: '1px solid #f1f5f9'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative px-5 pt-5 pb-0">
+            <div style={{
+              padding: '24px 24px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#ffffff',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  backgroundColor: '#fff1f2',
+                  color: '#f43f5e',
+                  border: '1px solid #fecdd3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Trash2 style={{ width: '22px', height: '22px' }} />
+                </div>
+                <span style={{
+                  fontSize: '18px',
+                  fontWeight: 900,
+                  color: '#1e293b',
+                  letterSpacing: '-0.02em'
+                }}>Delete Module</span>
+              </div>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#94a3b8',
+                  border: '1px solid #e2e8f0',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  flexShrink: 0,
+                  marginLeft: '12px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#1e293b';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94a3b8';
+                }}
+                title="Close"
               >
-                <X className="w-3.5 h-3.5" strokeWidth={2} />
+                <X style={{ width: '16px', height: '16px' }} />
               </button>
-              <div className="flex flex-col items-center text-center pt-1">
-                <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-3.5">
-                  <Trash2 className="w-5.5 h-5.5 text-rose-500" strokeWidth={1.5} />
-                </div>
-                <h3 className="text-base font-semibold text-slate-900">Delete Module</h3>
-                <p className="mt-0.5 text-xs text-slate-400 font-medium">This action cannot be undone.</p>
-              </div>
             </div>
 
             {/* Body */}
-            <div className="px-5 py-4 space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
-                  <ComponentIcon type={deleteConfirm.type} size={20} />
+            <div style={{ padding: '8px 24px 20px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px',
+                borderRadius: '14px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #f1f5f9',
+                marginBottom: '14px'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  backgroundColor: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid #e2e8f0',
+                  flexShrink: 0,
+                  color: '#4f46e5'
+                }}>
+                  <ComponentIcon type={deleteConfirm.type} size={24} />
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">{deleteConfirm.id}</div>
-                  <div className="text-xs font-medium text-slate-400">{deleteConfirm.type}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#1e293b',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '240px',
+                    lineHeight: 1.2
+                  }}>{deleteConfirm.id}</div>
+                  <div style={{
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    color: '#94a3b8',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    marginTop: '4px'
+                  }}>
+                    {deleteConfirm.type}
+                  </div>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Deleting <span className="font-semibold text-slate-700">{deleteConfirm.id}</span> will permanently remove all of its properties and block references from this project.
+              <p style={{
+                fontSize: '13px',
+                color: '#64748b',
+                fontWeight: 500,
+                lineHeight: 1.7,
+                margin: 0
+              }}>
+                Deleting <span style={{ fontWeight: 800, color: '#1e293b' }}>{deleteConfirm.id}</span> will permanently remove all of its properties and block references from this project.
               </p>
             </div>
 
             {/* Footer */}
-            <div className="px-5 pb-5 flex items-center gap-2.5">
+            <div style={{
+              padding: '28px 24px',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              alignItems: 'center',
+              backgroundColor: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              flexShrink: 0
+            }}>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 h-9 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] transition-all"
+                style={{
+                  minWidth: '120px',
+                  padding: '14px 28px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                  transition: 'all 0.2s',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#f8fafc',
+                  color: '#334155',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.color = '#334155';
+                }}
               >
                 Cancel
               </button>
@@ -687,9 +815,33 @@ export default function PropertiesPanel({ appState }) {
                   removeComponent(deleteConfirm.id);
                   setDeleteConfirm(null);
                 }}
-                className="flex-1 h-9 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                style={{
+                  minWidth: '130px',
+                  padding: '14px 28px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                  transition: 'all 0.2s',
+                  border: 'none',
+                  backgroundColor: '#e11d48',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#be123c';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(225, 29, 72, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e11d48';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(225, 29, 72, 0.25)';
+                }}
               >
-                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                <Trash2 style={{ width: '18px', height: '18px' }} />
                 <span>Delete</span>
               </button>
             </div>

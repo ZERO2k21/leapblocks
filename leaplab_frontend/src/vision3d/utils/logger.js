@@ -7,6 +7,22 @@
 
 const TAG = '[Vision3D]';
 
+// Suppress Three.js Clock deprecation warnings coming from R3F internals
+if (typeof window !== 'undefined') {
+  const originalConsoleWarn = window.console.warn;
+  window.console.warn = function (...args) {
+    if (
+      args[0] &&
+      typeof args[0] === 'string' &&
+      args[0].includes('THREE.Clock') &&
+      args[0].includes('deprecated')
+    ) {
+      return;
+    }
+    originalConsoleWarn.apply(window.console, args);
+  };
+}
+
 let enabled = true;
 
 export function setLoggingEnabled(value) {

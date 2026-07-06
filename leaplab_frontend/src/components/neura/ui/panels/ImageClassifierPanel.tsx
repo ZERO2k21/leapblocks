@@ -93,7 +93,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1000))
+        await new Promise(r => setTimeout(r, 1500))
         mode.setAccuracy(0.85 + Math.random() * 0.12)
         setIsTraining(false)
     }
@@ -104,96 +104,78 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    {/* Instructional tip */}
-                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl max-w-lg" style={{
-                        background: 'rgba(124,58,237,0.04)',
-                        border: '1px solid rgba(124,58,237,0.12)'
-                    }}>
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                            background: 'linear-gradient(135deg, #7C3AED20, #7C3AED10)'
-                        }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M12 16v-4M12 8h.01" />
-                            </svg>
-                        </div>
-                        <p className="text-xs text-gray-600 font-medium">
-                            {!mode.selectedClassId
-                                ? 'Select a class from the sidebar, then capture photos to train your model.'
-                                : `Point your camera at a "${selectedClass?.name}" and click capture. Take at least 5 photos from different angles.`
-                            }
-                        </p>
-                    </div>
-
-                    {/* Video container with glass frame */}
-                    <div className="relative rounded-3xl overflow-hidden" style={{
-                        maxWidth: 640,
-                        background: 'rgba(15,15,35,0.85)',
-                        backdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(124,58,237,0.1)'
-                    }}>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {/* Camera feed - centered and prominent */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
                         <video
                             ref={videoRef}
                             autoPlay
                             playsInline
                             muted
-                            className="w-full rounded-3xl"
+                            className="w-full h-full object-cover rounded-3xl"
                             style={{ transform: 'scaleX(-1)' }}
                         />
+                        {/* Capture flash */}
                         {isCapturing && (
-                            <div className="absolute inset-0 rounded-3xl" style={{
-                                background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(59,130,246,0.3))',
-                                animation: 'pulse 0.3s ease-out'
-                            }} />
+                            <div className="absolute inset-0 bg-white/50 animate-[flash_0.3s_ease-out] rounded-3xl" />
                         )}
+                        {/* LIVE badge */}
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">LIVE</span>
+                        </div>
+                        {/* Class badge */}
                         {selectedClass && (
                             <div
-                                className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold"
-                                style={{
-                                    background: `${selectedClass.color}DD`,
-                                    backdropFilter: 'blur(8px)',
-                                    boxShadow: `0 4px 16px ${selectedClass.color}40`
-                                }}
+                                className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md"
+                                style={{ backgroundColor: `${selectedClass.color}CC` }}
                             >
                                 {selectedClass.name}
                             </div>
                         )}
-                        {/* Glass corner accents */}
-                        <div className="absolute top-3 left-3 w-8 h-8 border-l-2 border-t-2 border-white/30 rounded-tl-lg" />
-                        <div className="absolute top-3 right-3 w-8 h-8 border-r-2 border-t-2 border-white/30 rounded-tr-lg" />
-                        <div className="absolute bottom-3 left-3 w-8 h-8 border-l-2 border-b-2 border-white/30 rounded-bl-lg" />
-                        <div className="absolute bottom-3 right-3 w-8 h-8 border-r-2 border-b-2 border-white/30 rounded-br-lg" />
+                        {/* Sample count */}
+                        {selectedClass && (
+                            <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                                <span className="text-white text-xs font-bold">
+                                    {selectedClass.samples.length} samples
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
 
+                    {/* Capture button */}
                     <CaptureButton
                         onClick={handleCapture}
                         disabled={!mode.selectedClassId || isCapturing}
                         label={isCapturing ? 'Captured!' : 'Take Photo'}
                         icon="camera"
                         color={selectedClass?.color || '#7C3AED'}
-                        pulse={!isCapturing}
+                        pulse={!isCapturing && !!mode.selectedClassId}
                     />
 
-                    {selectedClass && (
-                        <div className="w-full max-w-2xl">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-black text-gray-700" style={{
-                                    background: `linear-gradient(90deg, ${selectedClass.color}, ${selectedClass.color}CC)`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent'
-                                }}>
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400 font-bold">{selectedClass.samples.length} photos</span>
+                    {/* Samples section */}
+                    {selectedClass && selectedClass.samples.length > 0 && (
+                        <div className="w-full max-w-[520px]">
+                            <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-2.5 h-2.5 rounded-full"
+                                            style={{ backgroundColor: selectedClass.color }}
+                                        />
+                                        <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
+                                    </div>
+                                    <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
+                                        {selectedClass.samples.length} photos
+                                    </span>
+                                </div>
+                                <SampleGrid
+                                    samples={selectedClass.samples}
+                                    type="image"
+                                    onRemove={(id) => mode.removeSample(selectedClass.id, id)}
+                                />
                             </div>
-                            <SampleGrid
-                                samples={selectedClass.samples}
-                                type="image"
-                                onRemove={(id) => mode.removeSample(selectedClass.id, id)}
-                            />
                         </div>
                     )}
                 </div>
@@ -213,28 +195,29 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-                    {/* Video container with glass frame */}
-                    <div className="relative rounded-3xl overflow-hidden" style={{
-                        maxWidth: 640,
-                        background: 'rgba(15,15,35,0.85)',
-                        backdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(16,185,129,0.1)'
-                    }}>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {/* Camera feed for testing */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
                         <video
                             ref={videoRef}
                             autoPlay
                             playsInline
                             muted
-                            className="w-full rounded-3xl"
+                            className="w-full h-full object-cover rounded-3xl"
                             style={{ transform: 'scaleX(-1)' }}
                         />
-                        {/* Glass corner accents */}
-                        <div className="absolute top-3 left-3 w-8 h-8 border-l-2 border-t-2 border-white/30 rounded-tl-lg" />
-                        <div className="absolute top-3 right-3 w-8 h-8 border-r-2 border-t-2 border-white/30 rounded-tr-lg" />
-                        <div className="absolute bottom-3 left-3 w-8 h-8 border-l-2 border-b-2 border-white/30 rounded-bl-lg" />
-                        <div className="absolute bottom-3 right-3 w-8 h-8 border-r-2 border-b-2 border-white/30 rounded-br-lg" />
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span className="text-white text-xs font-bold tracking-wide">TESTING</span>
+                        </div>
+                        {prediction && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-black/50 backdrop-blur-md rounded-2xl">
+                                <span className="text-white text-lg font-bold">{prediction.label}</span>
+                                <span className="text-white/70 text-sm ml-2">
+                                    {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <TestPanel prediction={prediction} isProcessing={isProcessing} projectName={mode.project?.name}>

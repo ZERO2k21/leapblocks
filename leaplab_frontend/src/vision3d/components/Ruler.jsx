@@ -262,23 +262,25 @@ export const Ruler = () => {
         <Html position={measurement.labelPos} center>
           <div
             style={{
-              background: 'rgba(0,0,0,0.85)',
+              background: 'rgba(0,0,0,0.92)',
               color: '#fff',
-              padding: '6px 10px',
-              borderRadius: '6px',
+              padding: '8px 14px',
+              borderRadius: '4px',
               fontSize: '13px',
               fontFamily: 'monospace',
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
               userSelect: 'none',
-              border: `1px solid ${measurement.isFinal ? '#f97316' : '#6366f1'}`,
+              borderTop: `3px solid ${measurement.isFinal ? '#f97316' : '#e83e8c'}`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             }}
           >
-            {measurement.distance.toFixed(2)} mm
-            <br />
-            <span style={{ fontSize: '10px', color: '#aaa' }}>
+            <div style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '4px', letterSpacing: '0.5px' }}>
+              {measurement.distance.toFixed(2)} mm
+            </div>
+            <div style={{ fontSize: '11px', color: '#aaa', letterSpacing: '0.3px' }}>
               X: {measurement.dx.toFixed(2)} | Y: {measurement.dy.toFixed(2)} | Z: {measurement.dz.toFixed(2)}
-            </span>
+            </div>
           </div>
         </Html>
       )}

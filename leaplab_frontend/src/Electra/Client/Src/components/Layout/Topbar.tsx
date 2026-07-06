@@ -214,7 +214,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   setEditMenuOpen(false);
                   setBoardMenuOpen(false);
                 }}
-                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
+                className={`flex items-center gap-1.25 px-[14px] py-[8px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
                   } ${fileMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
               >
                 File
@@ -401,7 +401,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   setFileMenuOpen(false);
                   setBoardMenuOpen(false);
                 }}
-                className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
+                className={`flex items-center gap-1.25 px-[14px] py-[8px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
                   } ${editMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
               >
                 Edit
@@ -596,7 +596,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                     setFileMenuOpen(false);
                     setEditMenuOpen(false);
                   }}
-                  className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
+                  className={`flex items-center gap-1.25 px-[14px] py-[8px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
                     } ${boardMenuOpen ? (isElectra ? 'bg-[#22d3ee]/18' : 'bg-white/18') : 'bg-transparent'} ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}
                 >
                   <span>{currentBoard === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}</span>
@@ -696,7 +696,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               </div>
             )}
 
-            <button className={`flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide bg-transparent border-0 ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
+            <button className={`flex items-center gap-1.25 px-[14px] py-[8px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide bg-transparent border-0 ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
               } ${isElectra ? 'hover:bg-[#22d3ee]/10' : 'hover:bg-white/10'}`}>
               <BookOpen size={14} strokeWidth={2.2} className={isElectra ? 'opacity-70' : 'opacity-90'} />
               Tutorials

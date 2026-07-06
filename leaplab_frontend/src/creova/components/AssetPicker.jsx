@@ -4,6 +4,7 @@
  * Leap App Inventor Style
  */
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Image, Music, Video, File, X, Upload } from 'lucide-react';
 
 /**
@@ -63,72 +64,237 @@ export default function AssetPicker({
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+    return createPortal(
+        <div 
+            onClick={onClose}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 50,
+                padding: '16px'
+            }}
+        >
+            <div 
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '20px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    maxWidth: '640px',
+                    width: '100%',
+                    maxHeight: '80vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    border: '1px solid #f1f5f9'
+                }}
+            >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '24px 24px 16px',
+                    borderBottom: '1px solid #e2e8f0',
+                    flexShrink: 0
+                }}>
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900">
+                        <h3 style={{
+                            fontSize: '18px',
+                            fontWeight: 900,
+                            color: '#1e293b',
+                            letterSpacing: '-0.02em',
+                            margin: 0
+                        }}>
                             Select {filterType === 'all' ? 'Asset' : filterType.charAt(0).toUpperCase() + filterType.slice(1)}
                         </h3>
-                        <p className="text-sm text-slate-900 mt-1">
+                        <p style={{
+                            fontSize: '13px',
+                            color: '#94a3b8',
+                            fontWeight: 500,
+                            marginTop: '4px',
+                            margin: '4px 0 0'
+                        }}>
                             Choose from uploaded media files
                         </p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                        <X className="h-5 w-5 text-slate-900" />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {currentValue && (
+                            <button
+                                onClick={handleClear}
+                                style={{
+                                    padding: '8px 16px',
+                                    fontSize: '13px',
+                                    fontWeight: 800,
+                                    borderRadius: '10px',
+                                    border: '1px solid #fecaca',
+                                    backgroundColor: '#fff1f2',
+                                    color: '#e11d48',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#ffe4e6';
+                                    e.currentTarget.style.borderColor = '#fca5a5';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fff1f2';
+                                    e.currentTarget.style.borderColor = '#fecaca';
+                                }}
+                            >
+                                Clear Selection
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#94a3b8',
+                                border: '1px solid #e2e8f0',
+                                backgroundColor: 'transparent',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                flexShrink: 0
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                e.currentTarget.style.color = '#1e293b';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = '#94a3b8';
+                            }}
+                        >
+                            <X style={{ width: '16px', height: '16px' }} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search */}
-                <div className="p-4 border-b">
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
                     <input
                         type="text"
                         placeholder="Search files..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: '14px',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            outline: 'none',
+                            backgroundColor: '#f8fafc',
+                            color: '#1e293b',
+                            fontWeight: 500,
+                            boxSizing: 'border-box'
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.borderColor = '#818cf8';
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129, 140, 248, 0.15)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
                         autoFocus
                     />
                 </div>
 
-                {/* Media List */}
-                <div className="flex-1 overflow-y-auto p-4">
+                {/* Media Grid */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', minHeight: 0 }}>
                     {filteredMedia.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-900">
-                            <Upload className="h-16 w-16 mb-3" />
-                            <p className="text-sm font-medium">No files found</p>
-                            <p className="text-xs mt-1">
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%',
+                            color: '#94a3b8',
+                            padding: '40px 0'
+                        }}>
+                            <Upload style={{ width: '48px', height: '48px', marginBottom: '12px' }} />
+                            <p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>No files found</p>
+                            <p style={{ fontSize: '12px', marginTop: '4px', margin: '4px 0 0' }}>
                                 {searchTerm ? 'Try a different search' : 'Upload files in the Media tab'}
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '12px'
+                        }}>
                             {filteredMedia.map((item, index) => (
                                 <button
                                     key={index}
                                     onClick={() => handleSelect(item)}
-                                    className={`relative group rounded-lg border-2 overflow-hidden cursor-pointer transition-all text-left ${currentValue === item.filename
-                                            ? 'border-blue-500 shadow-md'
-                                            : 'border-gray-200 hover:border-blue-300'
-                                        }`}
+                                    style={{
+                                        position: 'relative',
+                                        borderRadius: '14px',
+                                        border: currentValue === item.filename
+                                            ? '2px solid #4f46e5'
+                                            : '2px solid #e2e8f0',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        transition: 'all 0.2s',
+                                        backgroundColor: '#ffffff',
+                                        padding: 0,
+                                        boxShadow: currentValue === item.filename
+                                            ? '0 4px 12px rgba(79, 70, 229, 0.15)'
+                                            : 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (currentValue !== item.filename) {
+                                            e.currentTarget.style.borderColor = '#818cf8';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.1)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (currentValue !== item.filename) {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
                                 >
-                                    {/* Thumbnail/Preview */}
-                                    <div className="aspect-square bg-gray-50 flex items-center justify-center">
+                                    {/* Thumbnail */}
+                                    <div style={{
+                                        aspectRatio: '1',
+                                        backgroundColor: '#f8fafc',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
                                         {getFileCategory(item.type) === 'image' ? (
                                             <img
                                                 src={item.data}
                                                 alt={item.filename}
-                                                className="w-full h-full object-cover"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             />
                                         ) : (
-                                            <div className="flex flex-col items-center gap-2">
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
                                                 {getFileIcon(item.type)}
-                                                <span className="text-xs font-medium text-slate-900">
+                                                <span style={{
+                                                    fontSize: '11px',
+                                                    fontWeight: 700,
+                                                    color: '#64748b',
+                                                    textTransform: 'uppercase'
+                                                }}>
                                                     {item.filename.split('.').pop().toUpperCase()}
                                                 </span>
                                             </div>
@@ -136,19 +302,44 @@ export default function AssetPicker({
                                     </div>
 
                                     {/* File Info */}
-                                    <div className="p-2 bg-white">
-                                        <div className="text-xs font-medium text-slate-900 truncate" title={item.filename}>
+                                    <div style={{ padding: '10px 12px', backgroundColor: '#ffffff' }}>
+                                        <div style={{
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            color: '#1e293b',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }} title={item.filename}>
                                             {item.filename}
                                         </div>
-                                        <div className="text-xs text-slate-900">
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#94a3b8',
+                                            fontWeight: 600,
+                                            marginTop: '2px'
+                                        }}>
                                             {formatFileSize(item.size)}
                                         </div>
                                     </div>
 
                                     {/* Selected Indicator */}
                                     {currentValue === item.filename && (
-                                        <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
-                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            backgroundColor: '#4f46e5',
+                                            color: '#ffffff',
+                                            borderRadius: '50%',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)'
+                                        }}>
+                                            <svg style={{ width: '14px', height: '14px' }} fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                             </svg>
                                         </div>
@@ -158,26 +349,9 @@ export default function AssetPicker({
                         </div>
                     )}
                 </div>
-
-                {/* Footer */}
-                <div className="flex gap-2 p-4 border-t bg-gray-50">
-                    {currentValue && (
-                        <button
-                            onClick={handleClear}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-slate-900 rounded transition-colors"
-                        >
-                            Clear Selection
-                        </button>
-                    )}
-                    <button
-                        onClick={onClose}
-                        className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
-                    >
-                        {currentValue ? 'Keep Current' : 'Cancel'}
-                    </button>
-                </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
