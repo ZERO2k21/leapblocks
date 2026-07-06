@@ -65,13 +65,47 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
 
+    const glassCardStyle = {
+        background: 'rgba(255,255,255,0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.6)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+    }
+
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-8">
+                    {/* Instructional tip */}
+                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl max-w-lg" style={{
+                        background: 'rgba(124,58,237,0.04)',
+                        border: '1px solid rgba(124,58,237,0.12)'
+                    }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                            background: 'linear-gradient(135deg, #7C3AED20, #7C3AED10)'
+                        }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 16v-4M12 8h.01" />
+                            </svg>
+                        </div>
+                        <p className="text-xs text-gray-600 font-medium">
+                            {!mode.selectedClassId
+                                ? 'Select a class from the sidebar, then type text samples to train your model.'
+                                : `Type text examples for "${selectedClass?.name}". Add at least 5 different examples for better accuracy.`
+                            }
+                        </p>
+                    </div>
+
                     <div className="w-full max-w-2xl">
-                        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Add Text Sample</h3>
+                        <div className="rounded-3xl p-6" style={glassCardStyle}>
+                            {/* Gradient header strip */}
+                            <div className="h-1 rounded-full mb-5" style={{
+                                background: 'linear-gradient(90deg, #7C3AED, #3B82F6)'
+                            }} />
+
+                            <h3 className="text-lg font-black text-gray-800 mb-4">Add Text Sample</h3>
 
                             <div className="flex gap-3">
                                 <textarea
@@ -79,7 +113,11 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     onChange={(e) => setInputText(e.target.value)}
                                     placeholder="Type something to classify..."
                                     rows={3}
-                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent text-sm"
+                                    className="flex-1 px-4 py-3 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-violet-400 text-sm font-medium transition-all"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.5)',
+                                        border: '1px solid rgba(124,58,237,0.2)'
+                                    }}
                                 />
                             </div>
 
@@ -87,8 +125,11 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 <div className="flex items-center gap-2">
                                     {selectedClass && (
                                         <span
-                                            className="px-3 py-1 rounded-lg text-white text-xs font-bold"
-                                            style={{ backgroundColor: selectedClass.color }}
+                                            className="px-3 py-1 rounded-xl text-white text-xs font-bold"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${selectedClass.color}DD, ${selectedClass.color})`,
+                                                boxShadow: `0 2px 8px ${selectedClass.color}30`
+                                            }}
                                         >
                                             → {selectedClass.name}
                                         </span>
@@ -99,9 +140,14 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     disabled={!inputText.trim() || !mode.selectedClassId || isAdding}
                                     className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
                                         inputText.trim() && mode.selectedClassId && !isAdding
-                                            ? 'bg-gradient-to-r from-violet-500 to-blue-500 text-white shadow-lg shadow-violet-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            ? 'hover:scale-105 hover:shadow-xl active:scale-95 cursor-pointer'
+                                            : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
                                     }`}
+                                    style={inputText.trim() && mode.selectedClassId && !isAdding ? {
+                                        background: 'linear-gradient(135deg, #7C3AED, #3B82F6)',
+                                        color: 'white',
+                                        boxShadow: '0 4px 20px rgba(124,58,237,0.3)'
+                                    } : {}}
                                 >
                                     {isAdding ? (
                                         <>
@@ -124,10 +170,8 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                     {selectedClass && (
                         <div className="w-full max-w-2xl">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-gray-600">
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400">{selectedClass.samples.length} texts</span>
+                                <h3 className="text-sm font-black text-gray-700">{selectedClass.name} Samples</h3>
+                                <span className="text-xs text-gray-400 font-bold">{selectedClass.samples.length} texts</span>
                             </div>
                             <SampleGrid
                                 samples={selectedClass.samples}
@@ -153,10 +197,15 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+                <div className="flex-1 flex flex-col items-center gap-8 p-8">
                     <div className="w-full max-w-2xl">
-                        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Test Your Text</h3>
+                        <div className="rounded-3xl p-6" style={glassCardStyle}>
+                            {/* Gradient header strip */}
+                            <div className="h-1 rounded-full mb-5" style={{
+                                background: 'linear-gradient(90deg, #10B981, #14B8A6)'
+                            }} />
+
+                            <h3 className="text-lg font-black text-gray-800 mb-4">Test Your Text</h3>
 
                             <div className="flex gap-3">
                                 <textarea
@@ -164,7 +213,11 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     onChange={(e) => setTestText(e.target.value)}
                                     placeholder="Type text to classify..."
                                     rows={3}
-                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent text-sm"
+                                    className="flex-1 px-4 py-3 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-medium transition-all"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.5)',
+                                        border: '1px solid rgba(16,185,129,0.2)'
+                                    }}
                                 />
                             </div>
 
@@ -174,9 +227,14 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     disabled={!testText.trim() || isProcessing}
                                     className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
                                         testText.trim() && !isProcessing
-                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            ? 'hover:scale-105 hover:shadow-xl active:scale-95 cursor-pointer'
+                                            : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
                                     }`}
+                                    style={testText.trim() && !isProcessing ? {
+                                        background: 'linear-gradient(135deg, #10B981, #14B8A6)',
+                                        color: 'white',
+                                        boxShadow: '0 4px 20px rgba(16,185,129,0.3)'
+                                    } : {}}
                                 >
                                     {isProcessing ? (
                                         <>
@@ -197,7 +255,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                         </div>
                     </div>
 
-                    <TestPanel prediction={prediction} isProcessing={isProcessing}>
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} projectName={mode.project?.name}>
                         <div />
                     </TestPanel>
                 </div>

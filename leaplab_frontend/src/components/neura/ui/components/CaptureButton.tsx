@@ -56,28 +56,50 @@ export default function CaptureButton({
         <button
             onClick={onClick}
             disabled={disabled}
-            className={`relative group flex flex-col items-center gap-3 transition-all duration-300 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95 cursor-pointer'
+            className={`relative group flex flex-col items-center gap-3 transition-all duration-400 ${
+                disabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110 active:scale-95 cursor-pointer'
             }`}
         >
             <div className="relative">
+                {/* Pulse ring */}
                 {pulse && !disabled && (
-                    <div
-                        className="absolute inset-0 rounded-full animate-ping opacity-30"
-                        style={{ backgroundColor: color }}
-                    />
+                    <>
+                        <div
+                            className="absolute inset-[-8px] rounded-full animate-ping opacity-20"
+                            style={{ backgroundColor: color }}
+                        />
+                        <div
+                            className="absolute inset-[-16px] rounded-full animate-ping opacity-10"
+                            style={{ backgroundColor: color, animationDelay: '0.5s' }}
+                        />
+                    </>
                 )}
+
+                {/* Glass outer ring */}
                 <div
-                    className="w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 group-hover:shadow-2xl"
+                    className="absolute inset-[-6px] rounded-full"
                     style={{
-                        backgroundColor: color,
-                        boxShadow: `0 10px 30px ${color}40`
+                        background: 'rgba(255,255,255,0.3)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255,255,255,0.4)'
+                    }}
+                />
+
+                {/* Main button */}
+                <div
+                    className="w-24 h-24 rounded-full flex items-center justify-center text-white transition-all duration-400 group-hover:shadow-2xl relative z-10"
+                    style={{
+                        background: `linear-gradient(135deg, ${color}DD, ${color})`,
+                        boxShadow: `0 8px 32px ${color}50, inset 0 2px 0 rgba(255,255,255,0.25)`
                     }}
                 >
                     {iconElement()}
                 </div>
             </div>
-            <span className="text-sm font-bold text-gray-600 group-hover:text-gray-800 transition-colors">
+
+            <span className="text-sm font-bold text-gray-600 group-hover:text-gray-800 transition-colors" style={{
+                textShadow: '0 1px 2px rgba(255,255,255,0.8)'
+            }}>
                 {label}
             </span>
         </button>

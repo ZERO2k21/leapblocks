@@ -14,7 +14,7 @@ const CLASSIFIER_TYPES: {
     emoji: string
     color: string
     gradient: string
-    shadow: string
+    glow: string
 }[] = [
     {
         type: 'image-classifier',
@@ -22,8 +22,8 @@ const CLASSIFIER_TYPES: {
         description: 'Teach your computer to recognize pictures!',
         emoji: '📷',
         color: '#7C3AED',
-        gradient: 'from-violet-400 to-purple-500',
-        shadow: 'shadow-violet-200'
+        gradient: 'from-violet-500 to-purple-600',
+        glow: 'shadow-violet-500/30'
     },
     {
         type: 'audio-classifier',
@@ -31,8 +31,8 @@ const CLASSIFIER_TYPES: {
         description: 'Train it to understand sounds and voices!',
         emoji: '🎤',
         color: '#3B82F6',
-        gradient: 'from-blue-400 to-indigo-500',
-        shadow: 'shadow-blue-200'
+        gradient: 'from-blue-500 to-indigo-600',
+        glow: 'shadow-blue-500/30'
     },
     {
         type: 'pose-classifier',
@@ -40,8 +40,8 @@ const CLASSIFIER_TYPES: {
         description: 'Detect body movements and gestures!',
         emoji: '🧍',
         color: '#F97316',
-        gradient: 'from-orange-400 to-red-500',
-        shadow: 'shadow-orange-200'
+        gradient: 'from-orange-500 to-red-500',
+        glow: 'shadow-orange-500/30'
     },
     {
         type: 'text-classifier',
@@ -49,8 +49,8 @@ const CLASSIFIER_TYPES: {
         description: 'Classify words and sentences smartly!',
         emoji: '💬',
         color: '#10B981',
-        gradient: 'from-emerald-400 to-teal-500',
-        shadow: 'shadow-emerald-200'
+        gradient: 'from-emerald-500 to-teal-500',
+        glow: 'shadow-emerald-500/30'
     },
     {
         type: 'numbers-cr',
@@ -58,8 +58,8 @@ const CLASSIFIER_TYPES: {
         description: 'Draw digits and let AI recognize them!',
         emoji: '✏️',
         color: '#EC4899',
-        gradient: 'from-pink-400 to-rose-500',
-        shadow: 'shadow-pink-200'
+        gradient: 'from-pink-500 to-rose-500',
+        glow: 'shadow-pink-500/30'
     },
     {
         type: 'object-detection',
@@ -67,8 +67,8 @@ const CLASSIFIER_TYPES: {
         description: 'Find and locate objects in the real world!',
         emoji: '🔍',
         color: '#14B8A6',
-        gradient: 'from-teal-400 to-cyan-500',
-        shadow: 'shadow-teal-200'
+        gradient: 'from-teal-500 to-cyan-500',
+        glow: 'shadow-teal-500/30'
     }
 ]
 
@@ -79,7 +79,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     const handleTitleChange = React.useCallback(() => {}, [])
 
     return (
-        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-violet-50/30">
+        <div className="h-screen flex flex-col relative overflow-hidden" style={{
+            background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 30%, #ede9fe 60%, #f0f9ff 100%)'
+        }}>
+            {/* Floating gradient orbs */}
+            <div className="absolute top-20 left-10 w-72 h-72 bg-violet-300/20 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300/15 rounded-full blur-3xl" style={{ animation: 'pulse 4s ease-in-out infinite 1s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-200/10 rounded-full blur-3xl" />
+
             <IgniteTopbar
                 title="NEURA"
                 onBack={onBack}
@@ -89,31 +96,74 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
             />
 
             {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
-                <div className="text-center mb-10">
-                    <div className="text-6xl mb-4">🧠</div>
-                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Classifier</h2>
-                    <p className="text-gray-500 max-w-md">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12 relative z-10">
+                <div className="text-center mb-12">
+                    <div className="relative inline-block mb-6">
+                        <div className="text-7xl relative z-10">🧠</div>
+                        <div className="absolute inset-0 text-7xl blur-xl opacity-40" style={{
+                            background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>🧠</div>
+                    </div>
+                    <h2 className="text-4xl font-black mb-3" style={{
+                        background: 'linear-gradient(135deg, #1e1b4b 0%, #7C3AED 50%, #3B82F6 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
+                        Choose Your Classifier
+                    </h2>
+                    <p className="text-gray-500 max-w-lg text-lg font-medium">
                         Pick what you want to teach your computer to recognize. Each type uses different AI magic!
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl w-full">
-                    {CLASSIFIER_TYPES.map((item) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
+                    {CLASSIFIER_TYPES.map((item, index) => (
                         <button
                             key={item.type}
                             onClick={() => onSelect(item.type)}
-                            className={`group relative flex flex-col items-center p-8 rounded-3xl bg-white border border-gray-100 shadow-lg ${item.shadow} hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 active:scale-95 cursor-pointer`}
+                            className="group relative flex flex-col items-center p-8 rounded-3xl transition-all duration-500 hover:scale-[1.04] hover:-translate-y-3 active:scale-95 cursor-pointer"
+                            style={{
+                                background: 'rgba(255,255,255,0.55)',
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                border: '1px solid rgba(255,255,255,0.6)',
+                                boxShadow: `0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                                animationDelay: `${index * 80}ms`
+                            }}
                         >
-                            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-4xl mb-4 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                            {/* Gradient top border */}
+                            <div
+                                className="absolute top-0 left-4 right-4 h-1 rounded-b-full opacity-70 group-hover:opacity-100 transition-opacity duration-300"
+                                style={{ background: `linear-gradient(90deg, ${item.color}80, ${item.color})` }}
+                            />
+
+                            {/* Icon container */}
+                            <div
+                                className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-4xl mb-5 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3`}
+                                style={{
+                                    boxShadow: `0 8px 24px ${item.color}40, inset 0 2px 0 rgba(255,255,255,0.3)`
+                                }}
+                            >
                                 {item.emoji}
                             </div>
+
                             <h3 className="text-xl font-bold text-gray-800 mb-2">{item.name}</h3>
                             <p className="text-sm text-gray-500 text-center leading-relaxed">{item.description}</p>
 
+                            {/* Hover glow effect */}
+                            <div
+                                className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                style={{
+                                    boxShadow: `0 20px 60px ${item.color}25, 0 0 40px ${item.color}10`
+                                }}
+                            />
+
+                            {/* Bottom gradient strip */}
                             <div
                                 className="absolute bottom-0 left-0 right-0 h-1.5 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                style={{ backgroundColor: item.color }}
+                                style={{ background: `linear-gradient(90deg, ${item.color}60, ${item.color})` }}
                             />
                         </button>
                     ))}

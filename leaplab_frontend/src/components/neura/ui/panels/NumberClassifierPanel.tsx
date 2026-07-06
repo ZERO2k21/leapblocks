@@ -156,18 +156,46 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
 
+    const canvasContainerStyle = {
+        background: 'rgba(15,15,35,0.85)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(236,72,153,0.1)'
+    }
+
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative">
+                    {/* Instructional tip */}
+                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl max-w-lg" style={{
+                        background: 'rgba(124,58,237,0.04)',
+                        border: '1px solid rgba(124,58,237,0.12)'
+                    }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                            background: 'linear-gradient(135deg, #7C3AED20, #7C3AED10)'
+                        }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 16v-4M12 8h.01" />
+                            </svg>
+                        </div>
+                        <p className="text-xs text-gray-600 font-medium">
+                            {!mode.selectedClassId
+                                ? 'Select a class (digit) from the sidebar, then draw the number on the canvas.'
+                                : `Draw the digit "${selectedClass?.name}" on the canvas. Try different handwriting styles for better accuracy.`
+                            }
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-5">
+                        <div className="relative rounded-3xl overflow-hidden" style={canvasContainerStyle}>
                             <canvas
                                 ref={canvasRef}
                                 width={280}
                                 height={280}
-                                className="rounded-3xl border-4 border-gray-200 shadow-2xl cursor-crosshair bg-black"
-                                style={{ width: 280, height: 280, touchAction: 'none' }}
+                                className="cursor-crosshair"
+                                style={{ width: 280, height: 280, touchAction: 'none', display: 'block' }}
                                 onMouseDown={startDrawing}
                                 onMouseMove={draw}
                                 onMouseUp={stopDrawing}
@@ -181,11 +209,22 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                     <span className="text-white/30 text-lg font-bold">Draw here!</span>
                                 </div>
                             )}
+                            {/* Glass corner accents */}
+                            <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-white/20 rounded-tl-lg" />
+                            <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-white/20 rounded-tr-lg" />
+                            <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-white/20 rounded-bl-lg" />
+                            <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-white/20 rounded-br-lg" />
                         </div>
 
                         <button
                             onClick={clearCanvas}
-                            className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
+                            className="px-5 py-2 text-sm font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                            style={{
+                                background: 'rgba(255,255,255,0.5)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(255,255,255,0.5)',
+                                color: '#6B7280'
+                            }}
                         >
                             Clear Canvas
                         </button>
@@ -204,10 +243,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     {selectedClass && (
                         <div className="w-full max-w-2xl">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-gray-600">
-                                    {selectedClass.name} Samples
-                                </h3>
-                                <span className="text-xs text-gray-400">{selectedClass.samples.length} digits</span>
+                                <h3 className="text-sm font-black text-gray-700">{selectedClass.name} Samples</h3>
+                                <span className="text-xs text-gray-400 font-bold">{selectedClass.samples.length} digits</span>
                             </div>
                             <SampleGrid
                                 samples={selectedClass.samples}
@@ -233,15 +270,18 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             )}
 
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="relative">
+                <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+                    <div className="flex flex-col items-center gap-5">
+                        <div className="relative rounded-3xl overflow-hidden" style={{
+                            ...canvasContainerStyle,
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(16,185,129,0.1)'
+                        }}>
                             <canvas
                                 ref={canvasRef}
                                 width={280}
                                 height={280}
-                                className="rounded-3xl border-4 border-emerald-200 shadow-2xl cursor-crosshair bg-black"
-                                style={{ width: 280, height: 280, touchAction: 'none' }}
+                                className="cursor-crosshair"
+                                style={{ width: 280, height: 280, touchAction: 'none', display: 'block' }}
                                 onMouseDown={startDrawing}
                                 onMouseMove={draw}
                                 onMouseUp={stopDrawing}
@@ -255,12 +295,23 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                     <span className="text-white/30 text-lg font-bold">Draw a digit!</span>
                                 </div>
                             )}
+                            {/* Glass corner accents */}
+                            <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-white/20 rounded-tl-lg" />
+                            <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-white/20 rounded-tr-lg" />
+                            <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-white/20 rounded-bl-lg" />
+                            <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-white/20 rounded-br-lg" />
                         </div>
 
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={clearCanvas}
-                                className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
+                                className="px-5 py-2 text-sm font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                                style={{
+                                    background: 'rgba(255,255,255,0.5)',
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(255,255,255,0.5)',
+                                    color: '#6B7280'
+                                }}
                             >
                                 Clear
                             </button>
@@ -269,9 +320,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 disabled={!checkCanvasHasContent() || isProcessing}
                                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
                                     checkCanvasHasContent() && !isProcessing
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        ? 'hover:scale-105 hover:shadow-xl active:scale-95 cursor-pointer'
+                                        : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
                                 }`}
+                                style={checkCanvasHasContent() && !isProcessing ? {
+                                    background: 'linear-gradient(135deg, #10B981, #14B8A6)',
+                                    color: 'white',
+                                    boxShadow: '0 4px 20px rgba(16,185,129,0.3)'
+                                } : {}}
                             >
                                 {isProcessing ? (
                                     <>
@@ -291,7 +347,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
                     </div>
 
-                    <TestPanel prediction={prediction} isProcessing={isProcessing}>
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} projectName={mode.project?.name}>
                         <div />
                     </TestPanel>
                 </div>
