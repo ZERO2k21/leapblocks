@@ -251,6 +251,7 @@ function PaintEditor({
 
             return () => {
                 canvas.dispose();
+                canvasRef.current = null;
             };
         }
     }, []); // Only run once to create the canvas
@@ -267,7 +268,8 @@ function PaintEditor({
             autoSaveTimerRef.current = setTimeout(() => {
                 try {
                     const json = JSON.stringify(canvas.toJSON());
-                    const key = `paintEditor_draft_${title || 'unknown'}`;
+                    const costumeId = costumes[activeCostumeIndex]?.id || 'default';
+                    const key = `paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`;
                     localStorage.setItem(key, json);
                 } catch (_) {}
             }, 1500);
@@ -283,23 +285,7 @@ function PaintEditor({
             canvas.off('path:created', handler);
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         };
-    }, [title, markDirty]);
-
-    // Restore draft on mount
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const key = `paintEditor_draft_${title || 'unknown'}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-            try {
-                canvas.loadFromJSON(JSON.parse(saved), () => {
-                    canvas.renderAll();
-                    saveState();
-                });
-            } catch (_) {}
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [title, markDirty, spriteName, activeCostumeIndex, costumes]);
 
     // Warn before navigating away with unsaved changes
     useEffect(() => {
@@ -313,7 +299,7 @@ function PaintEditor({
         return () => window.removeEventListener('beforeunload', handler);
     }, []);
 
-    // Load image when activeImage changes
+    // Load image or restore draft when active costume changes
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -328,6 +314,25 @@ function PaintEditor({
         // Clear existing content immediately
         canvas.clear();
         canvas.backgroundColor = 'transparent';
+
+        const costumeId = costumes[activeCostumeIndex]?.id || 'default';
+        const draftKey = `paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`;
+        const savedDraft = localStorage.getItem(draftKey);
+
+        if (savedDraft) {
+            try {
+                canvas.loadFromJSON(JSON.parse(savedDraft), () => {
+                    if (!isActive) return;
+                    canvas.renderAll();
+                    saveState();
+                });
+                return () => {
+                    isActive = false;
+                };
+            } catch (err) {
+                console.error('Failed to load draft:', err);
+            }
+        }
 
         const currentImage = costumes[activeCostumeIndex]?.image || '';
 
@@ -392,7 +397,7 @@ function PaintEditor({
         return () => {
             isActive = false;
         };
-    }, [activeCostumeIndex, costumes, isBackdropMode, canvasW, canvasH]);
+    }, [activeCostumeIndex, costumes, isBackdropMode, canvasW, canvasH, spriteName, title]);
 
     // Update canvas when initialImage changes (e.g., switching between sprite and stage)
     useEffect(() => {
@@ -781,8 +786,70 @@ function PaintEditor({
 
         onSave(imageData, svgDataUrl, costumeName);
         isDirtyRef.current = false;
-        localStorage.removeItem(`paintEditor_draft_${title || 'unknown'}`);
+        const costumeId = costumes[activeCostumeIndex]?.id || 'default';
+        localStorage.removeItem(`paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`);
         onClose();
+    };
+
+    const loadSrcToCanvas = (src: string, name: string) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        setCostumeName(name);
+        canvas.clear();
+        canvas.backgroundColor = 'transparent';
+
+        const isSVG = src.includes('<svg') || src.endsWith('.svg');
+        if (isSVG) {
+            const handleLoadedSVG = ({ objects, options }: any) => {
+                const validObjects = objects.filter((o: any) => o !== null);
+                const group = fabric.util.groupSVGElements(validObjects, options);
+                group.set({
+                    left: canvas.width! / 2,
+                    top: canvas.height! / 2,
+                    originX: 'center',
+                    originY: 'center',
+                });
+                const pad = isBackdropMode ? 0 : 60;
+                const scale = Math.min(
+                    (canvas.width! - pad) / (group.width! || 1),
+                    (canvas.height! - pad) / (group.height! || 1)
+                );
+                if (scale < 1) group.scale(scale);
+
+                if (group.type === 'group') {
+                    const items = (group as fabric.Group).removeAll();
+                    canvas.add(...items);
+                } else {
+                    canvas.add(group);
+                }
+                canvas.renderAll();
+                saveState();
+            };
+            if (src.includes('<svg')) fabric.loadSVGFromString(src).then(handleLoadedSVG);
+            else fabric.loadSVGFromURL(src).then(handleLoadedSVG);
+        } else {
+            const imgOpts = src.startsWith('http') ? { crossOrigin: 'anonymous' as const } : {};
+            fabric.Image.fromURL(src, imgOpts).then((img: fabric.FabricImage) => {
+                img.set({
+                    left: canvas.width! / 2,
+                    top: canvas.height! / 2,
+                    originX: 'center',
+                    originY: 'center',
+                });
+                const pad = isBackdropMode ? 0 : 60;
+                const scale = Math.min(
+                    (canvas.width! - pad) / (img.width! || 1),
+                    (canvas.height! - pad) / (img.height! || 1)
+                );
+                if (scale < 1) img.scale(scale);
+                canvas.add(img);
+                canvas.renderAll();
+                saveState();
+            }).catch((err) => {
+                console.error('Failed to load image onto canvas:', err);
+            });
+        }
     };
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -792,10 +859,8 @@ function PaintEditor({
         const reader = new FileReader();
         reader.onload = (event) => {
             const dataUrl = event.target?.result as string;
-            // Set as active image (will display in editor)
-            setActiveImage(dataUrl);
-            // Also save it as a new costume
-            onSave(dataUrl, undefined, file.name.replace(/\.[^/.]+$/, '')); // Remove extension
+            const fileName = file.name.replace(/\.[^/.]+$/, '');
+            loadSrcToCanvas(dataUrl, fileName);
         };
         reader.readAsDataURL(file);
 
@@ -826,7 +891,7 @@ function PaintEditor({
                     isOpen={isLibraryOpen}
                     onClose={() => setIsLibraryOpen(false)}
                     onSelectCostume={(name, src) => {
-                        onSave(src, undefined, name);
+                        loadSrcToCanvas(src, name);
                         setIsLibraryOpen(false);
                     }}
                 />
@@ -911,7 +976,7 @@ function PaintEditor({
                                             // Pick a random costume from built-in library
                                             const idx = Math.floor(Math.random() * BUILTIN_COSTUMES.length);
                                             const costume = BUILTIN_COSTUMES[idx];
-                                            onSave(costume.src, undefined, costume.name);
+                                            loadSrcToCanvas(costume.src, costume.name);
                                         }
                                     },
                                     { id: 'paint', icon: '🖌️', label: 'Paint', onClick: () => { /* already in editor */ } },
