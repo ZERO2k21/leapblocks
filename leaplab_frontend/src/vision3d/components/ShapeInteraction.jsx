@@ -45,7 +45,7 @@ const ShapeInteraction = () => {
       }
 
       const tool = store.activeTool;
-      const isShift = e.shiftKey;
+      const isMultiSelect = e.shiftKey || e.ctrlKey || e.metaKey;
 
       // ── Shape selection by raycasting ─────────────────────
       const rect = canvas.getBoundingClientRect();
@@ -66,11 +66,11 @@ const ShapeInteraction = () => {
       const hits = _raycaster.intersectObjects(allMeshes, false);
       const clickedShapeId = hits.length > 0 ? hits[0].object.userData.shapeId : null;
 
-      // Blender-like selection: Shift+Click = toggle, Click empty = deselect all
+      // Blender-like selection: Shift/Ctrl+Click = toggle, Click empty = deselect all
       if (clickedShapeId) {
-        debug('ShapeInteraction: clicked shape=' + clickedShapeId + ' tool=' + tool + ' shift=' + isShift);
-        if (isShift) {
-          // Shift+Click: toggle selection (add/remove)
+        debug('ShapeInteraction: clicked shape=' + clickedShapeId + ' tool=' + tool + ' multi=' + isMultiSelect);
+        if (isMultiSelect) {
+          // Shift/Ctrl+Click: toggle selection (add/remove)
           selectShape(clickedShapeId, true);
         } else {
           // Normal click: select only this shape
@@ -78,7 +78,7 @@ const ShapeInteraction = () => {
         }
       } else {
         // Clicked empty space: deselect all (Blender behavior)
-        if (!isShift) {
+        if (!isMultiSelect) {
           deselectAll();
         }
       }

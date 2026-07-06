@@ -15,6 +15,34 @@ const defaultFont = fontLoader.parse(helvetikerFont);
 
 let idCounter = 0;
 
+export function serializeGeometry(geo) {
+  if (!geo || !geo.attributes) return null;
+  const data = { attributes: {}, index: null };
+  for (const [name, attr] of Object.entries(geo.attributes)) {
+    data.attributes[name] = {
+      array: Array.from(attr.array),
+      itemSize: attr.itemSize,
+      normalized: attr.normalized,
+    };
+  }
+  if (geo.index) {
+    data.index = { array: Array.from(geo.index.array), itemSize: 1 };
+  }
+  return data;
+}
+
+export function deserializeGeometry(data) {
+  if (!data || !data.attributes) return null;
+  const geo = new THREE.BufferGeometry();
+  for (const [name, attrData] of Object.entries(data.attributes)) {
+    geo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(attrData.array), attrData.itemSize, attrData.normalized));
+  }
+  if (data.index) {
+    geo.setIndex(new THREE.BufferAttribute(new Uint32Array(data.index.array), 1));
+  }
+  return geo;
+}
+
 export function generateShapeId() {
   idCounter += 1;
   return `shape_${Date.now()}_${idCounter}`;
@@ -120,6 +148,18 @@ export function createShape(type, position = [0, 0, 0]) {
 
 export function createGeometry(shape) {
   debug('createGeometry:', shape.type, shape.id);
+  if (shape._csgGeometry) {
+    if (!shape._csgGeometry.isBufferGeometry) {
+      shape._csgGeometry = deserializeGeometry(shape._csgGeometry);
+    }
+    return shape._csgGeometry.clone();
+  }
+  if (shape._customGeometry) {
+    if (!shape._customGeometry.isBufferGeometry) {
+      shape._customGeometry = deserializeGeometry(shape._customGeometry);
+    }
+    return shape._customGeometry.clone();
+  }
   switch (shape.type) {
     case 'box': {
       const w = shape.width ?? 2;

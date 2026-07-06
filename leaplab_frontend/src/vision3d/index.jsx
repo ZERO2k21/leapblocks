@@ -18,6 +18,7 @@ import { saveVision3DProject } from './utils/cloudSave';
 import { importProjectFromJSON } from './utils/indexedDB';
 import './styles/Leap3D.css';
 import { log, debug, error } from './utils/logger';
+import { serializeGeometry } from './utils/helpers';
 
 const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
@@ -765,7 +766,13 @@ const Vision3DApp = ({ onBack }) => {
       project,
       shapes
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const replacer = (key, val) => {
+      if ((key === '_customGeometry' || key === '_csgGeometry') && val && val.attributes) {
+        return serializeGeometry(val);
+      }
+      return val;
+    };
+    const blob = new Blob([JSON.stringify(payload, replacer, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

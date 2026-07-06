@@ -4,41 +4,11 @@
  */
 
 import { create } from 'zustand';
-import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
+import { createShape, cloneShape, snapPositionToGrid, generateShapeId, serializeGeometry, deserializeGeometry } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { performCSG, isCSGValid } from '../engine/CSGEngine';
 import * as THREE from 'three';
 import { log, debug, warn, error } from '../utils/logger';
-
-// Serialize a BufferGeometry to a plain object (for history storage)
-function serializeGeometry(geo) {
-  if (!geo || !geo.attributes) return null;
-  const data = { attributes: {}, index: null };
-  for (const [name, attr] of Object.entries(geo.attributes)) {
-    data.attributes[name] = {
-      array: Array.from(attr.array),
-      itemSize: attr.itemSize,
-      normalized: attr.normalized,
-    };
-  }
-  if (geo.index) {
-    data.index = { array: Array.from(geo.index.array), itemSize: 1 };
-  }
-  return data;
-}
-
-// Deserialize a plain object back to a BufferGeometry
-function deserializeGeometry(data) {
-  if (!data || !data.attributes) return null;
-  const geo = new THREE.BufferGeometry();
-  for (const [name, attrData] of Object.entries(data.attributes)) {
-    geo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(attrData.array), attrData.itemSize, attrData.normalized));
-  }
-  if (data.index) {
-    geo.setIndex(new THREE.BufferAttribute(new Uint32Array(data.index.array), 1));
-  }
-  return geo;
-}
 
 const MAX_HISTORY = 50;
 
@@ -566,9 +536,9 @@ export const use3DStore = create((set, get) => ({
     debug('pushHistory');
     const state = get();
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    // Serialize geometry for history storage (strip non-serializable CSG)
+    // Serialize geometry for history storage
     newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
-      if (key === '_csgGeometry') return undefined;
+      if (key === '_csgGeometry' && val && val.attributes) return serializeGeometry(val);
       if (key === '_customGeometry' && val && val.attributes) return serializeGeometry(val);
       return val;
     })));
@@ -589,10 +559,13 @@ export const use3DStore = create((set, get) => ({
       log('undo: index', state.historyIndex, '->', state.historyIndex - 1);
       const newIndex = state.historyIndex - 1;
       const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
-      // Deserialize _customGeometry back to BufferGeometry
+      // Deserialize geometries back to BufferGeometry
       for (const sh of restoredShapes) {
         if (sh._customGeometry && sh._customGeometry.attributes) {
           sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+        if (sh._csgGeometry && sh._csgGeometry.attributes) {
+          sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
         }
       }
       set({
@@ -609,10 +582,13 @@ export const use3DStore = create((set, get) => ({
       log('redo: index', state.historyIndex, '->', state.historyIndex + 1);
       const newIndex = state.historyIndex + 1;
       const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
-      // Deserialize _customGeometry back to BufferGeometry
+      // Deserialize geometries back to BufferGeometry
       for (const sh of restoredShapes) {
         if (sh._customGeometry && sh._customGeometry.attributes) {
           sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+        if (sh._csgGeometry && sh._csgGeometry.attributes) {
+          sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
         }
       }
       set({
@@ -656,7 +632,16 @@ export const use3DStore = create((set, get) => ({
   // Bulk actions
   setShapes: (shapes) => {
     log('setShapes:', shapes.length, 'shapes');
-    set({ shapes, isProjectDirty: true });
+    const deserialized = shapes.map((sh) => {
+      if (sh._customGeometry && !sh._customGeometry.isBufferGeometry) {
+        sh._customGeometry = deserializeGeometry(sh._customGeometry);
+      }
+      if (sh._csgGeometry && !sh._csgGeometry.isBufferGeometry) {
+        sh._csgGeometry = deserializeGeometry(sh._csgGeometry);
+      }
+      return sh;
+    });
+    set({ shapes: deserialized, isProjectDirty: true });
   },
 
   clearScene: () => {
@@ -897,6 +882,14 @@ export const use3DStore = create((set, get) => ({
       if (shapeData.color) newShape.color = shapeData.color;
       Object.assign(newShape, shapeData);
     }
+
+    if (newShape._customGeometry && !newShape._customGeometry.isBufferGeometry) {
+      newShape._customGeometry = deserializeGeometry(newShape._customGeometry);
+    }
+    if (newShape._csgGeometry && !newShape._csgGeometry.isBufferGeometry) {
+      newShape._csgGeometry = deserializeGeometry(newShape._csgGeometry);
+    }
+
     log('importShape:', newShape.type, newShape.name);
     set((state) => ({
       shapes: [...state.shapes, newShape],

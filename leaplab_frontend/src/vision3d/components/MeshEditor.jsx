@@ -23,24 +23,41 @@ const _delta = new THREE.Vector3();
 const _intersectPlane = new THREE.Plane();
 const _intersectPoint = new THREE.Vector3();
 
-// Get directly selected vertex indices (no spatial weld, no neighbors)
+// Get directly selected vertex indices (spatially welded to prevent tearing the selection)
 function getDirectSelection(geo, selectedVertices, selectedEdges, selectedFaces) {
-  const selected = new Set();
-  for (const v of selectedVertices) selected.add(v.index);
-  for (const e of selectedEdges) { selected.add(e.a); selected.add(e.b); }
+  const connected = new Set();
+  const idx = geo.index;
+  const posAttr = geo.attributes.position;
+
+  for (const v of selectedVertices) connected.add(v.index);
+  for (const e of selectedEdges) { connected.add(e.a); connected.add(e.b); }
   for (const f of selectedFaces) {
-    const idx = geo.index;
     if (idx) {
-      selected.add(idx.getX(f.index * 3));
-      selected.add(idx.getX(f.index * 3 + 1));
-      selected.add(idx.getX(f.index * 3 + 2));
+      connected.add(idx.getX(f.index * 3));
+      connected.add(idx.getX(f.index * 3 + 1));
+      connected.add(idx.getX(f.index * 3 + 2));
     } else {
-      selected.add(f.index * 3);
-      selected.add(f.index * 3 + 1);
-      selected.add(f.index * 3 + 2);
+      connected.add(f.index * 3);
+      connected.add(f.index * 3 + 1);
+      connected.add(f.index * 3 + 2);
     }
   }
-  return selected;
+
+  const EPSILON = 0.01;
+  const expanded = new Set(connected);
+
+  // Spatial weld selected vertices — find all coincident vertices
+  for (const vi of connected) {
+    _vA.fromBufferAttribute(posAttr, vi);
+    for (let i = 0; i < posAttr.count; i++) {
+      _vB.fromBufferAttribute(posAttr, i);
+      if (_vA.distanceTo(_vB) < EPSILON) {
+        expanded.add(i);
+      }
+    }
+  }
+
+  return expanded;
 }
 
 // Blender-style proportional editing falloff functions
@@ -54,8 +71,7 @@ function applyProportionalFalloff(r) {
 }
 
 // Get all vertex indices connected to the selected components.
-// Uses spatial coincidence detection for indexed geometry (e.g. BoxGeometry
-// where adjacent faces have separate vertex copies at the same 3D position)
+// Uses spatial coincidence detection based on Euclidean distance for all shapes (indexed or non-indexed).
 function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFaces) {
   const connected = new Set();
   const idx = geo.index;
@@ -82,37 +98,22 @@ function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFace
     }
   }
 
-  // STEP 1: Spatial weld — for indexed geometry, find vertices at the same
-  // 3D position (within epsilon). BoxGeometry has 24 verts (4 per face) where
-  // corners are duplicated per-face with different indices.
-  const EPSILON = 0.0001;
+  const EPSILON = 0.01;
   const expanded = new Set(connected);
 
-  if (idx) {
-    // Build a spatial position map: quantized position → [vertex indices]
-    const posMap = new Map();
+  // STEP 1: Spatial weld selected vertices — find all coincident vertices
+  for (const vi of connected) {
+    _vA.fromBufferAttribute(posAttr, vi);
     for (let i = 0; i < posAttr.count; i++) {
-      const x = Math.round(posAttr.getX(i) / EPSILON) * EPSILON;
-      const y = Math.round(posAttr.getY(i) / EPSILON) * EPSILON;
-      const z = Math.round(posAttr.getZ(i) / EPSILON) * EPSILON;
-      const key = `${x},${y},${z}`;
-      if (!posMap.has(key)) posMap.set(key, []);
-      posMap.get(key).push(i);
-    }
-
-    // For every vertex in connected, also add all spatially coincident vertices
-    for (const vi of connected) {
-      const x = Math.round(posAttr.getX(vi) / EPSILON) * EPSILON;
-      const y = Math.round(posAttr.getY(vi) / EPSILON) * EPSILON;
-      const z = Math.round(posAttr.getZ(vi) / EPSILON) * EPSILON;
-      const key = `${x},${y},${z}`;
-      for (const w of posMap.get(key) || []) expanded.add(w);
+      _vB.fromBufferAttribute(posAttr, i);
+      if (_vA.distanceTo(_vB) < EPSILON) {
+        expanded.add(i);
+      }
     }
   }
 
-  // STEP 2: Find neighbors — vertices connected by an edge to any selected vertex
+  // STEP 2: Find neighbors — vertices connected by an edge to any selected/welded vertex
   const neighbors = new Set();
-
   if (idx) {
     for (let i = 0; i < idx.count; i += 3) {
       const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
@@ -135,7 +136,20 @@ function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFace
     }
   }
 
-  return { selected: expanded, neighbors };
+  // STEP 3: Spatial weld neighbor vertices — ensure coincident neighbor vertices are grouped
+  const finalNeighbors = new Set(neighbors);
+  for (const ni of neighbors) {
+    _vA.fromBufferAttribute(posAttr, ni);
+    for (let i = 0; i < posAttr.count; i++) {
+      if (expanded.has(i)) continue; // skip selected/welded vertices
+      _vB.fromBufferAttribute(posAttr, i);
+      if (_vA.distanceTo(_vB) < EPSILON) {
+        finalNeighbors.add(i);
+      }
+    }
+  }
+
+  return { selected: expanded, neighbors: finalNeighbors };
 }
 
 /**
