@@ -7,9 +7,9 @@ import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { use3DStore } from '../store/use3DStore';
 
-const VERTEX_COLOR = '#22d3ee';   // cyan
-const EDGE_COLOR = '#f59e0b';     // amber
-const FACE_COLOR = '#a855f7';     // purple
+const VERTEX_COLOR = '#3b82f6';   // Vibrant Blue
+const EDGE_COLOR = '#2563eb';     // Deep Royal Blue
+const FACE_COLOR = '#3b82f6';     // Blue (rendered with opacity overlay)
 
 const _v = new THREE.Vector3();
 

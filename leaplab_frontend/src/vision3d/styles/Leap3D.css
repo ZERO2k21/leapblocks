@@ -97,22 +97,26 @@
   flex-shrink: 0;
 }
 
-/* ─── Toolbar (Light theme) ─── */
+/* ─── Toolbar (Light theme Redesign - World Class Premium Editor UI) ─── */
 .v3d-toolbar-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 16px;
-  background: #f4f5f7;
-  border-bottom: 1px solid #d0d5dd;
-  font-size: 12px;
-  color: #475467;
+  height: 72px; /* Taller, spacious bar for kid-friendly target sizing */
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.85); /* Glassmorphism style */
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: #334155;
   flex-shrink: 0;
-  gap: 4px;
+  gap: 16px; /* Increased gaps */
   overflow-x: auto;
   position: relative;
-  z-index: 10;
+  z-index: 100;
   width: 100%;
   box-sizing: border-box;
 }
@@ -122,79 +126,205 @@
 .v3d-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px; /* Breathing room */
   white-space: nowrap;
 }
 
-.v3d-toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  font-size: 12px;
-  font-weight: 500;
-  color: #667085;
-  cursor: pointer;
-  transition: all 0.12s;
-  line-height: 1.4;
-  white-space: nowrap;
-  user-select: none;
-  height: 32px;
-}
-
-.v3d-toolbar-btn:hover {
-  background: #e9eaec;
-  color: #1d2939;
-}
-
-.v3d-toolbar-btn.active {
-  background: #4f46e5;
-  color: #fff;
-}
-
-.v3d-toolbar-btn:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.v3d-toolbar-separator {
-  width: 1px;
-  height: 20px;
-  background: #d0d5dd;
-  margin: 0 8px;
-  flex-shrink: 0;
-}
-
-.v3d-toolbar-group-label {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #98a2b3;
-  margin: 0 6px;
-  user-select: none;
-}
-
+/* Beautiful Color-Coded Segmented controls (Mac/iOS-like capsule style) */
 .v3d-toolbar-mode-group,
 .v3d-toolbar-view-group,
 .v3d-toolbar-actions-group {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  height: 48px; /* Taller controls */
 }
 
+/* Color Group 1: Transform (Blue) */
+.v3d-group-transform {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.v3d-group-transform .v3d-toolbar-btn:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+.v3d-group-transform .v3d-toolbar-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* Color Group 2: Modes (Teal) */
+.v3d-group-modes {
+  background: rgba(13, 148, 136, 0.06);
+  border: 1px solid rgba(13, 148, 136, 0.15);
+}
+.v3d-group-modes .v3d-toolbar-btn:hover {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+}
+.v3d-group-modes .v3d-toolbar-btn.active {
+  background: #0d9488 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25) !important;
+}
+
+/* Color Group 3: Edit Actions (Amber) */
+.v3d-group-edit-actions {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+.v3d-group-edit-actions .v3d-toolbar-btn:hover {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+.v3d-group-edit-actions .v3d-toolbar-btn.active {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Color Group 4: Combine / CSG (Purple) */
+.v3d-group-combine {
+  background: rgba(147, 51, 234, 0.06);
+  border: 1px solid rgba(147, 51, 234, 0.15);
+}
+.v3d-group-combine .v3d-toolbar-btn:hover {
+  background: rgba(147, 51, 234, 0.12);
+  color: #7e22ce;
+}
+.v3d-group-combine .v3d-toolbar-btn.active {
+  background: #9333ea !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(147, 51, 234, 0.25) !important;
+}
+
+/* Color Group 5: View Options (Slate) */
+.v3d-group-view {
+  background: rgba(71, 85, 105, 0.06);
+  border: 1px solid rgba(71, 85, 105, 0.15);
+}
+.v3d-group-view .v3d-toolbar-btn:hover {
+  background: rgba(71, 85, 105, 0.12);
+  color: #334155;
+}
+.v3d-group-view .v3d-toolbar-btn.active {
+  background: #475569 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(71, 85, 105, 0.25) !important;
+}
+
+.v3d-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px; /* Wider buttons for easy clicking */
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13px; /* Slightly larger readable text */
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.5;
+  white-space: nowrap;
+  user-select: none;
+  height: 40px; /* Taller button height */
+  box-sizing: border-box;
+}
+
+.v3d-toolbar-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.v3d-toolbar-btn:hover svg {
+  transform: translateY(-0.5px) scale(1.08);
+}
+
+.v3d-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* Standalone action buttons styling (Ruler, Import, Animate, Solid/Hollow etc.) */
+button.v3d-toolbar-btn:not(.v3d-toolbar-mode-group button):not(.v3d-toolbar-actions-group button) {
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  color: #475569;
+  height: 40px;
+  padding: 8px 18px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+button.v3d-toolbar-btn:not(.v3d-toolbar-mode-group button):not(.v3d-toolbar-actions-group button):hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+button.v3d-toolbar-btn:not(.v3d-toolbar-mode-group button):not(.v3d-toolbar-actions-group button).active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+.v3d-toolbar-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.v3d-toolbar-separator {
+  width: 1px;
+  height: 32px; /* Taller separator */
+  background: linear-gradient(to bottom, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent);
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
+.v3d-toolbar-group-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #94a3b8;
+  margin: 0 10px;
+  user-select: none;
+}
+
+/* Status Badges */
 .v3d-toolbar-info-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #98a2b3;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01);
   user-select: none;
+  transition: all 0.2s ease;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.v3d-toolbar-info-item:hover {
+  background: #f1f5f9;
+  color: #334155;
+  transform: translateY(-0.5px);
 }
 
 /* ─── Shape Panel ─── */

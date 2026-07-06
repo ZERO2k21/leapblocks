@@ -819,7 +819,7 @@ const Vision3DApp = ({ onBack }) => {
         <div className="v3d-canvas-wrapper">
           <div className="v3d-toolbar-bar">
             <div className="v3d-toolbar-left">
-              <div className="v3d-toolbar-mode-group">
+              <div className="v3d-toolbar-mode-group v3d-group-transform">
                 <button
                   className={`v3d-toolbar-btn ${activeTool === 'select' ? 'active' : ''}`}
                   onClick={() => setTool('select')}
@@ -850,12 +850,12 @@ const Vision3DApp = ({ onBack }) => {
                   title="Scale (S)"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3l-7 7M21 3v5M21 3h-5M3 21l7-7M3 21v-5M3 21h5"/></svg>
-                  Scale
+                  Resize
                 </button>
               </div>
               <span className="v3d-toolbar-separator" />
               {/* Edit Mode Group (Blender-like) */}
-              <div className="v3d-toolbar-mode-group">
+              <div className="v3d-toolbar-mode-group v3d-group-modes">
                 <button
                   className={`v3d-toolbar-btn ${editMode === 'vertex' ? 'active' : ''}`}
                   onClick={() => setEditMode(editMode === 'vertex' ? 'object' : 'vertex')}
@@ -863,7 +863,7 @@ const Vision3DApp = ({ onBack }) => {
                   title="Vertex Edit (1)"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-                  Vert
+                  Points
                 </button>
                 <button
                   className={`v3d-toolbar-btn ${editMode === 'edge' ? 'active' : ''}`}
@@ -872,7 +872,7 @@ const Vision3DApp = ({ onBack }) => {
                   title="Edge Edit (2)"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/></svg>
-                  Edge
+                  Lines
                 </button>
                 <button
                   className={`v3d-toolbar-btn ${editMode === 'face' ? 'active' : ''}`}
@@ -881,29 +881,29 @@ const Vision3DApp = ({ onBack }) => {
                   title="Face Edit (3)"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,3 3,21 21,21"/></svg>
-                  Face
+                  Sides
                 </button>
               </div>
               {/* Edit Tools (shown when in edit mode) */}
               {editMode !== 'object' && (
                 <>
                   <span className="v3d-toolbar-separator" />
-                  <div className="v3d-toolbar-actions-group">
+                  <div className="v3d-toolbar-actions-group v3d-group-edit-actions">
                     <button
                       className={`v3d-toolbar-btn ${editTool === 'exclude' ? 'active' : ''}`}
                       onClick={() => setEditTool('exclude')}
-                      title="Exclude — move only selected (E)"
+                      title="Move only selected (E)"
                     >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
-                      Exclude
+                      Move Selected
                     </button>
                     <button
                       className={`v3d-toolbar-btn ${editTool === 'include' ? 'active' : ''}`}
                       onClick={() => setEditTool('include')}
-                      title="Include — move selected + connected (I)"
+                      title="Move selected + connected (I)"
                     >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-                      Include
+                      Stretch Shape
                     </button>
                     {editMode === 'vertex' && (
                       <button
@@ -913,7 +913,7 @@ const Vision3DApp = ({ onBack }) => {
                         title="Merge Vertices (M)"
                       >
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 10l4 4"/></svg>
-                        Merge
+                        Join
                       </button>
                     )}
                     <button
@@ -999,34 +999,36 @@ const Vision3DApp = ({ onBack }) => {
                 </button>
               </div>
               <span className="v3d-toolbar-separator" />
-              <div className="v3d-toolbar-group-label">CSG</div>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('union')}
-                disabled={selectedIds.length < 2}
-                title="CSG Union (Ctrl+1)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
-                Union
-              </button>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('subtract')}
-                disabled={selectedIds.length < 2}
-                title="CSG Subtract (Ctrl+2)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
-                Subtract
-              </button>
-              <button
-                className="v3d-toolbar-btn"
-                onClick={() => csgOperation('intersect')}
-                disabled={selectedIds.length < 2}
-                title="CSG Intersect (Ctrl+3)"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
-                Intersect
-              </button>
+              <div className="v3d-toolbar-group-label">Combine</div>
+              <div className="v3d-toolbar-actions-group v3d-group-combine">
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('union')}
+                  disabled={selectedIds.length < 2}
+                  title="Glue shapes together (Ctrl+1)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
+                  Glue
+                </button>
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('subtract')}
+                  disabled={selectedIds.length < 2}
+                  title="Cut one shape from another (Ctrl+2)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
+                  Cut
+                </button>
+                <button
+                  className="v3d-toolbar-btn"
+                  onClick={() => csgOperation('intersect')}
+                  disabled={selectedIds.length < 2}
+                  title="Keep only the overlapping part (Ctrl+3)"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
+                  Overlap
+                </button>
+              </div>
               <span className="v3d-toolbar-separator" />
               <button
                 className={`v3d-toolbar-btn ${(() => {
@@ -1048,7 +1050,7 @@ const Vision3DApp = ({ onBack }) => {
                   <circle cx="12" cy="12" r="9"/>
                   <circle cx="12" cy="12" r="5" fill="currentColor" opacity={selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 0 : 0.3}/>
                 </svg>
-                {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Solid' : 'Hollow'}
+                {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Make Solid' : 'Make Hole'}
               </button>
             </div>
             <div className="v3d-toolbar-center">
