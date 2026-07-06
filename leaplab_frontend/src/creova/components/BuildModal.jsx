@@ -29,10 +29,10 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-slate-950/70 z-[9999] flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-[20px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.15)] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 animate-scale-in">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 backdrop-blur-sm shrink-0">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
           <div>
             <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <Terminal className="h-5 w-5 text-indigo-600" />
@@ -139,7 +139,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
         {/* Footer Actions */}
         <div 
           style={{
-            padding: '18px 24px',
+            padding: '28px 24px',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
@@ -153,14 +153,14 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
             <button 
               onClick={onClose}
               style={{
-                minWidth: '100px',
-                padding: '10px 20px',
+                minWidth: '120px',
+                padding: '14px 28px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '10px',
-                fontWeight: 600,
-                fontSize: '13px',
+                borderRadius: '14px',
+                fontWeight: 800,
+                fontSize: '15px',
                 transition: 'all 0.2s',
                 border: '1px solid #cbd5e1',
                 backgroundColor: '#f8fafc',
@@ -185,14 +185,14 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
               <button 
                 onClick={onClose}
                 style={{
-                  minWidth: '100px',
-                  padding: '10px 20px',
+                  minWidth: '120px',
+                  padding: '14px 28px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  fontSize: '13px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
                   transition: 'all 0.2s',
                   border: '1px solid #cbd5e1',
                   backgroundColor: '#f8fafc',
@@ -213,15 +213,15 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
               <button 
                 onClick={() => { onOpenFile(); onClose(); }}
                 style={{
-                  minWidth: '130px',
-                  padding: '10px 20px',
+                  minWidth: '150px',
+                  padding: '14px 28px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  fontSize: '13px',
+                  gap: '10px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
                   transition: 'all 0.2s',
                   border: 'none',
                   backgroundColor: '#059669',
@@ -240,7 +240,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.2)';
                 }}
               >
-                <FolderOpen className="h-4 w-4" />
+                <FolderOpen className="h-5 w-5" />
                 <span>Get APK</span>
               </button>
             </>
@@ -251,14 +251,14 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
               <button 
                 onClick={onClose}
                 style={{
-                  minWidth: '100px',
-                  padding: '10px 20px',
+                  minWidth: '120px',
+                  padding: '14px 28px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  fontSize: '13px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
                   transition: 'all 0.2s',
                   border: '1px solid #cbd5e1',
                   backgroundColor: '#f8fafc',
@@ -279,15 +279,15 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
               <button 
                 onClick={onRetry}
                 style={{
-                  minWidth: '130px',
-                  padding: '10px 20px',
+                  minWidth: '150px',
+                  padding: '14px 28px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  fontSize: '13px',
+                  gap: '10px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '15px',
                   transition: 'all 0.2s',
                   border: 'none',
                   backgroundColor: '#4f46e5',
@@ -306,7 +306,7 @@ export default function BuildModal({ isOpen, onClose, buildState, logs, appName,
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.2)';
                 }}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-5 w-5" />
                 <span>Try Again</span>
               </button>
             </>

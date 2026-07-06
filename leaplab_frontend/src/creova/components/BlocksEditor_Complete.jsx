@@ -135,7 +135,7 @@ export default function BlocksEditorComplete({ appState }) {
             horizontalLayout: false,
             toolboxPosition: 'start',
             renderer: 'geras',
-            media: 'https://unpkg.com/blockly/media/',
+            media: './blockly-media/',
             oneBasedIndex: true
         });
 
