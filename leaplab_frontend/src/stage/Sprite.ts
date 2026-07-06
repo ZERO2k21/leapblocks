@@ -12,6 +12,8 @@ export interface Costume {
     image: HTMLImageElement;
     width: number;
     height: number;
+    rotationCenterX?: number;  // normalized 0-1, default 0.5 (center)
+    rotationCenterY?: number;  // normalized 0-1, default 0.5 (center)
 }
 
 export type SpriteType = 'cat' | 'ball' | 'arrow' | 'robot';
@@ -435,7 +437,7 @@ export class Sprite {
     // ═══════════════════════════════════════════════════════════════════════
     // COSTUME MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════
-    async addCostume(name: string, src: string): Promise<void> {
+    async addCostume(name: string, src: string, rotationCenter?: { x: number; y: number }): Promise<void> {
         return new Promise((resolve) => {
             const img = new Image();
             // Only set crossOrigin for remote URLs; local assets don't need CORS
@@ -452,6 +454,8 @@ export class Sprite {
                     image: img,
                     width: img.width * scaleFactor,
                     height: img.height * scaleFactor,
+                    rotationCenterX: rotationCenter?.x ?? 0.5,
+                    rotationCenterY: rotationCenter?.y ?? 0.5,
                 });
                 this.onUpdate();
 
@@ -786,14 +790,21 @@ export class Sprite {
                     if (hasFisheye) this.applyFisheye(offCtx, smallW, smallH, eff.fisheye);
                     if (hasWhirl) this.applyWhirl(offCtx, smallW, smallH, eff.whirl);
 
+                    const rcx = (costume.rotationCenterX ?? 0.5) * w;
+                    const rcy = (costume.rotationCenterY ?? 0.5) * h;
                     ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(offscreen, -w / 2, -h / 2, w, h);
+                    ctx.drawImage(offscreen, -rcx, -rcy, w, h);
                     ctx.imageSmoothingEnabled = true;
                 } else {
-                    ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
+                    const rcx = (costume.rotationCenterX ?? 0.5) * w;
+                    const rcy = (costume.rotationCenterY ?? 0.5) * h;
+                    ctx.drawImage(costume.image, -rcx, -rcy, w, h);
                 }
             } else {
-                ctx.drawImage(costume.image, -w / 2, -h / 2, w, h);
+                // Use custom rotation center if set, otherwise default to center
+                const rcx = (costume.rotationCenterX ?? 0.5) * w;
+                const rcy = (costume.rotationCenterY ?? 0.5) * h;
+                ctx.drawImage(costume.image, -rcx, -rcy, w, h);
             }
         } else {
             // Default vector sprites

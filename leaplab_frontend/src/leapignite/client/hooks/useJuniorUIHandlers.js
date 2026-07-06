@@ -134,7 +134,7 @@ export function useJuniorUIHandlers({
         });
     };
 
-    const handlePaintSave = (imageData, svgData, name) => {
+    const handlePaintSave = (imageData, svgData, name, rotationCenter) => {
         // Use PNG data for stable rendering in sprite cards and stage preview.
         const savedData = imageData;
         const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';

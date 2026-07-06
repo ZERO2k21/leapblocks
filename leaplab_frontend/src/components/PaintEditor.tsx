@@ -11,7 +11,7 @@ import {
     ChevronDown, ArrowUp, ArrowDown,
     Plus, Search, MousePointer,
     MoveUp, MoveDown, Layers, Image as ImageIcon,
-    Combine, Ungroup, Download, Sparkles, Check
+    Combine, Ungroup, Download, Sparkles, Check, Pipette, Camera
 } from 'lucide-react';
 import { ActionMenu } from '../stage/ActionMenu';
 import { CostumeLibrary } from './CostumeLibrary';
@@ -33,7 +33,7 @@ interface Costume {
 }
 
 interface PaintEditorProps {
-    onSave: (imageData: string, svgData?: string, name?: string) => void;
+    onSave: (imageData: string, svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => void;
     onClose: () => void;
     title?: string;
     initialImage?: string;
@@ -97,6 +97,18 @@ function PaintEditor({
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
     const [isRemovingBg, setIsRemovingBg] = useState(false);
     const [activeCostumeIndex, setActiveCostumeIndex] = useState(0);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const [isSettingRotationCenter, setIsSettingRotationCenter] = useState(false);
+    const [rotationCenter, setRotationCenter] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
+    const [editMode, setEditMode] = useState<'vector' | 'bitmap'>('vector');
+    const bitmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const bitmapCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const isBitmapDrawingRef = useRef(false);
+    const bitmapLastPointRef = useRef<{ x: number; y: number } | null>(null);
+    const bitmapBrushColorRef = useRef('#000000');
+    const bitmapBrushSizeRef = useRef(4);
 
     // Auto BG Removal handler
     const handleAutoRemoveBG = async () => {
@@ -415,6 +427,134 @@ function PaintEditor({
         setCostumeName(spriteName);
     }, [spriteName, activeCostumeIndex]);
 
+    // Bitmap mode drawing handlers
+    useEffect(() => {
+        if (editMode !== 'bitmap') return;
+        const bitmapCanvas = bitmapCanvasRef.current;
+        if (!bitmapCanvas) return;
+        const ctx = bitmapCanvas.getContext('2d');
+        if (!ctx) return;
+        bitmapCtxRef.current = ctx;
+
+        const getPointer = (e: MouseEvent) => {
+            const rect = bitmapCanvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (bitmapCanvas.width / rect.width),
+                y: (e.clientY - rect.top) * (bitmapCanvas.height / rect.height)
+            };
+        };
+
+        const floodFill = (startX: number, startY: number, fillColor: string) => {
+            const imageData = ctx.getImageData(0, 0, bitmapCanvas.width, bitmapCanvas.height);
+            const data = imageData.data;
+            const w = bitmapCanvas.width;
+            const h = bitmapCanvas.height;
+            const startIdx = (Math.round(startY) * w + Math.round(startX)) * 4;
+            const startR = data[startIdx], startG = data[startIdx + 1], startB = data[startIdx + 2], startA = data[startIdx + 3];
+
+            // Parse fill color
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 1; tempCanvas.height = 1;
+            const tempCtx = tempCanvas.getContext('2d')!;
+            tempCtx.fillStyle = fillColor;
+            tempCtx.fillRect(0, 0, 1, 1);
+            const fc = tempCtx.getImageData(0, 0, 1, 1).data;
+
+            if (startR === fc[0] && startG === fc[1] && startB === fc[2] && startA === fc[3]) return;
+
+            const tolerance = 32;
+            const colorMatch = (idx: number) => {
+                return Math.abs(data[idx] - startR) < tolerance &&
+                       Math.abs(data[idx + 1] - startG) < tolerance &&
+                       Math.abs(data[idx + 2] - startB) < tolerance &&
+                       Math.abs(data[idx + 3] - startA) < tolerance;
+            };
+
+            const visited = new Uint8Array(w * h);
+            const queue: number[] = [Math.round(startX), Math.round(startY)];
+
+            while (queue.length > 0) {
+                const y = queue.pop()!;
+                const x = queue.pop()!;
+                if (x < 0 || x >= w || y < 0 || y >= h) continue;
+                const pi = y * w + x;
+                if (visited[pi]) continue;
+                const idx = pi * 4;
+                if (!colorMatch(idx)) continue;
+                visited[pi] = 1;
+                data[idx] = fc[0]; data[idx + 1] = fc[1]; data[idx + 2] = fc[2]; data[idx + 3] = fc[3];
+                queue.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        };
+
+        const handleDown = (e: MouseEvent) => {
+            if (activeTool !== 'brush' && activeTool !== 'eraser' && activeTool !== 'fill') return;
+            const p = getPointer(e);
+            isBitmapDrawingRef.current = true;
+            bitmapLastPointRef.current = p;
+
+            if (activeTool === 'fill') {
+                floodFill(p.x, p.y, outlineColor);
+                bitmapBrushColorRef.current = outlineColor;
+                isBitmapDrawingRef.current = false;
+                return;
+            }
+
+            bitmapBrushColorRef.current = activeTool === 'eraser' ? 'eraser' : outlineColor;
+            bitmapBrushSizeRef.current = strokeWidth;
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = activeTool === 'eraser' ? strokeWidth * 2 : strokeWidth;
+
+            if (activeTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = outlineColor;
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        const handleMove = (e: MouseEvent) => {
+            if (!isBitmapDrawingRef.current) return;
+            const p = getPointer(e);
+            const last = bitmapLastPointRef.current;
+            if (!last) return;
+
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+
+            bitmapLastPointRef.current = p;
+        };
+
+        const handleUp = () => {
+            if (isBitmapDrawingRef.current) {
+                isBitmapDrawingRef.current = false;
+                bitmapLastPointRef.current = null;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+        };
+
+        bitmapCanvas.addEventListener('mousedown', handleDown);
+        bitmapCanvas.addEventListener('mousemove', handleMove);
+        bitmapCanvas.addEventListener('mouseup', handleUp);
+        bitmapCanvas.addEventListener('mouseleave', handleUp);
+
+        return () => {
+            bitmapCanvas.removeEventListener('mousedown', handleDown);
+            bitmapCanvas.removeEventListener('mousemove', handleMove);
+            bitmapCanvas.removeEventListener('mouseup', handleUp);
+            bitmapCanvas.removeEventListener('mouseleave', handleUp);
+        };
+    }, [editMode, activeTool, outlineColor, strokeWidth]);
+
     const saveState = () => {
         if (isRestoring.current || eraserDrawingRef.current) return;
         const canvas = canvasRef.current;
@@ -438,7 +578,7 @@ function PaintEditor({
         if (!canvas) return;
 
         canvas.isDrawingMode = false;
-        canvas.selection = activeTool === 'select';
+        canvas.selection = activeTool === 'select' || activeTool === 'reshape' || activeTool === 'eyedropper';
 
         // Clean up previous eraser handlers
         if (eraserHandlersRef.current) {
@@ -591,12 +731,71 @@ function PaintEditor({
                 opt.target.set('fill', fillColor);
                 canvas.renderAll();
                 saveState();
+            } else if (activeTool === 'eyedropper') {
+                const pointer = canvas.getScenePoint(opt.e);
+                const ctx = canvas.lowerCanvasEl?.getContext('2d');
+                if (ctx) {
+                    const pixel = ctx.getImageData(Math.round(pointer.x), Math.round(pointer.y), 1, 1).data;
+                    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+                    setFillColor(hex);
+                    setOutlineColor(hex);
+                    setActiveTool('select');
+                }
             }
         };
 
+        // Reshape: configure custom controls on selection
+        const handleSelectionCreated = (opt: any) => {
+            if (activeTool !== 'reshape') return;
+            const obj = opt.selected?.[0];
+            if (!obj) return;
+            obj.set({
+                transparentCorners: false,
+                cornerColor: '#855CD6',
+                cornerStrokeColor: '#855CD6',
+                borderColor: '#855CD6',
+                cornerSize: 12,
+                cornerStyle: 'circle',
+                borderScaleFactor: 2,
+                padding: 4,
+            });
+            obj.setControlsVisibility({
+                mtr: true,  // rotation handle
+                tl: true, tr: true, bl: true, br: true,  // corners
+                mt: true, mb: true, ml: true, mr: true,  // edge midpoints
+            });
+            canvas.renderAll();
+        };
+
+        const handleSelectionUpdated = (opt: any) => {
+            if (activeTool !== 'reshape') return;
+            const obj = opt.selected?.[0];
+            if (!obj) return;
+            obj.set({
+                transparentCorners: false,
+                cornerColor: '#855CD6',
+                cornerStrokeColor: '#855CD6',
+                borderColor: '#855CD6',
+                cornerSize: 12,
+                cornerStyle: 'circle',
+                borderScaleFactor: 2,
+                padding: 4,
+            });
+            obj.setControlsVisibility({
+                mtr: true,
+                tl: true, tr: true, bl: true, br: true,
+                mt: true, mb: true, ml: true, mr: true,
+            });
+            canvas.renderAll();
+        };
+
         canvas.on('mouse:down', handleMouseDown);
+        canvas.on('selection:created', handleSelectionCreated);
+        canvas.on('selection:updated', handleSelectionUpdated);
         return () => {
             canvas.off('mouse:down', handleMouseDown);
+            canvas.off('selection:created', handleSelectionCreated);
+            canvas.off('selection:updated', handleSelectionUpdated);
             if (eraserHandlersRef.current) {
                 canvas.off('mouse:down', eraserHandlersRef.current.down);
                 canvas.off('mouse:move', eraserHandlersRef.current.move);
@@ -754,37 +953,44 @@ function PaintEditor({
     };
 
     const handleSave = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const svgString = canvas.toSVG();
-        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-
-        const objects = canvas.getObjects();
         let imageData: string;
+        let svgDataUrl = '';
 
-        if (objects.length > 0) {
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            objects.forEach(obj => {
-                const br = obj.getBoundingRect();
-                minX = Math.min(minX, br.left);
-                minY = Math.min(minY, br.top);
-                maxX = Math.max(maxX, br.left + br.width);
-                maxY = Math.max(maxY, br.top + br.height);
-            });
-
-            const pad = 10;
-            const left = Math.max(0, Math.floor(minX - pad));
-            const top = Math.max(0, Math.floor(minY - pad));
-            const width = Math.min(canvas.width! - left, Math.ceil(maxX - minX + pad * 2));
-            const height = Math.min(canvas.height! - top, Math.ceil(maxY - minY + pad * 2));
-
-            imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1, left, top, width, height });
+        if (editMode === 'bitmap' && bitmapCanvasRef.current) {
+            // Save bitmap canvas directly
+            imageData = bitmapCanvasRef.current.toDataURL('image/png');
         } else {
-            imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            const svgString = canvas.toSVG();
+            svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+
+            const objects = canvas.getObjects();
+
+            if (objects.length > 0) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                objects.forEach(obj => {
+                    const br = obj.getBoundingRect();
+                    minX = Math.min(minX, br.left);
+                    minY = Math.min(minY, br.top);
+                    maxX = Math.max(maxX, br.left + br.width);
+                    maxY = Math.max(maxY, br.top + br.height);
+                });
+
+                const pad = 10;
+                const left = Math.max(0, Math.floor(minX - pad));
+                const top = Math.max(0, Math.floor(minY - pad));
+                const width = Math.min(canvas.width! - left, Math.ceil(maxX - minX + pad * 2));
+                const height = Math.min(canvas.height! - top, Math.ceil(maxY - minY + pad * 2));
+
+                imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1, left, top, width, height });
+            } else {
+                imageData = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 1 });
+            }
         }
 
-        onSave(imageData, svgDataUrl, costumeName);
+        onSave(imageData, svgDataUrl || undefined, costumeName, isSettingRotationCenter ? rotationCenter : undefined);
         isDirtyRef.current = false;
         const costumeId = costumes[activeCostumeIndex]?.id || 'default';
         localStorage.removeItem(`paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`);
@@ -874,6 +1080,94 @@ function PaintEditor({
         fileInputRef.current?.click();
     };
 
+    const openCamera = async () => {
+        setCameraError(null);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            setCameraStream(stream);
+            setIsCameraOpen(true);
+        } catch (err: any) {
+            setCameraError(err.name === 'NotAllowedError'
+                ? 'Camera permission denied. Please allow camera access.'
+                : err.name === 'NotFoundError'
+                ? 'No camera found on this device.'
+                : 'Failed to access camera.');
+        }
+    };
+
+    const capturePhoto = (videoEl: HTMLVideoElement) => {
+        const offscreen = document.createElement('canvas');
+        offscreen.width = videoEl.videoWidth;
+        offscreen.height = videoEl.videoHeight;
+        const ctx = offscreen.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(videoEl, 0, 0);
+        const dataUrl = offscreen.toDataURL('image/png');
+        loadSrcToCanvas(dataUrl, 'Camera Capture');
+        closeCamera();
+    };
+
+    const closeCamera = () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            setCameraStream(null);
+        }
+        setIsCameraOpen(false);
+        setCameraError(null);
+    };
+
+    const switchToBitmap = () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !bitmapCanvasRef.current) return;
+
+        // Flatten Fabric.js canvas to bitmap
+        const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
+        const img = new Image();
+        img.onload = () => {
+            const bitmapCanvas = bitmapCanvasRef.current;
+            const ctx = bitmapCtxRef.current;
+            if (!bitmapCanvas || !ctx) return;
+
+            bitmapCanvas.width = canvasW;
+            bitmapCanvas.height = canvasH;
+            ctx.clearRect(0, 0, bitmapCanvas.width, bitmapCanvas.height);
+            ctx.drawImage(img, 0, 0, bitmapCanvas.width, bitmapCanvas.height);
+            setEditMode('bitmap');
+        };
+        img.src = dataUrl;
+    };
+
+    const switchToVector = () => {
+        const canvas = canvasRef.current;
+        const bitmapCanvas = bitmapCanvasRef.current;
+        if (!canvas || !bitmapCanvas) return;
+
+        // Capture bitmap as dataURL
+        const dataUrl = bitmapCanvas.toDataURL('image/png');
+        canvas.clear();
+        canvas.backgroundColor = 'transparent';
+
+        fabric.Image.fromURL(dataUrl, {}).then((img: fabric.FabricImage) => {
+            img.set({
+                left: canvas.width! / 2,
+                top: canvas.height! / 2,
+                originX: 'center',
+                originY: 'center',
+                selectable: false,
+                evented: false,
+            });
+            canvas.add(img);
+            canvas.renderAll();
+            setEditMode('vector');
+            saveState();
+        }).catch((err) => {
+            console.error('Failed to convert bitmap to vector:', err);
+            setEditMode('vector');
+        });
+    };
+
     return (
         <div className={mode === 'junior' ? "fixed inset-0 z-[5000] flex flex-col bg-white select-none overflow-hidden font-sans" : "flex flex-1 w-full h-full bg-white select-none overflow-hidden font-sans border-t border-gray-100"}>
             {/* Hidden file input for uploading costumes */}
@@ -895,6 +1189,59 @@ function PaintEditor({
                         setIsLibraryOpen(false);
                     }}
                 />
+            )}
+
+            {/* Camera Capture Modal */}
+            {isCameraOpen && (
+                <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-[480px] max-w-[90vw]">
+                        <div className="bg-[#7B4FC4] px-5 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Camera size={20} className="text-white" />
+                                <span className="text-white font-bold">Camera Capture</span>
+                            </div>
+                            <button onClick={closeCamera} className="text-white/80 hover:text-white transition-colors text-lg font-bold">&times;</button>
+                        </div>
+                        <div className="p-4">
+                            {cameraError ? (
+                                <div className="text-center py-8">
+                                    <Camera size={48} className="mx-auto text-gray-300 mb-3" />
+                                    <p className="text-gray-500 text-sm">{cameraError}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="rounded-xl overflow-hidden bg-black mb-4">
+                                        <video
+                                            data-camera-video
+                                            ref={(el) => {
+                                                if (el && cameraStream) {
+                                                    el.srcObject = cameraStream;
+                                                    el.play();
+                                                }
+                                            }}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            className="w-full h-auto max-h-[300px] object-contain"
+                                        />
+                                    </div>
+                                    <div className="flex justify-center">
+                                        <button
+                                            onClick={() => {
+                                                const video = document.querySelector('[data-camera-video]') as HTMLVideoElement;
+                                                if (video) capturePhoto(video);
+                                            }}
+                                            className="px-8 py-3 bg-[#22c55e] text-white rounded-2xl font-black text-lg flex items-center gap-2 shadow-lg hover:bg-green-600 transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            <Camera size={20} />
+                                            CAPTURE
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* 0. JUNIOR HEADER (matches JuniorApp style) */}
@@ -971,6 +1318,7 @@ function PaintEditor({
                                 tooltipLabel="Choose a Costume"
                                 actions={[
                                     { id: 'upload', icon: '📁', label: 'Upload Costume', onClick: triggerUpload },
+                                    { id: 'camera', icon: '📷', label: 'Camera Capture', onClick: openCamera },
                                     {
                                         id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
                                             // Pick a random costume from built-in library
@@ -1039,6 +1387,28 @@ function PaintEditor({
 
                             <div className="h-6 w-px bg-gray-200" />
 
+                            {/* Bitmap/Vector Mode Toggle */}
+                            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+                                <button
+                                    onClick={() => {
+                                        if (editMode === 'bitmap') switchToVector();
+                                    }}
+                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${editMode === 'vector' ? 'bg-[#855CD6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Vector
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (editMode === 'vector') switchToBitmap();
+                                    }}
+                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${editMode === 'bitmap' ? 'bg-[#855CD6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Bitmap
+                                </button>
+                            </div>
+
+                            <div className="h-6 w-px bg-gray-200" />
+
                             <div className="flex items-center gap-3">
                                 <ToolBtnVertical onClick={groupObjects} icon={<Combine size={18} />} label="Group" />
                                 <ToolBtnVertical onClick={ungroupObjects} icon={<Ungroup size={18} />} label="Ungroup" />
@@ -1051,6 +1421,25 @@ function PaintEditor({
                                 <ToolBtnVertical onClick={() => handleLayering('backward')} icon={<ArrowDown size={16} />} label="Backward" />
                                 <ToolBtnVertical onClick={() => handleLayering('front')} icon={<MoveUp size={16} />} label="Front" />
                                 <ToolBtnVertical onClick={() => handleLayering('back')} icon={<MoveDown size={16} />} label="Back" />
+                            </div>
+
+                            <div className="h-6 w-px bg-gray-200" />
+
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => {
+                                        setIsSettingRotationCenter(!isSettingRotationCenter);
+                                        if (!isSettingRotationCenter) setActiveTool('select');
+                                    }}
+                                    className={`flex flex-col items-center px-2 py-1 rounded-lg group active:scale-95 transition-all ${isSettingRotationCenter ? 'bg-purple-100 text-[#855CD6]' : 'hover:bg-gray-50 text-gray-500 group-hover:text-[#855CD6]'}`}
+                                    title="Set Rotation Center"
+                                >
+                                    <div className="relative w-4 h-4">
+                                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-current -translate-y-1/2" />
+                                        <div className="absolute left-1/2 top-0 h-full w-0.5 bg-current -translate-x-1/2" />
+                                    </div>
+                                    <span className="text-[9px] font-bold mt-0.5">Rotate Pt</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1088,6 +1477,7 @@ function PaintEditor({
                                         }}
                                         onClose={() => setActiveColorPicker(null)}
                                         title="Fill"
+                                        onEyedropper={() => setActiveTool('eyedropper')}
                                     />
                                 )}
                             </div>
@@ -1126,6 +1516,7 @@ function PaintEditor({
                                         }}
                                         onClose={() => setActiveColorPicker(null)}
                                         title="Outline"
+                                        onEyedropper={() => setActiveTool('eyedropper')}
                                     />
                                 )}
                             </div>
@@ -1196,11 +1587,12 @@ function PaintEditor({
                                 <DrawTool active={activeTool === 'circle'} onClick={() => addShape('circle')} icon={<Circle size={20} />} label="Circle" />
 
                                 <DrawTool active={activeTool === 'rect'} onClick={() => addShape('rect')} icon={<Square size={20} />} label="Rectangle" />
+                                <DrawTool active={activeTool === 'eyedropper'} onClick={() => setActiveTool('eyedropper')} icon={<Pipette size={20} />} label="Eyedropper" />
                             </div>
                         </div>
 
                         {/* CANVAS AREA */}
-                        <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative" style={{ cursor: activeTool === 'fill' ? 'crosshair' : 'default' }}>
+                        <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative" style={{ cursor: activeTool === 'fill' || activeTool === 'eyedropper' ? 'crosshair' : activeTool === 'reshape' ? 'move' : 'default' }}>
                             <div className="relative shadow-md border-2 border-[#d9e1e8] rounded-lg overflow-hidden"
                                 style={{
                                     backgroundColor: '#ffffff',
@@ -1212,6 +1604,55 @@ function PaintEditor({
                                     transformOrigin: 'center center'
                                 }}>
                                 <canvas id="fabric-canvas" />
+
+                                {/* Bitmap Mode Canvas Overlay */}
+                                {editMode === 'bitmap' && (
+                                    <canvas
+                                        ref={bitmapCanvasRef}
+                                        className="absolute inset-0 z-10"
+                                        style={{
+                                            width: `${canvasW}px`,
+                                            height: `${canvasH}px`,
+                                            cursor: activeTool === 'brush' || activeTool === 'eraser' ? 'crosshair' : activeTool === 'fill' ? 'crosshair' : 'default'
+                                        }}
+                                    />
+                                )}
+
+                                {/* Rotation Center Marker */}
+                                {isSettingRotationCenter && (
+                                    <div
+                                        className="absolute pointer-events-auto cursor-grab active:cursor-grabbing z-10"
+                                        style={{
+                                            left: `${rotationCenter.x * 100}%`,
+                                            top: `${rotationCenter.y * 100}%`,
+                                            transform: 'translate(-50%, -50%)',
+                                        }}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            const container = (e.target as HTMLElement).parentElement;
+                                            if (!container) return;
+                                            const rect = container.getBoundingClientRect();
+                                            const onMove = (me: MouseEvent) => {
+                                                const x = Math.max(0, Math.min(1, (me.clientX - rect.left) / rect.width));
+                                                const y = Math.max(0, Math.min(1, (me.clientY - rect.top) / rect.height));
+                                                setRotationCenter({ x, y });
+                                            };
+                                            const onUp = () => {
+                                                document.removeEventListener('mousemove', onMove);
+                                                document.removeEventListener('mouseup', onUp);
+                                            };
+                                            document.addEventListener('mousemove', onMove);
+                                            document.addEventListener('mouseup', onUp);
+                                        }}
+                                    >
+                                        {/* Crosshair marker */}
+                                        <div className="w-6 h-6 relative">
+                                            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500 -translate-y-1/2" />
+                                            <div className="absolute left-1/2 top-0 h-full w-0.5 bg-red-500 -translate-x-1/2" />
+                                            <div className="absolute top-1/2 left-1/2 w-3 h-3 border-2 border-red-500 rounded-full -translate-x-1/2 -translate-y-1/2 bg-white/50" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* BOTTOM ACTIONS */}

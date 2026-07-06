@@ -172,7 +172,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const updateCurrentCostumeFromEditor = async (imageData: string, _svgData?: string, name?: string) => {
+    const updateCurrentCostumeFromEditor = async (imageData: string, _svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => {
         if (!selectedSprite) return;
         const targetIndex = activeCostumeIndex;
         const target = selectedSprite.costumes[targetIndex];
@@ -187,6 +187,10 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                 target.width = img.width * scaleFactor;
                 target.height = img.height * scaleFactor;
                 target.name = name?.trim() ? name.trim() : target.name;
+                if (rotationCenter) {
+                    target.rotationCenterX = rotationCenter.x;
+                    target.rotationCenterY = rotationCenter.y;
+                }
                 resolve();
             };
             img.onerror = () => resolve();
@@ -217,7 +221,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     onSwitchCostume={(index: number) => {
                         stageManager.setBackdrop(index);
                     }}
-                    onSave={async (imageData: string, svgData?: string, name?: string) => {
+                    onSave={async (imageData: string, svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => {
                         const idx = stageManager.getCurrentBackdropIndex();
                         const backdropName = name || stageManager.getAllBackdrops()[idx]?.name || 'custom';
                         if (idx >= 0) {
@@ -349,6 +353,65 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             <button style={styles.actionButton} onClick={createBlankCostume}>🎨 Paint</button>
                             <button style={styles.actionButton} onClick={addSurpriseCostume}>😮 Surprise</button>
                             <button style={styles.actionButton} onClick={() => fileInputRef.current?.click()}>⬆️ Upload</button>
+                            <button
+                                style={styles.actionButton}
+                                onClick={async () => {
+                                    try {
+                                        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } });
+                                        // Create a modal for camera capture
+                                        const modal = document.createElement('div');
+                                        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)';
+                                        const box = document.createElement('div');
+                                        box.style.cssText = 'background:white;border-radius:16px;overflow:hidden;width:480px;max-width:90vw;box-shadow:0 25px 50px rgba(0,0,0,0.25)';
+                                        const header = document.createElement('div');
+                                        header.style.cssText = 'background:#7B4FC4;padding:12px 20px;display:flex;align-items:center;justify-content:space-between';
+                                        header.innerHTML = '<span style="color:white;font-weight:700">📷 Camera Capture</span>';
+                                        const closeBtn = document.createElement('button');
+                                        closeBtn.textContent = '×';
+                                        closeBtn.style.cssText = 'color:white;font-size:20px;font-weight:700;background:none;border:none;cursor:pointer';
+                                        closeBtn.onclick = () => { stream.getTracks().forEach(t => t.stop()); document.body.removeChild(modal); };
+                                        header.appendChild(closeBtn);
+                                        const videoWrap = document.createElement('div');
+                                        videoWrap.style.cssText = 'padding:16px';
+                                        const video = document.createElement('video');
+                                        video.srcObject = stream;
+                                        video.autoplay = true;
+                                        video.playsInline = true;
+                                        video.muted = true;
+                                        video.style.cssText = 'width:100%;border-radius:8px;background:black;max-height:300px;object-fit:contain';
+                                        videoWrap.appendChild(video);
+                                        const btnWrap = document.createElement('div');
+                                        btnWrap.style.cssText = 'display:flex;justify-content:center;padding:0 16px 16px';
+                                        const captureBtn = document.createElement('button');
+                                        captureBtn.textContent = '📷 CAPTURE';
+                                        captureBtn.style.cssText = 'padding:12px 32px;background:#22c55e;color:white;border:none;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer';
+                                        captureBtn.onclick = async () => {
+                                            const offscreen = document.createElement('canvas');
+                                            offscreen.width = video.videoWidth;
+                                            offscreen.height = video.videoHeight;
+                                            const ctx = offscreen.getContext('2d');
+                                            if (ctx) {
+                                                ctx.drawImage(video, 0, 0);
+                                                const dataUrl = offscreen.toDataURL('image/png');
+                                                const name = `camera_${selectedSprite.costumes.length + 1}`;
+                                                await selectedSprite.addCostume(name, dataUrl);
+                                                selectCostume(selectedSprite.costumes.length - 1);
+                                                addLog(`Captured camera costume: ${name}`);
+                                            }
+                                            stream.getTracks().forEach(t => t.stop());
+                                            document.body.removeChild(modal);
+                                        };
+                                        btnWrap.appendChild(captureBtn);
+                                        box.appendChild(header);
+                                        box.appendChild(videoWrap);
+                                        box.appendChild(btnWrap);
+                                        modal.appendChild(box);
+                                        document.body.appendChild(modal);
+                                    } catch (err) {
+                                        alert('Camera access denied or not available.');
+                                    }
+                                }}
+                            >📷 Camera</button>
                         </div>
                     </div>
                     <div style={styles.rightPanel}>
@@ -554,7 +617,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderTop: '1px solid #EEEAF8',
         padding: '8px',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '1fr 1fr 1fr',
         gap: '6px'
     },
     actionButton: {
