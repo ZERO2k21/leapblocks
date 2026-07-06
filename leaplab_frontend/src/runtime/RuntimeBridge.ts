@@ -270,7 +270,7 @@ class FaceRuntime {
                         .withFaceExpressions();
 
                     if (detections.length > 0) {
-                        this.faces = detections.map(d => {
+                        this.faces = detections.map((d: any) => {
                             // Get the dominant (highest probability) expression with non-neutral bias
                             const exprs = d.expressions as unknown as Record<string, number>;
                             
