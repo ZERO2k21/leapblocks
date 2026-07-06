@@ -11,6 +11,7 @@ interface HSBColorPickerProps {
     onChange: (color: string) => void;
     onClose: () => void;
     title?: string;
+    onEyedropper?: () => void;
 }
 
 // Convert HEX to HSB
@@ -86,7 +87,7 @@ function hsbToHex(h: number, s: number, b: number, a: number = 1) {
     return `#${rgbToHex(r)}${rgbToHex(g)}${rgbToHex(b_rgb)}`;
 }
 
-export function HSBColorPicker({ color, onChange, onClose, title = "Color" }: HSBColorPickerProps) {
+export function HSBColorPicker({ color, onChange, onClose, title = "Color", onEyedropper }: HSBColorPickerProps) {
     const [hsb, setHsb] = useState(hexToHsb(color));
     const popupRef = useRef<HTMLDivElement>(null);
 
@@ -226,8 +227,14 @@ export function HSBColorPicker({ color, onChange, onClose, title = "Color" }: HS
                 </button>
 
                 <button
-                    className="flex-1 ml-3 h-[42px] flex items-center justify-center gap-2 bg-[#f8f8f8] border border-gray-200 rounded-lg hover:bg-white hover:border-[#855CD6] text-gray-500 font-bold text-sm transition-all opacity-50 cursor-not-allowed"
-                    title="Eyedropper (Coming Soon)"
+                    onClick={() => {
+                        if (onEyedropper) {
+                            onEyedropper();
+                            onClose();
+                        }
+                    }}
+                    className={`flex-1 ml-3 h-[42px] flex items-center justify-center gap-2 border border-gray-200 rounded-lg font-bold text-sm transition-all ${onEyedropper ? 'bg-[#f8f8f8] hover:bg-white hover:border-[#855CD6] text-gray-500' : 'bg-[#f8f8f8] opacity-50 cursor-not-allowed text-gray-500'}`}
+                    title="Eyedropper"
                 >
                     <Pipette size={18} />
                 </button>
