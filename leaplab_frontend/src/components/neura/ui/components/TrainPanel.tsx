@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 interface TrainPanelProps {
     isTraining: boolean
@@ -10,6 +10,48 @@ interface TrainPanelProps {
 }
 
 export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples }: TrainPanelProps) {
+    const [progress, setProgress] = useState(0)
+    const [showAccuracy, setShowAccuracy] = useState(false)
+    const progressRef = useRef<NodeJS.Timeout | null>(null)
+
+    useEffect(() => {
+        if (isTraining) {
+            setProgress(0)
+            setShowAccuracy(false)
+            const startTime = Date.now()
+            const duration = 1500 // 1.5 seconds
+
+            progressRef.current = setInterval(() => {
+                const elapsed = Date.now() - startTime
+                const pct = Math.min(100, (elapsed / duration) * 100)
+                setProgress(pct)
+
+                if (pct >= 100) {
+                    if (progressRef.current) clearInterval(progressRef.current)
+                }
+            }, 16) // ~60fps
+        } else if (!isTraining && accuracy !== null) {
+            // Training complete — force progress to 100% immediately
+            if (progressRef.current) clearInterval(progressRef.current)
+            setProgress(100)
+            // Show accuracy after a brief delay
+            const timer = setTimeout(() => setShowAccuracy(true), 400)
+            return () => clearTimeout(timer)
+        }
+
+        return () => {
+            if (progressRef.current) clearInterval(progressRef.current)
+        }
+    }, [isTraining, accuracy])
+
+    // Reset progress when accuracy becomes null (new training)
+    useEffect(() => {
+        if (accuracy === null) {
+            setProgress(0)
+            setShowAccuracy(false)
+        }
+    }, [accuracy])
+
     return (
         <div className="flex flex-col items-center gap-8 py-10 px-8 bg-white rounded-3xl shadow-xl border border-gray-100 max-w-lg w-full mx-auto">
             {/* Header */}

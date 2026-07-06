@@ -75,6 +75,13 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
 
+    const canvasContainerStyle = {
+        background: 'rgba(15,15,35,0.85)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(236,72,153,0.1)'
+    }
+
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (

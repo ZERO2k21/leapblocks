@@ -71,8 +71,8 @@ export default function CaptureButton({
         <button
             onClick={onClick}
             disabled={disabled}
-            className={`relative group flex flex-col items-center gap-3 transition-all duration-300 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95 cursor-pointer'
+            className={`relative group flex flex-col items-center gap-3 transition-all duration-400 ${
+                disabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110 active:scale-95 cursor-pointer'
             }`}
         >
             <div className="relative">

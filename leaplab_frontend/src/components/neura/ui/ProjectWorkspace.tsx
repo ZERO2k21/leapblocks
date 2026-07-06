@@ -69,7 +69,9 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
     const totalSamples = mode.getTotalSamples()
 
     return (
-        <div className="h-screen flex flex-col bg-gray-50">
+        <div className="h-screen flex flex-col" style={{
+            background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)'
+        }}>
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
                 onBack={onBack}

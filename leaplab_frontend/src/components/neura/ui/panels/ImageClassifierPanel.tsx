@@ -220,7 +220,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         )}
                     </div>
 
-                    <TestPanel prediction={prediction} isProcessing={isProcessing}>
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} projectName={mode.project?.name}>
                         <div />
                     </TestPanel>
                 </div>

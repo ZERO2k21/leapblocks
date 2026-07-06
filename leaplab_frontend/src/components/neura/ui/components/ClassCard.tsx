@@ -30,6 +30,19 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                     ? 'bg-white shadow-xl shadow-violet-100/50 ring-2 ring-violet-400 scale-[1.02]'
                     : 'bg-white/60 hover:bg-white hover:shadow-lg hover:scale-[1.01]'
             }`}
+            style={{
+                background: isSelected
+                    ? 'rgba(255,255,255,0.8)'
+                    : 'rgba(255,255,255,0.45)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: isSelected
+                    ? `2px solid ${classData.color}60`
+                    : '1px solid rgba(255,255,255,0.5)',
+                boxShadow: isSelected
+                    ? `0 8px 32px ${classData.color}20, inset 0 1px 0 rgba(255,255,255,0.8)`
+                    : '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)'
+            }}
         >
             {/* Color indicator bar */}
             <div

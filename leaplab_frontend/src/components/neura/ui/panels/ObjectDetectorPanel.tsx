@@ -122,6 +122,14 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     const selectedClass = mode.getSelectedClass()
 
+    const glassStyle = {
+        background: 'rgba(255,255,255,0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.6)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+    }
+
     return (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
             {/* Camera feed */}

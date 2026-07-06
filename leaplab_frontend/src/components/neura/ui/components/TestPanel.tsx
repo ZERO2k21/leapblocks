@@ -4,9 +4,10 @@ interface TestPanelProps {
     prediction: { label: string; confidences: Record<string, number> } | null
     isProcessing: boolean
     children: React.ReactNode
+    projectName?: string
 }
 
-export default function TestPanel({ prediction, isProcessing, children }: TestPanelProps) {
+export default function TestPanel({ prediction, isProcessing, children, projectName }: TestPanelProps) {
     const sortedConfidences = prediction
         ? Object.entries(prediction.confidences)
             .sort(([, a], [, b]) => b - a)

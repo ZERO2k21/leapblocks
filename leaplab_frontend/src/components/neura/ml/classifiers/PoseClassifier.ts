@@ -21,9 +21,19 @@ export class PoseClassifier {
         if (this.poseModel) return this.poseModel
         const poseDetection = await ensurePoseDetection()
         await ensureTf()
-        this.poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-            modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-        })
+        try {
+            // Try with default CDN first
+            this.poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+                modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+            })
+        } catch (err) {
+            console.warn('[PoseClassifier] Default CDN failed, trying TFHub fallback:', err)
+            // Fallback to alternative CDN
+            this.poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+                modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+                modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/posenet/lightning/manifest.json'
+            })
+        }
         return this.poseModel
     }
 
