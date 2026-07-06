@@ -1101,11 +1101,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const headerFooterHeight = deviceType === 'phone' ? phoneHeaderFooter : tabletHeaderFooter;
     const frameWidth = displayWidth;
     const frameHeight = displayHeight + headerFooterHeight;
-    // Cap maximum scale of phone at 0.75 and tablet/monitor at 0.85 to keep it balanced
-    const maxScale = deviceType === 'phone' ? 0.55 : 0.5;
+    // Cap maximum scale of phone at 0.8 and tablet/monitor at 0.7 to keep it balanced
+    const maxScale = deviceType === 'phone' ? 0.8 : 0.7;
     const scale = containerSize.width > 0 && containerSize.height > 0
         ? Math.min(maxScale, Math.min((containerSize.width - 48) / frameWidth, (containerSize.height - 48) / frameHeight))
-        : 0.5; // default fallback scale
+        : 0.7; // default fallback scale
 
 
     return (
