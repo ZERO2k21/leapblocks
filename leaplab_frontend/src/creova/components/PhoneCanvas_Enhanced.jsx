@@ -1398,10 +1398,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             <div
                                 className="flex flex-col gap-[5px] p-2 min-h-full w-full relative flex-grow"
                                 style={{
-                                    alignItems: currentScreen.alignHorizontal === 'Center' ? 'center' :
-                                        currentScreen.alignHorizontal === 'Right' ? 'flex-end' : 'flex-start',
-                                    justifyContent: currentScreen.alignVertical === 'Center' ? 'center' :
-                                        currentScreen.alignVertical === 'Bottom' ? 'flex-end' : 'flex-start',
+                                    alignItems: currentScreen.alignHorizontal === 'Center' || currentScreen.alignHorizontal === '2' || currentScreen.alignHorizontal === 2 ? 'center' :
+                                        currentScreen.alignHorizontal === 'Right' || currentScreen.alignHorizontal === '3' || currentScreen.alignHorizontal === 3 ? 'flex-end' : 'flex-start',
+                                    justifyContent: currentScreen.alignVertical === 'Center' || currentScreen.alignVertical === '2' || currentScreen.alignVertical === 2 ? 'center' :
+                                        currentScreen.alignVertical === 'Bottom' || currentScreen.alignVertical === '3' || currentScreen.alignVertical === 3 ? 'flex-end' : 'flex-start',
                                 }}
                             >
                                 {components.length === 0 ? (

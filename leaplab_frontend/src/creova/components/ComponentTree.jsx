@@ -10,12 +10,37 @@ import ComponentIcon from './ComponentIcon';
  * ComponentTree - Displays hierarchical tree of components on current screen
  * Inspired by Leap App Inventor's component hierarchy panel
  */
+const ARRANGEMENT_TYPES = new Set([
+    'HorizontalArrangement',
+    'HorizontalScrollArrangement',
+    'VerticalArrangement',
+    'VerticalScrollArrangement',
+    'TableArrangement',
+    'AbsoluteArrangement',
+    'Canvas',
+    'Map',
+    'FeatureCollection'
+]);
+
+const findParentIdOfNode = (components, nodeId, currentParentId = null) => {
+    if (!components) return null;
+    for (const comp of components) {
+        if (comp.id === nodeId) return currentParentId;
+        if (comp.children?.length) {
+            const result = findParentIdOfNode(comp.children, nodeId, comp.id);
+            if (result) return result;
+        }
+    }
+    return null;
+};
+
 export default function ComponentTree({ appState }) {
     const { currentScreen, selectedComponent, selectComponent, deleteComponent, renameComponent } = appState;
     const [expandedNodes, setExpandedNodes] = useState(new Set(['Screen1']));
     const [renamingId, setRenamingId] = useState(null);
     const [renameValue, setRenameValue] = useState('');
     const [contextMenu, setContextMenu] = useState(null);
+    const [dragOverId, setDragOverId] = useState(null);
 
     if (!currentScreen) {
         return (
@@ -24,6 +49,46 @@ export default function ComponentTree({ appState }) {
             </div>
         );
     }
+
+    const handleDrop = (e, targetId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOverId(null);
+
+        const type = e.dataTransfer.getData('componentType');
+        const componentData = e.dataTransfer.getData('componentData');
+        if (!type) return;
+
+        let visible = true;
+        if (componentData) {
+            try {
+                const parsed = JSON.parse(componentData);
+                if (parsed.visible === false) visible = false;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        if (visible && targetId && targetId !== currentScreen.id) {
+            const isTargetLayout = ARRANGEMENT_TYPES.has(targetId) || targetId.includes('Layout') || targetId.includes('Arrangement');
+            if (isTargetLayout) {
+                selectComponent(targetId);
+            } else {
+                const parentId = findParentIdOfNode(currentScreen.components, targetId);
+                if (parentId) {
+                    selectComponent(parentId);
+                } else {
+                    selectComponent(currentScreen.id);
+                }
+            }
+        } else {
+            selectComponent(currentScreen.id);
+        }
+
+        if (appState.addComponent) {
+            appState.addComponent(type, { visible });
+        }
+    };
 
     useEffect(() => {
         setExpandedNodes(prev => {
@@ -78,16 +143,37 @@ export default function ComponentTree({ appState }) {
         const hasChildren = component.children && component.children.length > 0;
         const isRenaming = renamingId === component.id;
 
+        const isDragOver = dragOverId === component.id;
+
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 ${isSelected
-                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
-                        : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
-                        }`}
+                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 transition-all ${
+                        isDragOver
+                            ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
+                            : isSelected
+                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
+                                : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                    }`}
                     style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
                     onContextMenu={(e) => handleContextMenu(e, component)}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDragOverId(component.id);
+                    }}
+                    onDragLeave={(e) => {
+                        e.stopPropagation();
+                        if (dragOverId === component.id) {
+                            setDragOverId(null);
+                        }
+                    }}
+                    onDrop={(e) => handleDrop(e, component.id)}
                 >
                     {/* Expand/Collapse Arrow */}
                     {hasChildren && (
@@ -154,14 +240,42 @@ export default function ComponentTree({ appState }) {
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Components</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
+            <div 
+                className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body"
+                onDragOver={(e) => {
+                    e.preventDefault();
+                }}
+                onDragEnter={(e) => {
+                    e.preventDefault();
+                }}
+                onDrop={(e) => handleDrop(e, currentScreen.id)}
+            >
                 {/* Screen Node */}
                 <div
-                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] ${selectedComponent?.id === currentScreen.id
-                        ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
-                        : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
-                        }`}
+                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] transition-all ${
+                        dragOverId === currentScreen.id
+                            ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
+                            : selectedComponent?.id === currentScreen.id
+                                ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
+                                : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
+                    }`}
                     onClick={() => selectComponent(currentScreen.id)}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDragOverId(currentScreen.id);
+                    }}
+                    onDragLeave={(e) => {
+                        e.stopPropagation();
+                        if (dragOverId === currentScreen.id) {
+                            setDragOverId(null);
+                        }
+                    }}
+                    onDrop={(e) => handleDrop(e, currentScreen.id)}
                 >
                     <button
                         className="w-5 h-5 flex items-center justify-center mr-3 text-slate-500 hover:text-slate-900 text-[10px]"
