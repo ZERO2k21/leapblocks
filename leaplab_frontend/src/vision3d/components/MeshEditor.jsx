@@ -166,6 +166,7 @@ export const MeshEditor = () => {
   const editTool = use3DStore((s) => s.editTool);
   const selectVertex = use3DStore((s) => s.selectVertex);
   const selectEdge = use3DStore((s) => s.selectEdge);
+  const selectEdges = use3DStore((s) => s.selectEdges);
   const selectFace = use3DStore((s) => s.selectFace);
   const clearComponentSelection = use3DStore((s) => s.clearComponentSelection);
   const cacheGeometry = use3DStore((s) => s.cacheGeometry);
@@ -369,6 +370,25 @@ export const MeshEditor = () => {
 
     const canvas = gl.domElement;
 
+    // Track modifier keys manually — Electron can consume ctrlKey from PointerEvents
+    const keys = { ctrl: false, shift: false, meta: false };
+    const onKeyDown = (e) => {
+      if (e.key === 'Control') keys.ctrl = true;
+      if (e.key === 'Shift') keys.shift = true;
+      if (e.key === 'Meta') keys.meta = true;
+    };
+    const onKeyUp = (e) => {
+      if (e.key === 'Control') keys.ctrl = false;
+      if (e.key === 'Shift') keys.shift = false;
+      if (e.key === 'Meta') keys.meta = false;
+    };
+    const onWindowBlur = () => {
+      keys.ctrl = false; keys.shift = false; keys.meta = false;
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    window.addEventListener('blur', onWindowBlur);
+
     const onPointerDown = (e) => {
       if (e.button !== 0) return;
       if (window.__gizmoActive) return;
@@ -387,8 +407,11 @@ export const MeshEditor = () => {
       const hits = _raycaster.intersectObject(mesh, false);
 
       if (hits.length === 0) {
-        debug('MeshEditor: raycast miss - clearing selection');
-        clearComponentSelection();
+        // Only clear selection if no modifier key is held (preserve multi-select)
+        if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !keys.shift && !keys.ctrl && !keys.meta) {
+          debug('MeshEditor: raycast miss - clearing selection');
+          clearComponentSelection();
+        }
         return;
       }
 
@@ -398,63 +421,11 @@ export const MeshEditor = () => {
       const currentMode = editModeRef.current;
       const currentTool = use3DStore.getState().editTool;
 
-      // Check if exclude/include mode — start drag-to-move
-      if (currentTool === 'exclude' || currentTool === 'include') {
-        const sel = use3DStore.getState();
-        const hasSelection = sel.selectedVertices.length > 0 || sel.selectedEdges.length > 0 || sel.selectedFaces.length > 0;
-        if (!hasSelection) {
-          debug('MeshEditor: exclude/include but no selection — doing selection instead');
-        } else {
-          // Start drag-to-move: store original positions and set up plane
-          let selected, neighbors;
-          if (currentTool === 'exclude') {
-            // Exclude: only directly selected vertices (no weld, no neighbors)
-            selected = getDirectSelection(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
-            neighbors = new Set();
-          } else {
-            // Include: selected + spatial-welded + connected neighbors with proportional falloff
-            const result = getConnectedVertices(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
-            selected = result.selected;
-            neighbors = result.neighbors;
-          }
-
-          // Store original positions for all vertices we might move
-          const origPositions = new Float32Array(pos.array.length);
-          origPositions.set(pos.array);
-
-          // Set up intersect plane from hit point and camera
-          const camDir = new THREE.Vector3();
-          camera.getWorldDirection(camDir);
-          _intersectPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hit.point);
-
-          // Compute selection center (used for proportional falloff in Include mode)
-          _faceCenter.set(0, 0, 0);
-          if (selected.size > 0) {
-            for (const vi of selected) {
-              _vC.fromBufferAttribute(pos, vi);
-              _faceCenter.add(_vC);
-            }
-            _faceCenter.divideScalar(selected.size);
-          }
-
-          dragRef.current = {
-            startX: e.clientX,
-            startY: e.clientY,
-            moved: false,
-            mode: currentTool, // 'exclude' or 'include'
-            selectedVerts: selected,
-            neighborVerts: neighbors,
-            origPositions,
-            hitPoint: hit.point.clone(),
-            selectionCenter: _faceCenter.clone(),
-            proportionalRadius: use3DStore.getState().proportionalRadius || 2.0,
-          };
-
-          debug('MeshEditor: drag-to-move start mode=' + currentTool + ' selected=' + selected.size + ' neighbors=' + neighbors.size);
-          e.stopPropagation();
-          return;
-        }
-      }
+      // 1. Identify clicked component
+      let clickedIdx = null;
+      let clickedEdge = null;
+      let clickedFaceIdx = null;
+      const isMulti = keys.shift || keys.ctrl || keys.meta || e.shiftKey || e.ctrlKey || e.metaKey;
 
       if (currentMode === 'vertex') {
         const candidates = [face.a, face.b, face.c];
@@ -469,8 +440,7 @@ export const MeshEditor = () => {
             closestIdx = idx;
           }
         }
-        debug('MeshEditor: vertex idx=' + closestIdx + ' shift=' + e.shiftKey);
-        selectVertex(shapeId, closestIdx, e.shiftKey);
+        clickedIdx = closestIdx;
       } else if (currentMode === 'edge') {
         const candidates = [
           { a: face.a, b: face.b },
@@ -489,11 +459,86 @@ export const MeshEditor = () => {
             bestEdge = edge;
           }
         }
-        debug('MeshEditor: edge a=' + bestEdge.a + ' b=' + bestEdge.b + ' shift=' + e.shiftKey);
-        selectEdge(shapeId, bestEdge.a, bestEdge.b, e.shiftKey);
+        clickedEdge = bestEdge;
       } else if (currentMode === 'face') {
-        debug('MeshEditor: face idx=' + Math.floor(hit.faceIndex) + ' shift=' + e.shiftKey);
-        selectFace(shapeId, Math.floor(hit.faceIndex), e.shiftKey);
+        clickedFaceIdx = Math.floor(hit.faceIndex);
+      }
+
+      // 2. Check if clicked component is already selected
+      const sel = use3DStore.getState();
+      let clickedIsSelected = false;
+
+      if (currentMode === 'vertex' && clickedIdx !== null) {
+        clickedIsSelected = sel.selectedVertices.some(v => v.index === clickedIdx);
+      } else if (currentMode === 'edge' && clickedEdge !== null) {
+        clickedIsSelected = sel.selectedEdges.some(e => 
+          Math.min(e.a, e.b) === Math.min(clickedEdge.a, clickedEdge.b) &&
+          Math.max(e.a, e.b) === Math.max(clickedEdge.a, clickedEdge.b)
+        );
+      } else if (currentMode === 'face' && clickedFaceIdx !== null) {
+        clickedIsSelected = sel.selectedFaces.some(f => f.index === clickedFaceIdx);
+      }
+
+      // 3. If Exclude/Include active and we clicked an already selected element, drag it.
+      if ((currentTool === 'exclude' || currentTool === 'include') && clickedIsSelected) {
+        // Start drag-to-move: store original positions and set up plane
+        let selected, neighbors;
+        if (currentTool === 'exclude') {
+          selected = getDirectSelection(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+          neighbors = new Set();
+        } else {
+          const result = getConnectedVertices(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+          selected = result.selected;
+          neighbors = result.neighbors;
+        }
+
+        // Store original positions for all vertices we might move
+        const origPositions = new Float32Array(pos.array.length);
+        origPositions.set(pos.array);
+
+        // Set up intersect plane from hit point and camera
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        _intersectPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hit.point);
+
+        // Compute selection center (used for proportional falloff in Include mode)
+        _faceCenter.set(0, 0, 0);
+        if (selected.size > 0) {
+          for (const vi of selected) {
+            _vC.fromBufferAttribute(pos, vi);
+            _faceCenter.add(_vC);
+          }
+          _faceCenter.divideScalar(selected.size);
+        }
+
+        dragRef.current = {
+          startX: e.clientX,
+          startY: e.clientY,
+          moved: false,
+          mode: currentTool, // 'exclude' or 'include'
+          selectedVerts: selected,
+          neighborVerts: neighbors,
+          origPositions,
+          hitPoint: hit.point.clone(),
+          selectionCenter: _faceCenter.clone(),
+          proportionalRadius: use3DStore.getState().proportionalRadius || 2.0,
+        };
+
+        debug('MeshEditor: drag-to-move start mode=' + currentTool + ' selected=' + selected.size + ' neighbors=' + neighbors.size);
+        e.stopPropagation();
+        return;
+      }
+
+      // 4. Otherwise, handle selection / toggle of the clicked component
+      if (currentMode === 'vertex' && clickedIdx !== null) {
+        debug('MeshEditor: vertex idx=' + clickedIdx + ' multi=' + isMulti);
+        selectVertex(shapeId, clickedIdx, isMulti);
+      } else if (currentMode === 'edge' && clickedEdge !== null) {
+        debug('MeshEditor: edge a=' + clickedEdge.a + ' b=' + clickedEdge.b + ' multi=' + isMulti);
+        selectEdge(shapeId, clickedEdge.a, clickedEdge.b, isMulti);
+      } else if (currentMode === 'face' && clickedFaceIdx !== null) {
+        debug('MeshEditor: face idx=' + clickedFaceIdx + ' multi=' + isMulti);
+        selectFace(shapeId, clickedFaceIdx, isMulti);
       }
     };
 
@@ -603,6 +648,9 @@ export const MeshEditor = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+      window.removeEventListener('blur', onWindowBlur);
     };
   }, [editMode, camera, gl, selectVertex, selectEdge, selectFace, clearComponentSelection, cacheGeometry, applyGeometryEdit]);
 

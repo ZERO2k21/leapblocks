@@ -102,12 +102,54 @@ const DropHandler = () => {
 const SceneContent = () => {
   const shapes = use3DStore((s) => s.shapes);
   const orbitRef = useRef();
+  const { gl, camera, scene } = useThree();
 
   useEffect(() => {
     setOrbitRef(orbitRef);
     window.__externalOrbitRef = orbitRef;
     return () => { window.__externalOrbitRef = null; };
   }, []);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleCaptureDown = (e) => {
+      if (e.button !== 0) return;
+      if (window.__gizmoActive) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+
+      const allMeshes = [];
+      scene.traverse((child) => {
+        if (child.isMesh && child.userData.shapeId && !child.userData.gizmoAxis) {
+          allMeshes.push(child);
+        }
+      });
+
+      const hits = raycaster.intersectObjects(allMeshes, false);
+      if (hits.length > 0) {
+        const orbit = orbitRef.current;
+        if (orbit) {
+          orbit.enabled = false;
+          const reEnable = () => {
+            orbit.enabled = true;
+            window.removeEventListener('pointerup', reEnable);
+          };
+          window.addEventListener('pointerup', reEnable);
+        }
+      }
+    };
+
+    canvas.addEventListener('pointerdown', handleCaptureDown, { capture: true });
+    return () => {
+      canvas.removeEventListener('pointerdown', handleCaptureDown, { capture: true });
+    };
+  }, [gl, camera, scene]);
 
   return (
     <>

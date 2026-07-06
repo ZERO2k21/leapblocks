@@ -80,13 +80,14 @@ export const use3DStore = create((set, get) => ({
       });
     } else {
       // Entering edit mode — require exactly one selected shape
+      const wasInEdit = state.editMode !== 'object';
       const shapeId = state.selectedIds.length === 1 ? state.selectedIds[0] : null;
       set({
         editMode: mode,
         editShapeId: shapeId,
-        selectedVertices: [],
-        selectedEdges: [],
-        selectedFaces: [],
+        selectedVertices: wasInEdit ? state.selectedVertices : [],
+        selectedEdges: wasInEdit ? state.selectedEdges : [],
+        selectedFaces: wasInEdit ? state.selectedFaces : [],
         editTool: null,
         // Don't clear geometryCache here — MeshEditor will populate it
       });
@@ -129,6 +130,23 @@ export const use3DStore = create((set, get) => ({
         };
       }
       return { selectedEdges: [newEdge] };
+    });
+  },
+
+  selectEdges: (edges, append = false) => {
+    set((state) => {
+      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
+      const formatted = edges.map(e => ({
+        shapeId: e.shapeId,
+        a: Math.min(e.a, e.b),
+        b: Math.max(e.a, e.b)
+      }));
+      if (append) {
+        const existingKeys = new Set(state.selectedEdges.map(key));
+        const newEdges = formatted.filter(e => !existingKeys.has(key(e)));
+        return { selectedEdges: [...state.selectedEdges, ...newEdges] };
+      }
+      return { selectedEdges: formatted };
     });
   },
 

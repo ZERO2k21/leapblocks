@@ -62,7 +62,7 @@ export const MeshEditOverlay = () => {
 
   // Selected vertex positions (world space)
   const vertexPositions = useMemo(() => {
-    if (!geo || editMode !== 'vertex' || selectedVertices.length === 0) return null;
+    if (!geo || selectedVertices.length === 0) return null;
     const pos = geo.attributes.position;
     const positions = [];
     for (const v of selectedVertices) {
@@ -71,11 +71,11 @@ export const MeshEditOverlay = () => {
       positions.push(wx, wy, wz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedVertices, editShapeId, worldMatrix, geometryVersion]);
+  }, [geo, selectedVertices, editShapeId, worldMatrix, geometryVersion]);
 
   // Selected edge line segments (world space)
   const edgePositions = useMemo(() => {
-    if (!geo || editMode !== 'edge' || selectedEdges.length === 0) return null;
+    if (!geo || selectedEdges.length === 0) return null;
     const pos = geo.attributes.position;
     const positions = [];
     for (const e of selectedEdges) {
@@ -85,11 +85,11 @@ export const MeshEditOverlay = () => {
       positions.push(ax, ay, az, bx, by, bz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedEdges, editShapeId, worldMatrix, geometryVersion]);
+  }, [geo, selectedEdges, editShapeId, worldMatrix, geometryVersion]);
 
   // Selected face positions (world space) — render as filled quads where possible
   const facePositions = useMemo(() => {
-    if (!geo || editMode !== 'face' || selectedFaces.length === 0) return null;
+    if (!geo || selectedFaces.length === 0) return null;
     const pos = geo.attributes.position;
     const index = geo.index;
     const positions = [];
