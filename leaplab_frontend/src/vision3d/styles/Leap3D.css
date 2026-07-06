@@ -672,3 +672,235 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ─── Edit Mode Inspectors ─── */
+.edge-inspector,
+.vertex-inspector,
+.face-inspector {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  color: #334155;
+  max-width: 280px;
+  max-height: 60vh;
+  overflow-y: auto;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.edge-inspector-header,
+.vertex-inspector-header,
+.face-inspector-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+  font-size: 12px;
+  color: #1e293b;
+}
+
+.edge-inspector-header svg { color: #f59e0b; }
+.vertex-inspector-header svg { color: #22d3ee; }
+.face-inspector-header svg { color: #a855f7; }
+
+.edge-count,
+.vertex-count,
+.face-count {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.edge-inspector-content,
+.vertex-inspector-content,
+.face-inspector-content {
+  padding: 6px;
+}
+
+.edge-data-card,
+.vertex-data-card,
+.face-data-card {
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.edge-data-card:last-child,
+.vertex-data-card:last-child,
+.face-data-card:last-child {
+  margin-bottom: 0;
+}
+
+.edge-data-header,
+.vertex-data-header,
+.face-data-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.edge-index,
+.vertex-index,
+.face-index {
+  color: #475569;
+}
+
+.edge-type,
+.vertex-type,
+.face-type {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.edge-type.boundary,
+.vertex-type.boundary,
+.face-type.boundary {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.edge-type.manifold,
+.vertex-type.interior,
+.face-type.manifold {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.edge-type.non-manifold,
+.vertex-type.corner {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.edge-property,
+.vertex-property,
+.face-property {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.edge-property:last-child,
+.vertex-property:last-child,
+.face-property:last-child {
+  border-bottom: none;
+}
+
+.edge-property label,
+.vertex-property label,
+.face-property label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.edge-value,
+.vertex-value,
+.face-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.edge-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edge-unit {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.edge-value-coords,
+.vertex-value-coords,
+.face-value-coords,
+.face-edge-lengths,
+.face-angles,
+.edge-angles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.coord {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.coord.x { color: #ef4444; }
+.coord.y { color: #22c55e; }
+.coord.z { color: #3b82f6; }
+
+.face-vertex-list {
+  display: flex;
+  gap: 4px;
+}
+
+.vertex-chip {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #e0e7ff;
+  color: #4338ca;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.angle-chip,
+.edge-len {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.face-total-area {
+  padding: 6px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.face-total-area label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.total-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7c3aed;
+  font-family: monospace;
+}

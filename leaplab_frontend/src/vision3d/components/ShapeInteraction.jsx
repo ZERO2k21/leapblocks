@@ -14,6 +14,7 @@ import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { use3DStore } from '../store/use3DStore';
+import { debug } from '../utils/logger';
 
 const _mouse = new THREE.Vector2();
 const _raycaster = new THREE.Raycaster();
@@ -38,10 +39,13 @@ const ShapeInteraction = () => {
 
       const store = use3DStore.getState();
       // Skip object-level interaction when in edit mode (MeshEditor handles it)
-      if (store.editMode !== 'object') return;
+      if (store.editMode !== 'object') {
+        debug('ShapeInteraction: skip - in edit mode');
+        return;
+      }
 
       const tool = store.activeTool;
-      const isCtrl = e.ctrlKey || e.metaKey;
+      const isShift = e.shiftKey;
 
       // ── Shape selection by raycasting ─────────────────────
       const rect = canvas.getBoundingClientRect();
@@ -62,19 +66,20 @@ const ShapeInteraction = () => {
       const hits = _raycaster.intersectObjects(allMeshes, false);
       const clickedShapeId = hits.length > 0 ? hits[0].object.userData.shapeId : null;
 
-      // If we clicked on a shape, handle selection
+      // Blender-like selection: Shift+Click = toggle, Click empty = deselect all
       if (clickedShapeId) {
-        if (isCtrl) {
-          // Ctrl+click: toggle selection
-          const currentIds = use3DStore.getState().selectedIds;
-          if (currentIds.includes(clickedShapeId)) {
-            selectShape(clickedShapeId, false); // deselect
-          } else {
-            selectShape(clickedShapeId, true); // add to selection
-          }
+        debug('ShapeInteraction: clicked shape=' + clickedShapeId + ' tool=' + tool + ' shift=' + isShift);
+        if (isShift) {
+          // Shift+Click: toggle selection (add/remove)
+          selectShape(clickedShapeId, true);
         } else {
-          // Normal click: select only this shape (always select, never toggle off)
+          // Normal click: select only this shape
           selectShape(clickedShapeId, false);
+        }
+      } else {
+        // Clicked empty space: deselect all (Blender behavior)
+        if (!isShift) {
+          deselectAll();
         }
       }
 
@@ -83,7 +88,10 @@ const ShapeInteraction = () => {
       const postStore = use3DStore.getState();
       const postIds = postStore.selectedIds;
       if (postIds.length === 0) return;
-      if (tool === 'select') return;
+
+      // In select mode, allow dragging selected shapes (Blender-like behavior)
+      const effectiveTool = tool === 'select' ? 'move' : tool;
+      debug('ShapeInteraction: drag tool=' + effectiveTool + ' (original=' + tool + ') ids=' + postIds.length);
 
       const sel = postStore.shapes.filter((s) => postIds.includes(s.id));
       if (sel.length === 0) return;
@@ -176,17 +184,17 @@ const ShapeInteraction = () => {
           if (window.__externalOrbitRef?.current) window.__externalOrbitRef.current.enabled = false;
           canvas.style.cursor = 'grabbing';
 
-          if (tool === 'move') {
+          if (effectiveTool === 'move') {
             if (intersectYPlane(startX, startY, _center.y)) {
               startProjX = _intersection.x; startProjZ = _intersection.z;
             }
-          } else if (tool === 'scale') {
+          } else if (effectiveTool === 'scale') {
             const dx = startX - rectCx, dy = startY - rectCy;
             startScaleDist = Math.sqrt(dx * dx + dy * dy);
           }
         }
 
-        if (tool === 'move') {
+        if (effectiveTool === 'move') {
           if (!intersectYPlane(ev.clientX, ev.clientY, _center.y)) return;
           const dx = _intersection.x - startProjX;
           const dz = _intersection.z - startProjZ;
@@ -196,7 +204,7 @@ const ShapeInteraction = () => {
             mesh.position.x = startPos[i3] + dx;
             mesh.position.z = startPos[i3 + 2] + dz;
           }
-        } else if (tool === 'rotate') {
+        } else if (effectiveTool === 'rotate') {
           const dx = ev.clientX - startX;
           const dy = ev.clientY - startY;
           const angle = snapAng((dx + dy) * 0.01, rSnap);
@@ -218,7 +226,7 @@ const ShapeInteraction = () => {
             mesh.rotation.y = euler.y;
             mesh.rotation.z = euler.z;
           }
-        } else if (tool === 'scale') {
+        } else if (effectiveTool === 'scale') {
           const dx = ev.clientX - rectCx, dy = ev.clientY - rectCy;
           if (startScaleDist < 1) return;
           const sf = Math.round(Math.max(0.05, Math.sqrt(dx * dx + dy * dy) / startScaleDist) / 0.05) * 0.05;

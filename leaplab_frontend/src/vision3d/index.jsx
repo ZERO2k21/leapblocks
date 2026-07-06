@@ -17,7 +17,7 @@ import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
 import { saveVision3DProject } from './utils/cloudSave';
 import { importProjectFromJSON } from './utils/indexedDB';
 import './styles/Leap3D.css';
-import { log, debug } from './utils/logger';
+import { log, debug, error } from './utils/logger';
 
 const Vision3DApp = ({ onBack }) => {
   const [projectName, setProjectName] = useState('My Project');
@@ -25,7 +25,6 @@ const Vision3DApp = ({ onBack }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [netOpen, setNetOpen] = useState(false);
   const [cloudProjectId, setCloudProjectId] = useState(null);
-  log('Vision3DApp: mounted');
 
   const {
     activeTool,
@@ -85,6 +84,8 @@ const Vision3DApp = ({ onBack }) => {
     selectedFaces,
     clearComponentSelection,
   } = use3DStore();
+
+  useEffect(() => { log('Vision3DApp: mounted'); }, []);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -226,6 +227,73 @@ const Vision3DApp = ({ onBack }) => {
         state.selectShapes(allIds);
       }
 
+      // Deselect All (Alt+A — Blender convention)
+      if (e.altKey && key === 'a') {
+        e.preventDefault();
+        log('Keyboard: Alt+A (deselect all)');
+        if (state.editMode !== 'object') {
+          state.clearComponentSelection();
+        } else {
+          deselectAll();
+        }
+      }
+
+      // Invert Selection (Ctrl+I — Blender convention)
+      if (e.ctrlKey && key === 'i' && !e.shiftKey) {
+        e.preventDefault();
+        log('Keyboard: Ctrl+I (invert selection)');
+        if (state.editMode !== 'object') {
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const pos = geo.attributes.position;
+            const index = geo.index;
+            if (state.editMode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const verts = [];
+              for (let i = 0; i < pos.count; i++) {
+                if (!selected.has(i)) verts.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedVertices: verts });
+            } else if (state.editMode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const edgeSet = new Set();
+              const edges = [];
+              const addEdge = (a, b) => {
+                const k = edgeKey(a, b);
+                if (!edgeSet.has(k)) {
+                  edgeSet.add(k);
+                  if (!selected.has(k)) edges.push({ shapeId: state.editShapeId, a: Math.min(a, b), b: Math.max(a, b) });
+                }
+              };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  addEdge(index.getX(i), index.getX(i + 1));
+                  addEdge(index.getX(i + 1), index.getX(i + 2));
+                  addEdge(index.getX(i + 2), index.getX(i));
+                }
+              } else {
+                for (let i = 0; i < pos.count; i += 3) { addEdge(i, i + 1); addEdge(i + 1, i + 2); addEdge(i + 2, i); }
+              }
+              use3DStore.setState({ selectedEdges: edges });
+            } else if (state.editMode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const faceCount = index ? index.count / 3 : pos.count / 3;
+              const faces = [];
+              for (let i = 0; i < faceCount; i++) {
+                if (!selected.has(i)) faces.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedFaces: faces });
+            }
+          }
+        } else {
+          const selectedSet = new Set(state.selectedIds);
+          const allIds = state.shapes.map(s => s.id);
+          const inverted = allIds.filter(id => !selectedSet.has(id));
+          state.selectShapes(inverted);
+        }
+      }
+
       // Escape (deselect / exit edit mode)
       if (e.key === 'Escape') {
         const st = use3DStore.getState();
@@ -270,22 +338,191 @@ const Vision3DApp = ({ onBack }) => {
         setEditMode(state.editMode === 'face' ? 'object' : 'face');
       }
 
-      // Edit tools (E, B, I) — only in edit mode
+      // Edit tools — only in edit mode
       if (state.editMode !== 'object') {
-        if (key === 'e' && state.editMode === 'face' && state.selectedFaces.length > 0) {
+        const mode = state.editMode;
+
+        // E key: Extrude (Blender standard)
+        if (key === 'e' && !e.ctrlKey) {
           e.preventDefault();
-          debug('Keyboard: E (extrude face)');
+          debug('Keyboard: E (extrude ' + mode + ')');
           setEditTool('extrude');
         }
-        if (key === 'b' && state.editMode === 'edge' && state.selectedEdges.length > 0) {
+
+        // B key: Bevel (Blender standard)
+        if (key === 'b' && !e.ctrlKey) {
           e.preventDefault();
-          debug('Keyboard: B (bevel edge)');
+          debug('Keyboard: B (bevel ' + mode + ')');
           setEditTool('bevel');
         }
-        if (key === 'i' && state.editMode === 'face' && state.selectedFaces.length > 0) {
+
+        // I key: Inset (Blender standard)
+        if (key === 'i' && !e.ctrlKey && !e.shiftKey) {
           e.preventDefault();
-          debug('Keyboard: I (inset face)');
+          debug('Keyboard: I (inset ' + mode + ')');
           setEditTool('inset');
+        }
+
+        // Expand Selection (Ctrl+Numpad Plus or Ctrl+=)
+        if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd')) {
+          e.preventDefault();
+          debug('Keyboard: Ctrl++ (expand selection)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const index = geo.index;
+            if (mode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const edges = new Set();
+              const addEdge = (a, b) => { edges.add(Math.min(a, b) + '-' + Math.max(a, b)); };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(a) || selected.has(b)) addEdge(a, b);
+                  if (selected.has(b) || selected.has(c)) addEdge(b, c);
+                  if (selected.has(c) || selected.has(a)) addEdge(c, a);
+                }
+              }
+              const newVerts = new Set(selected);
+              edges.forEach(k => { const [a, b] = k.split('-').map(Number); newVerts.add(a); newVerts.add(b); });
+              use3DStore.setState({ selectedVertices: [...newVerts].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            } else if (mode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const neighborEdges = new Set();
+              const allEdges = new Set();
+              const addAllEdges = (a, b) => { allEdges.add(edgeKey(a, b)); };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  addAllEdges(a, b); addAllEdges(b, c); addAllEdges(c, a);
+                  if (selected.has(edgeKey(a, b))) { neighborEdges.add(edgeKey(b, c)); neighborEdges.add(edgeKey(c, a)); }
+                  if (selected.has(edgeKey(b, c))) { neighborEdges.add(edgeKey(a, b)); neighborEdges.add(edgeKey(c, a)); }
+                  if (selected.has(edgeKey(c, a))) { neighborEdges.add(edgeKey(a, b)); neighborEdges.add(edgeKey(b, c)); }
+                }
+              }
+              const newEdges = new Set(selected);
+              neighborEdges.forEach(k => { if (!newEdges.has(k)) newEdges.add(k); });
+              use3DStore.setState({ selectedEdges: [...newEdges].map(k => { const [a, b] = k.split('-').map(Number); return { shapeId: state.editShapeId, a, b }; }) });
+            } else if (mode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const neighborFaces = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const fi = Math.floor(i / 3);
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(fi)) {
+                    for (let j = 0; j < index.count; j += 3) {
+                      if (Math.floor(j / 3) === fi) continue;
+                      const na = index.getX(j), nb = index.getX(j + 1), nc = index.getX(j + 2);
+                      if ((a === na || a === nb || a === nc || b === na || b === nb || b === nc || c === na || c === nb || c === nc)) {
+                        neighborFaces.add(Math.floor(j / 3));
+                      }
+                    }
+                  }
+                }
+              }
+              const newFaces = new Set(selected);
+              neighborFaces.forEach(f => newFaces.add(f));
+              use3DStore.setState({ selectedFaces: [...newFaces].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            }
+          }
+        }
+
+        // Contract Selection (Ctrl+Numpad Minus or Ctrl+-)
+        if (e.ctrlKey && (e.key === '-' || e.code === 'NumpadSubtract')) {
+          e.preventDefault();
+          debug('Keyboard: Ctrl+- (contract selection)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const index = geo.index;
+            if (mode === 'vertex') {
+              const selected = new Set(state.selectedVertices.filter(v => v.shapeId === state.editShapeId).map(v => v.index));
+              const boundary = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(a) && selected.has(b) && selected.has(c)) {
+                    boundary.add(a); boundary.add(b); boundary.add(c);
+                  }
+                }
+              }
+              use3DStore.setState({ selectedVertices: [...boundary].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            } else if (mode === 'edge') {
+              const edgeKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+              const selected = new Set(state.selectedEdges.filter(e => e.shapeId === state.editShapeId).map(e => edgeKey(e.a, e.b)));
+              const interior = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  if (selected.has(edgeKey(a, b)) && selected.has(edgeKey(b, c)) && selected.has(edgeKey(c, a))) {
+                    interior.add(edgeKey(a, b)); interior.add(edgeKey(b, c)); interior.add(edgeKey(c, a));
+                  }
+                }
+              }
+              use3DStore.setState({ selectedEdges: [...interior].map(k => { const [a, b] = k.split('-').map(Number); return { shapeId: state.editShapeId, a, b }; }) });
+            } else if (mode === 'face') {
+              const selected = new Set(state.selectedFaces.filter(f => f.shapeId === state.editShapeId).map(f => f.index));
+              const interior = new Set();
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  const fi = Math.floor(i / 3);
+                  if (!selected.has(fi)) continue;
+                  const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+                  let fullyShared = true;
+                  for (let j = 0; j < index.count; j += 3) {
+                    if (Math.floor(j / 3) === fi) continue;
+                    const na = index.getX(j), nb = index.getX(j + 1), nc = index.getX(j + 2);
+                    const shared = [a, b, c].filter(v => v === na || v === nb || v === nc).length;
+                    if (shared >= 2 && !selected.has(Math.floor(j / 3))) { fullyShared = false; break; }
+                  }
+                  if (fullyShared) interior.add(fi);
+                }
+              }
+              use3DStore.setState({ selectedFaces: [...interior].map(i => ({ shapeId: state.editShapeId, index: i })) });
+            }
+          }
+        }
+
+        // Select All in edit mode (A key)
+        if (key === 'a' && !e.ctrlKey) {
+          e.preventDefault();
+          debug('Keyboard: A (select all ' + state.editMode + 's)');
+          const geo = state.geometryCache[state.editShapeId];
+          if (geo) {
+            const pos = geo.attributes.position;
+            const index = geo.index;
+            if (state.editMode === 'vertex') {
+              const verts = [];
+              for (let i = 0; i < pos.count; i++) {
+                verts.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedVertices: verts });
+            } else if (state.editMode === 'edge') {
+              const edgeSet = new Set();
+              const edges = [];
+              const addEdge = (a, b) => {
+                const k = Math.min(a, b) + '-' + Math.max(a, b);
+                if (!edgeSet.has(k)) { edgeSet.add(k); edges.push({ shapeId: state.editShapeId, a: Math.min(a, b), b: Math.max(a, b) }); }
+              };
+              if (index) {
+                for (let i = 0; i < index.count; i += 3) {
+                  addEdge(index.getX(i), index.getX(i + 1));
+                  addEdge(index.getX(i + 1), index.getX(i + 2));
+                  addEdge(index.getX(i + 2), index.getX(i));
+                }
+              } else {
+                for (let i = 0; i < pos.count; i += 3) { addEdge(i, i + 1); addEdge(i + 1, i + 2); addEdge(i + 2, i); }
+              }
+              use3DStore.setState({ selectedEdges: edges });
+            } else if (state.editMode === 'face') {
+              const faces = [];
+              const faceCount = index ? index.count / 3 : pos.count / 3;
+              for (let i = 0; i < faceCount; i++) {
+                faces.push({ shapeId: state.editShapeId, index: i });
+              }
+              use3DStore.setState({ selectedFaces: faces });
+            }
+          }
         }
       }
 

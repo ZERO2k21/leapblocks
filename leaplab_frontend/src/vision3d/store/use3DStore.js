@@ -64,7 +64,7 @@ export const use3DStore = create((set, get) => ({
     const state = get();
     log('setEditMode:', mode, state.editMode, '->', mode);
     if (mode === state.editMode) return;
-    // Exiting edit mode clears component selection
+    // Exiting edit mode clears component selection and geometry cache
     if (mode === 'object') {
       set({
         editMode: 'object',
@@ -73,6 +73,7 @@ export const use3DStore = create((set, get) => ({
         selectedEdges: [],
         selectedFaces: [],
         editTool: null,
+        geometryCache: {},
       });
     } else {
       // Entering edit mode — require exactly one selected shape
@@ -84,6 +85,7 @@ export const use3DStore = create((set, get) => ({
         selectedEdges: [],
         selectedFaces: [],
         editTool: null,
+        // Don't clear geometryCache here — MeshEditor will populate it
       });
     }
   },
@@ -419,7 +421,7 @@ export const use3DStore = create((set, get) => ({
       return s;
     });
 
-    set((state) => ({
+    set(() => ({
       shapes: [...updatedShapes, groupShape],
       selectedIds: [groupShape.id],
       isProjectDirty: true,
@@ -488,7 +490,6 @@ export const use3DStore = create((set, get) => ({
   // Mirror actions
   mirrorShapes: (ids, axis) => {
     log('mirrorShapes:', ids.length, 'shapes, axis:', axis);
-    const state = get();
     const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
 
     set((state) => ({
@@ -661,7 +662,7 @@ export const use3DStore = create((set, get) => ({
     // If we have a last duplicate transform, repeat it
     if (state.lastDuplicateTransform && state.lastDuplicateTransform.ids.length === ids.length) {
       const t = state.lastDuplicateTransform;
-      const newShapes = shapesToDuplicate.map((s, i) => {
+      const newShapes = shapesToDuplicate.map((s) => {
         const clone = cloneShape(s);
         clone.position = [
           s.position[0] + t.deltaX,
@@ -836,7 +837,6 @@ export const use3DStore = create((set, get) => ({
       if (shapeData.name) newShape.name = shapeData.name;
       if (shapeData.color) newShape.color = shapeData.color;
       Object.assign(newShape, shapeData);
-      newShape.id = newShape.id;
     }
     log('importShape:', newShape.type, newShape.name);
     set((state) => ({

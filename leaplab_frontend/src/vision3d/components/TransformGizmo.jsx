@@ -31,6 +31,7 @@ const TransformGizmo = () => {
   const updateShape = use3DStore((s) => s.updateShape);
   const pushHistory = use3DStore((s) => s.pushHistory);
   const activeTool = use3DStore((s) => s.activeTool);
+  const editMode = use3DStore((s) => s.editMode);
 
   const [hoveredAxis, setHoveredAxis] = useState(null);
   const [dragInfo, setDragInfo] = useState(null);
@@ -58,7 +59,8 @@ const TransformGizmo = () => {
     return Math.max(0.5, Math.min(3, camera.position.distanceTo(gizmoCenter) * 0.08));
   }, [gizmoCenter, camera.position]);
 
-  const mode = activeTool === 'move' ? 'translate' : activeTool === 'rotate' ? 'rotate' : activeTool === 'scale' ? 'scale' : null;
+  // Show translate gizmo in select mode (default), otherwise match the active tool
+  const mode = activeTool === 'rotate' ? 'rotate' : activeTool === 'scale' ? 'scale' : 'translate';
 
   const projectMouse = useCallback((clientX, clientY, axis, origin) => {
     const rect = gl.domElement.getBoundingClientRect();
@@ -113,6 +115,8 @@ const TransformGizmo = () => {
 
   useEffect(() => {
     if (!gl) return;
+    // Don't attach gizmo event listener in edit mode — MeshEditor handles clicks there
+    if (editMode !== 'object') return;
     const canvas = gl.domElement;
 
     const renderFrame = () => { gl.render(scene, camera); };
@@ -138,8 +142,8 @@ const TransformGizmo = () => {
       if (gl.shadowMap) gl.shadowMap.enabled = false;
 
       const store = use3DStore.getState();
-      const curMode = store.activeTool === 'move' ? 'translate' : store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : null;
-      if (!curMode) { restoreState(); return; }
+      // In select mode, default to translate (move)
+      const curMode = store.activeTool === 'rotate' ? 'rotate' : store.activeTool === 'scale' ? 'scale' : 'translate';
       const ids = store.selectedIds;
       const allShapes = store.shapes;
       const sel = allShapes.filter((s) => ids.includes(s.id));
@@ -298,7 +302,7 @@ const TransformGizmo = () => {
 
     canvas.addEventListener('pointerdown', handleDown, { capture: true });
     return () => canvas.removeEventListener('pointerdown', handleDown, { capture: true });
-  }, [gl, scene, camera, hitTestGizmo, projectMouse, pushHistory, updateShape]);
+  }, [gl, scene, camera, editMode, hitTestGizmo, projectMouse, pushHistory, updateShape]);
 
   useEffect(() => () => {
     if (externalOrbitRef?.current) externalOrbitRef.current.enabled = true;
@@ -314,11 +318,7 @@ const TransformGizmo = () => {
     if (!dragRef.current.active) gl.domElement.style.cursor = 'auto';
   }, [gl]);
 
-  if (!gizmoCenter || selectedIds.length === 0) return null;
-
-  // Hide gizmo when in edit mode (MeshEditor handles component transforms)
-  const currentEditMode = use3DStore.getState().editMode;
-  if (currentEditMode !== 'object') return null;
+  if (editMode !== 'object' || !gizmoCenter || selectedIds.length === 0) return null;
 
   const s = gizmoScale;
   const arrowLen = 3 * s;

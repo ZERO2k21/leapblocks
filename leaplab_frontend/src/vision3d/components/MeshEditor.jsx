@@ -1,17 +1,16 @@
 /**
  * MeshEditor.jsx — Blender-like vertex/edge/face editing
  * Handles raycasting, selection, and transform of mesh components.
+ * Uses refs for mesh/geometry so the pointerdown listener stays stable.
  */
 import { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { use3DStore } from '../store/use3DStore';
+import { debug, warn } from '../utils/logger';
 
 const _raycaster = new THREE.Raycaster();
 const _mouse = new THREE.Vector2();
-const _plane = new THREE.Plane();
-const _intersectPoint = new THREE.Vector3();
-const _camDir = new THREE.Vector3();
 
 // Pre-allocated objects for transforms
 const _vA = new THREE.Vector3();
@@ -22,82 +21,9 @@ const _faceCenter = new THREE.Vector3();
 const _normal = new THREE.Vector3();
 
 /**
- * Extract unique edges from indexed geometry.
- * Returns array of { a, b } where a < b (vertex indices).
- */
-function extractEdges(geometry) {
-  const pos = geometry.attributes.position;
-  const index = geometry.index;
-  const edgeSet = new Set();
-  const edges = [];
-
-  if (index) {
-    for (let i = 0; i < index.count; i += 3) {
-      const tri = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
-      for (let j = 0; j < 3; j++) {
-        const a = tri[j];
-        const b = tri[(j + 1) % 3];
-        const key = Math.min(a, b) + '-' + Math.max(a, b);
-        if (!edgeSet.has(key)) {
-          edgeSet.add(key);
-          edges.push({ a: Math.min(a, b), b: Math.max(a, b) });
-        }
-      }
-    }
-  } else {
-    for (let i = 0; i < pos.count; i += 3) {
-      const tri = [i, i + 1, i + 2];
-      for (let j = 0; j < 3; j++) {
-        const a = tri[j];
-        const b = tri[(j + 1) % 3];
-        const key = Math.min(a, b) + '-' + Math.max(a, b);
-        if (!edgeSet.has(key)) {
-          edgeSet.add(key);
-          edges.push({ a: Math.min(a, b), b: Math.max(a, b) });
-        }
-      }
-    }
-  }
-  return edges;
-}
-
-/**
- * Extract face centers and normals from geometry.
- */
-function extractFaces(geometry) {
-  const pos = geometry.attributes.position;
-  const index = geometry.index;
-  const faces = [];
-
-  const addFace = (a, b, c) => {
-    _vA.fromBufferAttribute(pos, a);
-    _vB.fromBufferAttribute(pos, b);
-    _vC.fromBufferAttribute(pos, c);
-    _faceCenter.copy(_vA).add(_vB).add(_vC).divideScalar(3);
-    _normal.crossVectors(_vB.sub(_vA), _vC.sub(_vA)).normalize();
-    faces.push({
-      index: faces.length,
-      center: _faceCenter.clone(),
-      normal: _normal.clone(),
-      verts: [a, b, c],
-    });
-  };
-
-  if (index) {
-    for (let i = 0; i < index.count; i += 3) {
-      addFace(index.getX(i), index.getX(i + 1), index.getX(i + 2));
-    }
-  } else {
-    for (let i = 0; i < pos.count; i += 3) {
-      addFace(i, i + 1, i + 2);
-    }
-  }
-  return faces;
-}
-
-/**
  * MeshEditor — active only in vertex/edge/face edit modes.
  * Listens to pointer events on the canvas for selection and transform.
+ * Uses refs for mesh/geometry so the pointerdown effect has minimal deps.
  */
 export const MeshEditor = () => {
   const editMode = use3DStore((s) => s.editMode);
@@ -111,68 +37,66 @@ export const MeshEditor = () => {
   const selectFace = use3DStore((s) => s.selectFace);
   const clearComponentSelection = use3DStore((s) => s.clearComponentSelection);
   const cacheGeometry = use3DStore((s) => s.cacheGeometry);
-  const geometryCache = use3DStore((s) => s.geometryCache);
   const applyGeometryEdit = use3DStore((s) => s.applyGeometryEdit);
-  const shapes = use3DStore((s) => s.shapes);
   const { camera, gl, scene } = useThree();
 
   const dragRef = useRef(null);
-  const edgesRef = useRef([]);
-  const facesRef = useRef([]);
   const meshRef = useRef(null);
+  const geoRef = useRef(null);
+
+  // Cache refs for values used inside event handlers (avoids stale closures)
+  const editModeRef = useRef(editMode);
+  editModeRef.current = editMode;
+  const editShapeIdRef = useRef(editShapeId);
+  editShapeIdRef.current = editShapeId;
 
   // Find the target mesh and cache its geometry
-  const getTargetMesh = useCallback(() => {
-    if (!editShapeId) return null;
+  useEffect(() => {
+    if (editMode === 'object' || !editShapeId) {
+      meshRef.current = null;
+      geoRef.current = null;
+      return;
+    }
+
     let found = null;
     scene?.traverse?.((child) => {
+      if (found) return;
       if (child.isMesh && child.userData.shapeId === editShapeId) {
         found = child;
       }
     });
-    return found;
-  }, [editShapeId, scene]);
 
-  // Cache geometry when entering edit mode or shape changes
-  useEffect(() => {
-    if (editMode === 'object' || !editShapeId) return;
-    const mesh = getTargetMesh();
-    if (!mesh) return;
+    if (!found) {
+      warn('MeshEditor: target mesh not found for shapeId=' + editShapeId);
+      meshRef.current = null;
+      geoRef.current = null;
+      return;
+    }
 
-    meshRef.current = mesh;
-    const geo = mesh.geometry.clone();
+    meshRef.current = found;
+    const geo = found.geometry.clone();
+    geoRef.current = geo;
     cacheGeometry(editShapeId, geo);
 
-    edgesRef.current = extractEdges(geo);
-    facesRef.current = extractFaces(geo);
-  }, [editMode, editShapeId, getTargetMesh, cacheGeometry]);
-
-  // Get the live geometry (cached or from mesh)
-  const getGeometry = useCallback(() => {
-    if (geometryCache[editShapeId]) return geometryCache[editShapeId];
-    const mesh = getTargetMesh();
-    return mesh?.geometry || null;
-  }, [editShapeId, geometryCache, getTargetMesh]);
+    debug('MeshEditor: cached geometry for ' + editShapeId + ' verts=' + geo.attributes.position.count);
+  }, [editMode, editShapeId, scene, cacheGeometry]);
 
   // Apply edit tool operation
   const applyEditTool = useCallback((tool) => {
-    const geo = getGeometry();
-    if (!geo || !editShapeId) return;
-
-    const mesh = getTargetMesh();
-    if (!mesh) return;
+    const geo = geoRef.current;
+    const mesh = meshRef.current;
+    if (!geo || !mesh || !editShapeIdRef.current) return;
+    const shapeId = editShapeIdRef.current;
 
     if (tool === 'extrude' && selectedFaces.length > 0) {
-      // Extrude: duplicate face vertices and push along normal
       const newGeo = geo.clone();
       const pos = newGeo.attributes.position;
       const idx = newGeo.index;
 
       for (const sel of selectedFaces) {
-        if (sel.shapeId !== editShapeId) continue;
+        if (sel.shapeId !== shapeId) continue;
         const faceIdx = sel.index;
 
-        // Get face vertices
         let a, b, c;
         if (idx) {
           a = idx.getX(faceIdx * 3);
@@ -184,16 +108,13 @@ export const MeshEditor = () => {
           c = faceIdx * 3 + 2;
         }
 
-        // Compute face normal
         _vA.fromBufferAttribute(pos, a);
         _vB.fromBufferAttribute(pos, b);
         _vC.fromBufferAttribute(pos, c);
         _normal.crossVectors(_vB.sub(_vA), _vC.sub(_vA)).normalize();
 
-        // Duplicate vertices
         const newCount = pos.count;
         const arr = pos.array;
-        // Add 3 new vertices (copy of face)
         const newArr = new Float32Array(arr.length + 9);
         newArr.set(arr);
         newArr[arr.length] = arr[a * 3]; newArr[arr.length + 1] = arr[a * 3 + 1]; newArr[arr.length + 2] = arr[a * 3 + 2];
@@ -204,7 +125,6 @@ export const MeshEditor = () => {
         pos.count = pos.count + 3;
         pos.needsUpdate = true;
 
-        // Push original face along normal by 1 unit
         const extrudeDist = 1.0;
         for (const vi of [a, b, c]) {
           pos.array[vi * 3] += _normal.x * extrudeDist;
@@ -212,7 +132,6 @@ export const MeshEditor = () => {
           pos.array[vi * 3 + 2] += _normal.z * extrudeDist;
         }
 
-        // Update index to connect new face
         if (idx) {
           const newIdx = new Uint32Array(idx.count + 3);
           newIdx.set(idx.array);
@@ -224,23 +143,21 @@ export const MeshEditor = () => {
       }
 
       newGeo.computeVertexNormals();
-      applyGeometryEdit(editShapeId, newGeo);
+      applyGeometryEdit(shapeId, newGeo);
     }
 
     if (tool === 'bevel' && selectedEdges.length > 0) {
-      // Bevel: split each selected edge into two, pushing vertices apart
       const newGeo = geo.clone();
       const pos = newGeo.attributes.position;
 
       for (const sel of selectedEdges) {
-        if (sel.shapeId !== editShapeId) continue;
+        if (sel.shapeId !== shapeId) continue;
         const { a, b } = sel;
 
         _vA.fromBufferAttribute(pos, a);
         _vB.fromBufferAttribute(pos, b);
         _edgeMid.copy(_vA).add(_vB).multiplyScalar(0.5);
 
-        // Push both vertices slightly toward midpoint (flatten the edge)
         const bevelAmount = 0.3;
         _vA.lerp(_edgeMid, bevelAmount);
         _vB.lerp(_edgeMid, bevelAmount);
@@ -251,16 +168,15 @@ export const MeshEditor = () => {
 
       pos.needsUpdate = true;
       newGeo.computeVertexNormals();
-      applyGeometryEdit(editShapeId, newGeo);
+      applyGeometryEdit(shapeId, newGeo);
     }
 
     if (tool === 'inset' && selectedFaces.length > 0) {
-      // Inset: shrink selected faces toward their center
       const newGeo = geo.clone();
       const pos = newGeo.attributes.position;
 
       for (const sel of selectedFaces) {
-        if (sel.shapeId !== editShapeId) continue;
+        if (sel.shapeId !== shapeId) continue;
         const faceIdx = sel.index;
 
         let a, b, c;
@@ -291,28 +207,25 @@ export const MeshEditor = () => {
 
       pos.needsUpdate = true;
       newGeo.computeVertexNormals();
-      applyGeometryEdit(editShapeId, newGeo);
+      applyGeometryEdit(shapeId, newGeo);
     }
 
     if (tool === 'merge' && selectedVertices.length >= 2) {
-      // Merge: collapse selected vertices to their average position
       const newGeo = geo.clone();
       const pos = newGeo.attributes.position;
 
-      // Compute average position
       _faceCenter.set(0, 0, 0);
       let count = 0;
       for (const sel of selectedVertices) {
-        if (sel.shapeId !== editShapeId) continue;
+        if (sel.shapeId !== shapeId) continue;
         _vA.fromBufferAttribute(pos, sel.index);
         _faceCenter.add(_vA);
         count++;
       }
       if (count > 0) _faceCenter.divideScalar(count);
 
-      // Move all selected vertices to average
       for (const sel of selectedVertices) {
-        if (sel.shapeId !== editShapeId) continue;
+        if (sel.shapeId !== shapeId) continue;
         pos.array[sel.index * 3] = _faceCenter.x;
         pos.array[sel.index * 3 + 1] = _faceCenter.y;
         pos.array[sel.index * 3 + 2] = _faceCenter.z;
@@ -320,10 +233,10 @@ export const MeshEditor = () => {
 
       pos.needsUpdate = true;
       newGeo.computeVertexNormals();
-      applyGeometryEdit(editShapeId, newGeo);
+      applyGeometryEdit(shapeId, newGeo);
       clearComponentSelection();
     }
-  }, [editShapeId, selectedFaces, selectedEdges, selectedVertices, getGeometry, getTargetMesh, applyGeometryEdit, clearComponentSelection]);
+  }, [selectedFaces, selectedEdges, selectedVertices, applyGeometryEdit, clearComponentSelection]);
 
   // Apply tool when editTool changes
   useEffect(() => {
@@ -332,21 +245,21 @@ export const MeshEditor = () => {
     }
   }, [editTool, applyEditTool]);
 
-  // Pointer event handlers
+  // Pointer event handlers — depends only on editMode + stable refs
   useEffect(() => {
     if (editMode === 'object') return;
 
     const canvas = gl.domElement;
-    let lastHitPoint = null;
 
     const onPointerDown = (e) => {
-      if (e.button !== 0) return; // left click only
+      if (e.button !== 0) return;
       if (window.__gizmoActive) return;
 
-      const mesh = getTargetMesh();
-      if (!mesh) return;
+      const mesh = meshRef.current;
+      const geo = geoRef.current;
+      const shapeId = editModeRef.current === 'object' ? null : editShapeIdRef.current;
+      if (!mesh || !geo || !shapeId) return;
 
-      // Raycast to mesh
       const rect = canvas.getBoundingClientRect();
       _mouse.set(
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -356,22 +269,17 @@ export const MeshEditor = () => {
       const hits = _raycaster.intersectObject(mesh, false);
 
       if (hits.length === 0) {
+        debug('MeshEditor: raycast miss - clearing selection');
         clearComponentSelection();
-        lastHitPoint = null;
         return;
       }
 
       const hit = hits[0];
-      lastHitPoint = hit.point.clone();
-
-      // Determine what component was hit
-      const geo = getGeometry();
-      if (!geo) return;
-
       const pos = geo.attributes.position;
       const face = hit.face;
+      const currentMode = editModeRef.current;
 
-      if (editMode === 'vertex') {
+      if (currentMode === 'vertex') {
         const candidates = [face.a, face.b, face.c];
         let minDist = Infinity;
         let closestIdx = face.a;
@@ -384,8 +292,9 @@ export const MeshEditor = () => {
             closestIdx = idx;
           }
         }
-        selectVertex(editShapeId, closestIdx, e.ctrlKey || e.metaKey);
-      } else if (editMode === 'edge') {
+        debug('MeshEditor: vertex idx=' + closestIdx + ' shift=' + e.shiftKey);
+        selectVertex(shapeId, closestIdx, e.shiftKey);
+      } else if (currentMode === 'edge') {
         const candidates = [
           { a: face.a, b: face.b },
           { a: face.b, b: face.c },
@@ -403,26 +312,16 @@ export const MeshEditor = () => {
             bestEdge = edge;
           }
         }
-        selectEdge(editShapeId, bestEdge.a, bestEdge.b, e.ctrlKey || e.metaKey);
-      } else if (editMode === 'face') {
-        selectFace(editShapeId, Math.floor(hit.faceIndex), e.ctrlKey || e.metaKey);
+        debug('MeshEditor: edge a=' + bestEdge.a + ' b=' + bestEdge.b + ' shift=' + e.shiftKey);
+        selectEdge(shapeId, bestEdge.a, bestEdge.b, e.shiftKey);
+      } else if (currentMode === 'face') {
+        debug('MeshEditor: face idx=' + Math.floor(hit.faceIndex) + ' shift=' + e.shiftKey);
+        selectFace(shapeId, Math.floor(hit.faceIndex), e.shiftKey);
       }
-
-      // Set up drag plane
-      camera.getWorldDirection(_camDir);
-      _plane.setFromNormalAndCoplanarPoint(_camDir, lastHitPoint);
-
-      dragRef.current = {
-        startX: e.clientX,
-        startY: e.clientY,
-        moved: false,
-        startPositions: null, // Will store original positions if we add drag-to-move later
-      };
     };
 
     const onPointerMove = (e) => {
       if (!dragRef.current) return;
-
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
       if (Math.abs(dx) + Math.abs(dy) > 3) {
@@ -430,7 +329,7 @@ export const MeshEditor = () => {
       }
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = () => {
       dragRef.current = null;
     };
 
@@ -443,9 +342,9 @@ export const MeshEditor = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [editMode, editShapeId, camera, gl, getTargetMesh, getGeometry, selectVertex, selectEdge, selectFace, clearComponentSelection]);
+  }, [editMode, camera, gl, selectVertex, selectEdge, selectFace, clearComponentSelection]);
 
-  return null; // This component only handles events, no visual output
+  return null;
 };
 
 export default MeshEditor;

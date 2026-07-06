@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-import React, { useRef, useEffect, Suspense, useCallback } from 'react';
+import React, { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,6 +16,7 @@ import TransformGizmo, { setOrbitRef } from './TransformGizmo';
 import ShapeInteraction from './ShapeInteraction';
 import { MeshEditor } from './MeshEditor';
 import { MeshEditOverlay } from './MeshEditOverlay';
+import SelectionTools from './SelectionTools';
 import { log, debug } from '../utils/logger';
 
 const CameraController = () => {
@@ -155,7 +156,6 @@ export const Canvas3D = () => {
   const containerRef = useRef(null);
   const cameraMode = use3DStore((s) => s.cameraMode);
   const deselectAll = use3DStore((s) => s.deselectAll);
-  const deselectOnClick = use3DStore((s) => s.deselectOnClick);
   debug('Canvas3D: rendering, camera:', cameraMode);
 
   // ResizeObserver to force R3F canvas re-measurement on container size changes
@@ -176,17 +176,10 @@ export const Canvas3D = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleCanvasClick = useCallback((e) => {
-    // If click is on the canvas background (not on a shape), deselect
-    if (e.target === e.currentTarget || e.target.tagName === 'CANVAS') {
-      // This is handled by the R3F scene background click
-    }
-  }, []);
-
   return (
     <div ref={containerRef} className="canvas-3d-container">
       <Canvas
-        shadows
+        shadows={THREE.PCFShadowMap}
         orthographic={cameraMode === 'orthographic'}
         camera={{
           position: [8, 6, 8],

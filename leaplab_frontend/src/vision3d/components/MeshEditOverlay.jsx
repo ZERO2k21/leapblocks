@@ -1,6 +1,7 @@
 /**
  * MeshEditOverlay.jsx — Visual overlay for vertex/edge/face selection
  * Renders highlighted vertices, edges, and faces on top of the edited mesh.
+ * Vertices are transformed to world space using the shape's transform.
  */
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
@@ -9,14 +10,8 @@ import { use3DStore } from '../store/use3DStore';
 const VERTEX_COLOR = '#22d3ee';   // cyan
 const EDGE_COLOR = '#f59e0b';     // amber
 const FACE_COLOR = '#a855f7';     // purple
-const HOVER_COLOR = '#ffffff';    // white
 
-const vertexGeo = new THREE.SphereGeometry(0.06, 8, 8);
-const edgeGeo = new THREE.BufferGeometry();
-const faceVertexGeo = new THREE.BufferGeometry();
-
-const vertexMat = new THREE.MeshBasicMaterial({ color: VERTEX_COLOR, depthTest: false, transparent: true, opacity: 0.95 });
-const edgeMat = new THREE.LineBasicMaterial({ color: EDGE_COLOR, linewidth: 2, depthTest: false, transparent: true, opacity: 0.9 });
+const _v = new THREE.Vector3();
 
 export const MeshEditOverlay = () => {
   const editMode = use3DStore((s) => s.editMode);
@@ -42,35 +37,53 @@ export const MeshEditOverlay = () => {
     return m;
   }, [shape?.position, shape?.rotation, shape?.scale]);
 
-  // Vertex positions for selected vertices
+  // Helper: transform local position to world space
+  const toWorld = (x, y, z) => {
+    _v.set(x, y, z).applyMatrix4(worldMatrix);
+    return [_v.x, _v.y, _v.z];
+  };
+
+  // All vertex dots (small, semi-transparent) when in vertex mode
+  const allVertexPositions = useMemo(() => {
+    if (!geo || editMode !== 'vertex') return null;
+    const pos = geo.attributes.position;
+    const positions = [];
+    const count = Math.min(pos.count, 500);
+    for (let i = 0; i < count; i++) {
+      const [wx, wy, wz] = toWorld(pos.getX(i), pos.getY(i), pos.getZ(i));
+      positions.push(wx, wy, wz);
+    }
+    return positions.length > 0 ? new Float32Array(positions) : null;
+  }, [geo, editMode, worldMatrix]);
+
+  // Selected vertex positions (world space)
   const vertexPositions = useMemo(() => {
     if (!geo || editMode !== 'vertex' || selectedVertices.length === 0) return null;
     const pos = geo.attributes.position;
     const positions = [];
     for (const v of selectedVertices) {
       if (v.shapeId !== editShapeId) continue;
-      const x = pos.getX(v.index);
-      const y = pos.getY(v.index);
-      const z = pos.getZ(v.index);
-      positions.push(x, y, z);
+      const [wx, wy, wz] = toWorld(pos.getX(v.index), pos.getY(v.index), pos.getZ(v.index));
+      positions.push(wx, wy, wz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedVertices, editShapeId]);
+  }, [geo, editMode, selectedVertices, editShapeId, worldMatrix]);
 
-  // Edge line segments for selected edges
+  // Selected edge line segments (world space)
   const edgePositions = useMemo(() => {
     if (!geo || editMode !== 'edge' || selectedEdges.length === 0) return null;
     const pos = geo.attributes.position;
     const positions = [];
     for (const e of selectedEdges) {
       if (e.shapeId !== editShapeId) continue;
-      positions.push(pos.getX(e.a), pos.getY(e.a), pos.getZ(e.a));
-      positions.push(pos.getX(e.b), pos.getY(e.b), pos.getZ(e.b));
+      const [ax, ay, az] = toWorld(pos.getX(e.a), pos.getY(e.a), pos.getZ(e.a));
+      const [bx, by, bz] = toWorld(pos.getX(e.b), pos.getY(e.b), pos.getZ(e.b));
+      positions.push(ax, ay, az, bx, by, bz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedEdges, editShapeId]);
+  }, [geo, editMode, selectedEdges, editShapeId, worldMatrix]);
 
-  // Face triangle positions for selected faces
+  // Selected face positions (world space) — render as filled quads where possible
   const facePositions = useMemo(() => {
     if (!geo || editMode !== 'face' || selectedFaces.length === 0) return null;
     const pos = geo.attributes.position;
@@ -89,32 +102,67 @@ export const MeshEditOverlay = () => {
         b = f.index * 3 + 1;
         c = f.index * 3 + 2;
       }
-      positions.push(
-        pos.getX(a), pos.getY(a), pos.getZ(a),
-        pos.getX(b), pos.getY(b), pos.getZ(b),
-        pos.getX(c), pos.getY(c), pos.getZ(c),
-      );
+      const [ax, ay, az] = toWorld(pos.getX(a), pos.getY(a), pos.getZ(a));
+      const [bx, by, bz] = toWorld(pos.getX(b), pos.getY(b), pos.getZ(b));
+      const [cx, cy, cz] = toWorld(pos.getX(c), pos.getY(c), pos.getZ(c));
+      positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedFaces, editShapeId]);
+  }, [geo, editMode, selectedFaces, editShapeId, worldMatrix]);
 
-  // All vertex dots (small, semi-transparent) when in vertex mode
-  const allVertexPositions = useMemo(() => {
-    if (!geo || editMode !== 'vertex') return null;
+  // All edge wireframe (subtle, shown in all edit modes)
+  const wireframePositions = useMemo(() => {
+    if (!geo || editMode === 'object') return null;
     const pos = geo.attributes.position;
+    const index = geo.index;
+    const edgeSet = new Set();
     const positions = [];
-    // Limit to first 500 vertices for performance
-    const count = Math.min(pos.count, 500);
-    for (let i = 0; i < count; i++) {
-      positions.push(pos.getX(i), pos.getY(i), pos.getZ(i));
+
+    const addEdge = (a, b) => {
+      const key = Math.min(a, b) + '-' + Math.max(a, b);
+      if (edgeSet.has(key)) return;
+      edgeSet.add(key);
+      const [ax, ay, az] = toWorld(pos.getX(a), pos.getY(a), pos.getZ(a));
+      const [bx, by, bz] = toWorld(pos.getX(b), pos.getY(b), pos.getZ(b));
+      positions.push(ax, ay, az, bx, by, bz);
+    };
+
+    if (index) {
+      for (let i = 0; i < index.count; i += 3) {
+        addEdge(index.getX(i), index.getX(i + 1));
+        addEdge(index.getX(i + 1), index.getX(i + 2));
+        addEdge(index.getX(i + 2), index.getX(i));
+      }
+    } else {
+      for (let i = 0; i < pos.count; i += 3) {
+        addEdge(i, i + 1);
+        addEdge(i + 1, i + 2);
+        addEdge(i + 2, i);
+      }
     }
+
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode]);
+  }, [geo, editMode, worldMatrix]);
 
   if (editMode === 'object' || !editShapeId) return null;
 
   return (
-    <group matrixWorld={worldMatrix} matrixAutoUpdate={false}>
+    <group>
+      {/* Wireframe overlay — subtle edges in all edit modes */}
+      {wireframePositions && (
+        <lineSegments>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={wireframePositions.length / 3}
+              array={wireframePositions}
+              itemSize={3}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="#64748b" linewidth={1} depthTest={false} transparent opacity={0.4} />
+        </lineSegments>
+      )}
+
       {/* All vertices (small dots) in vertex mode */}
       {allVertexPositions && (
         <points>
@@ -137,7 +185,7 @@ export const MeshEditOverlay = () => {
         </points>
       )}
 
-      {/* Selected vertices (larger, bright) */}
+      {/* Selected vertices (larger, bright cyan) */}
       {vertexPositions && (
         <points>
           <bufferGeometry>
@@ -149,7 +197,7 @@ export const MeshEditOverlay = () => {
             />
           </bufferGeometry>
           <pointsMaterial
-            size={0.1}
+            size={0.12}
             color={VERTEX_COLOR}
             depthTest={false}
             transparent
@@ -159,7 +207,7 @@ export const MeshEditOverlay = () => {
         </points>
       )}
 
-      {/* Selected edges */}
+      {/* Selected edges (thick amber lines) */}
       {edgePositions && (
         <lineSegments>
           <bufferGeometry>
@@ -170,7 +218,7 @@ export const MeshEditOverlay = () => {
               itemSize={3}
             />
           </bufferGeometry>
-          <lineBasicMaterial color={EDGE_COLOR} linewidth={2} depthTest={false} transparent opacity={0.9} />
+          <lineBasicMaterial color={EDGE_COLOR} linewidth={3} depthTest={false} transparent opacity={0.95} />
         </lineSegments>
       )}
 
@@ -189,7 +237,7 @@ export const MeshEditOverlay = () => {
             color={FACE_COLOR}
             depthTest={false}
             transparent
-            opacity={0.3}
+            opacity={0.35}
             side={THREE.DoubleSide}
           />
         </mesh>
