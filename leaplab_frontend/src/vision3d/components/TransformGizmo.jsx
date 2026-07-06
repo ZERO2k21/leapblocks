@@ -316,6 +316,10 @@ const TransformGizmo = () => {
 
   if (!gizmoCenter || selectedIds.length === 0) return null;
 
+  // Hide gizmo when in edit mode (MeshEditor handles component transforms)
+  const currentEditMode = use3DStore.getState().editMode;
+  if (currentEditMode !== 'object') return null;
+
   const s = gizmoScale;
   const arrowLen = 3 * s;
   const headLen = 0.5 * s;

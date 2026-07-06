@@ -154,81 +154,6 @@ export const MeshEditor = () => {
     return mesh?.geometry || null;
   }, [editShapeId, geometryCache, getTargetMesh]);
 
-  // Raycast to find nearest component
-  const raycastComponent = useCallback((clientX, clientY) => {
-    const mesh = getTargetMesh();
-    if (!mesh) return null;
-
-    const rect = gl.domElement.getBoundingClientRect();
-    _mouse.set(
-      ((clientX - rect.left) / rect.width) * 2 - 1,
-      -((clientY - rect.top) / rect.height) * 2 + 1
-    );
-    _raycaster.setFromCamera(_mouse, camera);
-    const hits = _raycaster.intersectObject(mesh, false);
-    if (hits.length === 0) return null;
-
-    const hit = hits[0];
-    const geo = getGeometry();
-    if (!geo) return null;
-
-    const pos = geo.attributes.position;
-    const face = hit.face;
-
-    if (editMode === 'vertex') {
-      // Find the closest vertex to the hit point
-      const candidates = [face.a, face.b, face.c];
-      let minDist = Infinity;
-      let closestIdx = face.a;
-      for (const idx of candidates) {
-        _vA.fromBufferAttribute(pos, idx);
-        _vA.applyMatrix4(mesh.matrixWorld);
-        const d = hit.point.distanceTo(_vA);
-        if (d < minDist) {
-          minDist = d;
-          closestIdx = idx;
-        }
-      }
-      return { type: 'vertex', index: closestIdx };
-    }
-
-    if (editMode === 'edge') {
-      // Find the closest edge to the hit point
-      const candidates = [
-        { a: face.a, b: face.b },
-        { a: face.b, b: face.c },
-        { a: face.c, b: face.a },
-      ];
-      let minDist = Infinity;
-      let bestEdge = candidates[0];
-      for (const edge of candidates) {
-        _vA.fromBufferAttribute(pos, edge.a).applyMatrix4(mesh.matrixWorld);
-        _vB.fromBufferAttribute(pos, edge.b).applyMatrix4(mesh.matrixWorld);
-        _edgeMid.copy(_vA).add(_vB).multiplyScalar(0.5);
-        const d = hit.point.distanceTo(_edgeMid);
-        if (d < minDist) {
-          minDist = d;
-          bestEdge = edge;
-        }
-      }
-      return { type: 'edge', a: Math.min(bestEdge.a, bestEdge.b), b: Math.max(bestEdge.a, bestEdge.b) };
-    }
-
-    if (editMode === 'face') {
-      // Determine which face was hit using face index
-      const index = geo.index;
-      let faceIdx;
-      if (index) {
-        faceIdx = Math.floor(hit.faceIndex);
-      } else {
-        faceIdx = Math.floor(hit.faceIndex);
-      }
-      return { type: 'face', index: faceIdx };
-    }
-
-    return null;
-  }, [editMode, getTargetMesh, getGeometry, camera, gl]);
-
   // Apply edit tool operation
   const applyEditTool = useCallback((tool) => {
     const geo = getGeometry();
@@ -412,47 +337,86 @@ export const MeshEditor = () => {
     if (editMode === 'object') return;
 
     const canvas = gl.domElement;
+    let lastHitPoint = null;
 
     const onPointerDown = (e) => {
       if (e.button !== 0) return; // left click only
       if (window.__gizmoActive) return;
 
-      const result = raycastComponent(e.clientX, e.clientY);
-      if (!result) {
-        clearComponentSelection();
-        return;
-      }
-
-      const ctrl = e.ctrlKey || e.metaKey;
-
-      if (result.type === 'vertex') {
-        selectVertex(editShapeId, result.index, ctrl);
-      } else if (result.type === 'edge') {
-        selectEdge(editShapeId, result.a, result.b, ctrl);
-      } else if (result.type === 'face') {
-        selectFace(editShapeId, result.index, ctrl);
-      }
-
-      // Start drag for move
       const mesh = getTargetMesh();
       if (!mesh) return;
 
-      _raycaster.setFromCamera(
-        new THREE.Vector2(
-          ((e.clientX - canvas.getBoundingClientRect().left) / canvas.getBoundingClientRect().width) * 2 - 1,
-          -((e.clientY - canvas.getBoundingClientRect().top) / canvas.getBoundingClientRect().height) * 2 + 1
-        ),
-        camera
+      // Raycast to mesh
+      const rect = canvas.getBoundingClientRect();
+      _mouse.set(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
       );
+      _raycaster.setFromCamera(_mouse, camera);
+      const hits = _raycaster.intersectObject(mesh, false);
 
-      // Get the drag plane (perpendicular to camera, through hit point)
+      if (hits.length === 0) {
+        clearComponentSelection();
+        lastHitPoint = null;
+        return;
+      }
+
+      const hit = hits[0];
+      lastHitPoint = hit.point.clone();
+
+      // Determine what component was hit
+      const geo = getGeometry();
+      if (!geo) return;
+
+      const pos = geo.attributes.position;
+      const face = hit.face;
+
+      if (editMode === 'vertex') {
+        const candidates = [face.a, face.b, face.c];
+        let minDist = Infinity;
+        let closestIdx = face.a;
+        for (const idx of candidates) {
+          _vA.fromBufferAttribute(pos, idx);
+          _vA.applyMatrix4(mesh.matrixWorld);
+          const d = hit.point.distanceTo(_vA);
+          if (d < minDist) {
+            minDist = d;
+            closestIdx = idx;
+          }
+        }
+        selectVertex(editShapeId, closestIdx, e.ctrlKey || e.metaKey);
+      } else if (editMode === 'edge') {
+        const candidates = [
+          { a: face.a, b: face.b },
+          { a: face.b, b: face.c },
+          { a: face.c, b: face.a },
+        ];
+        let minDist = Infinity;
+        let bestEdge = candidates[0];
+        for (const edge of candidates) {
+          _vA.fromBufferAttribute(pos, edge.a).applyMatrix4(mesh.matrixWorld);
+          _vB.fromBufferAttribute(pos, edge.b).applyMatrix4(mesh.matrixWorld);
+          _edgeMid.copy(_vA).add(_vB).multiplyScalar(0.5);
+          const d = hit.point.distanceTo(_edgeMid);
+          if (d < minDist) {
+            minDist = d;
+            bestEdge = edge;
+          }
+        }
+        selectEdge(editShapeId, bestEdge.a, bestEdge.b, e.ctrlKey || e.metaKey);
+      } else if (editMode === 'face') {
+        selectFace(editShapeId, Math.floor(hit.faceIndex), e.ctrlKey || e.metaKey);
+      }
+
+      // Set up drag plane
       camera.getWorldDirection(_camDir);
-      _plane.setFromNormalAndCoplanarPoint(_camDir, hit_point_ref.current || mesh.position);
+      _plane.setFromNormalAndCoplanarPoint(_camDir, lastHitPoint);
 
       dragRef.current = {
         startX: e.clientX,
         startY: e.clientY,
         moved: false,
+        startPositions: null, // Will store original positions if we add drag-to-move later
       };
     };
 
@@ -479,12 +443,9 @@ export const MeshEditor = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [editMode, editShapeId, camera, gl, raycastComponent, selectVertex, selectEdge, selectFace, clearComponentSelection, getTargetMesh]);
+  }, [editMode, editShapeId, camera, gl, getTargetMesh, getGeometry, selectVertex, selectEdge, selectFace, clearComponentSelection]);
 
   return null; // This component only handles events, no visual output
 };
-
-// Ref to store the hit point for drag plane
-const hit_point_ref = { current: null };
 
 export default MeshEditor;
