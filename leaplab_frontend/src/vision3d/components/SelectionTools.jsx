@@ -4,19 +4,22 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { use3DStore } from '../store/use3DStore';
 import { debug } from '../utils/logger';
 
 const CIRCLE_RADIUS = 20; // pixels for circle select
 
+// Helper to get Three.js refs (stored by Canvas3D's CameraController)
+function getR3FRefs() {
+  return window.__r3fRefs || { camera: null, gl: null, scene: null };
+}
+
 /**
  * SelectionTools — handles Box (B), Circle (C), and Lasso (Ctrl+RMB) selection.
  * Renders overlay on a separate DOM layer (not inside R3F).
  */
 const SelectionTools = () => {
-  const { camera, gl, scene } = useThree();
   const [mode, setMode] = useState(null); // null | 'box' | 'circle' | 'lasso'
   const [dragStart, setDragStart] = useState(null);
   const [dragCurrent, setDragCurrent] = useState(null);
@@ -32,6 +35,7 @@ const SelectionTools = () => {
 
   // Collect all selectable meshes from scene
   const getShapeMeshes = useCallback(() => {
+    const { scene } = getR3FRefs();
     const meshes = [];
     scene?.traverse?.((child) => {
       if (child.isMesh && child.userData.shapeId && !child.userData.gizmoAxis) {
@@ -39,7 +43,7 @@ const SelectionTools = () => {
       }
     });
     return meshes;
-  }, [scene]);
+  }, []);
 
   // Get all component positions for edit mode raycasting
   const getComponentPositions = useCallback(() => {
@@ -48,6 +52,7 @@ const SelectionTools = () => {
     if (!geo) return null;
 
     const mesh = (() => {
+      const { scene } = getR3FRefs();
       let found = null;
       scene?.traverse?.((child) => {
         if (found) return;
@@ -104,10 +109,12 @@ const SelectionTools = () => {
       }
     }
     return results;
-  }, [editMode, editShapeId, geometryCache, scene]);
+  }, [editMode, editShapeId, geometryCache]);
 
   // Project world position to screen coordinates
   const worldToScreen = useCallback((worldPos) => {
+    const { camera, gl } = getR3FRefs();
+    if (!camera || !gl) return { x: 0, y: 0 };
     const canvas = gl.domElement;
     const rect = canvas.getBoundingClientRect();
     const v = worldPos.clone().project(camera);
@@ -115,7 +122,7 @@ const SelectionTools = () => {
       x: ((v.x + 1) / 2) * rect.width + rect.left,
       y: ((-v.y + 1) / 2) * rect.height + rect.top,
     };
-  }, [camera, gl]);
+  }, []);
 
   // Check if a screen point is inside a selection area
   const isInsideSelection = useCallback((screenX, screenY, start, current, lasso) => {
@@ -277,6 +284,8 @@ const SelectionTools = () => {
   }, [getShapeMeshes, getComponentPositions, worldToScreen, isInsideSelection, applySelection]);
 
   useEffect(() => {
+    const { gl } = getR3FRefs();
+    if (!gl) return;
     const canvas = gl.domElement;
     let lassoTimer = null;
 
@@ -420,9 +429,10 @@ const SelectionTools = () => {
       if (lassoTimer) clearTimeout(lassoTimer);
       canvas.style.cursor = 'auto';
     };
-  }, [gl, camera, scene, selectInRectangle, selectInCircle, selectInLasso]);
+  }, [selectInRectangle, selectInCircle, selectInLasso]);
 
   // Render overlay as a separate div on top of canvas
+  const { gl } = getR3FRefs();
   const canvas = gl?.domElement;
   const overlayParent = canvas?.parentElement;
 

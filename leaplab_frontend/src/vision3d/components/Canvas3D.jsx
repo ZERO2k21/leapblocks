@@ -19,10 +19,20 @@ import { MeshEditOverlay } from './MeshEditOverlay';
 import SelectionTools from './SelectionTools';
 import { log, debug } from '../utils/logger';
 
+// Global refs for Three.js objects (used by SelectionTools outside Canvas)
+window.__r3fRefs = { scene: null, camera: null, gl: null };
+
 const CameraController = () => {
   const fitTarget = use3DStore((s) => s.fitSelectionTarget);
   const fitAll = use3DStore((s) => s.fitAllTarget);
-  const { camera } = useThree();
+  const { camera, gl, scene } = useThree();
+
+  // Store refs globally for SelectionTools (outside Canvas)
+  useEffect(() => {
+    window.__r3fRefs.scene = scene;
+    window.__r3fRefs.camera = camera;
+    window.__r3fRefs.gl = gl;
+  }, [scene, camera, gl]);
 
   useEffect(() => {
     const target = fitTarget || fitAll;
@@ -200,6 +210,7 @@ export const Canvas3D = () => {
           <SceneContent />
         </Suspense>
       </Canvas>
+      <SelectionTools />
     </div>
   );
 };

@@ -20,6 +20,7 @@ export const MeshEditOverlay = () => {
   const selectedEdges = use3DStore((s) => s.selectedEdges);
   const selectedFaces = use3DStore((s) => s.selectedFaces);
   const geometryCache = use3DStore((s) => s.geometryCache);
+  const geometryVersion = use3DStore((s) => s.geometryVersion);
   const shapes = use3DStore((s) => s.shapes);
 
   const geo = geometryCache[editShapeId] || null;
@@ -54,7 +55,7 @@ export const MeshEditOverlay = () => {
       positions.push(wx, wy, wz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, worldMatrix]);
+  }, [geo, editMode, worldMatrix, geometryVersion]);
 
   // Selected vertex positions (world space)
   const vertexPositions = useMemo(() => {
@@ -67,7 +68,7 @@ export const MeshEditOverlay = () => {
       positions.push(wx, wy, wz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedVertices, editShapeId, worldMatrix]);
+  }, [geo, editMode, selectedVertices, editShapeId, worldMatrix, geometryVersion]);
 
   // Selected edge line segments (world space)
   const edgePositions = useMemo(() => {
@@ -81,7 +82,7 @@ export const MeshEditOverlay = () => {
       positions.push(ax, ay, az, bx, by, bz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedEdges, editShapeId, worldMatrix]);
+  }, [geo, editMode, selectedEdges, editShapeId, worldMatrix, geometryVersion]);
 
   // Selected face positions (world space) — render as filled quads where possible
   const facePositions = useMemo(() => {
@@ -108,7 +109,7 @@ export const MeshEditOverlay = () => {
       positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
     }
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, selectedFaces, editShapeId, worldMatrix]);
+  }, [geo, editMode, selectedFaces, editShapeId, worldMatrix, geometryVersion]);
 
   // All edge wireframe (subtle, shown in all edit modes)
   const wireframePositions = useMemo(() => {
@@ -142,7 +143,7 @@ export const MeshEditOverlay = () => {
     }
 
     return positions.length > 0 ? new Float32Array(positions) : null;
-  }, [geo, editMode, worldMatrix]);
+  }, [geo, editMode, worldMatrix, geometryVersion]);
 
   if (editMode === 'object' || !editShapeId) return null;
 

@@ -57,8 +57,9 @@ export const use3DStore = create((set, get) => ({
   selectedVertices: [], // [{shapeId, index}] — selected vertex indices
   selectedEdges: [],    // [{shapeId, a, b}] — selected edge pairs (vertex indices)
   selectedFaces: [],    // [{shapeId, index}] — selected face indices
-  editTool: null,       // null | 'extrude' | 'bevel' | 'inset' | 'merge' | 'knife'
+  editTool: null,       // null | 'extrude' | 'inset' | 'merge' | 'knife' | 'exclude' | 'include'
   geometryCache: {},    // { [shapeId]: THREE.BufferGeometry } — cached live geometry
+  geometryVersion: 0,   // incremented on every cacheGeometry call to force re-renders
 
   setEditMode: (mode) => {
     const state = get();
@@ -146,6 +147,7 @@ export const use3DStore = create((set, get) => ({
   cacheGeometry: (shapeId, geometry) => {
     set((state) => ({
       geometryCache: { ...state.geometryCache, [shapeId]: geometry },
+      geometryVersion: state.geometryVersion + 1,
     }));
   },
 
@@ -526,7 +528,11 @@ export const use3DStore = create((set, get) => ({
     debug('pushHistory');
     const state = get();
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    newHistory.push(JSON.parse(JSON.stringify(state.shapes)));
+    // Strip non-serializable geometry objects before JSON serialization
+    newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
+      if (key === '_customGeometry' || key === '_csgGeometry') return undefined;
+      return val;
+    })));
 
     if (newHistory.length > MAX_HISTORY) {
       newHistory.shift();

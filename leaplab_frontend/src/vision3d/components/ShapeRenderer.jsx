@@ -26,6 +26,7 @@ export const ShapeRenderer = ({ shape }) => {
     if (shape._customGeometry) return shape._customGeometry;
     return createGeometry(shape);
   }, [
+    shape._customGeometry, shape._csgGeometry,
     shape.type, shape.width, shape.height, shape.depth, shape.cornerRadius,
     shape.radiusTop, shape.radiusBottom, shape.cylinderHeight, shape.radialSegments,
     shape.radius, shape.widthSegments, shape.heightSegments,
@@ -44,6 +45,10 @@ export const ShapeRenderer = ({ shape }) => {
     shape.polygonRadius, shape.polygonSides, shape.polygonHeight,
   ]);
 
+  // During edit mode, MeshEditor handles geometry directly via refs.
+  // Skip applying geometry prop to avoid R3F overwriting MeshEditor's changes.
+  const effectiveGeometry = isEdited ? undefined : geometry;
+
   const material = useMemo(() => {
     const isHole = shape.isHole;
     const color = isHole ? '#888888' : shape.color;
@@ -59,14 +64,17 @@ export const ShapeRenderer = ({ shape }) => {
     });
   }, [shape.color, shape.isHole, shape.metalness, shape.roughness, shape.opacity, shape.type, shape._csgGeometry]);
 
-  useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
+  // Don't dispose geometry during edit mode — MeshEditor manages it via refs
+  useEffect(() => () => {
+    if (!isEdited) { geometry.dispose(); material.dispose(); }
+  }, [geometry, material, isEdited]);
 
   if (!shape.visible) return null;
 
   return (
     <mesh
       ref={setShapeIdRef(shape.id)}
-      geometry={geometry}
+      geometry={effectiveGeometry}
       material={material}
       position={shape.position}
       rotation={shape.rotation}
@@ -77,7 +85,7 @@ export const ShapeRenderer = ({ shape }) => {
       receiveShadow
     >
       {isSelected && !isEdited && (
-        <mesh scale={[1.02, 1.02, 1.02]} geometry={geometry}>
+        <mesh scale={[1.02, 1.02, 1.02]} geometry={effectiveGeometry}>
           <meshBasicMaterial color="#6366f1" wireframe transparent opacity={0.5} />
         </mesh>
       )}

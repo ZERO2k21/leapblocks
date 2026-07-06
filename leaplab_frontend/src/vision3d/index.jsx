@@ -342,25 +342,18 @@ const Vision3DApp = ({ onBack }) => {
       if (state.editMode !== 'object') {
         const mode = state.editMode;
 
-        // E key: Extrude (Blender standard)
+        // E key: Exclude — move only selected components (tear effect)
         if (key === 'e' && !e.ctrlKey) {
           e.preventDefault();
-          debug('Keyboard: E (extrude ' + mode + ')');
-          setEditTool('extrude');
+          debug('Keyboard: E (exclude ' + mode + ')');
+          setEditTool('exclude');
         }
 
-        // B key: Bevel (Blender standard)
-        if (key === 'b' && !e.ctrlKey) {
-          e.preventDefault();
-          debug('Keyboard: B (bevel ' + mode + ')');
-          setEditTool('bevel');
-        }
-
-        // I key: Inset (Blender standard)
+        // I key: Include — move selected + connected components (smooth deformation)
         if (key === 'i' && !e.ctrlKey && !e.shiftKey) {
           e.preventDefault();
-          debug('Keyboard: I (inset ' + mode + ')');
-          setEditTool('inset');
+          debug('Keyboard: I (include ' + mode + ')');
+          setEditTool('include');
         }
 
         // Expand Selection (Ctrl+Numpad Plus or Ctrl+=)
@@ -889,39 +882,22 @@ const Vision3DApp = ({ onBack }) => {
                 <>
                   <span className="v3d-toolbar-separator" />
                   <div className="v3d-toolbar-actions-group">
-                    {editMode === 'face' && (
-                      <>
-                        <button
-                          className="v3d-toolbar-btn"
-                          onClick={() => setEditTool('extrude')}
-                          disabled={selectedFaces.length === 0}
-                          title="Extrude Face (E)"
-                        >
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
-                          Extrude
-                        </button>
-                        <button
-                          className="v3d-toolbar-btn"
-                          onClick={() => setEditTool('inset')}
-                          disabled={selectedFaces.length === 0}
-                          title="Inset Face (I)"
-                        >
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-                          Inset
-                        </button>
-                      </>
-                    )}
-                    {editMode === 'edge' && (
-                      <button
-                        className="v3d-toolbar-btn"
-                        onClick={() => setEditTool('bevel')}
-                        disabled={selectedEdges.length === 0}
-                        title="Bevel Edge (B)"
-                      >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20L20 4"/><path d="M4 20h6l-6-6z" fill="currentColor" opacity="0.2"/></svg>
-                        Bevel
-                      </button>
-                    )}
+                    <button
+                      className={`v3d-toolbar-btn ${editTool === 'exclude' ? 'active' : ''}`}
+                      onClick={() => setEditTool('exclude')}
+                      title="Exclude — move only selected (E)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
+                      Exclude
+                    </button>
+                    <button
+                      className={`v3d-toolbar-btn ${editTool === 'include' ? 'active' : ''}`}
+                      onClick={() => setEditTool('include')}
+                      title="Include — move selected + connected (I)"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                      Include
+                    </button>
                     {editMode === 'vertex' && (
                       <button
                         className="v3d-toolbar-btn"

@@ -19,6 +19,94 @@ const _vC = new THREE.Vector3();
 const _edgeMid = new THREE.Vector3();
 const _faceCenter = new THREE.Vector3();
 const _normal = new THREE.Vector3();
+const _delta = new THREE.Vector3();
+const _intersectPlane = new THREE.Plane();
+const _intersectPoint = new THREE.Vector3();
+
+// Get all vertex indices connected to the selected components
+// Uses spatial coincidence detection for indexed geometry (e.g. BoxGeometry
+// where adjacent faces have separate vertex copies at the same 3D position)
+function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFaces) {
+  const connected = new Set();
+  const idx = geo.index;
+  const posAttr = geo.attributes.position;
+
+  // Add selected vertices directly
+  for (const v of selectedVertices) connected.add(v.index);
+
+  // For edges: add both endpoints
+  for (const e of selectedEdges) { connected.add(e.a); connected.add(e.b); }
+
+  // For faces: add all face vertices
+  if (selectedFaces.length > 0) {
+    for (const f of selectedFaces) {
+      if (idx) {
+        connected.add(idx.getX(f.index * 3));
+        connected.add(idx.getX(f.index * 3 + 1));
+        connected.add(idx.getX(f.index * 3 + 2));
+      } else {
+        connected.add(f.index * 3);
+        connected.add(f.index * 3 + 1);
+        connected.add(f.index * 3 + 2);
+      }
+    }
+  }
+
+  // STEP 1: Spatial weld — for indexed geometry, find vertices at the same
+  // 3D position (within epsilon). BoxGeometry has 24 verts (4 per face) where
+  // corners are duplicated per-face with different indices.
+  const EPSILON = 0.0001;
+  const expanded = new Set(connected);
+
+  if (idx) {
+    // Build a spatial position map: quantized position → [vertex indices]
+    const posMap = new Map();
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = Math.round(posAttr.getX(i) / EPSILON) * EPSILON;
+      const y = Math.round(posAttr.getY(i) / EPSILON) * EPSILON;
+      const z = Math.round(posAttr.getZ(i) / EPSILON) * EPSILON;
+      const key = `${x},${y},${z}`;
+      if (!posMap.has(key)) posMap.set(key, []);
+      posMap.get(key).push(i);
+    }
+
+    // For every vertex in connected, also add all spatially coincident vertices
+    for (const vi of connected) {
+      const x = Math.round(posAttr.getX(vi) / EPSILON) * EPSILON;
+      const y = Math.round(posAttr.getY(vi) / EPSILON) * EPSILON;
+      const z = Math.round(posAttr.getZ(vi) / EPSILON) * EPSILON;
+      const key = `${x},${y},${z}`;
+      for (const w of posMap.get(key) || []) expanded.add(w);
+    }
+  }
+
+  // STEP 2: Find neighbors — vertices connected by an edge to any selected vertex
+  const neighbors = new Set();
+
+  if (idx) {
+    for (let i = 0; i < idx.count; i += 3) {
+      const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
+      if (expanded.has(a) && !expanded.has(b)) neighbors.add(b);
+      if (expanded.has(b) && !expanded.has(a)) neighbors.add(a);
+      if (expanded.has(b) && !expanded.has(c)) neighbors.add(c);
+      if (expanded.has(c) && !expanded.has(b)) neighbors.add(b);
+      if (expanded.has(c) && !expanded.has(a)) neighbors.add(a);
+      if (expanded.has(a) && !expanded.has(c)) neighbors.add(c);
+    }
+  } else {
+    for (let i = 0; i < posAttr.count; i += 3) {
+      const a = i, b = i + 1, c = i + 2;
+      if (expanded.has(a) && !expanded.has(b)) neighbors.add(b);
+      if (expanded.has(b) && !expanded.has(a)) neighbors.add(a);
+      if (expanded.has(b) && !expanded.has(c)) neighbors.add(c);
+      if (expanded.has(c) && !expanded.has(b)) neighbors.add(b);
+      if (expanded.has(c) && !expanded.has(a)) neighbors.add(a);
+      if (expanded.has(a) && !expanded.has(c)) neighbors.add(c);
+    }
+  }
+
+  return { selected: expanded, neighbors };
+}
 
 /**
  * MeshEditor — active only in vertex/edge/face edit modes.
@@ -146,31 +234,6 @@ export const MeshEditor = () => {
       applyGeometryEdit(shapeId, newGeo);
     }
 
-    if (tool === 'bevel' && selectedEdges.length > 0) {
-      const newGeo = geo.clone();
-      const pos = newGeo.attributes.position;
-
-      for (const sel of selectedEdges) {
-        if (sel.shapeId !== shapeId) continue;
-        const { a, b } = sel;
-
-        _vA.fromBufferAttribute(pos, a);
-        _vB.fromBufferAttribute(pos, b);
-        _edgeMid.copy(_vA).add(_vB).multiplyScalar(0.5);
-
-        const bevelAmount = 0.3;
-        _vA.lerp(_edgeMid, bevelAmount);
-        _vB.lerp(_edgeMid, bevelAmount);
-
-        pos.array[a * 3] = _vA.x; pos.array[a * 3 + 1] = _vA.y; pos.array[a * 3 + 2] = _vA.z;
-        pos.array[b * 3] = _vB.x; pos.array[b * 3 + 1] = _vB.y; pos.array[b * 3 + 2] = _vB.z;
-      }
-
-      pos.needsUpdate = true;
-      newGeo.computeVertexNormals();
-      applyGeometryEdit(shapeId, newGeo);
-    }
-
     if (tool === 'inset' && selectedFaces.length > 0) {
       const newGeo = geo.clone();
       const pos = newGeo.attributes.position;
@@ -238,9 +301,9 @@ export const MeshEditor = () => {
     }
   }, [selectedFaces, selectedEdges, selectedVertices, applyGeometryEdit, clearComponentSelection]);
 
-  // Apply tool when editTool changes
+  // Apply tool when editTool changes (skip exclude/include — they are drag-based)
   useEffect(() => {
-    if (editTool) {
+    if (editTool && editTool !== 'exclude' && editTool !== 'include') {
       applyEditTool(editTool);
     }
   }, [editTool, applyEditTool]);
@@ -278,6 +341,43 @@ export const MeshEditor = () => {
       const pos = geo.attributes.position;
       const face = hit.face;
       const currentMode = editModeRef.current;
+      const currentTool = use3DStore.getState().editTool;
+
+      // Check if exclude/include mode — start drag-to-move
+      if (currentTool === 'exclude' || currentTool === 'include') {
+        const sel = use3DStore.getState();
+        const hasSelection = sel.selectedVertices.length > 0 || sel.selectedEdges.length > 0 || sel.selectedFaces.length > 0;
+        if (!hasSelection) {
+          debug('MeshEditor: exclude/include but no selection — doing selection instead');
+        } else {
+          // Start drag-to-move: store original positions and set up plane
+          const { selected, neighbors } = getConnectedVertices(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+
+          // Store original positions for all vertices we might move
+          const origPositions = new Float32Array(pos.array.length);
+          origPositions.set(pos.array);
+
+          // Set up intersect plane from hit point and camera
+          const camDir = new THREE.Vector3();
+          camera.getWorldDirection(camDir);
+          _intersectPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hit.point);
+
+          dragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            moved: false,
+            mode: currentTool, // 'exclude' or 'include'
+            selectedVerts: selected,
+            neighborVerts: neighbors,
+            origPositions,
+            hitPoint: hit.point.clone(),
+          };
+
+          debug('MeshEditor: drag-to-move start mode=' + currentTool + ' selected=' + selected.size + ' neighbors=' + neighbors.size);
+          e.stopPropagation();
+          return;
+        }
+      }
 
       if (currentMode === 'vertex') {
         const candidates = [face.a, face.b, face.c];
@@ -322,14 +422,77 @@ export const MeshEditor = () => {
 
     const onPointerMove = (e) => {
       if (!dragRef.current) return;
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
+
+      const drag = dragRef.current;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
       if (Math.abs(dx) + Math.abs(dy) > 3) {
-        dragRef.current.moved = true;
+        drag.moved = true;
+      }
+
+      // Handle exclude/include drag-to-move
+      if (drag.mode && drag.moved) {
+        const mesh = meshRef.current;
+        const geo = geoRef.current;
+        if (!mesh || !geo) return;
+
+        const pos = geo.attributes.position;
+        const orig = drag.origPositions;
+
+        // Project mouse delta onto intersect plane
+        const rect = canvas.getBoundingClientRect();
+        _mouse.set(
+          ((e.clientX - rect.left) / rect.width) * 2 - 1,
+          -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+        _raycaster.setFromCamera(_mouse, camera);
+        _raycaster.ray.intersectPlane(_intersectPlane, _intersectPoint);
+
+        if (!_intersectPoint) return;
+
+        // Delta from hit point to current intersection
+        _delta.copy(_intersectPoint).sub(drag.hitPoint);
+
+        if (drag.mode === 'exclude') {
+          // Move ONLY selected vertices
+          for (const vi of drag.selectedVerts) {
+            pos.array[vi * 3] = orig[vi * 3] + _delta.x;
+            pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y;
+            pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
+          }
+        } else if (drag.mode === 'include') {
+          // Move selected vertices + neighbors
+          for (const vi of drag.selectedVerts) {
+            pos.array[vi * 3] = orig[vi * 3] + _delta.x;
+            pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y;
+            pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
+          }
+          for (const vi of drag.neighborVerts) {
+            pos.array[vi * 3] = orig[vi * 3] + _delta.x;
+            pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y;
+            pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
+          }
+        }
+
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
+
+        // Update the mesh directly — no dispose needed, old ref is garbage collected
+        mesh.geometry = geo;
+        cacheGeometry(editShapeIdRef.current, geo);
       }
     };
 
     const onPointerUp = () => {
+      if (dragRef.current?.mode && dragRef.current?.moved) {
+        debug('MeshEditor: drag-to-move complete mode=' + dragRef.current.mode);
+        // Persist the geometry change to the shape's _customGeometry
+        const shapeId = editShapeIdRef.current;
+        if (shapeId && geoRef.current) {
+          geoRef.current.computeVertexNormals();
+          applyGeometryEdit(shapeId, geoRef.current);
+        }
+      }
       dragRef.current = null;
     };
 
@@ -342,7 +505,7 @@ export const MeshEditor = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [editMode, camera, gl, selectVertex, selectEdge, selectFace, clearComponentSelection]);
+  }, [editMode, camera, gl, selectVertex, selectEdge, selectFace, clearComponentSelection, cacheGeometry, applyGeometryEdit]);
 
   return null;
 };
