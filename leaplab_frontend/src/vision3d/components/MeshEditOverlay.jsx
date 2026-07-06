@@ -30,13 +30,16 @@ export const MeshEditOverlay = () => {
   const worldMatrix = useMemo(() => {
     if (!shape) return new THREE.Matrix4();
     const m = new THREE.Matrix4();
+    const pos = shape.position || [0, 0, 0];
+    const rot = shape.rotation || [0, 0, 0];
+    const scl = shape.scale || [1, 1, 1];
     m.compose(
-      new THREE.Vector3(...(shape.position || [0, 0, 0])),
-      new THREE.Quaternion().setFromEuler(new THREE.Euler(...(shape.rotation || [0, 0, 0]))),
-      new THREE.Vector3(...(shape.scale || [1, 1, 1]))
+      new THREE.Vector3(pos[0], pos[1], pos[2]),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rot[0], rot[1], rot[2])),
+      new THREE.Vector3(scl[0], scl[1], scl[2])
     );
     return m;
-  }, [shape?.position, shape?.rotation, shape?.scale]);
+  }, [shape, geometryVersion]);
 
   // Helper: transform local position to world space
   const toWorld = (x, y, z) => {
@@ -151,7 +154,7 @@ export const MeshEditOverlay = () => {
     <group>
       {/* Wireframe overlay — subtle edges in all edit modes */}
       {wireframePositions && (
-        <lineSegments>
+        <lineSegments key={`wire-${geometryVersion}`}>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
@@ -166,7 +169,7 @@ export const MeshEditOverlay = () => {
 
       {/* All vertices (small dots) in vertex mode */}
       {allVertexPositions && (
-        <points>
+        <points key={`allv-${geometryVersion}`}>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
@@ -188,7 +191,7 @@ export const MeshEditOverlay = () => {
 
       {/* Selected vertices (larger, bright cyan) */}
       {vertexPositions && (
-        <points>
+        <points key={`vsel-${geometryVersion}`}>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
@@ -210,7 +213,7 @@ export const MeshEditOverlay = () => {
 
       {/* Selected edges (thick amber lines) */}
       {edgePositions && (
-        <lineSegments>
+        <lineSegments key={`esel-${geometryVersion}`}>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
@@ -225,7 +228,7 @@ export const MeshEditOverlay = () => {
 
       {/* Selected faces (semi-transparent purple overlay) */}
       {facePositions && (
-        <mesh>
+        <mesh key={`fsel-${geometryVersion}`}>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"

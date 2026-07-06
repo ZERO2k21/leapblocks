@@ -45,10 +45,6 @@ export const ShapeRenderer = ({ shape }) => {
     shape.polygonRadius, shape.polygonSides, shape.polygonHeight,
   ]);
 
-  // During edit mode, MeshEditor handles geometry directly via refs.
-  // Skip applying geometry prop to avoid R3F overwriting MeshEditor's changes.
-  const effectiveGeometry = isEdited ? undefined : geometry;
-
   const material = useMemo(() => {
     const isHole = shape.isHole;
     const color = isHole ? '#888888' : shape.color;
@@ -64,17 +60,14 @@ export const ShapeRenderer = ({ shape }) => {
     });
   }, [shape.color, shape.isHole, shape.metalness, shape.roughness, shape.opacity, shape.type, shape._csgGeometry]);
 
-  // Don't dispose geometry during edit mode — MeshEditor manages it via refs
-  useEffect(() => () => {
-    if (!isEdited) { geometry.dispose(); material.dispose(); }
-  }, [geometry, material, isEdited]);
+  useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
 
   if (!shape.visible) return null;
 
   return (
     <mesh
       ref={setShapeIdRef(shape.id)}
-      geometry={effectiveGeometry}
+      geometry={geometry}
       material={material}
       position={shape.position}
       rotation={shape.rotation}
@@ -85,7 +78,7 @@ export const ShapeRenderer = ({ shape }) => {
       receiveShadow
     >
       {isSelected && !isEdited && (
-        <mesh scale={[1.02, 1.02, 1.02]} geometry={effectiveGeometry}>
+        <mesh scale={[1.02, 1.02, 1.02]} geometry={geometry}>
           <meshBasicMaterial color="#6366f1" wireframe transparent opacity={0.5} />
         </mesh>
       )}

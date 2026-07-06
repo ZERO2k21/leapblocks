@@ -7,7 +7,38 @@ import { create } from 'zustand';
 import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { performCSG, isCSGValid } from '../engine/CSGEngine';
+import * as THREE from 'three';
 import { log, debug, warn, error } from '../utils/logger';
+
+// Serialize a BufferGeometry to a plain object (for history storage)
+function serializeGeometry(geo) {
+  if (!geo || !geo.attributes) return null;
+  const data = { attributes: {}, index: null };
+  for (const [name, attr] of Object.entries(geo.attributes)) {
+    data.attributes[name] = {
+      array: Array.from(attr.array),
+      itemSize: attr.itemSize,
+      normalized: attr.normalized,
+    };
+  }
+  if (geo.index) {
+    data.index = { array: Array.from(geo.index.array), itemSize: 1 };
+  }
+  return data;
+}
+
+// Deserialize a plain object back to a BufferGeometry
+function deserializeGeometry(data) {
+  if (!data || !data.attributes) return null;
+  const geo = new THREE.BufferGeometry();
+  for (const [name, attrData] of Object.entries(data.attributes)) {
+    geo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(attrData.array), attrData.itemSize, attrData.normalized));
+  }
+  if (data.index) {
+    geo.setIndex(new THREE.BufferAttribute(new Uint32Array(data.index.array), 1));
+  }
+  return geo;
+}
 
 const MAX_HISTORY = 50;
 
@@ -60,6 +91,7 @@ export const use3DStore = create((set, get) => ({
   editTool: null,       // null | 'extrude' | 'inset' | 'merge' | 'knife' | 'exclude' | 'include'
   geometryCache: {},    // { [shapeId]: THREE.BufferGeometry } — cached live geometry
   geometryVersion: 0,   // incremented on every cacheGeometry call to force re-renders
+  proportionalRadius: 2.0, // radius for proportional editing (Include mode)
 
   setEditMode: (mode) => {
     const state = get();
@@ -94,6 +126,10 @@ export const use3DStore = create((set, get) => ({
   setEditTool: (tool) => {
     log('setEditTool:', tool);
     set({ editTool: tool });
+  },
+
+  setProportionalRadius: (radius) => {
+    set({ proportionalRadius: Math.max(0.1, radius) });
   },
 
   selectVertex: (shapeId, index, multi = false) => {
@@ -169,6 +205,8 @@ export const use3DStore = create((set, get) => ({
       shapes: s.shapes.map(sh =>
         sh.id === shapeId ? { ...sh, _customGeometry: newGeometry } : sh
       ),
+      geometryCache: { ...s.geometryCache, [shapeId]: newGeometry },
+      geometryVersion: s.geometryVersion + 1,
       isProjectDirty: true,
     }));
     get().pushHistory();
@@ -528,9 +566,10 @@ export const use3DStore = create((set, get) => ({
     debug('pushHistory');
     const state = get();
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    // Strip non-serializable geometry objects before JSON serialization
+    // Serialize geometry for history storage (strip non-serializable CSG)
     newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
-      if (key === '_customGeometry' || key === '_csgGeometry') return undefined;
+      if (key === '_csgGeometry') return undefined;
+      if (key === '_customGeometry' && val && val.attributes) return serializeGeometry(val);
       return val;
     })));
 
@@ -549,8 +588,15 @@ export const use3DStore = create((set, get) => ({
     if (state.historyIndex > 0) {
       log('undo: index', state.historyIndex, '->', state.historyIndex - 1);
       const newIndex = state.historyIndex - 1;
+      const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
+      // Deserialize _customGeometry back to BufferGeometry
+      for (const sh of restoredShapes) {
+        if (sh._customGeometry && sh._customGeometry.attributes) {
+          sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+      }
       set({
-        shapes: JSON.parse(JSON.stringify(state.history[newIndex])),
+        shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
       });
@@ -562,8 +608,15 @@ export const use3DStore = create((set, get) => ({
     if (state.historyIndex < state.history.length - 1) {
       log('redo: index', state.historyIndex, '->', state.historyIndex + 1);
       const newIndex = state.historyIndex + 1;
+      const restoredShapes = JSON.parse(JSON.stringify(state.history[newIndex]));
+      // Deserialize _customGeometry back to BufferGeometry
+      for (const sh of restoredShapes) {
+        if (sh._customGeometry && sh._customGeometry.attributes) {
+          sh._customGeometry = deserializeGeometry(sh._customGeometry);
+        }
+      }
       set({
-        shapes: JSON.parse(JSON.stringify(state.history[newIndex])),
+        shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
       });

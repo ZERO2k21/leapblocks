@@ -23,7 +23,37 @@ const _delta = new THREE.Vector3();
 const _intersectPlane = new THREE.Plane();
 const _intersectPoint = new THREE.Vector3();
 
-// Get all vertex indices connected to the selected components
+// Get directly selected vertex indices (no spatial weld, no neighbors)
+function getDirectSelection(geo, selectedVertices, selectedEdges, selectedFaces) {
+  const selected = new Set();
+  for (const v of selectedVertices) selected.add(v.index);
+  for (const e of selectedEdges) { selected.add(e.a); selected.add(e.b); }
+  for (const f of selectedFaces) {
+    const idx = geo.index;
+    if (idx) {
+      selected.add(idx.getX(f.index * 3));
+      selected.add(idx.getX(f.index * 3 + 1));
+      selected.add(idx.getX(f.index * 3 + 2));
+    } else {
+      selected.add(f.index * 3);
+      selected.add(f.index * 3 + 1);
+      selected.add(f.index * 3 + 2);
+    }
+  }
+  return selected;
+}
+
+// Blender-style proportional editing falloff functions
+function falloffSmooth(r) {
+  if (r >= 1) return 0;
+  return 3 * r * r - 2 * r * r * r; // smoothstep
+}
+
+function applyProportionalFalloff(r) {
+  return falloffSmooth(r);
+}
+
+// Get all vertex indices connected to the selected components.
 // Uses spatial coincidence detection for indexed geometry (e.g. BoxGeometry
 // where adjacent faces have separate vertex copies at the same 3D position)
 function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFaces) {
@@ -146,6 +176,9 @@ export const MeshEditor = () => {
       return;
     }
 
+    // Clear any stuck gizmo-active flag from a previous object-mode drag
+    window.__gizmoActive = false;
+
     let found = null;
     scene?.traverse?.((child) => {
       if (found) return;
@@ -162,19 +195,32 @@ export const MeshEditor = () => {
     }
 
     meshRef.current = found;
-    const geo = found.geometry.clone();
+    // Use the mesh's actual geometry — modifications in place are reflected in the mesh
+    const geo = found.geometry;
     geoRef.current = geo;
     cacheGeometry(editShapeId, geo);
 
     debug('MeshEditor: cached geometry for ' + editShapeId + ' verts=' + geo.attributes.position.count);
   }, [editMode, editShapeId, scene, cacheGeometry]);
 
-  // Apply edit tool operation
+  // Apply edit tool operation — creates new geometry and syncs mesh + refs
   const applyEditTool = useCallback((tool) => {
     const geo = geoRef.current;
     const mesh = meshRef.current;
     if (!geo || !mesh || !editShapeIdRef.current) return;
     const shapeId = editShapeIdRef.current;
+
+    // Helper: after tool modifies newGeo, sync everything
+    const commitToolResult = (newGeo) => {
+      newGeo.computeVertexNormals();
+      // Update mesh geometry directly
+      mesh.geometry = newGeo;
+      // Update refs and cache
+      geoRef.current = newGeo;
+      cacheGeometry(shapeId, newGeo);
+      // Persist to store
+      applyGeometryEdit(shapeId, newGeo);
+    };
 
     if (tool === 'extrude' && selectedFaces.length > 0) {
       const newGeo = geo.clone();
@@ -230,8 +276,7 @@ export const MeshEditor = () => {
         }
       }
 
-      newGeo.computeVertexNormals();
-      applyGeometryEdit(shapeId, newGeo);
+      commitToolResult(newGeo);
     }
 
     if (tool === 'inset' && selectedFaces.length > 0) {
@@ -268,9 +313,7 @@ export const MeshEditor = () => {
         pos.array[c * 3] = _vC.x; pos.array[c * 3 + 1] = _vC.y; pos.array[c * 3 + 2] = _vC.z;
       }
 
-      pos.needsUpdate = true;
-      newGeo.computeVertexNormals();
-      applyGeometryEdit(shapeId, newGeo);
+      commitToolResult(newGeo);
     }
 
     if (tool === 'merge' && selectedVertices.length >= 2) {
@@ -294,9 +337,7 @@ export const MeshEditor = () => {
         pos.array[sel.index * 3 + 2] = _faceCenter.z;
       }
 
-      pos.needsUpdate = true;
-      newGeo.computeVertexNormals();
-      applyGeometryEdit(shapeId, newGeo);
+      commitToolResult(newGeo);
       clearComponentSelection();
     }
   }, [selectedFaces, selectedEdges, selectedVertices, applyGeometryEdit, clearComponentSelection]);
@@ -351,7 +392,17 @@ export const MeshEditor = () => {
           debug('MeshEditor: exclude/include but no selection — doing selection instead');
         } else {
           // Start drag-to-move: store original positions and set up plane
-          const { selected, neighbors } = getConnectedVertices(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+          let selected, neighbors;
+          if (currentTool === 'exclude') {
+            // Exclude: only directly selected vertices (no weld, no neighbors)
+            selected = getDirectSelection(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+            neighbors = new Set();
+          } else {
+            // Include: selected + spatial-welded + connected neighbors with proportional falloff
+            const result = getConnectedVertices(geo, sel.selectedVertices, sel.selectedEdges, sel.selectedFaces);
+            selected = result.selected;
+            neighbors = result.neighbors;
+          }
 
           // Store original positions for all vertices we might move
           const origPositions = new Float32Array(pos.array.length);
@@ -362,6 +413,16 @@ export const MeshEditor = () => {
           camera.getWorldDirection(camDir);
           _intersectPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hit.point);
 
+          // Compute selection center (used for proportional falloff in Include mode)
+          _faceCenter.set(0, 0, 0);
+          if (selected.size > 0) {
+            for (const vi of selected) {
+              _vC.fromBufferAttribute(pos, vi);
+              _faceCenter.add(_vC);
+            }
+            _faceCenter.divideScalar(selected.size);
+          }
+
           dragRef.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -371,6 +432,8 @@ export const MeshEditor = () => {
             neighborVerts: neighbors,
             origPositions,
             hitPoint: hit.point.clone(),
+            selectionCenter: _faceCenter.clone(),
+            proportionalRadius: use3DStore.getState().proportionalRadius || 2.0,
           };
 
           debug('MeshEditor: drag-to-move start mode=' + currentTool + ' selected=' + selected.size + ' neighbors=' + neighbors.size);
@@ -461,24 +524,31 @@ export const MeshEditor = () => {
             pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
           }
         } else if (drag.mode === 'include') {
-          // Move selected vertices + neighbors
+          // Move selected vertices at full strength + neighbors with proportional falloff
           for (const vi of drag.selectedVerts) {
             pos.array[vi * 3] = orig[vi * 3] + _delta.x;
             pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y;
             pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
           }
+          const radius = drag.proportionalRadius;
+          const center = drag.selectionCenter;
           for (const vi of drag.neighborVerts) {
-            pos.array[vi * 3] = orig[vi * 3] + _delta.x;
-            pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y;
-            pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z;
+            _vC.fromBufferAttribute(pos, vi);
+            const dist = _vC.distanceTo(center);
+            const r = dist / radius;
+            const strength = applyProportionalFalloff(r);
+            pos.array[vi * 3] = orig[vi * 3] + _delta.x * strength;
+            pos.array[vi * 3 + 1] = orig[vi * 3 + 1] + _delta.y * strength;
+            pos.array[vi * 3 + 2] = orig[vi * 3 + 2] + _delta.z * strength;
           }
         }
 
         pos.needsUpdate = true;
         geo.computeVertexNormals();
+        geo.computeBoundingSphere();
 
-        // Update the mesh directly — no dispose needed, old ref is garbage collected
-        mesh.geometry = geo;
+        // Geometry is modified in place — mesh.geometry already points to it.
+        // Just bump the version counter to force overlay recomputation.
         cacheGeometry(editShapeIdRef.current, geo);
       }
     };
@@ -490,20 +560,35 @@ export const MeshEditor = () => {
         const shapeId = editShapeIdRef.current;
         if (shapeId && geoRef.current) {
           geoRef.current.computeVertexNormals();
+          geoRef.current.computeBoundingSphere();
           applyGeometryEdit(shapeId, geoRef.current);
         }
       }
       dragRef.current = null;
     };
 
+    const onWheel = (e) => {
+      const drag = dragRef.current;
+      if (!drag || drag.mode !== 'include') return;
+      // Adjust proportional radius with mouse wheel (Blender-style)
+      const scale = e.deltaY > 0 ? 0.9 : 1.1;
+      drag.proportionalRadius = Math.max(0.1, drag.proportionalRadius * scale);
+      use3DStore.getState().setProportionalRadius(drag.proportionalRadius);
+      debug('MeshEditor: proportional radius -> ' + drag.proportionalRadius.toFixed(2));
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     canvas.addEventListener('pointerdown', onPointerDown, { capture: true });
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('wheel', onWheel, { passive: false });
 
     return () => {
       canvas.removeEventListener('pointerdown', onPointerDown, { capture: true });
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('wheel', onWheel);
     };
   }, [editMode, camera, gl, selectVertex, selectEdge, selectFace, clearComponentSelection, cacheGeometry, applyGeometryEdit]);
 
