@@ -1806,8 +1806,23 @@ export class AnimationVM {
             // Speech Recognition extension steps
             case 'speech_start_listening' as any: {
                 if (typeof window !== 'undefined' && (window as any).runtime?.speech) {
-                    (window as any).runtime.speech.startListening();
-                    vmLog.info('Started listening');
+                    const speech = (window as any).runtime.speech;
+                    await new Promise<void>((resolve) => {
+                        let resolved = false;
+                        const done = () => {
+                            if (resolved) return;
+                            resolved = true;
+                            try { speech.stopListening(); } catch { /* ignore */ }
+                            resolve();
+                        };
+                        speech.onResult(() => {
+                            done();
+                        });
+                        speech.startListening();
+                        // Timeout after 10s so we don't hang forever
+                        setTimeout(done, 10000);
+                    });
+                    vmLog.info('Listening complete — speech result received');
                 }
                 break;
             }

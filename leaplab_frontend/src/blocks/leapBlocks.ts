@@ -282,7 +282,13 @@ const leapBlocks = [
         args0: [{
             type: 'field_dropdown',
             name: 'COSTUME',
-            options: [] // Populated dynamically at runtime
+            options: () => {
+                if (typeof window !== 'undefined' && (window as any).getActiveSpriteCostumes) {
+                    const costumes = (window as any).getActiveSpriteCostumes();
+                    if (costumes && costumes.length > 0) return costumes.map((c: string) => [c, c]);
+                }
+                return [['costume1', 'costume1']];
+            },
         }],
         previousStatement: null,
         nextStatement: null,
