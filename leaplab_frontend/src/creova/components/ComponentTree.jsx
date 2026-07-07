@@ -152,10 +152,10 @@ export default function ComponentTree({ appState }) {
             <div key={component.id}>
                 <div
                     className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 transition-all ${isDragOver
-                            ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
-                            : isSelected
-                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
-                                : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                        ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
+                        : isSelected
+                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
+                            : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
                         }`}
                     style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
@@ -254,10 +254,10 @@ export default function ComponentTree({ appState }) {
                 {/* Screen Node */}
                 <div
                     className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] transition-all ${dragOverId === currentScreen.id
-                            ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
-                            : selectedComponent?.id === currentScreen.id
-                                ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
-                                : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
+                        ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
+                        : selectedComponent?.id === currentScreen.id
+                            ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
+                            : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
                         }`}
                     onClick={() => selectComponent(currentScreen.id)}
                     onDragOver={(e) => {
