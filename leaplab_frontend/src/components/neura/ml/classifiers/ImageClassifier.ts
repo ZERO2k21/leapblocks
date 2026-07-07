@@ -62,6 +62,24 @@ export class ImageClassifier {
         this.knn.clearClass(label)
     }
 
+    async rebuildClass(label: string, imageDataUrls: string[]): Promise<void> {
+        this.knn.clearClass(label)
+        for (const dataUrl of imageDataUrls) {
+            try {
+                const img = new Image()
+                img.src = dataUrl
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve()
+                    img.onerror = () => reject(new Error('Failed to load image'))
+                    setTimeout(() => resolve(), 2000)
+                })
+                await this.addSample(img, label)
+            } catch {
+                // Skip failed images
+            }
+        }
+    }
+
     dispose(): void {
         this.knn.dispose()
         this.mobilenetModel = null

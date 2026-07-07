@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 interface CaptureButtonProps {
     onClick: () => void
@@ -8,6 +8,10 @@ interface CaptureButtonProps {
     color?: string
     pulse?: boolean
     size?: 'sm' | 'md' | 'lg'
+    onMouseDown?: () => void
+    onMouseUp?: () => void
+    onTouchStart?: () => void
+    onTouchEnd?: () => void
 }
 
 export default function CaptureButton({
@@ -17,8 +21,13 @@ export default function CaptureButton({
     icon = 'camera',
     color = '#7C3AED',
     pulse = false,
-    size = 'lg'
+    size = 'lg',
+    onMouseDown,
+    onMouseUp,
+    onTouchStart,
+    onTouchEnd
 }: CaptureButtonProps) {
+    const [showRing, setShowRing] = useState(false)
     const sizeClasses = {
         sm: 'w-16 h-16',
         md: 'w-20 h-20',
@@ -67,13 +76,25 @@ export default function CaptureButton({
         }
     }
 
+    const handleClick = () => {
+        if (disabled) return
+        setShowRing(true)
+        setTimeout(() => setShowRing(false), 600)
+        onClick()
+    }
+
     return (
         <button
-            onClick={onClick}
+            onClick={handleClick}
+            onMouseDown={onMouseDown}
+            onMouseUp={onMouseUp}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
             disabled={disabled}
-            className={`relative group flex flex-col items-center gap-3 transition-all duration-400 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110 active:scale-95 cursor-pointer'
+            className={`relative group flex flex-col items-center gap-3 transition-all duration-300 ${
+                disabled ? 'opacity-40 cursor-not-allowed' : 'active:scale-90 cursor-pointer'
             }`}
+            style={{ transform: disabled ? undefined : undefined }}
         >
             <div className="relative">
                 {/* Pulse ring */}
@@ -81,21 +102,30 @@ export default function CaptureButton({
                     <>
                         <div
                             className="absolute inset-0 rounded-full animate-ping opacity-20"
-                            style={{ backgroundColor: color }}
+                            style={{ backgroundColor: color, animationDuration: '1.5s' }}
                         />
                         <div
                             className="absolute -inset-2 rounded-full animate-pulse opacity-10"
-                            style={{ backgroundColor: color }}
+                            style={{ backgroundColor: color, animationDuration: '2s' }}
                         />
                     </>
                 )}
 
+                {/* Capture ring expansion */}
+                {showRing && (
+                    <div
+                        className="absolute inset-0 rounded-full animate-[capture-ring_0.6s_cubic-bezier(0.34,1.56,0.64,1)]"
+                        style={{ border: `3px solid ${color}` }}
+                    />
+                )}
+
                 {/* Main button */}
                 <div
-                    className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 group-hover:shadow-2xl group-hover:brightness-110`}
+                    className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white transition-all duration-300 group-hover:shadow-2xl group-hover:brightness-110`}
                     style={{
                         backgroundColor: color,
-                        boxShadow: `0 10px 30px ${color}40, 0 0 0 4px ${color}15`
+                        boxShadow: `0 10px 30px ${color}40, 0 0 0 4px ${color}15`,
+                        animation: pulse && !disabled ? 'glow-pulse 2s ease-in-out infinite' : undefined
                     }}
                 >
                     {iconElement()}
@@ -109,8 +139,8 @@ export default function CaptureButton({
                 )}
             </div>
 
-            <span className={`text-sm font-bold transition-colors duration-200 ${
-                disabled ? 'text-gray-400' : 'text-gray-600 group-hover:text-gray-800'
+            <span className={`text-sm font-bold transition-all duration-200 ${
+                disabled ? 'text-gray-400' : 'text-gray-600 group-hover:text-gray-800 group-hover:scale-105'
             }`}>
                 {label}
             </span>
