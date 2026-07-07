@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { TextClassifier } from '../../ml/classifiers/TextClassifier'
+import { MAX_SAMPLES_PER_CLASS } from '../../../../types/neura.types'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
@@ -18,10 +19,17 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
     const handleAddText = useCallback(() => {
         if (!textInput.trim() || !mode.selectedClassId) return
+
+        // Check sample limit
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            return
+        }
+
         mode.addSample(mode.selectedClassId, { type: 'text', data: textInput.trim() })
         classifierRef.current.addSample(textInput.trim(), mode.getSelectedClass()?.name || '')
         setTextInput('')
-    }, [textInput, mode.selectedClassId])
+    }, [textInput, mode.selectedClassId, mode.getSelectedClass])
 
     const handleTrain = async () => {
         setIsTraining(true)
@@ -32,6 +40,8 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
+    const canAddSamples = selectedClass && !atSampleLimit
 
     const glassCardStyle = {
         background: 'rgba(255,255,255,0.6)',
@@ -84,11 +94,16 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
                         <div className="flex items-center justify-between mt-3">
                             <span className="text-[11px] text-gray-400">
-                                {textInput.length > 0 ? `${textInput.length} characters` : 'Press Enter to add'}
+                                {atSampleLimit
+                                    ? `Max ${MAX_SAMPLES_PER_CLASS} samples reached`
+                                    : textInput.length > 0
+                                        ? `${textInput.length} characters`
+                                        : 'Press Enter to add'
+                                }
                             </span>
                             <button
                                 onClick={handleAddText}
-                                disabled={!textInput.trim() || !mode.selectedClassId}
+                                disabled={!textInput.trim() || !canAddSamples}
                                 className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 Add Sample
@@ -106,8 +121,12 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
                                     <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
                                 </div>
-                                <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
-                                    {selectedClass.samples.length} texts
+                                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
+                                    atSampleLimit
+                                        ? 'text-amber-600 bg-amber-50'
+                                        : 'text-gray-400 bg-gray-50'
+                                }`}>
+                                    {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} texts
                                 </span>
                             </div>
                             <SampleGrid

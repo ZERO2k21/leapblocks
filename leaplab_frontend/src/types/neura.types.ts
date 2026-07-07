@@ -58,3 +58,6 @@ export interface TestResult {
     confidence: number;
     timestamp: number;
 }
+
+/** Maximum samples allowed per class to prevent localStorage quota exceeded */
+export const MAX_SAMPLES_PER_CLASS = 20;

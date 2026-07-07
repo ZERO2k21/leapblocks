@@ -126,7 +126,7 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                             />
                         </div>
                         <p className="text-[10px] text-gray-400 mt-0.5">
-                            {sampleCount >= 10 ? 'Great samples!' : sampleCount >= 5 ? 'Good, add more for better results' : 'Aim for 10-15 samples'}
+                            {sampleCount >= 10 ? 'Great samples!' : sampleCount >= 5 ? 'Good, add more for better results' : `Add more samples (${sampleCount}/20)`}
                         </p>
                     </div>
                 </div>

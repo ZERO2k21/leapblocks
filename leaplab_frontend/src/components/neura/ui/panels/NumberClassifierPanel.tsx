@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { NumberClassifier } from '../../ml/classifiers/NumberClassifier'
+import { MAX_SAMPLES_PER_CLASS } from '../../../../types/neura.types'
 import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
@@ -56,6 +57,13 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
     const handleCapture = () => {
         if (!canvasRef.current || !mode.selectedClassId) return
+
+        // Check sample limit
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            return
+        }
+
         const canvas = canvasRef.current
         const imageData = canvas.toDataURL('image/png')
         mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
@@ -74,6 +82,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
+    const canAddSamples = selectedClass && !atSampleLimit
 
     const canvasContainerStyle = {
         background: 'rgba(15,15,35,0.85)',
@@ -121,11 +131,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
                     <CaptureButton
                         onClick={handleCapture}
-                        disabled={!mode.selectedClassId}
-                        label="Save Drawing"
+                        disabled={!canAddSamples}
+                        label={atSampleLimit ? 'Max Samples Reached' : 'Save Drawing'}
                         icon="check"
                         color={selectedClass?.color || '#7C3AED'}
-                        pulse={!!mode.selectedClassId}
+                        pulse={!!canAddSamples}
                     />
 
                     {selectedClass && selectedClass.samples.length > 0 && (
@@ -136,8 +146,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
                                         <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
                                     </div>
-                                    <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
-                                        {selectedClass.samples.length} drawings
+                                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
+                                        atSampleLimit
+                                            ? 'text-amber-600 bg-amber-50'
+                                            : 'text-gray-400 bg-gray-50'
+                                    }`}>
+                                        {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} drawings
                                     </span>
                                 </div>
                                 <SampleGrid
