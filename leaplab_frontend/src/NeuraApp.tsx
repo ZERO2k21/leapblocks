@@ -21,7 +21,7 @@ interface NeuraAppProps {
     onBack?: () => void
 }
 
-type ViewState = { screen: 'home' } | { screen: 'workspace'; type: ProjectType }
+type ViewState = { screen: 'home' } | { screen: 'workspace'; type: ProjectType; template?: { name: string; classes: string[] } }
 
 function NeuraLoader() {
     return (
@@ -56,8 +56,8 @@ function getClassifierPanel(type: ProjectType) {
 export default function NeuraApp({ onBack }: NeuraAppProps) {
     const [view, setView] = useState<ViewState>({ screen: 'home' })
 
-    const handleSelectType = (type: ProjectType) => {
-        setView({ screen: 'workspace', type })
+    const handleSelectType = (type: ProjectType, template?: { name: string; classes: string[] }) => {
+        setView({ screen: 'workspace', type, template })
     }
 
     const handleBackToHome = () => {
@@ -86,6 +86,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                     <ProjectWorkspace
                         type={view.type}
                         onBack={handleBack}
+                        template={view.template}
                     >
                         {({ mode }) => {
                             const Panel = getClassifierPanel(view.type)

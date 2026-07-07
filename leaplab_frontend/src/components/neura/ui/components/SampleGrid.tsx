@@ -1,13 +1,40 @@
-import React from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import type { Sample } from '../../../../types/neura.types'
 
 interface SampleGridProps {
     samples: Sample[]
     type: 'image' | 'audio' | 'text' | 'keypoints'
     onRemove: (sampleId: string) => void
+    onUndo?: (sample: Sample) => void
 }
 
-export default function SampleGrid({ samples, type, onRemove }: SampleGridProps) {
+export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGridProps) {
+    const [deletedSample, setDeletedSample] = useState<{ sample: Sample; classId?: string } | null>(null)
+    const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+    const handleRemove = useCallback((sample: Sample) => {
+        setDeletedSample({ sample })
+        onRemove(sample.id)
+
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+        undoTimerRef.current = setTimeout(() => {
+            setDeletedSample(null)
+        }, 3000)
+    }, [onRemove])
+
+    const handleUndo = useCallback(() => {
+        if (deletedSample && onUndo) {
+            onUndo(deletedSample.sample)
+            setDeletedSample(null)
+            if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+        }
+    }, [deletedSample, onUndo])
+
+    useEffect(() => {
+        return () => {
+            if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+        }
+    }, [])
     if (samples.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-10 text-gray-300 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
@@ -27,7 +54,8 @@ export default function SampleGrid({ samples, type, onRemove }: SampleGridProps)
             {samples.map((sample, index) => (
                 <div
                     key={sample.id}
-                    className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-105 border border-gray-100"
+                    className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg border border-gray-100 animate-[stagger-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)_both] transition-all duration-200"
+                    style={{ animationDelay: `${index * 30}ms` }}
                 >
                     {type === 'image' && (
                         <img
@@ -67,7 +95,7 @@ export default function SampleGrid({ samples, type, onRemove }: SampleGridProps)
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
-                            onRemove(sample.id)
+                            handleRemove(sample)
                         }}
                         className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110"
                         style={{ boxShadow: '0 2px 8px rgba(239,68,68,0.4)' }}
@@ -83,6 +111,28 @@ export default function SampleGrid({ samples, type, onRemove }: SampleGridProps)
                     </div>
                 </div>
             ))}
+
+            {/* Undo toast */}
+            {deletedSample && onUndo && (
+                <div className="col-span-full fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[toast-enter_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    <div className="flex items-center gap-3 px-5 py-3 bg-gray-800/95 backdrop-blur-md text-white rounded-2xl shadow-2xl" style={{
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)'
+                    }}>
+                        <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                        </div>
+                        <span className="text-sm font-medium">Sample deleted</span>
+                        <button
+                            onClick={handleUndo}
+                            className="px-3 py-1.5 bg-violet-500 hover:bg-violet-400 rounded-lg text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95"
+                        >
+                            Undo
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

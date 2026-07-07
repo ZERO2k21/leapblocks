@@ -38,16 +38,30 @@ export function useNeuraProject(
     type: ProjectType,
     projectName?: string
 ): UseNeuraProjectReturn {
-    const [project, setProject] = useState<NeuraProject>(() => ({
-        id: generateId(),
-        type,
-        name: projectName || getDefaultName(type),
-        classes: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        modelTrained: false,
-        accuracy: undefined
-    }))
+    const [project, setProject] = useState<NeuraProject>(() => {
+        // Try to load from localStorage
+        const saved = localStorage.getItem(`neura-project-${type}`)
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved) as NeuraProject
+                if (parsed.type === type && parsed.classes) {
+                    return parsed
+                }
+            } catch {
+                // Invalid data, create new
+            }
+        }
+        return {
+            id: generateId(),
+            type,
+            name: projectName || getDefaultName(type),
+            classes: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            modelTrained: false,
+            accuracy: undefined
+        }
+    })
 
     const [mode, setMode] = useState<ClassifierMode>('collect')
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
@@ -143,6 +157,13 @@ export function useNeuraProject(
             setSelectedClassId(project.classes[0].id)
         }
     }, [project, selectedClassId])
+
+    // Save to localStorage on every project change
+    useEffect(() => {
+        if (project) {
+            localStorage.setItem(`neura-project-${type}`, JSON.stringify(project))
+        }
+    }, [project, type])
 
     return {
         project,
