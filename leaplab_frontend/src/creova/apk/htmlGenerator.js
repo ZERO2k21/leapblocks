@@ -1560,6 +1560,28 @@ function generateAppJs(appState) {
         break;
       case 'Elements': case 'elements':
         el._elements = Array.isArray(value) ? value : (typeof value === 'string' ? value.split(',') : []);
+        // Re-render ListView DOM children
+        if (el.classList.contains('comp-listview')) {
+          el.innerHTML = '';
+          var compId = el.id.replace('comp-', '');
+          el._elements.forEach(function(item, i) {
+            var row = document.createElement('div');
+            row.className = 'comp-listview-item';
+            row.textContent = String(item).trim();
+            row.addEventListener('click', function() {
+              el._selection = row.textContent;
+              el._selectionIndex = i + 1;
+              // Highlight selected item
+              var allItems = el.querySelectorAll('.comp-listview-item');
+              allItems.forEach(function(r) { r.style.backgroundColor = ''; });
+              row.style.backgroundColor = '#e0e7ff';
+              if (typeof window[compId + '_AfterPicking'] === 'function') {
+                window[compId + '_AfterPicking'](i, row.textContent);
+              }
+            });
+            el.appendChild(row);
+          });
+        }
         break;
       case 'Selection': case 'selection':
         el._selection = value;
@@ -2092,12 +2114,20 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `    ${varName}.className = 'comp-listview';\n`;
       const items = props.elements || props.Elements || [];
       const itemsList = typeof items === 'string' ? items.split(',') : items;
+      js += `    ${varName}._elements = ${JSON.stringify(itemsList)};\n`;
+      js += `    ${varName}._selection = '';\n`;
+      js += `    ${varName}._selectionIndex = 0;\n`;
       itemsList.forEach((item, idx) => {
         js += `    (function() {\n`;
         js += `      var item = document.createElement('div');\n`;
         js += `      item.className = 'comp-listview-item';\n`;
         js += `      item.textContent = ${JSON.stringify(String(item).trim())};\n`;
         js += `      item.addEventListener('click', function() {\n`;
+        js += `        ${varName}._selection = item.textContent;\n`;
+        js += `        ${varName}._selectionIndex = ${idx + 1};\n`;
+        js += `        var allItems = ${varName}.querySelectorAll('.comp-listview-item');\n`;
+        js += `        allItems.forEach(function(r) { r.style.backgroundColor = ''; });\n`;
+        js += `        item.style.backgroundColor = '#e0e7ff';\n`;
         js += `        if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking'](${idx}, item.textContent);\n`;
         js += `      });\n`;
         js += `      ${varName}.appendChild(item);\n`;
@@ -2518,6 +2548,7 @@ function generateComponentProxy(comp) {
     'Width', 'Height', 'FontSize', 'Hint', 'Picture', 'Checked',
     'AlignHorizontal', 'AlignVertical', 'FontBold', 'FontItalic', 'FontTypeface',
     'PaintColor', 'Radius', 'X', 'Y', 'Source', 'Points',
+    'Selection', 'SelectionIndex', 'Elements', 'ElementsFromString',
     ...propNames
   ]);
 
