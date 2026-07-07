@@ -552,7 +552,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
-            case 'Spinner':
+            case 'Spinner': {
+                const spinnerItems = comp.props.Elements || comp.props.ElementsFromString || '';
+                const spinnerList = typeof spinnerItems === 'string'
+                    ? (spinnerItems.trim() ? spinnerItems.split(',') : [])
+                    : Array.isArray(spinnerItems) ? spinnerItems : [];
                 return (
                     <select
                         key={comp.id}
@@ -564,9 +568,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
                     >
-                        <option>{comp.props.Text || comp.props.Selection || 'Select...'}</option>
+                        {spinnerList.length > 0 ? (
+                            spinnerList.map((item, idx) => (
+                                <option key={idx}>{item.trim()}</option>
+                            ))
+                        ) : (
+                            <option>Select...</option>
+                        )}
                     </select>
                 );
+            }
 
             case 'ListView': {
                 const items = comp.props.Elements || ['Item 1', 'Item 2', 'Item 3'];
