@@ -25,6 +25,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     })
     const [burstMode, setBurstMode] = useState(false)
     const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const startCamera = useCallback(async () => {
         try {
@@ -55,29 +56,37 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect') {
+        if (mode.mode === 'collect' || mode.mode === 'test') {
             startCamera()
         } else {
             stopCamera()
         }
     }, [mode.mode])
 
+    // Test mode prediction interval
     useEffect(() => {
-        if (mode.mode === 'test' && stream) {
-            const interval = setInterval(async () => {
-                if (videoRef.current && classifierRef.current.canClassify) {
-                    setIsProcessing(true)
-                    try {
-                        const result = await classifierRef.current.predict(videoRef.current)
-                        if (result) setPrediction(result)
-                    } catch (e) {
-                        // Prediction failed, ignore
-                    }
-                    setIsProcessing(false)
+        if (mode.mode !== 'test') return
+
+        const runPrediction = async () => {
+            if (videoRef.current && classifierRef.current.canClassify) {
+                setIsProcessing(true)
+                try {
+                    const result = await classifierRef.current.predict(videoRef.current)
+                    if (result) setPrediction(result)
+                } catch {
+                    // Prediction failed, ignore
                 }
-            }, 500)
-            return () => clearInterval(interval)
+                setIsProcessing(false)
+            }
         }
+
+        // Run prediction immediately when stream is ready
+        if (stream && videoRef.current) {
+            runPrediction()
+        }
+
+        const interval = setInterval(runPrediction, 500)
+        return () => clearInterval(interval)
     }, [mode.mode, stream])
 
     const handleCapture = async () => {
@@ -97,6 +106,38 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         await classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '')
 
         setTimeout(() => setIsCapturing(false), 300)
+    }
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0 || !mode.selectedClassId) return
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            if (!file.type.startsWith('image/')) continue
+
+            const dataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result as string)
+                reader.readAsDataURL(file)
+            })
+
+            mode.addSample(mode.selectedClassId, { type: 'image', data: dataUrl })
+
+            // Add to classifier
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                setTimeout(() => resolve(), 2000)
+            })
+            await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
     }
 
     const startBurstCapture = useCallback(() => {
@@ -203,7 +244,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold text-gray-700">Collect Photos</p>
-                                    <p className="text-xs text-gray-400">Take 10-15 photos of each object from different angles</p>
+                                    <p className="text-xs text-gray-400">Take 10-15 photos or upload images of each object</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
@@ -299,7 +340,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
 
-                    {/* Burst mode toggle */}
+                    {/* Burst mode toggle & Upload button */}
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => {
@@ -319,6 +360,33 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             </svg>
                             {burstMode ? 'Burst ON' : 'Burst OFF'}
                         </button>
+
+                        {/* Upload button */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleUpload}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={!mode.selectedClassId}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                                mode.selectedClassId
+                                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-md'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Upload
+                        </button>
+
                         {burstMode && (
                             <span className="text-[10px] text-gray-400">Hold capture button</span>
                         )}
