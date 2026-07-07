@@ -27,11 +27,11 @@ export default function TestPanel({ prediction, isProcessing, children, projectN
 
             {/* Processing indicator */}
             {isProcessing && (
-                <div className="flex items-center justify-center gap-3 py-6">
-                    <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="flex items-center justify-center gap-3 py-6 animate-[fade-in_0.2s_ease-out]">
+                    <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '0.6s' }} />
+                        <div className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '100ms', animationDuration: '0.6s' }} />
+                        <div className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '200ms', animationDuration: '0.6s' }} />
                     </div>
                     <span className="text-sm font-semibold text-gray-500">Analyzing...</span>
                 </div>
@@ -39,11 +39,17 @@ export default function TestPanel({ prediction, isProcessing, children, projectN
 
             {/* Prediction result */}
             {prediction && !isProcessing && (
-                <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 animate-fade-in">
+                <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 animate-[scale-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]" style={{
+                    boxShadow: maxConfidence >= 0.7
+                        ? '0 8px 32px rgba(16,185,129,0.12), 0 0 0 1px rgba(16,185,129,0.08)'
+                        : '0 8px 32px rgba(0,0,0,0.06)'
+                }}>
                     {/* Main prediction */}
                     <div className="text-center mb-6">
                         <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Prediction</p>
-                        <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-violet-50 to-blue-50 rounded-2xl">
+                        <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-violet-50 to-blue-50 rounded-2xl" style={{
+                            animation: 'glow-pulse 2s ease-in-out infinite'
+                        }}>
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                                 {prediction.label.charAt(0).toUpperCase()}
                             </div>
@@ -59,15 +65,18 @@ export default function TestPanel({ prediction, isProcessing, children, projectN
 
                     {/* Confidence bars */}
                     <div className="space-y-3">
-                        {sortedConfidences.map(([label, confidence]) => {
+                        {sortedConfidences.map(([label, confidence], index) => {
                             const colors = getConfidenceColor(confidence)
                             return (
-                                <div key={label} className="flex items-center gap-3">
+                                <div key={label} className="flex items-center gap-3 animate-[stagger-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)_both]" style={{ animationDelay: `${index * 50}ms` }}>
                                     <span className="text-xs font-semibold text-gray-600 w-24 truncate capitalize">{label}</span>
                                     <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full bg-gradient-to-r ${colors.bar} transition-all duration-700 ease-out`}
-                                            style={{ width: `${confidence * 100}%` }}
+                                            style={{
+                                                width: `${confidence * 100}%`,
+                                                boxShadow: confidence >= 0.7 ? '0 0 8px rgba(16,185,129,0.3)' : undefined
+                                            }}
                                         />
                                     </div>
                                     <span className={`text-xs font-bold ${colors.text} w-12 text-right`}>

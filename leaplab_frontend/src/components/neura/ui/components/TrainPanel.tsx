@@ -12,6 +12,7 @@ interface TrainPanelProps {
 export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [showAccuracy, setShowAccuracy] = useState(false)
+    const [displayAccuracy, setDisplayAccuracy] = useState(0)
     const progressRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
@@ -34,8 +35,21 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
             // Training complete — force progress to 100% immediately
             if (progressRef.current) clearInterval(progressRef.current)
             setProgress(100)
-            // Show accuracy after a brief delay
-            const timer = setTimeout(() => setShowAccuracy(true), 400)
+            // Show accuracy after a brief delay with counter animation
+            const timer = setTimeout(() => {
+                setShowAccuracy(true)
+                // Animate the accuracy number counting up
+                const target = Math.round(accuracy * 100)
+                const duration = 800
+                const startTime = Date.now()
+                const counterInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime
+                    const pct = Math.min(1, elapsed / duration)
+                    const eased = 1 - Math.pow(1 - pct, 3) // ease-out cubic
+                    setDisplayAccuracy(Math.round(target * eased))
+                    if (pct >= 1) clearInterval(counterInterval)
+                }, 16)
+            }, 400)
             return () => clearTimeout(timer)
         }
 
@@ -84,8 +98,8 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
 
             {/* Warning */}
             {!canTrain && (
-                <div className="flex items-center gap-3 px-5 py-3 bg-amber-50 rounded-2xl border border-amber-200 w-full">
-                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 px-5 py-3 bg-amber-50 rounded-2xl border border-amber-200 w-full animate-[slideUp_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 animate-pulse" style={{ animationDuration: '2s' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                             <line x1="12" y1="9" x2="12" y2="13" />
@@ -135,18 +149,22 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
 
             {/* Accuracy result */}
             {accuracy !== null && !isTraining && (
-                <div className="w-full animate-fade-in">
+                <div className="w-full animate-[scale-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
                     <div className="text-center mb-4">
                         <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Training Accuracy</span>
                         <div className="flex items-baseline justify-center gap-1 mt-1">
-                            <span className="text-5xl font-bold text-emerald-500">{Math.round(accuracy * 100)}</span>
+                            <span className="text-5xl font-black text-emerald-500">{displayAccuracy}</span>
                             <span className="text-2xl font-bold text-emerald-400">%</span>
                         </div>
                     </div>
                     <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out relative"
-                            style={{ width: `${accuracy * 100}%` }}
+                            className="h-full rounded-full transition-all duration-1000 ease-out relative"
+                            style={{
+                                width: `${accuracy * 100}%`,
+                                background: 'linear-gradient(90deg, #34D399, #10B981, #059669)',
+                                boxShadow: '0 0 12px rgba(16,185,129,0.4)'
+                            }}
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite]" />
                         </div>

@@ -3,7 +3,7 @@ import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topb
 import type { ProjectType } from '../../../types/neura.types'
 
 interface NeuraHomeProps {
-    onSelect: (type: ProjectType) => void
+    onSelect: (type: ProjectType, template?: { name: string; classes: string[] }) => void
     onBack: () => void
 }
 
@@ -72,6 +72,41 @@ const CLASSIFIER_TYPES: {
     }
 ]
 
+const PROJECT_TEMPLATES = [
+    {
+        name: 'Fruit Classifier',
+        description: 'Identify different fruits using AI',
+        emoji: '🍎',
+        classes: ['Apple', 'Banana', 'Orange', 'Grape'],
+        color: '#EF4444',
+        gradient: 'from-red-400 to-orange-500'
+    },
+    {
+        name: 'Animal Classifier',
+        description: 'Recognize different animals',
+        emoji: '🐶',
+        classes: ['Dog', 'Cat', 'Bird', 'Fish'],
+        color: '#F59E0B',
+        gradient: 'from-amber-400 to-yellow-500'
+    },
+    {
+        name: 'Waste Segregation',
+        description: 'Sort waste into correct categories',
+        emoji: '♻️',
+        classes: ['Wet Waste', 'Dry Waste', 'Recyclable', 'Hazardous'],
+        color: '#10B981',
+        gradient: 'from-emerald-400 to-green-500'
+    },
+    {
+        name: 'Healthy vs Junk Food',
+        description: 'Classify food as healthy or junk',
+        emoji: '🥗',
+        classes: ['Healthy Food', 'Junk Food'],
+        color: '#8B5CF6',
+        gradient: 'from-violet-400 to-purple-500'
+    }
+]
+
 export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const handleSave = React.useCallback(() => {}, [])
@@ -87,6 +122,12 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
             <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300/15 rounded-full blur-3xl" style={{ animation: 'pulse 4s ease-in-out infinite 1s' }} />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-200/10 rounded-full blur-3xl" />
 
+            {/* Subtle dot grid pattern */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+                backgroundImage: 'radial-gradient(circle, #7C3AED 1px, transparent 1px)',
+                backgroundSize: '24px 24px'
+            }} />
+
             <IgniteTopbar
                 title="NEURA"
                 onBack={onBack}
@@ -97,13 +138,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
 
             {/* Content */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12 relative z-10">
-                <div className="text-center mb-12">
+                <div className="text-center mb-12 animate-[stagger-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)_both]">
                     <div className="relative inline-block mb-6">
-                        <div className="text-7xl relative z-10">🧠</div>
+                        <div className="text-7xl relative z-10" style={{ animation: 'float 3s ease-in-out infinite' }}>🧠</div>
                         <div className="absolute inset-0 text-7xl blur-xl opacity-40" style={{
                             background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
                             WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
+                            WebkitTextFillColor: 'transparent',
+                            animation: 'float 3s ease-in-out infinite 0.2s'
                         }}>🧠</div>
                     </div>
                     <h2 className="text-4xl font-black mb-3" style={{
@@ -123,14 +165,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                         <button
                             key={item.type}
                             onClick={() => onSelect(item.type)}
-                            className="group relative flex flex-col items-center p-8 rounded-3xl transition-all duration-500 hover:scale-[1.04] hover:-translate-y-3 active:scale-95 cursor-pointer"
+                            className="group relative flex flex-col items-center p-8 rounded-3xl transition-all duration-500 hover:scale-[1.04] hover:-translate-y-3 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
                             style={{
                                 background: 'rgba(255,255,255,0.55)',
                                 backdropFilter: 'blur(20px)',
                                 WebkitBackdropFilter: 'blur(20px)',
                                 border: '1px solid rgba(255,255,255,0.6)',
                                 boxShadow: `0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                                animationDelay: `${index * 80}ms`
+                                animationDelay: `${100 + index * 80}ms`
                             }}
                         >
                             {/* Gradient top border */}
@@ -167,6 +209,51 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             />
                         </button>
                     ))}
+                </div>
+
+                {/* Quick Start Projects */}
+                <div className="mt-16 max-w-5xl w-full animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                    <div className="text-center mb-8">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Quick Start Projects</h3>
+                        <p className="text-sm text-gray-500">Pick a pre-made template to start building in seconds</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {PROJECT_TEMPLATES.map((template, index) => (
+                            <button
+                                key={template.name}
+                                onClick={() => onSelect('image-classifier', { name: template.name, classes: template.classes })}
+                                className="group relative flex flex-col items-center p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:-translate-y-2 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
+                                style={{
+                                    background: 'rgba(255,255,255,0.6)',
+                                    backdropFilter: 'blur(12px)',
+                                    border: '1px solid rgba(255,255,255,0.5)',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    animationDelay: `${600 + index * 80}ms`
+                                }}
+                            >
+                                <div
+                                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.gradient} flex items-center justify-center text-2xl mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                                    style={{ boxShadow: `0 6px 16px ${template.color}30` }}
+                                >
+                                    {template.emoji}
+                                </div>
+                                <h4 className="text-sm font-bold text-gray-800 mb-1">{template.name}</h4>
+                                <p className="text-xs text-gray-400 text-center mb-3">{template.description}</p>
+                                <div className="flex flex-wrap justify-center gap-1">
+                                    {template.classes.slice(0, 3).map(cls => (
+                                        <span key={cls} className="text-[10px] px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 font-medium">
+                                            {cls}
+                                        </span>
+                                    ))}
+                                    {template.classes.length > 3 && (
+                                        <span className="text-[10px] px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 font-medium">
+                                            +{template.classes.length - 3}
+                                        </span>
+                                    )}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

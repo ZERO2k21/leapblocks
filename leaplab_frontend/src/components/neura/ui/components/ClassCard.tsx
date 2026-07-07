@@ -7,9 +7,10 @@ interface ClassCardProps {
     onSelect: () => void
     onRemove: () => void
     onRename: (name: string) => void
+    index?: number
 }
 
-export default function ClassCard({ classData, isSelected, onSelect, onRemove, onRename }: ClassCardProps) {
+export default function ClassCard({ classData, isSelected, onSelect, onRemove, onRename, index = 0 }: ClassCardProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(classData.name)
 
@@ -25,9 +26,9 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
     return (
         <div
             onClick={onSelect}
-            className={`relative group cursor-pointer rounded-2xl p-4 transition-all duration-300 ${
+            className={`relative group cursor-pointer rounded-2xl p-4 transition-all duration-300 animate-[stagger-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both] ${
                 isSelected
-                    ? 'bg-white shadow-xl shadow-violet-100/50 ring-2 ring-violet-400 scale-[1.02]'
+                    ? 'bg-white scale-[1.02]'
                     : 'bg-white/60 hover:bg-white hover:shadow-lg hover:scale-[1.01]'
             }`}
             style={{
@@ -40,8 +41,9 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                     ? `2px solid ${classData.color}60`
                     : '1px solid rgba(255,255,255,0.5)',
                 boxShadow: isSelected
-                    ? `0 8px 32px ${classData.color}20, inset 0 1px 0 rgba(255,255,255,0.8)`
-                    : '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)'
+                    ? `0 8px 32px ${classData.color}25, 0 0 0 1px ${classData.color}15, inset 0 1px 0 rgba(255,255,255,0.8)`
+                    : '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)',
+                animationDelay: `${index * 60}ms`
             }}
         >
             {/* Color indicator bar */}
@@ -102,6 +104,30 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                                 {sampleCount} {sampleCount === 1 ? 'sample' : 'samples'}
                             </span>
                         </div>
+                    </div>
+                    {/* Sample quality progress bar */}
+                    <div className="mt-1.5">
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full rounded-full transition-all duration-700 ease-out"
+                                style={{
+                                    width: `${Math.min(100, (sampleCount / 15) * 100)}%`,
+                                    background: sampleCount >= 10
+                                        ? 'linear-gradient(90deg, #10B981, #34D399)'
+                                        : sampleCount >= 5
+                                            ? 'linear-gradient(90deg, #F59E0B, #FBBF24)'
+                                            : 'linear-gradient(90deg, #EF4444, #F87171)',
+                                    boxShadow: sampleCount >= 10
+                                        ? '0 0 8px rgba(16,185,129,0.4)'
+                                        : sampleCount >= 5
+                                            ? '0 0 8px rgba(245,158,11,0.4)'
+                                            : '0 0 8px rgba(239,68,68,0.4)'
+                                }}
+                            />
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                            {sampleCount >= 10 ? 'Great samples!' : sampleCount >= 5 ? 'Good, add more for better results' : 'Aim for 10-15 samples'}
+                        </p>
                     </div>
                 </div>
 

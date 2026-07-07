@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topbar'
 import type { ProjectType } from '../../../types/neura.types'
 import type { ClassifierMode } from '../hooks/useNeuraProject'
@@ -8,6 +8,7 @@ import ClassCard from './components/ClassCard'
 interface ProjectWorkspaceProps {
     type: ProjectType
     onBack: () => void
+    template?: { name: string; classes: string[] }
     children: (props: {
         mode: ReturnType<typeof useNeuraProject>
     }) => React.ReactNode
@@ -21,8 +22,8 @@ function ModeSwitcher({ mode, onModeChange, canTrain }: { mode: ClassifierMode; 
     ]
 
     return (
-        <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-1">
-            {modes.map((m) => {
+        <div className="relative flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+            {modes.map((m, idx) => {
                 const isActive = mode === m.id
                 const isDisabled = m.id === 'train' && !canTrain
                 return (
@@ -30,18 +31,23 @@ function ModeSwitcher({ mode, onModeChange, canTrain }: { mode: ClassifierMode; 
                         key={m.id}
                         onClick={() => !isDisabled && onModeChange(m.id)}
                         disabled={isDisabled}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                        className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 z-10 ${
                             isActive
-                                ? 'bg-white text-[#0b1b42] shadow-md'
+                                ? 'text-[#0b1b42]'
                                 : isDisabled
                                     ? 'text-white/30 cursor-not-allowed'
-                                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                                    : 'text-white/70 hover:text-white'
                         }`}
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {isActive && (
+                            <div className="absolute inset-0 bg-white rounded-lg shadow-md transition-all duration-300" style={{
+                                animation: 'scale-in 0.2s cubic-bezier(0.34,1.56,0.64,1)'
+                            }} />
+                        )}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                             <path d={m.icon} />
                         </svg>
-                        {m.label}
+                        <span className="relative z-10">{m.label}</span>
                     </button>
                 )
             })}
@@ -49,10 +55,19 @@ function ModeSwitcher({ mode, onModeChange, canTrain }: { mode: ClassifierMode; 
     )
 }
 
-export default function ProjectWorkspace({ type, onBack, children }: ProjectWorkspaceProps) {
-    const mode = useNeuraProject(type)
+export default function ProjectWorkspace({ type, onBack, template, children }: ProjectWorkspaceProps) {
+    const mode = useNeuraProject(type, template?.name)
     const [newClassName, setNewClassName] = useState('')
     const [showAddClass, setShowAddClass] = useState(false)
+
+    // Auto-create classes from template on first mount
+    useEffect(() => {
+        if (template && template.classes.length > 0 && mode.project && mode.project.classes.length === 0) {
+            template.classes.forEach(className => {
+                mode.addClass(className)
+            })
+        }
+    }, [])
 
     const canTrain = mode.project
         ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2
@@ -91,7 +106,7 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar */}
-                <div className="w-80 bg-white border-r border-gray-100 flex flex-col shadow-sm">
+                <div className="w-80 bg-white border-r border-gray-100 flex flex-col shadow-sm animate-[slide-down_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
                     {/* Sidebar header */}
                     <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white">
                         <div className="flex items-center justify-between mb-1">
@@ -142,7 +157,7 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
                             </div>
                         )}
 
-                        {mode.project?.classes.map((classData) => (
+                        {mode.project?.classes.map((classData, index) => (
                             <ClassCard
                                 key={classData.id}
                                 classData={classData}
@@ -150,6 +165,7 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
                                 onSelect={() => mode.setSelectedClassId(classData.id)}
                                 onRemove={() => mode.removeClass(classData.id)}
                                 onRename={(name) => mode.renameClass(classData.id, name)}
+                                index={index}
                             />
                         ))}
 
@@ -187,7 +203,9 @@ export default function ProjectWorkspace({ type, onBack, children }: ProjectWork
 
                 {/* Main content area */}
                 <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-gray-50">
-                    {children({ mode })}
+                    <div key={mode.mode} className="animate-[fade-in_0.3s_ease-out]">
+                        {children({ mode })}
+                    </div>
                 </div>
             </div>
         </div>
