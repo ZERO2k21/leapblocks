@@ -30,6 +30,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     })
     const [burstMode, setBurstMode] = useState(false)
     const [testImage, setTestImage] = useState<string | null>(null)
+    const [modelLoading, setModelLoading] = useState(false)
+    const streamRef = useRef<MediaStream | null>(null)
 
     // Camera controls
     const startCamera = useCallback(async () => {
@@ -42,6 +44,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 videoRef.current.srcObject = mediaStream
                 await videoRef.current.play()
             }
+            streamRef.current = mediaStream
             setStream(mediaStream)
             setCameraOn(true)
         } catch (err) {
@@ -52,11 +55,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [])
 
     const stopCamera = useCallback(() => {
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop())
+        const s = streamRef.current
+        if (s) {
+            s.getTracks().forEach(t => t.stop())
+            streamRef.current = null
             setStream(null)
         }
-    }, [stream])
+    }, [])
 
     const toggleCamera = useCallback(() => {
         if (cameraOn) {
@@ -80,6 +85,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     // Rebuild KNN from stored samples when entering train or test mode
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            let cancelled = false
+            setModelLoading(true)
             const rebuild = async () => {
                 classifierRef.current.clear()
                 for (const cls of mode.project!.classes) {
@@ -90,14 +97,16 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         )
                     }
                 }
+                if (!cancelled) setModelLoading(false)
             }
-            rebuild()
+            rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
+            return () => { cancelled = true }
         }
     }, [mode.mode])
 
     // Test mode prediction - works with both camera and uploaded image
     useEffect(() => {
-        if (mode.mode !== 'test') return
+        if (mode.mode !== 'test' || modelLoading) return
 
         const runPrediction = async () => {
             if (cameraOn && stream && videoRef.current) {
@@ -105,18 +114,19 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 try {
                     const result = await classifierRef.current.predict(videoRef.current)
                     if (result) setPrediction(result)
-                } catch {
-                    // ignore
+                } catch (err) {
+                    console.error('Prediction error:', err)
                 }
                 setIsProcessing(false)
             }
         }
 
         if (cameraOn && stream) {
+            runPrediction()
             const interval = setInterval(runPrediction, 500)
             return () => clearInterval(interval)
         }
-    }, [mode.mode, stream, cameraOn])
+    }, [mode.mode, stream, cameraOn, modelLoading])
 
     // Capture from camera
     const handleCapture = async () => {
@@ -575,6 +585,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             {/* ==================== TEST MODE ==================== */}
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6">
+                    {/* Model loading indicator */}
+                    {modelLoading && (
+                        <div className="flex items-center gap-3 px-6 py-4 bg-violet-50 rounded-2xl border border-violet-200 animate-[fade-in_0.3s_ease-out]">
+                            <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm font-semibold text-violet-700">Loading model and preparing samples...</span>
+                        </div>
+                    )}
+
                     {/* Camera feed for testing */}
                     {cameraOn && (
                         <div className="relative rounded-3xl overflow-hidden bg-gray-900 w-full max-w-[520px] transition-all duration-300" style={{ aspectRatio: '4/3' }}>
