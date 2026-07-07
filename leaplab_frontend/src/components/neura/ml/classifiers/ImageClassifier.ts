@@ -71,7 +71,7 @@ export class ImageClassifier {
                 await new Promise<void>((resolve, reject) => {
                     img.onload = () => resolve()
                     img.onerror = () => reject(new Error('Failed to load image'))
-                    setTimeout(() => resolve(), 2000)
+                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
                 })
                 await this.addSample(img, label)
             } catch {
