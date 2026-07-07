@@ -277,6 +277,14 @@ class ApkInjector {
       );
     }
 
+    // Set keyboard mode to adjustPan to avoid squeezing the UI layout/size when keyboard is opened
+    if (!manifest.includes('android:windowSoftInputMode=')) {
+      manifest = manifest.replace(
+        /(<activity\b[^>]*android:name="\.MainActivity"[^>]*)(>)/,
+        `$1 android:windowSoftInputMode="adjustPan"$2`
+      );
+    }
+
     await fs.writeFile(manifestPath, manifest);
     onProgress?.({ stage: 'manifest_done', progress: 60, message: 'Manifest patched' });
   }

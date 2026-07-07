@@ -238,6 +238,7 @@ class ApkBuilder {
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden"${screenOrientation ? `
             android:screenOrientation="${screenOrientation}"` : ''}
+            android:windowSoftInputMode="adjustPan"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

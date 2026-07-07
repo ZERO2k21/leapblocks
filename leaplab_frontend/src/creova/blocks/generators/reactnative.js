@@ -239,7 +239,7 @@ javascriptGenerator['math_add'] = function(block) {
     let code = [];
     for (let i = 0; i < block.itemCount_; i++) {
         let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || '0';
-        code.push(val);
+        code.push(`Number(${val})`);
     }
     return [code.join(' + '), javascriptGenerator.ORDER_ADDITION];
 };
