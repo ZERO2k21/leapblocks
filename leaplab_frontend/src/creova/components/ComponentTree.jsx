@@ -69,14 +69,17 @@ export default function ComponentTree({ appState }) {
             }
         }
 
+        let parentId = null;
         if (visible && targetId && targetId !== currentScreen.id) {
             const isTargetLayout = ARRANGEMENT_TYPES.has(targetId) || targetId.includes('Layout') || targetId.includes('Arrangement');
             if (isTargetLayout) {
+                parentId = targetId;
                 selectComponent(targetId);
             } else {
-                const parentId = findParentIdOfNode(currentScreen.components, targetId);
-                if (parentId) {
-                    selectComponent(parentId);
+                const computedParentId = findParentIdOfNode(currentScreen.components, targetId);
+                if (computedParentId) {
+                    parentId = computedParentId;
+                    selectComponent(computedParentId);
                 } else {
                     selectComponent(currentScreen.id);
                 }
@@ -86,7 +89,7 @@ export default function ComponentTree({ appState }) {
         }
 
         if (appState.addComponent) {
-            appState.addComponent(type, { visible });
+            appState.addComponent(type, { visible, parentId });
         }
     };
 

@@ -146,6 +146,7 @@ export function useAppState() {
   const addComponent = (type, options = {}) => {
     const meta = COMPONENT_META.get(type) || {};
     const visible = options.visible ?? meta.visible ?? true;
+    const parentIdOverride = options.parentId || null;
     let addedId = null;
 
     setScreens(prevScreens => prevScreens.map(screen => {
@@ -163,8 +164,9 @@ export function useAppState() {
         props: defaultProps
       };
 
-      const selectedParent = screen.components && isInTree(screen.components, selectedId)
-        ? findNodeById(screen.components, selectedId)
+      const targetParentId = parentIdOverride || selectedId;
+      const selectedParent = screen.components && isInTree(screen.components, targetParentId)
+        ? findNodeById(screen.components, targetParentId)
         : null;
       const canNestInArrangement = visible && selectedParent && ARRANGEMENT_TYPES.has(selectedParent.type) && selectedParent.type !== 'Map' && selectedParent.type !== 'FeatureCollection';
       const canNestInCanvas = selectedParent?.type === 'Canvas' && CANVAS_CHILD_TYPES.has(type);

@@ -863,7 +863,14 @@ class ApkInjector {
    * Inject app icon into the decoded APK mipmap folders at all densities
    */
   async injectAppIcon(decodedDir, renderedIconsDir, onProgress) {
-    if (!renderedIconsDir) return;
+    let sourceDir = renderedIconsDir;
+    if (!sourceDir) {
+      const bundledDir = path.join(__dirname, 'default_icons');
+      if (await fs.pathExists(bundledDir)) {
+        sourceDir = bundledDir;
+      }
+    }
+    if (!sourceDir) return;
     onProgress?.({ stage: 'icon_inject', progress: 72, message: `Injecting pre-rendered custom app icons...` });
 
     try {
@@ -877,7 +884,7 @@ class ApkInjector {
       const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 
       for (const d of densities) {
-        const sourcePng = path.join(renderedIconsDir, `${d}.png`);
+        const sourcePng = path.join(sourceDir, `${d}.png`);
         if (await fs.pathExists(sourcePng)) {
           const mipmapDir = path.join(decodedDir, 'res', `mipmap-${d}`);
           await fs.ensureDir(mipmapDir);
@@ -1130,7 +1137,7 @@ ${permissionCode}
 
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
     await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
-    const hasCustomIcon = !!renderedIconsDir;
+    const hasCustomIcon = !!renderedIconsDir || fs.pathExistsSync(path.join(__dirname, 'default_icons'));
     await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation, hasCustomIcon }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
     await this.injectAppIcon(decodedDir, renderedIconsDir, onProgress);
