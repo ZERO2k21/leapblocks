@@ -397,12 +397,12 @@ Blockly.Blocks['component_method'] = {
             } else {
                 // 2. Fallback: Heuristic based on method name patterns
                 const methodName = this.methodName;
-                if (methodName.match(/^(GetValue|GetTags|GetText|IsConnected|IsDevicePaired|HasAccuracy|ReceiveSigned|ReceiveUnsigned|ReceiveText|BytesAvailable|Calculate|Check|Accept|Format|Split|Replace|Connect)/i)) {
+                if (methodName.match(/^(GetValue|GetTags|IsConnected|IsDevicePaired|HasAccuracy|ReceiveSigned|ReceiveUnsigned|ReceiveText|BytesAvailable|Calculate|Check|Accept|Format|Split|Replace|Connect)/i)) {
                     hasReturn = true;
                     if (methodName.match(/^(Is|Has|Check|Accept|Connect)/i)) returnType = 'Boolean';
                     else if (methodName.match(/^(ReceiveSignedBytes|ReceiveUnsignedBytes)/i)) returnType = 'List';
                     else if (methodName.match(/^(ReceiveSigned|ReceiveUnsigned|BytesAvailable|Length)/i)) returnType = 'Number';
-                    else if (methodName.match(/^(ReceiveText|Format|Replace|Trim|GetText)/i)) returnType = 'String';
+                    else if (methodName.match(/^(ReceiveText|Format|Replace|Trim)/i)) returnType = 'String';
                     else if (methodName.match(/^(GetTags|Split)/i)) returnType = 'List';
                 }
 

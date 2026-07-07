@@ -3604,8 +3604,22 @@ export const GENERATED_COMPONENT_METADATA = {
     ]
   },
   "ImagePicker": {
-    "events": [],
-    "methods": [],
+    "events": [
+      {
+        "name": "AfterPicking",
+        "parameters": []
+      },
+      {
+        "name": "BeforePicking",
+        "parameters": []
+      }
+    ],
+    "methods": [
+      {
+        "name": "Open",
+        "parameters": []
+      }
+    ],
     "properties": [
       {
         "name": "Selection",

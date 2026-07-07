@@ -786,6 +786,10 @@ function generateAppJs(appState) {
     get SpeechRate() { return this._speechRate; },
     set SpeechRate(v) { this._speechRate = Number(v); },
     Speak: function(message) {
+      if (window.AndroidSpeech && typeof window.AndroidSpeech.speak === 'function') {
+        window.AndroidSpeech.speak(message);
+        return;
+      }
       if (!window.speechSynthesis) return;
       var self = this;
       if (typeof window[self.id + '_BeforeSpeaking'] === 'function') {
@@ -807,6 +811,273 @@ function generateAppJs(appState) {
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  function CameraShim(id, props) {
+    this.id = id;
+    this._useFront = !!props.UseFront;
+  }
+  CameraShim.prototype = {
+    get UseFront() { return this._useFront; },
+    set UseFront(v) { this._useFront = !!v; },
+    TakePicture: function() {
+      var self = this;
+      // Try getUserMedia first (works in modern WebViews)
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        var constraints = { video: { facingMode: self._useFront ? 'user' : 'environment' } };
+        navigator.mediaDevices.getUserMedia(constraints)
+          .then(function(stream) {
+            var video = document.createElement('video');
+            video.setAttribute('autoplay', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('muted', '');
+            video.muted = true;
+            video.srcObject = stream;
+            
+            // Explicitly call play to start stream in WebView
+            video.play().catch(function(e) {
+              console.log('[CameraShim] play failed, trying again on loadedmetadata:', e);
+            });
+            video.addEventListener('loadedmetadata', function() {
+              video.play().catch(function(e) {
+                console.error('[CameraShim] play failed on loadedmetadata:', e);
+              });
+            });
+
+            // Build a simple capture overlay
+            var overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+            video.style.cssText = 'max-width:100%;max-height:80%;object-fit:contain;';
+            overlay.appendChild(video);
+
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display:flex;gap:16px;margin-top:12px;';
+
+            var captureBtn = document.createElement('button');
+            captureBtn.textContent = 'Capture';
+            captureBtn.style.cssText = 'padding:12px 32px;font-size:16px;border:none;border-radius:24px;background:#4CAF50;color:#fff;cursor:pointer;';
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:12px 32px;font-size:16px;border:none;border-radius:24px;background:#EF4444;color:#fff;cursor:pointer;';
+
+            btnRow.appendChild(captureBtn);
+            btnRow.appendChild(cancelBtn);
+            overlay.appendChild(btnRow);
+            document.body.appendChild(overlay);
+
+            function cleanup() {
+              stream.getTracks().forEach(function(t) { t.stop(); });
+              if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }
+
+            captureBtn.addEventListener('click', function() {
+              var canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth || 640;
+              canvas.height = video.videoHeight || 480;
+              var ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+              cleanup();
+              if (typeof window[self.id + '_AfterPicture'] === 'function') {
+                window[self.id + '_AfterPicture'](dataUrl);
+              }
+            });
+
+            cancelBtn.addEventListener('click', cleanup);
+          })
+          .catch(function() {
+            // Fallback to file input if getUserMedia fails
+            self._takePictureViaFileInput();
+          });
+      } else {
+        // Fallback for WebViews without getUserMedia
+        self._takePictureViaFileInput();
+      }
+    },
+    _takePictureViaFileInput: function() {
+      var self = this;
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.setAttribute('capture', self._useFront ? 'user' : 'environment');
+      input.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          if (typeof window[self.id + '_AfterPicture'] === 'function') {
+            window[self.id + '_AfterPicture'](ev.target.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      input.click();
+    }
+  };
+
+  function ImagePickerShim(id, props) {
+    this.id = id;
+    this._selection = '';
+  }
+  ImagePickerShim.prototype = {
+    get Selection() { return this._selection; },
+    set Selection(v) { this._selection = v; },
+    Open: function() {
+      var self = this;
+      if (typeof window[self.id + '_BeforePicking'] === 'function') {
+        window[self.id + '_BeforePicking']();
+      }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          self._selection = ev.target.result;
+          if (typeof window[self.id + '_AfterPicking'] === 'function') {
+            window[self.id + '_AfterPicking']();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      input.click();
+    }
+  };
+
+  function SpeechRecognizerShim(id, props) {
+    this.id = id;
+    this._language = props.Language || '';
+    this._result = '';
+    this._recognition = null;
+  }
+  SpeechRecognizerShim.prototype = {
+    get Language() { return this._language; },
+    set Language(v) { this._language = String(v || ''); },
+    get Result() { return this._result; },
+    set Result(v) { this._result = v; },
+    GetText: function() {
+      var self = this;
+      if (window.AndroidSpeech && typeof window.AndroidSpeech.startSpeechRecognition === 'function') {
+        window.AndroidSpeech.startSpeechRecognition(self.id);
+        return;
+      }
+      var SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognitionAPI) {
+        // Fallback: use prompt() if Speech API not available
+        var text = prompt('Speech recognition is not available in this browser. Enter text:');
+        if (text !== null && text !== '') {
+          self._result = text;
+          if (typeof window[self.id + '_AfterGettingText'] === 'function') {
+            window[self.id + '_AfterGettingText'](text, false);
+          }
+        }
+        return;
+      }
+      if (typeof window[self.id + '_BeforeGettingText'] === 'function') {
+        window[self.id + '_BeforeGettingText']();
+      }
+      var recognition = new SpeechRecognitionAPI();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      if (self._language) recognition.lang = self._language;
+      self._recognition = recognition;
+
+      recognition.onresult = function(event) {
+        var transcript = '';
+        var isFinal = false;
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+          if (event.results[i].isFinal) isFinal = true;
+        }
+        if (isFinal) {
+          self._result = transcript;
+          if (typeof window[self.id + '_AfterGettingText'] === 'function') {
+            window[self.id + '_AfterGettingText'](transcript, false);
+          }
+        } else {
+          if (typeof window[self.id + '_AfterGettingText'] === 'function') {
+            window[self.id + '_AfterGettingText'](transcript, true);
+          }
+        }
+      };
+
+      recognition.onerror = function(event) {
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          // Fallback to prompt
+          var text = prompt('Microphone access denied. Enter text:');
+          if (text !== null && text !== '') {
+            self._result = text;
+            if (typeof window[self.id + '_AfterGettingText'] === 'function') {
+              window[self.id + '_AfterGettingText'](text, false);
+            }
+          }
+        }
+      };
+
+      recognition.start();
+    },
+    Stop: function() {
+      if (this._recognition) {
+        try { this._recognition.stop(); } catch(e) {}
+        this._recognition = null;
+      }
+    }
+  };
+
+  function VideoPlayerShim(id, props) {
+    this.id = id;
+    var src = props.Source || props.source || '';
+    this._source = (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file:') && !src.startsWith('blob:')) ? 'media/' + src : src;
+    this._volume = props.Volume !== undefined ? Number(props.Volume) : 50;
+    this._fullScreen = !!props.FullScreen;
+  }
+  VideoPlayerShim.prototype = {
+    _getEl: function() { return document.getElementById('comp-' + this.id); },
+    get Source() { return this._source; },
+    set Source(v) {
+      this._source = v;
+      var el = this._getEl();
+      if (el) el.src = (v && !v.startsWith('http') && !v.startsWith('data:') && !v.startsWith('file:') && !v.startsWith('blob:')) ? 'media/' + v : v;
+    },
+    get Volume() { return this._volume; },
+    set Volume(v) {
+      this._volume = Number(v);
+      var el = this._getEl();
+      if (el) el.volume = Math.max(0, Math.min(1, this._volume / 100));
+    },
+    get FullScreen() { return this._fullScreen; },
+    set FullScreen(v) {
+      this._fullScreen = !!v;
+      var el = this._getEl();
+      if (el && v && el.requestFullscreen) el.requestFullscreen();
+    },
+    Start: function() {
+      var el = this._getEl();
+      if (el) {
+        el.volume = Math.max(0, Math.min(1, this._volume / 100));
+        el.play().catch(function(e) {});
+      }
+    },
+    Pause: function() {
+      var el = this._getEl();
+      if (el) el.pause();
+    },
+    Stop: function() {
+      var el = this._getEl();
+      if (el) { el.pause(); el.currentTime = 0; }
+    },
+    SeekTo: function(ms) {
+      var el = this._getEl();
+      if (el) el.currentTime = Number(ms) / 1000;
+    },
+    GetDuration: function() {
+      var el = this._getEl();
+      return el ? Math.round((el.duration || 0) * 1000) : 0;
+    }
+  };
+
 
   function LocationSensorShim(id, props) {
     this.id = id;
@@ -1461,6 +1732,14 @@ function generateAppJs(appState) {
   BluetoothServerShim.prototype.StopAccepting = function() {
     this._accepting = false;
   };
+
+  // ── Media Utilities ────────────────────────────────────────────────────
+  function mediaUrl(value) {
+    if (!value) return '';
+    var s = String(value);
+    if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:') || s.startsWith('file://') || s.startsWith('blob:')) return s;
+    return 'media/' + s;
+  }
 
   // ── Color Utilities ────────────────────────────────────────────────────
   function parseColor(color) {
@@ -2330,6 +2609,14 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `    ${varName}.controls = true;\n`;
       js += `    ${varName}.style.width = '100%';\n`;
       js += `    ${varName}.src = '${mediaUrl(props.source || props.Source || '')}';\n`;
+      js += `    ${varName}.setAttribute('playsinline', '');\n`;
+      js += `    ${varName}.addEventListener('ended', function() {\n`;
+      js += `      if (typeof window['${id}_Completed'] === 'function') window['${id}_Completed']();\n`;
+      js += `    });\n`;
+      js += `    ${varName}.addEventListener('error', function(e) {\n`;
+      js += `      var msg = (${varName}.error && ${varName}.error.message) ? ${varName}.error.message : 'Video playback error';\n`;
+      js += `      if (typeof window['${id}_VideoPlayerError'] === 'function') window['${id}_VideoPlayerError'](msg);\n`;
+      js += `    });\n`;
       break;
 
     case 'Ball': {
@@ -2537,6 +2824,18 @@ function generateComponentProxy(comp) {
   }
   if (type === 'BluetoothServer') {
     return `  var ${id} = new BluetoothServerShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'Camera') {
+    return `  var ${id} = new CameraShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'ImagePicker') {
+    return `  var ${id} = new ImagePickerShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'SpeechRecognizer') {
+    return `  var ${id} = new SpeechRecognizerShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'VideoPlayer') {
+    return `  var ${id} = new VideoPlayerShim('${id}', ${JSON.stringify(props)});\n`;
   }
 
   const propNames = Object.keys(props);
