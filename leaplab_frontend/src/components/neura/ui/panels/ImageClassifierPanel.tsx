@@ -77,13 +77,30 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         return () => { stopCamera() }
     }, [mode.mode])
 
+    // Rebuild KNN from stored samples when entering train or test mode
+    useEffect(() => {
+        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            const rebuild = async () => {
+                classifierRef.current.clear()
+                for (const cls of mode.project!.classes) {
+                    if (cls.samples.length > 0) {
+                        await classifierRef.current.rebuildClass(
+                            cls.name,
+                            cls.samples.map(s => s.data)
+                        )
+                    }
+                }
+            }
+            rebuild()
+        }
+    }, [mode.mode])
+
     // Test mode prediction - works with both camera and uploaded image
     useEffect(() => {
         if (mode.mode !== 'test') return
 
         const runPrediction = async () => {
-            // Predict from camera if available
-            if (cameraOn && stream && videoRef.current && classifierRef.current.canClassify) {
+            if (cameraOn && stream && videoRef.current) {
                 setIsProcessing(true)
                 try {
                     const result = await classifierRef.current.predict(videoRef.current)
@@ -96,7 +113,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
 
         if (cameraOn && stream) {
-            runPrediction()
             const interval = setInterval(runPrediction, 500)
             return () => clearInterval(interval)
         }
@@ -142,7 +158,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             img.src = dataUrl
             await new Promise<void>((resolve) => {
                 img.onload = () => resolve()
-                setTimeout(() => resolve(), 2000)
+                setTimeout(() => resolve(), 3000)
             })
             await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
         }
@@ -166,22 +182,20 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         stopCamera()
 
         // Run prediction on uploaded image
-        if (classifierRef.current.canClassify) {
-            setIsProcessing(true)
-            try {
-                const img = new Image()
-                img.src = dataUrl
-                await new Promise<void>((resolve) => {
-                    img.onload = () => resolve()
-                    setTimeout(() => resolve(), 2000)
-                })
-                const result = await classifierRef.current.predict(img)
-                if (result) setPrediction(result)
-            } catch {
-                // ignore
-            }
-            setIsProcessing(false)
+        setIsProcessing(true)
+        try {
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                setTimeout(() => resolve(), 3000)
+            })
+            const result = await classifierRef.current.predict(img)
+            if (result) setPrediction(result)
+        } catch {
+            // ignore
         }
+        setIsProcessing(false)
 
         if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
@@ -205,7 +219,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         return () => stopBurstCapture()
     }, [])
 
-    // Training
+    // Training - rebuild KNN from stored samples, then compute leave-one-out accuracy
     const handleTrain = async () => {
         setIsTraining(true)
         const project = mode.project
@@ -214,29 +228,47 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             setIsTraining(false)
             return
         }
-        let correct = 0
-        let total = 0
-        for (const cls of project.classes) {
-            for (const sample of cls.samples) {
-                try {
-                    const img = new Image()
-                    img.src = sample.data
-                    await new Promise<void>((resolve, reject) => {
-                        img.onload = () => resolve()
-                        img.onerror = () => reject(new Error('Failed to load image'))
-                        setTimeout(() => resolve(), 2000)
-                    })
-                    const result = await classifierRef.current.predict(img, 3)
-                    if (result && result.label === cls.name) correct++
-                    total++
-                } catch {
-                    total++
+        try {
+            // Step 1: Rebuild the KNN classifier from stored base64 samples
+            classifierRef.current.clear()
+            for (const cls of project.classes) {
+                if (cls.samples.length > 0) {
+                    await classifierRef.current.rebuildClass(
+                        cls.name,
+                        cls.samples.map(s => s.data)
+                    )
                 }
             }
+
+            // Step 2: Small delay so the UI shows the training animation
+            await new Promise(r => setTimeout(r, 1200))
+
+            // Step 3: Compute leave-one-out accuracy against the rebuilt KNN
+            let correct = 0
+            let total = 0
+            for (const cls of project.classes) {
+                for (const sample of cls.samples) {
+                    try {
+                        const img = new Image()
+                        img.src = sample.data
+                        await new Promise<void>((resolve, reject) => {
+                            img.onload = () => resolve()
+                            img.onerror = () => reject(new Error('Failed to load image'))
+                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                        })
+                        const result = await classifierRef.current.predict(img, 3)
+                        if (result && result.label === cls.name) correct++
+                        total++
+                    } catch {
+                        total++
+                    }
+                }
+            }
+            const accuracy = total > 0 ? correct / total : 0
+            mode.setAccuracy(accuracy)
+        } catch {
+            mode.setAccuracy(0)
         }
-        const accuracy = total > 0 ? correct / total : 0
-        await new Promise(r => setTimeout(r, 800))
-        mode.setAccuracy(accuracy)
         setIsTraining(false)
     }
 

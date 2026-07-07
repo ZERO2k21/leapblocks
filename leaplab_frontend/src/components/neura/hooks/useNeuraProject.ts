@@ -39,12 +39,20 @@ export function useNeuraProject(
     projectName?: string
 ): UseNeuraProjectReturn {
     const [project, setProject] = useState<NeuraProject>(() => {
-        // Try to load from localStorage
+        const defaultName = getDefaultName(type)
+        const requestedName = projectName || defaultName
         const saved = localStorage.getItem(`neura-project-${type}`)
         if (saved) {
             try {
                 const parsed = JSON.parse(saved) as NeuraProject
-                if (parsed.type === type && parsed.classes) {
+                const savedMatchesRequest =
+                    parsed.type === type &&
+                    parsed.classes &&
+                    (parsed.name === requestedName || parsed.name === defaultName)
+                if (savedMatchesRequest) {
+                    if (projectName && parsed.name === defaultName) {
+                        return { ...parsed, name: projectName, updatedAt: Date.now() }
+                    }
                     return parsed
                 }
             } catch {
@@ -54,7 +62,7 @@ export function useNeuraProject(
         return {
             id: generateId(),
             type,
-            name: projectName || getDefaultName(type),
+            name: requestedName,
             classes: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
