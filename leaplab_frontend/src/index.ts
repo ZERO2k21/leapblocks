@@ -472,8 +472,8 @@ async function renderIconToPng(iconPath: string, size: number): Promise<Buffer> 
     justify-content: center;
   }
   img {
-    width: 80%;
-    height: 80%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
   }
 </style>
@@ -513,11 +513,21 @@ async function renderIconToPng(iconPath: string, size: number): Promise<Buffer> 
 }
 
 ipcMain.handle('build-apk', async (event, appState) => {
-  // Resolve custom app icon path with Creoleap logo fallback
-  const defaultIconPath = 'D:\\Creoleap Company\\leapblocks\\public\\assets\\Copy of Copy of CREOLEAP LOGO LEAP INTO THE AI FUTURE Final.svg';
-  let iconPath = appState.iconPath || appState.icon || null;
-  if (!iconPath && fs.existsSync(defaultIconPath)) {
-    iconPath = defaultIconPath;
+  // Always use the c-logo-svg.svg from the creova module folder as the default app icon (uneditable)
+  const defaultIconPath = path.join(app.getAppPath(), 'src', 'creova', 'apk', 'c-logo-svg.svg');
+  let iconPath = defaultIconPath;
+  if (!fs.existsSync(iconPath)) {
+    // Absolute fallbacks
+    const fallbackPath1 = 'D:\\Creoleap Company\\leapblocks\\leaplab_frontend\\src\\creova\\apk\\c-logo-svg.svg';
+    const fallbackPath2 = path.join(app.getAppPath(), 'public', 'assets', 'c-logo-svg.svg');
+    const fallbackPath3 = 'D:\\Creoleap Company\\leapblocks\\leaplab_frontend\\public\\assets\\c-logo-svg.svg';
+    if (fs.existsSync(fallbackPath1)) {
+      iconPath = fallbackPath1;
+    } else if (fs.existsSync(fallbackPath2)) {
+      iconPath = fallbackPath2;
+    } else if (fs.existsSync(fallbackPath3)) {
+      iconPath = fallbackPath3;
+    }
   }
 
   let renderedIconsDir: string | null = null;
