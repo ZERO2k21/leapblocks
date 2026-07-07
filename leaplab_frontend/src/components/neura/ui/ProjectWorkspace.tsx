@@ -83,6 +83,24 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const totalSamples = mode.getTotalSamples()
 
+    const handleDownload = () => {
+        if (!mode.project) return
+        const data = {
+            ...mode.project,
+            exportedAt: new Date().toISOString(),
+            version: '1.0'
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${mode.project.name.replace(/\s+/g, '_').toLowerCase()}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }
+
     return (
         <div className="h-screen flex flex-col" style={{
             background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)'
@@ -92,6 +110,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 onBack={onBack}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onSave={() => {}}
+                onDownload={handleDownload}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onTitleChange={() => {}}
                 brandName="NEURA"
