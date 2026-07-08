@@ -25,6 +25,11 @@ export function useTerminal() {
     ]);
     const terminalEndRef = useRef(null);
 
+    const [shellInput, setShellInput] = useState("");
+    const [shellHistory, setShellHistory] = useState([]);
+    const [shellHistoryIndex, setShellHistoryIndex] = useState(-1);
+    const shellInputRef = useRef(null);
+
     const addLog = useCallback((text, type = "log") => {
         setTerminalOutput(prev => [...prev, { text, type, ts: new Date() }]);
     }, []);
@@ -32,6 +37,46 @@ export function useTerminal() {
     const clearTerminal = useCallback(() => {
         setTerminalOutput([]);
     }, []);
+
+    const handleShellSubmit = useCallback(() => {
+        const cmd = shellInput.trim();
+        if (!cmd) return;
+
+        addLog(`$ ${cmd}`, "repl-in");
+        setShellHistory(prev => [...prev, cmd]);
+        setShellHistoryIndex(-1);
+
+        if (window.electronAPI?.isElectron) {
+            window.electronAPI.pythonShellRun(cmd);
+        }
+
+        setShellInput("");
+    }, [shellInput, addLog]);
+
+    const handleShellKey = useCallback((e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleShellSubmit();
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setShellHistory(prev => {
+                if (prev.length === 0) return prev;
+                const newIndex = shellHistoryIndex < prev.length - 1 ? shellHistoryIndex + 1 : shellHistoryIndex;
+                setShellHistoryIndex(newIndex);
+                setShellInput(prev[prev.length - 1 - newIndex] || "");
+                return prev;
+            });
+        } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setShellHistory(prev => {
+                if (prev.length === 0) return prev;
+                const newIndex = shellHistoryIndex > 0 ? shellHistoryIndex - 1 : -1;
+                setShellHistoryIndex(newIndex);
+                setShellInput(newIndex >= 0 ? prev[prev.length - 1 - newIndex] : "");
+                return prev;
+            });
+        }
+    }, [handleShellSubmit, shellHistoryIndex]);
 
     useEffect(() => {
         terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,6 +88,13 @@ export function useTerminal() {
         terminalEndRef,
         addLog,
         clearTerminal,
+        shellInput,
+        setShellInput,
+        shellHistory,
+        shellHistoryIndex,
+        shellInputRef,
+        handleShellSubmit,
+        handleShellKey,
     };
 }
 

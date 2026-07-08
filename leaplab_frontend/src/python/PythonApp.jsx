@@ -862,6 +862,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         },
     ]);
     const [replInput, setReplInput] = useState("");
+    const [shellInput, setShellInput] = useState("");
+    const [shellHistory, setShellHistory] = useState([]);
+    const [shellHistoryIndex, setShellHistoryIndex] = useState(-1);
+    const shellInputRef = useRef(null);
     const [replHistory, setReplHistory] = useState([]);
     const [replHistIdx, setReplHistIdx] = useState(-1);
     const terminalEndRef = useRef(null);
@@ -1335,6 +1339,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             window.electronAPI.onPythonPipError((data) => {
                 addLog(data, "error");
             }),
+            window.electronAPI.onPythonShellOutput ? window.electronAPI.onPythonShellOutput((data) => {
+                addLog(data.replace(/\n$/, ""), "log");
+            }) : null,
+            window.electronAPI.onPythonShellError ? window.electronAPI.onPythonShellError((data) => {
+                addLog(data.replace(/\n$/, ""), "error");
+            }) : null,
+            window.electronAPI.onPythonShellExit ? window.electronAPI.onPythonShellExit((code) => {
+                if (code === null) { addLog(`✗ Shell command failed.`, "error"); }
+                else if (code === 0) { addLog(`✓ Command completed`, "success"); }
+                else { addLog(`✗ Command exited with code ${code}`, "warning"); }
+            }) : null,
             window.electronAPI.onPythonFilesUpdated((files) => {
                 setProjectFiles(prev => ({ ...prev, ...files }));
                 const fileNames = Object.keys(files).join(', ');
@@ -1700,6 +1715,40 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     setReplInput(completion);
                     break;
                 }
+            }
+        }
+    };
+
+    // ── Shell Handlers ──────────────────────────────────────────────────────
+    const handleShellSubmit = () => {
+        const cmd = shellInput.trim();
+        if (!cmd) return;
+        addLog(`$ ${cmd}`, "repl-in");
+        setShellHistory(prev => [...prev, cmd]);
+        setShellHistoryIndex(-1);
+        if (window.electronAPI?.isElectron) {
+            window.electronAPI.pythonShellRun(cmd);
+        }
+        setShellInput("");
+    };
+
+    const handleShellKey = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleShellSubmit();
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (shellHistory.length > 0) {
+                const newIndex = shellHistoryIndex < shellHistory.length - 1 ? shellHistoryIndex + 1 : shellHistoryIndex;
+                setShellHistoryIndex(newIndex);
+                setShellInput(shellHistory[shellHistory.length - 1 - newIndex] || "");
+            }
+        } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (shellHistory.length > 0) {
+                const newIndex = shellHistoryIndex > 0 ? shellHistoryIndex - 1 : -1;
+                setShellHistoryIndex(newIndex);
+                setShellInput(newIndex >= 0 ? shellHistory[shellHistory.length - 1 - newIndex] : "");
             }
         }
     };
@@ -3615,6 +3664,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         handleTerminalInputSubmit={handleTerminalInputSubmit}
                         handleTerminalInputKey={handleTerminalInputKey}
                         terminalInputRef={terminalInputRef}
+                        isElectron={window.electronAPI?.isElectron || false}
+                        shellInput={shellInput}
+                        setShellInput={setShellInput}
+                        handleShellSubmit={handleShellSubmit}
+                        handleShellKey={handleShellKey}
+                        shellInputRef={shellInputRef}
                     />
 
                     {/* ── STAGE PANEL ── */}
@@ -3762,6 +3817,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 handleTerminalInputSubmit={handleTerminalInputSubmit}
                                 handleTerminalInputKey={handleTerminalInputKey}
                                 terminalInputRef={terminalInputRef}
+                                isElectron={window.electronAPI?.isElectron || false}
+                                shellInput={shellInput}
+                                setShellInput={setShellInput}
+                                handleShellSubmit={handleShellSubmit}
+                                handleShellKey={handleShellKey}
+                                shellInputRef={shellInputRef}
                             />
                         </div>
                     </div>

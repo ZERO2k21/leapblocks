@@ -13,6 +13,7 @@ export class PythonManager {
     private mainWindow: BrowserWindow | null = null;
     private currentProcess: ChildProcessWithoutNullStreams | null = null;
     private replProcess: ChildProcessWithoutNullStreams | null = null;
+    private shellProcess: ChildProcessWithoutNullStreams | null = null;
     private resolvedPythonPath: string | null = null;
 
     constructor(mainWindow: BrowserWindow | null) {
@@ -172,12 +173,61 @@ export class PythonManager {
     public stopAll() {
         this.stopProcess(this.currentProcess);
         this.stopProcess(this.replProcess);
+        this.stopProcess(this.shellProcess);
+        this.shellProcess = null;
     }
 
     public async installPipPackage(packageName: string) {
         const pyExe = await this.resolvePython();
         const p = spawn(pyExe, ['-m', 'pip', 'install', packageName]);
         this.pipeProcess(p, 'python-pip-output', 'python-pip-error', 'python-pip-exit');
+    }
+
+    public async runShellCommand(command: string) {
+        this.stopProcess(this.shellProcess);
+
+        const pyExe = await this.resolvePython();
+        const pyDir = path.dirname(pyExe);
+        const workDir = path.join(app.getPath('temp'), 'leapblocks_project');
+        if (!fs.existsSync(workDir)) {
+            fs.mkdirSync(workDir, { recursive: true });
+        }
+
+        const isWin = process.platform === 'win32';
+        const shell = isWin ? 'cmd.exe' : 'bash';
+        const shellArgs = isWin ? ['/c', command] : ['-c', command];
+
+        const env = {
+            ...process.env,
+            PATH: `${pyDir};${pyDir}\\Scripts;${process.env.PATH || ''}`,
+            PYTHONIOENCODING: 'utf-8',
+        };
+
+        try {
+            this.shellProcess = spawn(shell, shellArgs, { cwd: workDir, env, shell: false });
+            this.shellProcess.stdout.on('data', (data) => {
+                this.mainWindow?.webContents.send('python-shell-output', data.toString());
+            });
+            this.shellProcess.stderr.on('data', (data) => {
+                this.mainWindow?.webContents.send('python-shell-error', data.toString());
+            });
+            this.shellProcess.on('close', (code) => {
+                this.mainWindow?.webContents.send('python-shell-exit', code);
+            });
+            this.shellProcess.on('error', (err) => {
+                console.error(`[PythonManager] Shell error:`, err.message);
+                this.mainWindow?.webContents.send('python-shell-error', `Failed to start shell: ${err.message}`);
+                this.mainWindow?.webContents.send('python-shell-exit', null);
+            });
+        } catch (err) {
+            this.mainWindow?.webContents.send('python-shell-error', `Failed to start shell: ${(err as Error).message}`);
+            this.mainWindow?.webContents.send('python-shell-exit', null);
+        }
+    }
+
+    public stopShell() {
+        this.stopProcess(this.shellProcess);
+        this.shellProcess = null;
     }
 
     private stopProcess(proc: ChildProcessWithoutNullStreams | null) {

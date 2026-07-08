@@ -159,7 +159,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 700,
     icon: resolvedIcon,
-    title: "LeapBlocks",
+    title: "LeapLab",
     // Hide until content is painted — eliminates the white flash on startup
     show: false,
     backgroundColor: '#f8fafc', // matches the app background so no flicker

@@ -128,7 +128,7 @@ const createWindow = (): void => {
     width: 1400,
     minHeight: 600,
     minWidth: 1000,
-    title: 'LeapBlocks - Block Programming IDE',
+    title: 'LeapLab - Block Programming IDE',
     show: false, // hidden until ready-to-show fires — eliminates blank white flash
     backgroundColor: '#f8fafc', // matches app background so no flicker on show
     webPreferences: {
@@ -389,6 +389,13 @@ ipcMain.handle('python-stop', async () => {
 });
 ipcMain.handle('python-pip-install', async (event, pkg: string) => {
   await pythonManager.installPipPackage(pkg);
+});
+
+ipcMain.handle('python-shell-run', async (event, command: string) => {
+  await pythonManager.runShellCommand(command);
+});
+ipcMain.handle('python-shell-stop', async () => {
+  pythonManager.stopShell();
 });
 
 ipcMain.handle('remove-background', async (event, imagePath: string) => {

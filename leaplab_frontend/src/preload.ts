@@ -158,7 +158,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('serial-data');
         ipcRenderer.removeAllListeners('connection-change');
         ipcRenderer.removeAllListeners('upload-progress');
-        ['python-output', 'python-error', 'python-exit', 'python-repl-output', 'python-repl-error', 'python-repl-exit', 'python-pip-output', 'python-pip-error', 'python-pip-exit', 'python-download-progress', 'tool-download-progress'].forEach(e => ipcRenderer.removeAllListeners(e));
+        ['python-output', 'python-error', 'python-exit', 'python-repl-output', 'python-repl-error', 'python-repl-exit', 'python-pip-output', 'python-pip-error', 'python-pip-exit', 'python-shell-output', 'python-shell-error', 'python-shell-exit', 'python-download-progress', 'tool-download-progress'].forEach(e => ipcRenderer.removeAllListeners(e));
     },
 
     removeBackground: (imagePath: string): Promise<{ success: boolean; error?: string; stdout?: string; stderr?: string, base64?: string }> => {
@@ -192,6 +192,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pythonReplSend: (input: string) => ipcRenderer.invoke('python-repl-send', input),
     pythonStop: () => ipcRenderer.invoke('python-stop'),
     pythonPipInstall: (pkg: string) => ipcRenderer.invoke('python-pip-install', pkg),
+    pythonShellRun: (cmd: string) => ipcRenderer.invoke('python-shell-run', cmd),
+    pythonShellStop: () => ipcRenderer.invoke('python-shell-stop'),
     onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => {
         const handler = (_: any, files: any) => callback(files as Record<string, string>);
         ipcRenderer.on('python-files-updated', handler);
@@ -239,9 +241,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => ipcRenderer.removeListener('python-pip-error', handler);
     },
     onPythonPipExit: (callback: (code: number) => void) => {
-        const handler = (_: any, code: any) => callback(code as number);
+        const handler = (_: any, msg: any) => callback(msg as number);
         ipcRenderer.on('python-pip-exit', handler);
         return () => ipcRenderer.removeListener('python-pip-exit', handler);
+    },
+    onPythonShellOutput: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-shell-output', handler);
+        return () => ipcRenderer.removeListener('python-shell-output', handler);
+    },
+    onPythonShellError: (callback: (data: string) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as string);
+        ipcRenderer.on('python-shell-error', handler);
+        return () => ipcRenderer.removeListener('python-shell-error', handler);
+    },
+    onPythonShellExit: (callback: (code: number) => void) => {
+        const handler = (_: any, msg: any) => callback(msg as number);
+        ipcRenderer.on('python-shell-exit', handler);
+        return () => ipcRenderer.removeListener('python-shell-exit', handler);
     },
     onPythonDownloadProgress: (callback: (data: { status: string; message: string }) => void) => {
         const handler = (_: any, msg: any) => callback(msg as { status: string; message: string });
@@ -313,6 +330,8 @@ declare global {
             pythonReplSend: (input: string) => Promise<void>;
             pythonStop: () => Promise<void>;
             pythonPipInstall: (pkg: string) => Promise<void>;
+            pythonShellRun: (cmd: string) => Promise<void>;
+            pythonShellStop: () => Promise<void>;
             onPythonFilesUpdated: (callback: (files: Record<string, string>) => void) => () => void;
 
             onPythonOutput: (callback: (data: string) => void) => () => void;
@@ -324,6 +343,9 @@ declare global {
             onPythonPipOutput: (callback: (data: string) => void) => () => void;
             onPythonPipError: (callback: (data: string) => void) => () => void;
             onPythonPipExit: (callback: (code: number) => void) => () => void;
+            onPythonShellOutput: (callback: (data: string) => void) => () => void;
+            onPythonShellError: (callback: (data: string) => void) => () => void;
+            onPythonShellExit: (callback: (code: number) => void) => () => void;
             onPythonDownloadProgress: (callback: (data: { status: string; message: string }) => void) => () => void;
             onToolDownloadProgress: (callback: (data: { tool: string; status: string; message: string }) => void) => () => void;
 

@@ -54,36 +54,98 @@ const pixelToleap = (pixelX, pixelY, stageW, stageH, spriteSize = 60) => {
 };
 
 // Simple sprite renderer for Python IDE
-const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, isDragging, setIsDragging, setDraggingSpriteId, draggingSpriteId }) => {
+const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, isDragging, setIsDragging, setDraggingSpriteId, draggingSpriteId, updateSpriteProperty, stageRef }) => {
     const leapX = sprite.position?.x ?? sprite.x ?? 0;
     const leapY = sprite.position?.y ?? sprite.y ?? 0;
     const angle = sprite.direction ?? sprite.angle ?? 0;
     const size = sprite.size ?? 100;
     const isVisible = sprite.visible !== false;
 
-    // Convert leap coords to pixel coords
     const { pixelX, pixelY } = leapToPixel(leapX, leapY, stageWidth, stageHeight);
 
-    // Get current costume
     const costumes = sprite.costumes || {};
     const currentCostume = sprite.currentCostume || 'default';
     const costumeValue = costumes[currentCostume] || costumes.default || 'assets/sprites/robot/robot_idle.svg';
 
-    // Determine if it's an image path or emoji
     const isImage = costumeValue.includes('/') || costumeValue.endsWith('.png') || costumeValue.endsWith('.svg') || costumeValue.endsWith('.jpg');
 
     if (!isVisible) return null;
 
-    const handleMouseDown = (e) => {
-        e.stopPropagation();
+    const dragRef = { startX: 0, startY: 0, origLeapX: 0, origLeapY: 0, didDrag: false };
+
+    const getPointerPos = (clientX, clientY) => {
+        const stageEl = stageRef?.current;
+        if (!stageEl) return { px: 0, py: 0 };
+        const rect = stageEl.getBoundingClientRect();
+        return {
+            px: clientX - rect.left,
+            py: clientY - rect.top,
+        };
+    };
+
+    const startDrag = (clientX, clientY) => {
+        const { px, py } = getPointerPos(clientX, clientY);
+        dragRef.startX = px;
+        dragRef.startY = py;
+        dragRef.origLeapX = leapX;
+        dragRef.origLeapY = leapY;
+        dragRef.didDrag = false;
         setIsDragging(true);
         setDraggingSpriteId(sprite.id);
+    };
+
+    const moveDrag = (clientX, clientY) => {
+        const { px, py } = getPointerPos(clientX, clientY);
+        const dx = px - dragRef.startX;
+        const dy = py - dragRef.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            dragRef.didDrag = true;
+        }
+        const scaleX = stageWidth / 480;
+        const scaleY = stageHeight / 360;
+        const newLeapX = dragRef.origLeapX + dx / scaleX;
+        const newLeapY = dragRef.origLeapY - dy / scaleY;
+        updateSpriteProperty?.(sprite.id, 'x', Math.round(newLeapX));
+        updateSpriteProperty?.(sprite.id, 'y', Math.round(newLeapY));
+    };
+
+    const endDrag = () => {
+        setIsDragging(false);
+        setDraggingSpriteId(null);
+    };
+
+    const handleMouseDown = (e) => {
+        e.stopPropagation();
+        startDrag(e.clientX, e.clientY);
+        const handleMove = (me) => { me.preventDefault(); moveDrag(me.clientX, me.clientY); };
+        const handleUp = () => {
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleUp);
+            endDrag();
+        };
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleUp);
+    };
+
+    const handleTouchStart = (e) => {
+        e.stopPropagation();
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+        const handleMove = (te) => { te.preventDefault(); const t = te.touches[0]; moveDrag(t.clientX, t.clientY); };
+        const handleEnd = () => {
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+            endDrag();
+        };
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
     };
 
     return (
         <div
             onClick={onClick}
             onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             style={{
                 position: 'absolute',
                 left: pixelX,
@@ -93,24 +155,26 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
+                cursor: isDragging && draggingSpriteId === sprite.id ? 'grabbing' : 'grab',
                 transform: `rotate(${angle}deg) scale(${size / 100})`,
                 zIndex: isSelected || (isDragging && draggingSpriteId === sprite.id) ? 20 : 10,
                 filter: isSelected || (isDragging && draggingSpriteId === sprite.id)
                     ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))'
                     : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
-                transition: 'all 0.2s ease',
+                transition: isDragging && draggingSpriteId === sprite.id ? 'none' : 'all 0.2s ease',
+                touchAction: 'none',
+                userSelect: 'none',
             }}
         >
             {isImage ? (
                 <img
                     src={costumeValue}
                     alt={sprite.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
                     onError={(e) => { e.target.style.display = 'none'; }}
                 />
             ) : (
-                <span style={{ fontSize: 40, lineHeight: 1 }}>{costumeValue}</span>
+                <span style={{ fontSize: 40, lineHeight: 1, pointerEvents: 'none' }}>{costumeValue}</span>
             )}
             {sprite.speech && (
                 <div style={{
@@ -127,7 +191,8 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
                     fontSize: 12,
                     fontWeight: 600,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    zIndex: 30
+                    zIndex: 30,
+                    pointerEvents: 'none',
                 }}>
                     {sprite.speech}
                 </div>
@@ -145,7 +210,7 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
     );
 };
 
-export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpriteId, backdrop, stageRef, stageSize }) {
+export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpriteId, backdrop, stageRef, stageSize, updateSpriteProperty }) {
     // Dragging state for sprite highlight on drag
     const [draggingSpriteId, setDraggingSpriteId] = React.useState(null);
     const [isDragging, setIsDragging] = React.useState(false);
@@ -154,7 +219,7 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
     const stageWidth = stageSize?.w || 356;
     const stageHeight = stageSize?.h || 240;
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
         setIsDragging(false);
         setDraggingSpriteId(null);
     };
@@ -167,11 +232,13 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                 position: "relative",
                 background: backdrop ? "transparent" : "#F5F5F5",
                 overflow: "hidden",
-                borderRadius: 8
+                borderRadius: 8,
+                touchAction: 'none',
             }}
             ref={stageRef}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            onMouseUp={handlePointerUp}
+            onMouseLeave={handlePointerUp}
+            onTouchEnd={handlePointerUp}
         >
             {/* Backdrop image */}
             {backdrop && (
@@ -209,6 +276,8 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                         setIsDragging={setIsDragging}
                         setDraggingSpriteId={setDraggingSpriteId}
                         draggingSpriteId={draggingSpriteId}
+                        updateSpriteProperty={updateSpriteProperty}
+                        stageRef={stageRef}
                     />
                 ))}
 

@@ -156,6 +156,7 @@ export default function StagePanel({
                         backdrop={backdrop}
                         stageRef={stageRef}
                         stageSize={stageSize || { w: 356, h: 240 }}
+                        updateSpriteProperty={updateSpriteProperty}
                     />
                 </div>
             </div>

@@ -165,6 +165,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 onBack={onBack}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onSave={() => {}}
+                onNew={mode.resetProject}
                 onDownload={handleDownload}
                 onOpen={handleImport}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function

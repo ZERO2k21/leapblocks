@@ -23,7 +23,7 @@ export function usePipManager({ addLog, setActivePanel }) {
             addLog(`⏳ Installing ${pkgName} via pip...`, "info");
             setActivePanel("terminal");
             if (window.electronAPI?.isElectron) {
-                window.electronAPI.pythonPipInstall(pkgName);
+                window.electronAPI.pythonShellRun(`python -m pip install ${pkgName}`);
             } else {
                 setTimeout(() => {
                     addLog(`✓ ${pkgName} registered (web mode)`, "success");

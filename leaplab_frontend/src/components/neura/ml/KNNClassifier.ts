@@ -21,7 +21,9 @@ export class KNNClassifier {
      */
     async addExample(embedding: any, label: string): Promise<void> {
         const tf = await ensureTf()
-        const ex = embedding.expandDims(0)
+        const flat = embedding.reshape([embedding.size])
+        const ex = flat.expandDims(0)
+        flat.dispose()
         if (!this.examples[label]) {
             this.examples[label] = ex
         } else {
@@ -50,7 +52,9 @@ export class KNNClassifier {
         const labels = Object.keys(this.examples)
         if (!labels.length) return null
 
-        const emb = embedding.expandDims(0)
+        const flat = embedding.reshape([embedding.size])
+        const emb = flat.expandDims(0)
+        flat.dispose()
         const scores: Record<string, number> = {}
 
         for (const label of labels) {

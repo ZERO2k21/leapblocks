@@ -46,7 +46,11 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
     const { sprites, setSprites, selectedSpriteId, setSelectedSpriteId, backdrop, setBackdrop: setBackdropImg, stageSize, stageRef, addSprite, deleteSprite, updateSprite, updateSpriteProperty, resetStage } = stage;
 
     // ── Terminal ────────────────────────────────────────────────────────────
-    const { terminalOutput, setTerminalOutput, terminalEndRef, addLog, clearTerminal } = useTerminal();
+    const {
+        terminalOutput, setTerminalOutput, terminalEndRef, addLog, clearTerminal,
+        shellInput, setShellInput, shellHistory, shellHistoryIndex, shellInputRef,
+        handleShellSubmit, handleShellKey,
+    } = useTerminal();
 
     // ── File Manager ────────────────────────────────────────────────────────
     const {
@@ -295,6 +299,13 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
             window.electronAPI.onPythonReplError((data) => addLog(data.replace(/\n$/, ""), "error")),
             window.electronAPI.onPythonPipOutput((data) => addLog(data.replace(/\n$/, ""), "log")),
             window.electronAPI.onPythonPipError((data) => addLog(data, "error")),
+            ...(window.electronAPI.onPythonShellOutput ? [window.electronAPI.onPythonShellOutput((data) => addLog(data.replace(/\n$/, ""), "log"))] : []),
+            ...(window.electronAPI.onPythonShellError ? [window.electronAPI.onPythonShellError((data) => addLog(data.replace(/\n$/, ""), "error"))] : []),
+            ...(window.electronAPI.onPythonShellExit ? [window.electronAPI.onPythonShellExit((code) => {
+                if (code === null) { addLog(`✗ Shell command failed.`, "error"); }
+                else if (code === 0) { addLog(`✓ Command completed`, "success"); }
+                else { addLog(`✗ Command exited with code ${code}`, "warning"); }
+            })] : []),
             window.electronAPI.onPythonFilesUpdated((files) => {
                 setProjectFiles(prev => ({ ...prev, ...files }));
                 addLog(`📁 Files updated: ${Object.keys(files).join(', ')}`, "info");
@@ -373,6 +384,8 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         handleTerminalInputSubmit, handleTerminalInputKey,
         terminalInputRef, inputResolverRef,
         replInput, setReplInput, handleReplSubmit, handleReplKey, replInputRef,
+        shellInput, setShellInput, handleShellSubmit, handleShellKey, shellInputRef, shellHistoryIndex,
+        isElectron: window.electronAPI?.isElectron || false,
         ...upload, ...sprite,
         BACKDROP_LIBRARY, EXTENSIONS,
         openTextPrompt, modalState, modalInput, setModalInput,
