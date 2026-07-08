@@ -215,9 +215,9 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
     const [draggingSpriteId, setDraggingSpriteId] = React.useState(null);
     const [isDragging, setIsDragging] = React.useState(false);
 
-    // Use stageSize from props or default to 356x240
-    const stageWidth = stageSize?.w || 356;
-    const stageHeight = stageSize?.h || 240;
+    // Use stageSize from props or default to 480x310 (matching STAGE_CONFIG)
+    const stageWidth = stageSize?.w || 480;
+    const stageHeight = stageSize?.h || 310;
 
     const handlePointerUp = () => {
         setIsDragging(false);

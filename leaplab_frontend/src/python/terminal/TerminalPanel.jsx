@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Play, Square, Trash2, Package, CornerDownLeft } from "lucide-react";
 import PipPanel from "../panels/PipPanel";
 
@@ -46,6 +46,18 @@ export default function TerminalPanel({
     handleShellKey,
     shellInputRef,
 }) {
+    const [terminalHeight, setTerminalHeight] = useState(
+        typeof window !== 'undefined' && window.innerWidth < 768 ? 160 : 220
+    );
+
+    useEffect(() => {
+        const handleResize = () => {
+            setTerminalHeight(window.innerWidth < 768 ? 160 : 220);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
         { id: "repl", label: "REPL", icon: <span style={{ fontSize: 11 }}>{">>>"}</span> },
@@ -53,7 +65,7 @@ export default function TerminalPanel({
     ];
 
     return (
-        <div style={{ height: 220, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
+        <div style={{ height: terminalHeight, display: "flex", flexDirection: "column", borderTop: `1px solid ${C.BORDER}`, background: "#fff", flexShrink: 0 }}>
             <div style={{ display: "flex", background: "#F5F5F5", borderBottom: `1px solid ${C.BORDER}`, height: 32, alignItems: "center" }}>
                 {tabs.map(({ id, label, icon }) => (
                     <div

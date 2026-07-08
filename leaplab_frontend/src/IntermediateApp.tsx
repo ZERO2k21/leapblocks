@@ -6075,7 +6075,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 /* ── Blockly workspace min-height ─────────────────────────── */
                 .blocklyWorkspace {
-                    min-height: 350px !important;
+                    min-height: 0 !important;
                 }
             `}</style>
 
@@ -7733,8 +7733,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        minWidth: 0,                  // ← FIX 1 (ROOT CAUSE): Overrides min-width:auto so workspace compresses
-        overflow: 'hidden'
+        minWidth: 0,
+        overflow: 'visible'
     },
 
     blockly: {
