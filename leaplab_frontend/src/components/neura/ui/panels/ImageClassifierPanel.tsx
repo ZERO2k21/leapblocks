@@ -20,6 +20,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const fileInputRef = useRef<HTMLInputElement>(null)
     const testFileInputRef = useRef<HTMLInputElement>(null)
     const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
@@ -135,29 +136,62 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const handleCapture = async () => {
         if (!videoRef.current || !canvasRef.current || !mode.selectedClassId || !cameraOn) return
 
+        // Check sample limit
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            return
+        }
+
+        // Block re-entry while capturing
+        if (isCapturing) return
+
         setIsCapturing(true)
-        const canvas = canvasRef.current
-        const video = videoRef.current
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0)
+        try {
+            const canvas = canvasRef.current
+            const video = videoRef.current
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(video, 0, 0)
 
-        const imageData = canvas.toDataURL('image/png')
-        mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
-        await classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '')
+            const imageData = canvas.toDataURL('image/png')
+            mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-        setTimeout(() => setIsCapturing(false), 300)
+            // Add to classifier in background (non-blocking)
+            classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => {})
+        } catch (err) {
+            console.warn('[Neura] Capture failed:', err)
+        } finally {
+            // Always re-enable the button after brief visual feedback
+            setTimeout(() => setIsCapturing(false), 300)
+        }
     }
+
+    // Keep ref updated with latest handleCapture
+    handleCaptureRef.current = handleCapture
 
     // Upload images as samples (collect mode)
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (!files || files.length === 0 || !mode.selectedClassId) return
 
+        // Check sample limit
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            alert(`Maximum ${MAX_SAMPLES_PER_CLASS} samples per class reached.`)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
             if (!file.type.startsWith('image/')) continue
+
+            // Check limit before each upload
+            const currentClass = mode.getSelectedClass()
+            if (currentClass && currentClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+                break
+            }
 
             const dataUrl = await new Promise<string>((resolve) => {
                 const reader = new FileReader()
@@ -183,6 +217,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !file.type.startsWith('image/')) return
+
+        // Guard: wait for model rebuild to complete
+        if (modelLoading) {
+            alert('Model is still loading. Please wait a moment and try again.')
+            return
+        }
 
         const dataUrl = await new Promise<string>((resolve) => {
             const reader = new FileReader()
@@ -217,7 +257,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const startBurstCapture = useCallback(() => {
         if (!burstMode || !mode.selectedClassId || !cameraOn) return
         burstIntervalRef.current = setInterval(() => {
-            handleCapture()
+            handleCaptureRef.current?.()
         }, 500)
     }, [burstMode, mode.selectedClassId, cameraOn])
 
@@ -242,21 +282,20 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             return
         }
         try {
-            // Step 1: Rebuild the KNN classifier from stored base64 samples
-            classifierRef.current.clear()
-            for (const cls of project.classes) {
-                if (cls.samples.length > 0) {
-                    await classifierRef.current.rebuildClass(
-                        cls.name,
-                        cls.samples.map(s => s.data)
-                    )
-                }
+            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
+            // Add a small delay so the UI shows the training animation.
+            await new Promise(r => setTimeout(r, 1500))
+
+            // Step 2: Verify the KNN has data before computing accuracy
+            const sampleCounts = classifierRef.current.getSampleCounts()
+            const trainedClasses = Object.keys(sampleCounts)
+            if (trainedClasses.length < 2) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
             }
 
-            // Step 2: Small delay so the UI shows the training animation
-            await new Promise(r => setTimeout(r, 1200))
-
-            // Step 3: Compute leave-one-out accuracy against the rebuilt KNN
+            // Step 3: Compute accuracy by predicting each sample against the KNN
             let correct = 0
             let total = 0
             for (const cls of project.classes) {
@@ -279,6 +318,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             }
             const accuracy = total > 0 ? correct / total : 0
             mode.setAccuracy(accuracy)
+
+            // Auto-switch to test mode after training completes
+            setTimeout(() => {
+                mode.setMode('test')
+            }, 2000)
         } catch {
             mode.setAccuracy(0)
         }
@@ -286,7 +330,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
+    const canAddSamples = selectedClass && !atSampleLimit
 
     const handleRemoveSample = async (classId: string, sampleId: string) => {
         mode.removeSample(classId, sampleId)
@@ -601,11 +647,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             onMouseUp={burstMode ? stopBurstCapture : undefined}
                             onTouchStart={burstMode ? startBurstCapture : undefined}
                             onTouchEnd={burstMode ? stopBurstCapture : undefined}
-                            disabled={!mode.selectedClassId || isCapturing}
-                            label={isCapturing ? 'Captured!' : burstMode ? 'Hold to Capture' : 'Take Photo'}
+                            disabled={!canAddSamples || isCapturing}
+                            label={isCapturing ? 'Captured!' : atSampleLimit ? 'Max Samples Reached' : burstMode ? 'Hold to Capture' : 'Take Photo'}
                             icon="camera"
                             color={selectedClass?.color || '#7C3AED'}
-                            pulse={!isCapturing && !!mode.selectedClassId}
+                            pulse={!isCapturing && !!canAddSamples}
                         />
                     )}
 
@@ -626,8 +672,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
                                         <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
                                     </div>
-                                    <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
-                                        {selectedClass.samples.length} photos
+                                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
+                                        atSampleLimit
+                                            ? 'text-amber-600 bg-amber-50'
+                                            : 'text-gray-400 bg-gray-50'
+                                    }`}>
+                                        {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} samples
                                     </span>
                                 </div>
                                 <SampleGrid

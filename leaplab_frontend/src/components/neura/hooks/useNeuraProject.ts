@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { NeuraProject, ClassData, Sample, ProjectType } from '../../../types/neura.types'
+import { MAX_SAMPLES_PER_CLASS } from '../../../types/neura.types'
 
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
 
@@ -26,12 +27,13 @@ export interface UseNeuraProjectReturn {
    addClass: (name: string) => void
     removeClass: (classId: string) => void
     renameClass: (classId: string, name: string) => void
-    addSample: (classId: string, sample: Omit<Sample, 'id' | 'timestamp'>) => void
+    addSample: (classId: string, sample: Omit<Sample, 'id' | 'timestamp'>) => boolean
     removeSample: (classId: string, sampleId: string) => void
     clearSamples: (classId: string) => void
     resetProject: () => void
     getSelectedClass: () => ClassData | undefined
     getTotalSamples: () => number
+    loadProject: (project: NeuraProject) => void
 }
 
 export function useNeuraProject(
@@ -104,7 +106,13 @@ export function useNeuraProject(
         }))
     }, [])
 
-    const addSample = useCallback((classId: string, sampleData: Omit<Sample, 'id' | 'timestamp'>) => {
+    const addSample = useCallback((classId: string, sampleData: Omit<Sample, 'id' | 'timestamp'>): boolean => {
+        // Check sample limit
+        const currentClass = project?.classes.find(c => c.id === classId)
+        if (currentClass && currentClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            return false
+        }
+
         const sample: Sample = {
             ...sampleData,
             id: generateId(),
@@ -117,7 +125,8 @@ export function useNeuraProject(
             ),
             updatedAt: Date.now()
         }))
-    }, [])
+        return true
+    }, [project])
 
     const removeSample = useCallback((classId: string, sampleId: string) => {
         setProject(prev => ({
@@ -160,6 +169,13 @@ export function useNeuraProject(
         return project.classes.reduce((total, c) => total + c.samples.length, 0)
     }, [project])
 
+    const loadProject = useCallback((importedProject: NeuraProject) => {
+        setProject(importedProject)
+        setAccuracy(importedProject.accuracy ?? null)
+        setMode('collect')
+        setSelectedClassId(null)
+    }, [])
+
     useEffect(() => {
         if (project && project.classes.length > 0 && !selectedClassId) {
             setSelectedClassId(project.classes[0].id)
@@ -169,7 +185,11 @@ export function useNeuraProject(
     // Save to localStorage on every project change
     useEffect(() => {
         if (project) {
-            localStorage.setItem(`neura-project-${type}`, JSON.stringify(project))
+            try {
+                localStorage.setItem(`neura-project-${type}`, JSON.stringify(project))
+            } catch (e) {
+                console.warn('[Neura] Project too large to save locally. Consider downloading your project.')
+            }
         }
     }, [project, type])
 
@@ -189,7 +209,8 @@ export function useNeuraProject(
         clearSamples,
         resetProject,
         getSelectedClass,
-        getTotalSamples
+        getTotalSamples,
+        loadProject
     }
 }
 

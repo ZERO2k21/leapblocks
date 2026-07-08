@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topbar'
-import type { ProjectType } from '../../../types/neura.types'
+import type { ProjectType, NeuraProject } from '../../../types/neura.types'
 import type { ClassifierMode } from '../hooks/useNeuraProject'
 import { useNeuraProject } from '../hooks/useNeuraProject'
+import { fileService } from '../../../Electra/Client/Src/services/FileService'
 import ClassCard from './components/ClassCard'
 
 interface ProjectWorkspaceProps {
@@ -70,7 +71,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
     }, [])
 
     const canTrain = mode.project
-        ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2
+        ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2)
         : false
 
     const handleAddClass = () => {
@@ -83,34 +84,89 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const totalSamples = mode.getTotalSamples()
 
-    const handleDownload = () => {
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleDownload = useCallback(() => {
         if (!mode.project) return
-        const data = {
-            ...mode.project,
-            exportedAt: new Date().toISOString(),
-            version: '1.0'
+        fileService.saveProjectLocally(mode.project.name, 'neura', mode.project)
+    }, [mode.project])
+
+    const handleImport = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    const handleFileImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        try {
+            const data = await fileService.loadProject(file)
+
+            // Validate it's a valid neura project
+            const validation = fileService.validateNeuraImport(data)
+            if (!validation.isValid) {
+                alert(validation.error || 'Invalid project file.')
+                return
+            }
+
+            // Extract the NeuraProject from the .leap wrapper format
+            let projectData: NeuraProject
+
+            if (data.mode === 'neura' && data.classes) {
+                // .leap wrapper format -- extract the neura project fields
+                projectData = {
+                    id: data.id || Date.now().toString(36),
+                    type: data.type || 'image-classifier',
+                    name: data.projectName || data.name || 'Imported Project',
+                    classes: data.classes || [],
+                    createdAt: data.createdAt || data.timestamp || Date.now(),
+                    updatedAt: data.updatedAt || Date.now(),
+                    modelTrained: data.modelTrained || false,
+                    accuracy: data.accuracy,
+                    projectData: data.projectData
+                }
+            } else if (data.classes && data.type) {
+                // Direct NeuraProject format
+                projectData = data as NeuraProject
+            } else {
+                alert('This file does not appear to be a valid Neura project.')
+                return
+            }
+
+            // Validate essential fields
+            if (!Array.isArray(projectData.classes)) {
+                alert('Invalid project file: missing classes data.')
+                return
+            }
+
+            mode.loadProject(projectData)
+        } catch (err: any) {
+            console.error('[Neura] Failed to import project:', err)
+            alert('Failed to read project file: ' + (err?.message || 'Unknown error'))
         }
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${mode.project.name.replace(/\s+/g, '_').toLowerCase()}.json`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
+
+        // Reset the input so the same file can be re-imported
+        e.target.value = ''
+    }, [mode])
 
     return (
         <div className="h-screen flex flex-col" style={{
             background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)'
         }}>
+            <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".leap,.lbproject,application/json"
+                onChange={handleFileImport}
+            />
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
                 onBack={onBack}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onSave={() => {}}
                 onDownload={handleDownload}
+                onOpen={handleImport}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onTitleChange={() => {}}
                 brandName="NEURA"
