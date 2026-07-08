@@ -99,7 +99,7 @@ export default function TopBar() {
         <header style={{
             position: "sticky", top: 0, height: 60, background: "linear-gradient(135deg, #0a015a 0%, #080a25 100%)",
             display: "flex", alignItems: "center", padding: "0 16px",
-            justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, overflow: "visible",
+            justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, overflow: "hidden", flexWrap: "nowrap",
             boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>

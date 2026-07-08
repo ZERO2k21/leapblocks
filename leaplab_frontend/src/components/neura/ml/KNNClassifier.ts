@@ -139,6 +139,53 @@ export class KNNClassifier {
     }
 
     /**
+     * Remove a specific example by index from a class (for leave-one-out CV).
+     * Returns the removed embedding data for re-addition later.
+     */
+    async removeExampleByIndex(label: string, index: number): Promise<Float32Array | null> {
+        const tf = await ensureTf()
+        const examples = this.examples[label]
+        if (!examples || examples.shape[0] <= index) return null
+
+        // Extract the row data before removing
+        const rowData = await examples.slice([index, 0], [1, -1]).data() as Float32Array
+        const embedding = Array.from(rowData)
+
+        // Remove the row by concatenating slices before and after
+        const before = examples.slice([0, 0], [index, -1])
+        const after = examples.slice([index + 1, 0], [-1, -1])
+        const hasBefore = before.shape[0] > 0
+        const hasAfter = after.shape[0] > 0
+
+        if (hasBefore && hasAfter) {
+            this.examples[label] = tf.concat([before, after], 0)
+        } else if (hasBefore) {
+            this.examples[label] = before
+        } else if (hasAfter) {
+            this.examples[label] = after
+        } else {
+            // Only one example existed, now empty
+            this.examples[label].dispose()
+            delete this.examples[label]
+        }
+
+        before.dispose()
+        after.dispose()
+
+        return new Float32Array(embedding)
+    }
+
+    /**
+     * Re-add an example at the end of a class (after leave-one-out removal).
+     */
+    async addExampleFromDataArray(data: number[], label: string): Promise<void> {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(data)
+        await this.addExample(embedding, label)
+        embedding.dispose()
+    }
+
+    /**
      * Dispose of all resources.
      */
     dispose(): void {

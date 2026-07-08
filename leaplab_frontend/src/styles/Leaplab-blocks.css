@@ -358,6 +358,15 @@
    BLOCKLY TOOLBOX - LeapBlox Style
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ICT Panel Touch Support - prevent browser scroll/zoom on Blockly elements */
+.blocklySvg,
+.blocklyFlyout,
+.blocklyToolboxDiv,
+.blocklyBlockCanvas,
+.blocklyWorkspace {
+  touch-action: none !important;
+}
+
 /* Toolbox container */
 .blocklyToolboxDiv {
   background-color: #ffffff !important;
@@ -404,7 +413,7 @@
   cursor: pointer !important;
   transition: background-color 0.15s ease !important;
   border-left: none !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
 }
 
 /* Make the container the interactive element */
@@ -503,15 +512,9 @@
   stroke: none !important;
 }
 
-/* Force ALL dropdown arrow images inside blocks to black */
+/* Force dropdown arrow images inside blocks to black */
 .blocklySvg image[xlink\:href*="dropdown"],
-.blocklySvg image[href*="dropdown"],
-.blocklySvg .blocklyEditableText image,
-.blocklySvg .blocklyDropdownTextParent image,
-.blocklyEditableText image,
-.blocklyFlyout .blocklyEditableText image,
-.blocklySvg image[xlink\:href*="data:image"],
-.blocklySvg image[href*="data:image"] {
+.blocklySvg image[href*="dropdown"] {
   filter: brightness(0) !important;
 }
 
@@ -940,23 +943,11 @@ body #root .blocklyFlyoutButton .blocklyText,
   pointer-events: all;
 }
 
-/* Hide the block shape and any dummy text for these checkbox toggles */
-.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyPath,
-.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyEditableText,
-.blocklyFlyout g:has(path[fill^="#ffffff00"]) .blocklyText {
-  display: none !important;
-}
-
 /* The actual checkbox square */
 .blocklyFlyout .blocklyCheckbox {
   display: block !important;
   fill: #fff !important;
   stroke: rgba(0,0,0,0.2) !important;
-}
-
-/* Ensure reporter blocks following a checkbox are shifted right and UP onto the same row */
-.blocklyFlyout .blocklyBlockCanvas g:has(path[fill^="#ffffff00"]) + g {
-  transform: translate(44px, -32px) !important;
 }
 
 /* Category colors for separate pills in flyout */
@@ -1112,4 +1103,60 @@ g[display="none"],
 svg[display="none"],
 rect[display="none"] {
   display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE - ICT Panel / Tablet / Small Screen / Large TV
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Tablet / Small laptop */
+@media (max-width: 1024px) {
+  .blocklyToolboxDiv {
+    width: 68px !important;
+  }
+  .blocklyFlyout {
+    min-width: 240px !important;
+  }
+}
+
+/* Mobile / Small ICT panel */
+@media (max-width: 768px) {
+  .blocklyToolboxDiv {
+    width: 56px !important;
+    padding: 6px 0 8px !important;
+  }
+  .blocklyToolboxCategory {
+    min-height: 40px !important;
+    padding: 2px 2px 6px 2px !important;
+  }
+  .blocklyFlyout {
+    min-width: 200px !important;
+  }
+}
+
+/* Extra small ICT panel */
+@media (max-width: 480px) {
+  .blocklyToolboxDiv {
+    width: 48px !important;
+    padding: 4px 0 6px !important;
+  }
+  .blocklyToolboxCategory {
+    min-height: 36px !important;
+  }
+  .blocklyFlyout {
+    min-width: 180px !important;
+  }
+}
+
+/* Large TV screens */
+@media (min-width: 1920px) {
+  .blocklyToolboxDiv {
+    width: 90px !important;
+  }
+  .blocklyFlyout {
+    min-width: 320px !important;
+  }
+  .blocklyToolboxCategory {
+    min-height: 56px !important;
+  }
 }
