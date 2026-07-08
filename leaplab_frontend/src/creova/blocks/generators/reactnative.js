@@ -485,16 +485,15 @@ registerGenerator('lists_length', function (block) {
 // ── Variable Blocks ───────────────────────────────────────────────────────────
 
 registerGenerator('lexical_variable_get', function (block) {
-    const variable = javascriptGenerator.nameDB_
-        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
-        : block.getFieldValue('VAR');
+    // FieldVariable returns ID from getFieldValue; use getText() for the actual name
+    const field = block.getField('VAR');
+    const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
     return [variable, javascriptGenerator.ORDER_ATOMIC];
 });
 
 registerGenerator('lexical_variable_set', function (block) {
-    const variable = javascriptGenerator.nameDB_
-        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
-        : block.getFieldValue('VAR');
+    const field = block.getField('VAR');
+    const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
     return `${variable} = ${value};\n`;
 });
@@ -507,115 +506,55 @@ registerGenerator('global_declaration', function (block) {
 
 // Also register Blockly's built-in variable blocks as fallbacks
 registerGenerator('variables_get', function (block) {
-    const variable = javascriptGenerator.nameDB_
-        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
-        : block.getFieldValue('VAR');
+    const field = block.getField('VAR');
+    const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
     return [variable, javascriptGenerator.ORDER_ATOMIC];
 });
 
 registerGenerator('variables_set', function (block) {
-    const variable = javascriptGenerator.nameDB_
-        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
-        : block.getFieldValue('VAR');
+    const field = block.getField('VAR');
+    const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
     return `${variable} = ${value};\n`;
 });
 
-// ── Dictionary Blocks ──────────────────────────────────────────────────────────
+// ── Procedure Blocks ──────────────────────────────────────────────────────────
 
-registerGenerator('dictionaries_create_with', function (block) {
-    const parts = [];
-    for (let i = 0; i < block.itemCount_; i++) {
-        const pair = javascriptGenerator.valueToCode(block, 'ADD' + i, javascriptGenerator.ORDER_COMMA);
-        if (pair) parts.push(pair);
+registerGenerator('procedures_defnoreturn', function (block) {
+    const name = block.getFieldValue('NAME') || 'unnamed_procedure';
+    const args = block.arguments_ || [];
+    const argsStr = args.join(', ');
+    const body = javascriptGenerator.statementToCode(block, 'STACK');
+    return `function ${name}(${argsStr}) {\n${body}}\n`;
+});
+
+registerGenerator('procedures_defreturn', function (block) {
+    const name = block.getFieldValue('NAME') || 'unnamed_procedure';
+    const args = block.arguments_ || [];
+    const argsStr = args.join(', ');
+    const body = javascriptGenerator.statementToCode(block, 'STACK');
+    const returnVal = javascriptGenerator.valueToCode(block, 'RETURN', javascriptGenerator.ORDER_NONE) || 'null';
+    return `function ${name}(${argsStr}) {\n${body}  return ${returnVal};\n}\n`;
+});
+
+registerGenerator('procedures_callnoreturn', function (block) {
+    const name = block.getFieldValue('NAME') || 'unnamed_procedure';
+    const args = block.arguments_ || [];
+    const argsCode = [];
+    for (let i = 0; i < args.length; i++) {
+        argsCode.push(javascriptGenerator.valueToCode(block, 'ARG' + i, javascriptGenerator.ORDER_COMMA) || 'null');
     }
-    return ['Object.fromEntries([' + parts.join(', ') + '])', javascriptGenerator.ORDER_FUNCTION_CALL];
+    return `${name}(${argsCode.join(', ')});\n`;
 });
 
-registerGenerator('dictionaries_pair', function (block) {
-    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
-    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_COMMA) || 'null';
-    return ['[' + key + ', ' + value + ']', javascriptGenerator.ORDER_COMMA];
-});
-
-registerGenerator('dictionaries_set_pair', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_MEMBER) || '{}';
-    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_NONE) || '""';
-    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_NONE) || 'null';
-    return `if (${dict}) { ${dict}[${key}] = ${value}; }\n`;
-});
-
-registerGenerator('dictionaries_delete_pair', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_MEMBER) || '{}';
-    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_NONE) || '""';
-    return `if (${dict}) { delete ${dict}[${key}]; }\n`;
-});
-
-registerGenerator('dictionaries_get_value', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
-    const notFound = javascriptGenerator.valueToCode(block, 'NOTFOUND', javascriptGenerator.ORDER_COMMA) || 'null';
-    const code = `((dict, key, notFound) => { try { return (dict && typeof dict === 'object' && key in dict) ? dict[key] : notFound; } catch(e) { return notFound; } })(${dict}, ${key}, ${notFound})`;
-    return [code, javascriptGenerator.ORDER_FUNCTION_CALL];
-});
-
-javascriptGenerator['dictionaries_lookup'] = javascriptGenerator['dictionaries_get_value'];
-
-registerGenerator('dictionaries_walk_tree', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    const path = javascriptGenerator.valueToCode(block, 'PATH', javascriptGenerator.ORDER_COMMA) || '[]';
-    const code = `((dict, path) => {
-        let current = dict;
-        if (!Array.isArray(path)) return null;
-        for (let i = 0; i < path.length; i++) {
-            let key = path[i];
-            if (current && typeof current === 'object') {
-                if (Array.isArray(current) && typeof key === 'number') {
-                    current = current[key - 1];
-                } else if (key in current) {
-                    current = current[key];
-                } else {
-                    return null;
-                }
-            } else {
-                return null;
-            }
-        }
-        return current;
-    })(${dict}, ${path})`;
-    return [code, javascriptGenerator.ORDER_FUNCTION_CALL];
-});
-
-registerGenerator('dictionaries_is_key_in', function (block) {
-    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    return [`(!!(${dict} && typeof ${dict} === 'object' && ${key} in ${dict}))`, javascriptGenerator.ORDER_FUNCTION_CALL];
-});
-
-registerGenerator('dictionaries_length', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    return [`(${dict} && typeof ${dict} === 'object' ? Object.keys(${dict}).length : 0)`, javascriptGenerator.ORDER_MEMBER];
-});
-
-registerGenerator('dictionaries_get_keys', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    return [`(${dict} && typeof ${dict} === 'object' ? Object.keys(${dict}) : [])`, javascriptGenerator.ORDER_MEMBER];
-});
-
-registerGenerator('dictionaries_get_values', function (block) {
-    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
-    return [`(${dict} && typeof ${dict} === 'object' ? Object.values(${dict}) : [])`, javascriptGenerator.ORDER_MEMBER];
-});
-
-registerGenerator('dictionaries_combine', function (block) {
-    const dict1 = javascriptGenerator.valueToCode(block, 'DICT1', javascriptGenerator.ORDER_COMMA) || 'null';
-    const dict2 = javascriptGenerator.valueToCode(block, 'DICT2', javascriptGenerator.ORDER_COMMA) || 'null';
-    return `if (${dict1} && typeof ${dict1} === 'object' && ${dict2} && typeof ${dict2} === 'object') { Object.assign(${dict1}, ${dict2}); }\n`;
-});
-
-registerGenerator('dictionaries_is_a_dictionary', function (block) {
-    const thing = javascriptGenerator.valueToCode(block, 'THING', javascriptGenerator.ORDER_COMMA) || 'null';
-    return [`(!!(${thing} && typeof ${thing} === 'object' && !Array.isArray(${thing})))`, javascriptGenerator.ORDER_FUNCTION_CALL];
+registerGenerator('procedures_callreturn', function (block) {
+    const name = block.getFieldValue('NAME') || 'unnamed_procedure';
+    const args = block.arguments_ || [];
+    const argsCode = [];
+    for (let i = 0; i < args.length; i++) {
+        argsCode.push(javascriptGenerator.valueToCode(block, 'ARG' + i, javascriptGenerator.ORDER_COMMA) || 'null');
+    }
+    return [`${name}(${argsCode.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 });
 
 export default javascriptGenerator;

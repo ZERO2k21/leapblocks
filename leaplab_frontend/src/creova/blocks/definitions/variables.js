@@ -65,12 +65,29 @@ Blockly.Blocks['local_declaration_statement'] = {
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('locals', this.localCount_);
+        for (let i = 0; i < this.localCount_; i++) {
+            const localName = this.getFieldValue('VAR' + i) || 'name';
+            const child = Blockly.utils.xml.createElement('localname');
+            child.setAttribute('name', localName);
+            container.appendChild(child);
+        }
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
+        const localNames = [];
+        for (let i = 0, child; (child = xmlElement.childNodes[i]); i++) {
+            if (child.nodeName && child.nodeName.toLowerCase() === 'localname') {
+                localNames.push(child.getAttribute('name'));
+            }
+        }
+        this.localCount_ = localNames.length || parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+        for (let i = 0; i < localNames.length; i++) {
+            const field = this.getField('VAR' + i);
+            if (field && localNames[i]) {
+                field.setValue(localNames[i]);
+            }
+        }
     },
     decompose: function (workspace) {
         const containerBlock = workspace.newBlock('local_declaration_container');
@@ -161,12 +178,29 @@ Blockly.Blocks['local_declaration_expression'] = {
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('locals', this.localCount_);
+        for (let i = 0; i < this.localCount_; i++) {
+            const localName = this.getFieldValue('VAR' + i) || 'name';
+            const child = Blockly.utils.xml.createElement('localname');
+            child.setAttribute('name', localName);
+            container.appendChild(child);
+        }
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
+        const localNames = [];
+        for (let i = 0, child; (child = xmlElement.childNodes[i]); i++) {
+            if (child.nodeName && child.nodeName.toLowerCase() === 'localname') {
+                localNames.push(child.getAttribute('name'));
+            }
+        }
+        this.localCount_ = localNames.length || parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+        for (let i = 0; i < localNames.length; i++) {
+            const field = this.getField('VAR' + i);
+            if (field && localNames[i]) {
+                field.setValue(localNames[i]);
+            }
+        }
     },
     decompose: function (workspace) {
         const containerBlock = workspace.newBlock('local_declaration_container');
