@@ -7,9 +7,11 @@ interface TrainPanelProps {
     onTrain: () => void
     classCount: number
     totalSamples: number
+    warningTitle?: string
+    warningDesc?: string
 }
 
-export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples }: TrainPanelProps) {
+export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples, warningTitle, warningDesc }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [showAccuracy, setShowAccuracy] = useState(false)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -107,8 +109,8 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                         </svg>
                     </div>
                     <div>
-                        <p className="text-sm text-amber-700 font-semibold">Not enough data</p>
-                        <p className="text-xs text-amber-600">Add at least 2 classes with 2 samples each</p>
+                        <p className="text-sm text-amber-700 font-semibold">{warningTitle || 'Not enough data'}</p>
+                        <p className="text-xs text-amber-600">{warningDesc || 'Add at least 2 classes with 2 samples each'}</p>
                     </div>
                 </div>
             )}

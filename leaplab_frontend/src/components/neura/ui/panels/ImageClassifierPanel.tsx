@@ -28,7 +28,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
     const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(true)
+    const [cameraOn, setCameraOn] = useState(false)
     const [showOnboarding, setShowOnboarding] = useState(() => {
         return !localStorage.getItem('neura-onboarding-seen')
     })
@@ -76,15 +76,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
     }, [cameraOn, startCamera, stopCamera])
 
-    // Start camera on mount for collect/test modes
+    // Stop camera on unmount
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            startCamera()
-        } else {
-            stopCamera()
-        }
         return () => { stopCamera() }
-    }, [mode.mode])
+    }, [])
 
     // Rebuild KNN from stored samples when entering train or test mode
     useEffect(() => {
@@ -205,9 +200,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             img.src = dataUrl
             await new Promise<void>((resolve) => {
                 img.onload = () => resolve()
+                img.onerror = () => resolve()
                 setTimeout(() => resolve(), 3000)
             })
-            await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
+            }
         }
 
         if (fileInputRef.current) fileInputRef.current.value = ''
@@ -241,10 +239,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             img.src = dataUrl
             await new Promise<void>((resolve) => {
                 img.onload = () => resolve()
+                img.onerror = () => resolve()
                 setTimeout(() => resolve(), 3000)
             })
-            const result = await classifierRef.current.predict(img)
-            if (result) setPrediction(result)
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                const result = await classifierRef.current.predict(img)
+                if (result) setPrediction(result)
+            }
         } catch {
             // ignore
         }
@@ -308,6 +309,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             img.onerror = () => reject(new Error('Failed to load image'))
                             setTimeout(() => reject(new Error('Image load timeout')), 5000)
                         })
+                        if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                            total++
+                            continue
+                        }
                         const result = await classifierRef.current.predict(img, 3)
                         if (result && result.label === cls.name) correct++
                         total++
@@ -331,6 +336,16 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const totalSamplesAll = mode.getTotalSamples()
+    let warningTitle = ''
+    let warningDesc = ''
+    if (mode.project && mode.project.classes.length < 2) {
+        warningTitle = 'Add at least 2 classes'
+        warningDesc = 'Create 2 or more classes to start training'
+    } else if (totalSamplesAll === 0) {
+        warningTitle = 'Add samples to train the model'
+        warningDesc = 'Capture or upload images for each class'
+    }
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
@@ -702,6 +717,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         onTrain={handleTrain}
                         classCount={mode.project?.classes.length || 0}
                         totalSamples={mode.getTotalSamples()}
+                        warningTitle={warningTitle}
+                        warningDesc={warningDesc}
                     />
                 </div>
             )}
