@@ -37,9 +37,15 @@ export class ImageClassifier {
     async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<ImagePrediction | null> {
         const model = await this.ensureModel()
         const embedding = model.infer(imageElement, true)
-        const result = await this.knn.predictClass(embedding, k)
-        embedding.dispose()
-        return result
+        try {
+            const result = await this.knn.predictClass(embedding, k)
+            return result
+        } catch (err) {
+            console.warn('[ImageClassifier] Prediction failed:', err)
+            return null
+        } finally {
+            embedding.dispose()
+        }
     }
 
     getSampleCounts(): Record<string, number> {
@@ -67,6 +73,10 @@ export class ImageClassifier {
         let loaded = 0
         for (const dataUrl of imageDataUrls) {
             try {
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                    console.warn(`[ImageClassifier] Skipping invalid data URL for class "${label}"`)
+                    continue
+                }
                 const img = new Image()
                 img.src = dataUrl
                 await new Promise<void>((resolve, reject) => {
@@ -74,6 +84,10 @@ export class ImageClassifier {
                     img.onerror = () => reject(new Error('Failed to load image'))
                     setTimeout(() => reject(new Error('Image load timeout')), 5000)
                 })
+                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                    console.warn(`[ImageClassifier] Image has zero dimensions for class "${label}", skipping`)
+                    continue
+                }
                 await this.addSample(img, label)
                 loaded++
             } catch (err) {

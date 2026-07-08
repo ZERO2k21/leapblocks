@@ -391,6 +391,13 @@ ipcMain.handle('python-pip-install', async (event, pkg: string) => {
   await pythonManager.installPipPackage(pkg);
 });
 
+ipcMain.handle('python-shell-run', async (event, command: string) => {
+  await pythonManager.runShellCommand(command);
+});
+ipcMain.handle('python-shell-stop', async () => {
+  pythonManager.stopShell();
+});
+
 ipcMain.handle('remove-background', async (event, imagePath: string) => {
   const { exec } = require('child_process');
   const fs = require('fs');

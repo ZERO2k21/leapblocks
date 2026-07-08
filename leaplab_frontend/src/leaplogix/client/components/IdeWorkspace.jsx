@@ -88,6 +88,10 @@ export default function IdeWorkspace() {
                         terminalInputValue={ctx.terminalInputValue} setTerminalInputValue={ctx.setTerminalInputValue}
                         handleTerminalInputSubmit={ctx.handleTerminalInputSubmit} handleTerminalInputKey={ctx.handleTerminalInputKey}
                         terminalInputRef={ctx.terminalInputRef}
+                        isElectron={ctx.isElectron}
+                        shellInput={ctx.shellInput || ""} setShellInput={ctx.setShellInput}
+                        handleShellSubmit={ctx.handleShellSubmit} handleShellKey={ctx.handleShellKey}
+                        shellInputRef={ctx.shellInputRef || { current: null }}
                     />
                 </div>
             </div>

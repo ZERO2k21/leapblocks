@@ -7,6 +7,7 @@
 
 import React, { useState, lazy, Suspense } from 'react'
 import type { ProjectType } from './types/neura.types'
+import DiscardConfirmModal from './components/neura/ui/components/DiscardConfirmModal'
 
 const NeuraHome = lazy(() => import('./components/neura/ui/NeuraHome'))
 const ProjectWorkspace = lazy(() => import('./components/neura/ui/ProjectWorkspace'))
@@ -55,6 +56,8 @@ function getClassifierPanel(type: ProjectType) {
 
 export default function NeuraApp({ onBack }: NeuraAppProps) {
     const [view, setView] = useState<ViewState>({ screen: 'home' })
+    const [showDiscardModal, setShowDiscardModal] = useState(false)
+    const [discardClassCount, setDiscardClassCount] = useState(0)
 
     const handleSelectType = (type: ProjectType, template?: { name: string; classes: string[] }) => {
         setView({ screen: 'workspace', type, template })
@@ -66,10 +69,43 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 
     const handleBack = () => {
         if (view.screen === 'workspace') {
+            // Check if user has classes but no samples
+            try {
+                const saved = localStorage.getItem(`neura-project-${view.type}`)
+                if (saved) {
+                    const project = JSON.parse(saved)
+                    const hasClasses = project.classes?.length > 0
+                    const hasSamples = project.classes?.some((c: any) => c.samples?.length > 0)
+                    if (hasClasses && !hasSamples) {
+                        setDiscardClassCount(project.classes.length)
+                        setShowDiscardModal(true)
+                        return
+                    }
+                }
+            } catch {
+                // Invalid data, proceed normally
+            }
             handleBackToHome()
         } else if (onBack) {
             onBack()
         }
+    }
+
+    const handleDiscardConfirm = () => {
+        setShowDiscardModal(false)
+        // Clear the project data from localStorage
+        if (view.screen === 'workspace') {
+            try {
+                localStorage.removeItem(`neura-project-${view.type}`)
+            } catch {
+                // ignore
+            }
+        }
+        handleBackToHome()
+    }
+
+    const handleDiscardCancel = () => {
+        setShowDiscardModal(false)
     }
 
     return (
@@ -95,6 +131,13 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
                     </ProjectWorkspace>
                 )}
             </Suspense>
+
+            <DiscardConfirmModal
+                isOpen={showDiscardModal}
+                classCount={discardClassCount}
+                onConfirm={handleDiscardConfirm}
+                onCancel={handleDiscardCancel}
+            />
         </div>
     )
 }

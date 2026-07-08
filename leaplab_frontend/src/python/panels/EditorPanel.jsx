@@ -42,6 +42,12 @@ export default function EditorPanel({
     handleTerminalInputSubmit,
     handleTerminalInputKey,
     terminalInputRef,
+    isElectron,
+    shellInput,
+    setShellInput,
+    handleShellSubmit,
+    handleShellKey,
+    shellInputRef,
 }) {
     return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -94,6 +100,12 @@ export default function EditorPanel({
                 handleTerminalInputSubmit={handleTerminalInputSubmit}
                 handleTerminalInputKey={handleTerminalInputKey}
                 terminalInputRef={terminalInputRef}
+                isElectron={isElectron}
+                shellInput={shellInput}
+                setShellInput={setShellInput}
+                handleShellSubmit={handleShellSubmit}
+                handleShellKey={handleShellKey}
+                shellInputRef={shellInputRef}
             />
         </div>
     );
