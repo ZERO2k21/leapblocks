@@ -62,8 +62,9 @@ export class ImageClassifier {
         this.knn.clearClass(label)
     }
 
-    async rebuildClass(label: string, imageDataUrls: string[]): Promise<void> {
+    async rebuildClass(label: string, imageDataUrls: string[]): Promise<number> {
         this.knn.clearClass(label)
+        let loaded = 0
         for (const dataUrl of imageDataUrls) {
             try {
                 const img = new Image()
@@ -74,10 +75,12 @@ export class ImageClassifier {
                     setTimeout(() => reject(new Error('Image load timeout')), 5000)
                 })
                 await this.addSample(img, label)
-            } catch {
-                // Skip failed images
+                loaded++
+            } catch (err) {
+                console.warn(`[ImageClassifier] Failed to load sample for class "${label}":`, err)
             }
         }
+        return loaded
     }
 
     dispose(): void {

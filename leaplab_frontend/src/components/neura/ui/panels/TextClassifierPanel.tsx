@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { TextClassifier } from '../../ml/classifiers/TextClassifier'
+import { MAX_SAMPLES_PER_CLASS } from '../../../../types/neura.types'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
@@ -15,23 +16,97 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [modelLoading, setModelLoading] = useState(false)
+
+    // Rebuild KNN from stored samples when entering train or test mode
+    useEffect(() => {
+        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            let cancelled = false
+            setModelLoading(true)
+            const rebuild = async () => {
+                classifierRef.current.clear()
+                for (const cls of mode.project!.classes) {
+                    if (cls.samples.length > 0) {
+                        await classifierRef.current.addSampleBatch(
+                            cls.samples.map(s => s.data),
+                            cls.name
+                        )
+                    }
+                }
+                if (!cancelled) setModelLoading(false)
+            }
+            rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
+            return () => { cancelled = true }
+        }
+    }, [mode.mode])
 
     const handleAddText = useCallback(() => {
         if (!textInput.trim() || !mode.selectedClassId) return
+
+        // Check sample limit
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            return
+        }
+
         mode.addSample(mode.selectedClassId, { type: 'text', data: textInput.trim() })
         classifierRef.current.addSample(textInput.trim(), mode.getSelectedClass()?.name || '')
         setTextInput('')
-    }, [textInput, mode.selectedClassId])
+    }, [textInput, mode.selectedClassId, mode.getSelectedClass])
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1500))
-        mode.setAccuracy(0.80 + Math.random() * 0.18)
+        const project = mode.project
+        if (!project || project.classes.length < 2) {
+            mode.setAccuracy(0)
+            setIsTraining(false)
+            return
+        }
+        try {
+            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
+            // Add a small delay so the UI shows the training animation.
+            await new Promise(r => setTimeout(r, 1500))
+
+            // Step 2: Verify the KNN has data before computing accuracy
+            const sampleCounts = classifierRef.current.getSampleCounts()
+            const trainedClasses = Object.keys(sampleCounts)
+            if (trainedClasses.length < 2) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 3: Compute accuracy by predicting each sample against the KNN
+            let correct = 0
+            let total = 0
+            for (const cls of project.classes) {
+                for (const sample of cls.samples) {
+                    try {
+                        const result = await classifierRef.current.predict(sample.data, 3)
+                        if (result && result.label === cls.name) correct++
+                        total++
+                    } catch {
+                        total++
+                    }
+                }
+            }
+            const accuracy = total > 0 ? correct / total : 0
+            mode.setAccuracy(accuracy)
+
+            // Auto-switch to test mode after training completes
+            setTimeout(() => {
+                mode.setMode('test')
+            }, 2000)
+        } catch {
+            mode.setAccuracy(0)
+        }
         setIsTraining(false)
     }
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
+    const canAddSamples = selectedClass && !atSampleLimit
 
     const glassCardStyle = {
         background: 'rgba(255,255,255,0.6)',
@@ -84,11 +159,16 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
                         <div className="flex items-center justify-between mt-3">
                             <span className="text-[11px] text-gray-400">
-                                {textInput.length > 0 ? `${textInput.length} characters` : 'Press Enter to add'}
+                                {atSampleLimit
+                                    ? `Max ${MAX_SAMPLES_PER_CLASS} samples reached`
+                                    : textInput.length > 0
+                                        ? `${textInput.length} characters`
+                                        : 'Press Enter to add'
+                                }
                             </span>
                             <button
                                 onClick={handleAddText}
-                                disabled={!textInput.trim() || !mode.selectedClassId}
+                                disabled={!textInput.trim() || !canAddSamples}
                                 className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 Add Sample
@@ -106,8 +186,12 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
                                     <h3 className="text-sm font-bold text-gray-700">{selectedClass.name}</h3>
                                 </div>
-                                <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
-                                    {selectedClass.samples.length} texts
+                                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
+                                    atSampleLimit
+                                        ? 'text-amber-600 bg-amber-50'
+                                        : 'text-gray-400 bg-gray-50'
+                                }`}>
+                                    {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} texts
                                 </span>
                             </div>
                             <SampleGrid
@@ -144,16 +228,29 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                             </div>
                             <h3 className="text-sm font-bold text-gray-700">Test Text Classification</h3>
                         </div>
+                        {modelLoading && (
+                            <div className="flex items-center gap-3 px-4 py-3 bg-violet-50 rounded-xl border border-violet-200 mb-3 animate-[fade-in_0.3s_ease-out]">
+                                <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-xs font-semibold text-violet-700">Loading model...</span>
+                            </div>
+                        )}
                         <textarea
                             placeholder="Type text to classify..."
                             className="w-full h-24 px-4 py-3 text-sm border-2 border-gray-100 rounded-xl focus:outline-none focus:border-blue-300 resize-none bg-gray-50 mb-3"
-                            onBlur={(e) => {
-                                if (e.target.value) {
+                            onChange={(e) => {
+                                const value = e.target.value
+                                if (value.trim() && !modelLoading && classifierRef.current.canClassify) {
                                     setIsProcessing(true)
-                                    setTimeout(() => {
-                                        setPrediction({ label: selectedClass?.name || 'Unknown', confidences: { [selectedClass?.name || 'Unknown']: 0.75 + Math.random() * 0.2 } })
+                                    const timeoutId = setTimeout(async () => {
+                                        try {
+                                            const result = await classifierRef.current.predict(value, 3)
+                                            if (result) setPrediction(result)
+                                        } catch {
+                                            // ignore
+                                        }
                                         setIsProcessing(false)
-                                    }, 800)
+                                    }, 500)
+                                    return () => clearTimeout(timeoutId)
                                 }
                             }}
                         />

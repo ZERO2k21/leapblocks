@@ -108,7 +108,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                     </div>
                     <div>
                         <p className="text-sm text-amber-700 font-semibold">Not enough data</p>
-                        <p className="text-xs text-amber-600">Add at least 2 classes with samples</p>
+                        <p className="text-xs text-amber-600">Add at least 2 classes with 2 samples each</p>
                     </div>
                 </div>
             )}
@@ -146,6 +146,31 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                     </div>
                 )}
             </button>
+
+            {/* Training progress bar */}
+            {isTraining && (
+                <div className="w-full animate-[fade-in_0.3s_ease-out]">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500 font-semibold">Training Progress</span>
+                        <span className="text-xs font-bold text-violet-500">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full rounded-full transition-all duration-100 ease-out relative"
+                            style={{
+                                width: `${progress}%`,
+                                background: 'linear-gradient(90deg, #8B5CF6, #7C3AED, #6D28D9)',
+                                boxShadow: '0 0 12px rgba(139,92,246,0.4)'
+                            }}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite]" />
+                        </div>
+                    </div>
+                    <p className="text-center text-xs text-gray-400 mt-2">
+                        Analyzing samples and computing accuracy...
+                    </p>
+                </div>
+            )}
 
             {/* Accuracy result */}
             {accuracy !== null && !isTraining && (
