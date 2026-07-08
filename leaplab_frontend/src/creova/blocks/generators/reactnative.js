@@ -169,16 +169,21 @@ registerGenerator('device_vibrate', function (block) {
 
 // Control Blocks
 registerGenerator('controls_if', function (block) {
-    const condition = javascriptGenerator.valueToCode(block, 'IF0', javascriptGenerator.ORDER_NONE) || 'false';
-    const statements = javascriptGenerator.statementToCode(block, 'DO0');
-    return `if (${condition}) {\n${statements}}\n`;
-});
+    let n = 0;
+    let code = '';
+    let branchCode, conditionCode;
+    do {
+        conditionCode = javascriptGenerator.valueToCode(block, 'IF' + n, javascriptGenerator.ORDER_NONE) || 'false';
+        branchCode = javascriptGenerator.statementToCode(block, 'DO' + n);
+        code += (n > 0 ? ' else ' : '') + `if (${conditionCode}) {\n${branchCode}}`;
+        n++;
+    } while (block.getInput('IF' + n));
 
-registerGenerator('controls_if_else', function (block) {
-    const condition = javascriptGenerator.valueToCode(block, 'IF0', javascriptGenerator.ORDER_NONE) || 'false';
-    const thenStatements = javascriptGenerator.statementToCode(block, 'DO0');
-    const elseStatements = javascriptGenerator.statementToCode(block, 'ELSE');
-    return `if (${condition}) {\n${thenStatements}} else {\n${elseStatements}}\n`;
+    if (block.getInput('ELSE') || block.elseCount_) {
+        branchCode = javascriptGenerator.statementToCode(block, 'ELSE');
+        code += ` else {\n${branchCode}}`;
+    }
+    return code + '\n';
 });
 
 registerGenerator('controls_forEach', function (block) {
@@ -235,22 +240,22 @@ registerGenerator('controls_break', function (block) {
 });
 
 // Math Arithmetic Blocks
-javascriptGenerator['math_add'] = function(block) {
+javascriptGenerator['math_add'] = function (block) {
     let code = [];
     for (let i = 0; i < block.itemCount_; i++) {
         let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || '0';
-        code.push(val);
+        code.push(`Number(${val})`);
     }
     return [code.join(' + '), javascriptGenerator.ORDER_ADDITION];
 };
 
-javascriptGenerator['math_subtract'] = function(block) {
+javascriptGenerator['math_subtract'] = function (block) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_SUBTRACTION) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_SUBTRACTION) || '0';
     return [`${a} - ${b}`, javascriptGenerator.ORDER_SUBTRACTION];
 };
 
-javascriptGenerator['math_multiply'] = function(block) {
+javascriptGenerator['math_multiply'] = function (block) {
     let code = [];
     for (let i = 0; i < block.itemCount_; i++) {
         let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_MULTIPLICATION) || '1';
@@ -259,20 +264,20 @@ javascriptGenerator['math_multiply'] = function(block) {
     return [code.join(' * '), javascriptGenerator.ORDER_MULTIPLICATION];
 };
 
-javascriptGenerator['math_divide_regular'] = function(block) {
+javascriptGenerator['math_divide_regular'] = function (block) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_DIVISION) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_DIVISION) || '1';
     return [`${a} / ${b}`, javascriptGenerator.ORDER_DIVISION];
 };
 
-javascriptGenerator['math_power'] = function(block) {
+javascriptGenerator['math_power'] = function (block) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || '1';
     return [`Math.pow(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
 // Matrices Arithmetic Blocks
-javascriptGenerator['matrices_add'] = function(block) {
+javascriptGenerator['matrices_add'] = function (block) {
     let code = [];
     for (let i = 0; i < block.itemCount_; i++) {
         let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || 'null';
@@ -281,13 +286,13 @@ javascriptGenerator['matrices_add'] = function(block) {
     return [`matrixAdd(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_subtract'] = function(block) {
+javascriptGenerator['matrices_subtract'] = function (block) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`matrixSubtract(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_multiply'] = function(block) {
+javascriptGenerator['matrices_multiply'] = function (block) {
     let code = [];
     for (let i = 0; i < block.itemCount_; i++) {
         let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_COMMA) || 'null';
@@ -296,13 +301,13 @@ javascriptGenerator['matrices_multiply'] = function(block) {
     return [`matrixMultiply(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_power'] = function(block) {
+javascriptGenerator['matrices_power'] = function (block) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`matrixPower(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_operation'] = function(block) {
+javascriptGenerator['matrices_operation'] = function (block) {
     const op = block.getFieldValue('OP');
     const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
     let functionName = 'matrixInverse';
@@ -312,7 +317,7 @@ javascriptGenerator['matrices_operation'] = function(block) {
     return [`${functionName}(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_is_matrix'] = function(block) {
+javascriptGenerator['matrices_is_matrix'] = function (block) {
     const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`isMatrix(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
@@ -346,6 +351,175 @@ javascriptGenerator['colour_blend'] = function (block) {
     const ratio = javascriptGenerator.valueToCode(block, 'RATIO', javascriptGenerator.ORDER_COMMA) || '0.5';
     return [`blendColors(${colour1}, ${colour2}, ${ratio})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
+
+// ── Logic Blocks ──────────────────────────────────────────────────────────────
+
+registerGenerator('logic_compare', function (block) {
+    const op = block.getFieldValue('OP');
+    const order = (op === 'EQ' || op === 'NEQ') ? javascriptGenerator.ORDER_EQUALITY : javascriptGenerator.ORDER_RELATIONAL;
+    const a = javascriptGenerator.valueToCode(block, 'A', order) || '""';
+    const b = javascriptGenerator.valueToCode(block, 'B', order) || '""';
+    const jsOp = op === 'EQ' ? '===' : op === 'NEQ' ? '!==' : op === 'LT' ? '<' : op === 'LTE' ? '<=' : op === 'GT' ? '>' : '>=';
+    return [`${a} ${jsOp} ${b}`, order];
+});
+
+registerGenerator('logic_boolean', function (block) {
+    return [block.getFieldValue('BOOL') === 'TRUE' ? 'true' : 'false', javascriptGenerator.ORDER_ATOMIC];
+});
+
+registerGenerator('logic_negate', function (block) {
+    const value = javascriptGenerator.valueToCode(block, 'BOOL', javascriptGenerator.ORDER_LOGICAL_NOT) || 'true';
+    return [`!${value}`, javascriptGenerator.ORDER_LOGICAL_NOT];
+});
+
+registerGenerator('logic_operation', function (block) {
+    const op = block.getFieldValue('OP');
+    const order = op === 'AND' ? javascriptGenerator.ORDER_LOGICAL_AND : javascriptGenerator.ORDER_LOGICAL_OR;
+    const a = javascriptGenerator.valueToCode(block, 'A', order) || 'false';
+    const b = javascriptGenerator.valueToCode(block, 'B', order) || 'false';
+    return [`${a} ${op === 'AND' ? '&&' : '||'} ${b}`, order];
+});
+
+// ── Text Block ────────────────────────────────────────────────────────────────
+
+registerGenerator('text', function (block) {
+    const text = block.getFieldValue('TEXT') || '';
+    return [JSON.stringify(text), javascriptGenerator.ORDER_ATOMIC];
+});
+
+registerGenerator('text_join', function (block) {
+    const count = block.itemCount_ || 0;
+    if (count === 0) return ['""', javascriptGenerator.ORDER_ATOMIC];
+    const parts = [];
+    for (let i = 0; i < count; i++) {
+        const val = javascriptGenerator.valueToCode(block, 'ADD' + i, javascriptGenerator.ORDER_NONE) || '""';
+        parts.push(`String(${val})`);
+    }
+    return [parts.join(' + '), javascriptGenerator.ORDER_ADDITION];
+});
+
+registerGenerator('text_length', function (block) {
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_MEMBER) || '""';
+    return [`${value}.length`, javascriptGenerator.ORDER_MEMBER];
+});
+
+registerGenerator('text_isEmpty', function (block) {
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_MEMBER) || '""';
+    return [`!${value}.length`, javascriptGenerator.ORDER_LOGICAL_NOT];
+});
+
+// ── Math Blocks (missing) ─────────────────────────────────────────────────────
+
+registerGenerator('math_number', function (block) {
+    const num = Number(block.getFieldValue('NUM'));
+    return [String(num), num >= 0 ? javascriptGenerator.ORDER_ATOMIC : javascriptGenerator.ORDER_UNARY_NEGATION];
+});
+
+registerGenerator('math_compare', function (block) {
+    const op = block.getFieldValue('OP');
+    const order = (op === 'EQ' || op === 'NEQ') ? javascriptGenerator.ORDER_EQUALITY : javascriptGenerator.ORDER_RELATIONAL;
+    const a = javascriptGenerator.valueToCode(block, 'A', order) || '0';
+    const b = javascriptGenerator.valueToCode(block, 'B', order) || '0';
+    const jsOp = op === 'EQ' ? '===' : op === 'NEQ' ? '!==' : op === 'LT' ? '<' : op === 'LTE' ? '<=' : op === 'GT' ? '>' : '>=';
+    return [`${a} ${jsOp} ${b}`, order];
+});
+
+registerGenerator('math_single', function (block) {
+    const op = block.getFieldValue('OP');
+    const arg = javascriptGenerator.valueToCode(block, 'NUM', javascriptGenerator.ORDER_FUNCTION_CALL) || '0';
+    const opMap = { ROOT: `Math.sqrt(${arg})`, ABS: `Math.abs(${arg})`, NEG: `(-${arg})`, LN: `Math.log(${arg})`, LOG10: `Math.log10(${arg})`, EXP: `Math.exp(${arg})`, ROUND: `Math.round(${arg})`, CEILING: `Math.ceil(${arg})`, FLOOR: `Math.floor(${arg})` };
+    return [opMap[op] || arg, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+registerGenerator('math_random_int', function (block) {
+    const from = javascriptGenerator.valueToCode(block, 'FROM', javascriptGenerator.ORDER_COMMA) || '1';
+    const to = javascriptGenerator.valueToCode(block, 'TO', javascriptGenerator.ORDER_COMMA) || '100';
+    return [`Math.floor(Math.random() * (${to} - ${from} + 1) + ${from})`, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+registerGenerator('math_random_float', function () {
+    return ['Math.random()', javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+// ── List Blocks ───────────────────────────────────────────────────────────────
+
+registerGenerator('lists_create_empty', function () {
+    return ['[]', javascriptGenerator.ORDER_ATOMIC];
+});
+
+registerGenerator('lists_add_items', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    const item = javascriptGenerator.valueToCode(block, 'ITEM', javascriptGenerator.ORDER_NONE) || 'null';
+    return `${list}.push(${item});\n`;
+});
+
+registerGenerator('lists_remove_item', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    const index = javascriptGenerator.valueToCode(block, 'INDEX', javascriptGenerator.ORDER_SUBTRACTION) || '1';
+    return `${list}.splice(${index} - 1, 1);\n`;
+});
+
+registerGenerator('lists_getIndex', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    const index = javascriptGenerator.valueToCode(block, 'INDEX', javascriptGenerator.ORDER_SUBTRACTION) || '1';
+    return [`${list}[${index} - 1]`, javascriptGenerator.ORDER_MEMBER];
+});
+
+registerGenerator('lists_setIndex', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    const index = javascriptGenerator.valueToCode(block, 'INDEX', javascriptGenerator.ORDER_SUBTRACTION) || '1';
+    const item = javascriptGenerator.valueToCode(block, 'ITEM', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
+    return `${list}[${index} - 1] = ${item};\n`;
+});
+
+registerGenerator('lists_isEmpty', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    return [`!${list}.length`, javascriptGenerator.ORDER_LOGICAL_NOT];
+});
+
+registerGenerator('lists_length', function (block) {
+    const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_MEMBER) || '[]';
+    return [`${list}.length`, javascriptGenerator.ORDER_MEMBER];
+});
+
+// ── Variable Blocks ───────────────────────────────────────────────────────────
+
+registerGenerator('lexical_variable_get', function (block) {
+    const variable = javascriptGenerator.nameDB_
+        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
+        : block.getFieldValue('VAR');
+    return [variable, javascriptGenerator.ORDER_ATOMIC];
+});
+
+registerGenerator('lexical_variable_set', function (block) {
+    const variable = javascriptGenerator.nameDB_
+        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
+        : block.getFieldValue('VAR');
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
+    return `${variable} = ${value};\n`;
+});
+
+registerGenerator('global_declaration', function (block) {
+    const name = block.getFieldValue('NAME');
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
+    return `var ${name} = ${value};\n`;
+});
+
+// Also register Blockly's built-in variable blocks as fallbacks
+registerGenerator('variables_get', function (block) {
+    const variable = javascriptGenerator.nameDB_
+        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
+        : block.getFieldValue('VAR');
+    return [variable, javascriptGenerator.ORDER_ATOMIC];
+});
+
+registerGenerator('variables_set', function (block) {
+    const variable = javascriptGenerator.nameDB_
+        ? javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE')
+        : block.getFieldValue('VAR');
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
+    return `${variable} = ${value};\n`;
+});
 
 export default javascriptGenerator;
 

@@ -183,20 +183,20 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 {/* Sidebar */}
                 <div className="w-80 bg-white border-r border-gray-100 flex flex-col shadow-sm animate-[slide-down_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
                     {/* Sidebar header */}
-                    <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Classes</h2>
-                            <span className="text-[10px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">
+                    <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Classes</h2>
+                            <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full">
                                 {mode.project?.classes.length || 0}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <p className="text-[11px] text-gray-400">
+                            <p className="text-xs text-gray-500 font-medium">
                                 {totalSamples} total samples
                             </p>
                             <button
                                 onClick={() => setShowAddClass(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-[11px] font-bold hover:shadow-lg hover:shadow-violet-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-violet-200 transition-all duration-200 hover:scale-105 active:scale-95"
                             >
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 5v14M5 12h14" />
@@ -260,14 +260,14 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
                     {/* Sidebar footer stats */}
                     {mode.project && mode.project.classes.length > 0 && (
-                        <div className="px-5 py-3 border-t border-gray-50 bg-gradient-to-r from-gray-50 to-white">
-                            <div className="flex items-center justify-between text-[11px]">
-                                <span className="text-gray-400 font-medium">
+                        <div className="px-5 py-3 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-500 font-medium">
                                     {mode.project.classes.length} classes
                                 </span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    <span className="text-gray-500 font-semibold">
+                                    <span className="text-gray-600 font-semibold">
                                         {totalSamples} samples
                                     </span>
                                 </div>

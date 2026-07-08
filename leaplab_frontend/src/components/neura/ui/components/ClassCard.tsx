@@ -85,7 +85,7 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                         />
                     ) : (
                         <p
-                            className="text-sm font-semibold text-gray-700 truncate"
+                            className="text-sm font-bold text-gray-800 truncate"
                             onDoubleClick={(e) => {
                                 e.stopPropagation()
                                 setIsEditing(true)
@@ -100,13 +100,13 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                                 className="w-1.5 h-1.5 rounded-full"
                                 style={{ backgroundColor: classData.color }}
                             />
-                            <span className="text-xs text-gray-400 font-medium">
+                            <span className="text-xs text-gray-500 font-medium">
                                 {sampleCount} {sampleCount === 1 ? 'sample' : 'samples'}
                             </span>
                         </div>
                     </div>
                     {/* Sample quality progress bar */}
-                    <div className="mt-1.5">
+                    <div className="mt-2">
                         <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
                                 className="h-full rounded-full transition-all duration-700 ease-out"
@@ -125,8 +125,8 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                                 }}
                             />
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-0.5">
-                            {sampleCount >= 10 ? 'Great samples!' : sampleCount >= 5 ? 'Good, add more for better results' : `Add more samples (${sampleCount}/20)`}
+                        <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                            {sampleCount >= 10 ? 'Great samples!' : sampleCount >= 5 ? 'Good, add more for better results' : `Aim for 10-15 samples`}
                         </p>
                     </div>
                 </div>

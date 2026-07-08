@@ -8,7 +8,7 @@ import { Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft, RotateCw, 
 import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
-    const { screens, activeScreen, selectedId, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media, designViewport, setDesignViewport } = appState;
+    const { screens, activeScreen, selectedId, selectedComponent, isArrangementType, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media, designViewport, setDesignViewport } = appState;
     const [deviceType, setDeviceType] = useState(designViewport?.deviceType || 'phone'); // 'phone', 'tablet7', 'tablet10'
     const [orientation, setOrientation] = useState(designViewport?.orientation || 'portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
@@ -223,7 +223,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
         setDropTargetComponent(null);
         setDropTarget(null);
 
-        if (!draggedId || draggedId === targetId) return;
+        if (!draggedId) {
+            // New component dropped on an existing element, delegate to handleDrop
+            handleDrop(e, targetId);
+            return;
+        }
+
+        if (draggedId === targetId) return;
 
         // Check cycle
         const draggedNode = findComponentById(draggedId, components);
@@ -270,10 +276,19 @@ export default function PhoneCanvasEnhanced({ appState }) {
         const componentData = e.dataTransfer.getData('componentData');
         const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
 
+        // If a layout is currently selected, unconditionally place the dropped element inside that layout container
+        let finalTargetId = targetContainerId;
+        if (selectedComponent) {
+            const isLayout = isArrangementType(selectedComponent.type) && selectedComponent.type !== 'Map' && selectedComponent.type !== 'FeatureCollection';
+            if (isLayout) {
+                finalTargetId = selectedComponent.id;
+            }
+        }
+
         if (draggedId) {
-            const targetId = targetContainerId || currentScreen.id;
+            const targetId = finalTargetId || currentScreen.id;
             if (draggedId !== targetId) {
-                const position = targetContainerId ? 'inside' : 'after';
+                const position = finalTargetId ? 'inside' : 'after';
                 if (appState.moveComponent) {
                     appState.moveComponent(draggedId, targetId, position);
                 }
@@ -284,8 +299,8 @@ export default function PhoneCanvasEnhanced({ appState }) {
         if (!type) return;
 
         // Validate: Map containers only accept map features
-        if (targetContainerId) {
-            const target = findComponentById(targetContainerId, components);
+        if (finalTargetId) {
+            const target = findComponentById(finalTargetId, components);
             if (target && target.type === 'Map' && !mapFeatureTypes.includes(type)) {
                 return; // Reject non-map features dropped on Map
             }
@@ -310,11 +325,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
         }
 
         // If dropping into a container, select it first
-        if (targetContainerId) {
-            setSelectedId(targetContainerId);
+        if (finalTargetId) {
+            setSelectedId(finalTargetId);
         }
 
-        addComponent(type, { visible });
+        addComponent(type, { visible, parentId: finalTargetId });
     };
 
     const handleDragOver = (e) => {
@@ -537,7 +552,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     </div>
                 );
 
-            case 'Spinner':
+            case 'Spinner': {
+                const spinnerItems = comp.props.Elements || comp.props.ElementsFromString || '';
+                const spinnerList = typeof spinnerItems === 'string'
+                    ? (spinnerItems.trim() ? spinnerItems.split(',') : [])
+                    : Array.isArray(spinnerItems) ? spinnerItems : [];
                 return (
                     <select
                         key={comp.id}
@@ -549,9 +568,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         onClick={handleClick}
                         disabled={comp.props.Enabled === false}
                     >
-                        <option>{comp.props.Text || comp.props.Selection || 'Select...'}</option>
+                        {spinnerList.length > 0 ? (
+                            spinnerList.map((item, idx) => (
+                                <option key={idx}>{item.trim()}</option>
+                            ))
+                        ) : (
+                            <option>Select...</option>
+                        )}
                     </select>
                 );
+            }
 
             case 'ListView': {
                 const items = comp.props.Elements || ['Item 1', 'Item 2', 'Item 3'];
@@ -1101,11 +1127,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const headerFooterHeight = deviceType === 'phone' ? phoneHeaderFooter : tabletHeaderFooter;
     const frameWidth = displayWidth;
     const frameHeight = displayHeight + headerFooterHeight;
-    // Cap maximum scale of phone at 0.8 and tablet/monitor at 0.7 to keep it balanced
-    const maxScale = deviceType === 'phone' ? 0.8 : 0.7;
+    // Cap maximum scale of phone at 0.72 and tablet/monitor at 0.62 to keep it balanced
+    const maxScale = deviceType === 'phone' ? 0.72 : 0.62;
     const scale = containerSize.width > 0 && containerSize.height > 0
         ? Math.min(maxScale, Math.min((containerSize.width - 48) / frameWidth, (containerSize.height - 48) / frameHeight))
-        : 0.7; // default fallback scale
+        : 0.62; // default fallback scale
 
 
     return (

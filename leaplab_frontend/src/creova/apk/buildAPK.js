@@ -238,6 +238,7 @@ class ApkBuilder {
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden"${screenOrientation ? `
             android:screenOrientation="${screenOrientation}"` : ''}
+            android:windowSoftInputMode="adjustPan"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -300,10 +301,8 @@ versionInfo:
     onProgress?.({ stage: 'injecting_smali', progress: 50, message: 'Injecting WebView activity...' });
     await this.injector.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
 
-    // Inject custom app icon if pre-rendered
-    if (appState.renderedIconsDir) {
-      await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir, onProgress);
-    }
+    // Inject custom app icon if pre-rendered or fallback to default
+    await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir || null, onProgress);
 
     // Rebuild
     const unsignedPath = path.join(this.injector.workingDir, 'unsigned.apk');

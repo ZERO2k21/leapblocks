@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ImageClassifier } from '../../ml/classifiers/ImageClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../../../types/neura.types'
+import WorkflowIndicator from '../components/WorkflowIndicator'
+import StatsBar from '../components/StatsBar'
 import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
@@ -348,8 +350,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
         <button
             onClick={toggleCamera}
-            className={`flex items-center gap-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                size === 'sm' ? 'px-3 py-1.5' : 'px-4 py-2'
+            className={`flex items-center gap-2 rounded-xl text-sm font-bold transition-all duration-200 ${
+                size === 'sm' ? 'px-3 py-1.5' : 'px-5 py-2.5'
             } ${
                 cameraOn
                     ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
@@ -428,7 +430,28 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== COLLECT MODE ==================== */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6">
+                <div className="flex-1 flex flex-col items-center gap-5 p-6 overflow-y-auto">
+                    {/* Workflow Header */}
+                    <div className="w-full max-w-[520px] text-center mb-1 animate-[fade-in_0.3s_ease-out]">
+                        <h2 className="text-2xl font-black text-gray-800 mb-1" style={{
+                            background: 'linear-gradient(135deg, #1e1b4b 0%, #7C3AED 50%, #3B82F6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                        }}>
+                            Image Classifier Workflow
+                        </h2>
+                        <p className="text-sm text-gray-400 font-medium">
+                            Follow the steps to build your custom image classifier
+                        </p>
+                    </div>
+
+                    {/* 3-Step Workflow Indicator */}
+                    <WorkflowIndicator
+                        mode={mode.mode}
+                        onModeChange={mode.setMode}
+                        canTrain={canTrain}
+                    />
+
                     {/* Camera error state */}
                     {cameraError && !cameraOn && (
                         <div className="w-full max-w-[520px] bg-white rounded-3xl p-8 shadow-xl border border-gray-100 text-center animate-[scale-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
@@ -502,29 +525,71 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
                     {/* Camera off placeholder */}
                     {!cameraOn && !cameraError && (
-                        <div className="w-full max-w-[520px] rounded-3xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center py-16" style={{ aspectRatio: '4/3' }}>
-                            <div className="w-20 h-20 rounded-2xl bg-gray-200 flex items-center justify-center mb-4">
-                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-                                    <circle cx="12" cy="13" r="4" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                </svg>
+                        <div className="w-full max-w-[520px] rounded-3xl overflow-hidden flex flex-col items-center justify-center py-16" style={{
+                            aspectRatio: '4/3',
+                            background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)',
+                            border: '2px dashed #E5E7EB'
+                        }}>
+                            {/* Camera icon with decorative ring */}
+                            <div className="relative mb-5">
+                                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-50 to-blue-50 flex items-center justify-center border border-violet-100/50">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
+                                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                                        <circle cx="12" cy="13" r="4" />
+                                        <line x1="1" y1="1" x2="23" y2="23" />
+                                    </svg>
+                                </div>
                             </div>
-                            <p className="text-sm font-semibold text-gray-400 mb-1">Camera is off</p>
-                            <p className="text-xs text-gray-300 mb-4">Turn on camera or upload images</p>
+
+                            <p className="text-base font-bold text-gray-600 mb-1">Camera is off</p>
+                            <p className="text-sm text-gray-400 mb-5">Turn on your camera or upload images to get started</p>
+
+                            {/* Turn On Camera button */}
                             <button
                                 onClick={startCamera}
-                                className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all"
+                                className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-200 transition-all duration-200 hover:scale-105 active:scale-95 mb-4"
                             >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                                    <circle cx="12" cy="13" r="4" />
+                                </svg>
                                 Turn On Camera
                             </button>
+
+                            {/* "or" divider */}
+                            <div className="flex items-center gap-3 w-48 mb-4">
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <span className="text-xs text-gray-300 font-medium">or</span>
+                                <div className="flex-1 h-px bg-gray-200" />
+                            </div>
+
+                            {/* Upload Images button */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={!mode.selectedClassId}
+                                className={`flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                                    mode.selectedClassId
+                                        ? 'bg-white text-gray-700 border-2 border-gray-200 hover:border-violet-300 hover:shadow-md'
+                                        : 'bg-gray-50 text-gray-300 border-2 border-gray-100 cursor-not-allowed'
+                                }`}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Upload Images
+                            </button>
+                            <p className="text-[11px] text-gray-300 mt-2 font-medium">
+                                PNG, JPG, JPEG up to 10MB
+                            </p>
                         </div>
                     )}
 
                     <canvas ref={canvasRef} className="hidden" />
 
                     {/* Controls row */}
-                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                    <div className="flex items-center gap-4 flex-wrap justify-center">
                         <CameraToggle />
 
                         <button
@@ -533,11 +598,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 if (burstMode) stopBurstCapture()
                             }}
                             disabled={!cameraOn}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
                                 burstMode && cameraOn
                                     ? 'bg-violet-100 text-violet-700 ring-2 ring-violet-300'
                                     : cameraOn
-                                        ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                         : 'bg-gray-50 text-gray-300 cursor-not-allowed'
                             }`}
                         >
@@ -558,9 +623,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={!canAddSamples}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                                canAddSamples
+                            disabled={!mode.selectedClassId}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                                mode.selectedClassId
                                     ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-md'
                                     : 'bg-gray-50 text-gray-300 cursor-not-allowed'
                             }`}
@@ -589,6 +654,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             pulse={!isCapturing && !!canAddSamples}
                         />
                     )}
+
+                    {/* Stats Bar */}
+                    <StatsBar
+                        totalClasses={mode.project?.classes.length || 0}
+                        totalImages={mode.getTotalSamples()}
+                        imagesPerClass={(mode.project?.classes.length || 0) > 0 ? Math.round(mode.getTotalSamples() / (mode.project?.classes.length || 1)) : 0}
+                        recommended={15}
+                    />
 
                     {/* Samples section */}
                     {selectedClass && selectedClass.samples.length > 0 && (

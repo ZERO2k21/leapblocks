@@ -69,14 +69,17 @@ export default function ComponentTree({ appState }) {
             }
         }
 
+        let parentId = null;
         if (visible && targetId && targetId !== currentScreen.id) {
             const isTargetLayout = ARRANGEMENT_TYPES.has(targetId) || targetId.includes('Layout') || targetId.includes('Arrangement');
             if (isTargetLayout) {
+                parentId = targetId;
                 selectComponent(targetId);
             } else {
-                const parentId = findParentIdOfNode(currentScreen.components, targetId);
-                if (parentId) {
-                    selectComponent(parentId);
+                const computedParentId = findParentIdOfNode(currentScreen.components, targetId);
+                if (computedParentId) {
+                    parentId = computedParentId;
+                    selectComponent(computedParentId);
                 } else {
                     selectComponent(currentScreen.id);
                 }
@@ -86,7 +89,7 @@ export default function ComponentTree({ appState }) {
         }
 
         if (appState.addComponent) {
-            appState.addComponent(type, { visible });
+            appState.addComponent(type, { visible, parentId });
         }
     };
 
@@ -148,16 +151,14 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 transition-all ${
-                        isDragOver
-                            ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
-                            : isSelected
-                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
-                                : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
-                    }`}
+                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 transition-all ${isDragOver
+                        ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
+                        : isSelected
+                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
+                            : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                        }`}
                     style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
-                    onContextMenu={(e) => handleContextMenu(e, component)}
                     onDragOver={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -240,7 +241,7 @@ export default function ComponentTree({ appState }) {
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Components</span>
             </div>
 
-            <div 
+            <div
                 className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body"
                 onDragOver={(e) => {
                     e.preventDefault();
@@ -252,13 +253,12 @@ export default function ComponentTree({ appState }) {
             >
                 {/* Screen Node */}
                 <div
-                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] transition-all ${
-                        dragOverId === currentScreen.id
-                            ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
-                            : selectedComponent?.id === currentScreen.id
-                                ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
-                                : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
-                    }`}
+                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] transition-all ${dragOverId === currentScreen.id
+                        ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
+                        : selectedComponent?.id === currentScreen.id
+                            ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
+                            : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
+                        }`}
                     onClick={() => selectComponent(currentScreen.id)}
                     onDragOver={(e) => {
                         e.preventDefault();
@@ -314,46 +314,7 @@ export default function ComponentTree({ appState }) {
                     </div>
                 )}
 
-                {/* Context Menu */}
-                {contextMenu && (
-                    <>
-                        <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setContextMenu(null)}
-                        />
-                        <div
-                            className="fixed z-50 bg-white border-2 border-slate-200 rounded-xl shadow-2xl py-2 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
-                            style={{ left: contextMenu.x, top: contextMenu.y }}
-                        >
-                            <button
-                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-900 flex items-center gap-3 transition-colors font-semibold"
-                                onClick={() => {
-                                    handleRename(contextMenu.component);
-                                    setContextMenu(null);
-                                }}
-                            >
-                                <span className="text-lg">✏️</span> Rename
-                            </button>
-                            <button
-                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-slate-50 text-slate-900 flex items-center gap-3 transition-colors font-semibold"
-                                onClick={() => {
-                                    // Copy functionality
-                                    setContextMenu(null);
-                                }}
-                            >
-                                <span className="text-lg">📋</span> Copy
-                            </button>
-                            <div className="border-t border-slate-100 my-2"></div>
-                            <button
-                                className="w-full px-5 py-2.5 text-left text-[14px] hover:bg-red-50 text-red-600 flex items-center gap-3 transition-colors font-semibold"
-                                onClick={() => handleDelete(contextMenu.component)}
-                            >
-                                <span className="text-lg">🗑️</span> Delete
-                            </button>
-                        </div>
-
-                    </>
-                )}
+                {/* Context Menu Removed */}
             </div>
         </div>
     );
