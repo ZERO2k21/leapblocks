@@ -1,5 +1,5 @@
 appId: com.creoleap.leapblocks
-productName: LeapBlocks
+productName: LeapLab
 copyright: Copyright © 2026 Creoleap Technologies Pvt. Ltd.
 directories:
   output: out
@@ -31,7 +31,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  shortcutName: LeapBlocks
+  shortcutName: LeapLab
   menuCategory: Creoleap
   runAfterFinish: true
   deleteAppDataOnUninstall: false

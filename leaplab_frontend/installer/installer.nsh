@@ -11,10 +11,10 @@
 !macroend
 
 !macro customInstall
-  WriteRegStr HKCU "Software\\Creoleap\\LeapBlocks" "InstallLocation" "$INSTDIR"
-  WriteRegStr HKCU "Software\\Creoleap\\LeapBlocks" "Version" "${VERSION}"
+  WriteRegStr HKCU "Software\\Creoleap\\LeapLab" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKCU "Software\\Creoleap\\LeapLab" "Version" "${VERSION}"
 !macroend
 
 !macro customUnInstall
-  DeleteRegKey HKCU "Software\\Creoleap\\LeapBlocks"
+  DeleteRegKey HKCU "Software\\Creoleap\\LeapLab"
 !macroend

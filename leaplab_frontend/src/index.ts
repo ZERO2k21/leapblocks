@@ -128,7 +128,7 @@ const createWindow = (): void => {
     width: 1400,
     minHeight: 600,
     minWidth: 1000,
-    title: 'LeapBlocks - Block Programming IDE',
+    title: 'LeapLab - Block Programming IDE',
     show: false, // hidden until ready-to-show fires — eliminates blank white flash
     backgroundColor: '#f8fafc', // matches app background so no flicker on show
     webPreferences: {
