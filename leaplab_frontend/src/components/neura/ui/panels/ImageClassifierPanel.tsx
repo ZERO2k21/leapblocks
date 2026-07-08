@@ -39,6 +39,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [burstMode, setBurstMode] = useState(false)
     const [testImage, setTestImage] = useState<string | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
+    const [augmentMode, setAugmentMode] = useState(true)
     const streamRef = useRef<MediaStream | null>(null)
 
     // Camera controls
@@ -167,8 +168,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const imageData = canvas.toDataURL('image/png')
             mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-            // Add to classifier in background (non-blocking)
-            classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => {})
+            // Add to classifier with optional augmentation
+            if (augmentMode) {
+                classifierRef.current.addSampleAugmented(video, mode.getSelectedClass()?.name || '').catch(() => {})
+            } else {
+                classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => {})
+            }
         } catch (err) {
             console.warn('[Neura] Capture failed:', err)
         } finally {
@@ -219,7 +224,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 setTimeout(() => resolve(), 3000)
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
+                if (augmentMode) {
+                    await classifierRef.current.addSampleAugmented(img, mode.getSelectedClass()?.name || '')
+                } else {
+                    await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
+                }
             }
         }
 
@@ -302,11 +311,23 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             return
         }
         try {
-            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
-            // Add a small delay so the UI shows the training animation.
-            await new Promise(r => setTimeout(r, 1500))
+            // Step 1: Force rebuild KNN from stored samples to ensure fresh embeddings
+            setModelLoading(true)
+            classifierRef.current.clear()
+            for (const cls of project.classes) {
+                if (cls.samples.length > 0) {
+                    await classifierRef.current.rebuildClass(
+                        cls.name,
+                        cls.samples.map(s => s.data)
+                    )
+                }
+            }
+            setModelLoading(false)
 
-            // Step 2: Verify the KNN has data before computing accuracy
+            // Step 2: Brief delay for UI feedback
+            await new Promise(r => setTimeout(r, 800))
+
+            // Step 3: Verify the KNN has data before computing accuracy
             const sampleCounts = classifierRef.current.getSampleCounts()
             const trainedClasses = Object.keys(sampleCounts)
             if (trainedClasses.length < 2) {
@@ -315,7 +336,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 return
             }
 
-            // Step 3: Compute accuracy using true leave-one-out cross-validation
+            // Step 4: Compute accuracy using true leave-one-out cross-validation
+            // Use adaptive k based on smallest class size
+            const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
+            const adaptiveK = Math.min(3, minSamples)
+
             let correct = 0
             let total = 0
             for (const cls of project.classes) {
@@ -337,8 +362,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         // Remove this sample from KNN temporarily
                         const removedEmbedding = await classifierRef.current.removeExampleByIndex(cls.name, i)
 
-                        // Predict without this sample
-                        const result = await classifierRef.current.predict(img, 3)
+                        // Predict without this sample using adaptive k
+                        const result = await classifierRef.current.predict(img, adaptiveK)
                         if (result && result.label === cls.name) correct++
                         total++
 
@@ -369,6 +394,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
+    const canAddSamples = selectedClass && !atSampleLimit
     const totalSamplesAll = mode.getTotalSamples()
     let warningTitle = ''
     let warningDesc = ''
@@ -378,9 +405,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     } else if (totalSamplesAll === 0) {
         warningTitle = 'Add samples to train the model'
         warningDesc = 'Capture or upload images for each class'
+    } else if (mode.project && mode.project.classes.some(c => c.samples.length < 2)) {
+        warningTitle = 'Add more samples per class'
+        warningDesc = 'Each class needs at least 2 samples for reliable training. 5+ recommended for 90%+ accuracy.'
     }
-    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
-    const canAddSamples = selectedClass && !atSampleLimit
 
     const handleRemoveSample = async (classId: string, sampleId: string) => {
         mode.removeSample(classId, sampleId)
@@ -659,6 +687,24 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 <path d="M12 6v12M6 12h12" />
                             </svg>
                             {burstMode ? 'Burst ON' : 'Burst OFF'}
+                        </button>
+
+                        <button
+                            onClick={() => setAugmentMode(!augmentMode)}
+                            disabled={!mode.selectedClassId}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                                augmentMode && mode.selectedClassId
+                                    ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-300'
+                                    : mode.selectedClassId
+                                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                            }`}
+                            title="Data augmentation generates extra training variants for higher accuracy"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                            </svg>
+                            {augmentMode ? 'Augment ON' : 'Augment OFF'}
                         </button>
 
                         <input
