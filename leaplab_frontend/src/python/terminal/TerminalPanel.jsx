@@ -39,10 +39,17 @@ export default function TerminalPanel({
     handleTerminalInputSubmit,
     handleTerminalInputKey,
     terminalInputRef,
+    isElectron,
+    shellInput,
+    setShellInput,
+    handleShellSubmit,
+    handleShellKey,
+    shellInputRef,
 }) {
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span style={{ fontSize: 12 }}>▶</span> },
         { id: "repl", label: "REPL", icon: <span style={{ fontSize: 11 }}>{">>>"}</span> },
+        { id: "shell", label: "Shell", icon: <span style={{ fontSize: 12, fontFamily: "monospace" }}>$_</span> },
     ];
 
     return (
@@ -201,6 +208,61 @@ export default function TerminalPanel({
                         setPipFilter={setPipFilter}
                         handleInstall={handleInstall}
                     />
+                </div>
+            )}
+
+            {activePanel === "shell" && (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    {!isElectron ? (
+                        <div style={{
+                            flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                            padding: 24, background: "#1E1E1E",
+                        }}>
+                            <div style={{ fontSize: 28, marginBottom: 12, opacity: 0.5 }}>⚠</div>
+                            <div style={{ color: "#FFD700", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+                                Shell is only available in desktop mode
+                            </div>
+                            <div style={{ color: "#888", fontSize: 12, textAlign: "center", lineHeight: 1.5 }}>
+                                Install the LeapLab desktop app (.exe) for full terminal support.<br />
+                                You can then run commands like <span style={{ color: "#9CDCFE", fontFamily: "monospace" }}>pip install numpy</span> directly.
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ padding: "6px 14px", fontSize: 11, color: C.MUTED, borderBottom: `1px solid ${C.BORDER}`, background: "#FAFAFA" }}>
+                                System shell — type commands like <span style={{ fontFamily: "monospace", color: C.PURPLE }}>pip install numpy</span> and press Enter
+                            </div>
+                            <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E" }}>
+                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
+                                    $ pip install &lt;package&gt;  — install Python packages
+                                </div>
+                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
+                                    $ python -c "import &lt;module&gt;"  — verify installation
+                                </div>
+                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 12 }}>
+                                    $ python -m pip list  — list installed packages
+                                </div>
+                                <div style={{ color: "#569CD6", marginBottom: 4, fontSize: 11 }}>────────────────────────────────────────</div>
+                            </div>
+                            <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#1E1E1E" }}>
+                                <span style={{ color: "#6A9955", fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>$</span>
+                                <input
+                                    ref={shellInputRef}
+                                    value={shellInput}
+                                    onChange={(e) => setShellInput(e.target.value)}
+                                    onKeyDown={handleShellKey}
+                                    placeholder="Type a command and press Enter..."
+                                    style={{
+                                        flex: 1, border: "none", outline: "none",
+                                        fontFamily: "'Fira Code', monospace", fontSize: 13,
+                                        background: "transparent", color: "#D4D4D4",
+                                        caretColor: "#D4D4D4",
+                                    }}
+                                    autoFocus={activePanel === "shell"}
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
         </div>
