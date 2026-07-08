@@ -180,7 +180,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeLibrary: (libName: string) => ipcRenderer.invoke('remove-library', libName),
     getInstalledLibraries: () => ipcRenderer.invoke('get-installed-libraries'),
     getForgeLibPath: () => ipcRenderer.invoke('get-forge-lib-path'),
-    isElectron: true,
+    isElectron: typeof ipcRenderer !== 'undefined' && ipcRenderer !== null,
 
     // ═══════════════════════════════════════════════════════════════════════
     // PYTHON NATIVE APIS

@@ -1067,7 +1067,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             return { x: pixelX, y: pixelY };
         };
 
-        if (!skulptRef.current) {
+        // Only load Skulpt in web mode; Electron uses native Python
+        if (!window.electronAPI?.isElectron && !skulptRef.current) {
             skulptRef.current = new SkulptEngine({
                 onOut: (text) => addLog(text.replace(/\n$/, ""), "log"),
                 onErr: (text) => addLog(text, "error"),
