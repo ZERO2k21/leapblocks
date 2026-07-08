@@ -28,5 +28,5 @@ function fixIcon(exePath) {
 }
 
 // Fix app EXE (installer icon is handled by electron-builder from electron-builder.yml)
-const appExe = path.join(OutDir, 'win-unpacked', 'LeapBlocks.exe');
+const appExe = path.join(OutDir, 'win-unpacked', 'LeapLab.exe');
 fixIcon(appExe);

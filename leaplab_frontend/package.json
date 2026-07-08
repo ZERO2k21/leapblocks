@@ -1,6 +1,6 @@
 {
   "name": "leapblocks",
-  "productName": "leapblocks",
+  "productName": "leaplab",
   "version": "1.0.0",
   "description": "LeapBlocks monorepo — block-based coding, App Inventor, Arduino/ESP32, ML",
   "main": "dist/main/index.js",
