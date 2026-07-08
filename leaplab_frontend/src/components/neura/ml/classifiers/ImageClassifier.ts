@@ -68,6 +68,21 @@ export class ImageClassifier {
         this.knn.clearClass(label)
     }
 
+    /**
+     * Remove a specific example by index (for leave-one-out CV).
+     */
+    async removeExampleByIndex(label: string, index: number): Promise<number[] | null> {
+        const data = await this.knn.removeExampleByIndex(label, index)
+        return data ? Array.from(data) : null
+    }
+
+    /**
+     * Re-add an example from data array (for leave-one-out CV).
+     */
+    async addExampleFromDataArray(data: number[], label: string): Promise<void> {
+        await this.knn.addExampleFromDataArray(data, label)
+    }
+
     async rebuildClass(label: string, imageDataUrls: string[]): Promise<number> {
         this.knn.clearClass(label)
         let loaded = 0

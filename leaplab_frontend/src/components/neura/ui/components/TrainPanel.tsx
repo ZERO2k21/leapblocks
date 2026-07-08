@@ -9,9 +9,10 @@ interface TrainPanelProps {
     totalSamples: number
     warningTitle?: string
     warningDesc?: string
+    trainingError?: string | null
 }
 
-export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples, warningTitle, warningDesc }: TrainPanelProps) {
+export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples, warningTitle, warningDesc, trainingError }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [showAccuracy, setShowAccuracy] = useState(false)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -111,6 +112,22 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                     <div>
                         <p className="text-sm text-amber-700 font-semibold">{warningTitle || 'Not enough data'}</p>
                         <p className="text-xs text-amber-600">{warningDesc || 'Add at least 2 classes with 2 samples each'}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Training Error */}
+            {trainingError && (
+                <div className="flex items-center gap-3 px-5 py-3 bg-red-50 rounded-2xl border border-red-200 w-full animate-[slideUp_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p className="text-sm text-red-700 font-semibold">{trainingError}</p>
                     </div>
                 </div>
             )}

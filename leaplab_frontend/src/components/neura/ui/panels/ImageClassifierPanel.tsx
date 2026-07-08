@@ -21,9 +21,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const testFileInputRef = useRef<HTMLInputElement>(null)
     const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const handleCaptureRef = useRef<() => Promise<void>>(null)
+    const autoSwitchRef = useRef<NodeJS.Timeout | null>(null)
+    const skipNextRebuildRef = useRef(false)
+    const isPredictingRef = useRef(false)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
+    const [trainingError, setTrainingError] = useState<string | null>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -84,6 +88,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     // Rebuild KNN from stored samples when entering train or test mode
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            // Skip rebuild if coming from train→test auto-switch
+            if (skipNextRebuildRef.current && mode.mode === 'test') {
+                skipNextRebuildRef.current = false
+                setModelLoading(false)
+                return
+            }
+            skipNextRebuildRef.current = false
+
             let cancelled = false
             setModelLoading(true)
             const rebuild = async () => {
@@ -108,7 +120,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         if (mode.mode !== 'test' || modelLoading) return
 
         const runPrediction = async () => {
+            if (isPredictingRef.current) return
             if (cameraOn && stream && videoRef.current) {
+                isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
                     const result = await classifierRef.current.predict(videoRef.current)
@@ -117,6 +131,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     console.error('Prediction error:', err)
                 }
                 setIsProcessing(false)
+                isPredictingRef.current = false
             }
         }
 
@@ -270,12 +285,16 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [])
 
     useEffect(() => {
-        return () => stopBurstCapture()
+        return () => {
+            stopBurstCapture()
+            if (autoSwitchRef.current) clearTimeout(autoSwitchRef.current)
+        }
     }, [])
 
     // Training - rebuild KNN from stored samples, then compute leave-one-out accuracy
     const handleTrain = async () => {
         setIsTraining(true)
+        setTrainingError(null)
         const project = mode.project
         if (!project || project.classes.length < 2) {
             mode.setAccuracy(0)
@@ -296,11 +315,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 return
             }
 
-            // Step 3: Compute accuracy by predicting each sample against the KNN
+            // Step 3: Compute accuracy using true leave-one-out cross-validation
             let correct = 0
             let total = 0
             for (const cls of project.classes) {
-                for (const sample of cls.samples) {
+                for (let i = 0; i < cls.samples.length; i++) {
+                    const sample = cls.samples[i]
                     try {
                         const img = new Image()
                         img.src = sample.data
@@ -313,9 +333,19 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             total++
                             continue
                         }
+
+                        // Remove this sample from KNN temporarily
+                        const removedEmbedding = await classifierRef.current.removeExampleByIndex(cls.name, i)
+
+                        // Predict without this sample
                         const result = await classifierRef.current.predict(img, 3)
                         if (result && result.label === cls.name) correct++
                         total++
+
+                        // Re-add the sample back
+                        if (removedEmbedding) {
+                            await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
+                        }
                     } catch {
                         total++
                     }
@@ -325,11 +355,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             mode.setAccuracy(accuracy)
 
             // Auto-switch to test mode after training completes
-            setTimeout(() => {
+            skipNextRebuildRef.current = true
+            autoSwitchRef.current = setTimeout(() => {
                 mode.setMode('test')
             }, 2000)
-        } catch {
+        } catch (err) {
             mode.setAccuracy(0)
+            setTrainingError('Training failed. Please try again.')
+            console.error('[Neura] Training error:', err)
         }
         setIsTraining(false)
     }
@@ -719,6 +752,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         totalSamples={mode.getTotalSamples()}
                         warningTitle={warningTitle}
                         warningDesc={warningDesc}
+                        trainingError={trainingError}
                     />
                 </div>
             )}
