@@ -886,6 +886,11 @@ class ApkInjector {
     return template.replace(/\{\{packageName\}\}/g, pkgPath);
   }
 
+  generateLeapWebViewClientSmali(pkgPath) {
+    const template = fs.readFileSync(path.join(__dirname, 'templates', 'LeapWebViewClient.smali.template'), 'utf8');
+    return template.replace(/\{\{packageName\}\}/g, pkgPath);
+  }
+
   /**
    * Inject app icon into the decoded APK mipmap folders at all densities
    */
@@ -954,6 +959,12 @@ class ApkInjector {
     await fs.writeFile(
       path.join(smaliDir, 'LeapChromeClient.smali'),
       this.generateLeapChromeClientSmali(pkgPath)
+    );
+
+    // ── Write LeapWebViewClient.smali ──────────────────────────────────────
+    await fs.writeFile(
+      path.join(smaliDir, 'LeapWebViewClient.smali'),
+      this.generateLeapWebViewClientSmali(pkgPath)
     );
 
     // Filter dynamic runtime permissions

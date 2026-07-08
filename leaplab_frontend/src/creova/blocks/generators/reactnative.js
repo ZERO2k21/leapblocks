@@ -521,6 +521,103 @@ registerGenerator('variables_set', function (block) {
     return `${variable} = ${value};\n`;
 });
 
+// ── Dictionary Blocks ──────────────────────────────────────────────────────────
+
+registerGenerator('dictionaries_create_with', function (block) {
+    const parts = [];
+    for (let i = 0; i < block.itemCount_; i++) {
+        const pair = javascriptGenerator.valueToCode(block, 'ADD' + i, javascriptGenerator.ORDER_COMMA);
+        if (pair) parts.push(pair);
+    }
+    return ['Object.fromEntries([' + parts.join(', ') + '])', javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+registerGenerator('dictionaries_pair', function (block) {
+    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_COMMA) || 'null';
+    return ['[' + key + ', ' + value + ']', javascriptGenerator.ORDER_COMMA];
+});
+
+registerGenerator('dictionaries_set_pair', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_MEMBER) || '{}';
+    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_NONE) || '""';
+    const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_NONE) || 'null';
+    return `if (${dict}) { ${dict}[${key}] = ${value}; }\n`;
+});
+
+registerGenerator('dictionaries_delete_pair', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_MEMBER) || '{}';
+    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_NONE) || '""';
+    return `if (${dict}) { delete ${dict}[${key}]; }\n`;
+});
+
+registerGenerator('dictionaries_get_value', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
+    const notFound = javascriptGenerator.valueToCode(block, 'NOTFOUND', javascriptGenerator.ORDER_COMMA) || 'null';
+    const code = `((dict, key, notFound) => { try { return (dict && typeof dict === 'object' && key in dict) ? dict[key] : notFound; } catch(e) { return notFound; } })(${dict}, ${key}, ${notFound})`;
+    return [code, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+javascriptGenerator['dictionaries_lookup'] = javascriptGenerator['dictionaries_get_value'];
+
+registerGenerator('dictionaries_walk_tree', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    const path = javascriptGenerator.valueToCode(block, 'PATH', javascriptGenerator.ORDER_COMMA) || '[]';
+    const code = `((dict, path) => {
+        let current = dict;
+        if (!Array.isArray(path)) return null;
+        for (let i = 0; i < path.length; i++) {
+            let key = path[i];
+            if (current && typeof current === 'object') {
+                if (Array.isArray(current) && typeof key === 'number') {
+                    current = current[key - 1];
+                } else if (key in current) {
+                    current = current[key];
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
+        return current;
+    })(${dict}, ${path})`;
+    return [code, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+registerGenerator('dictionaries_is_key_in', function (block) {
+    const key = javascriptGenerator.valueToCode(block, 'KEY', javascriptGenerator.ORDER_COMMA) || '""';
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`(!!(${dict} && typeof ${dict} === 'object' && ${key} in ${dict}))`, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
+registerGenerator('dictionaries_length', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`(${dict} && typeof ${dict} === 'object' ? Object.keys(${dict}).length : 0)`, javascriptGenerator.ORDER_MEMBER];
+});
+
+registerGenerator('dictionaries_get_keys', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`(${dict} && typeof ${dict} === 'object' ? Object.keys(${dict}) : [])`, javascriptGenerator.ORDER_MEMBER];
+});
+
+registerGenerator('dictionaries_get_values', function (block) {
+    const dict = javascriptGenerator.valueToCode(block, 'DICT', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`(${dict} && typeof ${dict} === 'object' ? Object.values(${dict}) : [])`, javascriptGenerator.ORDER_MEMBER];
+});
+
+registerGenerator('dictionaries_combine', function (block) {
+    const dict1 = javascriptGenerator.valueToCode(block, 'DICT1', javascriptGenerator.ORDER_COMMA) || 'null';
+    const dict2 = javascriptGenerator.valueToCode(block, 'DICT2', javascriptGenerator.ORDER_COMMA) || 'null';
+    return `if (${dict1} && typeof ${dict1} === 'object' && ${dict2} && typeof ${dict2} === 'object') { Object.assign(${dict1}, ${dict2}); }\n`;
+});
+
+registerGenerator('dictionaries_is_a_dictionary', function (block) {
+    const thing = javascriptGenerator.valueToCode(block, 'THING', javascriptGenerator.ORDER_COMMA) || 'null';
+    return [`(!!(${thing} && typeof ${thing} === 'object' && !Array.isArray(${thing})))`, javascriptGenerator.ORDER_FUNCTION_CALL];
+});
+
 export default javascriptGenerator;
 
 // Blockly 10+ / 12 uses `forBlock` lookups. Some generators above may have

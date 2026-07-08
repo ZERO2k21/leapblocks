@@ -25,6 +25,8 @@ function generateIndexHtml(appState) {
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>${escapeHtml(appName || 'My App')}</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <div id="app-root">
@@ -2299,6 +2301,7 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `    ${varName}.className = 'comp-button';\n`;
       js += `    ${varName}.textContent = ${JSON.stringify(props.text || props.Text || 'Button')};\n`;
       js += `    ${varName}.addEventListener('click', function() {\n`;
+      js += `      window._lastButtonClickTime = Date.now();\n`;
       js += `      var _fn = window['${id}_Click'];\n`;
       js += `      if (typeof _fn === 'function') {\n`;
       js += `        try { _fn(); } catch(_e) { console.error('[LeapApp] Error in ${id}_Click:', _e); }\n`;
@@ -2546,7 +2549,70 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `    ${varName}.style.position = 'relative';\n`;
       js += `    ${varName}.style.minHeight = '200px';\n`;
       js += `    ${varName}.style.background = '#e8e8e8';\n`;
-      js += `    ${varName}.style.backgroundImage = 'repeating-linear-gradient(45deg, #d0d0d0 0px, #d0d0d0 1px, transparent 1px, transparent 8px)';\n`;
+      js += `    (function(mapDiv) {\n`;
+      js += `      function initMap() {\n`;
+      js += `        if (typeof L === 'undefined') {\n`;
+      js += `          setTimeout(initMap, 100);\n`;
+      js += `          return;\n`;
+      js += `        }\n`;
+      js += `        var lat = ${Number(props.Latitude) || 0};\n`;
+      js += `        var lon = ${Number(props.Longitude) || 0};\n`;
+      js += `        var zoom = ${Number(props.ZoomLevel) || 13};\n`;
+      js += `        var map = L.map(mapDiv).setView([lat, lon], zoom);\n`;
+      js += `        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n`;
+      js += `          maxZoom: 19,\n`;
+      js += `          attribution: '© OpenStreetMap'\n`;
+      js += `        }).addTo(map);\n`;
+      js += `        mapDiv._leafletMap = map;\n`;
+      js += `        mapDiv._markers = {};\n`;
+      js += `        mapDiv._userInteracting = false;\n`;
+      js += `        mapDiv._interactionTimeout = null;\n`;
+      js += `        map.on('dragstart zoomstart', function() {\n`;
+      js += `          mapDiv._userInteracting = true;\n`;
+      js += `          if (mapDiv._interactionTimeout) clearTimeout(mapDiv._interactionTimeout);\n`;
+      js += `        });\n`;
+      js += `        map.on('dragend zoomend', function() {\n`;
+      js += `          if (mapDiv._interactionTimeout) clearTimeout(mapDiv._interactionTimeout);\n`;
+      js += `          mapDiv._interactionTimeout = setTimeout(function() {\n`;
+      js += `            mapDiv._userInteracting = false;\n`;
+      js += `          }, 8000);\n`;
+      js += `        });\n`;
+      js += `        setTimeout(function() {\n`;
+      js += `          map.invalidateSize();\n`;
+      js += `        }, 300);\n`;
+      js += `      }\n`;
+      js += `      initMap();\n`;
+      js += `    })(${varName});\n`;
+      break;
+
+    case 'Marker':
+      js += `    var ${varName} = document.createElement('div');\n`;
+      js += `    ${varName}.id = 'comp-${id}';\n`;
+      js += `    ${varName}.style.display = 'none';\n`;
+      js += `    (function(dummyEl) {\n`;
+      js += `      var markerId = '${id}';\n`;
+      js += `      var lat = ${Number(props.Latitude) || 0};\n`;
+      js += `      var lon = ${Number(props.Longitude) || 0};\n`;
+      js += `      function addMarker() {\n`;
+      js += `        var parentMapDiv = ${parentVar};\n`;
+      js += `        if (!parentMapDiv || !parentMapDiv._leafletMap || typeof L === 'undefined') {\n`;
+      js += `          setTimeout(addMarker, 100);\n`;
+      js += `          return;\n`;
+      js += `        }\n`;
+      js += `        var map = parentMapDiv._leafletMap;\n`;
+      js += `        var customIcon = L.divIcon({\n`;
+      js += `          html: '<svg width="32" height="42" viewBox="0 0 32 42"><path d="M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26c0-8.8-7.2-16-16-16zm0 22c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="#E53935" stroke="#fff" stroke-width="1.5"/></svg>',\n`;
+      js += `          className: 'custom-leaflet-marker',\n`;
+      js += `          iconSize: [32, 42],\n`;
+      js += `          iconAnchor: [16, 42]\n`;
+      js += `        });\n`;
+      js += `        var marker = L.marker([lat, lon], {icon: customIcon}).addTo(map);\n`;
+      js += `        if ('${props.Title || ''}') marker.bindPopup('${props.Title || ''}');\n`;
+      js += `        parentMapDiv._markers[markerId] = marker;\n`;
+      js += `        dummyEl._leafletMarker = marker;\n`;
+      js += `      }\n`;
+      js += `      addMarker();\n`;
+      js += `    })(${varName});\n`;
       break;
 
     case 'Polygon': {
@@ -2836,6 +2902,102 @@ function generateComponentProxy(comp) {
   }
   if (type === 'VideoPlayer') {
     return `  var ${id} = new VideoPlayerShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+
+  if (type === 'Map') {
+    let js = `  // Proxy: ${id} (Map)\n`;
+    js += `  var ${id} = {\n`;
+    js += `    get Latitude() { return getComponentValue('${id}', 'Latitude') || 0; },\n`;
+    js += `    set Latitude(v) {\n`;
+    js += `      setComponentProperty('${id}', 'Latitude', v);\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el && el._leafletMap) {\n`;
+    js += `        var force = (window._lastButtonClickTime && (Date.now() - window._lastButtonClickTime < 600));\n`;
+    js += `        if (force) { el._userInteracting = false; }\n`;
+    js += `        if (!el._userInteracting) {\n`;
+    js += `          var currentCenter = el._leafletMap.getCenter();\n`;
+    js += `          el._leafletMap.setView([Number(v) || 0, currentCenter.lng], el._leafletMap.getZoom());\n`;
+    js += `        }\n`;
+    js += `        el._leafletMap.invalidateSize();\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    get Longitude() { return getComponentValue('${id}', 'Longitude') || 0; },\n`;
+    js += `    set Longitude(v) {\n`;
+    js += `      setComponentProperty('${id}', 'Longitude', v);\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el && el._leafletMap) {\n`;
+    js += `        var force = (window._lastButtonClickTime && (Date.now() - window._lastButtonClickTime < 600));\n`;
+    js += `        if (force) { el._userInteracting = false; }\n`;
+    js += `        if (!el._userInteracting) {\n`;
+    js += `          var currentCenter = el._leafletMap.getCenter();\n`;
+    js += `          el._leafletMap.setView([currentCenter.lat, Number(v) || 0], el._leafletMap.getZoom());\n`;
+    js += `        }\n`;
+    js += `        el._leafletMap.invalidateSize();\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    get ZoomLevel() { return getComponentValue('${id}', 'ZoomLevel') || 13; },\n`;
+    js += `    set ZoomLevel(v) {\n`;
+    js += `      setComponentProperty('${id}', 'ZoomLevel', v);\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el && el._leafletMap) {\n`;
+    js += `        el._leafletMap.setZoom(Number(v) || 13);\n`;
+    js += `        el._leafletMap.invalidateSize();\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    PanTo: function(latitude, longitude, zoom) {\n`;
+    js += `      this.Latitude = latitude;\n`;
+    js += `      this.Longitude = longitude;\n`;
+    js += `      if (zoom !== undefined) this.ZoomLevel = zoom;\n`;
+    js += `    }\n`;
+    js += `  };\n\n`;
+    return js;
+  }
+
+  if (type === 'Marker') {
+    let js = `  // Proxy: ${id} (Marker)\n`;
+    js += `  var ${id} = {\n`;
+    js += `    get Latitude() { return getComponentValue('${id}', 'Latitude') || 0; },\n`;
+    js += `    set Latitude(v) {\n`;
+    js += `      setComponentProperty('${id}', 'Latitude', v);\n`;
+    js += `      var dummy = document.getElementById('comp-${id}');\n`;
+    js += `      if (dummy && dummy._leafletMarker) {\n`;
+    js += `        var latlng = dummy._leafletMarker.getLatLng();\n`;
+    js += `        dummy._leafletMarker.setLatLng([Number(v) || 0, latlng.lng]);\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    get Longitude() { return getComponentValue('${id}', 'Longitude') || 0; },\n`;
+    js += `    set Longitude(v) {\n`;
+    js += `      setComponentProperty('${id}', 'Longitude', v);\n`;
+    js += `      var dummy = document.getElementById('comp-${id}');\n`;
+    js += `      if (dummy && dummy._leafletMarker) {\n`;
+    js += `        var latlng = dummy._leafletMarker.getLatLng();\n`;
+    js += `        dummy._leafletMarker.setLatLng([latlng.lat, Number(v) || 0]);\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    SetLocation: function(latitude, longitude) {\n`;
+    js += `      this.Latitude = latitude;\n`;
+    js += `      this.Longitude = longitude;\n`;
+    js += `    }\n`;
+    js += `  };\n\n`;
+    return js;
+  }
+
+  if (type === 'Navigation') {
+    let js = `  // Proxy: ${id} (Navigation)\n`;
+    js += `  var ${id} = {\n`;
+    js += `    StartLatitude: 0,\n`;
+    js += `    StartLongitude: 0,\n`;
+    js += `    EndLatitude: 0,\n`;
+    js += `    EndLongitude: 0,\n`;
+    js += `    RequestDirections: function() {\n`;
+    js += `      var url = 'https://www.google.com/maps/dir/?api=1&origin=' + this.StartLatitude + ',' + this.StartLongitude + '&destination=' + this.EndLatitude + ',' + this.EndLongitude;\n`;
+    js += `      var a = document.createElement('a');\n`;
+    js += `      a.href = url;\n`;
+    js += `      a.target = '_blank';\n`;
+    js += `      a.click();\n`;
+    js += `    }\n`;
+    js += `  };\n\n`;
+    return js;
   }
 
   const propNames = Object.keys(props);

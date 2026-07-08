@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 2,
+  "appName": "GPSTracker",
+  "packageName": "com.gps.tracker",
+  "versionCode": 1,
+  "versionName": "1.0",
+  "screens": [
+    {
+      "id": "Screen1",
+      "title": "GPS & Maps Tracker",
+      "backgroundColor": "#F5F5F5",
+      "backgroundImage": "",
+      "alignHorizontal": "Center",
+      "alignVertical": "Top",
+      "components": [
+        {
+          "id": "VerticalArrangement1",
+          "type": "VerticalArrangement",
+          "icon": "↕",
+          "visible": true,
+          "props": {
+            "Width": -2,
+            "Height": -2,
+            "AlignHorizontal": "Center",
+            "AlignVertical": "Top",
+            "Padding": 16,
+            "width": -2,
+            "height": -2,
+            "visible": true
+          },
+          "children": [
+            {
+              "id": "lblTitle",
+              "type": "Label",
+              "icon": "T",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": -1,
+                "Text": "GPS & Maps Tracker",
+                "FontSize": 24,
+                "FontBold": true,
+                "TextAlignment": "center",
+                "width": -2,
+                "height": -1,
+                "visible": true
+              }
+            },
+            {
+              "id": "Map1",
+              "type": "Map",
+              "icon": "🗺️",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": 300,
+                "ZoomLevel": 15,
+                "ShowUser": true,
+                "EnableZoom": true,
+                "ShowCompass": true,
+                "ShowScale": true,
+                "EnableRotation": true,
+                "LocationSensor": "LocationSensor1",
+                "width": -2,
+                "height": 300,
+                "visible": true
+              },
+              "children": [
+                {
+                  "id": "CurrentMarker",
+                  "type": "Marker",
+                  "icon": "📌",
+                  "visible": true,
+                  "props": {
+                    "Latitude": 0,
+                    "Longitude": 0,
+                    "visible": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "lblLatitude",
+              "type": "Label",
+              "icon": "T",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": -1,
+                "Text": "Latitude : --",
+                "FontSize": 18,
+                "width": -2,
+                "height": -1,
+                "visible": true
+              }
+            },
+            {
+              "id": "lblLongitude",
+              "type": "Label",
+              "icon": "T",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": -1,
+                "Text": "Longitude : --",
+                "FontSize": 18,
+                "width": -2,
+                "height": -1,
+                "visible": true
+              }
+            },
+            {
+              "id": "lblAddress",
+              "type": "Label",
+              "icon": "T",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": -1,
+                "Text": "Address : --",
+                "FontSize": 16,
+                "width": -2,
+                "height": -1,
+                "visible": true
+              }
+            },
+            {
+              "id": "HorizontalArrangement1",
+              "type": "HorizontalArrangement",
+              "icon": "↔",
+              "visible": true,
+              "props": {
+                "Width": -2,
+                "Height": -1,
+                "AlignHorizontal": "Center",
+                "AlignVertical": "Center",
+                "width": -2,
+                "height": -1,
+                "visible": true
+              },
+              "children": [
+                {
+                  "id": "btnGetLocation",
+                  "type": "Button",
+                  "icon": "🔘",
+                  "visible": true,
+                  "props": {
+                    "Width": -1,
+                    "Height": -1,
+                    "Text": "Get Location",
+                    "BackgroundColor": "#2196F3",
+                    "TextColor": "#ffffff",
+                    "Shape": "rounded",
+                    "width": -1,
+                    "height": -1,
+                    "visible": true
+                  }
+                },
+                {
+                  "id": "btnRefresh",
+                  "type": "Button",
+                  "icon": "🔘",
+                  "visible": true,
+                  "props": {
+                    "Width": -1,
+                    "Height": -1,
+                    "Text": "Refresh",
+                    "BackgroundColor": "#4CAF50",
+                    "TextColor": "#ffffff",
+                    "Shape": "rounded",
+                    "width": -1,
+                    "height": -1,
+                    "visible": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "btnNavigate",
+              "type": "Button",
+              "icon": "🔘",
+              "visible": true,
+              "props": {
+                "Width": 200,
+                "Height": -1,
+                "Text": "Navigate",
+                "BackgroundColor": "#2196F3",
+                "TextColor": "#ffffff",
+                "Shape": "rounded",
+                "width": 200,
+                "height": -1,
+                "visible": true
+              }
+            }
+          ]
+        }
+      ],
+      "nonVisibleComponents": [
+        {
+          "id": "LocationSensor1",
+          "type": "LocationSensor",
+          "icon": "📍",
+          "visible": false,
+          "props": {
+            "Enabled": true,
+            "TimeInterval": 1000,
+            "DistanceInterval": 5,
+            "visible": false
+          }
+        },
+        {
+          "id": "Navigation1",
+          "type": "Navigation",
+          "icon": "🗺️",
+          "visible": false,
+          "props": {
+            "visible": false
+          }
+        },
+        {
+          "id": "Notifier1",
+          "type": "Notifier",
+          "icon": "🔔",
+          "visible": false,
+          "props": {
+            "visible": false
+          }
+        }
+      ]
+    }
+  ],
+  "blockLogic": "<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"component_event\" id=\"screen_init\" x=\"50\" y=\"50\"><mutation component_type=\"Screen\" event_name=\"Initialize\" instance_name=\"Screen1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Screen1</field><statement name=\"DO\"><block type=\"component_method\" id=\"notifier_welcome\"><mutation component_type=\"Notifier\" method_name=\"ShowAlert\" instance_name=\"Notifier1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Notifier1</field><value name=\"ARG_notice\"><block type=\"text\" id=\"welcome_text\"><field name=\"TEXT\">Welcome to GPS &amp; Maps Tracker</field></block></value><next><block type=\"component_set_property\" id=\"sensor_enable\"><mutation component_type=\"LocationSensor\" property_name=\"Enabled\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Enabled</field><value name=\"VALUE\"><block type=\"logic_boolean\" id=\"bool_true\"><field name=\"BOOL\">TRUE</field></block></value></block></next></block></statement></block><block type=\"component_event\" id=\"loc_changed\" x=\"50\" y=\"200\"><mutation component_type=\"LocationSensor\" event_name=\"LocationChanged\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><statement name=\"DO\"><block type=\"component_set_property\" id=\"set_lbl_lat\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLatitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLatitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"join_lat\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"lat_prefix\"><field name=\"TEXT\">Latitude : </field></block></value><value name=\"ADD1\"><block type=\"lexical_variable_get\" id=\"get_lat_val\"><field name=\"VAR\">latitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"set_lbl_lon\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLongitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLongitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"join_lon\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"lon_prefix\"><field name=\"TEXT\">Longitude : </field></block></value><value name=\"ADD1\"><block type=\"lexical_variable_get\" id=\"get_lon_val\"><field name=\"VAR\">longitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"set_lbl_addr\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblAddress\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblAddress</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"join_addr\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"addr_prefix\"><field name=\"TEXT\">Address : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"get_curr_addr\"><mutation component_type=\"LocationSensor\" property_name=\"CurrentAddress\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">CurrentAddress</field></block></value></block></value><next><block type=\"component_set_property\" id=\"set_marker_lat\"><mutation component_type=\"Marker\" property_name=\"Latitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"lexical_variable_get\" id=\"get_marker_lat_val\"><field name=\"VAR\">latitude</field></block></value><next><block type=\"component_set_property\" id=\"set_marker_lon\"><mutation component_type=\"Marker\" property_name=\"Longitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"lexical_variable_get\" id=\"get_marker_lon_val\"><field name=\"VAR\">longitude</field></block></value><next><block type=\"component_set_property\" id=\"set_map_lat\"><mutation component_type=\"Map\" property_name=\"Latitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"lexical_variable_get\" id=\"get_map_lat_val\"><field name=\"VAR\">latitude</field></block></value><next><block type=\"component_set_property\" id=\"set_map_lon\"><mutation component_type=\"Map\" property_name=\"Longitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"lexical_variable_get\" id=\"get_map_lon_val\"><field name=\"VAR\">longitude</field></block></value></block></next></block></next></block></next></block></next></block></next></block></next></block></statement></block><block type=\"component_event\" id=\"btn_get_loc_click\" x=\"650\" y=\"50\"><mutation component_type=\"Button\" event_name=\"Click\" instance_name=\"btnGetLocation\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">btnGetLocation</field><statement name=\"DO\"><block type=\"controls_if\" id=\"if_gps_disabled\"><mutation else=\"1\"></mutation><value name=\"IF0\"><block type=\"logic_negate\" id=\"not_enabled\"><value name=\"BOOL\"><block type=\"component_get_property\" id=\"get_sensor_enabled\"><mutation component_type=\"LocationSensor\" property_name=\"Enabled\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Enabled</field></block></value></block></value><statement name=\"DO0\"><block type=\"component_method\" id=\"notifier_gps_disabled\"><mutation component_type=\"Notifier\" method_name=\"ShowAlert\" instance_name=\"Notifier1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Notifier1</field><value name=\"ARG_notice\"><block type=\"text\" id=\"txt_gps_disabled\"><field name=\"TEXT\">Please Enable GPS</field></block></value></block></statement><statement name=\"ELSE\"><block type=\"controls_if\" id=\"if_location_unavailable\"><mutation else=\"1\"></mutation><value name=\"IF0\"><block type=\"logic_compare\" id=\"compare_lat_zero\"><field name=\"OP\">EQ</field><value name=\"A\"><block type=\"component_get_property\" id=\"get_sensor_lat_check\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><value name=\"B\"><block type=\"math_number\" id=\"num_zero\"><field name=\"NUM\">0</field></block></value></block></value><statement name=\"DO0\"><block type=\"component_method\" id=\"notifier_unavailable\"><mutation component_type=\"Notifier\" method_name=\"ShowAlert\" instance_name=\"Notifier1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Notifier1</field><value name=\"ARG_notice\"><block type=\"text\" id=\"txt_unavailable\"><field name=\"TEXT\">Unable to Detect Location</field></block></value></block></statement><statement name=\"ELSE\"><block type=\"component_set_property\" id=\"btn_set_lbl_lat\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLatitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLatitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"btn_join_lat\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"btn_lat_prefix\"><field name=\"TEXT\">Latitude : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"btn_get_sensor_lat\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"btn_set_lbl_lon\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLongitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLongitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"btn_join_lon\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"btn_lon_prefix\"><field name=\"TEXT\">Longitude : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"btn_get_sensor_lon\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"btn_set_lbl_addr\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblAddress\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblAddress</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"btn_join_addr\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"btn_addr_prefix\"><field name=\"TEXT\">Address : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"btn_get_curr_addr\"><mutation component_type=\"LocationSensor\" property_name=\"CurrentAddress\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">CurrentAddress</field></block></value></block></value><next><block type=\"component_set_property\" id=\"btn_set_marker_lat\"><mutation component_type=\"Marker\" property_name=\"Latitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"btn_get_sensor_lat2\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"btn_set_marker_lon\"><mutation component_type=\"Marker\" property_name=\"Longitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"btn_get_sensor_lon2\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value><next><block type=\"component_set_property\" id=\"btn_set_map_lat\"><mutation component_type=\"Map\" property_name=\"Latitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"btn_get_sensor_lat3\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"btn_set_map_lon\"><mutation component_type=\"Map\" property_name=\"Longitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"btn_get_sensor_lon3\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value></block></next></block></next></block></next></block></next></block></next></block></next></block></statement></block></statement></block></statement></block><block type=\"component_event\" id=\"btn_refresh_click\" x=\"650\" y=\"700\"><mutation component_type=\"Button\" event_name=\"Click\" instance_name=\"btnRefresh\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">btnRefresh</field><statement name=\"DO\"><block type=\"controls_if\" id=\"if_gps_disabled_ref\"><mutation else=\"1\"></mutation><value name=\"IF0\"><block type=\"logic_negate\" id=\"not_enabled_ref\"><value name=\"BOOL\"><block type=\"component_get_property\" id=\"get_sensor_enabled_ref\"><mutation component_type=\"LocationSensor\" property_name=\"Enabled\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Enabled</field></block></value></block></value><statement name=\"DO0\"><block type=\"component_method\" id=\"notifier_gps_disabled_ref\"><mutation component_type=\"Notifier\" method_name=\"ShowAlert\" instance_name=\"Notifier1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Notifier1</field><value name=\"ARG_notice\"><block type=\"text\" id=\"txt_gps_disabled_ref\"><field name=\"TEXT\">Please Enable GPS</field></block></value></block></statement><statement name=\"ELSE\"><block type=\"controls_if\" id=\"if_location_unavailable_ref\"><mutation else=\"1\"></mutation><value name=\"IF0\"><block type=\"logic_compare\" id=\"compare_lat_zero_ref\"><field name=\"OP\">EQ</field><value name=\"A\"><block type=\"component_get_property\" id=\"get_sensor_lat_check_ref\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><value name=\"B\"><block type=\"math_number\" id=\"num_zero_ref\"><field name=\"NUM\">0</field></block></value></block></value><statement name=\"DO0\"><block type=\"component_method\" id=\"notifier_unavailable_ref\"><mutation component_type=\"Notifier\" method_name=\"ShowAlert\" instance_name=\"Notifier1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Notifier1</field><value name=\"ARG_notice\"><block type=\"text\" id=\"txt_unavailable_ref\"><field name=\"TEXT\">Unable to Detect Location</field></block></value></block></statement><statement name=\"ELSE\"><block type=\"component_set_property\" id=\"ref_set_lbl_lat\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLatitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLatitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"ref_join_lat\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"ref_lat_prefix\"><field name=\"TEXT\">Latitude : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"ref_get_sensor_lat\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"ref_set_lbl_lon\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblLongitude\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblLongitude</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"ref_join_lon\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"ref_lon_prefix\"><field name=\"TEXT\">Longitude : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"ref_get_sensor_lon\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value></block></value><next><block type=\"component_set_property\" id=\"ref_set_lbl_addr\"><mutation component_type=\"Label\" property_name=\"Text\" instance_name=\"lblAddress\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">lblAddress</field><field name=\"PROPERTY\">Text</field><value name=\"VALUE\"><block type=\"text_join\" id=\"ref_join_addr\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"text\" id=\"ref_addr_prefix\"><field name=\"TEXT\">Address : </field></block></value><value name=\"ADD1\"><block type=\"component_get_property\" id=\"ref_get_curr_addr\"><mutation component_type=\"LocationSensor\" property_name=\"CurrentAddress\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">CurrentAddress</field></block></value></block></value><next><block type=\"component_set_property\" id=\"ref_set_marker_lat\"><mutation component_type=\"Marker\" property_name=\"Latitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"ref_get_sensor_lat2\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"ref_set_marker_lon\"><mutation component_type=\"Marker\" property_name=\"Longitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"ref_get_sensor_lon2\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value><next><block type=\"component_set_property\" id=\"ref_set_map_lat\"><mutation component_type=\"Map\" property_name=\"Latitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Latitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"ref_get_sensor_lat3\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"ref_set_map_lon\"><mutation component_type=\"Map\" property_name=\"Longitude\" instance_name=\"Map1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Map1</field><field name=\"PROPERTY\">Longitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"ref_get_sensor_lon3\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value></block></next></block></next></block></next></block></next></block></next></block></next></block></statement></block></statement></block></statement></block><block type=\"component_event\" id=\"btn_navigate_click\" x=\"650\" y=\"1400\"><mutation component_type=\"Button\" event_name=\"Click\" instance_name=\"btnNavigate\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">btnNavigate</field><statement name=\"DO\"><block type=\"component_set_property\" id=\"nav_set_start_lat\"><mutation component_type=\"Navigation\" property_name=\"StartLatitude\" instance_name=\"Navigation1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Navigation1</field><field name=\"PROPERTY\">StartLatitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"nav_get_sensor_lat\"><mutation component_type=\"LocationSensor\" property_name=\"Latitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"nav_set_start_lon\"><mutation component_type=\"Navigation\" property_name=\"StartLongitude\" instance_name=\"Navigation1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Navigation1</field><field name=\"PROPERTY\">StartLongitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"nav_get_sensor_lon\"><mutation component_type=\"LocationSensor\" property_name=\"Longitude\" instance_name=\"LocationSensor1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">LocationSensor1</field><field name=\"PROPERTY\">Longitude</field></block></value><next><block type=\"component_set_property\" id=\"nav_set_end_lat\"><mutation component_type=\"Navigation\" property_name=\"EndLatitude\" instance_name=\"Navigation1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Navigation1</field><field name=\"PROPERTY\">EndLatitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"nav_get_marker_lat\"><mutation component_type=\"Marker\" property_name=\"Latitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Latitude</field></block></value><next><block type=\"component_set_property\" id=\"nav_set_end_lon\"><mutation component_type=\"Navigation\" property_name=\"EndLongitude\" instance_name=\"Navigation1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Navigation1</field><field name=\"PROPERTY\">EndLongitude</field><value name=\"VALUE\"><block type=\"component_get_property\" id=\"nav_get_marker_lon\"><mutation component_type=\"Marker\" property_name=\"Longitude\" instance_name=\"CurrentMarker\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">CurrentMarker</field><field name=\"PROPERTY\">Longitude</field></block></value><next><block type=\"component_method\" id=\"nav_request_directions\"><mutation component_type=\"Navigation\" method_name=\"RequestDirections\" instance_name=\"Navigation1\" is_generic=\"false\"></mutation><field name=\"INSTANCE\">Navigation1</field></block></next></block></next></block></next></block></next></block></statement></block></xml>",
+  "media": [],
+  "designViewport": {
+    "width": 412,
+    "height": 915,
+    "deviceType": "phone",
+    "orientation": "portrait"
+  }
+}
