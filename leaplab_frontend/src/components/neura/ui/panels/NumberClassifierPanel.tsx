@@ -19,6 +19,45 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const lastPosRef = useRef<{ x: number; y: number } | null>(null)
+    const [modelLoading, setModelLoading] = useState(false)
+
+    // Rebuild KNN from stored samples when entering train or test mode
+    useEffect(() => {
+        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            let cancelled = false
+            setModelLoading(true)
+            const rebuild = async () => {
+                classifierRef.current.clear()
+                for (const cls of mode.project!.classes) {
+                    if (cls.samples.length > 0) {
+                        for (const sample of cls.samples) {
+                            try {
+                                // Create a canvas from the stored image data
+                                const img = new Image()
+                                img.src = sample.data
+                                await new Promise<void>((resolve, reject) => {
+                                    img.onload = () => resolve()
+                                    img.onerror = () => reject(new Error('Failed to load image'))
+                                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                                })
+                                const tempCanvas = document.createElement('canvas')
+                                tempCanvas.width = 360
+                                tempCanvas.height = 360
+                                const tempCtx = tempCanvas.getContext('2d')!
+                                tempCtx.drawImage(img, 0, 0, 360, 360)
+                                await classifierRef.current.addSample(tempCanvas, cls.name)
+                            } catch {
+                                // skip invalid samples
+                            }
+                        }
+                    }
+                }
+                if (!cancelled) setModelLoading(false)
+            }
+            rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
+            return () => { cancelled = true }
+        }
+    }, [mode.mode])
 
     const startDrawing = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current
@@ -64,24 +103,86 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             return
         }
 
-        const canvas = canvasRef.current
-        const imageData = canvas.toDataURL('image/png')
-        mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
-        classifierRef.current.addSample(canvas, mode.getSelectedClass()?.name || '')
+        try {
+            const canvas = canvasRef.current
+            const imageData = canvas.toDataURL('image/png')
+            mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-        const ctx = canvas.getContext('2d')!
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+            // Add to classifier in background (non-blocking)
+            classifierRef.current.addSample(canvas, mode.getSelectedClass()?.name || '').catch(() => {})
+
+            // Clear the drawing canvas
+            const ctx = canvas.getContext('2d')!
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+        } catch (err) {
+            console.warn('[Neura] Number capture failed:', err)
+        }
     }
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1500))
-        mode.setAccuracy(0.86 + Math.random() * 0.12)
+        const project = mode.project
+        if (!project || project.classes.length < 2) {
+            mode.setAccuracy(0)
+            setIsTraining(false)
+            return
+        }
+        try {
+            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
+            // Add a small delay so the UI shows the training animation.
+            await new Promise(r => setTimeout(r, 1500))
+
+            // Step 2: Verify the KNN has data before computing accuracy
+            const sampleCounts = classifierRef.current.getSampleCounts()
+            const trainedClasses = Object.keys(sampleCounts)
+            if (trainedClasses.length < 2) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 3: Compute accuracy by predicting each sample against the KNN
+            let correct = 0
+            let total = 0
+            for (const cls of project.classes) {
+                for (const sample of cls.samples) {
+                    try {
+                        // Create a canvas from the stored image data
+                        const img = new Image()
+                        img.src = sample.data
+                        await new Promise<void>((resolve, reject) => {
+                            img.onload = () => resolve()
+                            img.onerror = () => reject(new Error('Failed to load image'))
+                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                        })
+                        const tempCanvas = document.createElement('canvas')
+                        tempCanvas.width = 360
+                        tempCanvas.height = 360
+                        const tempCtx = tempCanvas.getContext('2d')!
+                        tempCtx.drawImage(img, 0, 0, 360, 360)
+                        const result = await classifierRef.current.predict(tempCanvas, 3)
+                        if (result && result.label === cls.name) correct++
+                        total++
+                    } catch {
+                        total++
+                    }
+                }
+            }
+            const accuracy = total > 0 ? correct / total : 0
+            mode.setAccuracy(accuracy)
+
+            // Auto-switch to test mode after training completes
+            setTimeout(() => {
+                mode.setMode('test')
+            }, 2000)
+        } catch {
+            mode.setAccuracy(0)
+        }
         setIsTraining(false)
     }
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
@@ -180,6 +281,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {modelLoading && (
+                        <div className="flex items-center gap-3 px-6 py-4 bg-violet-50 rounded-2xl border border-violet-200 animate-[fade-in_0.3s_ease-out]">
+                            <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm font-semibold text-violet-700">Loading model and preparing samples...</span>
+                        </div>
+                    )}
                     <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white border-2 border-gray-100 w-full max-w-[360px]" style={{ aspectRatio: '1' }}>
                         <canvas
                             ref={canvasRef}
@@ -203,6 +310,24 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             </div>
                         )}
                     </div>
+                    <CaptureButton
+                        onClick={async () => {
+                            if (!canvasRef.current || modelLoading) return
+                            setIsProcessing(true)
+                            try {
+                                const result = await classifierRef.current.predict(canvasRef.current, 3)
+                                if (result) setPrediction(result)
+                            } catch {
+                                // ignore
+                            }
+                            setIsProcessing(false)
+                        }}
+                        disabled={modelLoading}
+                        label="Test Drawing"
+                        icon="check"
+                        color="#7C3AED"
+                        pulse={!modelLoading}
+                    />
                     <TestPanel prediction={prediction} isProcessing={isProcessing}>
                         <div />
                     </TestPanel>

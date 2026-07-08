@@ -71,7 +71,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
     }, [])
 
     const canTrain = mode.project
-        ? mode.project.classes.some(c => c.samples.length > 0) && mode.project.classes.length >= 2
+        ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2)
         : false
 
     const handleAddClass = () => {

@@ -140,19 +140,29 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             return
         }
 
+        // Block re-entry while capturing
+        if (isCapturing) return
+
         setIsCapturing(true)
-        const canvas = canvasRef.current
-        const video = videoRef.current
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0)
+        try {
+            const canvas = canvasRef.current
+            const video = videoRef.current
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(video, 0, 0)
 
-        const imageData = canvas.toDataURL('image/png')
-        mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
-        await classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '')
+            const imageData = canvas.toDataURL('image/png')
+            mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-        setTimeout(() => setIsCapturing(false), 300)
+            // Add to classifier in background (non-blocking)
+            classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => {})
+        } catch (err) {
+            console.warn('[Neura] Capture failed:', err)
+        } finally {
+            // Always re-enable the button after brief visual feedback
+            setTimeout(() => setIsCapturing(false), 300)
+        }
     }
 
     // Keep ref updated with latest handleCapture
@@ -306,6 +316,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             }
             const accuracy = total > 0 ? correct / total : 0
             mode.setAccuracy(accuracy)
+
+            // Auto-switch to test mode after training completes
+            setTimeout(() => {
+                mode.setMode('test')
+            }, 2000)
         } catch {
             mode.setAccuracy(0)
         }
@@ -313,7 +328,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length > 0) : false
+    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 

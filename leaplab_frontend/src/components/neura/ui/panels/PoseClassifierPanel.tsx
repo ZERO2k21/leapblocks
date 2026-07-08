@@ -20,6 +20,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
+    const [modelLoading, setModelLoading] = useState(false)
 
     const startCamera = useCallback(async () => {
         try {
@@ -51,6 +52,33 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         }
     }, [mode.mode])
 
+    // Rebuild KNN from stored samples when entering train or test mode
+    useEffect(() => {
+        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            let cancelled = false
+            setModelLoading(true)
+            const rebuild = async () => {
+                classifierRef.current.clear()
+                for (const cls of mode.project!.classes) {
+                    if (cls.samples.length > 0) {
+                        for (const sample of cls.samples) {
+                            try {
+                                const features = JSON.parse(sample.data)
+                                const float32Features = new Float32Array(features)
+                                await classifierRef.current.addSample(float32Features, cls.name)
+                            } catch {
+                                // skip invalid samples
+                            }
+                        }
+                    }
+                }
+                if (!cancelled) setModelLoading(false)
+            }
+            rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
+            return () => { cancelled = true }
+        }
+    }, [mode.mode])
+
     const handleCapture = async () => {
         if (!videoRef.current || !canvasRef.current || !mode.selectedClassId) return
 
@@ -60,31 +88,84 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             return
         }
 
+        // Block re-entry while capturing
+        if (isCapturing) return
+
         setIsCapturing(true)
-        const canvas = canvasRef.current
-        const video = videoRef.current
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0)
+        try {
+            const canvas = canvasRef.current
+            const video = videoRef.current
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(video, 0, 0)
 
-        const imageData = canvas.toDataURL('image/png')
-        mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
+            const imageData = canvas.toDataURL('image/png')
+            mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-        await classifierRef.current.addSampleFromImage(video, mode.getSelectedClass()?.name || '')
-
-        setTimeout(() => setIsCapturing(false), 300)
+            // Add to classifier in background (non-blocking)
+            classifierRef.current.addSampleFromImage(video, mode.getSelectedClass()?.name || '').catch(() => {})
+        } catch (err) {
+            console.warn('[Neura] Pose capture failed:', err)
+        } finally {
+            // Always re-enable the button after brief visual feedback
+            setTimeout(() => setIsCapturing(false), 300)
+        }
     }
 
     const handleTrain = async () => {
         setIsTraining(true)
-        await new Promise(r => setTimeout(r, 1500))
-        mode.setAccuracy(0.88 + Math.random() * 0.1)
+        const project = mode.project
+        if (!project || project.classes.length < 2) {
+            mode.setAccuracy(0)
+            setIsTraining(false)
+            return
+        }
+        try {
+            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
+            // Add a small delay so the UI shows the training animation.
+            await new Promise(r => setTimeout(r, 1500))
+
+            // Step 2: Verify the KNN has data before computing accuracy
+            const sampleCounts = classifierRef.current.getSampleCounts()
+            const trainedClasses = Object.keys(sampleCounts)
+            if (trainedClasses.length < 2) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 3: Compute accuracy by predicting each sample against the KNN
+            let correct = 0
+            let total = 0
+            for (const cls of project.classes) {
+                for (const sample of cls.samples) {
+                    try {
+                        const features = JSON.parse(sample.data)
+                        const float32Features = new Float32Array(features)
+                        const result = await classifierRef.current.predict(float32Features, 3)
+                        if (result && result.label === cls.name) correct++
+                        total++
+                    } catch {
+                        total++
+                    }
+                }
+            }
+            const accuracy = total > 0 ? correct / total : 0
+            mode.setAccuracy(accuracy)
+
+            // Auto-switch to test mode after training completes
+            setTimeout(() => {
+                mode.setMode('test')
+            }, 2000)
+        } catch {
+            mode.setAccuracy(0)
+        }
         setIsTraining(false)
     }
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.some(c => c.samples.length > 0) : false
+    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
@@ -179,6 +260,12 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+                    {modelLoading && (
+                        <div className="flex items-center gap-3 px-6 py-4 bg-violet-50 rounded-2xl border border-violet-200 animate-[fade-in_0.3s_ease-out]">
+                            <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm font-semibold text-violet-700">Loading model and preparing samples...</span>
+                        </div>
+                    )}
                     <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
                         <video
                             ref={videoRef}
