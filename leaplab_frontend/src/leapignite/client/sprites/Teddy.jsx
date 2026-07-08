@@ -350,19 +350,18 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     const [isDragging, setIsDragging] = useState(false);
     const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false });
 
-    const handleMouseDown = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+    const startDrag = (clientX, clientY) => {
+        const stageEl = dragRef.current.stageEl;
+        const rect = stageEl?.getBoundingClientRect();
         const stageLeft = rect?.left || 0;
         const stageTop = rect?.top || 0;
-        const pointerX = e.clientX - stageLeft;
-        const pointerY = e.clientY - stageTop;
+        const pointerX = clientX - stageLeft;
+        const pointerY = clientY - stageTop;
         const tipOffset = getPenTipOffset(angleRef.current, sizeRef.current, scaleX, mirrored);
 
         dragRef.current = {
-            startX: e.clientX,
-            startY: e.clientY,
+            startX: clientX,
+            startY: clientY,
             origX: x,
             origY: y,
             didDrag: false,
@@ -371,63 +370,99 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             prevDrawPoint: isPenSprite ? { x: pointerX, y: pointerY } : null,
             tipOffsetX: tipOffset.x,
             tipOffsetY: tipOffset.y,
+            stageEl,
         };
 
         setIsDragging(true);
         if (onDragStateChange) onDragStateChange(true);
+    };
+
+    const moveDrag = (clientX, clientY) => {
+        const dx = clientX - dragRef.current.startX;
+        const dy = clientY - dragRef.current.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            dragRef.current.didDrag = true;
+        }
+        const pointerPoint = {
+            x: clientX - dragRef.current.parentLeft,
+            y: clientY - dragRef.current.parentTop
+        };
+        const newX = isPenSprite
+            ? (pointerPoint.x - dragRef.current.tipOffsetX)
+            : (dragRef.current.origX + dx);
+        const newY = isPenSprite
+            ? (pointerPoint.y - dragRef.current.tipOffsetY)
+            : (dragRef.current.origY + dy);
+
+        if (isPenSprite && window.drawSegment) {
+            if (dragRef.current.prevDrawPoint) {
+                const activeColor = window.penColor || penColor;
+                const activeSize = window.penSize || 4;
+                window.drawSegment(
+                    dragRef.current.prevDrawPoint.x,
+                    dragRef.current.prevDrawPoint.y,
+                    pointerPoint.x,
+                    pointerPoint.y,
+                    activeColor,
+                    activeSize
+                );
+            }
+            dragRef.current.prevDrawPoint = pointerPoint;
+        }
+
+        updateStore({ x: newX, y: newY });
+    };
+
+    const endDrag = () => {
+        setIsDragging(false);
+        if (onDragStateChange) onDragStateChange(false);
+        if (!dragRef.current.didDrag && onClick) {
+            onClick();
+        }
+    };
+
+    const handleMouseDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const stageEl = e.currentTarget.parentElement;
+        dragRef.current.stageEl = stageEl;
+        startDrag(e.clientX, e.clientY);
 
         const handleMouseMove = (me) => {
-            const dx = me.clientX - dragRef.current.startX;
-            const dy = me.clientY - dragRef.current.startY;
-            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                dragRef.current.didDrag = true;
-            }
-            const pointerPoint = {
-                x: me.clientX - dragRef.current.parentLeft,
-                y: me.clientY - dragRef.current.parentTop
-            };
-            const newX = isPenSprite
-                ? (pointerPoint.x - dragRef.current.tipOffsetX)
-                : (dragRef.current.origX + dx);
-            const newY = isPenSprite
-                ? (pointerPoint.y - dragRef.current.tipOffsetY)
-                : (dragRef.current.origY + dy);
-
-            // If it's a pen sprite, draw while dragging!
-            if (isPenSprite && window.drawSegment) {
-                if (dragRef.current.prevDrawPoint) {
-                    const activeColor = window.penColor || penColor;
-                    const activeSize = window.penSize || 4;
-
-                    window.drawSegment(
-                        dragRef.current.prevDrawPoint.x,
-                        dragRef.current.prevDrawPoint.y,
-                        pointerPoint.x,
-                        pointerPoint.y,
-                        activeColor,
-                        activeSize
-                    );
-                }
-
-                dragRef.current.prevDrawPoint = pointerPoint;
-            }
-
-            updateStore({ x: newX, y: newY });
+            me.preventDefault();
+            moveDrag(me.clientX, me.clientY);
         };
-
         const handleMouseUp = () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
-            setIsDragging(false);
-            if (onDragStateChange) onDragStateChange(false);
-            // Only fire click/select if we didn't actually drag
-            if (!dragRef.current.didDrag && onClick) {
-                onClick();
-            }
+            endDrag();
         };
 
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleTouchStart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const touch = e.touches[0];
+        const stageEl = e.currentTarget.parentElement;
+        dragRef.current.stageEl = stageEl;
+        startDrag(touch.clientX, touch.clientY);
+
+        const handleTouchMove = (te) => {
+            te.preventDefault();
+            const t = te.touches[0];
+            moveDrag(t.clientX, t.clientY);
+        };
+        const handleTouchEnd = () => {
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+            endDrag();
+        };
+
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
     };
 
     // Determine pen-down indicator color
@@ -489,8 +524,10 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                         ? 'drop-shadow(0 15px 15px rgba(0,0,0,0.3)) brightness(1.1)'
                         : (active ? 'drop-shadow(0 0 8px rgba(123,79,196,0.6))' : 'none'),
                     userSelect: 'none',
+                    touchAction: 'none',
                 }}
                 onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
             >
                 {/* Speech Bubble */}
                 {speech && (
