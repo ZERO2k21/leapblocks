@@ -245,16 +245,40 @@ export default function TerminalPanel({
                                 System shell — type commands like <span style={{ fontFamily: "monospace", color: C.PURPLE }}>pip install numpy</span> and press Enter
                             </div>
                             <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px", fontFamily: "'Fira Code', Consolas, monospace", fontSize: 13, lineHeight: 1.6, background: "#1E1E1E" }}>
-                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
-                                    $ pip install &lt;package&gt;  — install Python packages
-                                </div>
-                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
-                                    $ python -c "import &lt;module&gt;"  — verify installation
-                                </div>
-                                <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 12 }}>
-                                    $ python -m pip list  — list installed packages
-                                </div>
-                                <div style={{ color: "#569CD6", marginBottom: 4, fontSize: 11 }}>────────────────────────────────────────</div>
+                                {terminalOutput.length === 0 ? (
+                                    <>
+                                        <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
+                                            $ pip install &lt;package&gt;  — install Python packages
+                                        </div>
+                                        <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 8 }}>
+                                            $ python -c "import &lt;module&gt;"  — verify installation
+                                        </div>
+                                        <div style={{ color: "#6A9955", fontStyle: "italic", marginBottom: 12 }}>
+                                            $ python -m pip list  — list installed packages
+                                        </div>
+                                        <div style={{ color: "#569CD6", marginBottom: 4, fontSize: 11 }}>────────────────────────────────────────</div>
+                                    </>
+                                ) : terminalOutput.map((log, i) => (
+                                    <div
+                                        key={i}
+                                        style={{
+                                            color: log.type === "error" ? "#F44747"
+                                                : log.type === "success" ? "#6A9955"
+                                                    : log.type === "warning" ? "#FFD700"
+                                                        : log.type === "repl-in" ? "#C586C0"
+                                                            : "#D4D4D4",
+                                            marginBottom: 2,
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            paddingLeft: log.type === "repl-in" ? 0 : 4,
+                                        }}
+                                    >
+                                        {log.type === "repl-in" ? <span style={{ userSelect: "none", color: "#6A9955" }}>$ </span> : null}
+                                        {log.type === "error" && !log.text.startsWith("✗") ? <span style={{ color: "#F44747" }}>✗ </span> : null}
+                                        {log.text}
+                                    </div>
+                                ))}
+                                <div ref={terminalEndRef} />
                             </div>
                             <div style={{ display: "flex", borderTop: `1px solid ${C.BORDER}`, padding: "6px 10px", alignItems: "center", gap: 8, background: "#1E1E1E" }}>
                                 <span style={{ color: "#6A9955", fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>$</span>
