@@ -7,7 +7,7 @@ import { BrowserWindow, app } from 'electron';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ensurePython, getPythonPathIfAvailable } from '../utils/ensurePython';
+import { ensurePython } from '../utils/ensurePython';
 
 export class PythonManager {
     private mainWindow: BrowserWindow | null = null;
@@ -31,17 +31,12 @@ export class PythonManager {
             return this.resolvedPythonPath;
         }
 
-        // Fast path: check without downloading
-        const available = getPythonPathIfAvailable();
-        if (available) {
-            this.resolvedPythonPath = available;
-            return available;
-        }
-
-        // Slow path: download Python 3.10 on demand
+        // Use ensurePython() for ALL resolution — it checks system PATH,
+        // cached download (with pip verification), and downloads if needed.
+        // This ensures pip is always verified before returning.
         this.mainWindow?.webContents.send('python-download-progress', {
-            status: 'downloading',
-            message: 'Python 3.10 not found. Downloading automatically...',
+            status: 'checking',
+            message: 'Checking Python availability...',
         });
 
         try {

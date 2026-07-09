@@ -287,7 +287,7 @@ export const Topbar = ({
           </div>
 
           <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
-            <img alt="Leap into the AI Future" src="/assets/logo-creoleap.png" className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]" />
+            <img alt="Leap into the AI Future" src="assets/logo-creoleap.png" className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]" />
           </div>
 
           <button
