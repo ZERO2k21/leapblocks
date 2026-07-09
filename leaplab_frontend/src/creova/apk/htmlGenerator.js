@@ -1382,6 +1382,56 @@ function generateAppJs(appState) {
     }
   };
 
+  function SharingShim(id, props) {
+    this.id = id;
+  }
+  SharingShim.prototype = {
+    ShareMessage: function(message) {
+      if (navigator.share) {
+        navigator.share({ text: message }).catch(function(e) {});
+      } else {
+        alert('Sharing message: ' + message);
+      }
+    },
+    ShareFile: function(file) {
+      alert('Sharing file: ' + file);
+    },
+    ShareFileWithMessage: function(file, message) {
+      alert('Sharing file: ' + file + ' with message: ' + message);
+    }
+  };
+
+  function FileShim(id, props) {
+    this.id = id;
+  }
+  FileShim.prototype = {
+    SaveFile: function(text, fileName) {
+      localStorage.setItem(fileName, text);
+      var self = this;
+      setTimeout(function() {
+        if (typeof window[self.id + '_AfterFileSaved'] === 'function') {
+          window[self.id + '_AfterFileSaved'](fileName);
+        }
+      }, 0);
+    },
+    ReadFrom: function(fileName) {
+      var text = localStorage.getItem(fileName) || '';
+      var self = this;
+      setTimeout(function() {
+        if (typeof window[self.id + '_GotText'] === 'function') {
+          window[self.id + '_GotText'](text);
+        }
+      }, 0);
+    },
+    AppendToFile: function(text, fileName) {
+      var existing = localStorage.getItem(fileName) || '';
+      localStorage.setItem(fileName, existing + text);
+    },
+    Delete: function(fileName) {
+      localStorage.removeItem(fileName);
+    }
+  };
+
   function extractMacAddress(address) {
     if (!address) return '';
     address = String(address).trim();
@@ -2885,6 +2935,12 @@ function generateComponentProxy(comp) {
   if (type === 'Web') {
     return `  var ${id} = new WebShim('${id}', ${JSON.stringify(props)});\n`;
   }
+  if (type === 'Sharing') {
+    return `  var ${id} = new SharingShim('${id}', ${JSON.stringify(props)});\n`;
+  }
+  if (type === 'File') {
+    return `  var ${id} = new FileShim('${id}', ${JSON.stringify(props)});\n`;
+  }
   if (type === 'BluetoothClient') {
     return `  var ${id} = new BluetoothClientShim('${id}', ${JSON.stringify(props)});\n`;
   }
@@ -2903,6 +2959,46 @@ function generateComponentProxy(comp) {
   if (type === 'VideoPlayer') {
     return `  var ${id} = new VideoPlayerShim('${id}', ${JSON.stringify(props)});\n`;
   }
+  if (type === 'WebViewer') {
+    let js = `  // Proxy: ${id} (WebViewer)\n`;
+    js += `  var ${id} = {\n`;
+    js += `    get HomeUrl() { return getComponentValue('${id}', 'HomeUrl') || ''; },\n`;
+    js += `    set HomeUrl(v) {\n`;
+    js += `      setComponentProperty('${id}', 'HomeUrl', v);\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el) el.src = v;\n`;
+    js += `    },\n`;
+    js += `    get CurrentUrl() {\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      return el ? el.src : '';\n`;
+    js += `    },\n`;
+    js += `    get RotationAngle() { return this._rotationAngle || 0; },\n`;
+    js += `    set RotationAngle(v) {\n`;
+    js += `      this._rotationAngle = Number(v) || 0;\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el) el.style.transform = 'rotate(' + this._rotationAngle + 'deg)';\n`;
+    js += `    },\n`;
+    js += `    GoToUrl: function(url) {\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el) el.src = url;\n`;
+    js += `    },\n`;
+    js += `    Reload: function() {\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el) {\n`;
+    // Force reload by setting src to itself
+    js += `        var currentSrc = el.src;\n`;
+    js += `        el.src = '';\n`;
+    js += `        el.src = currentSrc;\n`;
+    js += `      }\n`;
+    js += `    },\n`;
+    js += `    GoHome: function() {\n`;
+    js += `      var el = document.getElementById('comp-${id}');\n`;
+    js += `      if (el) el.src = this.HomeUrl || 'about:blank';\n`;
+    js += `    }\n`;
+    js += `  };\n\n`;
+    return js;
+  }
+
 
   if (type === 'Map') {
     let js = `  // Proxy: ${id} (Map)\n`;

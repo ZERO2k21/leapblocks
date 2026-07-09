@@ -48,7 +48,7 @@ Blockly.Blocks['lexical_variable_set'] = {
 // Initialize Local Variable (in do)
 Blockly.Blocks['local_declaration_statement'] = {
     init: function () {
-        this.appendValueInput("DECL0")
+        this.appendValueInput("DECL")
             .setCheck(null)
             .appendField("initialize local")
             .appendField(new Blockly.FieldTextInput("name"), "VAR0")
@@ -111,14 +111,16 @@ Blockly.Blocks['local_declaration_statement'] = {
         this.localCount_ = connections.length;
         this.updateShape_();
         for (let i = 0; i < this.localCount_; i++) {
-            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            if (connections[i]) connections[i].reconnect(this, inputName);
         }
     },
     saveConnections: function (containerBlock) {
         let itemBlock = containerBlock.nextConnection.targetBlock();
         let i = 0;
         while (itemBlock) {
-            const input = this.getInput('DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.getInput(inputName);
             itemBlock.valueConnection_ = input && input.connection.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
@@ -129,13 +131,17 @@ Blockly.Blocks['local_declaration_statement'] = {
         for (let i = 0; this.getInput('DECL' + i); i++) {
             this.removeInput('DECL' + i);
         }
+        if (this.getInput('DECL')) {
+            this.removeInput('DECL');
+        }
         // Remove STACK input
         if (this.getInput('STACK')) {
             this.removeInput('STACK');
         }
         // Add new declaration inputs
         for (let i = 0; i < this.localCount_; i++) {
-            const input = this.appendValueInput('DECL' + i).setCheck(null);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.appendValueInput(inputName).setCheck(null);
             if (i === 0) {
                 input.appendField('initialize local');
             }
@@ -162,7 +168,7 @@ Blockly.Blocks['local_declaration_container'] = {
 // Initialize Local Variable (in return)
 Blockly.Blocks['local_declaration_expression'] = {
     init: function () {
-        this.appendValueInput("DECL0")
+        this.appendValueInput("DECL")
             .setCheck(null)
             .appendField("initialize local")
             .appendField(new Blockly.FieldTextInput("name"), "VAR0")
@@ -224,14 +230,16 @@ Blockly.Blocks['local_declaration_expression'] = {
         this.localCount_ = connections.length;
         this.updateShape_();
         for (let i = 0; i < this.localCount_; i++) {
-            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            if (connections[i]) connections[i].reconnect(this, inputName);
         }
     },
     saveConnections: function (containerBlock) {
         let itemBlock = containerBlock.nextConnection.targetBlock();
         let i = 0;
         while (itemBlock) {
-            const input = this.getInput('DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.getInput(inputName);
             itemBlock.valueConnection_ = input && input.connection.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
@@ -242,13 +250,17 @@ Blockly.Blocks['local_declaration_expression'] = {
         for (let i = 0; this.getInput('DECL' + i); i++) {
             this.removeInput('DECL' + i);
         }
+        if (this.getInput('DECL')) {
+            this.removeInput('DECL');
+        }
         // Remove RETURN input
         if (this.getInput('RETURN')) {
             this.removeInput('RETURN');
         }
         // Add new declaration inputs
         for (let i = 0; i < this.localCount_; i++) {
-            const input = this.appendValueInput('DECL' + i).setCheck(null);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.appendValueInput(inputName).setCheck(null);
             if (i === 0) {
                 input.appendField('initialize local');
             }
