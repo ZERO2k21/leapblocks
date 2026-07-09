@@ -774,7 +774,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             }`}>
             <img
               alt="Leap into the AI Future"
-              src="/assets/logo - creoleap.png"
+              src="/assets/logo-creoleap.png"
               className={`w-[145px] h-auto object-contain block shrink-0 ${isElectra ? 'brightness-[1.14] contrast-[1.05]' : 'brightness-[1.14] contrast-[1.05]'
                 }`}
             />

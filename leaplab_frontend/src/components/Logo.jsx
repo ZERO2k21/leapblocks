@@ -24,7 +24,7 @@ export default function Logo({ height = 100, className = "" }) {
 export function CreoleapLogo({ height = 250, className = "", style = {} }) {
     return (
         <img
-            src="/assets/logo - creoleap.png"
+            src="/assets/logo-creoleap.png"
             alt="Leap into the AI Future"
             onError={(e) => {
                 e.target.src = '/assets/creoleap_logo.svg';

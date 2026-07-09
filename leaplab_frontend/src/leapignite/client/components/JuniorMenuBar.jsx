@@ -467,7 +467,7 @@ export default function JuniorMenuBar({
                         filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
                     }}>
                         <img
-                            src="/assets/logo - creoleap.png"
+                            src="/assets/logo-creoleap.png"
                             alt="CREOLEAP"
                             style={{
                                 width: '145px',

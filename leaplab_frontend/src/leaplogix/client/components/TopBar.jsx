@@ -315,7 +315,7 @@ export default function TopBar() {
                         overflow: 'hidden',
                     }}>
                         <img
-                            src="/assets/logo - creoleap.png"
+                            src="/assets/logo-creoleap.png"
                             alt="CREOLEAP"
                             style={{
                                 width: '145px',
