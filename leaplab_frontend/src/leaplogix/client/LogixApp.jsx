@@ -405,7 +405,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
             <div style={{
                 display: "flex", flexDirection: "column",
                 height: "100vh", width: "100vw",
-                background: C.BG, color: C.TEXT, overflow: "hidden",
+                background: C.BG, color: C.TEXT, overflow: "clip",
                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
             }}>
                 <TopBar />
