@@ -102,13 +102,18 @@ function downloadFile(url: string, destPath: string, onProgress?: (pct: number, 
 
       const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
       let downloadedBytes = 0;
+      let lastReportedPct = -1;
 
       res.on('data', (chunk) => {
         downloadedBytes += chunk.length;
         if (totalBytes > 0) {
           const pct = Math.round((downloadedBytes / totalBytes) * 100);
-          const mb = (downloadedBytes / 1024 / 1024).toFixed(1);
-          onProgress?.(pct, mb);
+          // Only report every 5% to avoid flooding the terminal
+          if (pct >= lastReportedPct + 5 || pct === 100) {
+            const mb = (downloadedBytes / 1024 / 1024).toFixed(1);
+            onProgress?.(pct, mb);
+            lastReportedPct = pct;
+          }
         }
       });
 
@@ -143,18 +148,21 @@ async function extractTarGz(tarPath: string, destDir: string): Promise<void> {
 
 // ── Pip verification ────────────────────────────────────────────────────────
 // Checks if pip is actually usable in the given Python installation.
-async function verifyPip(pythonExe: string): Promise<boolean> {
+async function verifyPip(pythonExe: string, onProgress?: (msg: string) => void): Promise<boolean> {
   return new Promise((resolve) => {
     try {
+      const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
       const proc = spawn(pythonExe, ['-m', 'pip', '--version'], {
-        shell: false, stdio: 'pipe', timeout: 15000,
+        shell: false, stdio: 'pipe', timeout: 15000, env,
       });
       let stdout = '';
       let stderr = '';
       proc.stdout.on('data', (d) => { stdout += d.toString(); });
       proc.stderr.on('data', (d) => { stderr += d.toString(); });
       proc.on('close', (code) => {
-        resolve(code === 0 && (stdout.includes('pip') || stderr.includes('pip')));
+        const ok = code === 0 && (stdout.includes('pip') || stderr.includes('pip'));
+        onProgress?.(`pip verify: code=${code}, stdout=${stdout.trim().slice(0, 100)}, stderr=${stderr.trim().slice(0, 100)}`);
+        resolve(ok);
       });
       proc.on('error', () => { resolve(false); });
     } catch {
@@ -172,19 +180,12 @@ async function patchWindowsEmbed(cacheDir: string, onProgress?: (msg: string) =>
   const maxRetries = 2;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    // Step 1: Enable site-packages in the .pth file
+    // Step 1: Write the .pth file with correct content (no regex — write directly)
     const pthFile = path.join(cacheDir, `python${PYTHON_VERSION.replace('.', '')}._pth`);
     if (fs.existsSync(pthFile)) {
-      let content = fs.readFileSync(pthFile, 'utf-8');
-      // Match both "# import site" and "#import site" (with or without space after #)
-      const patched = content.replace(/^[ \t]*#\s*import\s+site[ \t]*$/m, 'import site');
-      if (patched !== content) {
-        fs.writeFileSync(pthFile, patched, 'utf-8');
-        onProgress?.('Enabled site-packages in embeddable Python');
-      } else if (content.includes('import site') && !content.includes('# import site') && !content.includes('#import site')) {
-        // Already patched (no leading #)
-        onProgress?.('site-packages already enabled');
-      }
+      const correctPth = `python${PYTHON_VERSION.replace('.', '')}.zip\r\n.\r\nLib/site-packages\r\nimport site\r\n`;
+      fs.writeFileSync(pthFile, correctPth, 'utf-8');
+      onProgress?.('Enabled site-packages in embeddable Python');
     }
 
     // Step 2: Bootstrap pip — download get-pip.py and run it
@@ -206,18 +207,20 @@ async function patchWindowsEmbed(cacheDir: string, onProgress?: (msg: string) =>
 
     onProgress?.('Bootstrapping pip...');
 
+    const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
     const pipInstalled = await new Promise<boolean>((resolve) => {
-      const proc = spawn(pythonExe, [get_pip_path], { cwd: cacheDir, shell: false, stdio: 'pipe' });
+      const proc = spawn(pythonExe, [get_pip_path], { cwd: cacheDir, shell: false, stdio: 'pipe', env });
+      let stdout = '';
       let stderr = '';
+      proc.stdout.on('data', (d) => { stdout += d.toString(); });
       proc.stderr.on('data', (d) => { stderr += d.toString(); });
-      proc.stdout.on('data', () => {}); // consume stdout
       proc.on('close', (code) => {
         try { fs.unlinkSync(get_pip_path); } catch {}
         if (code === 0) {
           onProgress?.('pip installed successfully');
           resolve(true);
         } else {
-          onProgress?.(`pip bootstrap failed (exit code ${code}): ${stderr.slice(-200)}`);
+          onProgress?.(`pip bootstrap failed (exit code ${code}): ${(stdout + stderr).slice(-300)}`);
           resolve(false);
         }
       });
@@ -230,7 +233,7 @@ async function patchWindowsEmbed(cacheDir: string, onProgress?: (msg: string) =>
 
     if (pipInstalled) {
       // Final verification
-      if (await verifyPip(pythonExe)) {
+      if (await verifyPip(pythonExe, onProgress)) {
         onProgress?.('pip verified and ready');
         return;
       }
@@ -322,13 +325,13 @@ export async function ensurePython(
 
     // Verify pip works — re-patch if broken (e.g. first download failed mid-patch)
     if (os.platform() === 'win32') {
-      const pipWorks = await verifyPip(cached);
+      const pipWorks = await verifyPip(cached, (msg) => log(msg));
       if (!pipWorks) {
         log('pip not found in cached Python. Re-patching...');
         try {
           await patchWindowsEmbed(getCacheDir(), (msg) => log(msg));
           log('Re-patching complete. Verifying pip...');
-          if (await verifyPip(cached)) {
+          if (await verifyPip(cached, (msg) => log(msg))) {
             log('pip is now working');
           } else {
             log('WARNING: pip still not working after re-patch');
@@ -390,9 +393,31 @@ export async function ensurePython(
   if (isWin) {
     await patchWindowsEmbed(cacheDir, (msg) => log(msg));
     // Verify pip works after initial patching
-    if (!await verifyPip(cached)) {
+    if (!await verifyPip(cached, (msg) => log(msg))) {
       log('WARNING: pip verification failed after initial install');
     }
+  }
+
+  // Auto-install essential packages (numpy, matplotlib)
+  const packages = ['numpy', 'matplotlib'];
+  for (const pkg of packages) {
+    log(`Installing ${pkg}...`);
+    const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
+    await new Promise<void>((resolve) => {
+      const proc = spawn(cached, ['-m', 'pip', 'install', pkg], { cwd: cacheDir, shell: false, stdio: 'pipe', env });
+      let output = '';
+      proc.stdout.on('data', (d) => { output += d.toString(); });
+      proc.stderr.on('data', (d) => { output += d.toString(); });
+      proc.on('close', (code) => {
+        if (code === 0) {
+          log(`${pkg} installed successfully`);
+        } else {
+          log(`WARNING: ${pkg} install failed (exit code ${code}): ${output.slice(-200)}`);
+        }
+        resolve();
+      });
+      proc.on('error', () => { resolve(); });
+    });
   }
 
   // Verify

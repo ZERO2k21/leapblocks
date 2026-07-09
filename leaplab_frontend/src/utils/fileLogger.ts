@@ -53,6 +53,7 @@ export function logToFile(channel: string, data: string): void {
     const line = `[${timestamp}] [${channel}] ${data}\n`;
 
     fs.appendFileSync(logFile, line, 'utf-8');
+    console.log(`[LOG] [${channel}] ${data.trim()}`);
   } catch (err) {
     console.error('[fileLogger] Failed to write log:', err);
   }
