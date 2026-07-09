@@ -566,7 +566,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
                     }}>
                         <img
-                            src="/assets/logo - creoleap.png"
+                            src="/assets/logo-creoleap.png"
                             alt="CREOLEAP"
                             style={{
                                 width: '145px',

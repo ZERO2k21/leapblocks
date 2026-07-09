@@ -23,7 +23,7 @@ const PRESET_BACKDROPS = [
 const mappedleapBackdrops = leapBackdrops.map(bg => ({
     id: bg.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
     name: bg.name,
-    src: `/assets/backdrops/${bg.md5ext || bg.md5}`,
+    src: `assets/backdrops/${bg.md5ext || bg.md5}`,
     color: '#E0E0E0'
 }));
 

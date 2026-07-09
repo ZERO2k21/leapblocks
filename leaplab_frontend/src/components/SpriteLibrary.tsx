@@ -65,9 +65,9 @@ const mappedleapSprites = leapSprites.map((sprite: any) => {
     else if (tags.includes('letters')) category = 'Letters';
     else if (tags.includes('transportation') || tags.includes('vehicles')) category = 'Transport';
 
-    // Fix image paths: add leading '/' for proper public directory resolution
-    const fixedImage = sprite.image ? `/${sprite.image}` : undefined;
-    const fixedCostumes = sprite.costumes ? sprite.costumes.map((c: string) => `/${c}`) : undefined;
+    // Fix image paths: use relative paths (no leading '/') for Electron file:// compatibility
+    const fixedImage = sprite.image || undefined;
+    const fixedCostumes = sprite.costumes || undefined;
 
     return {
         ...sprite,

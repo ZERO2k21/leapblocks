@@ -44,7 +44,7 @@ const mappedleapBackdrops = leapBackdrops.map((backdrop: any, index: number) => 
         ...backdrop,
         // Guarantee a unique, stable id — use existing id/name or fall back to index
         id: backdrop.id ?? backdrop.name ?? `leap_backdrop_${index}`,
-        image: `/assets/backdrops/${backdrop.md5ext || backdrop.md5}`,
+        image: `assets/backdrops/${backdrop.md5ext || backdrop.md5}`,
         category
     } as BackdropEntry;
 });

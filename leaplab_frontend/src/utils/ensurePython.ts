@@ -141,52 +141,151 @@ async function extractTarGz(tarPath: string, destDir: string): Promise<void> {
   });
 }
 
+// ── Pip verification ────────────────────────────────────────────────────────
+// Checks if pip is actually usable in the given Python installation.
+async function verifyPip(pythonExe: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const proc = spawn(pythonExe, ['-m', 'pip', '--version'], {
+        shell: false, stdio: 'pipe', timeout: 15000,
+      });
+      let stdout = '';
+      let stderr = '';
+      proc.stdout.on('data', (d) => { stdout += d.toString(); });
+      proc.stderr.on('data', (d) => { stderr += d.toString(); });
+      proc.on('close', (code) => {
+        resolve(code === 0 && (stdout.includes('pip') || stderr.includes('pip')));
+      });
+      proc.on('error', () => { resolve(false); });
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 // ── Windows embeddable patching ────────────────────────────────────────────
 // The official embeddable package disables pip/site by default.
 // We need to:
 //   1. Uncomment "import site" in python310._pth
 //   2. Bootstrap pip via get-pip.py
 async function patchWindowsEmbed(cacheDir: string, onProgress?: (msg: string) => void): Promise<void> {
-  // Step 1: Enable site-packages in the .pth file
-  const pthFile = path.join(cacheDir, `python${PYTHON_VERSION.replace('.', '')}._pth`);
-  if (fs.existsSync(pthFile)) {
-    let content = fs.readFileSync(pthFile, 'utf-8');
-    content = content.replace(/^#\s*import\s+site/m, 'import site');
-    fs.writeFileSync(pthFile, content, 'utf-8');
-    onProgress?.('Enabled site-packages in embeddable Python');
-  }
+  const maxRetries = 2;
 
-  // Step 2: Bootstrap pip — download get-pip.py and run it
-  const pythonExe = path.join(cacheDir, 'python.exe');
-  const get_pip_path = path.join(cacheDir, 'get-pip.py');
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Step 1: Enable site-packages in the .pth file
+    const pthFile = path.join(cacheDir, `python${PYTHON_VERSION.replace('.', '')}._pth`);
+    if (fs.existsSync(pthFile)) {
+      let content = fs.readFileSync(pthFile, 'utf-8');
+      // Match both "# import site" and "#import site" (with or without space after #)
+      const patched = content.replace(/^[ \t]*#\s*import\s+site[ \t]*$/m, 'import site');
+      if (patched !== content) {
+        fs.writeFileSync(pthFile, patched, 'utf-8');
+        onProgress?.('Enabled site-packages in embeddable Python');
+      } else if (content.includes('import site') && !content.includes('# import site') && !content.includes('#import site')) {
+        // Already patched (no leading #)
+        onProgress?.('site-packages already enabled');
+      }
+    }
 
-  await new Promise<void>((resolve, reject) => {
-    const file = createWriteStream(get_pip_path);
-    https.get('https://bootstrap.pypa.io/get-pip.py', (res) => {
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        file.close();
-        https.get(res.headers.location!, (res2) => {
-          res2.pipe(createWriteStream(get_pip_path)).on('finish', () => resolve());
-        }).on('error', reject);
+    // Step 2: Bootstrap pip — download get-pip.py and run it
+    const pythonExe = path.join(cacheDir, 'python.exe');
+    const get_pip_path = path.join(cacheDir, 'get-pip.py');
+
+    // Clean up any leftover get-pip.py from a previous failed attempt
+    try { fs.unlinkSync(get_pip_path); } catch {}
+
+    onProgress?.(`Downloading get-pip.py (attempt ${attempt}/${maxRetries})...`);
+
+    try {
+      await downloadGetPip(get_pip_path);
+    } catch (err: any) {
+      onProgress?.(`Failed to download get-pip.py: ${err.message}`);
+      if (attempt < maxRetries) continue;
+      throw new Error(`Failed to download get-pip.py after ${maxRetries} attempts: ${err.message}`);
+    }
+
+    onProgress?.('Bootstrapping pip...');
+
+    const pipInstalled = await new Promise<boolean>((resolve) => {
+      const proc = spawn(pythonExe, [get_pip_path], { cwd: cacheDir, shell: false, stdio: 'pipe' });
+      let stderr = '';
+      proc.stderr.on('data', (d) => { stderr += d.toString(); });
+      proc.stdout.on('data', () => {}); // consume stdout
+      proc.on('close', (code) => {
+        try { fs.unlinkSync(get_pip_path); } catch {}
+        if (code === 0) {
+          onProgress?.('pip installed successfully');
+          resolve(true);
+        } else {
+          onProgress?.(`pip bootstrap failed (exit code ${code}): ${stderr.slice(-200)}`);
+          resolve(false);
+        }
+      });
+      proc.on('error', (err) => {
+        try { fs.unlinkSync(get_pip_path); } catch {}
+        onProgress?.(`pip bootstrap error: ${err.message}`);
+        resolve(false);
+      });
+    });
+
+    if (pipInstalled) {
+      // Final verification
+      if (await verifyPip(pythonExe)) {
+        onProgress?.('pip verified and ready');
         return;
       }
-      res.pipe(file).on('finish', () => resolve());
-    }).on('error', reject);
-  });
+      onProgress?.('pip bootstrap reported success but verification failed');
+    }
 
-  onProgress?.('Bootstrapping pip...');
-  await new Promise<void>((resolve, reject) => {
-    const proc = spawn(pythonExe, [get_pip_path], { cwd: cacheDir, shell: false, stdio: 'pipe' });
-    proc.on('close', (code) => {
-      try { fs.unlinkSync(get_pip_path); } catch {}
-      if (code === 0) {
-        onProgress?.('pip installed successfully');
-        resolve();
-      } else {
-        reject(new Error(`pip bootstrap failed with exit code ${code}`));
+    if (attempt < maxRetries) {
+      onProgress?.(`Retrying pip bootstrap...`);
+    }
+  }
+
+  throw new Error(`pip bootstrap failed after ${maxRetries} attempts. Check your internet connection.`);
+}
+
+/**
+ * Download get-pip.py with proper redirect handling.
+ */
+function downloadGetPip(destPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const followRedirect = (url: string, redirects = 0) => {
+      if (redirects > 5) {
+        reject(new Error('Too many redirects downloading get-pip.py'));
+        return;
       }
-    });
-    proc.on('error', reject);
+
+      const proto = url.startsWith('https') ? https : http;
+      proto.get(url, { headers: { 'User-Agent': 'LeapBlocks/1.0' } }, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          res.resume(); // drain the response
+          const location = res.headers.location;
+          if (!location) {
+            reject(new Error('Redirect without Location header'));
+            return;
+          }
+          followRedirect(location, redirects + 1);
+          return;
+        }
+
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error(`get-pip.py download failed: HTTP ${res.statusCode}`));
+          return;
+        }
+
+        const file = createWriteStream(destPath);
+        res.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+        file.on('error', (err) => {
+          try { fs.unlinkSync(destPath); } catch {}
+          reject(err);
+        });
+      }).on('error', reject);
+    };
+
+    followRedirect('https://bootstrap.pypa.io/get-pip.py');
   });
 }
 
@@ -220,6 +319,26 @@ export async function ensurePython(
   const cached = getPythonBinaryPath();
   if (fs.existsSync(cached)) {
     log(`Using cached Python: ${cached}`);
+
+    // Verify pip works — re-patch if broken (e.g. first download failed mid-patch)
+    if (os.platform() === 'win32') {
+      const pipWorks = await verifyPip(cached);
+      if (!pipWorks) {
+        log('pip not found in cached Python. Re-patching...');
+        try {
+          await patchWindowsEmbed(getCacheDir(), (msg) => log(msg));
+          log('Re-patching complete. Verifying pip...');
+          if (await verifyPip(cached)) {
+            log('pip is now working');
+          } else {
+            log('WARNING: pip still not working after re-patch');
+          }
+        } catch (err: any) {
+          log(`WARNING: Re-patching failed: ${err.message}. pip may not work.`);
+        }
+      }
+    }
+
     return cached;
   }
 
@@ -270,6 +389,10 @@ export async function ensurePython(
   // Windows: patch embeddable Python to enable pip
   if (isWin) {
     await patchWindowsEmbed(cacheDir, (msg) => log(msg));
+    // Verify pip works after initial patching
+    if (!await verifyPip(cached)) {
+      log('WARNING: pip verification failed after initial install');
+    }
   }
 
   // Verify
