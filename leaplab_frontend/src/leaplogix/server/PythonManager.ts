@@ -8,6 +8,7 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ensurePython } from '../../utils/ensurePython';
+import { logToFile } from '../../utils/fileLogger';
 
 export class PythonManager {
     private mainWindow: BrowserWindow | null = null;
@@ -201,22 +202,29 @@ export class PythonManager {
         try {
             this.shellProcess = spawn(shell, shellArgs, { cwd: workDir, env, shell: false });
             this.shellProcess.stdout.on('data', (data) => {
-                this.mainWindow?.webContents.send('python-shell-output', data.toString());
+                const text = data.toString();
+                this.mainWindow?.webContents.send('python-shell-output', text);
+                logToFile('python-shell-output', text);
             });
             this.shellProcess.stderr.on('data', (data) => {
-                this.mainWindow?.webContents.send('python-shell-error', data.toString());
+                const text = data.toString();
+                this.mainWindow?.webContents.send('python-shell-error', text);
+                logToFile('python-shell-error', text);
             });
             this.shellProcess.on('close', (code) => {
                 this.mainWindow?.webContents.send('python-shell-exit', code);
+                logToFile('python-shell-exit', `exit code: ${code}`);
             });
             this.shellProcess.on('error', (err) => {
                 console.error(`[PythonManager] Shell error:`, err.message);
                 this.mainWindow?.webContents.send('python-shell-error', `Failed to start shell: ${err.message}`);
                 this.mainWindow?.webContents.send('python-shell-exit', null);
+                logToFile('python-shell-error', `Failed to start shell: ${err.message}`);
             });
         } catch (err) {
             this.mainWindow?.webContents.send('python-shell-error', `Failed to start shell: ${(err as Error).message}`);
             this.mainWindow?.webContents.send('python-shell-exit', null);
+            logToFile('python-shell-error', `Failed to start shell: ${(err as Error).message}`);
         }
     }
 
@@ -290,11 +298,15 @@ export class PythonManager {
 
     private pipeProcess(proc: ChildProcessWithoutNullStreams, outEvent: string, errEvent: string, exitEvent: string, workDir?: string, filesBefore?: Map<string, { mtime: number; size: number }>) {
         proc.stdout.on('data', (data) => {
-            this.mainWindow?.webContents.send(outEvent, data.toString());
+            const text = data.toString();
+            this.mainWindow?.webContents.send(outEvent, text);
+            logToFile(outEvent, text);
         });
 
         proc.stderr.on('data', (data) => {
-            this.mainWindow?.webContents.send(errEvent, data.toString());
+            const text = data.toString();
+            this.mainWindow?.webContents.send(errEvent, text);
+            logToFile(errEvent, text);
         });
 
         proc.on('close', (code) => {
@@ -305,12 +317,14 @@ export class PythonManager {
                 }
             }
             this.mainWindow?.webContents.send(exitEvent, code);
+            logToFile(exitEvent, `exit code: ${code}`);
         });
 
         proc.on('error', (err) => {
             console.error(`[PythonManager] Process error:`, err.message);
             this.mainWindow?.webContents.send(errEvent, `Failed to start Python: ${err.message}`);
             this.mainWindow?.webContents.send(exitEvent, null);
+            logToFile(errEvent, `Failed to start Python: ${err.message}`);
         });
     }
 }

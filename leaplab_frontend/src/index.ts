@@ -13,6 +13,7 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 import { getBundledArduinoCliPath } from './utils/ensureArduinoCli';
+import { cleanupOldLogs } from './utils/fileLogger';
 
 // Suppress development security warnings in the console
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -223,6 +224,7 @@ const createWindow = (): void => {
 
 app.on('ready', () => {
   logTiming('Electron app ready event fired');
+  cleanupOldLogs();
   createWindow();
   startCompileServer();
   logTiming('createWindow() completed');
