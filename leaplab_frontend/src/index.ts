@@ -123,6 +123,11 @@ if (require('electron-squirrel-startup')) {
 const createWindow = (): void => {
   logTiming('createWindow() called');
 
+  const isDev = !app.isPackaged;
+  const iconPath = isDev
+    ? join(__dirname, '../public/assets/leaplabicon.ico')
+    : join(process.resourcesPath, 'public/assets/leaplabicon.ico');
+
   mainWindow = new BrowserWindow({
     height: 800,
     width: 1400,
@@ -131,6 +136,7 @@ const createWindow = (): void => {
     title: 'LeapLab - Block Programming IDE',
     show: false, // hidden until ready-to-show fires — eliminates blank white flash
     backgroundColor: '#f8fafc', // matches app background so no flicker on show
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,

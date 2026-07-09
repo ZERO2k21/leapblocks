@@ -59,7 +59,7 @@ async function main() {
                     console.error(`Failed to download ${url}`);
                 }
             });
-            localCostumes.push(`/assets/sprites/leap/${filename}`);
+            localCostumes.push(`assets/sprites/leap/${filename}`);
         }
 
         if (localCostumes.length > 0) {
