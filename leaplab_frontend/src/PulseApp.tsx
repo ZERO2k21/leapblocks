@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLeapLabAuthStore } from './auth/leaplabAuthStore';
 import { LMS_API_BASE } from './auth/api';
 
@@ -100,7 +100,11 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
   // ── Fetch quizzes ──
   const fetchQuizzes = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setError('Not authenticated. Please log in again.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -114,7 +118,9 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   }, [token]);
 
   useEffect(() => {
+    const controller = new AbortController();
     fetchQuizzes();
+    return () => controller.abort();
   }, [fetchQuizzes]);
 
   // ── Timer ──
@@ -124,7 +130,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       setTimeLeft((prev) => {
         if (prev !== null && prev <= 1) {
           clearInterval(timer);
-          handleSubmit();
+          handleSubmitRef.current();
           return 0;
         }
         return prev !== null ? prev - 1 : null;
@@ -136,6 +142,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   // ── Start quiz ──
   const startQuiz = async (quizId: string) => {
     if (!token) return;
+    setError(null);
     try {
       // Fetch quiz details
       const quizRes = await apiGet(`/api/leaplab/quiz/quizzes/${quizId}`, token);
@@ -157,6 +164,9 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       setError(err.message);
     }
   };
+
+  // Use ref so timer always calls latest handleSubmit
+  const handleSubmitRef = useRef<() => Promise<void>>(async () => {});
 
   // ── Submit quiz ──
   const handleSubmit = async () => {
@@ -181,6 +191,11 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       setSubmitting(false);
     }
   };
+
+  // Keep ref in sync with latest handleSubmit
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   // ── Format time ──
   const formatTime = (seconds: number) => {
