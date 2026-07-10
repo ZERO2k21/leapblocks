@@ -75,7 +75,7 @@ export default function AppInventor({ onBack }) {
   });
 
   useKeyboardShortcuts({
-    onSave: handleSaveProject,
+    onSave: handleDownloadProject,
     onSaveAs: handleSaveAsProject,
     onNew: handleNewProject,
     onOpen: handleOpenProject,

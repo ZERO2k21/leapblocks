@@ -1,5 +1,5 @@
 import React from 'react';
-import { IgniteTopbar } from '../../Electra/Client/Src/components/Layout/Topbar';
+import { IgniteTopbar } from './Topbar';
 import Palette from '../components/Palette_Enhanced';
 import PhoneCanvas from '../components/PhoneCanvas_Enhanced';
 import PropertiesPanel from '../components/PropertiesPanel';
