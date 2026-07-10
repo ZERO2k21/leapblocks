@@ -5,8 +5,7 @@
  */
 import React, { useState, lazy, Suspense, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Node, Edge } from 'reactflow';
-import { SerialMonitor } from './components/Editor/SerialMonitor';
-import { Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
+import { Code, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
 import '../utlis/elements/leap-elements';
 import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
@@ -20,7 +19,6 @@ import { PartPicker as ComponentSidebar } from './components/Library/PartPicker'
 import { IgniteTopbar } from './components/Layout/Topbar';
 
 import Loader from '../../../components/Loader';
-import { compileCode } from './services/CompilerService';
 import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +27,12 @@ import { pack, unpack, isPacked } from '../utlis/compress';
 import { fileService } from './services/FileService';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 import { showToast } from '../../../leapignite/client/components/Toast';
+
+// Hooks and Extracted Components
+import { useElectraCompiler } from './hooks/useElectraCompiler';
+import { TerminalPanel } from './components/Editor/TerminalPanel';
+import { WebOpenModal } from './components/WebOpenModal';
+import { BoardConfirmModal } from './components/BoardConfirmModal';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -390,7 +394,15 @@ export default function ForgeElectra({
     }
   }, [wifiLog, board, isSimulating]);
 
-  const [isCompiling, setIsCompiling] = useState(false);
+  const { isCompiling, handleToggleSimulation } = useElectraCompiler({
+    board,
+    code,
+    isSimulating,
+    startSimulation,
+    stopSimulation,
+    clearSerial,
+    setWifiStatus,
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   // File Operations
@@ -766,84 +778,7 @@ export default function ForgeElectra({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history, nodes, edges, code, projectPath]);
 
-  const handleToggleSimulation = async () => {
-    if (isSimulating) {
-      stopSimulation();
-      setWifiStatus('');
-      return;
-    }
 
-    const FQBN: Record<string, string> = {
-      'arduino-uno': 'arduino:avr:uno',
-      'esp32-c3': 'esp32:esp32:esp32c3',
-    };
-
-    setIsCompiling(true);
-    clearSerial();
-
-    try {
-      if (board === 'esp32-c3') {
-        // ── ESP32-C3 Simulation via Transpilation ──────────────────────────────
-        // ESP32 firmware uses FreeRTOS for multitasking. We simulate FreeRTOS
-        // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
-        // browser's event loop. Arduino C++ is transpiled to JavaScript and
-        // run through ArduinoRuntime with FreeRTOS API stubs.
-        try {
-          const { transpileCode } = await import('./services/CompilerService');
-          const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
-
-          if (transpileResult.success && transpileResult.jsCode) {
-            const runner = await getSimulationRunner();
-            runner.setBoard(board);
-            runner.setTranspiledJS(transpileResult.jsCode);
-            startSimulation('__esp32_c3_transpiled__', code);
-          } else if (transpileResult.error) {
-            const { appendSerial } = useForgeStore.getState();
-            appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
-            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            appendSerial(transpileResult.error + '\n');
-            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            appendSerial('\nPlease fix the errors and try again.\n');
-          }
-        } catch (transpileErr: any) {
-          const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial((transpileErr.message || String(transpileErr)) + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease check your code and try again.\n');
-        }
-      } else {
-        const result = await compileCode({
-          code,
-          board: FQBN[board] ?? 'arduino:avr:uno',
-          libraries: useForgeStore.getState().importedLibraries
-        });
-        if (result.success && result.hexContent) {
-          startSimulation(result.hexContent, code);
-        } else if (result.error) {
-          // Display compilation errors in Serial Monitor
-          const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ COMPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial(result.error + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease fix the errors and try again.\n');
-        }
-      }
-    } catch (err: any) {
-      console.error(err);
-      // Display unexpected errors in Serial Monitor
-      const { appendSerial } = useForgeStore.getState();
-      appendSerial('❌ UNEXPECTED ERROR:\n');
-      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      appendSerial(err.message || String(err) + '\n');
-      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      appendSerial('\nPlease check your code and try again.\n');
-    } finally {
-      setIsCompiling(false);
-    }
-  };
 
   const [showBoardConfirm, setShowBoardConfirm] = useState(false);
   const [pendingBoard, setPendingBoard] = useState<string | null>(null);
@@ -1201,55 +1136,16 @@ export default function ForgeElectra({
               </div>
             </div>
 
-            {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
-            {activeTab !== 'libraries' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
-                <div className="flex items-center gap-1.5 px-4 relative backdrop-blur-[12px] transition-all duration-300" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
-                  <button
-                    className={`bg-transparent border-none px-2.5 h-[24px] cursor-pointer text-[10px] font-bold flex items-center gap-1.5 rounded-none uppercase tracking-[0.8px] relative transition-all duration-200 ${activeTab === 'serial' || activeTab === 'code' ? 'text-[var(--lp-accent-bright)]' : 'text-[var(--lp-zinc-400)]'}`}
-                    onClick={() => setActiveTab('serial')}
-                  >
-                    <Terminal size={14} /> SERIAL OUTPUT
-                    {serialOutput.length > 0 && <span className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ marginLeft: 6, background: 'var(--lp-rose)', boxShadow: '0 0 8px var(--lp-rose)' }} />}
-                  </button>
-
-                  {board === 'esp32-c3' && (
-                    <button
-                      className={`bg-transparent border-none px-2.5 h-[24px] cursor-pointer text-[10px] font-bold flex items-center gap-1.5 rounded-none uppercase tracking-[0.8px] relative transition-all duration-200 ${activeTab === 'wifi' ? 'text-[var(--lp-accent-bright)]' : 'text-[var(--lp-zinc-400)]'}`}
-                      onClick={() => setActiveTab('wifi')}
-                    >
-                      <Wifi size={14} /> WiFi LOG
-                      {wifiLog.length > 0 && <span className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                  {activeTab === 'wifi' ? (
-                    <div style={{ fontFamily: 'var(--code-font, "JetBrains Mono", monospace)', fontSize: 12, padding: 16, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
-                        <button onClick={() => clearWiFiLog()} className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.5px] cursor-pointer rounded-[var(--lp-radius-sm)] transition-all duration-200 hover:bg-[var(--lp-accent-primary)] hover:text-[var(--lp-btn-text,#000)]" style={{ background: 'var(--lp-wifi-clear-bg, rgba(34, 211, 238, 0.1))', border: '1px solid var(--lp-wifi-clear-border, rgba(34, 211, 238, 0.3))', color: 'var(--lp-accent-primary)' }}>CLEAR</button>
-                      </div>
-                      {wifiLog.length === 0 ? (
-                        <div style={{ color: 'var(--lp-zinc-600)', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
-                      ) : wifiLog.map((line, i) => (
-                        <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : 'var(--lp-zinc-400)', marginBottom: 2 }}>{line}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <SerialMonitor
-                      output={serialOutput}
-                      onClear={() => clearSerial()}
-                      onSend={async (data) => {
-                        const runner = await getSimulationRunner();
-                        if (runner && isSimulating) runner.sendSerialInput(data);
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+            <TerminalPanel
+              board={board}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              serialOutput={serialOutput}
+              clearSerial={clearSerial}
+              wifiLog={wifiLog}
+              clearWiFiLog={clearWiFiLog}
+              isSimulating={isSimulating}
+            />
           </div>
         )}
       </main>
@@ -1270,73 +1166,22 @@ export default function ForgeElectra({
         </div>
       </footer>
 
-      {/* Web Open Project Modal */}
-      {!IS_ELECTRON && showWebOpenModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-[2000] bg-black/70 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" onClick={() => setShowWebOpenModal(false)}>
-          <div className="flex flex-col w-[500px] max-h-[80vh] animate-[modalScale_0.2s_cubic-bezier(0.34,1.56,0.64,1)]" onClick={e => e.stopPropagation()} style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-accent-primary)', borderRadius: 'var(--lp-radius)', boxShadow: '0 0 40px rgba(34, 211, 238, 0.2), var(--lp-shadow-lg)' }}>
-            <div className="flex justify-between items-center p-5" style={{ borderBottom: '1px solid var(--lp-border)' }}>
-              <h3 className="m-0 text-[18px] uppercase tracking-[1px]" style={{ color: 'var(--lp-accent-primary)' }}>Recent Projects</h3>
-              <button className="bg-transparent border-none text-[24px] cursor-pointer" style={{ color: 'var(--lp-zinc-400)' }} onClick={() => setShowWebOpenModal(false)}>×</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2.5">
-              {recentProjects.length === 0 ? (
-                <div className="p-10 text-center text-[#64748b]">
-                  No saved projects found in browser storage.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {recentProjects.map(p => (
-                    <div key={p.id} className="flex justify-between items-center p-[15px] cursor-pointer border border-transparent rounded-[var(--lp-radius-sm)] transition-all duration-200 hover:translate-x-1" onClick={() => loadWebProject(p)} style={{ background: 'var(--lp-zinc-800)' } }>
-                      <div>
-                        <div className="font-semibold text-white mb-1">{p.name}</div>
-                        <div className="text-[11px]" style={{ color: 'var(--lp-zinc-400)' }}>Last saved: {new Date(p.updatedAt).toLocaleString()}</div>
-                      </div>
-                      <div className="font-mono text-[10px] opacity-60" style={{ color: 'var(--lp-accent-primary)' }}>{p.id.slice(0, 8)}...</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <WebOpenModal
+        isOpen={!IS_ELECTRON && showWebOpenModal}
+        onClose={() => setShowWebOpenModal(false)}
+        recentProjects={recentProjects}
+        loadWebProject={loadWebProject}
+      />
 
-      {/* Board Switch Confirmation Modal */}
-      {showBoardConfirm && pendingBoard && (
-        <div className="fixed inset-0 flex items-center justify-center z-[2000] bg-black/70 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>
-          <div className="flex flex-col max-w-[420px] max-h-[80vh] animate-[modalScale_0.2s_cubic-bezier(0.34,1.56,0.64,1)]" onClick={e => e.stopPropagation()} style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-accent-primary)', borderRadius: 'var(--lp-radius)', boxShadow: '0 0 40px rgba(34, 211, 238, 0.2), var(--lp-shadow-lg)' }}>
-            <div className="flex justify-between items-center p-5" style={{ borderBottom: '1px solid var(--lp-border)' }}>
-              <h3 className="m-0 text-[18px] uppercase tracking-[1px]" style={{ color: 'var(--lp-accent-primary)' }}>Switch Board?</h3>
-              <button className="bg-transparent border-none text-[24px] cursor-pointer" style={{ color: 'var(--lp-zinc-400)' }} onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>×</button>
-            </div>
-            <div className="p-6 flex-1 overflow-y-auto">
-              <p className="text-[14px] leading-[1.6] mb-6" style={{ color: '#a1a1aa' }}>
-                Switching to <strong>{pendingBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'}</strong> will clear the current circuit and code. Make sure to save your work before proceeding.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}
-                  className="px-5 py-2 rounded-lg border cursor-pointer text-[13px] font-semibold bg-transparent"
-                  style={{ borderColor: '#27272a', color: '#a1a1aa', fontFamily: '"Segoe UI", Inter, sans-serif' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowBoardConfirm(false);
-                    if (pendingBoard) executeBoardSwitch(pendingBoard);
-                    setPendingBoard(null);
-                  }}
-                  className="px-5 py-2 rounded-lg border-none cursor-pointer text-[13px] font-bold"
-                  style={{ background: 'linear-gradient(135deg, #22d3ee, #06b6d4)', color: '#09090b', fontFamily: '"Segoe UI", Inter, sans-serif' }}
-                >
-                  Switch Anyway
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <BoardConfirmModal
+        isOpen={showBoardConfirm}
+        onClose={() => {
+          setShowBoardConfirm(false);
+          setPendingBoard(null);
+        }}
+        pendingBoard={pendingBoard}
+        executeBoardSwitch={executeBoardSwitch}
+      />
     </div>
   );
 }

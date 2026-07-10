@@ -302,11 +302,14 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 >
                     <button
                         onClick={onClose}
-                        className={`cursor-pointer transition-all duration-200 px-[32px] py-[10px] text-[13px] font-medium rounded-[10px] border border-solid ${
+                        className={`cursor-pointer transition-all duration-200 text-[13px] font-medium rounded-[10px] border border-solid ${
                             isDark
                                 ? 'bg-transparent border-white/10 text-slate-400 hover:bg-white/5 hover:border-white/20 hover:text-white'
                                 : 'bg-transparent border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900'
                         }`}
+                        style={{
+                            padding: '10px 32px',
+                        }}
                     >
                         Cancel
                     </button>
