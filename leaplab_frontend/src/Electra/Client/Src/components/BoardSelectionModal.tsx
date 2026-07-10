@@ -278,15 +278,12 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                                                     letterSpacing: '0.02em',
                                                     padding: '4px 10px',
                                                     borderRadius: '6px',
-                                                    color: isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(71, 85, 105, 0.6)',
-                                                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.03)',
-                                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(15, 23, 42, 0.05)',
+                                                    color: isActive ? `rgba(${board.accentRgb}, 0.8)` : (isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(71, 85, 105, 0.6)'),
+                                                    background: isActive ? `rgba(${board.accentRgb}, ${isDark ? '0.08' : '0.06'})` : (isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.03)'),
+                                                    border: isActive
+                                                        ? `1px solid rgba(${board.accentRgb}, ${isDark ? '0.15' : '0.12'})`
+                                                        : (isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(15, 23, 42, 0.05)'),
                                                     transition: 'all 0.3s ease',
-                                                    ...(isActive ? {
-                                                        color: `rgba(${board.accentRgb}, 0.8)`,
-                                                        background: `rgba(${board.accentRgb}, ${isDark ? '0.08' : '0.06'})`,
-                                                        borderColor: `rgba(${board.accentRgb}, ${isDark ? '0.15' : '0.12'})`,
-                                                    } : {}),
                                                 }}
                                             >
                                                 {tag}
@@ -336,7 +333,9 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                             fontWeight: 500,
                             borderRadius: '10px',
                             background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.02)',
-                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(15, 23, 42, 0.1)',
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.1)',
                             color: isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.7)',
                         }}
                         onMouseEnter={e => {

@@ -238,12 +238,12 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
                 background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
                 border: `1px solid ${
                   isInputFocused
-                    ? (isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(2, 132, 199, 0.35)')
-                    : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.08)')
+                    ? (isDark ? 'rgba(59, 130, 246, 0.4)' : '#0284c7')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#d1d5db')
                 }`,
                 boxShadow: isInputFocused
-                  ? `0 0 0 3px ${isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(2, 132, 199, 0.06)'}`
-                  : isDark ? 'none' : '0 1px 2px rgba(15, 23, 42, 0.04)',
+                  ? `0 0 0 3px ${isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(2, 132, 199, 0.08)'}`
+                  : 'none',
               }}
             >
               <ChevronRight
@@ -253,7 +253,7 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
                   left: '11px',
                   color: isInputFocused
                     ? (isDark ? 'var(--lp-accent-primary)' : '#0284c7')
-                    : (isDark ? 'rgba(100, 116, 139, 0.35)' : 'rgba(15, 23, 42, 0.2)'),
+                    : (isDark ? 'rgba(100, 116, 139, 0.5)' : '#9ca3af'),
                   transition: 'color 0.25s ease',
                 }}
                 strokeWidth={2.5}
@@ -292,8 +292,8 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
                 textTransform: 'uppercase',
                 borderRadius: '8px',
                 background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.08)'}`,
-                color: isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(15, 23, 42, 0.4)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#d1d5db'}`,
+                color: isDark ? 'rgba(148, 163, 184, 0.6)' : '#64748b',
                 boxShadow: isDark ? 'none' : '0 1px 2px rgba(15, 23, 42, 0.04)',
                 transition: 'all 0.2s ease',
               }}
@@ -317,12 +317,12 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
                 textTransform: 'uppercase',
                 borderRadius: '8px',
                 border: 'none',
-                background: inputValue
-                  ? (isDark ? 'var(--lp-accent-primary)' : '#0284c7')
-                  : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.03)'),
-                color: inputValue
-                  ? (isDark ? 'var(--lp-btn-text, #000)' : '#ffffff')
-                  : (isDark ? 'rgba(100, 116, 139, 0.3)' : 'rgba(15, 23, 42, 0.2)'),
+            background: inputValue
+              ? (isDark ? 'var(--lp-accent-primary)' : '#0284c7')
+              : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+            color: inputValue
+              ? (isDark ? 'var(--lp-btn-text, #000)' : '#ffffff')
+              : (isDark ? 'rgba(100, 116, 139, 0.3)' : '#94a3b8'),
                 opacity: inputValue ? 1 : 0.6,
                 cursor: inputValue ? 'pointer' : 'not-allowed',
                 boxShadow: inputValue && !isDark ? '0 1px 3px rgba(2, 132, 199, 0.15)' : 'none',
@@ -353,7 +353,7 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
           50% { opacity: 0.6; transform: scale(1.05); }
         }
         .serial-input-field::placeholder {
-          color: rgba(15, 23, 42, 0.3);
+          color: #9ca3af;
         }
       `}</style>
     </div>
