@@ -1049,7 +1049,7 @@ export default function ForgeElectra({
                 className="flex items-center relative z-10"
                 style={{
                   height: '38px',
-                  padding: '0 12px',
+                  padding: '0 16px',
                   gap: '2px',
                   background: uiTheme === 'light'
                     ? 'rgba(255, 255, 255, 0.6)'
@@ -1204,7 +1204,7 @@ export default function ForgeElectra({
             {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
             {activeTab !== 'libraries' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
-                <div className="flex items-center gap-1.5 px-3 relative backdrop-blur-[12px] transition-all duration-300" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
+                <div className="flex items-center gap-1.5 px-4 relative backdrop-blur-[12px] transition-all duration-300" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
                   <button
                     className={`bg-transparent border-none px-2.5 h-[24px] cursor-pointer text-[10px] font-bold flex items-center gap-1.5 rounded-none uppercase tracking-[0.8px] relative transition-all duration-200 ${activeTab === 'serial' || activeTab === 'code' ? 'text-[var(--lp-accent-bright)]' : 'text-[var(--lp-zinc-400)]'}`}
                     onClick={() => setActiveTab('serial')}
@@ -1226,7 +1226,7 @@ export default function ForgeElectra({
 
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                   {activeTab === 'wifi' ? (
-                    <div style={{ fontFamily: 'var(--code-font, "JetBrains Mono", monospace)', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
+                    <div style={{ fontFamily: 'var(--code-font, "JetBrains Mono", monospace)', fontSize: 12, padding: 16, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
                         <button onClick={() => clearWiFiLog()} className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.5px] cursor-pointer rounded-[var(--lp-radius-sm)] transition-all duration-200 hover:bg-[var(--lp-accent-primary)] hover:text-[var(--lp-btn-text,#000)]" style={{ background: 'var(--lp-wifi-clear-bg, rgba(34, 211, 238, 0.1))', border: '1px solid var(--lp-wifi-clear-border, rgba(34, 211, 238, 0.3))', color: 'var(--lp-accent-primary)' }}>CLEAR</button>

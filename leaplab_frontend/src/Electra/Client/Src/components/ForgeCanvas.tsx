@@ -455,15 +455,13 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
   return (
     <div
-      className="forge-canvas-container"
+      className={`forge-canvas-container w-full h-full relative ${
+        uiTheme === 'light'
+          ? 'bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.04)_1px,transparent_0)]'
+          : 'bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)]'
+      }`}
       style={{
-        width: '100%',
-        height: '100%',
-        background: 'var(--lp-dark-bg)',
-        position: 'relative',
-        backgroundImage: uiTheme === 'light'
-          ? 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)'
-          : 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)',
+        backgroundColor: 'var(--lp-dark-bg)',
         backgroundSize: '24px 24px'
       }}
       onDrop={onDrop}
@@ -517,13 +515,11 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* ── Wokwi-style MiniMap with component labels ── */}
         <MiniMap
-          className="glass-minimap"
+          className="glass-minimap rounded-[16px] overflow-hidden"
           style={{
             background: 'var(--lp-glass)',
             backdropFilter: 'blur(10px)',
             border: '1px solid var(--lp-border)',
-            borderRadius: 16,
-            overflow: 'hidden'
           }}
           nodeColor={(n: any) => {
             const t = n.data?.type;
@@ -544,7 +540,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         />
 
         {/* ── Zoom percentage display (Wokwi-style) ── */}
-        <Panel position="bottom-right" style={{ marginBottom: 8, marginRight: 8 }}>
+        <Panel position="bottom-right" className="mb-[8px] mr-[8px]">
           <div className="zoom-display">
             {Math.round(currentViewport.zoom * 100)}%
           </div>
@@ -552,20 +548,9 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* ── Pan-drag mode indicator ── */}
         {panDragEnabled && (
-          <Panel position="bottom-center" style={{ marginBottom: 12 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'var(--lp-accent-primary, #3b82f6)',
-              color: '#fff',
-              padding: '6px 14px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 600,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
-              animation: 'fadeIn 0.2s ease',
-            }}>
+          <Panel position="bottom-center" className="mb-[12px]">
+            <div className="flex items-center gap-[6px] bg-[var(--lp-accent-primary,#3b82f6)] text-white p-[6px_14px] rounded-[20px] text-[12px] font-semibold shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
+              style={{ animation: 'fadeIn 0.2s ease' }}>
               <Hand size={14} />
               <span>Pan Mode — drag to move canvas · double-click or Esc to exit</span>
             </div>
@@ -962,15 +947,7 @@ const WireDraftOverlayImpl: React.FC<WireDraftOverlayProps> = ({ wireDraft, onRe
 
   return (
     <svg
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 1001,
-      }}
+      className="absolute top-0 left-0 w-full h-full pointer-events-none z-[1001]"
     >
       <path
         d={draftWirePath}
@@ -979,7 +956,7 @@ const WireDraftOverlayImpl: React.FC<WireDraftOverlayProps> = ({ wireDraft, onRe
         fill="none"
         strokeLinejoin="round"
         strokeLinecap="round"
-        style={{ filter: 'drop-shadow(0 0 3px rgba(34, 197, 94, 0.5))' }}
+        className="drop-shadow-[0_0_3px_rgba(34,197,94,0.5)]"
       />
       {waypointDots?.map((dot: { key: number; sx: number; sy: number }) => (
         <circle key={dot.key} cx={dot.sx} cy={dot.sy} r={3} fill="#22c55e" stroke="#09090b" strokeWidth={1} />

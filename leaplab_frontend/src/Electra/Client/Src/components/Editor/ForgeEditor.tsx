@@ -58,71 +58,58 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
   };
 
   return (
-    <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
+    <div className="forge-editor-container h-full w-full overflow-hidden flex flex-col">
       {/* Filename tab bar */}
       <div
-        className="flex items-center shrink-0"
+        className={`flex items-center shrink-0 h-[30px] px-[16px] md:px-[20px] gap-[2px] ${
+          isDark ? 'bg-[rgba(10,12,16,0.3)]' : 'bg-[rgba(241,245,249,0.6)]'
+        }`}
         style={{
-          height: '30px',
-          padding: '0 12px',
-          gap: '2px',
-          background: isDark ? 'rgba(10, 12, 16, 0.3)' : 'rgba(241, 245, 249, 0.6)',
           borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.05)'}`,
         }}
       >
         <div
-          className="flex items-center relative"
-          style={{
-            gap: '6px',
-            padding: '0 12px',
-            height: '100%',
-            fontSize: '11px',
-            fontWeight: 500,
-            fontFamily: "'JetBrains Mono', monospace",
-            color: isDark ? 'rgba(226, 232, 240, 0.8)' : '#334155',
-            cursor: 'default',
-            userSelect: 'none',
-          }}
+          className={`flex items-center relative gap-[6px] px-[12px] h-full text-[11px] font-medium cursor-default select-none ${
+            isDark ? 'text-[rgba(226,232,240,0.8)]' : 'text-[#334155]'
+          }`}
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
         >
           {/* Active indicator line */}
           <div
-            className="absolute top-0 left-2 right-2"
-            style={{
-              height: '2px',
-              borderRadius: '0 0 2px 2px',
-              background: 'var(--lp-accent-primary)',
-              opacity: 0.6,
-            }}
+            className="absolute top-0 left-2 right-2 h-[2px] rounded-[0_0_2px_2px] opacity-60"
+            style={{ background: 'var(--lp-accent-primary)' }}
           />
           sketch.ino
         </div>
       </div>
 
-      <MonacoEditor
-        height="calc(100% - 28px)"
-        defaultLanguage="cpp"
-        value={code}
-        onChange={onChange}
-        theme={uiTheme === 'light' ? 'electra-light' : 'electra-dark'}
-        onMount={handleEditorDidMount}
-        options={{
-          fontSize: 14, // 14px default Arduino IDE font size for perfect legibility
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          fontFamily: "Consolas, 'Courier New', monospace", // Standard Arduino IDE Windows font stack
-          fontLigatures: false, // Standard clean character spacing
-          cursorStyle: 'line',
-          cursorWidth: 2,
-          cursorBlinking: 'smooth',
-          cursorSmoothCaretAnimation: 'on',
-          padding: { top: 10 },
-          lineNumbers: 'on',
-          roundedSelection: true,
-          automaticLayout: true,
-          renderLineHighlight: 'all',
-          smoothScrolling: true,
-        }}
-      />
+      <div className={`flex-1 min-h-0 p-[8px_16px] ${isDark ? 'bg-[#14161c]' : 'bg-[#ffffff]'}`}>
+        <MonacoEditor
+          height="100%"
+          defaultLanguage="cpp"
+          value={code}
+          onChange={onChange}
+          theme={uiTheme === 'light' ? 'electra-light' : 'electra-dark'}
+          onMount={handleEditorDidMount}
+          options={{
+            fontSize: 14, // 14px default Arduino IDE font size for perfect legibility
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontFamily: "Consolas, 'Courier New', monospace", // Standard Arduino IDE Windows font stack
+            fontLigatures: false, // Standard clean character spacing
+            cursorStyle: 'line',
+            cursorWidth: 2,
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            padding: { top: 10 },
+            lineNumbers: 'on',
+            roundedSelection: true,
+            automaticLayout: true,
+            renderLineHighlight: 'all',
+            smoothScrolling: true,
+          }}
+        />
+      </div>
     </div>
   );
 };

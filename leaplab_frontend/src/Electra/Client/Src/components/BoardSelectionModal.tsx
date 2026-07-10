@@ -43,106 +43,82 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
     return (
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center"
+            className={`fixed inset-0 z-[10000] flex items-center justify-center animate-[overlay-fade-in_0.3s_ease-out] ${
+                isDark ? 'bg-[rgba(8,9,12,0.88)]' : 'bg-[rgba(241,245,249,0.85)]'
+            }`}
             style={{
-                background: isDark ? 'rgba(8, 9, 12, 0.88)' : 'rgba(241, 245, 249, 0.85)',
                 backdropFilter: 'blur(20px) saturate(1.2)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
-                animation: 'overlay-fade-in 0.3s ease-out',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.2)'
             }}
         >
             {/* Ambient glow behind modal */}
             <div
-                className="absolute pointer-events-none"
-                style={{
-                    width: '600px',
-                    height: '400px',
-                    borderRadius: '50%',
-                    background: isDark
-                        ? 'radial-gradient(ellipse, rgba(59, 130, 246, 0.06) 0%, transparent 70%)'
-                        : 'radial-gradient(ellipse, rgba(59, 130, 246, 0.04) 0%, transparent 70%)',
-                    filter: 'blur(60px)',
-                }}
+                className={`absolute pointer-events-none w-[600px] h-[400px] rounded-[50%] blur-[60px] ${
+                    isDark
+                        ? 'bg-[radial-gradient(ellipse,rgba(59,130,246,0.06)_0%,transparent_70%)]'
+                        : 'bg-[radial-gradient(ellipse,rgba(59,130,246,0.04)_0%,transparent_70%)]'
+                }`}
             />
 
             <div
-                className="relative max-w-[880px] w-[92%] max-md:max-w-[460px]"
+                className={`relative max-w-[880px] w-[92%] max-md:max-w-[460px] rounded-[24px] border border-solid ${
+                    isDark
+                        ? 'bg-[linear-gradient(180deg,rgba(15,17,23,0.95)_0%,rgba(10,11,14,0.98)_100%)] border-[rgba(255,255,255,0.06)] shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_25px_60px_-12px_rgba(0, 0, 0, 0.5), 0_0_120px_-40px_rgba(59,130,246,0.08)]'
+                        : 'bg-[linear-gradient(180deg,#ffffff_0%,#fafbfc_100%)] border-[rgba(15,23,42,0.08)] shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_25px_50px_-12px_rgba(15, 23, 42, 0.12),0_0_80px_-30px_rgba(59, 130, 246, 0.04)]'
+                }`}
                 style={{
-                    background: isDark
-                        ? 'linear-gradient(180deg, rgba(15, 17, 23, 0.95) 0%, rgba(10, 11, 14, 0.98) 100%)'
-                        : 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(15, 23, 42, 0.08)',
-                    borderRadius: '24px',
-                    padding: '44px 52px',
-                    boxShadow: isDark
-                        ? '0 0 0 1px rgba(255,255,255,0.03), 0 25px 60px -12px rgba(0, 0, 0, 0.5), 0 0 120px -40px rgba(59, 130, 246, 0.08)'
-                        : '0 0 0 1px rgba(0,0,0,0.02), 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 80px -30px rgba(59, 130, 246, 0.04)',
                     animation: 'modal-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                    padding: '40px 48px',
+                    maxHeight: '90vh',
+                    overflowY: 'auto',
                 }}
             >
                 {/* Close Button */}
                 <button
-                    className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200"
+                    className={`absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200 bg-transparent border-none ${
+                        isDark
+                            ? 'text-[rgba(148,163,184,0.6)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f8fafc]'
+                            : 'text-[rgba(100,116,139,0.5)] hover:bg-[rgba(15,23,42,0.04)] hover:text-[#0f172a]'
+                    }`}
                     onClick={onClose}
                     aria-label="Close modal"
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(100, 116, 139, 0.5)',
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.04)';
-                        e.currentTarget.style.color = isDark ? '#f8fafc' : '#0f172a';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(100, 116, 139, 0.5)';
-                    }}
                 >
                     <X size={18} strokeWidth={2} />
                 </button>
 
                 {/* Header */}
-                <div className="text-center" style={{ marginBottom: '36px' }}>
+                <div className="text-center mb-[36px]">
                     <h1
-                        className="m-0 font-bold tracking-[-0.02em]"
-                        style={{
-                            fontSize: '30px',
-                            lineHeight: '1.2',
-                            color: isDark ? '#f1f5f9' : '#0f172a',
-                            marginBottom: '10px',
-                        }}
+                        className={`m-0 font-bold tracking-[-0.02em] text-[30px] leading-[1.2] mb-[10px] ${
+                            isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
+                        }`}
                     >
                         Choose Your Board
                     </h1>
                     <p
-                        className="m-0"
-                        style={{
-                            fontSize: '14px',
-                            fontWeight: 400,
-                            lineHeight: '1.5',
-                            color: isDark ? 'rgba(148, 163, 184, 0.8)' : 'rgba(71, 85, 105, 0.8)',
-                        }}
+                        className={`m-0 text-[14px] font-normal leading-[1.5] ${
+                            isDark ? 'text-[rgba(148,163,184,0.8)]' : 'text-[rgba(71,85,105,0.8)]'
+                        }`}
                     >
                         Select a microcontroller to start your simulation
                     </p>
                 </div>
 
                 {/* Board Cards */}
-                <div className="grid grid-cols-2 max-md:grid-cols-1" style={{ gap: '20px' }}>
+                <div className="grid grid-cols-2 max-md:grid-cols-1 gap-[20px]">
                     {BOARDS.map((board) => {
                         const isActive = hovered === board.id;
-                        const Icon = board.icon;
 
                         return (
                             <div
                                 key={board.id}
-                                className="relative cursor-pointer flex flex-col overflow-hidden"
+                                className={`relative cursor-pointer flex flex-col overflow-hidden rounded-[16px] transition-all duration-[0.35s] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    isActive ? '-translate-y-[4px]' : 'translate-y-0'
+                                }`}
                                 style={{
-                                    borderRadius: '16px',
-                                    padding: '28px',
-                                    transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                                    transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
+                                    padding: '24px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
                                     background: isActive
                                         ? (isDark ? `rgba(${board.accentRgb}, 0.04)` : '#ffffff')
                                         : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'),
@@ -163,127 +139,116 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                             >
                                 {/* Hover glow overlay */}
                                 <div
-                                    className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+                                    className={`absolute inset-0 pointer-events-none rounded-[16px] transition-opacity duration-500 ${
+                                        isActive ? 'opacity-100' : 'opacity-0'
+                                    }`}
                                     style={{
-                                        borderRadius: '16px',
-                                        opacity: isActive ? 1 : 0,
                                         background: `radial-gradient(ellipse at 50% 0%, rgba(${board.accentRgb}, ${isDark ? '0.06' : '0.04'}) 0%, transparent 60%)`,
                                     }}
                                 />
 
                                 {/* Image Container */}
                                 <div
-                                    className="relative w-full flex items-center justify-center overflow-hidden"
+                                    className={`relative w-full flex items-center justify-center overflow-hidden border border-solid ${
+                                        isDark
+                                            ? 'bg-[linear-gradient(180deg,rgba(0,0,0,0.3)_0%,rgba(0,0,0,0.15)_100%)] border-[rgba(255,255,255,0.04)]'
+                                            : 'bg-[linear-gradient(180deg,#f1f5f9_0%,#e2e8f0_100%)] border-[rgba(15,23,42,0.04)]'
+                                    }`}
                                     style={{
+                                        width: '100%',
                                         height: '180px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
                                         borderRadius: '12px',
                                         marginBottom: '24px',
-                                        background: isDark
-                                            ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)'
-                                            : 'linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%)',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid rgba(15,23,42,0.04)',
                                     }}
                                 >
                                     {/* Subtle grid pattern */}
                                     <div
-                                        className="absolute inset-0 pointer-events-none"
+                                        className={`absolute inset-0 pointer-events-none ${
+                                            isDark
+                                                ? 'bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.015)_1px,transparent_0)]'
+                                                : 'bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.02)_1px,transparent_0)]'
+                                        }`}
                                         style={{
-                                            backgroundImage: isDark
-                                                ? 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.015) 1px, transparent 0)'
-                                                : 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.02) 1px, transparent 0)',
                                             backgroundSize: '20px 20px',
                                         }}
                                     />
                                     {/* Accent glow on hover */}
                                     <div
-                                        className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+                                        className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
+                                            isActive ? 'opacity-[0.15]' : 'opacity-0'
+                                        }`}
                                         style={{
-                                            opacity: isActive ? 0.15 : 0,
                                             background: `radial-gradient(circle at center, rgba(${board.accentRgb}, 0.4) 0%, transparent 60%)`,
                                         }}
                                     />
                                     <div className="flex items-center justify-center pointer-events-none w-full h-full relative z-10">
                                         <board.Preview
-                                            className="block pointer-events-none"
+                                            className="block pointer-events-none origin-center transition-all duration-[0.4s]"
                                             style={{
                                                 transform: 'scale(0.6)',
-                                                transformOrigin: 'center center',
                                                 filter: isActive
                                                     ? `drop-shadow(0 4px 20px rgba(${board.accentRgb}, 0.2))`
                                                     : 'none',
-                                                transition: 'filter 0.4s ease, transform 0.4s ease',
                                             }}
                                         />
                                     </div>
                                 </div>
 
                                 {/* Content */}
-                                <div className="flex flex-col flex-1 relative z-10">
-                                    {/* Title row with icon */}
-                                    <div className="flex items-center gap-2.5" style={{ marginBottom: '8px' }}>
-                                        <div
-                                            className="flex items-center justify-center"
-                                            style={{
-                                                width: '28px',
-                                                height: '28px',
-                                                borderRadius: '8px',
-                                                background: isActive
-                                                    ? `rgba(${board.accentRgb}, ${isDark ? '0.15' : '0.1'})`
-                                                    : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)'),
-                                                transition: 'background 0.3s ease',
-                                            }}
-                                        >
-                                            <Icon
-                                                size={14}
-                                                style={{
-                                                    color: isActive ? board.accent : (isDark ? '#64748b' : '#94a3b8'),
-                                                    transition: 'color 0.3s ease',
-                                                }}
-                                            />
-                                        </div>
-                                        <h2
-                                            className="m-0 font-semibold"
-                                            style={{
-                                                fontSize: '18px',
-                                                lineHeight: '1.3',
-                                                color: isDark ? '#f1f5f9' : '#0f172a',
-                                            }}
-                                        >
-                                            {board.title}
-                                        </h2>
-                                    </div>
+                                <div className="flex flex-col flex-1 relative z-10" style={{ display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: 10 }}>
+                                    <h2
+                                        className={`m-0 font-semibold text-[20px] leading-[1.3] ${
+                                            isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
+                                        }`}
+                                        style={{
+                                            margin: '0 0 12px 0',
+                                            fontWeight: 600,
+                                            fontSize: '20px',
+                                            lineHeight: 1.3,
+                                        }}
+                                    >
+                                        {board.title}
+                                    </h2>
 
                                     {/* Description */}
                                     <p
-                                        className="m-0"
+                                        className={`m-0 text-[13px] leading-[1.6] ${
+                                            isDark ? 'text-[rgba(148,163,184,0.7)]' : 'text-[rgba(71,85,105,0.7)]'
+                                        }`}
                                         style={{
+                                            margin: '0 0 16px 0',
                                             fontSize: '13px',
-                                            lineHeight: '1.6',
-                                            color: isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(71, 85, 105, 0.7)',
-                                            marginBottom: '16px',
+                                            lineHeight: 1.6,
                                         }}
                                     >
                                         {board.description}
                                     </p>
 
                                     {/* Tags */}
-                                    <div className="flex flex-wrap" style={{ gap: '6px', marginBottom: '20px' }}>
+                                    <div
+                                        className="flex flex-wrap gap-[6px]"
+                                        style={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: '6px',
+                                            marginBottom: '20px',
+                                        }}
+                                    >
                                         {board.tags.map(tag => (
                                             <span
                                                 key={tag}
+                                                className="text-[10px] font-medium tracking-[0.02em] p-[4px_10px] rounded-[6px] transition-all duration-[0.3s]"
                                                 style={{
-                                                    fontSize: '10px',
                                                     fontFamily: "'JetBrains Mono', monospace",
-                                                    fontWeight: 500,
-                                                    letterSpacing: '0.02em',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
                                                     color: isActive ? `rgba(${board.accentRgb}, 0.8)` : (isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(71, 85, 105, 0.6)'),
                                                     background: isActive ? `rgba(${board.accentRgb}, ${isDark ? '0.08' : '0.06'})` : (isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.03)'),
                                                     border: isActive
                                                         ? `1px solid rgba(${board.accentRgb}, ${isDark ? '0.15' : '0.12'})`
                                                         : (isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(15, 23, 42, 0.05)'),
-                                                    transition: 'all 0.3s ease',
                                                 }}
                                             >
                                                 {tag}
@@ -293,15 +258,18 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
                                     {/* CTA */}
                                     <div
-                                        className="flex items-center mt-auto"
-                                        style={{ gap: '8px' }}
+                                        className="flex items-center gap-[8px]"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            marginTop: 'auto',
+                                        }}
                                     >
                                         <span
+                                            className="text-[13px] font-semibold transition-colors duration-[0.25s]"
                                             style={{
-                                                fontSize: '13px',
-                                                fontWeight: 600,
                                                 color: isActive ? board.accent : (isDark ? '#64748b' : '#94a3b8'),
-                                                transition: 'color 0.25s ease',
                                             }}
                                         >
                                             Start Simulation
@@ -309,10 +277,11 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                                         <ArrowRight
                                             size={15}
                                             strokeWidth={2.5}
+                                            className={`transition-all duration-[0.25s] ${
+                                                isActive ? 'translate-x-[4px]' : 'translate-x-0'
+                                            }`}
                                             style={{
                                                 color: isActive ? board.accent : (isDark ? '#64748b' : '#94a3b8'),
-                                                transition: 'all 0.25s ease',
-                                                transform: isActive ? 'translateX(4px)' : 'translateX(0)',
                                             }}
                                         />
                                     </div>
@@ -323,31 +292,21 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 </div>
 
                 {/* Cancel */}
-                <div className="flex justify-center" style={{ marginTop: '28px' }}>
+                <div
+                    className="flex justify-center"
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginTop: '28px',
+                    }}
+                >
                     <button
                         onClick={onClose}
-                        className="cursor-pointer transition-all duration-200"
-                        style={{
-                            padding: '10px 32px',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            borderRadius: '10px',
-                            background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.02)',
-                            borderWidth: '1px',
-                            borderStyle: 'solid',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.1)',
-                            color: isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.7)',
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.04)';
-                            e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(15, 23, 42, 0.15)';
-                            e.currentTarget.style.color = isDark ? '#e2e8f0' : '#334155';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.02)';
-                            e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.1)';
-                            e.currentTarget.style.color = isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.7)';
-                        }}
+                        className={`cursor-pointer transition-all duration-200 px-[32px] py-[10px] text-[13px] font-medium rounded-[10px] border border-solid ${
+                            isDark
+                                ? 'bg-transparent border-white/10 text-slate-400 hover:bg-white/5 hover:border-white/20 hover:text-white'
+                                : 'bg-transparent border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900'
+                        }`}
                     >
                         Cancel
                     </button>

@@ -95,9 +95,9 @@ export const SelectionToolbar: React.FC = () => {
     };
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--lp-border)', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
-        <Sliders size={12} style={{ color: 'var(--lp-zinc-600)' }} />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', minWidth: '60px' }}>{config.label}</span>
+      <div className="flex items-center gap-[8px] bg-[var(--lp-zinc-800)] p-[4px_10px] rounded-[8px] border border-solid border-[var(--lp-border)] shadow-[0_2px_6px_rgba(0,0,0,0.2)]">
+        <Sliders size={12} className="text-[var(--lp-zinc-600)]" />
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)] uppercase min-w-[60px]">{config.label}</span>
         <input
           type="range"
           min={config.min}
@@ -105,7 +105,8 @@ export const SelectionToolbar: React.FC = () => {
           step={config.step ?? (config.min < 1 ? 0.01 : 1)}
           value={currentValue}
           onChange={handleSliderChange}
-          style={{ width: '100px', accentColor: 'var(--lp-accent-primary)' }}
+          className="w-[100px]"
+          style={{ accentColor: 'var(--lp-accent-primary)' }}
         />
         <input
           type="number"
@@ -114,22 +115,11 @@ export const SelectionToolbar: React.FC = () => {
           max={config.max}
           step={config.step ?? (config.min < 1 ? 0.01 : 1)}
           onChange={handleSliderChange}
-          style={{
-            width: '65px',
-            background: 'var(--lp-zinc-900)',
-            border: '1px solid var(--lp-border)',
-            borderRadius: '4px',
-            padding: '2px 4px',
-            fontSize: '10px',
-            color: 'var(--lp-accent-primary)',
-            fontWeight: 900,
-            fontFamily: "'Space Mono', monospace",
-            textAlign: 'right',
-            outline: 'none',
-          }}
+          className="w-[65px] bg-[var(--lp-zinc-900)] border border-solid border-[var(--lp-border)] rounded-[4px] p-[2px_4px] text-[10px] text-[var(--lp-accent-primary)] font-black text-right outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         />
         {config.unit && (
-          <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', fontFamily: "'Space Mono', monospace" }}>
+          <span className="text-[10px] font-black text-[var(--lp-accent-primary)]" style={{ fontFamily: "'Space Mono', monospace" }}>
             {config.unit}
           </span>
         )}
@@ -157,22 +147,17 @@ export const SelectionToolbar: React.FC = () => {
   const renderLEDColorPalette = () => {
     if (nodeType !== 'led' && nodeType !== 'led-ring' && nodeType !== 'led-bar-graph') return null;
     return (
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--lp-border)', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', textTransform: 'uppercase', marginRight: '4px' }}>LED_COLOR</span>
+      <div className="flex gap-[6px] items-center bg-[var(--lp-zinc-800)] p-[4px_10px] rounded-[8px] border border-solid border-[var(--lp-border)] shadow-[0_2px_6px_rgba(0,0,0,0.2)]">
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)] uppercase mr-[4px]">LED_COLOR</span>
         {LED_COLORS.map((lc) => (
           <button
             key={lc.color}
             onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })}
             title={lc.name}
-            style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '1px',
-              backgroundColor: lc.color,
-              border: selectedNode?.data?.color === lc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
-              cursor: 'pointer',
-              transition: 'all 0.1s',
-            }}
+            className={`w-[16px] h-[16px] rounded-[1px] cursor-pointer transition-all duration-[0.1s] ${
+              selectedNode?.data?.color === lc.color ? 'border-2 border-solid border-[var(--lp-accent-primary)]' : 'border border-solid border-[rgba(255,255,255,0.1)]'
+            }`}
+            style={{ backgroundColor: lc.color }}
           />
         ))}
       </div>
@@ -182,21 +167,16 @@ export const SelectionToolbar: React.FC = () => {
   const renderColorPalette = () => {
     if (!selectedEdge) return null;
     return (
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+      <div className="flex gap-[6px] items-center bg-[var(--lp-zinc-800)] p-[4px_10px] rounded-[2px] border border-solid border-[var(--lp-border)]">
         {WIRE_COLORS.map((wc) => (
           <button
             key={wc.color}
             onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })}
             title={wc.name}
-            style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: wc.color,
-              border: selectedEdge.data?.color === wc.color ? '2px solid var(--lp-accent-primary)' : '1px solid rgba(255,255,255,0.1)',
-              cursor: 'pointer',
-              transition: 'transform 0.1s',
-            }}
+            className={`w-[16px] h-[16px] rounded-[50%] cursor-pointer transition-transform duration-[0.1s] ${
+              selectedEdge.data?.color === wc.color ? 'border-2 border-solid border-[var(--lp-accent-primary)]' : 'border border-solid border-[rgba(255,255,255,0.1)]'
+            }`}
+            style={{ backgroundColor: wc.color }}
           />
         ))}
       </div>
@@ -206,22 +186,24 @@ export const SelectionToolbar: React.FC = () => {
   const renderIRReceiverInput = () => {
     if (nodeType !== 'ir-receiver') return null;
     return (
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>ADDR</span>
+      <div className="flex gap-[8px] items-center bg-[var(--lp-zinc-800)] p-[4px_10px] rounded-[2px] border border-solid border-[var(--lp-border)]">
+        <span className="text-[10px] font-bold text-[var(--lp-text-color)] uppercase">ADDR</span>
         <input
           type="text"
           value={irAddress}
           onChange={(e) => setIrAddress(e.target.value)}
           title="IR Address (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          className="w-[30px] bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-text-color)', textTransform: 'uppercase' }}>CMD</span>
+        <span className="text-[10px] font-bold text-[var(--lp-text-color)] uppercase">CMD</span>
         <input
           type="text"
           value={irCommand}
           onChange={(e) => setIrCommand(e.target.value)}
           title="IR Command (0-255)"
-          style={{ width: '30px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          className="w-[30px] bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         />
         <button
           onClick={() => {
@@ -233,17 +215,7 @@ export const SelectionToolbar: React.FC = () => {
               });
             }
           }}
-          style={{
-            background: 'var(--lp-accent-primary)',
-            color: 'var(--lp-text-color)',
-            border: 'none',
-            padding: '2px 8px',
-                    borderRadius: '8px',
-            fontSize: '9px',
-            fontWeight: 900,
-            cursor: 'pointer',
-            textTransform: 'uppercase'
-          }}
+          className="bg-[var(--lp-accent-primary)] text-[var(--lp-text-color)] border-none p-[2px_8px] rounded-[8px] text-[9px] font-black cursor-pointer uppercase"
         >
           Send
         </button>
@@ -278,30 +250,32 @@ export const SelectionToolbar: React.FC = () => {
     ];
 
     return (
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--lp-zinc-800)', padding: '4px 10px', borderRadius: '2px', border: '1px solid var(--lp-border)' }}>
+      <div className="flex gap-[8px] items-center bg-[var(--lp-zinc-800)] p-[4px_10px] rounded-[2px] border border-solid border-[var(--lp-border)]">
         {/* Size Selector */}
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)' }}>SIZE</span>
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)]">SIZE</span>
         <select
           value={currentSize}
           onChange={(e) => updateNodeData(selectedNode!.id, { size: parseInt(e.target.value) || 23 })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          className="bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         >
           {sizes.map(s => <option key={s} value={s}>NEMA {s}</option>)}
         </select>
 
         {/* Display Selector */}
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>DISP</span>
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)] ml-[6px]">DISP</span>
         <select
           value={currentDisplay}
           onChange={(e) => updateNodeData(selectedNode!.id, { display: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          className="bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         >
           {displays.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
 
         {/* Gear Ratio Selector */}
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>GEAR</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)] ml-[6px]">GEAR</span>
+        <div className="flex items-center gap-[2px]">
           <select
             value={gearRatios.includes(currentGearRatio) ? currentGearRatio : 'custom'}
             onChange={(e) => {
@@ -309,7 +283,8 @@ export const SelectionToolbar: React.FC = () => {
                 updateNodeData(selectedNode!.id, { gearRatio: e.target.value });
               }
             }}
-            style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+            className="bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+            style={{ fontFamily: "'Space Mono', monospace" }}
           >
             {gearRatios.map(g => <option key={g} value={g}>{g}</option>)}
             {!gearRatios.includes(currentGearRatio) && <option value={currentGearRatio}>{currentGearRatio} (Custom)</option>}
@@ -322,17 +297,19 @@ export const SelectionToolbar: React.FC = () => {
               placeholder="e.g. 5:1"
               value={currentGearRatio === 'custom' ? '' : currentGearRatio}
               onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })}
-              style={{ width: '50px', background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+              className="w-[50px] bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+              style={{ fontFamily: "'Space Mono', monospace" }}
             />
           )}
         </div>
 
         {/* Arrow Color Selector */}
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--lp-zinc-400)', marginLeft: '6px' }}>ARROW</span>
+        <span className="text-[10px] font-bold text-[var(--lp-zinc-400)] ml-[6px]">ARROW</span>
         <select
           value={currentArrow}
           onChange={(e) => updateNodeData(selectedNode!.id, { arrow: e.target.value })}
-          style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', border: '1px solid var(--lp-border)', borderRadius: '2px', padding: '2px 4px', fontSize: '10px', fontFamily: "'Space Mono', monospace", outline: 'none' }}
+          className="bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border border-solid border-[var(--lp-border)] rounded-[2px] p-[2px_4px] text-[10px] outline-none"
+          style={{ fontFamily: "'Space Mono', monospace" }}
         >
           {arrowColors.map(ac => <option key={ac.value} value={ac.value}>{ac.label}</option>)}
         </select>
@@ -345,23 +322,9 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      style={{
-      position: 'absolute',
-      bottom: '24px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      background: 'var(--lp-glass)',
-      padding: '6px 16px',
-      borderRadius: '12px',
-      border: '1px solid var(--lp-border-active)',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.1)',
-      backdropFilter: 'blur(12px)',
-      animation: 'slideUp 0.2s ease-out'
-    }}>
+      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-[12px] bg-[var(--lp-glass)] p-[6px_16px] rounded-[12px] border border-solid border-[var(--lp-border-active)] shadow-[0_8px_24px_rgba(0,0,0,0.5),0_0_0_1px_rgba(34,211,238,0.1)]"
+      style={{ backdropFilter: 'blur(12px)', animation: 'slideUp 0.2s ease-out' }}
+    >
       <style>{`
         @keyframes slideUp {
           from { transform: translate(-50%, 20px); opacity: 0; }
@@ -371,12 +334,12 @@ export const SelectionToolbar: React.FC = () => {
 
       {selectedNode ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--lp-border)', paddingRight: '12px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', letterSpacing: '1px' }}>
+          <div className="flex items-center gap-[8px] border-r border-solid border-[var(--lp-border)] pr-[12px]">
+            <span className="text-[10px] font-black text-[var(--lp-accent-primary)] tracking-[1px]">
               UNIT::{selectedNode?.data?.type.replace(/-/g, '_').toUpperCase()}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="flex gap-[12px] items-center">
             {renderSlider()}
             {renderLEDColorPalette()}
             {renderIRReceiverInput()}
@@ -385,12 +348,12 @@ export const SelectionToolbar: React.FC = () => {
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--lp-border)', paddingRight: '12px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--lp-accent-primary)', letterSpacing: '1px' }}>
+          <div className="flex items-center gap-[8px] border-r border-solid border-[var(--lp-border)] pr-[12px]">
+            <span className="text-[10px] font-black text-[var(--lp-accent-primary)] tracking-[1px]">
               WIRE_SPEC
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="flex gap-[8px] items-center">
             {renderColorPalette()}
           </div>
         </>
@@ -398,24 +361,11 @@ export const SelectionToolbar: React.FC = () => {
 
       {/* Hide delete for board elements — they are essential */}
       {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
-        <div style={{ display: 'flex', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--lp-border)' }}>
+        <div className="flex gap-[8px] pl-[8px] border-l border-solid border-[var(--lp-border)]">
           <button
             onClick={handleDelete}
             title="REMOVE_ELEMENT"
-            style={{
-              background: 'rgba(244, 63, 94, 0.1)',
-              border: '1px solid var(--lp-rose)',
-              color: 'var(--lp-rose)',
-              padding: '4px 8px',
-                      borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '9px',
-              fontWeight: 900,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.2s'
-            }}
+            className="bg-[rgba(244,63,94,0.1)] border border-solid border-[var(--lp-rose)] text-[var(--lp-rose)] p-[4px_8px] rounded-[8px] cursor-pointer text-[9px] font-black flex items-center gap-[4px] transition-all duration-[0.2s]"
           >
             <Trash2 size={12} />
             DELETE
