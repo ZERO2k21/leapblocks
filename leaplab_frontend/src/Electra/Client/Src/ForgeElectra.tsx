@@ -1045,27 +1045,148 @@ export default function ForgeElectra({
               borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
               minHeight: 0
             }}>
-              <div className="flex items-center gap-1.5 px-3 relative z-10 backdrop-blur-[12px] transition-all duration-300" style={{ height: 36, background: 'rgba(10, 11, 14, 0.25)', borderBottom: '1px solid var(--lp-border)' }}>
-                {/* Board badge - non-interactive */}
-                <div className="flex items-center gap-1.5 px-2 py-[3px] rounded-[20px] text-[9px] font-extrabold uppercase tracking-[1px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_4px_12px_rgba(0,0,0,0.15)] transition-all duration-300" style={{ background: 'var(--lp-badge-bg, rgba(255, 255, 255, 0.03))', borderColor: 'var(--lp-badge-border, rgba(255, 255, 255, 0.08))', color: 'var(--lp-badge-color, var(--lp-accent-primary))' }}>
-                  <div className="w-[6px] h-[6px] rounded-full relative" style={{ background: 'var(--lp-badge-color, var(--lp-accent-primary))', boxShadow: '0 0 10px var(--lp-badge-color, var(--lp-accent-primary))' }} />
+              <div
+                className="flex items-center relative z-10"
+                style={{
+                  height: '38px',
+                  padding: '0 12px',
+                  gap: '2px',
+                  background: uiTheme === 'light'
+                    ? 'rgba(255, 255, 255, 0.6)'
+                    : 'rgba(10, 12, 16, 0.4)',
+                  borderBottom: `1px solid ${uiTheme === 'light' ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.05)'}`,
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                {/* Board badge */}
+                <div
+                  className="flex items-center shrink-0"
+                  style={{
+                    gap: '7px',
+                    padding: '4px 12px 4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: uiTheme === 'light'
+                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.08)`
+                      : 'var(--lp-badge-bg, rgba(255, 255, 255, 0.03))',
+                    border: `1px solid ${uiTheme === 'light'
+                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.15)`
+                      : 'var(--lp-badge-border, rgba(255, 255, 255, 0.08))'}`,
+                    color: 'var(--lp-badge-color, var(--lp-accent-primary))',
+                    boxShadow: uiTheme === 'light'
+                      ? 'none'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.12)',
+                  }}
+                >
+                  <div
+                    className="relative"
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: 'var(--lp-badge-color, var(--lp-accent-primary))',
+                      boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-badge-color, var(--lp-accent-primary))` : 'none',
+                    }}
+                  />
                   {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
                 </div>
 
-                <div style={{ width: 1, height: 20, background: 'rgba(255, 255, 255, 0.08)', margin: '0 12px' }} />
+                {/* Divider */}
+                <div
+                  style={{
+                    width: '1px',
+                    height: '18px',
+                    margin: '0 10px',
+                    background: uiTheme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)',
+                  }}
+                />
 
+                {/* SKETCH tab */}
                 <button
-                  className={`bg-transparent border-none px-2.5 h-[32px] cursor-pointer text-[11px] font-bold flex items-center gap-1.5 rounded-none uppercase tracking-[0.8px] relative transition-all duration-200 ${activeTab === 'code' ? 'text-[var(--lp-accent-bright)]' : 'text-[var(--lp-zinc-400)]'}`}
+                  className="relative flex items-center cursor-pointer border-none"
+                  style={{
+                    gap: '6px',
+                    padding: '0 12px',
+                    height: '38px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: 'transparent',
+                    color: activeTab === 'code'
+                      ? 'var(--lp-accent-bright)'
+                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
+                    transition: 'color 0.2s ease',
+                  }}
                   onClick={() => setActiveTab('code')}
+                  onMouseEnter={e => {
+                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
+                  }}
+                  onMouseLeave={e => {
+                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
+                  }}
                 >
-                  <Code size={14} /> SKETCH
+                  <Code size={13} strokeWidth={2.5} />
+                  Sketch
+                  {/* Active indicator */}
+                  {activeTab === 'code' && (
+                    <div
+                      className="absolute bottom-0 left-3 right-3"
+                      style={{
+                        height: '2px',
+                        borderRadius: '2px 2px 0 0',
+                        background: 'var(--lp-accent-primary)',
+                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
+                      }}
+                    />
+                  )}
                 </button>
 
+                {/* LIBRARIES tab */}
                 <button
-                  className={`bg-transparent border-none px-2.5 h-[32px] cursor-pointer text-[11px] font-bold flex items-center gap-1.5 rounded-none uppercase tracking-[0.8px] relative transition-all duration-200 ${activeTab === 'libraries' ? 'text-[var(--lp-accent-bright)]' : 'text-[var(--lp-zinc-400)]'}`}
+                  className="relative flex items-center cursor-pointer border-none"
+                  style={{
+                    gap: '6px',
+                    padding: '0 12px',
+                    height: '38px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: 'transparent',
+                    color: activeTab === 'libraries'
+                      ? 'var(--lp-accent-bright)'
+                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
+                    transition: 'color 0.2s ease',
+                  }}
                   onClick={() => setActiveTab('libraries')}
+                  onMouseEnter={e => {
+                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
+                  }}
+                  onMouseLeave={e => {
+                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
+                  }}
                 >
-                  <LibraryIcon size={14} /> LIBRARIES
+                  <LibraryIcon size={13} strokeWidth={2.5} />
+                  Libraries
+                  {activeTab === 'libraries' && (
+                    <div
+                      className="absolute bottom-0 left-3 right-3"
+                      style={{
+                        height: '2px',
+                        borderRadius: '2px 2px 0 0',
+                        background: 'var(--lp-accent-primary)',
+                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
+                      }}
+                    />
+                  )}
                 </button>
               </div>
 

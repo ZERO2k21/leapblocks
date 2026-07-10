@@ -9,7 +9,8 @@ interface ForgeEditorProps {
 
 export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
   const MonacoEditor = Editor as any;
-  const {uiTheme } = useForgeStore();
+  const uiTheme = useForgeStore(s => s.uiTheme);
+  const isDark = uiTheme !== 'light';
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
@@ -58,8 +59,41 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
 
   return (
     <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
-      <div className="flex items-center px-3 h-[28px] shrink-0" style={{ background: 'var(--lp-surface)', borderBottom: '1px solid var(--lp-border)' }}>
-        <div className="flex items-center gap-1.5 px-3 h-full text-[11px] cursor-pointer select-none transition-all duration-200" style={{ color: 'var(--lp-zinc-100)', borderBottom: '1.5px solid var(--lp-accent-primary)', background: 'var(--lp-dark-surface)' }}>
+      {/* Filename tab bar */}
+      <div
+        className="flex items-center shrink-0"
+        style={{
+          height: '30px',
+          padding: '0 12px',
+          gap: '2px',
+          background: isDark ? 'rgba(10, 12, 16, 0.3)' : 'rgba(241, 245, 249, 0.6)',
+          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.05)'}`,
+        }}
+      >
+        <div
+          className="flex items-center relative"
+          style={{
+            gap: '6px',
+            padding: '0 12px',
+            height: '100%',
+            fontSize: '11px',
+            fontWeight: 500,
+            fontFamily: "'JetBrains Mono', monospace",
+            color: isDark ? 'rgba(226, 232, 240, 0.8)' : '#334155',
+            cursor: 'default',
+            userSelect: 'none',
+          }}
+        >
+          {/* Active indicator line */}
+          <div
+            className="absolute top-0 left-2 right-2"
+            style={{
+              height: '2px',
+              borderRadius: '0 0 2px 2px',
+              background: 'var(--lp-accent-primary)',
+              opacity: 0.6,
+            }}
+          />
           sketch.ino
         </div>
       </div>

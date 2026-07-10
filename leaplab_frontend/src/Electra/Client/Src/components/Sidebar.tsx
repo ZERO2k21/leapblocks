@@ -82,42 +82,48 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0f1115] text-[#e2e8f0] font-['Outfit',sans-serif]">
-      <div className="p-3 border-b border-[rgba(255,255,255,0.06)]">
-        <label className="text-[11px] font-semibold uppercase tracking-[0.5px] text-[#64748b] mb-2 block">Target Board</label>
-        <div className="relative flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] cursor-pointer" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <Cpu size={14} className="text-[#3B82F6] shrink-0" />
+    <div className="component-sidebar h-full flex flex-col font-['Outfit',sans-serif]" style={{ background: 'var(--lp-dark-surface)', color: 'var(--lp-text-color)', borderRight: '1px solid var(--lp-border)' }}>
+      <div className="p-3" style={{ borderBottom: '1px solid var(--lp-border)' }}>
+        <label className="text-[11px] font-semibold uppercase tracking-[0.5px] mb-2 block" style={{ color: 'var(--lp-zinc-400)' }}>Target Board</label>
+        <div className="relative flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] cursor-pointer" style={{ background: 'var(--lp-glass)', border: '1px solid var(--lp-border)' }}>
+          <Cpu size={14} className="shrink-0" style={{ color: 'var(--lp-accent-primary)' }} />
           <select
             value={useForgeStore((s) => s.board)}
             onChange={(e) => useForgeStore.getState().setBoard(e.target.value)}
-            className="flex-1 bg-transparent border-none text-[12px] text-[#e2e8f0] outline-none cursor-pointer appearance-none"
+            className="flex-1 bg-transparent border-none text-[12px] outline-none cursor-pointer appearance-none"
+            style={{ color: 'var(--lp-text-color)' }}
           >
             {COMPONENTS.filter(c => c.category === 'boards').map(b => (
               <option key={b.id} value={b.id} className="bg-[#1e293b]">{b.name}</option>
             ))}
           </select>
-          <ChevronDown size={14} className="text-[#64748b] pointer-events-none shrink-0" />
+          <ChevronDown size={14} className="pointer-events-none shrink-0" style={{ color: 'var(--lp-zinc-400)' }} />
         </div>
       </div>
 
-      <div className="p-3 border-b border-[rgba(255,255,255,0.06)]">
+      <div className="p-3" style={{ borderBottom: '1px solid var(--lp-border)' }}>
         <div className="relative flex items-center">
-          <Search size={16} className="absolute left-2.5 text-[#64748b]" />
+          <Search size={16} className="absolute left-2.5" style={{ color: 'var(--lp-zinc-400)' }} />
           <input
             type="text"
             placeholder="Search parts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full py-2 pl-8 pr-3 text-[12px] rounded-md outline-none bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[#e2e8f0] placeholder-[#64748b] focus:border-[#3B82F6] transition-colors"
+            className="w-full py-2 pl-8 pr-3 text-[12px] rounded-md outline-none transition-colors"
+            style={{ background: 'var(--lp-glass)', border: '1px solid var(--lp-border)', color: 'var(--lp-text-color)', '--tw-placeholder-color': 'var(--lp-zinc-400)' } as React.CSSProperties}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-1 p-2">
+      <div className="grid grid-cols-5 gap-1 p-2">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
-            className={`flex items-center justify-center p-2 rounded-md transition-all duration-200 ${activeCategory === cat.id ? 'bg-[#3B82F6]/20 text-[#60A5FA] border border-[#3B82F6]/30' : 'bg-[rgba(255,255,255,0.03)] text-[#64748b] border border-transparent hover:bg-[rgba(255,255,255,0.08)] hover:text-[#e2e8f0]'}`}
+            className={`flex items-center justify-center p-2 rounded-md transition-all duration-200 border ${activeCategory === cat.id ? 'border-[var(--lp-accent-primary)]/30' : 'border-transparent hover:bg-[var(--lp-glass)]'}`}
+            style={activeCategory === cat.id
+              ? { background: 'rgba(var(--lp-accent-primary-rgb, 34, 211, 238), 0.15)', color: 'var(--lp-accent-primary)' }
+              : { color: 'var(--lp-zinc-400)' }
+            }
             onClick={() => setActiveCategory(cat.id)}
             title={cat.name}
           >
@@ -130,16 +136,19 @@ export default function Sidebar() {
         {filteredComponents.map(comp => (
           <div
             key={comp.id}
-            className="flex items-center gap-2.5 p-2 rounded-md cursor-grab transition-all duration-200 border border-transparent hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(59,130,246,0.2)] active:cursor-grabbing"
+            className="component-card flex items-center gap-2.5 p-2 rounded-md cursor-grab transition-all duration-200 border border-transparent hover:border-[rgba(59,130,246,0.2)] active:cursor-grabbing"
             draggable
             onDragStart={(e) => onDragStart(e, comp.id)}
           >
-            <div className="w-9 h-9 flex items-center justify-center rounded-md shrink-0" style={{ background: 'rgba(255,255,255,0.04)' }}>
-              {comp.category === 'boards' ? <Cpu size={20} className="text-[#3B82F6]" /> : <Lightbulb size={20} className="text-[#22d3ee]" />}
+            <div className="w-9 h-9 flex items-center justify-center rounded-md shrink-0" style={{ background: 'var(--lp-glass)' }}>
+              {comp.category === 'boards'
+                ? <Cpu size={20} style={{ color: 'var(--lp-accent-primary)' }} />
+                : <Lightbulb size={20} className="text-[#22d3ee]" />
+              }
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[12px] font-semibold text-[#e2e8f0] truncate">{comp.name}</span>
-              <span className="text-[10px] text-[#64748b] truncate">{comp.desc}</span>
+              <span className="text-[12px] font-semibold truncate" style={{ color: 'var(--lp-text-color)' }}>{comp.name}</span>
+              <span className="text-[10px] truncate" style={{ color: 'var(--lp-zinc-400)' }}>{comp.desc}</span>
             </div>
           </div>
         ))}

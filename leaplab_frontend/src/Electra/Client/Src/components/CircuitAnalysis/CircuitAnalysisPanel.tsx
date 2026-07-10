@@ -32,13 +32,24 @@ interface CircuitLaws {
     powerLaw: string[];
 }
 
+const panelBg = 'var(--lp-dark-bg, #0f172a)';
+const cardBg = 'var(--lp-dark-surface, #1e293b)';
+const cardBgAlt = 'var(--lp-dark-bg, #0f172a)';
+const borderColor = 'var(--lp-border, #334155)';
+const textPrimary = 'var(--lp-text-color, #e2e8f0)';
+const textSecondary = 'var(--lp-zinc-400, #94a3b8)';
+const textTertiary = 'var(--lp-zinc-600, #64748b)';
+const accentGreen = 'var(--lp-emerald, #22c55e)';
+const accentLime = 'var(--lp-lime, #bef264)';
+const accentBlue = 'var(--lp-accent-primary, #3b82f6)';
+const accentPurple = '#8b5cf6';
+
 export const CircuitAnalysisPanel: React.FC = () => {
     const { nodes, edges, isSimulating } = useForgeStore();
 
     const analysis = useMemo((): CircuitMetrics => {
-        // Default values
         const defaultMetrics: CircuitMetrics = {
-            totalVoltage: 5.0, // Assume 5V supply (Arduino/ESP32)
+            totalVoltage: 5.0,
             totalCurrent: 0,
             totalPower: 0,
             totalResistance: 0,
@@ -55,21 +66,18 @@ export const CircuitAnalysisPanel: React.FC = () => {
             return defaultMetrics;
         }
 
-        // Find power source (Arduino/ESP32 board)
         const powerSource = nodes.find(n =>
             n.data.type === 'arduino-uno' ||
             n.data.type === 'esp32-c3' ||
             n.data.type === 'esp32'
         );
 
-        const supplyVoltage = powerSource ? 5.0 : 5.0; // 5V for Arduino, 3.3V for ESP32
+        const supplyVoltage = powerSource ? 5.0 : 5.0;
         const components: ComponentAnalysis[] = [];
 
-        // Analyze each component
         nodes.forEach(node => {
             const { data } = node;
 
-            // Skip board components
             if (data.type?.includes('arduino') || data.type?.includes('esp32')) {
                 return;
             }
@@ -79,72 +87,54 @@ export const CircuitAnalysisPanel: React.FC = () => {
             let resistance = 0;
             let power = 0;
 
-            // Calculate based on component type
             switch (data.type) {
                 case 'led':
-                    // LED: Typical forward voltage 2V, current 20mA
                     voltage = 2.0;
-                    current = 0.02; // 20mA
-                    resistance = voltage / current; // ~100Ω
+                    current = 0.02;
+                    resistance = voltage / current;
                     power = voltage * current;
                     break;
-
                 case 'rgb-led':
-                    // RGB LED: 3 LEDs, each 2V, 20mA
                     voltage = 2.0;
-                    current = 0.06; // 60mA total (3 x 20mA)
+                    current = 0.06;
                     power = voltage * current * 3;
                     break;
-
                 case 'resistor':
-                    // Resistor: Use actual resistance value
-                    resistance = data.sensorValues?.value || 1000; // Default 1kΩ
+                    resistance = data.sensorValues?.value || 1000;
                     current = supplyVoltage / resistance;
                     voltage = supplyVoltage;
                     power = voltage * current;
                     break;
-
                 case 'buzzer':
-                    // Buzzer: Typical 3V, 30mA
                     voltage = 3.0;
                     current = 0.03;
                     power = voltage * current;
                     break;
-
                 case 'servo':
-                    // Servo: 5V, 100-500mA depending on load
                     voltage = 5.0;
-                    current = 0.2; // 200mA average
+                    current = 0.2;
                     power = voltage * current;
                     break;
-
                 case 'stepper-motor':
-                    // Stepper: 5V, 500mA per coil
                     voltage = 5.0;
                     current = 0.5;
                     power = voltage * current;
                     break;
-
                 case 'dc-motor':
-                    // DC Motor: 5V, 100-300mA
                     voltage = 5.0;
                     current = 0.15;
                     power = voltage * current;
                     break;
-
                 case 'relay':
                 case 'ks2e-m-dc5':
                 case 'relay-module':
-                    // Relay coil: 5V, 70mA
                     voltage = 5.0;
                     current = 0.07;
                     power = voltage * current;
                     break;
-
                 default:
-                    // Generic component
                     voltage = supplyVoltage;
-                    current = 0.01; // 10mA default
+                    current = 0.01;
                     power = voltage * current;
             }
 
@@ -161,12 +151,10 @@ export const CircuitAnalysisPanel: React.FC = () => {
             }
         });
 
-        // Calculate totals
         const totalCurrent = components.reduce((sum, c) => sum + c.current, 0);
         const totalPower = components.reduce((sum, c) => sum + c.power, 0);
         const totalResistance = supplyVoltage / (totalCurrent || 1);
 
-        // Generate circuit law explanations
         const laws: CircuitLaws = {
             ohmsLaw: [
                 `V = I × R`,
@@ -207,81 +195,81 @@ export const CircuitAnalysisPanel: React.FC = () => {
 
     if (!isSimulating) {
         return (
-            <div className="p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: '#0f172a', color: '#e2e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-                <div className="mb-5 pb-3" style={{ borderBottom: '2px solid #1e293b' }}>
-                    <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2 text-[#22c55e]">⚡ Circuit Analysis</h3>
-                    <p className="m-0 text-[12px] font-medium text-[#94a3b8]">Educational Circuit Theory Tool</p>
+            <div className="circuit-analysis-panel p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: panelBg, color: textPrimary }}>
+                <div className="mb-5 pb-3" style={{ borderBottom: `2px solid ${borderColor}` }}>
+                    <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2" style={{ color: accentGreen }}>⚡ Circuit Analysis</h3>
+                    <p className="m-0 text-[12px] font-medium" style={{ color: textSecondary }}>Educational Circuit Theory Tool</p>
                 </div>
-                <div className="text-center px-5 py-[60px] text-[#64748b]">
+                <div className="text-center px-5 py-[60px]" style={{ color: textTertiary }}>
                     <p className="my-2 text-[14px]">▶️ Start simulation to see circuit analysis</p>
-                    <p className="text-[12px] text-[#475569]">Learn Ohm's Law, KCL, KVL, and Power calculations</p>
+                    <p className="text-[12px]" style={{ color: textTertiary }}>Learn Ohm's Law, KCL, KVL, and Power calculations</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: '#0f172a', color: '#e2e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-            <div className="mb-5 pb-3" style={{ borderBottom: '2px solid #1e293b' }}>
-                <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2 text-[#22c55e]">⚡ Circuit Analysis</h3>
-                <p className="m-0 text-[12px] font-medium text-[#94a3b8]">Real-time Circuit Theory</p>
+        <div className="circuit-analysis-panel p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: panelBg, color: textPrimary }}>
+            <div className="mb-5 pb-3" style={{ borderBottom: `2px solid ${borderColor}` }}>
+                <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2" style={{ color: accentGreen }}>⚡ Circuit Analysis</h3>
+                <p className="m-0 text-[12px] font-medium" style={{ color: textSecondary }}>Real-time Circuit Theory</p>
             </div>
 
             {/* Overall Metrics */}
-            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
-                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">📊 Circuit Metrics</h4>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: cardBg, borderColor: borderColor }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px]" style={{ color: accentLime }}>📊 Circuit Metrics</h4>
                 <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
-                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Supply Voltage</span>
-                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{analysis.totalVoltage.toFixed(2)} V</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:-translate-y-0.5" style={{ background: cardBgAlt, borderColor: borderColor, transition: 'border-color 0.2s, box-shadow 0.2s' }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px]" style={{ color: textSecondary }}>Supply Voltage</span>
+                        <span className="text-[18px] font-bold font-mono" style={{ color: accentGreen }}>{analysis.totalVoltage.toFixed(2)} V</span>
                     </div>
-                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Total Current</span>
-                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{(analysis.totalCurrent * 1000).toFixed(1)} mA</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:-translate-y-0.5" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px]" style={{ color: textSecondary }}>Total Current</span>
+                        <span className="text-[18px] font-bold font-mono" style={{ color: accentGreen }}>{(analysis.totalCurrent * 1000).toFixed(1)} mA</span>
                     </div>
-                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Total Power</span>
-                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{(analysis.totalPower * 1000).toFixed(1)} mW</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:-translate-y-0.5" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px]" style={{ color: textSecondary }}>Total Power</span>
+                        <span className="text-[18px] font-bold font-mono" style={{ color: accentGreen }}>{(analysis.totalPower * 1000).toFixed(1)} mW</span>
                     </div>
-                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Equivalent R</span>
-                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{analysis.totalResistance.toFixed(1)} Ω</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:-translate-y-0.5" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px]" style={{ color: textSecondary }}>Equivalent R</span>
+                        <span className="text-[18px] font-bold font-mono" style={{ color: accentGreen }}>{analysis.totalResistance.toFixed(1)} Ω</span>
                     </div>
                 </div>
             </div>
 
             {/* Component Analysis */}
-            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
-                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">🔌 Component Analysis</h4>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: cardBg, borderColor: borderColor }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px]" style={{ color: accentLime }}>🔌 Component Analysis</h4>
                 <div className="flex flex-col gap-3">
                     {analysis.components.map(comp => (
-                        <div key={comp.id} className="p-3 rounded-md border transition-all duration-200 hover:border-[#3b82f6] hover:shadow-[0_2px_8px_rgba(59,130,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                        <div key={comp.id} className="p-3 rounded-md border transition-all duration-200" style={{ background: cardBgAlt, borderColor: borderColor }}>
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-[13px] font-semibold text-[#e2e8f0]">{comp.label}</span>
-                                <span className="text-[10px] uppercase tracking-[0.3px] px-1.5 py-0.5 rounded text-[#64748b]" style={{ background: '#1e293b' }}>{comp.type}</span>
+                                <span className="text-[13px] font-semibold" style={{ color: textPrimary }}>{comp.label}</span>
+                                <span className="text-[10px] uppercase tracking-[0.3px] px-1.5 py-0.5 rounded" style={{ background: cardBg, color: textTertiary }}>{comp.type}</span>
                             </div>
                             <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 mb-2">
-                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono" style={{ color: textPrimary }}>
                                     <span className="text-[14px]">⚡</span>
                                     <span>{comp.voltage.toFixed(2)} V</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono" style={{ color: textPrimary }}>
                                     <span className="text-[14px]">🔄</span>
                                     <span>{(comp.current * 1000).toFixed(1)} mA</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono" style={{ color: textPrimary }}>
                                     <span className="text-[14px]">💡</span>
                                     <span>{(comp.power * 1000).toFixed(1)} mW</span>
                                 </div>
                                 {comp.resistance && (
-                                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                    <div className="flex items-center gap-1.5 text-[12px] font-mono" style={{ color: textPrimary }}>
                                         <span className="text-[14px]">🔧</span>
                                         <span>{comp.resistance.toFixed(1)} Ω</span>
                                     </div>
                                 )}
                             </div>
-                            <div className="mt-2 p-2 rounded border-l-[3px]" style={{ background: '#1e293b', borderLeftColor: '#22c55e' }}>
-                                <code className="text-[11px] font-mono text-[#94a3b8]">P = V × I = {comp.voltage.toFixed(2)}V × {(comp.current * 1000).toFixed(1)}mA = {(comp.power * 1000).toFixed(1)}mW</code>
+                            <div className="mt-2 p-2 rounded border-l-[3px]" style={{ background: cardBg, borderLeftColor: accentGreen }}>
+                                <code className="text-[11px] font-mono" style={{ color: textSecondary }}>P = V × I = {comp.voltage.toFixed(2)}V × {(comp.current * 1000).toFixed(1)}mA = {(comp.power * 1000).toFixed(1)}mW</code>
                             </div>
                         </div>
                     ))}
@@ -289,80 +277,80 @@ export const CircuitAnalysisPanel: React.FC = () => {
             </div>
 
             {/* Circuit Laws */}
-            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
-                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">📚 Circuit Theory</h4>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: cardBg, borderColor: borderColor }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px]" style={{ color: accentLime }}>📚 Circuit Theory</h4>
 
                 {/* Ohm's Law */}
-                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: `1px solid ${borderColor}` }}>
                         <span className="text-[18px]">⚡</span>
-                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Ohm's Law</span>
+                        <span className="text-[13px] font-semibold" style={{ color: textPrimary }}>Ohm's Law</span>
                     </div>
                     <div className="flex flex-col gap-1">
                         {analysis.laws.ohmsLaw.map((line, i) => (
-                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] ${i === 0 ? 'text-[14px] font-bold font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { color: accentGreen, background: cardBg } : { color: textPrimary }}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* KCL */}
-                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: `1px solid ${borderColor}` }}>
                         <span className="text-[18px]">🔄</span>
-                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Kirchhoff's Current Law</span>
+                        <span className="text-[13px] font-semibold" style={{ color: textPrimary }}>Kirchhoff's Current Law</span>
                     </div>
                     <div className="flex flex-col gap-1">
                         {analysis.laws.kcl.map((line, i) => (
-                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] ${i === 0 ? 'text-[14px] font-bold font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { color: accentGreen, background: cardBg } : { color: textPrimary }}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* KVL */}
-                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: `1px solid ${borderColor}` }}>
                         <span className="text-[18px]">🔁</span>
-                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Kirchhoff's Voltage Law</span>
+                        <span className="text-[13px] font-semibold" style={{ color: textPrimary }}>Kirchhoff's Voltage Law</span>
                     </div>
                     <div className="flex flex-col gap-1">
                         {analysis.laws.kvl.map((line, i) => (
-                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] ${i === 0 ? 'text-[14px] font-bold font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { color: accentGreen, background: cardBg } : { color: textPrimary }}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* Power Law */}
-                <div className="p-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
-                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                <div className="p-3 rounded-md border transition-all duration-200" style={{ background: cardBgAlt, borderColor: borderColor }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: `1px solid ${borderColor}` }}>
                         <span className="text-[18px]">💡</span>
-                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Power Law</span>
+                        <span className="text-[13px] font-semibold" style={{ color: textPrimary }}>Power Law</span>
                     </div>
                     <div className="flex flex-col gap-1">
                         {analysis.laws.powerLaw.map((line, i) => (
-                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] ${i === 0 ? 'text-[14px] font-bold font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { color: accentGreen, background: cardBg } : { color: textPrimary }}>{line}</p>
                         ))}
                     </div>
                 </div>
             </div>
 
             {/* Educational Tips */}
-            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
-                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">💡 Learning Tips</h4>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: cardBg, borderColor: borderColor }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px]" style={{ color: accentLime }}>💡 Learning Tips</h4>
                 <div className="flex flex-col gap-2.5">
-                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
-                        <strong className="block mb-1 text-[#3b82f6] font-semibold">Ohm's Law:</strong> The fundamental relationship between voltage, current, and resistance.
+                    <div className="p-3 text-[12px] leading-[1.6] rounded-md border-l-[3px]" style={{ background: `linear-gradient(135deg, ${cardBg} 0%, ${cardBgAlt} 100%)`, borderColor: borderColor, borderLeftColor: accentBlue, color: textPrimary }}>
+                        <strong className="block mb-1 font-semibold" style={{ color: accentBlue }}>Ohm's Law:</strong> The fundamental relationship between voltage, current, and resistance.
                         If you know any two values, you can calculate the third!
                     </div>
-                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
-                        <strong className="block mb-1 text-[#3b82f6] font-semibold">KCL:</strong> Current is conserved at every node. What flows in must flow out.
+                    <div className="p-3 text-[12px] leading-[1.6] rounded-md border-l-[3px]" style={{ background: `linear-gradient(135deg, ${cardBg} 0%, ${cardBgAlt} 100%)`, borderColor: borderColor, borderLeftColor: accentBlue, color: textPrimary }}>
+                        <strong className="block mb-1 font-semibold" style={{ color: accentBlue }}>KCL:</strong> Current is conserved at every node. What flows in must flow out.
                         This helps analyze parallel circuits.
                     </div>
-                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
-                        <strong className="block mb-1 text-[#3b82f6] font-semibold">KVL:</strong> Voltage is conserved around any closed loop. The sum of voltage rises
+                    <div className="p-3 text-[12px] leading-[1.6] rounded-md border-l-[3px]" style={{ background: `linear-gradient(135deg, ${cardBg} 0%, ${cardBgAlt} 100%)`, borderColor: borderColor, borderLeftColor: accentBlue, color: textPrimary }}>
+                        <strong className="block mb-1 font-semibold" style={{ color: accentBlue }}>KVL:</strong> Voltage is conserved around any closed loop. The sum of voltage rises
                         equals the sum of voltage drops. Essential for series circuits.
                     </div>
-                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
-                        <strong className="block mb-1 text-[#3b82f6] font-semibold">Power:</strong> Power is the rate of energy consumption. Higher power means more
+                    <div className="p-3 text-[12px] leading-[1.6] rounded-md border-l-[3px]" style={{ background: `linear-gradient(135deg, ${cardBg} 0%, ${cardBgAlt} 100%)`, borderColor: borderColor, borderLeftColor: accentBlue, color: textPrimary }}>
+                        <strong className="block mb-1 font-semibold" style={{ color: accentBlue }}>Power:</strong> Power is the rate of energy consumption. Higher power means more
                         heat and faster battery drain. Always check component power ratings!
                     </div>
                 </div>
