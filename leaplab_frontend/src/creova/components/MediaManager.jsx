@@ -141,10 +141,18 @@ export default function MediaManager({ appState }) {
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Media</span>
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
+                    style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0
+                    }}
                     title="Upload Media"
                 >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-5 w-5" />
                 </button>
             </div>
 
