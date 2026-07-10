@@ -455,13 +455,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
   return (
     <div
-      className={`forge-canvas-container w-full h-full relative ${
-        uiTheme === 'light'
+      className={`forge-canvas-container w-full h-full relative ${uiTheme === 'light'
           ? 'bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.04)_1px,transparent_0)]'
           : 'bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)]'
-      }`}
+        }`}
       style={{
-        backgroundColor: 'var(--lp-dark-bg)',
+        background: 'var(--lp-dark-bg)',
         backgroundSize: '24px 24px'
       }}
       onDrop={onDrop}

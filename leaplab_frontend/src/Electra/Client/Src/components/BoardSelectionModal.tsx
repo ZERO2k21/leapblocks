@@ -68,7 +68,7 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 }`}
                 style={{
                     animation: 'modal-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    padding: '40px 48px',
+                    padding: '48px 48px 40px 48px',
                     maxHeight: '90vh',
                     overflowY: 'auto',
                 }}
@@ -89,7 +89,7 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 {/* Header */}
                 <div className="text-center mb-[36px]">
                     <h1
-                        className={`m-0 font-bold tracking-[-0.02em] text-[30px] leading-[1.2] mb-[10px] ${
+                        className={`m-0 font-bold tracking-[-0.02em] text-[30px] leading-normal pt-1.5 mb-[10px] ${
                             isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
                         }`}
                     >
