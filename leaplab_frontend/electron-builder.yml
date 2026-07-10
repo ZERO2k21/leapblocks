@@ -18,7 +18,8 @@ npmRebuild: false
 win:
   icon: public/assets/leaplabicon.ico
   requestedExecutionLevel: asInvoker
-  signAndEditExecutable: false
+
+  signAndEditExecutable: true
   target:
     - target: nsis
       arch:

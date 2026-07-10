@@ -188,6 +188,9 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.creoleap.leapblocks');
+  }
   // ── Parallel startup: show window immediately, run background tasks concurrently ──
   // createWindow() is called first so the UI appears as fast as possible.
   // All heavy background work (build server, ESP32 core check, QEMU check) runs
