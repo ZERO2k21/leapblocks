@@ -24,12 +24,37 @@ const TOOLBAR_BUTTONS = [
   { label: '📤 Export', title: 'Export', variant: 'default' },
 ];
 
+function validateBlock(block) {
+  let error = null;
+  let warning = null;
+
+  block.inputList.forEach(input => {
+    if (input.type === Blockly.inputs.inputTypes.VALUE && !input.connection?.targetConnection) {
+      error = 'Error: Missing input — this socket needs a block attached.';
+    }
+  });
+
+  const isRootType = block.type.includes('event') ||
+    block.type.includes('procedures_def') ||
+    block.type === 'global_declaration';
+
+  if (!block.getParent() && !isRootType) {
+    if (block.outputConnection || block.previousConnection) {
+      warning = 'Warning: This block is not connected to any event or procedure, so it will not run.';
+    }
+  }
+
+  return { error, warning };
+}
+
 const BlockEditor = () => {
   const workspaceRef = useRef(null);
   const blocklyWorkspaceRef = useRef(null);
-  const [showModal, setShowModal] = useState(null); // null, 'variable', 'list', 'table'
+  const [showModal, setShowModal] = useState(null);
   const { state, actions, helpers } = useVariables();
   const [blocklyInitialized, setBlocklyInitialized] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
+  const [warningCount, setWarningCount] = useState(0);
 
   // Initialize Blockly workspace
   useEffect(() => {
@@ -180,21 +205,40 @@ const BlockEditor = () => {
     }
   }, [state.currentSpriteId, blocklyInitialized, state.sprites, actions]);
 
-  // Autosave workspace to current sprite on change
+  // Autosave workspace + validate blocks on change
   useEffect(() => {
     if (!blocklyInitialized || !blocklyWorkspaceRef.current) return;
     const workspace = blocklyWorkspaceRef.current;
+
+    let validationTimer;
 
     const onWorkspaceChange = (event) => {
       if (event.isUiEvent) return;
       const xml = Blockly.Xml.workspaceToDom(workspace);
       const xmlString = new XMLSerializer().serializeToString(xml);
-      // Debounce this in production!
       actions.updateSpriteBlocks(state.currentSpriteId, xmlString);
+
+      if (validationTimer) clearTimeout(validationTimer);
+      validationTimer = setTimeout(() => {
+        let errors = 0;
+        let warnings = 0;
+        const allBlocks = workspace.getAllBlocks(false);
+        allBlocks.forEach(block => {
+          const { error, warning } = validateBlock(block);
+          if (error) { block.setWarningText(error); errors++; }
+          else if (warning) { block.setWarningText(warning); warnings++; }
+          else block.setWarningText(null);
+        });
+        setErrorCount(errors);
+        setWarningCount(warnings);
+      }, 150);
     };
 
     workspace.addChangeListener(onWorkspaceChange);
-    return () => workspace.removeChangeListener(onWorkspaceChange);
+    return () => {
+      workspace.removeChangeListener(onWorkspaceChange);
+      if (validationTimer) clearTimeout(validationTimer);
+    };
   }, [blocklyInitialized, state.currentSpriteId, actions]);
 
   // Handle variable/list/table creation
@@ -338,10 +382,27 @@ const BlockEditor = () => {
         >
           ➕ Make a Variable
         </button>
-        <div className="flex-1" />
-        <span className="text-[13px] text-[#666] px-3 py-1.5 bg-[#f5f5f5] rounded-md">
-          {Object.keys(state.globalVariables).length + Object.values(state.sprites).reduce((acc, sprite) => acc + Object.keys(sprite.localVariables).length, 0)} variables
-        </span>
+        <div className="flex items-center gap-2 mr-2">
+          {(errorCount > 0 || warningCount > 0) && (
+            <>
+              {errorCount > 0 && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-[#e11d48] bg-[#fff1f2] border border-[#ffe4e6] cursor-help" title={`${errorCount} block(s) with missing inputs — hover the warning icons on blocks for details`}>
+                  <span className="text-[13px]">●</span>
+                  {errorCount}
+                </span>
+              )}
+              {warningCount > 0 && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-[#d97706] bg-[#fef3c7] border border-[#fde68a] cursor-help" title={`${warningCount} orphan block(s) — not connected to any event or procedure`}>
+                  <span className="text-[13px]">⚠</span>
+                  {warningCount}
+                </span>
+              )}
+            </>
+          )}
+          <span className="text-[13px] text-[#666] px-3 py-1.5 bg-[#f5f5f5] rounded-md">
+            {Object.keys(state.globalVariables).length + Object.values(state.sprites).reduce((acc, sprite) => acc + Object.keys(sprite.localVariables).length, 0)} variables
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 relative overflow-hidden">
