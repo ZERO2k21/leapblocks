@@ -7,6 +7,7 @@ import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { ToastProvider } from './leapignite/client/components/Toast';
 
 import Loader from './components/Loader';
+import { UpdateBanner } from './components/UpdateBanner';
 import { getSharedProject, fetchCloudProjectContent } from './services/cloudProjectApi';
 import { useCloudProjectStore } from './store/cloudProjectStore';
 
@@ -417,6 +418,8 @@ export default function App() {
                         </div>
                     </div>
                 )}
+
+                {(window as any).electronAPI?.isElectron && <UpdateBanner />}
 
                 {exitPrompt && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
