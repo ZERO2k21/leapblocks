@@ -32,7 +32,7 @@ export class SoundManager {
         return SoundManager.instance;
     }
 
-    init() {
+    async init() {
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
             this.masterGain = this.audioContext.createGain();
@@ -40,7 +40,7 @@ export class SoundManager {
         }
         // Resume context if suspended (browser autoplay policy)
         if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+            await this.audioContext.resume();
         }
     }
 
@@ -141,7 +141,7 @@ export class SoundManager {
      * Returns a promise that resolves when playback starts (not when it ends)
      */
     async play(name: string, src: string, options?: PlaybackOptions): Promise<void> {
-        this.init();
+        await this.init();
         if (!this.audioContext || !this.masterGain) return;
 
         const bufferKey = this.getBufferKey(src, options?.cacheKey);
@@ -162,7 +162,7 @@ export class SoundManager {
      * Play a sound and await until it finishes, unless aborted
      */
     async playAndWait(name: string, src: string, options?: PlaybackOptions, signal?: AbortSignal): Promise<void> {
-        this.init();
+        await this.init();
         if (!this.audioContext || !this.masterGain) return;
 
         const bufferKey = this.getBufferKey(src, options?.cacheKey);
@@ -195,7 +195,8 @@ export class SoundManager {
     }
 
     async playSound(sprite: Sprite, name: string, wait = false, signal?: AbortSignal): Promise<void> {
-        const sound = sprite.sounds.find((entry) => entry.name === name);
+        const searchName = name.toLowerCase();
+        const sound = sprite.sounds.find((entry) => entry.name.toLowerCase() === searchName);
         if (!sound) return;
 
         const options: PlaybackOptions = {
