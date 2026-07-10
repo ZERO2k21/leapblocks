@@ -1,52 +1,32 @@
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// AppForge Studio — Root Component
-// Three-tab layout: Designer | Blocks | Build
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, useCallback } from 'react';
 import { VariablesProvider } from './context/VariablesContext';
 import BlocksEditor from './components/BlockEditor/BlockEditor';
 
-function DesignerPlaceholder() {
+function Placeholder({ emoji, title, desc, badge }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-      <div className="text-[64px] mb-2 animate-float">🎨</div>
-      <h2 className="text-[22px] font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Designer</h2>
-      <p className="text-[14px] text-[#71717a] max-w-[300px]">Drag & drop components to build your app interface</p>
-      <span className="px-3 py-1 rounded-full text-[11px] font-semibold text-[#06b6d4] bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.2)] tracking-[0.5px] uppercase">Phase 2</span>
-    </div>
-  );
-}
-
-function BlocksPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-      <div className="text-[64px] mb-2 animate-float">🧩</div>
-      <h2 className="text-[22px] font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Blocks</h2>
-      <p className="text-[14px] text-[#71717a] max-w-[300px]">Program your app logic with visual block coding</p>
-      <span className="px-3 py-1 rounded-full text-[11px] font-semibold text-[#06b6d4] bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.2)] tracking-[0.5px] uppercase">Phase 3</span>
-    </div>
-  );
-}
-
-function BuildPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-      <div className="text-[64px] mb-2 animate-float">📦</div>
-      <h2 className="text-[22px] font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Build</h2>
-      <p className="text-[14px] text-[#71717a] max-w-[300px]">Compile and export your app as an Android APK</p>
-      <span className="px-3 py-1 rounded-full text-[11px] font-semibold text-[#06b6d4] bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.2)] tracking-[0.5px] uppercase">Phase 5</span>
+      <div className="text-[64px] mb-2 animate-float">{emoji}</div>
+      <h2 className="text-[22px] font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">{title}</h2>
+      <p className="text-[14px] text-[#71717a] max-w-[300px]">{desc}</p>
+      <span className="px-3 py-1 rounded-full text-[11px] font-semibold text-[#06b6d4] bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.2)] tracking-[0.5px] uppercase">{badge}</span>
     </div>
   );
 }
 
 const TABS = [
-  { id: 'designer', label: 'Designer', icon: '🎨', component: DesignerPlaceholder },
+  { id: 'designer', label: 'Designer', icon: '🎨', component: () => <Placeholder emoji="🎨" title="Designer" desc="Drag & drop components to build your app interface" badge="Phase 2" /> },
   { id: 'blocks',   label: 'Blocks',   icon: '🧩', component: BlocksEditor },
-  { id: 'build',    label: 'Build',    icon: '📦', component: BuildPlaceholder },
+  { id: 'build',    label: 'Build',    icon: '📦', component: () => <Placeholder emoji="📦" title="Build" desc="Compile and export your app as an Android APK" badge="Phase 5" /> },
 ];
 
-const isLocalhost = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' || 
+const ACTIONS = [
+  { icon: '💾', title: 'Save Project' },
+  { icon: '📂', title: 'Open Project' },
+  { icon: '⚙️', title: 'Settings' },
+];
+
+const isLocalhost = window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1' ||
                     window.location.hostname === '[::1]';
 
 const BUILD_SERVER_URL = (() => {
@@ -61,7 +41,7 @@ export default function App() {
   const [projectName, setProjectName] = useState('Untitled Project');
   const [isEditing, setIsEditing] = useState(false);
 
-  const ActiveComponent = TABS.find(t => t.id === activeTab)?.component || DesignerPlaceholder;
+  const ActiveComponent = TABS.find(t => t.id === activeTab)?.component || TABS[0].component;
 
   const handleProjectNameSubmit = useCallback((e) => {
     e.preventDefault();
@@ -111,15 +91,11 @@ export default function App() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[14px] text-[#71717a] hover:bg-[#2a2a38] hover:text-[#e4e4e7] transition-all duration-[120ms]" title="Save Project">
-            💾
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[14px] text-[#71717a] hover:bg-[#2a2a38] hover:text-[#e4e4e7] transition-all duration-[120ms]" title="Open Project">
-            📂
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[14px] text-[#71717a] hover:bg-[#2a2a38] hover:text-[#e4e4e7] transition-all duration-[120ms]" title="Settings">
-            ⚙️
-          </button>
+          {ACTIONS.map((action, i) => (
+            <button key={i} className="w-8 h-8 flex items-center justify-center rounded-md text-[14px] text-[#71717a] hover:bg-[#2a2a38] hover:text-[#e4e4e7] transition-all duration-[120ms]" title={action.title}>
+              {action.icon}
+            </button>
+          ))}
         </div>
       </header>
 

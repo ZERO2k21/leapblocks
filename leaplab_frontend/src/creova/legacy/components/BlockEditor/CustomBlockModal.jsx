@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+const INPUT_TYPES = [
+  { type: 'number', icon: <div style={{...iconStyle, borderRadius: '4px'}}>123</div>, label: 'Add an input<br/>number or text' },
+  { type: 'boolean', icon: <div style={{...iconStyle, borderRadius: '20px'}}></div>, label: 'Add an input<br/>boolean' },
+  { type: 'label', icon: <div style={{...iconStyle, background: 'transparent', border: 'none', color: '#575E75', fontWeight: 'bold'}}>label</div>, label: 'Add a label' },
+];
+
 const CustomBlockModal = ({ onClose, onCreate }) => {
   const [blockName, setBlockName] = useState('my block');
-  const [inputs, setInputs] = useState([]); // { type: 'number', name: 'arg' }
+  const [inputs, setInputs] = useState([]);
   const [noRefresh, setNoRefresh] = useState(false);
 
   const handleAddInput = (type) => {
@@ -30,9 +36,9 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ padding: '24px' }}>
-            <div style={{ 
-              background: '#f8f8f8', 
-              padding: '24px', 
+            <div style={{
+              background: '#f8f8f8',
+              padding: '24px',
               borderRadius: '12px',
               border: '2px solid #eee',
               marginBottom: '24px',
@@ -43,10 +49,10 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
               minHeight: '80px',
               justifyContent: 'center'
             }}>
-              <div style={{ 
-                background: '#FF6680', 
-                color: 'white', 
-                padding: '12px 24px', 
+              <div style={{
+                background: '#FF6680',
+                color: 'white',
+                padding: '12px 24px',
                 borderRadius: '8px',
                 fontWeight: 'bold',
                 display: 'flex',
@@ -58,7 +64,7 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
               }}>
                 <span style={{ whiteSpace: 'nowrap' }}>{blockName || 'my block'}</span>
                 {inputs.map((input, idx) => (
-                  <span key={idx} style={{ 
+                  <span key={idx} style={{
                     background: input.type === 'boolean' ? '#4C97FF' : 'white',
                     color: input.type === 'boolean' ? 'white' : '#575E75',
                     padding: '4px 12px',
@@ -75,26 +81,20 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <button type="button" onClick={() => handleAddInput('number')} style={btnStyle}>
-                <div style={{...iconStyle, borderRadius: '4px'}}>123</div>
-                <span style={labelStyle}>Add an input<br/>number or text</span>
-              </button>
-              <button type="button" onClick={() => handleAddInput('boolean')} style={btnStyle}>
-                <div style={{...iconStyle, borderRadius: '20px'}}></div>
-                <span style={labelStyle}>Add an input<br/>boolean</span>
-              </button>
-              <button type="button" onClick={() => handleAddInput('label')} style={btnStyle}>
-                <div style={{...iconStyle, background: 'transparent', border: 'none', color: '#575E75', fontWeight: 'bold'}}>label</div>
-                <span style={labelStyle}>Add a label</span>
-              </button>
+              {INPUT_TYPES.map((item) => (
+                <button key={item.type} type="button" onClick={() => handleAddInput(item.type)} style={btnStyle}>
+                  {item.icon}
+                  <span style={labelStyle} dangerouslySetInnerHTML={{ __html: item.label }} />
+                </button>
+              ))}
             </div>
 
             <div className="max-h-[180px] overflow-y-auto bg-white rounded-lg p-2.5">
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'block' }}>Block name:</label>
-                <input 
-                  type="text" 
-                  value={blockName} 
+                <input
+                  type="text"
+                  value={blockName}
                   onChange={(e) => setBlockName(e.target.value)}
                   className="w-full p-2.5 rounded-md border border-[#ddd] outline-none"
                   autoFocus
@@ -104,9 +104,9 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
               {inputs.map((input, idx) => (
                 <div key={idx} className="flex items-center gap-3 mb-3 p-2 bg-[#f9f9f9] rounded-lg">
                   <span style={{ fontSize: '0.85rem', color: '#666', minWidth: '70px' }}>{input.type === 'label' ? 'Label:' : 'Input:'}</span>
-                  <input 
-                    type="text" 
-                    value={input.name} 
+                  <input
+                    type="text"
+                    value={input.name}
                     onChange={(e) => {
                       const newInputs = [...inputs];
                       newInputs[idx].name = e.target.value;
@@ -120,11 +120,11 @@ const CustomBlockModal = ({ onClose, onCreate }) => {
             </div>
 
             <div className="flex items-center gap-2.5 mt-5">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="no-refresh"
-                checked={noRefresh} 
-                onChange={(e) => setNoRefresh(e.target.checked)} 
+                checked={noRefresh}
+                onChange={(e) => setNoRefresh(e.target.checked)}
                 className="w-5 h-5"
               />
               <label htmlFor="no-refresh" style={{ fontWeight: 'normal', color: '#575E75' }}>Run without screen refresh</label>

@@ -1,7 +1,9 @@
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// VariableMakerModal - Modal for creating variables
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, useEffect } from 'react';
+
+const SCOPE_OPTIONS = [
+  { value: 'global', label: 'All sprites', desc: 'This variable can be used by any sprite' },
+  { value: 'local', label: 'This sprite only', desc: 'Only this sprite can access this variable' },
+];
 
 const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
   const [name, setName] = useState('');
@@ -9,9 +11,9 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
   const [columns, setColumns] = useState(['Column 1']);
   const [error, setError] = useState('');
 
-  // Validation
+  const addColumn = () => setColumns([...columns, `Column ${columns.length + 1}`]);
+
   const isValidName = (name) => {
-    // No empty, no duplicates (checked at submit), valid identifier
     return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
   };
 
@@ -19,10 +21,8 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
     e.preventDefault();
     setError('');
 
-    // Trim whitespace
     const trimmedName = name.trim();
 
-    // Validate
     if (!trimmedName) {
       setError(`Please enter a ${type} name.`);
       return;
@@ -33,7 +33,6 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
       return;
     }
 
-    // Call create
     if (type === 'table') {
       onCreate(trimmedName, columns, scope);
     } else {
@@ -41,14 +40,12 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
     }
   };
 
-  // Handle backdrop click to close
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
-  // Handle Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -90,9 +87,9 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
                 <div className="flex flex-col gap-2 mt-2">
                   {columns.map((col, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <input 
-                        type="text" 
-                        value={col} 
+                      <input
+                        type="text"
+                        value={col}
                         onChange={(e) => {
                           const newCols = [...columns];
                           newCols[idx] = e.target.value;
@@ -112,36 +109,26 @@ const VariableMakerModal = ({ type = 'variable', onClose, onCreate }) => {
             <div className="mb-5 last:mb-0">
               <label className="block mb-2 font-semibold text-[#444] text-[14px]">For:</label>
               <div className="flex flex-col gap-3">
-                <label className="flex items-start px-4 py-4 bg-white/50 border-2 border-black/10 rounded-xl cursor-pointer transition-all duration-[200ms] hover:border-black/20 hover:bg-white/70 has-[:checked]:border-[#FF9F43]">
-                  <input
-                    type="radio"
-                    name="scope"
-                    value="global"
-                    checked={scope === 'global'}
-                    onChange={(e) => setScope(e.target.value)}
-                    className="hidden"
-                  />
-                  <span className="w-5 h-5 border-2 border-[#ccc] rounded-full mr-3 mt-0.5 shrink-0 transition-all duration-[200ms] relative flex items-center justify-center has-[:checked]:bg-[#FF9F43] has-[:checked]:border-[#FF9F43] after:content-[''] after:w-2.5 after:h-2.5 after:bg-[#FF9F43] after:rounded-full after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2"></span>
-                  <span className="flex flex-col gap-0.5">
-                    <strong className="text-[#333] text-[14px]">All sprites</strong>
-                    <small className="text-[#666] text-[12px]">This variable can be used by any sprite</small>
-                  </span>
-                </label>
-                <label className="flex items-start px-4 py-4 bg-white/50 border-2 border-black/10 rounded-xl cursor-pointer transition-all duration-[200ms] hover:border-black/20 hover:bg-white/70 has-[:checked]:border-[#FF9F43]">
-                  <input
-                    type="radio"
-                    name="scope"
-                    value="local"
-                    checked={scope === 'local'}
-                    onChange={(e) => setScope(e.target.value)}
-                    className="hidden"
-                  />
-                  <span className="w-5 h-5 border-2 border-[#ccc] rounded-full mr-3 mt-0.5 shrink-0 transition-all duration-[200ms]"></span>
-                  <span className="flex flex-col gap-0.5">
-                    <strong className="text-[#333] text-[14px]">This sprite only</strong>
-                    <small className="text-[#666] text-[12px]">Only this sprite can access this variable</small>
-                  </span>
-                </label>
+                {SCOPE_OPTIONS.map((opt) => {
+                  const selected = scope === opt.value;
+                  return (
+                    <label key={opt.value} className={`flex items-start px-4 py-4 bg-white/50 border-2 rounded-xl cursor-pointer transition-all duration-[200ms] hover:border-black/20 hover:bg-white/70 ${selected ? 'border-[#FF9F43]' : 'border-black/10'}`}>
+                      <input
+                        type="radio"
+                        name="scope"
+                        value={opt.value}
+                        checked={selected}
+                        onChange={(e) => setScope(e.target.value)}
+                        className="hidden"
+                      />
+                      <span className={`w-5 h-5 border-2 rounded-full mr-3 mt-0.5 shrink-0 transition-all duration-[200ms] relative flex items-center justify-center ${selected ? 'bg-[#FF9F43] border-[#FF9F43] after:content-[""] after:w-2.5 after:h-2.5 after:bg-white after:rounded-full after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2' : 'border-[#ccc]'}`}></span>
+                      <span className="flex flex-col gap-0.5">
+                        <strong className="text-[#333] text-[14px]">{opt.label}</strong>
+                        <small className="text-[#666] text-[12px]">{opt.desc}</small>
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>
