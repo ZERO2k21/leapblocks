@@ -20,7 +20,6 @@ import BlocksView from './components/BlocksView';
 import BuildModal from './components/BuildModal';
 import ComponentTree from './components/ComponentTree';
 import MediaManager from './components/MediaManager';
-import './styles/leap-creova.css';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 import { fileService } from '../Electra/Client/Src/services/FileService';
 import { useCloudProjectStore } from '../store/cloudProjectStore';
@@ -501,27 +500,27 @@ export default function AppInventor({ onBack }) {
         }
       />
 
-      <div className={`flex-1 overflow-hidden ${activeTab === 'designer' ? 'creova-designer-grid p-4 bg-slate-50' : 'flex p-0'}`}>
+      <div className={`flex-1 overflow-hidden ${activeTab === 'designer' ? 'flex flex-col gap-4 overflow-y-auto p-4 bg-slate-50 desktop:grid desktop:grid-cols-[220px_minmax(320px,_1fr)_260px] desktop:grid-rows-[minmax(0,_1.2fr)_minmax(0,_1fr)] desktop:gap-3 desktop:overflow-hidden wide:grid-cols-[230px_minmax(320px,_1fr)_250px_270px] wide:grid-rows-[none] wide:gap-3 ultra:grid-cols-[280px_minmax(400px,_1fr)_300px_320px] ultra:gap-4' : 'flex p-0'}`}>
         {activeTab === 'designer' ? (
           <>
-            <div className="creova-grid-palette min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="min-h-[400px] overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300 desktop:col-[1] desktop:row-[1/span_2] desktop:min-h-0 wide:col-[1] wide:row-[1]">
               <Palette />
             </div>
 
-            <div className="creova-grid-canvas min-h-0 flex flex-col bg-transparent">
+            <div className="min-h-[500px] flex flex-col bg-transparent desktop:col-[2] desktop:row-[1/span_2] desktop:min-h-0 wide:col-[2] wide:row-[1]">
               <PhoneCanvas appState={appState} />
             </div>
 
-            <div className="creova-grid-tree min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="min-h-[450px] overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300 desktop:col-[3] desktop:row-[1] desktop:min-h-0 wide:col-[3] wide:row-[1]">
               <div className="flex-1 min-h-0 flex flex-col">
                 <ComponentTree appState={appState} />
               </div>
-              <div className="creova-media-manager-container border-t border-slate-200 flex flex-col">
+              <div className="h-[260px] border-t border-slate-200 flex flex-col wide:h-[300px] ultra:h-[380px]">
                 <MediaManager appState={appState} />
               </div>
             </div>
 
-            <div className="creova-grid-properties min-h-0 overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300">
+            <div className="min-h-[450px] overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300 desktop:col-[3] desktop:row-[2] desktop:min-h-0 wide:col-[4] wide:row-[1]">
               <PropertiesPanel appState={appState} />
             </div>
           </>
