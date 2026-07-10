@@ -5,7 +5,6 @@
  */
 import React, { useMemo } from 'react';
 import { useForgeStore } from '../../../utlis/store/useForgeStore';
-import './CircuitAnalysisPanel.css';
 
 interface CircuitMetrics {
     totalVoltage: number;
@@ -208,81 +207,81 @@ export const CircuitAnalysisPanel: React.FC = () => {
 
     if (!isSimulating) {
         return (
-            <div className="circuit-analysis-panel">
-                <div className="analysis-header">
-                    <h3>⚡ Circuit Analysis</h3>
-                    <p className="analysis-subtitle">Educational Circuit Theory Tool</p>
+            <div className="p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: '#0f172a', color: '#e2e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+                <div className="mb-5 pb-3" style={{ borderBottom: '2px solid #1e293b' }}>
+                    <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2 text-[#22c55e]">⚡ Circuit Analysis</h3>
+                    <p className="m-0 text-[12px] font-medium text-[#94a3b8]">Educational Circuit Theory Tool</p>
                 </div>
-                <div className="analysis-placeholder">
-                    <p>▶️ Start simulation to see circuit analysis</p>
-                    <p className="hint">Learn Ohm's Law, KCL, KVL, and Power calculations</p>
+                <div className="text-center px-5 py-[60px] text-[#64748b]">
+                    <p className="my-2 text-[14px]">▶️ Start simulation to see circuit analysis</p>
+                    <p className="text-[12px] text-[#475569]">Learn Ohm's Law, KCL, KVL, and Power calculations</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="circuit-analysis-panel">
-            <div className="analysis-header">
-                <h3>⚡ Circuit Analysis</h3>
-                <p className="analysis-subtitle">Real-time Circuit Theory</p>
+        <div className="p-4 h-full overflow-y-auto overflow-x-hidden" style={{ background: '#0f172a', color: '#e2e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+            <div className="mb-5 pb-3" style={{ borderBottom: '2px solid #1e293b' }}>
+                <h3 className="m-0 mb-1 text-[20px] font-bold flex items-center gap-2 text-[#22c55e]">⚡ Circuit Analysis</h3>
+                <p className="m-0 text-[12px] font-medium text-[#94a3b8]">Real-time Circuit Theory</p>
             </div>
 
             {/* Overall Metrics */}
-            <div className="analysis-section">
-                <h4>📊 Circuit Metrics</h4>
-                <div className="metrics-grid">
-                    <div className="metric-card">
-                        <span className="metric-label">Supply Voltage</span>
-                        <span className="metric-value">{analysis.totalVoltage.toFixed(2)} V</span>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">📊 Circuit Metrics</h4>
+                <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Supply Voltage</span>
+                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{analysis.totalVoltage.toFixed(2)} V</span>
                     </div>
-                    <div className="metric-card">
-                        <span className="metric-label">Total Current</span>
-                        <span className="metric-value">{(analysis.totalCurrent * 1000).toFixed(1)} mA</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Total Current</span>
+                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{(analysis.totalCurrent * 1000).toFixed(1)} mA</span>
                     </div>
-                    <div className="metric-card">
-                        <span className="metric-label">Total Power</span>
-                        <span className="metric-value">{(analysis.totalPower * 1000).toFixed(1)} mW</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Total Power</span>
+                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{(analysis.totalPower * 1000).toFixed(1)} mW</span>
                     </div>
-                    <div className="metric-card">
-                        <span className="metric-label">Equivalent R</span>
-                        <span className="metric-value">{analysis.totalResistance.toFixed(1)} Ω</span>
+                    <div className="p-3 flex flex-col gap-1 rounded-md border transition-all duration-200 hover:border-[#22c55e] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(34,197,94,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.3px] text-[#94a3b8]">Equivalent R</span>
+                        <span className="text-[18px] font-bold font-mono text-[#22c55e]">{analysis.totalResistance.toFixed(1)} Ω</span>
                     </div>
                 </div>
             </div>
 
             {/* Component Analysis */}
-            <div className="analysis-section">
-                <h4>🔌 Component Analysis</h4>
-                <div className="component-list">
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">🔌 Component Analysis</h4>
+                <div className="flex flex-col gap-3">
                     {analysis.components.map(comp => (
-                        <div key={comp.id} className="component-analysis">
-                            <div className="component-header">
-                                <span className="component-name">{comp.label}</span>
-                                <span className="component-type">{comp.type}</span>
+                        <div key={comp.id} className="p-3 rounded-md border transition-all duration-200 hover:border-[#3b82f6] hover:shadow-[0_2px_8px_rgba(59,130,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[13px] font-semibold text-[#e2e8f0]">{comp.label}</span>
+                                <span className="text-[10px] uppercase tracking-[0.3px] px-1.5 py-0.5 rounded text-[#64748b]" style={{ background: '#1e293b' }}>{comp.type}</span>
                             </div>
-                            <div className="component-metrics">
-                                <div className="component-metric">
-                                    <span className="metric-icon">⚡</span>
+                            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-2 mb-2">
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                    <span className="text-[14px]">⚡</span>
                                     <span>{comp.voltage.toFixed(2)} V</span>
                                 </div>
-                                <div className="component-metric">
-                                    <span className="metric-icon">🔄</span>
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                    <span className="text-[14px]">🔄</span>
                                     <span>{(comp.current * 1000).toFixed(1)} mA</span>
                                 </div>
-                                <div className="component-metric">
-                                    <span className="metric-icon">💡</span>
+                                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                    <span className="text-[14px]">💡</span>
                                     <span>{(comp.power * 1000).toFixed(1)} mW</span>
                                 </div>
                                 {comp.resistance && (
-                                    <div className="component-metric">
-                                        <span className="metric-icon">🔧</span>
+                                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#cbd5e1]">
+                                        <span className="text-[14px]">🔧</span>
                                         <span>{comp.resistance.toFixed(1)} Ω</span>
                                     </div>
                                 )}
                             </div>
-                            <div className="component-formula">
-                                <code>P = V × I = {comp.voltage.toFixed(2)}V × {(comp.current * 1000).toFixed(1)}mA = {(comp.power * 1000).toFixed(1)}mW</code>
+                            <div className="mt-2 p-2 rounded border-l-[3px]" style={{ background: '#1e293b', borderLeftColor: '#22c55e' }}>
+                                <code className="text-[11px] font-mono text-[#94a3b8]">P = V × I = {comp.voltage.toFixed(2)}V × {(comp.current * 1000).toFixed(1)}mA = {(comp.power * 1000).toFixed(1)}mW</code>
                             </div>
                         </div>
                     ))}
@@ -290,80 +289,80 @@ export const CircuitAnalysisPanel: React.FC = () => {
             </div>
 
             {/* Circuit Laws */}
-            <div className="analysis-section">
-                <h4>📚 Circuit Theory</h4>
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">📚 Circuit Theory</h4>
 
                 {/* Ohm's Law */}
-                <div className="law-card">
-                    <div className="law-header">
-                        <span className="law-icon">⚡</span>
-                        <span className="law-title">Ohm's Law</span>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                        <span className="text-[18px]">⚡</span>
+                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Ohm's Law</span>
                     </div>
-                    <div className="law-content">
+                    <div className="flex flex-col gap-1">
                         {analysis.laws.ohmsLaw.map((line, i) => (
-                            <p key={i} className={i === 0 ? 'law-formula' : ''}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* KCL */}
-                <div className="law-card">
-                    <div className="law-header">
-                        <span className="law-icon">🔄</span>
-                        <span className="law-title">Kirchhoff's Current Law</span>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                        <span className="text-[18px]">🔄</span>
+                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Kirchhoff's Current Law</span>
                     </div>
-                    <div className="law-content">
+                    <div className="flex flex-col gap-1">
                         {analysis.laws.kcl.map((line, i) => (
-                            <p key={i} className={i === 0 ? 'law-formula' : ''}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* KVL */}
-                <div className="law-card">
-                    <div className="law-header">
-                        <span className="law-icon">🔁</span>
-                        <span className="law-title">Kirchhoff's Voltage Law</span>
+                <div className="p-3 mb-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                        <span className="text-[18px]">🔁</span>
+                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Kirchhoff's Voltage Law</span>
                     </div>
-                    <div className="law-content">
+                    <div className="flex flex-col gap-1">
                         {analysis.laws.kvl.map((line, i) => (
-                            <p key={i} className={i === 0 ? 'law-formula' : ''}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
                         ))}
                     </div>
                 </div>
 
                 {/* Power Law */}
-                <div className="law-card">
-                    <div className="law-header">
-                        <span className="law-icon">💡</span>
-                        <span className="law-title">Power Law</span>
+                <div className="p-3 rounded-md border transition-all duration-200 hover:border-[#8b5cf6] hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)]" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #334155' }}>
+                        <span className="text-[18px]">💡</span>
+                        <span className="text-[13px] font-semibold text-[#e2e8f0]">Power Law</span>
                     </div>
-                    <div className="law-content">
+                    <div className="flex flex-col gap-1">
                         {analysis.laws.powerLaw.map((line, i) => (
-                            <p key={i} className={i === 0 ? 'law-formula' : ''}>{line}</p>
+                            <p key={i} className={`m-0 text-[12px] leading-[1.5] text-[#cbd5e1] ${i === 0 ? 'text-[14px] font-bold text-[#22c55e] font-mono p-2 rounded mb-1' : ''}`} style={i === 0 ? { background: '#1e293b' } : {}}>{line}</p>
                         ))}
                     </div>
                 </div>
             </div>
 
             {/* Educational Tips */}
-            <div className="analysis-section">
-                <h4>💡 Learning Tips</h4>
-                <div className="tips-list">
-                    <div className="tip-card">
-                        <strong>Ohm's Law:</strong> The fundamental relationship between voltage, current, and resistance.
+            <div className="mb-6 p-4 rounded-lg border animate-[analysisFadeIn_0.3s_ease-out]" style={{ background: '#1e293b', borderColor: '#334155' }}>
+                <h4 className="m-0 mb-3 text-[14px] font-semibold uppercase tracking-[0.5px] text-[#bef264]">💡 Learning Tips</h4>
+                <div className="flex flex-col gap-2.5">
+                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
+                        <strong className="block mb-1 text-[#3b82f6] font-semibold">Ohm's Law:</strong> The fundamental relationship between voltage, current, and resistance.
                         If you know any two values, you can calculate the third!
                     </div>
-                    <div className="tip-card">
-                        <strong>KCL:</strong> Current is conserved at every node. What flows in must flow out.
+                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
+                        <strong className="block mb-1 text-[#3b82f6] font-semibold">KCL:</strong> Current is conserved at every node. What flows in must flow out.
                         This helps analyze parallel circuits.
                     </div>
-                    <div className="tip-card">
-                        <strong>KVL:</strong> Voltage is conserved around any closed loop. The sum of voltage rises
+                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
+                        <strong className="block mb-1 text-[#3b82f6] font-semibold">KVL:</strong> Voltage is conserved around any closed loop. The sum of voltage rises
                         equals the sum of voltage drops. Essential for series circuits.
                     </div>
-                    <div className="tip-card">
-                        <strong>Power:</strong> Power is the rate of energy consumption. Higher power means more
+                    <div className="p-3 text-[12px] leading-[1.6] text-[#cbd5e1] rounded-md border-l-[3px]" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderColor: '#334155', borderLeftColor: '#3b82f6' }}>
+                        <strong className="block mb-1 text-[#3b82f6] font-semibold">Power:</strong> Power is the rate of energy consumption. Higher power means more
                         heat and faster battery drain. Always check component power ratings!
                     </div>
                 </div>

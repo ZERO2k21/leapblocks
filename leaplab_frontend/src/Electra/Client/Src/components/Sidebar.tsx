@@ -82,40 +82,42 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="forge-sidebar">
-      <div className="sidebar-section">
-        <label className="section-label">Target Board</label>
-        <div className="board-selector">
-          <Cpu size={14} />
+    <div className="h-full flex flex-col bg-[#0f1115] text-[#e2e8f0] font-['Outfit',sans-serif]">
+      <div className="p-3 border-b border-[rgba(255,255,255,0.06)]">
+        <label className="text-[11px] font-semibold uppercase tracking-[0.5px] text-[#64748b] mb-2 block">Target Board</label>
+        <div className="relative flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] cursor-pointer" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <Cpu size={14} className="text-[#3B82F6] shrink-0" />
           <select
             value={useForgeStore((s) => s.board)}
             onChange={(e) => useForgeStore.getState().setBoard(e.target.value)}
+            className="flex-1 bg-transparent border-none text-[12px] text-[#e2e8f0] outline-none cursor-pointer appearance-none"
           >
             {COMPONENTS.filter(c => c.category === 'boards').map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
+              <option key={b.id} value={b.id} className="bg-[#1e293b]">{b.name}</option>
             ))}
           </select>
-          <ChevronDown size={14} className="chevron" />
+          <ChevronDown size={14} className="text-[#64748b] pointer-events-none shrink-0" />
         </div>
       </div>
 
-      <div className="sidebar-header">
-        <div className="search-container">
-          <Search size={16} />
+      <div className="p-3 border-b border-[rgba(255,255,255,0.06)]">
+        <div className="relative flex items-center">
+          <Search size={16} className="absolute left-2.5 text-[#64748b]" />
           <input
             type="text"
             placeholder="Search parts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full py-2 pl-8 pr-3 text-[12px] rounded-md outline-none bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[#e2e8f0] placeholder-[#64748b] focus:border-[#3B82F6] transition-colors"
           />
         </div>
       </div>
 
-      <div className="categories-grid">
+      <div className="grid grid-cols-6 gap-1 p-2">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
-            className={`category-btn ${activeCategory === cat.id ? 'active' : ''}`}
+            className={`flex items-center justify-center p-2 rounded-md transition-all duration-200 ${activeCategory === cat.id ? 'bg-[#3B82F6]/20 text-[#60A5FA] border border-[#3B82F6]/30' : 'bg-[rgba(255,255,255,0.03)] text-[#64748b] border border-transparent hover:bg-[rgba(255,255,255,0.08)] hover:text-[#e2e8f0]'}`}
             onClick={() => setActiveCategory(cat.id)}
             title={cat.name}
           >
@@ -124,20 +126,20 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div className="component-list">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {filteredComponents.map(comp => (
           <div
             key={comp.id}
-            className="component-card"
+            className="flex items-center gap-2.5 p-2 rounded-md cursor-grab transition-all duration-200 border border-transparent hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(59,130,246,0.2)] active:cursor-grabbing"
             draggable
             onDragStart={(e) => onDragStart(e, comp.id)}
           >
-            <div className="comp-icon">
-              {comp.category === 'boards' ? <Cpu size={24} /> : <Lightbulb size={24} />}
+            <div className="w-9 h-9 flex items-center justify-center rounded-md shrink-0" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              {comp.category === 'boards' ? <Cpu size={20} className="text-[#3B82F6]" /> : <Lightbulb size={20} className="text-[#22d3ee]" />}
             </div>
-            <div className="comp-info">
-              <span className="comp-name">{comp.name}</span>
-              <span className="comp-desc">{comp.desc}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[12px] font-semibold text-[#e2e8f0] truncate">{comp.name}</span>
+              <span className="text-[10px] text-[#64748b] truncate">{comp.desc}</span>
             </div>
           </div>
         ))}

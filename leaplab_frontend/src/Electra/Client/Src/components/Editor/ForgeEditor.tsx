@@ -58,8 +58,8 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
 
   return (
     <div className="forge-editor-container" style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
-      <div className="editor-tab-bar">
-        <div className="editor-tab active">
+      <div className="flex items-center px-3 h-[28px] shrink-0" style={{ background: 'var(--lp-surface)', borderBottom: '1px solid var(--lp-border)' }}>
+        <div className="flex items-center gap-1.5 px-3 h-full text-[11px] cursor-pointer select-none transition-all duration-200" style={{ color: 'var(--lp-zinc-100)', borderBottom: '1.5px solid var(--lp-accent-primary)', background: 'var(--lp-dark-surface)' }}>
           sketch.ino
         </div>
       </div>
