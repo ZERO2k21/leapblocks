@@ -33,6 +33,7 @@ import { migrateWorkspaceBlocks, migrateSingleBlock } from './utils/blocklyMigra
 
 import { animationVM } from './vm/AnimationVM';
 import type { CompiledScript } from './vm/AnimationVM';
+import { soundManager } from './engine/SoundManager';
 
 import { Sprite } from './stage/Sprite';
 import type { SpriteType } from './stage/Sprite';
@@ -3883,6 +3884,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const handleRunClick = useCallback(() => {
         console.log('[APP] Run button clicked - MULTI-SPRITE MODE');
         addLog('Green flag clicked');
+        // Resume AudioContext while we still have user gesture context
+        soundManager.init();
         animationVM.stopAll();
         leapRuntime.stopAll();
 
