@@ -150,9 +150,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
     }, [mode])
 
     return (
-        <div className="h-screen flex flex-col" style={{
-            background: 'linear-gradient(135deg, #f8f7ff 0%, #ffffff 50%, #f0f4ff 100%)'
-        }}>
+        <div className="h-screen flex flex-col bg-background">
             <input
                 type="file"
                 ref={fileInputRef}
@@ -182,57 +180,53 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar */}
-                <div className="w-80 bg-white border-r border-gray-100 flex flex-col shadow-sm animate-[slide-down_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
-                    {/* Sidebar header */}
-                    <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                        <div className="flex items-center justify-between mb-1.5">
-                            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Classes</h2>
-                            <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full">
-                                {mode.project?.classes.length || 0}
-                            </span>
+                <aside className="w-64 bg-surface border-r border-outline-variant flex flex-col py-4 z-40 animate-[slide-down_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    {/* Classes Header */}
+                    <div className="px-4 mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                            <div>
+                                <h2 className="text-base font-semibold text-on-surface" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Classes</h2>
+                                <p className="text-xs text-on-surface-variant">{totalSamples} total samples</p>
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs text-gray-500 font-medium">
-                                {totalSamples} total samples
-                            </p>
-                            <button
-                                onClick={() => setShowAddClass(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-violet-200 transition-all duration-200 hover:scale-105 active:scale-95"
-                            >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 5v14M5 12h14" />
-                                </svg>
-                                Add
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setShowAddClass(true)}
+                            className="w-full mt-3 bg-primary text-on-primary py-2.5 rounded-full flex items-center justify-center gap-2 text-sm font-bold shadow-lg hover:opacity-90 active:translate-x-0.5 transition-all"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Add Class
+                        </button>
                     </div>
 
-                    {/* Class list */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                        {showAddClass && (
-                            <div className="flex gap-2 animate-[slideUp_0.2s_ease-out]">
-                                <input
-                                    autoFocus
-                                    value={newClassName}
-                                    onChange={(e) => setNewClassName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleAddClass()
-                                        if (e.key === 'Escape') setShowAddClass(false)
-                                    }}
-                                    placeholder="Enter class name..."
-                                    className="flex-1 px-4 py-2.5 text-sm border-2 border-violet-200 rounded-xl focus:outline-none focus:border-violet-400 bg-white transition-colors"
-                                />
-                                <button
-                                    onClick={handleAddClass}
-                                    className="px-4 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-xl text-sm font-bold hover:shadow-lg transition-all"
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </button>
-                            </div>
-                        )}
+                    {/* Add class input */}
+                    {showAddClass && (
+                        <div className="px-4 mb-3 flex gap-2 animate-[slideUp_0.2s_ease-out]">
+                            <input
+                                autoFocus
+                                value={newClassName}
+                                onChange={(e) => setNewClassName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAddClass()
+                                    if (e.key === 'Escape') setShowAddClass(false)
+                                }}
+                                placeholder="Enter class name..."
+                                className="flex-1 px-3 py-2 text-sm border-2 border-primary/30 rounded-xl focus:outline-none focus:border-primary bg-white transition-colors"
+                            />
+                            <button
+                                onClick={handleAddClass}
+                                className="px-3 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:shadow-lg transition-all"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
+                    {/* Class list */}
+                    <div className="flex-1 overflow-y-auto px-3 space-y-2">
                         {mode.project?.classes.map((classData, index) => (
                             <ClassCard
                                 key={classData.id}
@@ -245,44 +239,91 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                             />
                         ))}
 
-                        {mode.project && mode.project.classes.length === 0 && (
+                        {mode.project && mode.project.classes.length === 0 && !showAddClass && (
                             <div className="flex flex-col items-center py-12 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center mb-4">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="12" cy="12" r="10" />
                                         <path d="M12 8v8M8 12h8" />
                                     </svg>
                                 </div>
-                                <p className="text-sm font-bold text-gray-600 mb-1">No classes yet</p>
-                                <p className="text-xs text-gray-400">Click "Add" to create your first class</p>
+                                <p className="text-sm font-semibold text-on-surface mb-1">No classes yet</p>
+                                <p className="text-xs text-on-surface-variant">Click "Add Class" to start</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Sidebar footer stats */}
-                    {mode.project && mode.project.classes.length > 0 && (
-                        <div className="px-5 py-3 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-gray-500 font-medium">
-                                    {mode.project.classes.length} classes
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    <span className="text-gray-600 font-semibold">
-                                        {totalSamples} samples
-                                    </span>
-                                </div>
-                            </div>
+                    {/* Workflow Navigation */}
+                    <nav className="px-3 mb-4 space-y-1">
+                        <div
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                                mode.mode === 'collect'
+                                    ? 'bg-primary text-on-primary font-bold shadow-sm'
+                                    : 'text-on-surface-variant hover:bg-surface-container-low cursor-pointer'
+                            }`}
+                            onClick={() => mode.setMode('collect')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            <span className="text-sm">Collect</span>
                         </div>
-                    )}
-                </div>
+                        <div
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors opacity-60 cursor-not-allowed ${
+                                mode.mode === 'train'
+                                    ? 'bg-primary text-on-primary font-bold'
+                                    : 'text-on-surface-variant hover:bg-surface-container-low'
+                            }`}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                <path d="M2 17l10 5 10-5" />
+                                <path d="M2 12l10 5 10-5" />
+                            </svg>
+                            <span className="text-sm">Train</span>
+                        </div>
+                        <div
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors opacity-60 cursor-not-allowed ${
+                                mode.mode === 'test'
+                                    ? 'bg-primary text-on-primary font-bold'
+                                    : 'text-on-surface-variant hover:bg-surface-container-low'
+                            }`}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 11l3 3L22 4" />
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                            </svg>
+                            <span className="text-sm">Test</span>
+                        </div>
+                    </nav>
+
+                    {/* Sidebar footer */}
+                    <div className="px-3 pt-3 border-t border-outline-variant space-y-1">
+                        <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-surface-container-low transition-colors text-on-surface-variant cursor-pointer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="3" />
+                                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                            </svg>
+                            <span className="text-sm">Settings</span>
+                        </div>
+                        <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-surface-container-low transition-colors text-on-surface-variant cursor-pointer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span className="text-sm">Help</span>
+                        </div>
+                    </div>
+                </aside>
 
                 {/* Main content area */}
-                <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-gray-50">
+                <main className="flex-1 overflow-y-auto bg-background">
                     <div key={mode.mode} className="animate-[fade-in_0.3s_ease-out]">
                         {children({ mode })}
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     )
