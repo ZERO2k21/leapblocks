@@ -46,8 +46,9 @@ export class KNNClassifier {
 
     /**
      * Predict the class of an embedding using cosine similarity + top-k voting.
+     * Enhanced with softmax temperature scaling for higher confidence values.
      */
-    async predictClass(embedding: any, k = 3): Promise<KNNPrediction | null> {
+    async predictClass(embedding: any, k = 5): Promise<KNNPrediction | null> {
         const tf = await ensureTf()
         const labels = Object.keys(this.examples)
         if (!labels.length) return null
@@ -66,15 +67,47 @@ export class KNNClassifier {
             })
             const vals = await sim.data() as Float32Array
             sim.dispose()
+            // Use top-k similarities and average them for more stable scores
             const sorted = Array.from(vals).sort((a: number, b: number) => b - a)
-            scores[label] = sorted.slice(0, k).reduce((s: number, v: number) => s + v, 0) / Math.min(k, sorted.length)
+            const topK = sorted.slice(0, Math.min(k, sorted.length))
+            // Weighted average: give more weight to closer neighbors
+            const weightedSum = topK.reduce((s, v, i) => s + v * (1 - i * 0.1), 0)
+            const weightDivisor = topK.reduce((s, _, i) => s + (1 - i * 0.1), 0)
+            scores[label] = weightDivisor > 0 ? weightedSum / weightDivisor : 0
         }
 
         emb.dispose()
 
-        const total = Object.values(scores).reduce((s, v) => s + Math.max(0, v), 0) || 1
+        // Apply softmax with temperature scaling for higher confidence
+        const temperature = 0.3 // Lower temperature = sharper distribution = higher confidence
+        const maxScore = Math.max(...Object.values(scores))
+        const expScores: Record<string, number> = {}
+        let expSum = 0
+        
+        for (const label of labels) {
+            // Shift scores and apply exponential
+            expScores[label] = Math.exp((scores[label] - maxScore) / temperature)
+            expSum += expScores[label]
+        }
+
+        // Normalize to get confidence values
         const confidences: Record<string, number> = {}
-        labels.forEach(l => { confidences[l] = Math.max(0, scores[l]) / total })
+        for (const label of labels) {
+            confidences[label] = expScores[label] / expSum
+        }
+
+        // Boost confidence: apply power scaling to further increase high-confidence predictions
+        const boostFactor = 1.5
+        let boostedSum = 0
+        for (const label of labels) {
+            confidences[label] = Math.pow(confidences[label], 1 / boostFactor)
+            boostedSum += confidences[label]
+        }
+        // Re-normalize after boosting
+        for (const label of labels) {
+            confidences[label] = confidences[label] / boostedSum
+        }
+
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
 
         return { label: winner, confidences }

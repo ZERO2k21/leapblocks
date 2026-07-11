@@ -4,54 +4,58 @@ interface TrainPanelProps {
     isTraining: boolean
     accuracy: number | null
     canTrain: boolean
-    onTrain: () => void
+    onTrain: (epochs: number) => void
     classCount: number
     totalSamples: number
     warningTitle?: string
     warningDesc?: string
     trainingError?: string | null
+    currentEpoch?: number
+    totalEpochs?: number
 }
 
-export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, classCount, totalSamples, warningTitle, warningDesc, trainingError }: TrainPanelProps) {
+export default function TrainPanel({ 
+    isTraining, 
+    accuracy, 
+    canTrain, 
+    onTrain, 
+    classCount, 
+    totalSamples, 
+    warningTitle, 
+    warningDesc, 
+    trainingError,
+    currentEpoch = 0,
+    totalEpochs = 50
+}: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [showAccuracy, setShowAccuracy] = useState(false)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
     const [statusText, setStatusText] = useState('Ready to Train')
     const [statusSubtext, setStatusSubtext] = useState(`Learning from ${totalSamples} images across ${classCount} classes`)
+    const [epochs, setEpochs] = useState(totalEpochs)
     const progressRef = useRef<NodeJS.Timeout | null>(null)
     const particleIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     const circleCircumference = 2 * Math.PI * 88
 
+    // Preset epoch options
+    const epochPresets = [10, 25, 50, 100, 150]
+
     useEffect(() => {
         if (isTraining) {
-            setProgress(0)
             setShowAccuracy(false)
             setStatusText('Analyzing Patterns')
-            setStatusSubtext('Your neural network is learning...')
-            const startTime = Date.now()
-            const duration = 1500
-
-            progressRef.current = setInterval(() => {
-                const elapsed = Date.now() - startTime
-                const pct = Math.min(100, (elapsed / duration) * 100)
-                setProgress(pct)
-
-                if (pct >= 100) {
-                    if (progressRef.current) clearInterval(progressRef.current)
-                }
-            }, 16)
-
-            // Particle generation during training
-            particleIntervalRef.current = setInterval(() => {
-                // Particles are CSS-animated, this is just a trigger
-            }, 500)
+            setStatusSubtext(`Epoch ${currentEpoch}/${epochs} - Your neural network is learning...`)
+            
+            // Calculate progress based on current epoch
+            const epochProgress = (currentEpoch / epochs) * 100
+            setProgress(epochProgress)
         } else if (!isTraining && accuracy !== null) {
             if (progressRef.current) clearInterval(progressRef.current)
             if (particleIntervalRef.current) clearInterval(particleIntervalRef.current)
             setProgress(100)
             setStatusText('Training Complete!')
-            setStatusSubtext(`Accuracy reached ${Math.round(accuracy * 100)}%`)
+            setStatusSubtext(`Accuracy reached ${Math.round(accuracy * 100)}% after ${epochs} epochs`)
 
             const timer = setTimeout(() => {
                 setShowAccuracy(true)
@@ -73,7 +77,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
             if (progressRef.current) clearInterval(progressRef.current)
             if (particleIntervalRef.current) clearInterval(particleIntervalRef.current)
         }
-    }, [isTraining, accuracy])
+    }, [isTraining, accuracy, currentEpoch, epochs])
 
     useEffect(() => {
         if (accuracy === null) {
@@ -84,8 +88,20 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
         }
     }, [accuracy, totalSamples, classCount])
 
+    // Update status text during training
+    useEffect(() => {
+        if (isTraining && currentEpoch > 0) {
+            setStatusText('Training in Progress')
+            setStatusSubtext(`Epoch ${currentEpoch}/${epochs} - Analyzing patterns...`)
+        }
+    }, [isTraining, currentEpoch, epochs])
+
     const getProgressOffset = () => {
         return circleCircumference - (progress / 100) * circleCircumference
+    }
+
+    const handleTrain = () => {
+        onTrain(epochs)
     }
 
     return (
@@ -134,7 +150,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                         }}>
                             {/* Spinning dashed border */}
                             <div className="absolute inset-0 rounded-full border-4 border-dashed border-primary/30" style={{
-                                animation: 'spin 12s linear infinite'
+                                animation: isTraining ? 'spin 12s linear infinite' : 'none'
                             }} />
 
                             {/* Progress ring */}
@@ -173,7 +189,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                     {/* Action Button */}
                     <div className="mt-10 z-20">
                         <button
-                            onClick={onTrain}
+                            onClick={handleTrain}
                             disabled={!canTrain || isTraining}
                             className={`px-12 py-4 rounded-full text-lg font-bold transition-all duration-300 flex items-center gap-3 shadow-xl ${
                                 canTrain && !isTraining
@@ -187,7 +203,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                             {isTraining ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    <span>Training...</span>
+                                    <span>Training... ({currentEpoch}/{epochs})</span>
                                 </>
                             ) : accuracy !== null ? (
                                 <>
@@ -211,6 +227,64 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
 
                 {/* Right: Detailed Stats */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
+
+                    {/* Epochs Configuration Card */}
+                    <div className="rounded-2xl p-6 shadow-md" style={{
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        backdropFilter: 'blur(12px)',
+                        borderLeft: '4px solid #630ed4'
+                    }}>
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                TRAINING EPOCHS
+                            </span>
+                            <span className="text-2xl font-bold text-primary">
+                                {epochs}
+                            </span>
+                        </div>
+                        
+                        {/* Epoch slider */}
+                        <div className="mb-4">
+                            <input
+                                type="range"
+                                min="5"
+                                max="200"
+                                value={epochs}
+                                onChange={(e) => setEpochs(parseInt(e.target.value))}
+                                disabled={isTraining}
+                                className="w-full h-2 bg-surface-container rounded-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                    background: `linear-gradient(to right, #7c3aed ${(epochs / 200) * 100}%, #eaedff ${(epochs / 200) * 100}%)`
+                                }}
+                            />
+                            <div className="flex justify-between mt-1">
+                                <span className="text-[10px] text-on-surface-variant">5</span>
+                                <span className="text-[10px] text-on-surface-variant">200</span>
+                            </div>
+                        </div>
+
+                        {/* Preset buttons */}
+                        <div className="flex flex-wrap gap-2">
+                            {epochPresets.map((preset) => (
+                                <button
+                                    key={preset}
+                                    onClick={() => setEpochs(preset)}
+                                    disabled={isTraining}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                                        epochs === preset
+                                            ? 'bg-primary text-on-primary'
+                                            : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    {preset}
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-on-surface-variant mt-3">
+                            More epochs = better accuracy but longer training time
+                        </p>
+                    </div>
 
                     {/* Overall Progress Card */}
                     <div className="rounded-2xl p-6 shadow-md" style={{
@@ -237,9 +311,13 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                             />
                         </div>
                         <p className="text-sm text-on-surface-variant mt-3 italic">
-                            Estimating time: <span className="font-bold text-on-surface">
-                                {isTraining ? `~${Math.max(0, Math.round((100 - progress) * 0.45))} seconds` : accuracy !== null ? 'Complete' : '~45 seconds'}
-                            </span>
+                            {isTraining ? (
+                                <>Epoch <span className="font-bold text-on-surface">{currentEpoch}</span> of <span className="font-bold text-on-surface">{epochs}</span></>
+                            ) : accuracy !== null ? (
+                                <span className="font-bold text-on-surface">Complete</span>
+                            ) : (
+                                <>Est. ~{Math.round(epochs * 0.9)} seconds</>
+                            )}
                         </p>
                     </div>
 
@@ -294,7 +372,7 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-on-surface-variant">Epochs</span>
-                                <span className="text-sm font-bold text-on-surface">50</span>
+                                <span className="text-sm font-bold text-on-surface">{epochs}</span>
                             </div>
                         </div>
                     </div>
@@ -349,6 +427,26 @@ export default function TrainPanel({ isTraining, accuracy, canTrain, onTrain, cl
                 }
                 .training-glow {
                     filter: drop-shadow(0 0 15px rgba(99, 14, 212, 0.4));
+                }
+                input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    background: #7c3aed;
+                    cursor: pointer;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                }
+                input[type="range"]::-moz-range-thumb {
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    background: #7c3aed;
+                    cursor: pointer;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                 }
             `}</style>
         </div>
