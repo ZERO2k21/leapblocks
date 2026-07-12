@@ -28,15 +28,15 @@ export class PythonManager {
     private async resolvePython(): Promise<string> {
         // Fast path: already resolved in this session
         if (this.resolvedPythonPath && fs.existsSync(this.resolvedPythonPath)) {
-            return this.resolvedPythonPath;
-        }
+                    return this.resolvedPythonPath;
+                }
 
-        // Use ensurePython() for ALL resolution — it checks system PATH,
-        // cached download (with pip verification), and downloads if needed.
-        // This ensures pip is always verified before returning.
-        this.mainWindow?.webContents.send('python-download-progress', {
-            status: 'checking',
-            message: 'Checking Python availability...',
+                // Use ensurePython() for ALL resolution — it checks system PATH,
+                // cached download (with pip verification), and downloads if needed.
+                // This ensures pip is always verified before returning.
+                this.mainWindow?.webContents.send('python-download-progress', {
+                    status: 'checking',
+                    message: 'Checking Python availability...',
         });
 
         try {

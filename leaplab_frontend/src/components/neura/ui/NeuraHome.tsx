@@ -107,6 +107,41 @@ const PROJECT_TEMPLATES = [
     }
 ]
 
+const OBJECT_DETECTION_TEMPLATES = [
+    {
+        name: 'Classroom Object Counter',
+        description: 'Count objects in a classroom setting',
+        emoji: '🏫',
+        classes: ['person', 'chair', 'book', 'backpack', 'laptop', 'bottle', 'cup'],
+        color: '#3B82F6',
+        gradient: 'from-blue-400 to-indigo-500'
+    },
+    {
+        name: 'Smart Parking Detection',
+        description: 'Detect vehicles in parking areas',
+        emoji: '🅿️',
+        classes: ['car', 'truck', 'bus', 'motorcycle', 'bicycle', 'parking meter'],
+        color: '#10B981',
+        gradient: 'from-emerald-400 to-teal-500'
+    },
+    {
+        name: 'Classroom Attendance',
+        description: 'Track people entering the classroom',
+        emoji: '👋',
+        classes: ['person'],
+        color: '#F97316',
+        gradient: 'from-orange-400 to-amber-500'
+    },
+    {
+        name: 'Traffic Vehicle Detection',
+        description: 'Identify vehicles on the road',
+        emoji: '🚗',
+        classes: ['car', 'truck', 'bus', 'motorcycle', 'bicycle', 'traffic light', 'person'],
+        color: '#EF4444',
+        gradient: 'from-red-400 to-rose-500'
+    }
+]
+
 export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const handleSave = React.useCallback(() => {}, [])
@@ -248,6 +283,51 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                     {template.classes.length > 3 && (
                                         <span className="text-[10px] px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 font-medium">
                                             +{template.classes.length - 3}
+                                        </span>
+                                    )}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Object Detection Projects */}
+                <div className="mt-12 max-w-5xl w-full animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                    <div className="text-center mb-8">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Object Detection Projects</h3>
+                        <p className="text-sm text-gray-500">Detect and locate real-world objects using AI vision</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {OBJECT_DETECTION_TEMPLATES.map((template, index) => (
+                            <button
+                                key={template.name}
+                                onClick={() => onSelect('object-detection', { name: template.name, classes: template.classes })}
+                                className="group relative flex flex-col items-center p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:-translate-y-2 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
+                                style={{
+                                    background: 'rgba(255,255,255,0.6)',
+                                    backdropFilter: 'blur(12px)',
+                                    border: '1px solid rgba(255,255,255,0.5)',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    animationDelay: `${800 + index * 80}ms`
+                                }}
+                            >
+                                <div
+                                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.gradient} flex items-center justify-center text-2xl mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                                    style={{ boxShadow: `0 6px 16px ${template.color}30` }}
+                                >
+                                    {template.emoji}
+                                </div>
+                                <h4 className="text-sm font-bold text-gray-800 mb-1">{template.name}</h4>
+                                <p className="text-xs text-gray-400 text-center mb-3">{template.description}</p>
+                                <div className="flex flex-wrap justify-center gap-1">
+                                    {template.classes.slice(0, 4).map(cls => (
+                                        <span key={cls} className="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full font-medium">
+                                            {cls}
+                                        </span>
+                                    ))}
+                                    {template.classes.length > 4 && (
+                                        <span className="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full font-medium">
+                                            +{template.classes.length - 4}
                                         </span>
                                     )}
                                 </div>

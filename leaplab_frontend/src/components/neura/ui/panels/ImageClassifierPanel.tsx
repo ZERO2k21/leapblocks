@@ -474,7 +474,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 <span className="text-3xl">📸</span>
                             </div>
                             <h3 className="text-xl font-bold text-on-surface mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Welcome to Image Classifier!</h3>
-                            <p className="text-sm text-on-surface-variant">Teach AI to recognize different objects using your camera or uploaded images.</p>
+                            <p className="text-sm text-on-surface-variant">Teach AI to recognize different objects using your camera or uploaded pictures.</p>
                         </div>
                         <div className="space-y-4 mb-6">
                             <div className="flex items-start gap-3">
@@ -492,7 +492,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold text-on-surface">Collect Photos</p>
-                                    <p className="text-xs text-on-surface-variant">Use camera or upload images of each object</p>
+                                    <p className="text-xs text-on-surface-variant">Use camera or upload pictures of each object</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
@@ -524,10 +524,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            Image Classifier Workflow
+                            How to Teach Your AI
                         </h2>
                         <p className="text-sm text-on-surface-variant font-medium">
-                            Follow the steps to build your custom image classifier
+                            Follow the steps to teach AI to recognize your objects
                         </p>
                     </div>
 
@@ -630,7 +630,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     Camera is off
                                 </h2>
                                 <p className="font-body-sm text-body-sm text-on-surface-variant mb-lg text-center max-w-sm">
-                                    Start by adding classes and uploading images for each class.
+                                    Start by adding object types and uploading pictures for each one.
                                 </p>
 
                                 {/* Buttons row */}
@@ -655,7 +655,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         <div className="h-px w-6 bg-outline-variant" />
                                     </div>
 
-                                    {/* Upload Images button */}
+                                    {/* Upload Pictures button */}
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={!mode.selectedClassId}
@@ -671,7 +671,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                             <polyline points="17 8 12 3 7 8" />
                                             <line x1="12" y1="3" x2="12" y2="15" />
                                         </svg>
-                                        Upload Images
+                                        Upload Pictures
                                     </button>
                                 </div>
 
@@ -813,10 +813,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            Image Classifier Workflow
+                            Teaching Your AI
                         </h2>
                         <p className="text-sm text-on-surface-variant font-medium">
-                            Teach your computer to see by training a neural network
+                            Watch as your AI learns from your pictures
                         </p>
                     </div>
 
@@ -852,10 +852,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            Test Your Model
+                            Test Your AI
                         </h2>
                         <p className="text-sm text-on-surface-variant font-medium">
-                            See how well your machine learning model performs in the real world.
+                            See how well your AI can recognize objects!
                         </p>
                     </div>
 

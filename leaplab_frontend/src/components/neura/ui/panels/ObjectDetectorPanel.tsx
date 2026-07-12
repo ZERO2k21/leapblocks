@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ensureCocoSsd } from '../../ml/loadScript'
+import TrainPanel from './TrainPanel'
 
 interface ObjectDetectorPanelProps {
     mode: UseNeuraProjectReturn
@@ -10,6 +11,13 @@ interface Detection {
     class: string
     score: number
     bbox: [number, number, number, number]
+}
+
+interface UploadedImageState {
+    originalUrl: string
+    annotatedUrl: string | null
+    width: number
+    height: number
 }
 
 const OBJECT_COLORS: Record<string, string> = {
@@ -55,9 +63,11 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [cameraOn, setCameraOn] = useState(false)
     const [isDetecting, setIsDetecting] = useState(false)
     const [detections, setDetections] = useState<Detection[]>([])
-    const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+    const [uploadedImage, setUploadedImage] = useState<UploadedImageState | null>(null)
     const [uploadedDetections, setUploadedDetections] = useState<Detection[]>([])
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
+    const [sessionTime] = useState(() => Date.now())
+    const [showOriginal, setShowOriginal] = useState(true)
 
     // ── Load COCO-SSD model on mount ──
     useEffect(() => {
@@ -147,7 +157,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         const ctx = canvas.getContext('2d')!
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        dets.forEach((det, i) => {
+        dets.forEach((det) => {
             const [x, y, w, h] = det.bbox
             const color = getColorForObject(det.class)
 
@@ -247,7 +257,6 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             reader.readAsDataURL(file)
         })
 
-        setUploadedImage(dataUrl)
         setCameraOn(false)
         stopCamera()
 
@@ -269,12 +278,16 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 }))
                 setUploadedDetections(dets)
 
-                // Draw on a canvas overlay
+                // Create annotated version with detection boxes
                 const canvas = document.createElement('canvas')
                 canvas.width = img.naturalWidth
                 canvas.height = img.naturalHeight
                 const ctx = canvas.getContext('2d')!
 
+                // Draw the original image first
+                ctx.drawImage(img, 0, 0)
+
+                // Draw detection boxes on top
                 dets.forEach((det) => {
                     const [x, y, w, h] = det.bbox
                     const color = getColorForObject(det.class)
@@ -301,10 +314,27 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     ctx.fillText(label, x + 8, labelY - 9)
                 })
 
-                // Store the drawn canvas as the displayed image
-                setUploadedImage(canvas.toDataURL('image/png'))
+                // Store both original and annotated versions
+                setUploadedImage({
+                    originalUrl: dataUrl,
+                    annotatedUrl: canvas.toDataURL('image/png'),
+                    width: img.naturalWidth,
+                    height: img.naturalHeight
+                })
             } catch (err) {
                 console.error('[ObjectDetector] Upload detection failed:', err)
+                // Still show the image even if detection fails
+                const img2 = new Image()
+                img2.src = dataUrl
+                await new Promise<void>((resolve) => {
+                    img2.onload = () => resolve()
+                })
+                setUploadedImage({
+                    originalUrl: dataUrl,
+                    annotatedUrl: null,
+                    width: img2.naturalWidth,
+                    height: img2.naturalHeight
+                })
             }
         }
 
@@ -315,127 +345,261 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const handleResetUpload = () => {
         setUploadedImage(null)
         setUploadedDetections([])
+        setShowOriginal(true)
     }
 
     const selectedClass = mode.getSelectedClass()
     const hasUploadedImage = !!uploadedImage
+    const currentDetections = hasUploadedImage ? uploadedDetections : detections
+    const totalSamples = mode.getTotalSamples()
+    const labelsApplied = mode.project?.classes.length || 0
+
+    const WORKFLOW_STEPS = ['Collect', 'Label Objects', 'Teach AI', 'Find Things']
+    const currentStepIndex = ['collect', 'annotate', 'train', 'test'].indexOf(mode.mode)
+
+    const ALL_SUPPORTED_OBJECTS = [
+        'person', 'car', 'cat', 'dog', 'chair', 'bottle', 'laptop', 'cell phone',
+        'book', 'keyboard', 'cup', 'pizza', 'bed', 'tv', 'clock', 'vase'
+    ]
+
+    const templateClasses = mode.project?.classes?.map(c => c.name.toLowerCase()) || []
+    const hasTemplate = templateClasses.length > 0 && templateClasses.length <= 10
+    const SUPPORTED_OBJECTS = hasTemplate
+        ? ALL_SUPPORTED_OBJECTS.filter(obj => templateClasses.includes(obj))
+        : ALL_SUPPORTED_OBJECTS
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 overflow-y-auto">
-            {/* ── Camera feed / Uploaded image ── */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gray-900 w-full max-w-[520px]" style={{ aspectRatio: '4/3' }}>
-                {isLoadingModel && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-900 to-orange-900 flex flex-col items-center justify-center z-10 rounded-3xl">
-                        <div className="w-12 h-12 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mb-4" />
-                        <p className="text-amber-200 text-sm font-bold">Loading AI model...</p>
-                        <p className="text-amber-400/60 text-xs mt-1">COCO-SSD (80 object classes)</p>
-                    </div>
-                )}
+        // Route to TrainPanel when in train mode
+        mode.mode === 'train' ? (
+            <TrainPanel mode={mode} />
+        ) : (
+        <div className="flex-1 flex flex-col p-5 overflow-y-auto bg-slate-50/50">
+            {/* ── Compact Header ── */}
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h1 className="text-base font-bold text-slate-800">
+                        {WORKFLOW_STEPS[currentStepIndex]}
+                    </h1>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                        {mode.mode === 'collect' && 'Capture or upload pictures to detect objects'}
+                        {mode.mode === 'annotate' && 'Draw boxes and label objects'}
+                        {mode.mode === 'test' && 'Test your detector'}
+                    </p>
+                </div>
+                <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                    {currentStepIndex + 1}/4
+                </span>
+            </div>
 
-                {/* Camera view */}
-                {!hasUploadedImage && (
-                    <>
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-full object-cover rounded-3xl"
-                            style={{ transform: 'scaleX(-1)' }}
-                        />
-                        <canvas
-                            ref={canvasRef}
-                            className="absolute inset-0 w-full h-full rounded-3xl pointer-events-none"
-                            style={{ transform: 'scaleX(-1)' }}
-                        />
-                    </>
-                )}
-
-                {/* Uploaded image view */}
-                {hasUploadedImage && (
-                    <img
-                        src={uploadedImage}
-                        alt="Uploaded for detection"
-                        className="w-full h-full object-cover rounded-3xl"
-                    />
-                )}
-
-                {/* Status badges */}
-                {!hasUploadedImage && cameraOn && (
-                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md rounded-xl">
-                        <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                        <span className="text-white text-xs font-bold tracking-wide">DETECTING</span>
-                    </div>
-                )}
-                {!hasUploadedImage && !cameraOn && !isLoadingModel && (
-                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-gray-600/80 backdrop-blur-md rounded-xl">
-                        <div className="w-2 h-2 rounded-full bg-gray-400" />
-                        <span className="text-white text-xs font-bold tracking-wide">CAM OFF</span>
-                    </div>
-                )}
-                {hasUploadedImage && (
-                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-blue-500/80 backdrop-blur-md rounded-xl">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                            <polyline points="17 8 12 3 7 8" />
-                            <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        <span className="text-white text-xs font-bold tracking-wide">UPLOADED</span>
-                    </div>
-                )}
-
-                {/* Detection count badge */}
-                {!hasUploadedImage && detections.length > 0 && (
-                    <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                        <span className="text-white text-xs font-bold">{detections.length} objects</span>
-                    </div>
-                )}
-                {hasUploadedImage && uploadedDetections.length > 0 && (
-                    <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                        <span className="text-white text-xs font-bold">{uploadedDetections.length} objects</span>
-                    </div>
-                )}
-
-                {/* Camera off placeholder */}
-                {!hasUploadedImage && !cameraOn && !isLoadingModel && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="w-20 h-20 rounded-2xl bg-gray-700/50 flex items-center justify-center mb-4">
-                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
+            {/* ── Stats Row ── */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-5 h-5 rounded bg-violet-100 flex items-center justify-center">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                                <circle cx="12" cy="13" r="4" />
                             </svg>
                         </div>
-                        <p className="text-gray-400 text-sm font-semibold">Turn on camera to start detecting</p>
+                        <span className="text-[10px] font-medium text-slate-400">Pictures</span>
+                    </div>
+                    <p className="text-lg font-bold text-slate-700">{totalSamples}</p>
+                </div>
+                <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-5 h-5 rounded bg-teal-100 flex items-center justify-center">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+                                <line x1="7" y1="7" x2="7.01" y2="7" />
+                            </svg>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-400">Types</span>
+                    </div>
+                    <p className="text-lg font-bold text-slate-700">{labelsApplied}</p>
+                </div>
+                <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-400">Objects</span>
+                    </div>
+                    <p className="text-lg font-bold text-slate-700">{currentDetections.length}</p>
+                </div>
+            </div>
+
+            {/* ── Main Content ── */}
+            <div className="flex gap-4 mb-4">
+                {/* Camera Preview / Uploaded Image */}
+                <div className="flex-1">
+                    <div className="relative rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm" style={{ aspectRatio: '4/3' }}>
+                        {isLoadingModel && (
+                            <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10 rounded-xl">
+                                <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-2" />
+                                <p className="text-slate-600 text-xs font-semibold">Loading model...</p>
+                            </div>
+                        )}
+
+                        {/* Camera view */}
+                        {!hasUploadedImage && (
+                            <>
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
+                                    className="w-full h-full object-cover rounded-xl"
+                                    style={{ transform: 'scaleX(-1)' }}
+                                />
+                                <canvas
+                                    ref={canvasRef}
+                                    className="absolute inset-0 w-full h-full rounded-xl pointer-events-none"
+                                    style={{ transform: 'scaleX(-1)' }}
+                                />
+                            </>
+                        )}
+
+                        {/* Uploaded image view */}
+                        {hasUploadedImage && (
+                            <>
+                                <img
+                                    src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)}
+                                    alt="Uploaded for detection"
+                                    className="w-full h-full object-contain rounded-xl"
+                                />
+                                {uploadedImage.annotatedUrl && (
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
+                                        <button
+                                            onClick={() => setShowOriginal(true)}
+                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded transition-all ${showOriginal ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'}`}
+                                        >
+                                            Original
+                                        </button>
+                                        <button
+                                            onClick={() => setShowOriginal(false)}
+                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded transition-all ${!showOriginal ? 'bg-violet-500 text-white' : 'text-white/60 hover:text-white'}`}
+                                        >
+                                            Detections
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Status badges */}
+                        {!hasUploadedImage && cameraOn && (
+                            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm rounded-md">
+                                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                <span className="text-white text-[9px] font-bold">DETECTING</span>
+                            </div>
+                        )}
+                        {hasUploadedImage && (
+                            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-violet-500/90 backdrop-blur-sm rounded-md">
+                                <span className="text-white text-[9px] font-bold">UPLOADED</span>
+                            </div>
+                        )}
+
+                        {/* Detection count */}
+                        {currentDetections.length > 0 && (
+                            <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/50 backdrop-blur-sm rounded-md">
+                                <span className="text-white text-[9px] font-bold">{currentDetections.length} found</span>
+                            </div>
+                        )}
+
+                        {/* Camera off placeholder */}
+                        {!hasUploadedImage && !cameraOn && !isLoadingModel && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center mb-2">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </div>
+                                <p className="text-slate-400 text-xs font-medium mb-2">Camera is off</p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={toggleCamera}
+                                        disabled={isLoadingModel || hasUploadedImage}
+                                        className="px-4 py-1.5 bg-violet-500 text-white rounded-lg text-xs font-semibold hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-40"
+                                    >
+                                        Start Camera
+                                    </button>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isLoadingModel}
+                                        className="px-4 py-1.5 bg-white text-slate-600 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-40"
+                                    >
+                                        Upload
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Detection Results */}
+                {currentDetections.length > 0 && (
+                    <div className="w-64 bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-bold text-slate-700">Detected</h3>
+                            <span className="text-[10px] text-slate-400 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">
+                                {currentDetections.length}
+                            </span>
+                        </div>
+                        <div className="space-y-1 max-h-56 overflow-y-auto">
+                            {currentDetections.map((det, i) => (
+                                <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                                    <div
+                                        className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: `${getColorForObject(det.class)}20` }}
+                                    >
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getColorForObject(det.class) }} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-semibold text-slate-700 capitalize truncate">{det.class}</p>
+                                    </div>
+                                    <span
+                                        className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white shrink-0"
+                                        style={{ backgroundColor: getColorForObject(det.class) }}
+                                    >
+                                        {Math.round(det.score * 100)}%
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* ── Control buttons ── */}
-            <div className="flex gap-3 flex-wrap justify-center">
+            {/* ── Control Buttons ── */}
+            <div className="flex gap-2 flex-wrap">
                 {/* Camera toggle */}
                 <button
                     onClick={toggleCamera}
                     disabled={isLoadingModel || hasUploadedImage}
-                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                         cameraOn
-                            ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    } ${isLoadingModel || hasUploadedImage ? 'opacity-40 cursor-not-allowed' : ''}`}
+                            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
                 >
-                    {cameraOn ? 'Camera On' : 'Camera Off'}
+                    {cameraOn ? 'Stop Camera' : 'Start Camera'}
                 </button>
 
                 {/* Real-time toggle */}
                 {cameraOn && !hasUploadedImage && (
                     <button
                         onClick={() => setRealtimeEnabled(!realtimeEnabled)}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                        className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                             realtimeEnabled
-                                ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-300'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                         }`}
                     >
-                        {realtimeEnabled ? 'Auto Detect ON' : 'Auto Detect OFF'}
+                        {realtimeEnabled ? 'Auto Detect' : 'Manual'}
                     </button>
                 )}
 
@@ -444,7 +608,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <button
                         onClick={handleManualDetect}
                         disabled={!model || isDetecting}
-                        className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-amber-200 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        className="px-4 py-2 bg-violet-500 text-white rounded-lg text-xs font-semibold hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-40"
                     >
                         {isDetecting ? 'Detecting...' : 'Detect Now'}
                     </button>
@@ -454,7 +618,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 {cameraOn && !hasUploadedImage && mode.selectedClassId && (
                     <button
                         onClick={handleCapture}
-                        className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                        className="px-4 py-2 bg-teal-500 text-white rounded-lg text-xs font-semibold hover:bg-teal-600 active:scale-95 transition-all"
                     >
                         Capture
                     </button>
@@ -471,76 +635,46 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoadingModel}
-                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                         !isLoadingModel
-                            ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-md'
-                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                            ? 'bg-violet-500 text-white hover:bg-violet-600'
+                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     }`}
                 >
-                    Upload to Detect
+                    Upload Image
                 </button>
 
                 {/* Reset uploaded image */}
                 {hasUploadedImage && (
                     <button
                         onClick={handleResetUpload}
-                        className="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all duration-200"
+                        className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-all"
                     >
                         Back to Camera
                     </button>
                 )}
             </div>
 
-            {/* ── Detection results ── */}
-            {((!hasUploadedImage && detections.length > 0) || (hasUploadedImage && uploadedDetections.length > 0)) && (
-                <div className="w-full max-w-[520px] bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold text-gray-700">Detection Results</h3>
-                        <span className="text-[11px] text-gray-400 font-semibold bg-gray-50 px-2.5 py-1 rounded-lg">
-                            {(hasUploadedImage ? uploadedDetections : detections).length} objects
-                        </span>
-                    </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {(hasUploadedImage ? uploadedDetections : detections).map((det, i) => (
-                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-xl">
-                                <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                    style={{ background: `linear-gradient(135deg, ${getColorForObject(det.class)}40, ${getColorForObject(det.class)}80)` }}
-                                >
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getColorForObject(det.class) }} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-gray-700 capitalize">{det.class}</p>
-                                    <p className="text-[10px] text-gray-400">
-                                        bbox: [{det.bbox.map(v => Math.round(v)).join(', ')}]
-                                    </p>
-                                </div>
-                                <span
-                                    className="text-xs font-bold px-2.5 py-1 rounded-lg text-white"
-                                    style={{ backgroundColor: getColorForObject(det.class) }}
-                                >
-                                    {Math.round(det.score * 100)}%
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Supported objects hint ── */}
+            {/* ── Supported Objects Hint ── */}
             {!hasUploadedImage && !cameraOn && !isLoadingModel && (
-                <div className="w-full max-w-[520px] bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-                    <h3 className="text-xs font-bold text-gray-500 mb-2">80 Supported Objects</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                        {['person', 'car', 'cat', 'dog', 'chair', 'bottle', 'laptop', 'phone', 'book', 'keyboard', 'cup', 'pizza', 'bed', 'tv', 'clock', 'vase'].map(obj => (
-                            <span key={obj} className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-gray-100 text-gray-500 capitalize">
+                <div className="mt-3 bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div className="flex flex-wrap gap-1">
+                        {SUPPORTED_OBJECTS.map(obj => (
+                            <span key={obj} className={`text-[10px] font-medium px-2 py-0.5 rounded-md capitalize ${
+                                hasTemplate
+                                    ? 'bg-teal-50 text-teal-600 border border-teal-200'
+                                    : 'bg-slate-100 text-slate-500'
+                            }`}>
                                 {obj}
                             </span>
                         ))}
-                        <span className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-gray-50 text-gray-300">+64 more</span>
+                        {!hasTemplate && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-50 text-slate-400">+64 more</span>
+                        )}
                     </div>
                 </div>
             )}
         </div>
+        )
     )
 }

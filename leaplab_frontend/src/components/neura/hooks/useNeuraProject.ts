@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { NeuraProject, ClassData, Sample, ProjectType } from '../../../types/neura.types'
+import type { NeuraProject, ClassData, Sample, ProjectType, BoundingBox, Annotation, AnnotationToolType } from '../../../types/neura.types'
 import { MAX_SAMPLES_PER_CLASS } from '../../../types/neura.types'
 
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
@@ -14,7 +14,7 @@ function getNextColor(existingColors: string[]): string {
     return CLASS_COLORS.find(c => !existingColors.includes(c)) || CLASS_COLORS[0]
 }
 
-export type ClassifierMode = 'collect' | 'train' | 'test'
+export type ClassifierMode = 'collect' | 'annotate' | 'train' | 'test'
 
 export interface UseNeuraProjectReturn {
     project: NeuraProject | null
@@ -24,7 +24,7 @@ export interface UseNeuraProjectReturn {
     setSelectedClassId: (id: string | null) => void
     accuracy: number | null
     setAccuracy: (acc: number | null) => void
-   addClass: (name: string) => void
+    addClass: (name: string) => void
     removeClass: (classId: string) => void
     renameClass: (classId: string, name: string) => void
     addSample: (classId: string, sample: Omit<Sample, 'id' | 'timestamp'>) => boolean
@@ -34,6 +34,20 @@ export interface UseNeuraProjectReturn {
     getSelectedClass: () => ClassData | undefined
     getTotalSamples: () => number
     loadProject: (project: NeuraProject) => void
+    // Annotation state
+    annotations: Annotation[]
+    currentAnnotation: Annotation | null
+    selectedBoxId: string | null
+    activeTool: AnnotationToolType
+    zoom: number
+    setCurrentAnnotation: (annotation: Annotation | null) => void
+    setSelectedBoxId: (id: string | null) => void
+    setActiveTool: (tool: AnnotationToolType) => void
+    setZoom: (zoom: number) => void
+    addBox: (box: Omit<BoundingBox, 'id'>) => void
+    removeBox: (boxId: string) => void
+    updateBox: (boxId: string, updates: Partial<BoundingBox>) => void
+    addAnnotation: (annotation: Omit<Annotation, 'id' | 'timestamp'>) => void
 }
 
 export function useNeuraProject(
@@ -76,6 +90,13 @@ export function useNeuraProject(
     const [mode, setMode] = useState<ClassifierMode>('collect')
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
     const [accuracy, setAccuracy] = useState<number | null>(null)
+
+    // Annotation state
+    const [annotations, setAnnotations] = useState<Annotation[]>([])
+    const [currentAnnotation, setCurrentAnnotation] = useState<Annotation | null>(null)
+    const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null)
+    const [activeTool, setActiveTool] = useState<AnnotationToolType>('box')
+    const [zoom, setZoom] = useState<number>(100)
 
     const addClass = useCallback((name: string) => {
         setProject(prev => {
@@ -174,7 +195,69 @@ export function useNeuraProject(
         setAccuracy(importedProject.accuracy ?? null)
         setMode('collect')
         setSelectedClassId(null)
+        setAnnotations([])
+        setCurrentAnnotation(null)
     }, [])
+
+    // ── Annotation functions ──
+
+    const addAnnotation = useCallback((annotationData: Omit<Annotation, 'id' | 'timestamp'>) => {
+        const newAnnotation: Annotation = {
+            ...annotationData,
+            id: generateId(),
+            timestamp: Date.now()
+        }
+        setAnnotations(prev => [...prev, newAnnotation])
+        setCurrentAnnotation(newAnnotation)
+    }, [])
+
+    const addBox = useCallback((boxData: Omit<BoundingBox, 'id'>) => {
+        const newBox: BoundingBox = {
+            ...boxData,
+            id: generateId()
+        }
+        if (currentAnnotation) {
+            const updatedAnnotation = {
+                ...currentAnnotation,
+                boxes: [...currentAnnotation.boxes, newBox]
+            }
+            setCurrentAnnotation(updatedAnnotation)
+            setAnnotations(prev =>
+                prev.map(a => a.id === currentAnnotation.id ? updatedAnnotation : a)
+            )
+        }
+    }, [currentAnnotation])
+
+    const removeBox = useCallback((boxId: string) => {
+        if (currentAnnotation) {
+            const updatedAnnotation = {
+                ...currentAnnotation,
+                boxes: currentAnnotation.boxes.filter(b => b.id !== boxId)
+            }
+            setCurrentAnnotation(updatedAnnotation)
+            setAnnotations(prev =>
+                prev.map(a => a.id === currentAnnotation.id ? updatedAnnotation : a)
+            )
+            if (selectedBoxId === boxId) {
+                setSelectedBoxId(null)
+            }
+        }
+    }, [currentAnnotation, selectedBoxId])
+
+    const updateBox = useCallback((boxId: string, updates: Partial<BoundingBox>) => {
+        if (currentAnnotation) {
+            const updatedAnnotation = {
+                ...currentAnnotation,
+                boxes: currentAnnotation.boxes.map(b =>
+                    b.id === boxId ? { ...b, ...updates } : b
+                )
+            }
+            setCurrentAnnotation(updatedAnnotation)
+            setAnnotations(prev =>
+                prev.map(a => a.id === currentAnnotation.id ? updatedAnnotation : a)
+            )
+        }
+    }, [currentAnnotation])
 
     useEffect(() => {
         if (project && project.classes.length > 0 && !selectedClassId) {
@@ -210,7 +293,21 @@ export function useNeuraProject(
         resetProject,
         getSelectedClass,
         getTotalSamples,
-        loadProject
+        loadProject,
+        // Annotation state
+        annotations,
+        currentAnnotation,
+        selectedBoxId,
+        activeTool,
+        zoom,
+        setCurrentAnnotation,
+        setSelectedBoxId,
+        setActiveTool,
+        setZoom,
+        addBox,
+        removeBox,
+        updateBox,
+        addAnnotation
     }
 }
 

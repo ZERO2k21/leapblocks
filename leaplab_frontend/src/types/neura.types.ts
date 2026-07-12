@@ -61,3 +61,41 @@ export interface TestResult {
 
 /** Maximum samples allowed per class to prevent localStorage quota exceeded */
 export const MAX_SAMPLES_PER_CLASS = 20;
+
+// ── Annotation Types ──
+
+export interface BoundingBox {
+    id: string
+    label: string
+    x: number      // percentage (0-100)
+    y: number
+    width: number
+    height: number
+    color: string
+}
+
+export interface Annotation {
+    id: string
+    imageId?: string
+    imageUrl: string
+    boxes: BoundingBox[]
+    timestamp: number
+    imageName?: string
+}
+
+export type AnnotationToolType = 'box' | 'polygon' | 'delete'
+
+export interface AnnotationTool {
+    type: AnnotationToolType
+    isActive: boolean
+}
+
+export interface AnnotateState {
+    annotations: Annotation[]
+    currentAnnotation: Annotation | null
+    selectedBoxId: string | null
+    activeTool: AnnotationToolType
+    zoom: number
+    isDrawing: boolean
+    drawStart: { x: number; y: number } | null
+}
