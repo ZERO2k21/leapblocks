@@ -4,9 +4,9 @@
  *
  * Download-on-demand for Python 3.10.
  * Instead of bundling Python with the installer, we download the official
- * embeddable Python distribution on first use and cache it in userData.
+ * full Python installer on Windows and python-build-standalone on macOS/Linux.
  *
- * On Windows we use the official embeddable package from python.org.
+ * On Windows we download and silently run the full installer from python.org.
  * On macOS/Linux we use python-build-standalone (indygreg) which ships
  * a self-contained Python + pip.
  */
@@ -21,8 +21,8 @@ import * as http from 'http';
 // ── Configuration ──────────────────────────────────────────────────────────
 const PYTHON_VERSION = '3.10.11';
 
-// Windows: official embeddable package from python.org (~11 MB)
-const WIN_EMBED_URL = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip`;
+// Windows: full installer from python.org (~27 MB)
+const WIN_INSTALLER_URL = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe`;
 // macOS/Linux: python-build-standalone from GitHub (~30 MB, includes pip)
 const STANDALONE_BASE = 'https://github.com/indygreg/python-build-standalone/releases/download/20241016';
 
@@ -39,14 +39,14 @@ function getStandaloneFilename(): string {
 }
 
 function getDownloadUrl(): string {
-  if (os.platform() === 'win32') return WIN_EMBED_URL;
+  if (os.platform() === 'win32') return WIN_INSTALLER_URL;
   return `${STANDALONE_BASE}/${getStandaloneFilename()}`;
 }
 
 // ── Cache paths ────────────────────────────────────────────────────────────
 
 /**
- * Local cache directory for Python.
+ * Local cache directory for Python installer metadata.
  *   Windows: C:\Users\<user>\AppData\Roaming\leapblocks\python\
  *   macOS:   ~/Library/Application Support/leapblocks/python/
  *   Linux:   ~/.config/leapblocks/python/
@@ -69,9 +69,17 @@ function getCacheDir(): string {
   }
 }
 
+/**
+ * Full Python installs to a known location.
+ *   Windows: %LOCALAPPDATA%\Programs\Python\Python310\python.exe
+ *   macOS:   ~/Library/Application Support/leapblocks/python/bin/python3
+ *   Linux:   ~/.config/leapblocks/python/bin/python3
+ */
 function getPythonBinaryPath(): string {
   if (os.platform() === 'win32') {
-    return path.join(getCacheDir(), 'python.exe');
+    // Full Python user-level install location
+    const majorMinor = PYTHON_VERSION.slice(0, PYTHON_VERSION.lastIndexOf('.'));
+    return path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Python', `Python${majorMinor.replace('.', '')}`, 'python.exe');
   }
   return path.join(getCacheDir(), 'bin', 'python3');
 }
@@ -102,13 +110,18 @@ function downloadFile(url: string, destPath: string, onProgress?: (pct: number, 
 
       const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
       let downloadedBytes = 0;
+      let lastReportedPct = -1;
 
       res.on('data', (chunk) => {
         downloadedBytes += chunk.length;
         if (totalBytes > 0) {
           const pct = Math.round((downloadedBytes / totalBytes) * 100);
-          const mb = (downloadedBytes / 1024 / 1024).toFixed(1);
-          onProgress?.(pct, mb);
+          // Only report every 5% to avoid flooding the terminal
+          if (pct >= lastReportedPct + 5 || pct === 100) {
+            const mb = (downloadedBytes / 1024 / 1024).toFixed(1);
+            onProgress?.(pct, mb);
+            lastReportedPct = pct;
+          }
         }
       });
 
@@ -125,12 +138,6 @@ function downloadFile(url: string, destPath: string, onProgress?: (pct: number, 
   });
 }
 
-async function extractZip(zipPath: string, destDir: string): Promise<void> {
-  const AdmZip = require('adm-zip');
-  const zip = new AdmZip(zipPath);
-  zip.extractAllTo(destDir, true);
-}
-
 async function extractTarGz(tarPath: string, destDir: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const { exec } = require('child_process');
@@ -141,151 +148,65 @@ async function extractTarGz(tarPath: string, destDir: string): Promise<void> {
   });
 }
 
+/**
+ * Silently run the full Python installer on Windows.
+ * Installs for the current user only (no admin required when elevation is allowed).
+ */
+function runWindowsInstaller(installerPath: string, onProgress?: (msg: string) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '/quiet',
+      'InstallAllUsers=0',
+      'PrependPath=1',
+      'Include_pip=1',
+      'Include_test=0',
+      'Include_launcher=0',
+      'Include_symbols=0',
+      'Include_tcltk=1',
+    ];
+    onProgress?.('Running full Python installer...');
+    const proc = spawn(installerPath, args, { shell: false, stdio: 'pipe' });
+    let output = '';
+    proc.stdout.on('data', (d) => { output += d.toString(); });
+    proc.stderr.on('data', (d) => { output += d.toString(); });
+    proc.on('close', (code) => {
+      try { fs.unlinkSync(installerPath); } catch {}
+      if (code === 0) {
+        onProgress?.('Full Python installed successfully');
+        resolve();
+      } else {
+        reject(new Error(`Python installer exited with code ${code}: ${output.slice(-300)}`));
+      }
+    });
+    proc.on('error', (err) => {
+      try { fs.unlinkSync(installerPath); } catch {}
+      reject(err);
+    });
+  });
+}
+
 // ── Pip verification ────────────────────────────────────────────────────────
 // Checks if pip is actually usable in the given Python installation.
-async function verifyPip(pythonExe: string): Promise<boolean> {
+async function verifyPip(pythonExe: string, onProgress?: (msg: string) => void): Promise<boolean> {
   return new Promise((resolve) => {
     try {
+      const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
       const proc = spawn(pythonExe, ['-m', 'pip', '--version'], {
-        shell: false, stdio: 'pipe', timeout: 15000,
+        shell: false, stdio: 'pipe', timeout: 15000, env,
       });
       let stdout = '';
       let stderr = '';
       proc.stdout.on('data', (d) => { stdout += d.toString(); });
       proc.stderr.on('data', (d) => { stderr += d.toString(); });
       proc.on('close', (code) => {
-        resolve(code === 0 && (stdout.includes('pip') || stderr.includes('pip')));
+        const ok = code === 0 && (stdout.includes('pip') || stderr.includes('pip'));
+        onProgress?.(`pip verify: code=${code}, stdout=${stdout.trim().slice(0, 100)}, stderr=${stderr.trim().slice(0, 100)}`);
+        resolve(ok);
       });
       proc.on('error', () => { resolve(false); });
     } catch {
       resolve(false);
     }
-  });
-}
-
-// ── Windows embeddable patching ────────────────────────────────────────────
-// The official embeddable package disables pip/site by default.
-// We need to:
-//   1. Uncomment "import site" in python310._pth
-//   2. Bootstrap pip via get-pip.py
-async function patchWindowsEmbed(cacheDir: string, onProgress?: (msg: string) => void): Promise<void> {
-  const maxRetries = 2;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    // Step 1: Enable site-packages in the .pth file
-    const pthFile = path.join(cacheDir, `python${PYTHON_VERSION.replace('.', '')}._pth`);
-    if (fs.existsSync(pthFile)) {
-      let content = fs.readFileSync(pthFile, 'utf-8');
-      // Match both "# import site" and "#import site" (with or without space after #)
-      const patched = content.replace(/^[ \t]*#\s*import\s+site[ \t]*$/m, 'import site');
-      if (patched !== content) {
-        fs.writeFileSync(pthFile, patched, 'utf-8');
-        onProgress?.('Enabled site-packages in embeddable Python');
-      } else if (content.includes('import site') && !content.includes('# import site') && !content.includes('#import site')) {
-        // Already patched (no leading #)
-        onProgress?.('site-packages already enabled');
-      }
-    }
-
-    // Step 2: Bootstrap pip — download get-pip.py and run it
-    const pythonExe = path.join(cacheDir, 'python.exe');
-    const get_pip_path = path.join(cacheDir, 'get-pip.py');
-
-    // Clean up any leftover get-pip.py from a previous failed attempt
-    try { fs.unlinkSync(get_pip_path); } catch {}
-
-    onProgress?.(`Downloading get-pip.py (attempt ${attempt}/${maxRetries})...`);
-
-    try {
-      await downloadGetPip(get_pip_path);
-    } catch (err: any) {
-      onProgress?.(`Failed to download get-pip.py: ${err.message}`);
-      if (attempt < maxRetries) continue;
-      throw new Error(`Failed to download get-pip.py after ${maxRetries} attempts: ${err.message}`);
-    }
-
-    onProgress?.('Bootstrapping pip...');
-
-    const pipInstalled = await new Promise<boolean>((resolve) => {
-      const proc = spawn(pythonExe, [get_pip_path], { cwd: cacheDir, shell: false, stdio: 'pipe' });
-      let stderr = '';
-      proc.stderr.on('data', (d) => { stderr += d.toString(); });
-      proc.stdout.on('data', () => {}); // consume stdout
-      proc.on('close', (code) => {
-        try { fs.unlinkSync(get_pip_path); } catch {}
-        if (code === 0) {
-          onProgress?.('pip installed successfully');
-          resolve(true);
-        } else {
-          onProgress?.(`pip bootstrap failed (exit code ${code}): ${stderr.slice(-200)}`);
-          resolve(false);
-        }
-      });
-      proc.on('error', (err) => {
-        try { fs.unlinkSync(get_pip_path); } catch {}
-        onProgress?.(`pip bootstrap error: ${err.message}`);
-        resolve(false);
-      });
-    });
-
-    if (pipInstalled) {
-      // Final verification
-      if (await verifyPip(pythonExe)) {
-        onProgress?.('pip verified and ready');
-        return;
-      }
-      onProgress?.('pip bootstrap reported success but verification failed');
-    }
-
-    if (attempt < maxRetries) {
-      onProgress?.(`Retrying pip bootstrap...`);
-    }
-  }
-
-  throw new Error(`pip bootstrap failed after ${maxRetries} attempts. Check your internet connection.`);
-}
-
-/**
- * Download get-pip.py with proper redirect handling.
- */
-function downloadGetPip(destPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const followRedirect = (url: string, redirects = 0) => {
-      if (redirects > 5) {
-        reject(new Error('Too many redirects downloading get-pip.py'));
-        return;
-      }
-
-      const proto = url.startsWith('https') ? https : http;
-      proto.get(url, { headers: { 'User-Agent': 'LeapBlocks/1.0' } }, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          res.resume(); // drain the response
-          const location = res.headers.location;
-          if (!location) {
-            reject(new Error('Redirect without Location header'));
-            return;
-          }
-          followRedirect(location, redirects + 1);
-          return;
-        }
-
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`get-pip.py download failed: HTTP ${res.statusCode}`));
-          return;
-        }
-
-        const file = createWriteStream(destPath);
-        res.pipe(file);
-        file.on('finish', () => { file.close(); resolve(); });
-        file.on('error', (err) => {
-          try { fs.unlinkSync(destPath); } catch {}
-          reject(err);
-        });
-      }).on('error', reject);
-    };
-
-    followRedirect('https://bootstrap.pypa.io/get-pip.py');
   });
 }
 
@@ -295,7 +216,7 @@ function downloadGetPip(destPath: string): Promise<void> {
  * Ensure Python 3.10 is available locally.
  * Checks in order:
  *   1. System PATH (user has Python 3.10+ installed)
- *   2. Our cached download in userData
+ *   2. Previously installed full Python at the standard location
  *   3. Download from python.org / GitHub (first-time)
  *
  * Returns the absolute path to the python binary.
@@ -315,31 +236,11 @@ export async function ensurePython(
     return systemPy;
   }
 
-  // ── 2. Check our cached download ─────────────────────────────────────────
-  const cached = getPythonBinaryPath();
-  if (fs.existsSync(cached)) {
-    log(`Using cached Python: ${cached}`);
-
-    // Verify pip works — re-patch if broken (e.g. first download failed mid-patch)
-    if (os.platform() === 'win32') {
-      const pipWorks = await verifyPip(cached);
-      if (!pipWorks) {
-        log('pip not found in cached Python. Re-patching...');
-        try {
-          await patchWindowsEmbed(getCacheDir(), (msg) => log(msg));
-          log('Re-patching complete. Verifying pip...');
-          if (await verifyPip(cached)) {
-            log('pip is now working');
-          } else {
-            log('WARNING: pip still not working after re-patch');
-          }
-        } catch (err: any) {
-          log(`WARNING: Re-patching failed: ${err.message}. pip may not work.`);
-        }
-      }
-    }
-
-    return cached;
+  // ── 2. Check previously installed full Python ────────────────────────────
+  const pythonExe = getPythonBinaryPath();
+  if (fs.existsSync(pythonExe)) {
+    log(`Using installed Python: ${pythonExe}`);
+    return pythonExe;
   }
 
   // ── 3. Download ──────────────────────────────────────────────────────────
@@ -352,26 +253,25 @@ export async function ensurePython(
   fs.mkdirSync(cacheDir, { recursive: true });
 
   const isWin = os.platform() === 'win32';
-  const archiveExt = isWin ? '.zip' : '.tar.gz';
-  const archivePath = path.join(cacheDir, `python${archiveExt}`);
+  const archiveExt = isWin ? '.exe' : '.tar.gz';
+  const archivePath = path.join(cacheDir, `python-${PYTHON_VERSION}-${os.arch()}${archiveExt}`);
 
   // Download with progress
-  log('Downloading Python (this may take a minute on first launch)...');
+  log('Downloading full Python (this may take a minute on first launch)...');
   await downloadFile(url, archivePath, (pct, mb) => {
     log(`Downloading: ${pct}% (${mb} MB)`);
   });
-  log('Download complete. Extracting...');
+  log('Download complete.');
 
-  // Extract
+  // Install or extract
   if (isWin) {
-    await extractZip(archivePath, cacheDir);
+    await runWindowsInstaller(archivePath, (msg) => log(msg));
   } else {
-    // Standalone builds extract to a `python/` subdirectory — move contents up
+    log('Extracting...');
     const tmpExtract = path.join(cacheDir, '_extract');
     fs.mkdirSync(tmpExtract, { recursive: true });
     await extractTarGz(archivePath, tmpExtract);
 
-    // Move contents from _extract/python/ to cacheDir
     const pythonSubdir = path.join(tmpExtract, 'python');
     const target = fs.existsSync(pythonSubdir) ? pythonSubdir : tmpExtract;
     const entries = fs.readdirSync(target);
@@ -381,32 +281,43 @@ export async function ensurePython(
       fs.renameSync(src, dst);
     }
     fs.rmSync(tmpExtract, { recursive: true, force: true });
+    try { fs.unlinkSync(archivePath); } catch {}
   }
 
-  // Clean up archive
-  try { fs.unlinkSync(archivePath); } catch {}
-
-  // Windows: patch embeddable Python to enable pip
-  if (isWin) {
-    await patchWindowsEmbed(cacheDir, (msg) => log(msg));
-    // Verify pip works after initial patching
-    if (!await verifyPip(cached)) {
-      log('WARNING: pip verification failed after initial install');
-    }
+  // Auto-install essential packages (numpy, matplotlib)
+  const packages = ['numpy', 'matplotlib'];
+  for (const pkg of packages) {
+    log(`Installing ${pkg}...`);
+    const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
+    await new Promise<void>((resolve) => {
+      const proc = spawn(pythonExe, ['-m', 'pip', 'install', pkg], { cwd: cacheDir, shell: false, stdio: 'pipe', env });
+      let output = '';
+      proc.stdout.on('data', (d) => { output += d.toString(); });
+      proc.stderr.on('data', (d) => { output += d.toString(); });
+      proc.on('close', (code) => {
+        if (code === 0) {
+          log(`${pkg} installed successfully`);
+        } else {
+          log(`WARNING: ${pkg} install failed (exit code ${code}): ${output.slice(-200)}`);
+        }
+        resolve();
+      });
+      proc.on('error', () => { resolve(); });
+    });
   }
 
   // Verify
-  if (!fs.existsSync(cached)) {
+  if (!fs.existsSync(pythonExe)) {
     throw new Error(
-      `Python download succeeded but binary not found at ${cached}. ` +
-      `Contents: ${fs.readdirSync(cacheDir).join(', ')}`
+      `Python install succeeded but binary not found at ${pythonExe}. ` +
+      `Contents of Python directory: ${fs.readdirSync(path.dirname(pythonExe)).join(', ')}`
     );
   }
 
   // Write version marker
   fs.writeFileSync(getVersionFile(), PYTHON_VERSION, 'utf-8');
-  log(`Python ${PYTHON_VERSION} installed at: ${cached}`);
-  return cached;
+  log(`Python ${PYTHON_VERSION} installed at: ${pythonExe}`);
+  return pythonExe;
 }
 
 /**

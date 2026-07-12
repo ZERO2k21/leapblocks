@@ -1091,13 +1091,13 @@ export default function BlocksEditorComplete({ appState }) {
     // Zoom controls
     const handleZoomIn = () => {
         if (workspaceRef.current) {
-            workspaceRef.current.zoomCenter(1.2);
+            workspaceRef.current.zoomCenter(1);
         }
     };
 
     const handleZoomOut = () => {
         if (workspaceRef.current) {
-            workspaceRef.current.zoomCenter(0.8);
+            workspaceRef.current.zoomCenter(-1);
         }
     };
 

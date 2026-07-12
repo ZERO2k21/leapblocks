@@ -180,7 +180,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeLibrary: (libName: string) => ipcRenderer.invoke('remove-library', libName),
     getInstalledLibraries: () => ipcRenderer.invoke('get-installed-libraries'),
     getForgeLibPath: () => ipcRenderer.invoke('get-forge-lib-path'),
-    isElectron: true,
+    isElectron: typeof ipcRenderer !== 'undefined' && ipcRenderer !== null,
 
     // ═══════════════════════════════════════════════════════════════════════
     // PYTHON NATIVE APIS
@@ -273,6 +273,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => ipcRenderer.removeListener('tool-download-progress', handler);
     },
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // AUTO-UPDATE APIs
+    // ═══════════════════════════════════════════════════════════════════════
+
+    checkForUpdate: () => ipcRenderer.invoke('check-for-update'),
+    downloadUpdate: (info: any) => ipcRenderer.invoke('download-update', info),
+    installUpdate: (path: string) => ipcRenderer.invoke('install-update', path),
+
+    onUpdateAvailable: (callback: (info: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('update-available', handler);
+      return () => ipcRenderer.removeListener('update-available', handler);
+    },
+
+    onUpdateDownloadProgress: (callback: (progress: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('update-download-progress', handler);
+      return () => ipcRenderer.removeListener('update-download-progress', handler);
+    },
+
     /**
      * Generic invoke for flexible IPC calls
      */
@@ -348,6 +368,13 @@ declare global {
             onPythonShellExit: (callback: (code: number) => void) => () => void;
             onPythonDownloadProgress: (callback: (data: { status: string; message: string }) => void) => () => void;
             onToolDownloadProgress: (callback: (data: { tool: string; status: string; message: string }) => void) => () => void;
+
+            // Auto-update
+            checkForUpdate: () => Promise<any>;
+            downloadUpdate: (info: any) => Promise<{ success: boolean; installerPath?: string; error?: string }>;
+            installUpdate: (path: string) => Promise<{ success: boolean; error?: string }>;
+            onUpdateAvailable: (callback: (info: any) => void) => () => void;
+            onUpdateDownloadProgress: (callback: (progress: any) => void) => () => void;
 
             invoke: (channel: string, ...args: any[]) => Promise<any>;
         };

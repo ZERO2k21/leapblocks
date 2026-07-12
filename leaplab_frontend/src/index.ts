@@ -13,6 +13,9 @@ import { ArduinoUploader } from './upload/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 import { getBundledArduinoCliPath } from './utils/ensureArduinoCli';
+import { cleanupOldLogs } from './utils/fileLogger';
+import { checkForUpdate, downloadUpdate, installUpdate } from './update/updateChecker';
+import type { UpdateInfo, DownloadProgress } from './update/updateChecker';
 
 // Suppress development security warnings in the console
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -223,9 +226,19 @@ const createWindow = (): void => {
 
 app.on('ready', () => {
   logTiming('Electron app ready event fired');
+  cleanupOldLogs();
   createWindow();
   startCompileServer();
   logTiming('createWindow() completed');
+
+  // Fire-and-forget update check after window loads
+  setTimeout(() => {
+    checkForUpdate().then((updateInfo) => {
+      if (updateInfo?.hasUpdate && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-available', updateInfo);
+      }
+    });
+  }, 5000);
   // ESP32 core check removed from startup — now runs on-demand during first ESP32 compile
   // This prevents blocking the app startup with a 7+ second installation
 });
@@ -693,4 +706,36 @@ ipcMain.handle('open-project', async () => {
     }
   }
   return null;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTO-UPDATE IPC HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+ipcMain.handle('check-for-update', async (): Promise<UpdateInfo | null> => {
+  return checkForUpdate();
+});
+
+ipcMain.handle('download-update', async (event, updateInfo: UpdateInfo): Promise<{ success: boolean; installerPath?: string; error?: string }> => {
+  try {
+    const installerPath = await downloadUpdate(updateInfo, (progress: DownloadProgress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-download-progress', progress);
+      }
+    });
+    return { success: true, installerPath };
+  } catch (err: any) {
+    log('UPDATE', `Download failed: ${err.message}`, err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('install-update', async (_, installerPath: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    installUpdate(installerPath);
+    return { success: true };
+  } catch (err: any) {
+    log('UPDATE', `Install failed: ${err.message}`, err);
+    return { success: false, error: err.message };
+  }
 });

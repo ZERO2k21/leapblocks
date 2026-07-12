@@ -15,20 +15,12 @@ interface Props {
 }
 
 const BOARDS: { id: BoardType; label: string; chip: string; color: string; badge?: string }[] = [
-    { id: 'arduino-uno', label: 'Arduino Uno', chip: 'ATmega328P', color: '#2196F3' },
-    { id: 'esp32-c3', label: 'ESP32-C3', chip: 'RISC-V', color: '#E53935', badge: 'WiFi' },
+    { id: 'arduino-uno', label: 'Arduino Uno', chip: 'ATmega328P', color: '#00979C' },
+    { id: 'esp32-c3', label: 'ESP32-C3', chip: 'ESP32-C3', color: '#E53935', badge: 'WiFi' },
 ];
 
 export const BoardSelector: React.FC<Props> = ({ selected, onChange, disabled }) => (
-    <div style={{
-        display: 'flex',
-        gap: 4,
-        padding: '3px 6px',
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 8,
-        border: '0.5px solid rgba(255,255,255,0.08)',
-        flexWrap: 'wrap',
-    }}>
+    <div className="flex gap-[4px] p-[3px_6px] bg-[rgba(255,255,255,0.04)] rounded-[8px] border-[0.5px] border-solid border-[rgba(255,255,255,0.08)] flex-wrap">
         {BOARDS.map(b => {
             const active = selected === b.id;
             return (
@@ -37,44 +29,28 @@ export const BoardSelector: React.FC<Props> = ({ selected, onChange, disabled })
                     disabled={disabled}
                     onClick={() => onChange(b.id)}
                     title={b.chip}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        padding: '3px 9px',
-                        borderRadius: 5,
-                        border: 'none',
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        background: active ? b.color : 'transparent',
-                        color: active ? '#fff' : 'rgba(255,255,255,0.45)',
-                        fontSize: 11,
-                        fontWeight: active ? 600 : 400,
-                        transition: 'all 0.15s',
-                        opacity: disabled ? 0.5 : 1,
-                        whiteSpace: 'nowrap',
-                    }}
+                    className={`flex items-center gap-[5px] p-[3px_9px] rounded-[5px] border-none whitespace-nowrap transition-all duration-[0.15s] text-[11px] ${
+                        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'
+                    } ${
+                        active
+                            ? (b.id === 'arduino-uno' ? 'bg-[#00979C] text-white font-semibold' : 'bg-[#E53935] text-white font-semibold')
+                            : 'bg-transparent text-[rgba(255,255,255,0.45)] font-normal'
+                    }`}
                 >
                     {/* Dot indicator */}
-                    <span style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: active ? 'rgba(255,255,255,0.75)' : b.color,
-                        flexShrink: 0,
-                    }} />
+                    <span className={`w-[6px] h-[6px] rounded-[50%] shrink-0 ${
+                        active ? 'bg-[rgba(255,255,255,0.75)]' : (b.id === 'arduino-uno' ? 'bg-[#00979C]' : 'bg-[#E53935]')
+                    }`} />
 
                     {b.label}
 
                     {/* WiFi / feature badge */}
                     {b.badge && (
-                        <span style={{
-                            fontSize: 9,
-                            padding: '1px 4px',
-                            borderRadius: 3,
-                            background: active ? 'rgba(255,255,255,0.2)' : 'rgba(229,57,53,0.18)',
-                            color: active ? '#fff' : '#E57373',
-                            marginLeft: 1,
-                        }}>
+                        <span className={`ml-[1px] text-[9px] p-[1px_4px] rounded-[3px] ${
+                            active
+                                ? 'bg-[rgba(255,255,255,0.2)] text-white'
+                                : 'bg-[rgba(229,57,53,0.18)] text-[#E57373]'
+                        }`}>
                             {b.badge}
                         </span>
                     )}

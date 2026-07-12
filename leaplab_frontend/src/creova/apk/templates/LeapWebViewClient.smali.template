@@ -1,0 +1,125 @@
+.class public L{{packageName}}/LeapWebViewClient;
+.super Landroid/webkit/WebViewClient;
+.source "LeapWebViewClient.java"
+
+.field private activity:Landroid/app/Activity;
+
+.method public constructor <init>(Landroid/app/Activity;)V
+    .registers 2
+    invoke-direct {p0}, Landroid/webkit/WebViewClient;-><init>()V
+    iput-object p1, p0, L{{packageName}}/LeapWebViewClient;->activity:Landroid/app/Activity;
+    return-void
+.end method
+
+.method public shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
+    .registers 9
+
+    const/4 v5, 0x1
+
+    if-nez p2, :cond_5
+    const/4 v0, 0x0
+    return v0
+
+    :cond_5
+    const-string v0, "intent:"
+    invoke-virtual {p2, v0}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v0
+    if-eqz v0, :cond_23
+
+    :try_start_d
+    invoke-static {p2, v5}, Landroid/content/Intent;->parseUri(Ljava/lang/String;I)Landroid/content/Intent;
+    move-result-object v0
+    if-eqz v0, :cond_1e
+    iget-object v1, p0, L{{packageName}}/LeapWebViewClient;->activity:Landroid/app/Activity;
+    invoke-virtual {v1, v0}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_18
+    .catch Ljava/lang/Exception; {:try_start_d .. :try_end_18} :catch_1a
+
+    return v5
+
+    :catch_1a
+    move-exception v0
+    return v5
+
+    :cond_1e
+    return v5
+
+    :cond_23
+    const-string v0, "http://"
+    invoke-virtual {p2, v0}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v0
+    if-nez v0, :cond_35
+
+    const-string v0, "https://"
+    invoke-virtual {p2, v0}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v0
+    if-eqz v0, :cond_57
+
+    :cond_35
+    const-string v0, "maps.google"
+    invoke-virtual {p2, v0}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+    move-result v0
+    if-nez v0, :cond_45
+
+    const-string v0, "google.com/maps"
+    invoke-virtual {p2, v0}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+    move-result v0
+    if-eqz v0, :cond_55
+
+    :cond_45
+    :try_start_45
+    new-instance v0, Landroid/content/Intent;
+    const-string v1, "android.intent.action.VIEW"
+    invoke-static {p2}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+    move-result-object v2
+    invoke-direct {v0, v1, v2}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+    iget-object v1, p0, L{{packageName}}/LeapWebViewClient;->activity:Landroid/app/Activity;
+    invoke-virtual {v1, v0}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_54
+    .catch Ljava/lang/Exception; {:try_start_45 .. :try_end_54} :catch_55
+
+    return v5
+
+    :catch_55
+    move-exception v0
+
+    :cond_55
+    const/4 v0, 0x0
+    return v0
+
+    :cond_57
+    :try_start_57
+    new-instance v0, Landroid/content/Intent;
+    const-string v1, "android.intent.action.VIEW"
+    invoke-static {p2}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+    move-result-object v2
+    invoke-direct {v0, v1, v2}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+    iget-object v1, p0, L{{packageName}}/LeapWebViewClient;->activity:Landroid/app/Activity;
+    invoke-virtual {v1, v0}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_66
+    .catch Ljava/lang/Exception; {:try_start_57 .. :try_end_66} :catch_68
+
+    return v5
+
+    :catch_68
+    move-exception v0
+    return v5
+.end method
+
+.method public shouldOverrideUrlLoading(Landroid/webkit/WebView;Landroid/webkit/WebResourceRequest;)Z
+    .registers 4
+
+    invoke-interface {p2}, Landroid/webkit/WebResourceRequest;->getUrl()Landroid/net/Uri;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Landroid/net/Uri;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {p0, p1, v0}, L{{packageName}}/LeapWebViewClient;->shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
+
+    move-result v0
+
+    return v0
+.end method

@@ -310,6 +310,13 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
                 setProjectFiles(prev => ({ ...prev, ...files }));
                 addLog(`📁 Files updated: ${Object.keys(files).join(', ')}`, "info");
             }),
+            window.electronAPI.onPythonDownloadProgress?.((data) => {
+                if (data.status === 'checking') addLog(`🔍 ${data.message}`, "info");
+                else if (data.status === 'downloading') addLog(`⬇ ${data.message}`, "info");
+                else if (data.status === 'ready') addLog(`✓ ${data.message}`, "success");
+                else if (data.status === 'error') addLog(`✗ ${data.message}`, "error");
+                else addLog(`[Python] ${data.message}`, "log");
+            }),
         ];
         return () => cleanups.forEach(fn => fn?.());
     }, [addLog, isPythonBannerText, isRunning, handleStop, setProjectFiles]);
@@ -398,7 +405,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
             <div style={{
                 display: "flex", flexDirection: "column",
                 height: "100vh", width: "100vw",
-                background: C.BG, color: C.TEXT, overflow: "hidden",
+                background: C.BG, color: C.TEXT, overflow: "clip",
                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
             }}>
                 <TopBar />

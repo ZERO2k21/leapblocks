@@ -48,27 +48,30 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             {isOpen && (
                 <div style={{
                     position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-                    background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
-                    borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.16)',
-                    border: '1px solid rgba(255,255,255,0.6)', minWidth: 160,
-                    overflow: 'hidden', zIndex: 1000, padding: '4px 0',
+                    background: '#1e1e2e', border: '1px solid rgba(124,58,237,0.3)',
+                    borderRadius: 10, boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+                    minWidth: 220,
+                    overflow: 'hidden', zIndex: 1000, padding: '6px 0',
                 }}>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 12px' }} />
+                            <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 12px' }} />
                         ) : (
                             <button key={idx} onClick={() => { item.onClick?.(); onClose(); }} disabled={item.disabled}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                    padding: '7px 14px', border: 'none', background: 'transparent',
-                                    fontSize: 12, fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                                    padding: '8px 14px', border: 'none', background: 'transparent',
+                                    fontSize: 13, fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                                     fontWeight: 500, textAlign: 'left', cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151', transition: 'all 0.12s ease',
-                                }}>
-                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.8 }} />}
+                                    color: item.disabled ? '#666' : '#e0e0e0', transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = item.disabled ? '#666' : '#e0e0e0'; }}
+                            >
+                                {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                                 <span style={{ flex: 1 }}>{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{ fontSize: 10, color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: 4 }}>{item.shortcut}</span>
+                                    <span style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>{item.shortcut}</span>
                                 )}
                             </button>
                         )
@@ -99,7 +102,7 @@ export default function TopBar() {
         <header style={{
             position: "sticky", top: 0, height: 60, background: "linear-gradient(135deg, #0a015a 0%, #080a25 100%)",
             display: "flex", alignItems: "center", padding: "0 16px",
-            justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, overflow: "hidden", flexWrap: "nowrap",
+            justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, flexWrap: "nowrap",
             boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>

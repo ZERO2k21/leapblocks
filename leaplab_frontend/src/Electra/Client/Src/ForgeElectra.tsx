@@ -3,14 +3,13 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, lazy, Suspense, useEffect, useRef, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Node, Edge } from 'reactflow';
-import { SerialMonitor } from './components/Editor/SerialMonitor';
-import { Code, Terminal, Wifi, Library as LibraryIcon } from 'lucide-react';
+import { Code, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
 import '../utlis/elements/leap-elements';
-import './ForgeElectra.css';
 import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
+import { getElectraVars, getLightThemeVars } from './utlis/electraTheme';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -20,7 +19,6 @@ import { PartPicker as ComponentSidebar } from './components/Library/PartPicker'
 import { IgniteTopbar } from './components/Layout/Topbar';
 
 import Loader from '../../../components/Loader';
-import { compileCode } from './services/CompilerService';
 import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +27,12 @@ import { pack, unpack, isPacked } from '../utlis/compress';
 import { fileService } from './services/FileService';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 import { showToast } from '../../../leapignite/client/components/Toast';
+
+// Hooks and Extracted Components
+import { useElectraCompiler } from './hooks/useElectraCompiler';
+import { TerminalPanel } from './components/Editor/TerminalPanel';
+import { WebOpenModal } from './components/WebOpenModal';
+import { BoardConfirmModal } from './components/BoardConfirmModal';
 
 interface ForgeElectraProps {
   onBack: () => void;
@@ -390,7 +394,15 @@ export default function ForgeElectra({
     }
   }, [wifiLog, board, isSimulating]);
 
-  const [isCompiling, setIsCompiling] = useState(false);
+  const { isCompiling, handleToggleSimulation } = useElectraCompiler({
+    board,
+    code,
+    isSimulating,
+    startSimulation,
+    stopSimulation,
+    clearSerial,
+    setWifiStatus,
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   // File Operations
@@ -766,84 +778,7 @@ export default function ForgeElectra({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history, nodes, edges, code, projectPath]);
 
-  const handleToggleSimulation = async () => {
-    if (isSimulating) {
-      stopSimulation();
-      setWifiStatus('');
-      return;
-    }
 
-    const FQBN: Record<string, string> = {
-      'arduino-uno': 'arduino:avr:uno',
-      'esp32-c3': 'esp32:esp32:esp32c3',
-    };
-
-    setIsCompiling(true);
-    clearSerial();
-
-    try {
-      if (board === 'esp32-c3') {
-        // ── ESP32-C3 Simulation via Transpilation ──────────────────────────────
-        // ESP32 firmware uses FreeRTOS for multitasking. We simulate FreeRTOS
-        // via a cooperative scheduler (FreeRTOS.ts) that runs tasks in the
-        // browser's event loop. Arduino C++ is transpiled to JavaScript and
-        // run through ArduinoRuntime with FreeRTOS API stubs.
-        try {
-          const { transpileCode } = await import('./services/CompilerService');
-          const transpileResult = await transpileCode(code, 'esp32:esp32:esp32c3');
-
-          if (transpileResult.success && transpileResult.jsCode) {
-            const runner = await getSimulationRunner();
-            runner.setBoard(board);
-            runner.setTranspiledJS(transpileResult.jsCode);
-            startSimulation('__esp32_c3_transpiled__', code);
-          } else if (transpileResult.error) {
-            const { appendSerial } = useForgeStore.getState();
-            appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
-            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            appendSerial(transpileResult.error + '\n');
-            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            appendSerial('\nPlease fix the errors and try again.\n');
-          }
-        } catch (transpileErr: any) {
-          const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ ESP32-C3 TRANSPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial((transpileErr.message || String(transpileErr)) + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease check your code and try again.\n');
-        }
-      } else {
-        const result = await compileCode({
-          code,
-          board: FQBN[board] ?? 'arduino:avr:uno',
-          libraries: useForgeStore.getState().importedLibraries
-        });
-        if (result.success && result.hexContent) {
-          startSimulation(result.hexContent, code);
-        } else if (result.error) {
-          // Display compilation errors in Serial Monitor
-          const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ COMPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial(result.error + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease fix the errors and try again.\n');
-        }
-      }
-    } catch (err: any) {
-      console.error(err);
-      // Display unexpected errors in Serial Monitor
-      const { appendSerial } = useForgeStore.getState();
-      appendSerial('❌ UNEXPECTED ERROR:\n');
-      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      appendSerial(err.message || String(err) + '\n');
-      appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      appendSerial('\nPlease check your code and try again.\n');
-    } finally {
-      setIsCompiling(false);
-    }
-  };
 
   const [showBoardConfirm, setShowBoardConfirm] = useState(false);
   const [pendingBoard, setPendingBoard] = useState<string | null>(null);
@@ -896,8 +831,57 @@ export default function ForgeElectra({
 
 
 
+  const electraVars = useMemo(() => getElectraVars(board, uiTheme), [board, uiTheme]);
+
   return (
-    <div className={`forge-root board-${board} theme-${uiTheme}`}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{
+      ...electraVars as React.CSSProperties,
+      background: 'var(--lp-bg)',
+      backgroundImage: 'var(--lp-bg-gradient)',
+      color: 'var(--lp-text-color)',
+      fontFamily: "'Outfit', sans-serif",
+      transition: 'background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease',
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
+        @keyframes tabGlowEntrance { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalScale { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes badgePulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+        @keyframes analysisFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes overlay-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modal-slide-up { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .react-flow__node { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+        .react-flow__node.selected .leap-node-wrapper, .react-flow__node:focus .leap-node-wrapper, .react-flow__node:focus-visible .leap-node-wrapper { outline: none !important; box-shadow: none !important; border: none !important; }
+        .react-flow__edge-interaction { stroke-width: 4px !important; }
+        .leap-node-wrapper { background: transparent; outline: none; box-shadow: none; transition: none; }
+        .leap-node-wrapper:hover { background: transparent; outline: none; box-shadow: none; transform: none; filter: none; }
+        .leap-node-svg-container { transition: filter 0.18s ease; filter: none; }
+        .leap-node-svg-container:hover { filter: drop-shadow(0 0 1.5px rgba(34, 211, 238, 0.5)); }
+        .leap-node-wrapper.is-selected .leap-node-svg-container { filter: drop-shadow(0 0 1px rgba(34, 211, 238, 0.9)) drop-shadow(0 0 3px rgba(34, 211, 238, 0.4)); }
+        .monaco-editor, .monaco-editor .margin, .monaco-editor-background { background-color: transparent !important; }
+        .board-arduino-uno .component-sidebar { background: rgba(10, 15, 20, 0.75) !important; border-right: 1px solid rgba(255, 255, 255, 0.08) !important; font-family: 'Outfit', sans-serif !important; }
+        .board-arduino-uno .component-sidebar div, .board-arduino-uno .component-sidebar span { color: #e2e8f0 !important; }
+        .board-arduino-uno .component-sidebar button { color: #94a3b8 !important; }
+        .board-arduino-uno .component-sidebar input { color: #f8fafc !important; }
+        .board-arduino-uno .component-sidebar .component-card { background: rgba(30, 41, 59, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.06) !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; transition: all 0.2s ease !important; }
+        .board-arduino-uno .component-sidebar .component-card:hover { border-color: #00f2fe !important; background: rgba(30, 41, 59, 0.6) !important; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15) !important; transform: translateY(-1px) !important; }
+        .theme-light .component-sidebar { background: #f8fafc !important; border-right: 1px solid var(--lp-border) !important; }
+        .theme-light .component-sidebar div, .theme-light .component-sidebar span { color: #334155 !important; }
+        .theme-light .component-sidebar button { color: #64748b !important; }
+        .theme-light .component-sidebar input { color: #0f172a !important; background: #ffffff !important; border: 1px solid #e2e8f0 !important; }
+        .theme-light .component-sidebar .component-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02) !important; }
+        .theme-light .component-sidebar .component-card:hover { border-color: var(--lp-accent-primary) !important; background: #ffffff !important; transform: translateY(-2px) !important; box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04) !important; }
+        .circuit-analysis-panel::-webkit-scrollbar { width: 8px; }
+        .circuit-analysis-panel::-webkit-scrollbar-track { background: #0f172a; }
+        .circuit-analysis-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .circuit-analysis-panel::-webkit-scrollbar-thumb:hover { background: #475569; }
+        @media (max-width: 1024px) { .forge-main-split { position: relative; } }
+        @media (max-width: 768px) { .canvas-action-panel { top: auto !important; bottom: 16px !important; right: 50% !important; transform: translateX(50%) !important; border-radius: 20px !important; box-shadow: var(--lp-shadow-lg) !important; } }
+        @media (max-width: 1024px) { .forge-main-split { padding: 8px; gap: 8px; } }
+      `}</style>
       <input
         type="file"
         ref={fileInputRef}
@@ -926,10 +910,11 @@ export default function ForgeElectra({
         isSaving={isSaving}
       />
 
-      <main className="forge-main-split">
+      <main className={`forge-main-split flex-1 flex gap-2 p-2 bg-transparent min-h-0 min-w-0 ${uiTheme === 'light' ? 'max-lg:relative' : ''}`} style={uiTheme === 'light' ? { ...getLightThemeVars(board) as React.CSSProperties, color: '#0f172a' } : {}}>
         {/* Far Left: Component Drawer */}
         {showPartPicker && (
-          <div className="part-picker-pane">
+          <div className="part-picker-pane h-full border overflow-hidden flex flex-col relative backdrop-blur-[16px] max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[320px] max-lg:z-70 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2" style={{ width: 'var(--sidebar-width)', background: 'var(--lp-dark-surface)', borderRadius: 'var(--lp-radius)', borderColor: 'var(--lp-border)', boxShadow: 'var(--lp-shadow)' }}>
+            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3 }} />
             <ComponentSidebar
               onSelect={(type) => {
                 const state = useForgeStore.getState();
@@ -954,7 +939,8 @@ export default function ForgeElectra({
         )}
 
         {/* Middle: Simulation Canvas (takes flex: 1) */}
-        <div className="canvas-pane">
+        <div className="canvas-pane flex-[1.2] max-lg:flex-[1_1_100%] max-lg:w-full max-lg:h-full max-lg:z-10 overflow-hidden flex flex-col relative backdrop-blur-[16px]" style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-border)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow)' }}>
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3, transition: 'background 0.4s ease' }} />
           <div style={{ flex: 1, position: 'relative', height: '100%' }}>
             <Suspense fallback={<Loader />}>
               <ForgeCanvas
@@ -972,9 +958,9 @@ export default function ForgeElectra({
 
             {/* Floating WiFi Status */}
             {board === 'esp32-c3' && isSimulating && wifiStatus && (
-              <div style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 10 }}>
-                <div className="wifi-status-pill">
-                  <div className="wifi-dot" />
+              <div className="absolute bottom-5 right-5 z-10">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.5px] backdrop-blur-[8px]" style={{ background: 'var(--lp-glass)', color: 'var(--lp-accent-bright)', border: '1px solid var(--lp-accent-primary)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow-lg)' }}>
+                  <div className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ background: 'var(--lp-accent-primary)', boxShadow: '0 0 8px var(--lp-accent-primary)' }} />
                   {wifiStatus}
                 </div>
               </div>
@@ -984,7 +970,8 @@ export default function ForgeElectra({
 
         {/* Middle/Right: Interactive Programming Pane */}
         {showEditor && (
-          <div className="editor-pane">
+          <div className="editor-pane flex-[0.8] min-w-[400px] max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[420px] max-lg:z-60 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2 overflow-hidden flex flex-col relative backdrop-blur-[16px]" style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-border)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow)' }}>
+            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3, transition: 'background 0.4s ease' }} />
             {/* Top: Sketch Editor */}
             <div style={{
               flex: activeTab === 'libraries' ? 1 : 1.5,
@@ -993,29 +980,148 @@ export default function ForgeElectra({
               borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
               minHeight: 0
             }}>
-              <div className="forge-tabs-container" style={{ height: 36 }}>
-                {/* Board badge - non-interactive */}
-                <div className="board-badge">
-                  <div className="board-badge-dot" />
+              <div
+                className="flex items-center relative z-10"
+                style={{
+                  height: '38px',
+                  padding: '0 16px',
+                  gap: '2px',
+                  background: uiTheme === 'light'
+                    ? 'rgba(255, 255, 255, 0.6)'
+                    : 'rgba(10, 12, 16, 0.4)',
+                  borderBottom: `1px solid ${uiTheme === 'light' ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.05)'}`,
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                {/* Board badge */}
+                <div
+                  className="flex items-center shrink-0"
+                  style={{
+                    gap: '7px',
+                    padding: '4px 12px 4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: uiTheme === 'light'
+                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.08)`
+                      : 'var(--lp-badge-bg, rgba(255, 255, 255, 0.03))',
+                    border: `1px solid ${uiTheme === 'light'
+                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.15)`
+                      : 'var(--lp-badge-border, rgba(255, 255, 255, 0.08))'}`,
+                    color: 'var(--lp-badge-color, var(--lp-accent-primary))',
+                    boxShadow: uiTheme === 'light'
+                      ? 'none'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.12)',
+                  }}
+                >
+                  <div
+                    className="relative"
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: 'var(--lp-badge-color, var(--lp-accent-primary))',
+                      boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-badge-color, var(--lp-accent-primary))` : 'none',
+                    }}
+                  />
                   {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
                 </div>
 
-                <div style={{ width: 1, height: 20, background: 'rgba(255, 255, 255, 0.08)', margin: '0 12px' }} />
+                {/* Divider */}
+                <div
+                  style={{
+                    width: '1px',
+                    height: '18px',
+                    margin: '0 10px',
+                    background: uiTheme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)',
+                  }}
+                />
 
+                {/* SKETCH tab */}
                 <button
-                  className={`forge-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
-                  style={{ height: 32, fontSize: 11 }}
+                  className="relative flex items-center cursor-pointer border-none"
+                  style={{
+                    gap: '6px',
+                    padding: '0 12px',
+                    height: '38px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: 'transparent',
+                    color: activeTab === 'code'
+                      ? 'var(--lp-accent-bright)'
+                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
+                    transition: 'color 0.2s ease',
+                  }}
                   onClick={() => setActiveTab('code')}
+                  onMouseEnter={e => {
+                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
+                  }}
+                  onMouseLeave={e => {
+                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
+                  }}
                 >
-                  <Code size={14} /> SKETCH
+                  <Code size={13} strokeWidth={2.5} />
+                  Sketch
+                  {/* Active indicator */}
+                  {activeTab === 'code' && (
+                    <div
+                      className="absolute bottom-0 left-3 right-3"
+                      style={{
+                        height: '2px',
+                        borderRadius: '2px 2px 0 0',
+                        background: 'var(--lp-accent-primary)',
+                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
+                      }}
+                    />
+                  )}
                 </button>
 
+                {/* LIBRARIES tab */}
                 <button
-                  className={`forge-tab-btn ${activeTab === 'libraries' ? 'active' : ''}`}
-                  style={{ height: 32, fontSize: 11 }}
+                  className="relative flex items-center cursor-pointer border-none"
+                  style={{
+                    gap: '6px',
+                    padding: '0 12px',
+                    height: '38px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    background: 'transparent',
+                    color: activeTab === 'libraries'
+                      ? 'var(--lp-accent-bright)'
+                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
+                    transition: 'color 0.2s ease',
+                  }}
                   onClick={() => setActiveTab('libraries')}
+                  onMouseEnter={e => {
+                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
+                  }}
+                  onMouseLeave={e => {
+                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
+                  }}
                 >
-                  <LibraryIcon size={14} /> LIBRARIES
+                  <LibraryIcon size={13} strokeWidth={2.5} />
+                  Libraries
+                  {activeTab === 'libraries' && (
+                    <div
+                      className="absolute bottom-0 left-3 right-3"
+                      style={{
+                        height: '2px',
+                        borderRadius: '2px 2px 0 0',
+                        background: 'var(--lp-accent-primary)',
+                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
+                      }}
+                    />
+                  )}
                 </button>
               </div>
 
@@ -1030,161 +1136,52 @@ export default function ForgeElectra({
               </div>
             </div>
 
-            {/* Bottom: Terminal (Serial / WiFi) - Hidden when Libraries tab is active */}
-            {activeTab !== 'libraries' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--lp-dark-bg)', minHeight: 0 }}>
-                <div className="forge-tabs-container" style={{ height: 32, background: 'rgba(10, 11, 14, 0.15)', borderTop: '1px solid var(--lp-border)' }}>
-                  <button
-                    className={`forge-tab-btn ${activeTab === 'serial' || activeTab === 'code' ? 'active' : ''}`}
-                    style={{ height: 24, fontSize: 10 }}
-                    onClick={() => setActiveTab('serial')}
-                  >
-                    <Terminal size={14} /> SERIAL OUTPUT
-                    {serialOutput.length > 0 && <span className="status-dot" style={{ marginLeft: 6 }} />}
-                  </button>
-
-                  {board === 'esp32-c3' && (
-                    <button
-                      className={`forge-tab-btn wifi ${activeTab === 'wifi' ? 'active' : ''}`}
-                      style={{ height: 24, fontSize: 10 }}
-                      onClick={() => setActiveTab('wifi')}
-                    >
-                      <Wifi size={14} /> WiFi LOG
-                      {wifiLog.length > 0 && <span className="status-dot" style={{ background: '#10b981', boxShadow: '0 0 8px #10b981', marginLeft: 6 }} />}
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                  {activeTab === 'wifi' ? (
-                    <div style={{ fontFamily: 'var(--code-font, "JetBrains Mono", monospace)', fontSize: 12, padding: 15, overflowY: 'auto', height: '100%', background: 'var(--lp-dark-bg)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <span style={{ color: 'var(--lp-zinc-400)', fontSize: 9, fontWeight: 700, letterSpacing: '0.5px' }}>NETWORK LOG</span>
-                        <button onClick={() => clearWiFiLog()} className="wifi-clear-btn">CLEAR</button>
-                      </div>
-                      {wifiLog.length === 0 ? (
-                        <div style={{ color: 'var(--lp-zinc-600)', textAlign: 'center', marginTop: 20 }}>No network activity.</div>
-                      ) : wifiLog.map((line, i) => (
-                        <div key={i} style={{ color: line.includes('ERROR') ? '#ef4444' : 'var(--lp-zinc-400)', marginBottom: 2 }}>{line}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <SerialMonitor
-                      output={serialOutput}
-                      onClear={() => clearSerial()}
-                      onSend={async (data) => {
-                        const runner = await getSimulationRunner();
-                        if (runner && isSimulating) runner.sendSerialInput(data);
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+            <TerminalPanel
+              board={board}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              serialOutput={serialOutput}
+              clearSerial={clearSerial}
+              wifiLog={wifiLog}
+              clearWiFiLog={clearWiFiLog}
+              isSimulating={isSimulating}
+            />
           </div>
         )}
       </main>
 
-      <footer className="forge-footer">
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <span className="engine-pill">Electra Engine v1.0</span>
+      <footer className="flex items-center px-4 justify-between relative text-[10px] h-[30px]" style={{ background: 'var(--lp-dark-bg)', borderTop: '1px solid var(--lp-border)', color: 'var(--lp-zinc-400)', ...(uiTheme === 'light' ? getLightThemeVars(board) : {}) as React.CSSProperties }}>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, var(--lp-accent-primary), transparent)', opacity: 0.3 }} />
+        <div className="flex items-center gap-5">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--lp-radius-sm)] font-bold text-[9px] uppercase tracking-[1px] border" style={{ background: 'var(--lp-zinc-800)', color: 'var(--lp-accent-primary)', borderColor: 'var(--lp-border-active)' }}>Electra Engine v1.0</span>
           {isSimulating && (
-            <div className="sim-status-live">
-              <div className="status-dot" />
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.5px] px-2 py-0.5 rounded-[var(--lp-radius-sm)]" style={{ color: 'var(--lp-emerald)', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ background: 'var(--lp-emerald)', boxShadow: '0 0 8px var(--lp-emerald)' }} />
               SIMULATION ACTIVE ({board.toUpperCase()})
             </div>
           )}
         </div>
-        <div style={{ fontWeight: 600, letterSpacing: '0.05em' }}>
+        <div className="font-semibold tracking-[0.05em]">
           {new Date().toLocaleTimeString()}
         </div>
       </footer>
 
-      {/* Web Open Project Modal */}
-      {!IS_ELECTRON && showWebOpenModal && (
-        <div className="web-modal-overlay" onClick={() => setShowWebOpenModal(false)}>
-          <div className="web-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="web-modal-header">
-              <h3>Recent Projects</h3>
-              <button onClick={() => setShowWebOpenModal(false)}>×</button>
-            </div>
-            <div className="web-modal-body">
-              {recentProjects.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                  No saved projects found in browser storage.
-                </div>
-              ) : (
-                <div className="project-list">
-                  {recentProjects.map(p => (
-                    <div key={p.id} className="project-item" onClick={() => loadWebProject(p)}>
-                      <div className="project-info">
-                        <div className="project-name">{p.name}</div>
-                        <div className="project-date">Last saved: {new Date(p.updatedAt).toLocaleString()}</div>
-                      </div>
-                      <div className="project-id">{p.id.slice(0, 8)}...</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <WebOpenModal
+        isOpen={!IS_ELECTRON && showWebOpenModal}
+        onClose={() => setShowWebOpenModal(false)}
+        recentProjects={recentProjects}
+        loadWebProject={loadWebProject}
+      />
 
-      {/* Board Switch Confirmation Modal */}
-      {showBoardConfirm && pendingBoard && (
-        <div className="web-modal-overlay" onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>
-          <div className="web-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
-            <div className="web-modal-header">
-              <h3>Switch Board?</h3>
-              <button onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}>×</button>
-            </div>
-            <div className="web-modal-body" style={{ padding: '24px' }}>
-              <p style={{ color: '#a1a1aa', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-                Switching to <strong>{pendingBoard === 'esp32-c3' ? 'ESP32-C3' : 'Arduino Uno'}</strong> will clear the current circuit and code. Make sure to save your work before proceeding.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => { setShowBoardConfirm(false); setPendingBoard(null); }}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: '8px',
-                    border: '1px solid #27272a',
-                    background: 'transparent',
-                    color: '#a1a1aa',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: '"Segoe UI", Inter, sans-serif'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowBoardConfirm(false);
-                    if (pendingBoard) executeBoardSwitch(pendingBoard);
-                    setPendingBoard(null);
-                  }}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                    color: '#09090b',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: '"Segoe UI", Inter, sans-serif'
-                  }}
-                >
-                  Switch Anyway
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <BoardConfirmModal
+        isOpen={showBoardConfirm}
+        onClose={() => {
+          setShowBoardConfirm(false);
+          setPendingBoard(null);
+        }}
+        pendingBoard={pendingBoard}
+        executeBoardSwitch={executeBoardSwitch}
+      />
     </div>
   );
 }

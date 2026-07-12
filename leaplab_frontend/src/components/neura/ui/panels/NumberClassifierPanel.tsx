@@ -20,6 +20,9 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [isProcessing, setIsProcessing] = useState(false)
     const lastPosRef = useRef<{ x: number; y: number } | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
+    const [typedDigit, setTypedDigit] = useState('')
+    const predictTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const isPredictingRef = useRef(false)
 
     // Rebuild KNN from stored samples when entering train or test mode
     useEffect(() => {
@@ -32,7 +35,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     if (cls.samples.length > 0) {
                         for (const sample of cls.samples) {
                             try {
-                                // Create a canvas from the stored image data
                                 const img = new Image()
                                 img.src = sample.data
                                 await new Promise<void>((resolve, reject) => {
@@ -59,45 +61,145 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         }
     }, [mode.mode])
 
+    // Get canvas coordinates from mouse or touch event
+    const getCanvasCoords = useCallback((clientX: number, clientY: number) => {
+        const canvas = canvasRef.current
+        if (!canvas) return null
+        const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        }
+    }, [])
+
+    // Drawing functions - Mouse
     const startDrawing = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current
         if (!canvas) return
         const ctx = canvas.getContext('2d')!
-        const rect = canvas.getBoundingClientRect()
+        const coords = getCanvasCoords(e.clientX, e.clientY)
+        if (!coords) return
         ctx.beginPath()
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
-        lastPosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+        ctx.moveTo(coords.x, coords.y)
+        lastPosRef.current = coords
         setIsDrawing(true)
-    }, [])
+    }, [getCanvasCoords])
 
     const draw = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return
         const canvas = canvasRef.current
         if (!canvas) return
         const ctx = canvas.getContext('2d')!
-        const rect = canvas.getBoundingClientRect()
-        ctx.lineWidth = 4
+        const coords = getCanvasCoords(e.clientX, e.clientY)
+        if (!coords) return
+        ctx.lineWidth = 8
         ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
         ctx.strokeStyle = '#1F2937'
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
         if (lastPosRef.current) {
             ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y)
-            ctx.lineTo(x, y)
+            ctx.lineTo(coords.x, coords.y)
             ctx.stroke()
         }
-        lastPosRef.current = { x, y }
-    }, [isDrawing])
+        lastPosRef.current = coords
+    }, [isDrawing, getCanvasCoords])
+
+    // Drawing functions - Touch
+    const startDrawingTouch = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault()
+        const touch = e.touches[0]
+        const canvas = canvasRef.current
+        if (!canvas || !touch) return
+        const ctx = canvas.getContext('2d')!
+        const coords = getCanvasCoords(touch.clientX, touch.clientY)
+        if (!coords) return
+        ctx.beginPath()
+        ctx.moveTo(coords.x, coords.y)
+        lastPosRef.current = coords
+        setIsDrawing(true)
+    }, [getCanvasCoords])
+
+    const drawTouch = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault()
+        if (!isDrawing) return
+        const touch = e.touches[0]
+        const canvas = canvasRef.current
+        if (!canvas || !touch) return
+        const ctx = canvas.getContext('2d')!
+        const coords = getCanvasCoords(touch.clientX, touch.clientY)
+        if (!coords) return
+        ctx.lineWidth = 8
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.strokeStyle = '#1F2937'
+        if (lastPosRef.current) {
+            ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y)
+            ctx.lineTo(coords.x, coords.y)
+            ctx.stroke()
+        }
+        lastPosRef.current = coords
+    }, [isDrawing, getCanvasCoords])
 
     const stopDrawing = useCallback(() => {
         setIsDrawing(false)
         lastPosRef.current = null
     }, [])
 
+    // Auto-predict after drawing stops (test mode only)
+    const scheduleAutoPredict = useCallback(() => {
+        if (mode.mode !== 'test' || modelLoading) return
+        if (predictTimeoutRef.current) clearTimeout(predictTimeoutRef.current)
+        predictTimeoutRef.current = setTimeout(async () => {
+            if (isPredictingRef.current || !canvasRef.current) return
+            // Check if canvas has content
+            const canvas = canvasRef.current
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const hasContent = imageData.data.some((v, i) => i % 4 === 3 && v > 0)
+            if (!hasContent) return
+
+            isPredictingRef.current = true
+            setIsProcessing(true)
+            try {
+                const result = await classifierRef.current.predict(canvas, 3)
+                if (result) setPrediction(result)
+            } catch {
+                // ignore
+            }
+            setIsProcessing(false)
+            isPredictingRef.current = false
+        }, 300)
+    }, [mode.mode, modelLoading])
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (predictTimeoutRef.current) clearTimeout(predictTimeoutRef.current)
+        }
+    }, [])
+
+    const handleStopDrawing = useCallback(() => {
+        stopDrawing()
+        if (mode.mode === 'test') {
+            scheduleAutoPredict()
+        }
+    }, [stopDrawing, mode.mode, scheduleAutoPredict])
+
+    const clearCanvas = useCallback(() => {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        setPrediction(null)
+    }, [])
+
     const handleCapture = () => {
         if (!canvasRef.current || !mode.selectedClassId) return
 
-        // Check sample limit
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             return
@@ -108,16 +210,42 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             const imageData = canvas.toDataURL('image/png')
             mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
 
-            // Add to classifier in background (non-blocking)
             classifierRef.current.addSample(canvas, mode.getSelectedClass()?.name || '').catch(() => {})
 
-            // Clear the drawing canvas
-            const ctx = canvas.getContext('2d')!
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            clearCanvas()
         } catch (err) {
             console.warn('[Neura] Number capture failed:', err)
         }
     }
+
+    // Render a typed digit onto the canvas for testing
+    const renderDigitOnCanvas = useCallback((digit: string) => {
+        const canvas = canvasRef.current
+        if (!canvas || !digit) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = '#1F2937'
+        ctx.font = 'bold 200px "Plus Jakarta Sans", system-ui, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(digit, canvas.width / 2, canvas.height / 2)
+    }, [])
+
+    const handleTypedDigitTest = useCallback(async (digit: string) => {
+        if (!digit || modelLoading) return
+        renderDigitOnCanvas(digit)
+        isPredictingRef.current = true
+        setIsProcessing(true)
+        try {
+            const result = await classifierRef.current.predict(canvasRef.current!, 3)
+            if (result) setPrediction(result)
+        } catch {
+            // ignore
+        }
+        setIsProcessing(false)
+        isPredictingRef.current = false
+    }, [modelLoading, renderDigitOnCanvas])
 
     const handleTrain = async () => {
         setIsTraining(true)
@@ -128,11 +256,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             return
         }
         try {
-            // Step 1: KNN was already rebuilt by useEffect when entering train mode.
-            // Add a small delay so the UI shows the training animation.
             await new Promise(r => setTimeout(r, 1500))
 
-            // Step 2: Verify the KNN has data before computing accuracy
             const sampleCounts = classifierRef.current.getSampleCounts()
             const trainedClasses = Object.keys(sampleCounts)
             if (trainedClasses.length < 2) {
@@ -141,13 +266,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 return
             }
 
-            // Step 3: Compute accuracy by predicting each sample against the KNN
             let correct = 0
             let total = 0
             for (const cls of project.classes) {
                 for (const sample of cls.samples) {
                     try {
-                        // Create a canvas from the stored image data
                         const img = new Image()
                         img.src = sample.data
                         await new Promise<void>((resolve, reject) => {
@@ -171,7 +294,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             const accuracy = total > 0 ? correct / total : 0
             mode.setAccuracy(accuracy)
 
-            // Auto-switch to test mode after training completes
             setTimeout(() => {
                 mode.setMode('test')
             }, 2000)
@@ -186,13 +308,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
-    const canvasContainerStyle = {
-        background: 'rgba(15,15,35,0.85)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2), 0 0 40px rgba(236,72,153,0.1)'
-    }
-
     return (
         <div className="flex flex-col h-full">
             {mode.mode === 'collect' && (
@@ -203,13 +318,15 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             ref={canvasRef}
                             width={360}
                             height={360}
-                            className="w-full h-full cursor-crosshair rounded-3xl"
+                            className="w-full h-full cursor-crosshair rounded-3xl touch-none"
                             onMouseDown={startDrawing}
                             onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
+                            onMouseUp={handleStopDrawing}
+                            onMouseLeave={handleStopDrawing}
+                            onTouchStart={startDrawingTouch}
+                            onTouchMove={drawTouch}
+                            onTouchEnd={handleStopDrawing}
                         />
-                        {/* Drawing hint */}
                         {!isDrawing && (
                             <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl pointer-events-none">
                                 <span className="text-white text-xs font-bold">Draw a number</span>
@@ -230,14 +347,26 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         )}
                     </div>
 
-                    <CaptureButton
-                        onClick={handleCapture}
-                        disabled={!canAddSamples}
-                        label={atSampleLimit ? 'Max Samples Reached' : 'Save Drawing'}
-                        icon="check"
-                        color={selectedClass?.color || '#7C3AED'}
-                        pulse={!!canAddSamples}
-                    />
+                    {/* Controls */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={clearCanvas}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-200"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                            Clear
+                        </button>
+                        <CaptureButton
+                            onClick={handleCapture}
+                            disabled={!canAddSamples}
+                            label={atSampleLimit ? 'Max Samples Reached' : 'Save Drawing'}
+                            icon="check"
+                            color={selectedClass?.color || '#7C3AED'}
+                            pulse={!!canAddSamples}
+                        />
+                    </div>
 
                     {selectedClass && selectedClass.samples.length > 0 && (
                         <div className="w-full max-w-[360px]">
@@ -287,16 +416,21 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <span className="text-sm font-semibold text-violet-700">Loading model and preparing samples...</span>
                         </div>
                     )}
+
+                    {/* Drawing canvas */}
                     <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white border-2 border-gray-100 w-full max-w-[360px]" style={{ aspectRatio: '1' }}>
                         <canvas
                             ref={canvasRef}
                             width={360}
                             height={360}
-                            className="w-full h-full cursor-crosshair rounded-3xl"
+                            className="w-full h-full cursor-crosshair rounded-3xl touch-none"
                             onMouseDown={startDrawing}
                             onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
+                            onMouseUp={handleStopDrawing}
+                            onMouseLeave={handleStopDrawing}
+                            onTouchStart={startDrawingTouch}
+                            onTouchMove={drawTouch}
+                            onTouchEnd={handleStopDrawing}
                         />
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md rounded-xl pointer-events-none">
                             <span className="text-white text-xs font-bold tracking-wide">TEST MODE</span>
@@ -310,24 +444,78 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             </div>
                         )}
                     </div>
-                    <CaptureButton
-                        onClick={async () => {
-                            if (!canvasRef.current || modelLoading) return
-                            setIsProcessing(true)
-                            try {
-                                const result = await classifierRef.current.predict(canvasRef.current, 3)
-                                if (result) setPrediction(result)
-                            } catch {
-                                // ignore
-                            }
-                            setIsProcessing(false)
-                        }}
-                        disabled={modelLoading}
-                        label="Test Drawing"
-                        icon="check"
-                        color="#7C3AED"
-                        pulse={!modelLoading}
-                    />
+
+                    {/* Controls row */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={clearCanvas}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-200"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                            Clear
+                        </button>
+                        <CaptureButton
+                            onClick={async () => {
+                                if (!canvasRef.current || modelLoading) return
+                                isPredictingRef.current = true
+                                setIsProcessing(true)
+                                try {
+                                    const result = await classifierRef.current.predict(canvasRef.current, 3)
+                                    if (result) setPrediction(result)
+                                } catch {
+                                    // ignore
+                                }
+                                setIsProcessing(false)
+                                isPredictingRef.current = false
+                            }}
+                            disabled={modelLoading}
+                            label="Test Drawing"
+                            icon="check"
+                            color="#7C3AED"
+                            pulse={!modelLoading}
+                        />
+                    </div>
+
+                    {/* Text input for testing */}
+                    <div className="w-full max-w-[360px] bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">Or type a digit</p>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="number"
+                                min="0"
+                                max="9"
+                                value={typedDigit}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(-1)
+                                    setTypedDigit(val)
+                                    if (val) renderDigitOnCanvas(val)
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && typedDigit) {
+                                        handleTypedDigitTest(typedDigit)
+                                    }
+                                }}
+                                placeholder="0-9"
+                                className="flex-1 px-4 py-3 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-violet-400 bg-gray-50 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <button
+                                onClick={() => {
+                                    if (typedDigit) handleTypedDigitTest(typedDigit)
+                                }}
+                                disabled={!typedDigit || modelLoading}
+                                className={`px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                                    typedDigit && !modelLoading
+                                        ? 'bg-gradient-to-r from-violet-500 to-blue-500 text-white hover:shadow-lg hover:shadow-violet-200'
+                                        : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                }`}
+                            >
+                                Test
+                            </button>
+                        </div>
+                    </div>
+
                     <TestPanel prediction={prediction} isProcessing={isProcessing}>
                         <div />
                     </TestPanel>

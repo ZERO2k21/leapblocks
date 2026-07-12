@@ -118,8 +118,9 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     const executionGlobals = useRef({});
     const cellRefs = useRef({});
 
-    // ── Initialize Skulpt Engine ─────────────────────────────────────────────
+    // ── Initialize Skulpt Engine (web mode only) ─────────────────────────────────
     useEffect(() => {
+        if (window.electronAPI?.isElectron) return; // Electron uses native Python
         skulptRef.current = new SkulptEngine({
             onOut: (text) => {
                 // Output will be captured per-cell during execution
@@ -177,21 +178,23 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
         let outputLines = [];
         let errorOccurred = false;
 
-        // Create a temporary engine with cell-specific output capture
-        const cellEngine = new SkulptEngine({
-            onOut: (text) => {
-                outputLines.push({ type: "stdout", text: text.replace(/\n$/, "") });
-            },
-            onErr: (text) => {
-                outputLines.push({ type: "stderr", text });
-                errorOccurred = true;
-            },
-            actions: skulptRef.current?.callbacks?.actions || {},
-        });
-
-        try {
-            await cellEngine.runPython(cell.code);
-
+        // In Electron mode, use native Python; otherwise use Skulpt
+        if (window.electronAPI?.isElectron) {
+            if (window.electronAPI.pythonCheck) {
+                const check = await window.electronAPI.pythonCheck();
+                if (!check.available) {
+                    outputLines.push({ type: "stderr", text: `Python not available: ${check.error}` });
+                    errorOccurred = true;
+                }
+            }
+            if (!errorOccurred) {
+                try {
+                    await window.electronAPI.pythonRun(cell.code, {});
+                } catch (e) {
+                    outputLines.push({ type: "stderr", text: e.message });
+                    errorOccurred = true;
+                }
+            }
             setCells(prev => prev.map(c =>
                 c.id === cellId ? {
                     ...c,
@@ -200,19 +203,43 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     executionCount: newExecCount,
                 } : c
             ));
-        } catch (e) {
-            const errorMsg = typeof e === 'string' ? e : e?.message || "Unknown error";
-            setCells(prev => prev.map(c =>
-                c.id === cellId ? {
-                    ...c,
-                    isRunning: false,
-                    output: [...outputLines, { type: "error", text: errorMsg }],
-                    executionCount: newExecCount,
-                } : c
-            ));
-        } finally {
-            setKernelStatus("idle");
+        } else {
+            // Create a temporary engine with cell-specific output capture
+            const cellEngine = new SkulptEngine({
+                onOut: (text) => {
+                    outputLines.push({ type: "stdout", text: text.replace(/\n$/, "") });
+                },
+                onErr: (text) => {
+                    outputLines.push({ type: "stderr", text });
+                    errorOccurred = true;
+                },
+                actions: skulptRef.current?.callbacks?.actions || {},
+            });
+
+            try {
+                await cellEngine.runPython(cell.code);
+
+                setCells(prev => prev.map(c =>
+                    c.id === cellId ? {
+                        ...c,
+                        isRunning: false,
+                        output: outputLines.length > 0 ? outputLines : [{ type: "stdout", text: "" }],
+                        executionCount: newExecCount,
+                    } : c
+                ));
+            } catch (e) {
+                const errorMsg = typeof e === 'string' ? e : e?.message || "Unknown error";
+                setCells(prev => prev.map(c =>
+                    c.id === cellId ? {
+                        ...c,
+                        isRunning: false,
+                        output: [...outputLines, { type: "error", text: errorMsg }],
+                        executionCount: newExecCount,
+                    } : c
+                ));
+            }
         }
+        setKernelStatus("idle");
     }, [cells, executionCount]);
 
     // ── Execute All Cells ────────────────────────────────────────────────────

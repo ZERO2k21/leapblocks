@@ -3,7 +3,6 @@
 // Shows name and value, draggable
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import React, { useState, useRef, useEffect } from 'react';
-import './VariableWatcher.css';
 
 const VariableWatcher = ({ variable, onPositionChange, onClose }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -94,19 +93,20 @@ const VariableWatcher = ({ variable, onPositionChange, onClose }) => {
   return (
     <div
       ref={watcherRef}
-      className={`variable-watcher ${isDragging ? 'dragging' : ''} ${animate ? 'pulse' : ''}`}
+      className={`group absolute bg-gradient-to-br from-[#FFD93D] to-[#FFBF00] border-[3px] border-[#e6a800] rounded-xl p-0 min-w-[120px] shadow-[0_4px_8px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.1)] cursor-move select-none z-[1000] overflow-hidden transition-shadow duration-200 before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none before:rounded-xl ${isDragging ? 'z-[9999] shadow-[0_12px_24px_rgba(0,0,0,0.3),0_8px_16px_rgba(0,0,0,0.2)] opacity-95' : 'hover:shadow-[0_6px_12px_rgba(0,0,0,0.25),0_4px_8px_rgba(0,0,0,0.15)]'} ${animate ? 'animate-pulse-watcher' : ''}`}
       style={{
         left: `${variable.x}px`,
         top: `${variable.y}px`,
+        fontFamily: "'Roboto', 'Arial', sans-serif",
       }}
       onMouseDown={handleMouseDown}
       title="Drag to reposition"
     >
-      <div className="watcher-close" onClick={(e) => { e.stopPropagation(); onClose && onClose(); }}>×</div>
-      <div className="watcher-header">
-        <span className="watcher-name">{variable.name}</span>
+      <div className="absolute top-1 right-1.5 w-5 h-5 bg-black/20 rounded-full flex items-center justify-center text-[16px] leading-none text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-500/50" onClick={(e) => { e.stopPropagation(); onClose && onClose(); }}>×</div>
+      <div className="bg-black/15 px-3 py-2 border-b-2 border-black/10 text-[13px] font-bold text-[#333] uppercase tracking-[0.5px]">
+        <span>{variable.name}</span>
       </div>
-      <div className="watcher-value">
+      <div className="px-3 py-3 text-[24px] font-bold text-[#222] text-center font-['Courier_New',monospace]">
         {formatValue(displayValue)}
       </div>
     </div>

@@ -48,7 +48,7 @@ Blockly.Blocks['lexical_variable_set'] = {
 // Initialize Local Variable (in do)
 Blockly.Blocks['local_declaration_statement'] = {
     init: function () {
-        this.appendValueInput("DECL0")
+        this.appendValueInput("DECL")
             .setCheck(null)
             .appendField("initialize local")
             .appendField(new Blockly.FieldTextInput("name"), "VAR0")
@@ -65,12 +65,29 @@ Blockly.Blocks['local_declaration_statement'] = {
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('locals', this.localCount_);
+        for (let i = 0; i < this.localCount_; i++) {
+            const localName = this.getFieldValue('VAR' + i) || 'name';
+            const child = Blockly.utils.xml.createElement('localname');
+            child.setAttribute('name', localName);
+            container.appendChild(child);
+        }
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
+        const localNames = [];
+        for (let i = 0, child; (child = xmlElement.childNodes[i]); i++) {
+            if (child.nodeName && child.nodeName.toLowerCase() === 'localname') {
+                localNames.push(child.getAttribute('name'));
+            }
+        }
+        this.localCount_ = localNames.length || parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+        for (let i = 0; i < localNames.length; i++) {
+            const field = this.getField('VAR' + i);
+            if (field && localNames[i]) {
+                field.setValue(localNames[i]);
+            }
+        }
     },
     decompose: function (workspace) {
         const containerBlock = workspace.newBlock('local_declaration_container');
@@ -94,14 +111,16 @@ Blockly.Blocks['local_declaration_statement'] = {
         this.localCount_ = connections.length;
         this.updateShape_();
         for (let i = 0; i < this.localCount_; i++) {
-            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            if (connections[i]) connections[i].reconnect(this, inputName);
         }
     },
     saveConnections: function (containerBlock) {
         let itemBlock = containerBlock.nextConnection.targetBlock();
         let i = 0;
         while (itemBlock) {
-            const input = this.getInput('DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.getInput(inputName);
             itemBlock.valueConnection_ = input && input.connection.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
@@ -112,13 +131,17 @@ Blockly.Blocks['local_declaration_statement'] = {
         for (let i = 0; this.getInput('DECL' + i); i++) {
             this.removeInput('DECL' + i);
         }
+        if (this.getInput('DECL')) {
+            this.removeInput('DECL');
+        }
         // Remove STACK input
         if (this.getInput('STACK')) {
             this.removeInput('STACK');
         }
         // Add new declaration inputs
         for (let i = 0; i < this.localCount_; i++) {
-            const input = this.appendValueInput('DECL' + i).setCheck(null);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.appendValueInput(inputName).setCheck(null);
             if (i === 0) {
                 input.appendField('initialize local');
             }
@@ -145,7 +168,7 @@ Blockly.Blocks['local_declaration_container'] = {
 // Initialize Local Variable (in return)
 Blockly.Blocks['local_declaration_expression'] = {
     init: function () {
-        this.appendValueInput("DECL0")
+        this.appendValueInput("DECL")
             .setCheck(null)
             .appendField("initialize local")
             .appendField(new Blockly.FieldTextInput("name"), "VAR0")
@@ -161,12 +184,29 @@ Blockly.Blocks['local_declaration_expression'] = {
     },
     mutationToDom: function () {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('locals', this.localCount_);
+        for (let i = 0; i < this.localCount_; i++) {
+            const localName = this.getFieldValue('VAR' + i) || 'name';
+            const child = Blockly.utils.xml.createElement('localname');
+            child.setAttribute('name', localName);
+            container.appendChild(child);
+        }
         return container;
     },
     domToMutation: function (xmlElement) {
-        this.localCount_ = parseInt(xmlElement.getAttribute('locals'), 10) || 1;
+        const localNames = [];
+        for (let i = 0, child; (child = xmlElement.childNodes[i]); i++) {
+            if (child.nodeName && child.nodeName.toLowerCase() === 'localname') {
+                localNames.push(child.getAttribute('name'));
+            }
+        }
+        this.localCount_ = localNames.length || parseInt(xmlElement.getAttribute('locals'), 10) || 1;
         this.updateShape_();
+        for (let i = 0; i < localNames.length; i++) {
+            const field = this.getField('VAR' + i);
+            if (field && localNames[i]) {
+                field.setValue(localNames[i]);
+            }
+        }
     },
     decompose: function (workspace) {
         const containerBlock = workspace.newBlock('local_declaration_container');
@@ -190,14 +230,16 @@ Blockly.Blocks['local_declaration_expression'] = {
         this.localCount_ = connections.length;
         this.updateShape_();
         for (let i = 0; i < this.localCount_; i++) {
-            if (connections[i]) connections[i].reconnect(this, 'DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            if (connections[i]) connections[i].reconnect(this, inputName);
         }
     },
     saveConnections: function (containerBlock) {
         let itemBlock = containerBlock.nextConnection.targetBlock();
         let i = 0;
         while (itemBlock) {
-            const input = this.getInput('DECL' + i);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.getInput(inputName);
             itemBlock.valueConnection_ = input && input.connection.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
@@ -208,13 +250,17 @@ Blockly.Blocks['local_declaration_expression'] = {
         for (let i = 0; this.getInput('DECL' + i); i++) {
             this.removeInput('DECL' + i);
         }
+        if (this.getInput('DECL')) {
+            this.removeInput('DECL');
+        }
         // Remove RETURN input
         if (this.getInput('RETURN')) {
             this.removeInput('RETURN');
         }
         // Add new declaration inputs
         for (let i = 0; i < this.localCount_; i++) {
-            const input = this.appendValueInput('DECL' + i).setCheck(null);
+            const inputName = i === 0 ? 'DECL' : 'DECL' + i;
+            const input = this.appendValueInput(inputName).setCheck(null);
             if (i === 0) {
                 input.appendField('initialize local');
             }

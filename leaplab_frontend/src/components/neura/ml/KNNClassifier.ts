@@ -45,8 +45,8 @@ export class KNNClassifier {
     }
 
     /**
-     * Predict the class of an embedding using cosine similarity + top-k voting.
-     * Enhanced with softmax temperature scaling for higher confidence values.
+     * Predict the class of an embedding using cosine similarity + distance-weighted top-k voting.
+     * Automatically adjusts k based on the smallest class size for optimal accuracy.
      */
     async predictClass(embedding: any, k = 5): Promise<KNNPrediction | null> {
         const tf = await ensureTf()
@@ -56,7 +56,14 @@ export class KNNClassifier {
         const flat = embedding.reshape([embedding.size])
         const emb = flat.expandDims(0)
         flat.dispose()
-        const scores: Record<string, number> = {}
+
+        // Adaptive k: clamp to smallest class size to avoid bias toward larger classes
+        const minClassSize = Math.min(...labels.map(l => (this.examples[l] as any).shape[0]))
+        const adaptiveK = Math.min(k, minClassSize, 5)
+        const effectiveK = Math.max(1, adaptiveK)
+
+        const weightedScores: Record<string, number> = {}
+        const rawSimilarities: Record<string, number[]> = {}
 
         for (const label of labels) {
             const examples = this.examples[label]
@@ -67,46 +74,36 @@ export class KNNClassifier {
             })
             const vals = await sim.data() as Float32Array
             sim.dispose()
-            // Use top-k similarities and average them for more stable scores
+
+            // Sort by similarity descending, take top-k
             const sorted = Array.from(vals).sort((a: number, b: number) => b - a)
-            const topK = sorted.slice(0, Math.min(k, sorted.length))
-            // Weighted average: give more weight to closer neighbors
-            const weightedSum = topK.reduce((s, v, i) => s + v * (1 - i * 0.1), 0)
-            const weightDivisor = topK.reduce((s, _, i) => s + (1 - i * 0.1), 0)
-            scores[label] = weightDivisor > 0 ? weightedSum / weightDivisor : 0
+            const topK = sorted.slice(0, effectiveK)
+            rawSimilarities[label] = topK
+
+            // Distance-weighted voting: weight each vote by its similarity score
+            // Use softmax-like weighting to amplify confident matches
+            const weightedSum = topK.reduce((s, v, i) => {
+                const weight = Math.exp(v * 3) // exponential weighting favors high similarity
+                return s + v * weight
+            }, 0)
+            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 3), 0) || 1
+            weightedScores[label] = weightedSum / weightTotal
         }
 
         emb.dispose()
 
-        // Apply softmax with temperature scaling for higher confidence
-        const temperature = 0.3 // Lower temperature = sharper distribution = higher confidence
-        const maxScore = Math.max(...Object.values(scores))
+        // Softmax-style confidence normalization for crisp predictions
+        const temperature = 0.1
+        const maxScore = Math.max(...Object.values(weightedScores).map(v => Math.max(0, v)), 0.001)
         const expScores: Record<string, number> = {}
-        let expSum = 0
-        
-        for (const label of labels) {
-            // Shift scores and apply exponential
-            expScores[label] = Math.exp((scores[label] - maxScore) / temperature)
-            expSum += expScores[label]
+        for (const l of labels) {
+            const normalized = Math.max(0, weightedScores[l]) / maxScore
+            expScores[l] = Math.exp(normalized / temperature)
         }
+        const expTotal = Object.values(expScores).reduce((s, v) => s + v, 0) || 1
 
-        // Normalize to get confidence values
         const confidences: Record<string, number> = {}
-        for (const label of labels) {
-            confidences[label] = expScores[label] / expSum
-        }
-
-        // Boost confidence: apply power scaling to further increase high-confidence predictions
-        const boostFactor = 1.5
-        let boostedSum = 0
-        for (const label of labels) {
-            confidences[label] = Math.pow(confidences[label], 1 / boostFactor)
-            boostedSum += confidences[label]
-        }
-        // Re-normalize after boosting
-        for (const label of labels) {
-            confidences[label] = confidences[label] / boostedSum
-        }
+        labels.forEach(l => { confidences[l] = expScores[l] / expTotal })
 
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
 
@@ -144,11 +141,14 @@ export class KNNClassifier {
 
     /**
      * Check if the classifier has enough data to train.
-     * Requires at least 2 classes with at least 1 sample each.
+     * Requires at least 2 classes with at least 2 samples each for reliable KNN.
      */
     get canClassify(): boolean {
         const counts = this.getSampleCounts()
-        return Object.keys(counts).length >= 2
+        const classLabels = Object.keys(counts)
+        if (classLabels.length < 2) return false
+        // Need at least 2 samples per class for meaningful leave-one-out and kNN
+        return classLabels.every(l => counts[l] >= 2)
     }
 
     /**

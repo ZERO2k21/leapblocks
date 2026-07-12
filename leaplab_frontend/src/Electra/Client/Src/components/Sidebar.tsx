@@ -82,40 +82,42 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="forge-sidebar">
-      <div className="sidebar-section">
-        <label className="section-label">Target Board</label>
-        <div className="board-selector">
-          <Cpu size={14} />
+    <div className="component-sidebar h-full flex flex-col font-['Outfit',sans-serif] bg-[var(--lp-dark-surface)] text-[var(--lp-text-color)] border-r border-solid border-[var(--lp-border)]">
+      <div className="p-3 border-b border-solid border-[var(--lp-border)]">
+        <label className="text-[11px] font-semibold uppercase tracking-[0.5px] mb-2 block text-[var(--lp-zinc-400)]">Target Board</label>
+        <div className="relative flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] cursor-pointer bg-[var(--lp-glass)] border border-solid border-[var(--lp-border)]">
+          <Cpu size={14} className="shrink-0 text-[var(--lp-accent-primary)]" />
           <select
             value={useForgeStore((s) => s.board)}
             onChange={(e) => useForgeStore.getState().setBoard(e.target.value)}
+            className="flex-1 bg-transparent border-none text-[12px] outline-none cursor-pointer appearance-none text-[var(--lp-text-color)]"
           >
             {COMPONENTS.filter(c => c.category === 'boards').map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
+              <option key={b.id} value={b.id} className="bg-[#1e293b]">{b.name}</option>
             ))}
           </select>
-          <ChevronDown size={14} className="chevron" />
+          <ChevronDown size={14} className="pointer-events-none shrink-0 text-[var(--lp-zinc-400)]" />
         </div>
       </div>
 
-      <div className="sidebar-header">
-        <div className="search-container">
-          <Search size={16} />
+      <div className="p-3 border-b border-solid border-[var(--lp-border)]">
+        <div className="relative flex items-center">
+          <Search size={16} className="absolute left-2.5 text-[var(--lp-zinc-400)]" />
           <input
             type="text"
             placeholder="Search parts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full py-2 pl-8 pr-3 text-[12px] rounded-md outline-none transition-colors bg-[var(--lp-glass)] border border-solid border-[var(--lp-border)] text-[var(--lp-text-color)] placeholder-[var(--lp-zinc-400)]"
           />
         </div>
       </div>
 
-      <div className="categories-grid">
+      <div className="grid grid-cols-5 gap-1 p-2">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
-            className={`category-btn ${activeCategory === cat.id ? 'active' : ''}`}
+            className={`flex items-center justify-center p-2 rounded-md transition-all duration-200 border ${activeCategory === cat.id ? 'border-[var(--lp-accent-primary)]/30 bg-[rgba(var(--lp-accent-primary-rgb,34,211,238),0.15)] text-[var(--lp-accent-primary)]' : 'border-transparent hover:bg-[var(--lp-glass)] text-[var(--lp-zinc-400)]'}`}
             onClick={() => setActiveCategory(cat.id)}
             title={cat.name}
           >
@@ -124,20 +126,23 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div className="component-list">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {filteredComponents.map(comp => (
           <div
             key={comp.id}
-            className="component-card"
+            className="component-card flex items-center gap-2.5 p-2 rounded-md cursor-grab transition-all duration-200 border border-transparent hover:border-[rgba(59,130,246,0.2)] active:cursor-grabbing"
             draggable
             onDragStart={(e) => onDragStart(e, comp.id)}
           >
-            <div className="comp-icon">
-              {comp.category === 'boards' ? <Cpu size={24} /> : <Lightbulb size={24} />}
+            <div className="w-9 h-9 flex items-center justify-center rounded-md shrink-0 bg-[var(--lp-glass)]">
+              {comp.category === 'boards'
+                ? <Cpu size={20} className="text-[var(--lp-accent-primary)]" />
+                : <Lightbulb size={20} className="text-[#22d3ee]" />
+              }
             </div>
-            <div className="comp-info">
-              <span className="comp-name">{comp.name}</span>
-              <span className="comp-desc">{comp.desc}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[12px] font-semibold truncate text-[var(--lp-text-color)]">{comp.name}</span>
+              <span className="text-[10px] truncate text-[var(--lp-zinc-400)]">{comp.desc}</span>
             </div>
           </div>
         ))}
