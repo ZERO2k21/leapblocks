@@ -48,7 +48,7 @@ export class KNNClassifier {
      * Predict the class of an embedding using cosine similarity + distance-weighted top-k voting.
      * Automatically adjusts k based on the smallest class size for optimal accuracy.
      */
-    async predictClass(embedding: any, k = 3): Promise<KNNPrediction | null> {
+    async predictClass(embedding: any, k = 5): Promise<KNNPrediction | null> {
         const tf = await ensureTf()
         const labels = Object.keys(this.examples)
         if (!labels.length) return null
