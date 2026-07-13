@@ -6,8 +6,8 @@ import { ElementPin } from '.';
 export class Battery12VElement extends LitElement {
   get pinInfo(): ElementPin[] {
     return [
-      { name: 'POS', x: 21, y: 11, number: 1, signals: [] },
-      { name: 'NEG', x: 79, y: 11, number: 2, signals: [] },
+      { name: 'POS', x: 19, y: 9, number: 1, signals: [] },
+      { name: 'NEG', x: 79, y: 9, number: 2, signals: [] },
     ];
   }
 
@@ -41,17 +41,17 @@ export class Battery12VElement extends LitElement {
 
         <!-- Terminals (Industrial Studs) -->
         <!-- Positive -->
-        <g transform="translate(18, 8)">
-          <rect x="0" y="0" width="16" height="16" rx="2" fill="url(#terminal-pos-grad)" stroke="#7f1d1d" stroke-width="0.5" />
-          <circle cx="8" cy="8" r="4" fill="#fb7185" opacity="0.4" />
-          <text x="8" y="32" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#f87171" text-anchor="middle" style="text-shadow: 0 0 5px rgba(248,113,113,0.5)">+</text>
+        <g transform="translate(16, 6)">
+          <rect x="0" y="0" width="20" height="20" rx="3" fill="url(#terminal-pos-grad)" stroke="#7f1d1d" stroke-width="0.5" />
+          <circle cx="10" cy="10" r="7" fill="#fb7185" opacity="0.4" />
+          <text x="10" y="36" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#f87171" text-anchor="middle" style="text-shadow: 0 0 5px rgba(248,113,113,0.5)">+</text>
         </g>
 
         <!-- Negative -->
-        <g transform="translate(66, 8)">
-          <rect x="0" y="0" width="16" height="16" rx="2" fill="#52525b" stroke="#27272a" stroke-width="0.5" />
-          <circle cx="8" cy="8" r="4" fill="#94a3b8" opacity="0.2" />
-          <text x="8" y="32" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#94a3b8" text-anchor="middle">-</text>
+        <g transform="translate(64, 6)">
+          <rect x="0" y="0" width="20" height="20" rx="3" fill="#52525b" stroke="#27272a" stroke-width="0.5" />
+          <circle cx="10" cy="10" r="7" fill="#94a3b8" opacity="0.2" />
+          <text x="10" y="36" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#94a3b8" text-anchor="middle">-</text>
         </g>
 
         <!-- Premium Label -->

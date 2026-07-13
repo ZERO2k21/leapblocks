@@ -875,7 +875,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           // Larger hit area + larger visible pin when in a draft, Tinkercad-style
           const isDraftRelevant =
             isDraftSourcePin || isDraftTarget || isDraftActive || isPendingSourcePin;
-          const pinSize = isDraftRelevant ? 4 : (isConnected ? 3 : 2);
+          const pinSize = isDraftRelevant ? 8 : (isConnected ? 6 : 4);
           const halfSize = pinSize / 2;
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
