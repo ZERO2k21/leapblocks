@@ -817,38 +817,38 @@ const Vision3DApp = ({ onBack }) => {
       <div className="flex flex-1 overflow-hidden relative">
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div className="flex items-center justify-between h-[72px] px-6 bg-white/85 backdrop-blur-[12px] [backdrop-filter:saturate(180%)] border-b border-slate-200/80 shadow-[0_4px_30px_rgba(0,0,0,0.02)] text-[13px] text-slate-700 shrink-0 gap-4 overflow-x-auto relative z-[100] w-full box-border">
-            <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-blue-500/[0.06] border border-blue-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'select' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'select' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('select')}
                   title="Select (V)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
                   Select
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'move' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'move' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('move')}
                   title="Move (G)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
                   Move
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'rotate' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'rotate' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('rotate')}
                   title="Rotate (R)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                   Rotate
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'scale' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'scale' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('scale')}
                   title="Scale (S)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3l-7 7M21 3v5M21 3h-5M3 21l7-7M3 21v-5M3 21h5"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3l-7 7M21 3v5M21 3h-5M3 21l7-7M3 21v-5M3 21h5"/></svg>
                   Resize
                 </button>
               </div>
@@ -856,30 +856,30 @@ const Vision3DApp = ({ onBack }) => {
               {/* Edit Mode Group (Blender-like) */}
               <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-teal-500/[0.06] border border-teal-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'vertex' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'vertex' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'vertex' ? 'object' : 'vertex')}
                   disabled={selectedIds.length !== 1}
                   title="Vertex Edit (1)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
                   Points
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'edge' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'edge' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'edge' ? 'object' : 'edge')}
                   disabled={selectedIds.length !== 1}
                   title="Edge Edit (2)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/></svg>
                   Lines
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'face' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'face' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'face' ? 'object' : 'face')}
                   disabled={selectedIds.length !== 1}
                   title="Face Edit (3)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,3 3,21 21,21"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12,3 3,21 21,21"/></svg>
                   Sides
                 </button>
               </div>
@@ -889,38 +889,38 @@ const Vision3DApp = ({ onBack }) => {
                   <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
                   <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-amber-500/[0.06] border border-amber-500/[0.15]">
                     <button
-                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'exclude' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
+                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'exclude' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
                       onClick={() => setEditTool('exclude')}
                       title="Move only selected (E)"
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12M5 12l7 7 7-7"/></svg>
                       Move Selected
                     </button>
                     <button
-                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'include' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
+                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'include' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
                       onClick={() => setEditTool('include')}
                       title="Move selected + connected (I)"
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
                       Stretch Shape
                     </button>
                     {editMode === 'vertex' && (
                       <button
-                        className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                        className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                         onClick={() => setEditTool('merge')}
                         disabled={selectedVertices.length < 2}
                         title="Merge Vertices (M)"
                       >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 10l4 4"/></svg>
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 10l4 4"/></svg>
                         Join
                       </button>
                     )}
                     <button
-                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700"
+                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700"
                       onClick={() => clearComponentSelection()}
                       title="Deselect Components (Escape)"
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
                       Clear
                     </button>
                   </div>
@@ -929,15 +929,15 @@ const Vision3DApp = ({ onBack }) => {
               <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
               <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${rulerActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)]' : 'bg-slate-100/80 border-slate-200/80 text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${rulerActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)]' : 'bg-slate-100/80 border-slate-200/80 text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]'}`}
                   onClick={toggleRuler}
                   title="Ruler / Measurement Tool (X)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Ruler
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => fileInputRef.current?.click()}
                   title="Import STL/OBJ file"
                 >
@@ -949,14 +949,14 @@ const Vision3DApp = ({ onBack }) => {
                   const hasNet = selShape && NET_SUPPORTED.includes(selShape.type);
                   return (
                     <button
-                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                       onClick={() => {
                         if (hasNet) setNetOpen(true);
                       }}
                       disabled={!hasNet}
                       title={hasNet ? "Show how this shape is constructed from its net" : "Net animation not available for this shape"}
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                         <polygon points="5,3 19,12 5,21"/>
                       </svg>
                       Animate
@@ -964,7 +964,7 @@ const Vision3DApp = ({ onBack }) => {
                   );
                 })()}
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => {
                     if (selectedIds.length !== 1) return;
                     const shape = shapes.find((s) => s.id === selectedIds[0]);
@@ -990,7 +990,7 @@ const Vision3DApp = ({ onBack }) => {
                   disabled={selectedIds.length !== 1}
                   title="Split sphere into two hemispheres"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="9"/>
                     <line x1="3" y1="12" x2="21" y2="12" strokeDasharray="3 2"/>
                   </svg>
@@ -1001,36 +1001,36 @@ const Vision3DApp = ({ onBack }) => {
               <div className="text-[10px] font-extrabold uppercase tracking-[1.2px] text-slate-400 mx-2.5 select-none">Combine</div>
               <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-purple-500/[0.06] border border-purple-500/[0.15]">
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('union')}
                   disabled={selectedIds.length < 2}
                   title="Glue shapes together (Ctrl+1)"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="6"/><circle cx="14" cy="14" r="6"/></svg>
                   Glue
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('subtract')}
                   disabled={selectedIds.length < 2}
                   title="Cut one shape from another (Ctrl+2)"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="7"/><rect x="8" y="8" width="8" height="8"/></svg>
                   Cut
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('intersect')}
                   disabled={selectedIds.length < 2}
                   title="Keep only the overlapping part (Ctrl+3)"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10" cy="10" r="7"/><circle cx="14" cy="14" r="7"/><path d="M6 12a6 6 0 0 1 6-6"/></svg>
                   Overlap
                 </button>
               </div>
               <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
               <button
-                className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${(() => {
+                className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${(() => {
                   if (selectedIds.length === 0) return '';
                   const sel = shapes.filter((s) => selectedIds.includes(s.id));
                   const anyHole = sel.some((s) => s.isHole);
@@ -1045,74 +1045,74 @@ const Vision3DApp = ({ onBack }) => {
                 disabled={selectedIds.length === 0}
                 title="Toggle Solid/Hollow (H)"
               >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="9"/>
                   <circle cx="12" cy="12" r="5" fill="currentColor" opacity={selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 0 : 0.3}/>
                 </svg>
                 {selectedIds.length > 0 && shapes.filter((s) => selectedIds.includes(s.id)).some((s) => s.isHole) ? 'Make Solid' : 'Make Hole'}
               </button>
             </div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" title="Objects in scene">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 {shapes.length}
               </div>
               <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" title="Selected shapes">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                 {selectedIds.length}
               </div>
               {tempWorkplane && (
                 <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#f97316' }}>
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Workplane
                 </div>
               )}
               {rulerActive && (
                 <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#ef4444' }}>
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Ruler
                 </div>
               )}
               {editMode !== 'object' && (
                 <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#a855f7' }}>
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
                   {editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-slate-500/[0.06] border border-slate-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showGrid ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showGrid ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
                   onClick={() => setShowGrid(!showGrid)}
                   title="Toggle Grid"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
                   Grid
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showAxes ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
+                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showAxes ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
                   onClick={() => setShowAxes(!showAxes)}
                   title="Toggle Axes"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20"/></svg>
                   Axes
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700"
                   onClick={toggleCameraMode}
                   title="Toggle Perspective/Orthographic (P)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v16h22V4z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v16h22V4z"/><circle cx="12" cy="12" r="3"/></svg>
                   {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
                 </button>
                 <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
                   onClick={() => setPreviewOpen(true)}
                   title="Preview (fullscreen auto-rotate)"
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   Preview
                 </button>
               </div>
