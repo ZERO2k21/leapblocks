@@ -156,7 +156,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
             Import
           </button>
           {(() => {
-            const NET_SUPPORTED = ['cube','box','cylinder','cone','tetrahedron','pyramid'];
+            const NET_SUPPORTED = ['cube','box','cylinder','cone','tetrahedron','pyramid','sphere','halfSphere'];
             const selShape = selectedIds.length === 1 ? shapes.find((s) => s.id === selectedIds[0]) : null;
             const hasNet = selShape && NET_SUPPORTED.includes(selShape.type);
             return (
@@ -175,39 +175,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
               </button>
             );
           })()}
-          <button
-            className="flex items-center justify-center gap-2 !px-8 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[40px] shadow-sm hover:bg-slate-100 hover:text-slate-800 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
-            onClick={() => {
-              if (selectedIds.length !== 1) return;
-              const shape = shapes.find((s) => s.id === selectedIds[0]);
-              if (!shape) return;
-              if (shape.type === 'sphere' || shape.type === 'halfSphere') {
-                const r = shape.radius ?? shape.halfSphereRadius ?? 1;
-                const pos = shape.position;
-                const color = shape.color;
-                removeShapes([shape.id]);
-                addShape('halfSphere', {
-                  position: [pos[0], pos[1] + r / 2, pos[2]],
-                  color: color,
-                  halfSphereRadius: r,
-                });
-                addShape('halfSphere', {
-                  position: [pos[0], pos[1] - r / 2, pos[2]],
-                  color: color,
-                  halfSphereRadius: r,
-                  rotation: [Math.PI, 0, 0],
-                });
-              }
-            }}
-            disabled={selectedIds.length !== 1}
-            title="Split sphere into two hemispheres"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="9"/>
-              <line x1="3" y1="12" x2="21" y2="12" strokeDasharray="3 2"/>
-            </svg>
-            Split
-          </button>
+
         </div>
         <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
         <div className="text-[12px] font-extrabold uppercase tracking-[1.2px] text-slate-400 mx-2.5 select-none">Combine</div>
