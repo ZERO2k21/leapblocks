@@ -103,6 +103,18 @@ export const SelectionToolbar: React.FC = () => {
   const nodeType = selectedNode?.data?.type;
   const currentValues = selectedNode?.data?.sensorValues;
 
+  const getStatusLabel = (category: string) => {
+    const cat = category.toUpperCase();
+    if (cat.includes('BOARD') || cat.includes('MCU')) return 'MCU';
+    if (cat.includes('SENSOR')) return 'INPUT';
+    if (cat.includes('ACTUATOR') || cat.includes('MOTOR')) return 'ACTUATOR';
+    if (cat.includes('DISPLAY')) return 'DISPLAY';
+    if (cat.includes('OUTPUT')) return 'OUTPUT';
+    if (cat.includes('POWER')) return 'POWER';
+    if (cat.includes('CONNECTION')) return 'WIRE';
+    return 'DEV';
+  };
+
   const handleDelete = () => {
     if (selectedNodeId) {
       removeNode(selectedNodeId);
@@ -312,7 +324,7 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-[#0c0d12] p-[10px_10px_10px_16px] rounded-[12px] border border-solid transition-all duration-300 ease-out"
+      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-[#0c0d12] p-[8px] rounded-[12px] border border-solid transition-all duration-300 ease-out"
       style={{
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -390,15 +402,35 @@ export const SelectionToolbar: React.FC = () => {
 
       {selectedNode ? (
         <>
-          <div className="flex items-center select-none pl-0.5">
-            <div className="group chip-id-plate" style={{ background: `linear-gradient(135deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.04) 0%, rgba(15, 17, 23, 0.85) 100%)` }}>
-              <div className="flex items-center gap-[12px] p-[8px_16px_8px_8px]">
-                <div className="icon-box-plate" style={{ background: `linear-gradient(135deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.18) 0%, rgba(${hexToRgb(badgeInfo.primary)}, 0.03) 100%)`, border: `1px solid ${badgeInfo.primary}25` }}>
+          <div className="flex items-center select-none">
+            <div
+              className="group chip-id-plate"
+              style={{
+                background: `linear-gradient(90deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.05) 0%, rgba(12, 13, 18, 0.8) 100%)`,
+                borderLeft: `2.5px solid ${badgeInfo.primary}`
+              }}
+            >
+              <div className="flex items-center gap-[12px] p-[8px_16px_8px_10px]">
+                <div
+                  className="icon-box-plate"
+                  style={{
+                    background: `rgba(${hexToRgb(badgeInfo.primary)}, 0.1)`,
+                    border: `1px solid ${badgeInfo.primary}30`,
+                    boxShadow: `inset 0 1px 2px rgba(0,0,0,0.5), 0 0 10px ${badgeInfo.primary}15`
+                  }}
+                >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-[2px]">
-                  <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}80` }}>{badgeInfo.category}</span>
-                  <span className="text-[11px] font-bold text-slate-200 tracking-[0.5px] leading-none uppercase font-mono">{badgeInfo.displayName}</span>
+                <div className="flex flex-col gap-[3px]">
+                  <div className="flex items-center gap-[6px]">
+                    <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}bf` }}>{badgeInfo.category}</span>
+                    <span className="text-[7px] font-extrabold px-[4px] py-[1px] rounded-[3px] border border-solid tracking-[0.5px] leading-none uppercase" style={{ color: badgeInfo.primary, backgroundColor: `${badgeInfo.primary}15`, borderColor: `${badgeInfo.primary}30` }}>
+                      {getStatusLabel(badgeInfo.category)}
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-black text-slate-100 tracking-[0.5px] leading-none uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {badgeInfo.displayName}
+                  </span>
                 </div>
               </div>
             </div>
@@ -412,15 +444,35 @@ export const SelectionToolbar: React.FC = () => {
         </>
       ) : (
         <>
-          <div className="flex items-center select-none pl-0.5">
-            <div className="group chip-id-plate" style={{ background: `linear-gradient(135deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.04) 0%, rgba(15, 17, 23, 0.85) 100%)` }}>
-              <div className="flex items-center gap-[12px] p-[8px_16px_8px_8px]">
-                <div className="icon-box-plate" style={{ background: `linear-gradient(135deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.18) 0%, rgba(${hexToRgb(badgeInfo.primary)}, 0.03) 100%)`, border: `1px solid ${badgeInfo.primary}25` }}>
+          <div className="flex items-center select-none">
+            <div
+              className="group chip-id-plate"
+              style={{
+                background: `linear-gradient(90deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.05) 0%, rgba(12, 13, 18, 0.8) 100%)`,
+                borderLeft: `2.5px solid ${badgeInfo.primary}`
+              }}
+            >
+              <div className="flex items-center gap-[12px] p-[8px_16px_8px_10px]">
+                <div
+                  className="icon-box-plate"
+                  style={{
+                    background: `rgba(${hexToRgb(badgeInfo.primary)}, 0.1)`,
+                    border: `1px solid ${badgeInfo.primary}30`,
+                    boxShadow: `inset 0 1px 2px rgba(0,0,0,0.5), 0 0 10px ${badgeInfo.primary}15`
+                  }}
+                >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-[2px]">
-                  <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}80` }}>{badgeInfo.category}</span>
-                  <span className="text-[11px] font-bold text-slate-200 tracking-[0.5px] leading-none uppercase font-mono">{badgeInfo.displayName}</span>
+                <div className="flex flex-col gap-[3px]">
+                  <div className="flex items-center gap-[6px]">
+                    <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}bf` }}>{badgeInfo.category}</span>
+                    <span className="text-[7px] font-extrabold px-[4px] py-[1px] rounded-[3px] border border-solid tracking-[0.5px] leading-none uppercase" style={{ color: badgeInfo.primary, backgroundColor: `${badgeInfo.primary}15`, borderColor: `${badgeInfo.primary}30` }}>
+                      {getStatusLabel(badgeInfo.category)}
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-black text-slate-100 tracking-[0.5px] leading-none uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {badgeInfo.displayName}
+                  </span>
                 </div>
               </div>
             </div>
@@ -437,7 +489,7 @@ export const SelectionToolbar: React.FC = () => {
       {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
         <>
           <div className="w-[1px] h-[22px] bg-[rgba(255,255,255,0.08)] self-center mx-[10px]" />
-          <div className="flex gap-[8px] items-center pr-0.5">
+          <div className="flex gap-[8px] items-center">
             <button
               onClick={handleDelete}
               title="REMOVE ELEMENT"

@@ -381,9 +381,12 @@ export default function AssetPicker({
                             gap: '12px'
                         }}>
                             {filteredMedia.map((item, index) => (
-                                <button
+                                <div
                                     key={index}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() => handleSelect(item)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(item); } }}
                                     style={{
                                         position: 'relative',
                                         borderRadius: '14px',
@@ -398,7 +401,8 @@ export default function AssetPicker({
                                         padding: 0,
                                         boxShadow: currentValue === item.filename
                                             ? '0 4px 12px rgba(79, 70, 229, 0.15)'
-                                            : 'none'
+                                            : 'none',
+                                        outline: 'none'
                                     }}
                                     onMouseEnter={(e) => {
                                         if (currentValue !== item.filename) {
@@ -410,6 +414,16 @@ export default function AssetPicker({
                                         if (currentValue !== item.filename) {
                                             e.currentTarget.style.borderColor = '#e2e8f0';
                                             e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
+                                    onFocus={(e) => {
+                                        if (currentValue !== item.filename) {
+                                            e.currentTarget.style.borderColor = '#818cf8';
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        if (currentValue !== item.filename) {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
                                         }
                                     }}
                                 >
@@ -490,12 +504,15 @@ export default function AssetPicker({
                                             </svg>
                                         </div>
                                     )}
-                                </button>
+                                </div>
                             ))}
 
                             {/* Upload more card */}
-                            <button
+                            <div
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => fileInputRef.current?.click()}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
                                 style={{
                                     borderRadius: '14px',
                                     border: '2px dashed #e2e8f0',
@@ -510,7 +527,8 @@ export default function AssetPicker({
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '8px',
-                                    minHeight: '180px'
+                                    minHeight: '180px',
+                                    outline: 'none'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.borderColor = '#c7d2fe';
@@ -520,12 +538,18 @@ export default function AssetPicker({
                                     e.currentTarget.style.borderColor = '#e2e8f0';
                                     e.currentTarget.style.backgroundColor = '#f8fafc';
                                 }}
+                                onFocus={(e) => {
+                                    e.currentTarget.style.borderColor = '#c7d2fe';
+                                }}
+                                onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                }}
                             >
                                 <Upload style={{ width: '24px', height: '24px', color: '#94a3b8' }} />
                                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
                                     Upload more
                                 </span>
-                            </button>
+                            </div>
                         </div>
                     )}
                 </div>
