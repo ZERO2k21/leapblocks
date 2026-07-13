@@ -89,7 +89,7 @@ export class ImageClassifier {
         embedding.dispose()
     }
 
-    async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<ImagePrediction | null> {
+    async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<ImagePrediction | null> {
         try {
             const embedding = await this.extractEmbedding(imageElement)
             try {
@@ -139,7 +139,7 @@ export class ImageClassifier {
         await this.knn.addExampleFromDataArray(data, label)
     }
 
-    async rebuildClass(label: string, imageDataUrls: string[]): Promise<number> {
+    async rebuildClass(label: string, imageDataUrls: string[], augment = false): Promise<number> {
         this.knn.clearClass(label)
         let loaded = 0
         for (const dataUrl of imageDataUrls) {
@@ -159,7 +159,11 @@ export class ImageClassifier {
                     console.warn(`[ImageClassifier] Image has zero dimensions for class "${label}", skipping`)
                     continue
                 }
-                await this.addSample(img, label)
+                if (augment) {
+                    await this.addSampleAugmented(img, label)
+                } else {
+                    await this.addSample(img, label)
+                }
                 loaded++
             } catch (err) {
                 console.warn(`[ImageClassifier] Failed to load sample for class "${label}":`, err)

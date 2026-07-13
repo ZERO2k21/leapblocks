@@ -59,7 +59,7 @@ export class KNNClassifier {
 
         // Adaptive k: clamp to smallest class size to avoid bias toward larger classes
         const minClassSize = Math.min(...labels.map(l => (this.examples[l] as any).shape[0]))
-        const adaptiveK = Math.min(k, minClassSize, 5)
+        const adaptiveK = Math.min(k, minClassSize, 7)
         const effectiveK = Math.max(1, adaptiveK)
 
         const weightedScores: Record<string, number> = {}
@@ -83,17 +83,17 @@ export class KNNClassifier {
             // Distance-weighted voting: weight each vote by its similarity score
             // Use softmax-like weighting to amplify confident matches
             const weightedSum = topK.reduce((s, v, i) => {
-                const weight = Math.exp(v * 3) // exponential weighting favors high similarity
+                const weight = Math.exp(v * 1.5) // exponential weighting favors high similarity
                 return s + v * weight
             }, 0)
-            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 3), 0) || 1
+            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 1.5), 0) || 1
             weightedScores[label] = weightedSum / weightTotal
         }
 
         emb.dispose()
 
         // Softmax-style confidence normalization for crisp predictions
-        const temperature = 0.1
+        const temperature = 0.8
         const maxScore = Math.max(...Object.values(weightedScores).map(v => Math.max(0, v)), 0.001)
         const expScores: Record<string, number> = {}
         for (const l of labels) {
@@ -113,7 +113,7 @@ export class KNNClassifier {
     /**
      * Predict from raw Float32Array data.
      */
-    async predictFromData(data: Float32Array | number[], k = 3): Promise<KNNPrediction | null> {
+    async predictFromData(data: Float32Array | number[], k = 5): Promise<KNNPrediction | null> {
         const tf = await ensureTf()
         const embedding = tf.tensor1d(data)
         const result = await this.predictClass(embedding, k)

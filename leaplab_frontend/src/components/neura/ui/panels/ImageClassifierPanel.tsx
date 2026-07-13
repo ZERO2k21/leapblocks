@@ -107,7 +107,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     if (cls.samples.length > 0) {
                         await classifierRef.current.rebuildClass(
                             cls.name,
-                            cls.samples.map(s => s.data)
+                            cls.samples.map(s => s.data),
+                            augmentMode
                         )
                     }
                 }
@@ -321,7 +322,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 if (cls.samples.length > 0) {
                     await classifierRef.current.rebuildClass(
                         cls.name,
-                        cls.samples.map(s => s.data)
+                        cls.samples.map(s => s.data),
+                        augmentMode
                     )
                 }
             }
@@ -338,7 +340,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             }
 
             const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
-            const adaptiveK = Math.min(3, minSamples)
+            const adaptiveK = Math.min(5, minSamples)
 
             let bestAccuracy = 0
             const epochResults: number[] = []
@@ -392,16 +394,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     weightTotal += weight
                 }
                 const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
-                const boostedAccuracy = Math.min(0.98, smoothedAccuracy * 1.05 + 0.02)
 
-                if (boostedAccuracy > bestAccuracy) {
-                    bestAccuracy = boostedAccuracy
+                if (smoothedAccuracy > bestAccuracy) {
+                    bestAccuracy = smoothedAccuracy
                 }
-                mode.setAccuracy(boostedAccuracy)
+                mode.setAccuracy(smoothedAccuracy)
             }
 
-            const finalAccuracy = Math.max(0.75, bestAccuracy)
-            mode.setAccuracy(finalAccuracy)
+            mode.setAccuracy(bestAccuracy)
 
             skipNextRebuildRef.current = true
             autoSwitchRef.current = setTimeout(() => {
@@ -440,7 +440,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const cls = project.classes.find(c => c.id === classId)
             if (cls) {
                 const remainingSamples = cls.samples.filter(s => s.id !== sampleId)
-                await classifierRef.current.rebuildClass(cls.name, remainingSamples.map(s => s.data))
+                await classifierRef.current.rebuildClass(cls.name, remainingSamples.map(s => s.data), augmentMode)
             }
         }
     }
@@ -546,6 +546,38 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         onModeChange={mode.setMode}
                         canTrain={canTrain}
                     />
+
+                    {/* Sample Collection Tips */}
+                    <div className="w-full max-w-[720px] animate-[fade-in_0.3s_ease-out]">
+                        <div className="bg-gradient-to-r from-violet-50 to-blue-50 rounded-2xl px-5 py-4 border border-violet-100">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-violet-100 rounded-xl flex-shrink-0">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-violet-700 mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>TIPS FOR BETTER ACCURACY</p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                                            <span className="w-1 h-1 rounded-full bg-violet-400" /> Vary camera angles
+                                        </span>
+                                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                                            <span className="w-1 h-1 rounded-full bg-violet-400" /> Use different lighting
+                                        </span>
+                                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                                            <span className="w-1 h-1 rounded-full bg-violet-400" /> Change backgrounds
+                                        </span>
+                                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                                            <span className="w-1 h-1 rounded-full bg-violet-400" /> Mix close-up & far shots
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Camera error state */}
                     {cameraError && !cameraOn && (

@@ -244,7 +244,7 @@ export default function TestPanel({
                                         <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                                             CONFIDENCE
                                         </span>
-                                        <span className="text-2xl font-black text-secondary">
+                                        <span className={`text-2xl font-black ${displayConfidence < 40 ? 'text-amber-500' : 'text-secondary'}`}>
                                             {displayConfidence}%
                                         </span>
                                     </div>
@@ -253,13 +253,23 @@ export default function TestPanel({
                                             className="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
                                             style={{
                                                 width: `${displayConfidence}%`,
-                                                background: '#25fea8',
-                                                boxShadow: '0 0 15px rgba(0,108,71,0.4)'
+                                                background: displayConfidence < 40 ? '#f59e0b' : '#25fea8',
+                                                boxShadow: displayConfidence < 40 ? '0 0 15px rgba(245,158,11,0.4)' : '0 0 15px rgba(0,108,71,0.4)'
                                             }}
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-r from-secondary/80 to-secondary animate-pulse" />
+                                            <div className={`absolute inset-0 bg-gradient-to-r ${displayConfidence < 40 ? 'from-amber-400/80 to-amber-500' : 'from-secondary/80 to-secondary'} animate-pulse`} />
                                         </div>
                                     </div>
+                                    {displayConfidence < 40 && (
+                                        <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mt-3">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                            </svg>
+                                            <p className="text-xs font-medium text-amber-800">Model is uncertain. Add more diverse samples with different angles, lighting, and backgrounds for better accuracy.</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Action Buttons */}
@@ -407,6 +417,16 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
                                 {Math.round(maxConfidence * 100)}%
                             </span>
                         </div>
+                        {maxConfidence < 0.4 && (
+                            <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mt-4 text-left">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <p className="text-xs font-medium text-amber-800">Model is uncertain. Add more diverse samples with different angles, lighting, and backgrounds for better accuracy.</p>
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-3">
                         {sortedConfidences.map(([label, confidence], index) => {
