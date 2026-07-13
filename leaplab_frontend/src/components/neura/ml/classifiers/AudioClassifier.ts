@@ -100,7 +100,7 @@ export class AudioClassifier {
         await this.addSampleFromBuffer(audioBuffer, label)
     }
 
-    async predict(features: number[], k = 3): Promise<AudioPrediction | null> {
+    async predict(features: number[], k = 5): Promise<AudioPrediction | null> {
         const tf = await ensureTf()
         const embedding = tf.tensor1d(new Float32Array(features))
         const result = await this.knn.predictClass(embedding, k)
@@ -108,7 +108,7 @@ export class AudioClassifier {
         return result
     }
 
-    async predictFromBuffer(audioBuffer: AudioBuffer, k = 3): Promise<AudioPrediction | null> {
+    async predictFromBuffer(audioBuffer: AudioBuffer, k = 5): Promise<AudioPrediction | null> {
         const features = await this.extractFeatures(audioBuffer)
         const tf = await ensureTf()
         const embedding = tf.tensor1d(features)
@@ -117,7 +117,7 @@ export class AudioClassifier {
         return result
     }
 
-    async predictFromRecording(audioBlob: Blob, k = 3): Promise<AudioPrediction | null> {
+    async predictFromRecording(audioBlob: Blob, k = 5): Promise<AudioPrediction | null> {
         const ctx = this.getAudioContext()
         const arrayBuffer = await audioBlob.arrayBuffer()
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer)

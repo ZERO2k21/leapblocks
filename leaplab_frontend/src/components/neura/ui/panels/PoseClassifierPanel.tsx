@@ -15,6 +15,8 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new PoseClassifier())
+    const streamRef = useRef<MediaStream | null>(null)
+    const isPredictingRef = useRef(false)
     const [isCapturing, setIsCapturing] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -31,6 +33,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 videoRef.current.srcObject = mediaStream
                 await videoRef.current.play()
             }
+            streamRef.current = mediaStream
             setStream(mediaStream)
         } catch (err) {
             console.error('Camera access denied:', err)
@@ -38,11 +41,13 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     }, [])
 
     const stopCamera = useCallback(() => {
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop())
-            setStream(null)
+        const s = streamRef.current
+        if (s) {
+            s.getTracks().forEach(t => t.stop())
+            streamRef.current = null
         }
-    }, [stream])
+        setStream(null)
+    }, [])
 
     useEffect(() => {
         if (mode.mode === 'collect' || mode.mode === 'test') {
@@ -63,9 +68,16 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     if (cls.samples.length > 0) {
                         for (const sample of cls.samples) {
                             try {
-                                const features = JSON.parse(sample.data)
-                                const float32Features = new Float32Array(features)
-                                await classifierRef.current.addSample(float32Features, cls.name)
+                                if (!sample.data || !sample.data.startsWith('data:image/')) continue
+                                const img = new Image()
+                                img.src = sample.data
+                                await new Promise<void>((resolve, reject) => {
+                                    img.onload = () => resolve()
+                                    img.onerror = () => reject(new Error('Failed to load image'))
+                                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                                })
+                                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue
+                                await classifierRef.current.addSampleFromImage(img, cls.name)
                             } catch {
                                 // skip invalid samples
                             }
@@ -78,6 +90,33 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             return () => { cancelled = true }
         }
     }, [mode.mode])
+
+    // Test mode prediction - runs on video frames
+    useEffect(() => {
+        if (mode.mode !== 'test' || modelLoading) return
+
+        const runPrediction = async () => {
+            if (isPredictingRef.current) return
+            if (stream && videoRef.current) {
+                isPredictingRef.current = true
+                setIsProcessing(true)
+                try {
+                    const result = await classifierRef.current.predictFromImage(videoRef.current, 5)
+                    if (result) setPrediction(result)
+                } catch (err) {
+                    console.error('Pose prediction error:', err)
+                }
+                setIsProcessing(false)
+                isPredictingRef.current = false
+            }
+        }
+
+        if (stream) {
+            runPrediction()
+            const interval = setInterval(runPrediction, 500)
+            return () => clearInterval(interval)
+        }
+    }, [mode.mode, stream, modelLoading])
 
     const handleCapture = async () => {
         if (!videoRef.current || !canvasRef.current || !mode.selectedClassId) return
@@ -141,9 +180,22 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             for (const cls of project.classes) {
                 for (const sample of cls.samples) {
                     try {
-                        const features = JSON.parse(sample.data)
-                        const float32Features = new Float32Array(features)
-                        const result = await classifierRef.current.predict(float32Features, 3)
+                        if (!sample.data || !sample.data.startsWith('data:image/')) {
+                            total++
+                            continue
+                        }
+                        const img = new Image()
+                        img.src = sample.data
+                        await new Promise<void>((resolve, reject) => {
+                            img.onload = () => resolve()
+                            img.onerror = () => reject(new Error('Failed to load image'))
+                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                        })
+                        if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                            total++
+                            continue
+                        }
+                        const result = await classifierRef.current.predictFromImage(img, 5)
                         if (result && result.label === cls.name) correct++
                         total++
                     } catch {

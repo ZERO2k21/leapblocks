@@ -94,7 +94,7 @@ export class PoseClassifier {
         return []
     }
 
-    async predict(features: Float32Array, k = 3): Promise<PosePrediction | null> {
+    async predict(features: Float32Array, k = 5): Promise<PosePrediction | null> {
         const tf = await ensureTf()
         const embedding = tf.tensor1d(features)
         const result = await this.knn.predictClass(embedding, k)
@@ -102,7 +102,7 @@ export class PoseClassifier {
         return result
     }
 
-    async predictFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<PosePrediction | null> {
+    async predictFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<PosePrediction | null> {
         const tf = await ensureTf()
         const keypoints = await this.detectPose(imageElement)
         if (keypoints.length === 0) return null

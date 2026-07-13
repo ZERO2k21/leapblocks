@@ -12,6 +12,7 @@ interface TextClassifierPanelProps {
 
 export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) {
     const classifierRef = useRef(new TextClassifier())
+    const predictTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [textInput, setTextInput] = useState('')
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -82,7 +83,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             for (const cls of project.classes) {
                 for (const sample of cls.samples) {
                     try {
-                        const result = await classifierRef.current.predict(sample.data, 3)
+                        const result = await classifierRef.current.predict(sample.data, 5)
                         if (result && result.label === cls.name) correct++
                         total++
                     } catch {
@@ -107,14 +108,6 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
-
-    const glassCardStyle = {
-        background: 'rgba(255,255,255,0.6)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.6)',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-    }
 
     return (
         <div className="flex flex-col h-full">
@@ -239,18 +232,21 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                             className="w-full h-24 px-4 py-3 text-sm border-2 border-gray-100 rounded-xl focus:outline-none focus:border-blue-300 resize-none bg-gray-50 mb-3"
                             onChange={(e) => {
                                 const value = e.target.value
+                                if (predictTimeoutRef.current) {
+                                    clearTimeout(predictTimeoutRef.current)
+                                    predictTimeoutRef.current = null
+                                }
                                 if (value.trim() && !modelLoading && classifierRef.current.canClassify) {
                                     setIsProcessing(true)
-                                    const timeoutId = setTimeout(async () => {
+                                    predictTimeoutRef.current = setTimeout(async () => {
                                         try {
-                                            const result = await classifierRef.current.predict(value, 3)
+                                            const result = await classifierRef.current.predict(value, 5)
                                             if (result) setPrediction(result)
                                         } catch {
                                             // ignore
                                         }
                                         setIsProcessing(false)
                                     }, 500)
-                                    return () => clearTimeout(timeoutId)
                                 }
                             }}
                         />

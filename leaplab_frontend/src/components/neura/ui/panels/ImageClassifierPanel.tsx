@@ -40,6 +40,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [testImage, setTestImage] = useState<string | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [augmentMode, setAugmentMode] = useState(true)
+    const [inferenceTime, setInferenceTime] = useState(0)
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const streamRef = useRef<MediaStream | null>(null)
@@ -129,8 +130,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
+                    const start = performance.now()
                     const result = await classifierRef.current.predict(videoRef.current)
-                    if (result) setPrediction(result)
+                    const elapsed = Math.round(performance.now() - start)
+                    if (result) {
+                        setPrediction(result)
+                        setInferenceTime(elapsed)
+                    }
                 } catch (err) {
                     console.error('Prediction error:', err)
                 }
@@ -270,8 +276,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 setTimeout(() => resolve(), 3000)
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                const start = performance.now()
                 const result = await classifierRef.current.predict(img)
-                if (result) setPrediction(result)
+                const elapsed = Math.round(performance.now() - start)
+                if (result) {
+                    setPrediction(result)
+                    setInferenceTime(elapsed)
+                }
             }
         } catch {
             // ignore
@@ -339,7 +350,17 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 return
             }
 
-            const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
+            // For LOO-CV: rebuild a temporary KNN without augmentation for accurate evaluation
+            // The main KNN stays augmented for actual test-mode predictions
+            const { ImageClassifier } = await import('../../ml/classifiers/ImageClassifier')
+            const loClassifier = new ImageClassifier()
+            for (const cls of project.classes) {
+                if (cls.samples.length > 0) {
+                    await loClassifier.rebuildClass(cls.name, cls.samples.map(s => s.data), false)
+                }
+            }
+
+            const minSamples = Math.min(...Object.values(loClassifier.getSampleCounts()))
             const adaptiveK = Math.min(5, minSamples)
 
             let bestAccuracy = 0
@@ -369,13 +390,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 continue
                             }
 
-                            const removedEmbedding = await classifierRef.current.removeExampleByIndex(cls.name, i)
-                            const result = await classifierRef.current.predict(img, adaptiveK)
+                            const removedEmbedding = await loClassifier.removeExampleByIndex(cls.name, i)
+                            const result = await loClassifier.predict(img, adaptiveK)
                             if (result && result.label === cls.name) correct++
                             total++
 
                             if (removedEmbedding) {
-                                await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
+                                await loClassifier.addExampleFromDataArray(removedEmbedding, cls.name)
                             }
                         } catch {
                             total++
@@ -400,6 +421,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 }
                 mode.setAccuracy(smoothedAccuracy)
             }
+
+            // Clean up temporary LOO-CV classifier
+            loClassifier.dispose()
 
             mode.setAccuracy(bestAccuracy)
 
@@ -930,7 +954,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         onFileChange={handleTestUpload}
                         projectName={mode.project?.name}
                         testsRun={prediction ? 1 : 0}
-                        inferenceTime={prediction ? Math.floor(Math.random() * 20) + 8 : 0}
+                        inferenceTime={inferenceTime}
                     />
                 </div>
             )}

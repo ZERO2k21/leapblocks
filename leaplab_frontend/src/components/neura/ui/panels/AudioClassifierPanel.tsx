@@ -15,7 +15,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const classifierRef = useRef(new AudioClassifier())
     const audioContextRef = useRef<AudioContext | null>(null)
     const analyserRef = useRef<AnalyserNode | null>(null)
+    const micStreamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
+    const isPredictingRef = useRef(false)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isRecording, setIsRecording] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
@@ -53,6 +55,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const startAudio = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            micStreamRef.current = stream
             const ctx = new AudioContext()
             const source = ctx.createMediaStreamSource(stream)
             const analyser = ctx.createAnalyser()
@@ -79,7 +82,14 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
         audioContextRef.current?.close()
         audioContextRef.current = null
         analyserRef.current = null
+        micStreamRef.current?.getTracks().forEach(t => t.stop())
+        micStreamRef.current = null
         setWaveform([])
+    }, [])
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => { stopAudio() }
     }, [])
 
     useEffect(() => {
@@ -89,6 +99,56 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             stopAudio()
         }
     }, [mode.mode])
+
+    // Test mode prediction - captures audio and predicts periodically
+    useEffect(() => {
+        if (mode.mode !== 'test' || modelLoading) return
+
+        let cancelled = false
+
+        const runPrediction = async () => {
+            if (isPredictingRef.current || cancelled) return
+            const ctx = audioContextRef.current
+            const analyser = analyserRef.current
+            if (!ctx || !analyser) return
+
+            isPredictingRef.current = true
+            setIsProcessing(true)
+            try {
+                if (ctx.state === 'suspended') await ctx.resume()
+
+                // Capture 2 seconds of audio data
+                const sampleData: number[] = []
+                for (let i = 0; i < 40; i++) {
+                    if (cancelled) break
+                    const data = new Uint8Array(analyser.frequencyBinCount)
+                    analyser.getByteFrequencyData(data)
+                    sampleData.push(...Array.from(data))
+                    await new Promise(r => setTimeout(r, 50))
+                }
+
+                if (!cancelled && sampleData.length > 0) {
+                    const result = await classifierRef.current.predict(sampleData, 5)
+                    if (result && !cancelled) setPrediction(result)
+                }
+            } catch (err) {
+                console.error('Audio prediction error:', err)
+            }
+            setIsProcessing(false)
+            isPredictingRef.current = false
+        }
+
+        // Start audio for test mode
+        startAudio()
+
+        // Run predictions periodically
+        const interval = setInterval(runPrediction, 3000)
+
+        return () => {
+            cancelled = true
+            clearInterval(interval)
+        }
+    }, [mode.mode, modelLoading])
 
     const handleCapture = async () => {
         if (!mode.selectedClassId) return
@@ -159,7 +219,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                 for (const sample of cls.samples) {
                     try {
                         const features = JSON.parse(sample.data)
-                        const result = await classifierRef.current.predict(features, 3)
+                        const result = await classifierRef.current.predict(features, 5)
                         if (result && result.label === cls.name) correct++
                         total++
                     } catch {

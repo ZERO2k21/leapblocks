@@ -67,7 +67,7 @@ export class NumberClassifier {
         embedding.dispose()
     }
 
-    async predict(canvas: HTMLCanvasElement, k = 3): Promise<NumberPrediction | null> {
+    async predict(canvas: HTMLCanvasElement, k = 5): Promise<NumberPrediction | null> {
         const tf = await ensureTf()
         const features = this.processCanvas(canvas)
         const embedding = tf.tensor1d(features)

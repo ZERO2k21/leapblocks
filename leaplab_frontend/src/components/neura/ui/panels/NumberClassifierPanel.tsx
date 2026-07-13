@@ -164,7 +164,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             isPredictingRef.current = true
             setIsProcessing(true)
             try {
-                const result = await classifierRef.current.predict(canvas, 3)
+                const result = await classifierRef.current.predict(canvas, 5)
                 if (result) setPrediction(result)
             } catch {
                 // ignore
@@ -238,7 +238,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         isPredictingRef.current = true
         setIsProcessing(true)
         try {
-            const result = await classifierRef.current.predict(canvasRef.current!, 3)
+            const result = await classifierRef.current.predict(canvasRef.current!, 5)
             if (result) setPrediction(result)
         } catch {
             // ignore
@@ -283,7 +283,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         tempCanvas.height = 360
                         const tempCtx = tempCanvas.getContext('2d')!
                         tempCtx.drawImage(img, 0, 0, 360, 360)
-                        const result = await classifierRef.current.predict(tempCanvas, 3)
+                        const result = await classifierRef.current.predict(tempCanvas, 5)
                         if (result && result.label === cls.name) correct++
                         total++
                     } catch {
@@ -462,7 +462,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 isPredictingRef.current = true
                                 setIsProcessing(true)
                                 try {
-                                    const result = await classifierRef.current.predict(canvasRef.current, 3)
+                                    const result = await classifierRef.current.predict(canvasRef.current, 5)
                                     if (result) setPrediction(result)
                                 } catch {
                                     // ignore

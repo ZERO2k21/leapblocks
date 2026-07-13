@@ -43,7 +43,7 @@ export class TextClassifier {
         embeddings.dispose()
     }
 
-    async predict(text: string, k = 3): Promise<TextPrediction | null> {
+    async predict(text: string, k = 5): Promise<TextPrediction | null> {
         const embedding = await this.embedText(text)
         const reshaped = embedding.squeeze([0])
         const result = await this.knn.predictClass(reshaped, k)
@@ -52,7 +52,7 @@ export class TextClassifier {
         return result
     }
 
-    async predictBatch(texts: string[], k = 3): Promise<(TextPrediction | null)[]> {
+    async predictBatch(texts: string[], k = 5): Promise<(TextPrediction | null)[]> {
         const use = await this.ensureModel()
         const embeddings = await use.embed(texts)
         const results: (TextPrediction | null)[] = []
