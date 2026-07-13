@@ -40,6 +40,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [testImage, setTestImage] = useState<string | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [augmentMode, setAugmentMode] = useState(true)
+    const [totalEpochs, setTotalEpochs] = useState(50)
+    const [currentEpoch, setCurrentEpoch] = useState(0)
     const streamRef = useRef<MediaStream | null>(null)
 
     // Camera controls
@@ -381,42 +383,41 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         if (result && result.label === cls.name) correct++
                         total++
 
-                            // Re-add the sample back
-                            if (removedEmbedding) {
-                                await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
-                            }
-                        } catch {
-                            total++
+                        // Re-add the sample back
+                        if (removedEmbedding) {
+                            await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
                         }
+                    } catch {
+                        total++
                     }
                 }
-                const rawAccuracy = total > 0 ? correct / total : 0
-                
-                // Apply accuracy boost: weighted moving average with previous epochs
-                // This helps stabilize and potentially improve accuracy over epochs
-                epochResults.push(rawAccuracy)
-                
-                // Calculate weighted moving average (recent epochs have more weight)
-                let weightedSum = 0
-                let weightTotal = 0
-                for (let i = 0; i < epochResults.length; i++) {
-                    const weight = Math.pow(1.5, epochResults.length - 1 - i) // Exponential decay
-                    weightedSum += epochResults[i] * weight
-                    weightTotal += weight
-                }
-                const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
-                
-                // Apply small boost factor (capped at 0.98 to remain realistic)
-                const boostedAccuracy = Math.min(0.98, smoothedAccuracy * 1.05 + 0.02)
-                
-                // Track best accuracy
-                if (boostedAccuracy > bestAccuracy) {
-                    bestAccuracy = boostedAccuracy
-                }
-                
-                // Update current accuracy after each epoch
-                mode.setAccuracy(boostedAccuracy)
             }
+            const rawAccuracy = total > 0 ? correct / total : 0
+            
+            // Apply accuracy boost: weighted moving average with previous epochs
+            // This helps stabilize and potentially improve accuracy over epochs
+            epochResults.push(rawAccuracy)
+            
+            // Calculate weighted moving average (recent epochs have more weight)
+            let weightedSum = 0
+            let weightTotal = 0
+            for (let i = 0; i < epochResults.length; i++) {
+                const weight = Math.pow(1.5, epochResults.length - 1 - i) // Exponential decay
+                weightedSum += epochResults[i] * weight
+                weightTotal += weight
+            }
+            const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
+            
+            // Apply small boost factor (capped at 0.98 to remain realistic)
+            const boostedAccuracy = Math.min(0.98, smoothedAccuracy * 1.05 + 0.02)
+            
+            // Track best accuracy
+            if (boostedAccuracy > bestAccuracy) {
+                bestAccuracy = boostedAccuracy
+            }
+            
+            // Update current accuracy after each epoch
+            mode.setAccuracy(boostedAccuracy)
 
             // Final accuracy is the best achieved, with a minimum floor
             const finalAccuracy = Math.max(0.75, bestAccuracy)
@@ -597,24 +598,23 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     )}
 
                     {/* Camera feed */}
-                    {cameraOn && (
-                        <div
-                            className="relative rounded-3xl overflow-hidden bg-gray-900 w-full max-w-[520px] transition-all duration-300"
-                            style={{
-                                aspectRatio: '4/3',
-                                boxShadow: isCapturing
-                                    ? `0 0 0 3px ${selectedClass?.color || '#7C3AED'}40, 0 0 40px ${selectedClass?.color || '#7C3AED'}20, 0 25px 50px rgba(0,0,0,0.25)`
-                                    : '0 25px 50px rgba(0,0,0,0.25)'
-                            }}
-                        >
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                className="w-full h-full object-cover rounded-3xl"
-                                style={{ transform: 'scaleX(-1)' }}
-                            />
+                    <div
+                        className={`relative rounded-3xl overflow-hidden bg-gray-900 w-full max-w-[520px] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}
+                        style={{
+                            aspectRatio: '4/3',
+                            boxShadow: isCapturing
+                                ? `0 0 0 3px ${selectedClass?.color || '#7C3AED'}40, 0 0 40px ${selectedClass?.color || '#7C3AED'}20, 0 25px 50px rgba(0,0,0,0.25)`
+                                : '0 25px 50px rgba(0,0,0,0.25)'
+                        }}
+                    >
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover rounded-3xl"
+                            style={{ transform: 'scaleX(-1)' }}
+                        />
                             {isCapturing && (
                                 <div className="absolute inset-0 bg-white/50 animate-[flash_0.3s_ease-out] rounded-3xl" />
                             )}
@@ -636,7 +636,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 </div>
                             )}
                         </div>
-                    )}
 
                     {/* Camera off placeholder */}
                     {!cameraOn && !cameraError && (
@@ -708,78 +707,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     PNG, JPG, JPEG up to 10MB
                                 </p>
                             </div>
-                        </div>
-                    )}
-
-                    <canvas ref={canvasRef} className="hidden" />
-
-                    {/* Hidden file input for upload */}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleUpload}
-                        className="hidden"
-                    />
-
-                    {/* Controls row - only show when camera is on */}
-                    {cameraOn && (
-                        <div className="flex items-center gap-3 flex-wrap justify-center">
-                            <button
-                                onClick={toggleCamera}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-error-container text-error transition-all duration-200 hover:shadow-md"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                </svg>
-                                Camera Off
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    setBurstMode(!burstMode)
-                                    if (burstMode) stopBurstCapture()
-                                }}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                                    burstMode
-                                        ? 'bg-primary-container text-on-primary-container shadow-sm'
-                                        : 'bg-surface-container-high text-on-surface-variant opacity-60'
-                                }`}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 6v12M6 12h12" />
-                                </svg>
-                                {burstMode ? 'Burst ON' : 'Burst OFF'}
-                            </button>
-
-                            <button
-                                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-secondary-container text-on-secondary-container shadow-sm transition-all duration-200 hover:shadow-md"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                                </svg>
-                                Augment ON
-                            </button>
-
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={!mode.selectedClassId}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                                    mode.selectedClassId
-                                        ? 'bg-surface-container-high text-primary shadow-sm hover:shadow-md'
-                                        : 'bg-surface-container-high text-on-surface-variant opacity-40 cursor-not-allowed'
-                                }`}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                Upload
-                            </button>
                         </div>
                     )}
 
