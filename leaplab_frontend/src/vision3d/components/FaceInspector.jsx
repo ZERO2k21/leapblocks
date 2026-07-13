@@ -224,98 +224,98 @@ export const FaceInspector = () => {
   const totalArea = faceData.reduce((sum, f) => sum + f.area, 0);
 
   return (
-    <div className="face-inspector">
-      <div className="face-inspector-header">
+    <div className="absolute top-3 left-3 z-[20] bg-white/96 border border-slate-200 rounded-lg shadow-lg text-[11px] text-slate-600 max-w-[280px] max-h-[60vh] overflow-y-auto backdrop-blur-[8px]">
+      <div className="flex items-center gap-1.5 p-[8px_12px] border-b border-slate-200 font-semibold text-[12px] text-slate-800">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
           <polygon points="12,3 3,21 21,21"/>
         </svg>
         <span>Face Inspector</span>
-        <span className="face-count">{faceData.length} selected</span>
+        <span className="ml-auto text-[10px] font-medium text-slate-500 bg-slate-100 p-[2px_6px] rounded">{faceData.length} selected</span>
       </div>
 
       {faceData.length > 1 && (
-        <div className="face-total-area">
-          <label>Total Area</label>
-          <span className="total-value">{totalArea.toFixed(4)} sq units</span>
+        <div className="p-2 bg-indigo-50/50 border-b border-slate-200 flex justify-between items-center text-[10px] font-semibold">
+          <label className="text-[10px] text-slate-500 font-medium">Total Area</label>
+          <span className="font-mono text-indigo-700">{totalArea.toFixed(4)} sq units</span>
         </div>
       )}
 
-      <div className="face-inspector-content">
+      <div className="p-1.5">
         {faceData.map((data, idx) => (
-          <div key={idx} className="face-data-card">
-            <div className="face-data-header">
-              <span className="face-index">Face #{data.faceIndex}</span>
-              <span className={`face-type ${data.isBoundary ? 'boundary' : 'manifold'}`}>
+          <div key={idx} className="p-2 mb-1 rounded-md bg-slate-50 border border-slate-200 last:mb-0">
+            <div className="flex justify-between items-center mb-1.5 font-semibold text-[11px]">
+              <span className="text-slate-600">Face #{data.faceIndex}</span>
+              <span className={`text-[9px] p-[1px_6px] rounded font-medium uppercase tracking-[0.5px] ${data.isBoundary ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
                 {data.isBoundary ? 'Boundary' : 'Manifold'}
               </span>
             </div>
 
             {/* Vertices */}
-            <div className="face-property">
-              <label>Vertices</label>
-              <div className="face-vertex-list">
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Vertices</label>
+              <div className="flex gap-1">
                 {data.vertices.map((v, i) => (
-                  <span key={i} className="vertex-chip">V{v}</span>
+                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-slate-200 text-slate-700">V{v}</span>
                 ))}
               </div>
             </div>
 
             {/* Center */}
-            <div className="face-property">
-              <label>Center</label>
-              <div className="face-value-coords">
-                <span className="coord x">X: {data.center[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.center[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.center[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Center</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.center[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.center[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.center[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Normal */}
-            <div className="face-property">
-              <label>Normal</label>
-              <div className="face-value-coords">
-                <span className="coord x">X: {data.normal[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.normal[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.normal[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Normal</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.normal[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.normal[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.normal[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Area */}
-            <div className="face-property">
-              <label>Area</label>
-              <span className="face-value">{data.area.toFixed(4)} sq units</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Area</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.area.toFixed(4)} sq units</span>
             </div>
 
             {/* Perimeter */}
-            <div className="face-property">
-              <label>Perimeter</label>
-              <span className="face-value">{data.perimeter.toFixed(4)} units</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Perimeter</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.perimeter.toFixed(4)} units</span>
             </div>
 
             {/* Edge Lengths */}
-            <div className="face-property">
-              <label>Edge Lengths</label>
-              <div className="face-edge-lengths">
-                <span className="edge-len">AB: {data.edgeLengths[0].toFixed(3)}</span>
-                <span className="edge-len">BC: {data.edgeLengths[1].toFixed(3)}</span>
-                <span className="edge-len">CA: {data.edgeLengths[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Edge Lengths</label>
+              <div className="flex flex-col text-[10px] text-slate-500 font-mono items-end">
+                <span className="block">AB: {data.edgeLengths[0].toFixed(3)}</span>
+                <span className="block">BC: {data.edgeLengths[1].toFixed(3)}</span>
+                <span className="block">CA: {data.edgeLengths[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Angles */}
-            <div className="face-property">
-              <label>Angles</label>
-              <div className="face-angles">
-                <span className="angle-chip">@V{data.vertices[0]}: {data.angles[0].toFixed(1)}°</span>
-                <span className="angle-chip">@V{data.vertices[1]}: {data.angles[1].toFixed(1)}°</span>
-                <span className="angle-chip">@V{data.vertices[2]}: {data.angles[2].toFixed(1)}°</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Angles</label>
+              <div className="flex flex-col gap-0.5 items-end">
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-slate-200/80 text-slate-700">@V{data.vertices[0]}: {data.angles[0].toFixed(1)}°</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-slate-200/80 text-slate-700">@V{data.vertices[1]}: {data.angles[1].toFixed(1)}°</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-slate-200/80 text-slate-700">@V{data.vertices[2]}: {data.angles[2].toFixed(1)}°</span>
               </div>
             </div>
 
             {/* Adjacent Faces */}
-            <div className="face-property">
-              <label>Adjacent Faces</label>
-              <span className="face-value">{data.adjacentFaces}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Adjacent Faces</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.adjacentFaces}</span>
             </div>
           </div>
         ))}

@@ -25,13 +25,13 @@ export const PropertiesPanel = () => {
 
   if (!selectedShape) {
     return (
-      <div className="properties-panel">
-        <div className="properties-panel-header">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-[10px_14px] border-b border-slate-200">
           <h3>Inspector</h3>
           <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8' }} title="Close">x</button>
         </div>
-        <div className="properties-empty">
-          <p>Select an object to view its properties</p>
+        <div className="flex-1 flex items-center justify-center p-6 text-center">
+          <p className="m-0 text-[13px] text-slate-400">Select an object to view its properties</p>
         </div>
       </div>
     );
@@ -93,11 +93,11 @@ export const PropertiesPanel = () => {
   };
 
   return (
-    <div className="properties-panel">
-      <div className="properties-panel-header">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between p-[10px_14px] border-b border-slate-200">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <h3>Inspector</h3>
-          <span className="shape-type-badge">{selectedShape.type}</span>
+          <span className="text-[10px] font-semibold p-[2px_8px] bg-indigo-50 text-indigo-600 rounded-full uppercase">{selectedShape.type}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button onClick={handleDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: 4, color: '#ef4444', display: 'flex', alignItems: 'center' }} title="Delete (Del)">
@@ -110,91 +110,91 @@ export const PropertiesPanel = () => {
         </div>
       </div>
 
-      <div className="properties-content">
+      <div className="flex-1 overflow-y-auto p-[10px_14px]">
         {/* Name */}
-        <div className="property-group">
-          <label>Name</label>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Name</label>
           <input
             type="text"
             value={selectedShape.name}
             onChange={(e) => updateShape(selectedShape.id, { name: e.target.value })}
-            className="property-input"
+            className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]"
           />
         </div>
 
         {/* Shape-specific properties */}
         {selectedShape.type === 'box' && (
-          <div className="property-group">
-            <label>Dimensions</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">W</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Dimensions</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">W</span>
                 <input type="number" value={selectedShape.width ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('width', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.height ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('height', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">D</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">D</span>
                 <input type="number" value={selectedShape.depth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('depth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
-            <div className="property-row" style={{ marginTop: 4 }}>
-              <div className="property-field" style={{ flex: 1 }}>
-                <span className="property-label">Corner Radius</span>
+            <div className="flex gap-1.25" style={{ marginTop: 4 }}>
+              <div className="flex-1 flex items-center gap-0.75" style={{ flex: 1 }}>
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Corner Radius</span>
                 <input type="number" value={selectedShape.cornerRadius ?? 0} min={0} step={0.1}
                   onChange={(e) => updateProp('cornerRadius', Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {(selectedShape.type === 'cylinder' || selectedShape.type === 'cone') && (
-          <div className="property-group">
-            <label>{selectedShape.type === 'cylinder' ? 'Cylinder' : 'Cone'}</label>
-            <div className="property-row">
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{selectedShape.type === 'cylinder' ? 'Cylinder' : 'Cone'}</label>
+            <div className="flex gap-1.25">
               {selectedShape.type === 'cylinder' && (
-                <div className="property-field">
-                  <span className="property-label">R Top</span>
+                <div className="flex-1 flex items-center gap-0.75">
+                  <span className="text-[10px] text-slate-500 whitespace-nowrap">R Top</span>
                   <input type="number" value={selectedShape.radiusTop ?? 1} min={0.1} step={0.1}
                     onChange={(e) => updateProp('radiusTop', parseFloat(e.target.value) || 0.1)}
-                    className="property-input" />
+                    className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
                 </div>
               )}
-              <div className="property-field">
-                <span className="property-label">{selectedShape.type === 'cylinder' ? 'R Bot' : 'Radius'}</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">{selectedShape.type === 'cylinder' ? 'R Bot' : 'Radius'}</span>
                 <input type="number" value={selectedShape.type === 'cylinder' ? (selectedShape.radiusBottom ?? 1) : (selectedShape.coneRadius ?? 1)} min={0.1} step={0.1}
                   onChange={(e) => updateProp(selectedShape.type === 'cylinder' ? 'radiusBottom' : 'coneRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.type === 'cylinder' ? (selectedShape.cylinderHeight ?? 2) : (selectedShape.coneHeight ?? 2)} min={0.1} step={0.1}
                   onChange={(e) => updateProp(selectedShape.type === 'cylinder' ? 'cylinderHeight' : 'coneHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
-            <div className="property-row" style={{ marginTop: 4 }}>
-              <div className="property-field">
-                <span className="property-label">Segments</span>
+            <div className="flex gap-1.25" style={{ marginTop: 4 }}>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Segments</span>
                 <input type="number" value={selectedShape.radialSegments ?? 32} min={3} max={128} step={1}
                   onChange={(e) => updateProp('radialSegments', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
               {selectedShape.type === 'cylinder' && (
-                <div className="property-field">
-                  <span className="property-label">Taper %</span>
+                <div className="flex-1 flex items-center gap-0.75">
+                  <span className="text-[10px] text-slate-500 whitespace-nowrap">Taper %</span>
                   <input type="number" value={selectedShape.taper ?? 0} min={-90} max={90} step={1}
                     onChange={(e) => updateProp('taper', parseFloat(e.target.value) || 0)}
-                    className="property-input" />
+                    className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
                 </div>
               )}
             </div>
@@ -202,28 +202,28 @@ export const PropertiesPanel = () => {
         )}
 
         {(selectedShape.type === 'sphere' || selectedShape.type === 'dodecahedron' || selectedShape.type === 'icosahedron' || selectedShape.type === 'octahedron' || selectedShape.type === 'tetrahedron') && (
-          <div className="property-group">
-            <label>{selectedShape.type.charAt(0).toUpperCase() + selectedShape.type.slice(1)}</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Radius</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{selectedShape.type.charAt(0).toUpperCase() + selectedShape.type.slice(1)}</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radius</span>
                 <input type="number" value={selectedShape.radius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('radius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
               {selectedShape.type === 'sphere' && (
                 <>
-                  <div className="property-field">
-                    <span className="property-label">W Segs</span>
+                  <div className="flex-1 flex items-center gap-0.75">
+                    <span className="text-[10px] text-slate-500 whitespace-nowrap">W Segs</span>
                     <input type="number" value={selectedShape.widthSegments ?? 32} min={3} max={128} step={1}
                       onChange={(e) => updateProp('widthSegments', parseInt(e.target.value) || 3)}
-                      className="property-input" />
+                      className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
                   </div>
-                  <div className="property-field">
-                    <span className="property-label">H Segs</span>
+                  <div className="flex-1 flex items-center gap-0.75">
+                    <span className="text-[10px] text-slate-500 whitespace-nowrap">H Segs</span>
                     <input type="number" value={selectedShape.heightSegments ?? 16} min={2} max={128} step={1}
                       onChange={(e) => updateProp('heightSegments', parseInt(e.target.value) || 2)}
-                      className="property-input" />
+                      className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
                   </div>
                 </>
               )}
@@ -232,419 +232,419 @@ export const PropertiesPanel = () => {
         )}
 
         {selectedShape.type === 'torus' && (
-          <div className="property-group">
-            <label>Torus</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Major R</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Torus</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Major R</span>
                 <input type="number" value={selectedShape.torusRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('torusRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Tube R</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Tube R</span>
                 <input type="number" value={selectedShape.tubeRadius ?? 0.4} min={0.05} step={0.05}
                   onChange={(e) => updateProp('tubeRadius', parseFloat(e.target.value) || 0.05)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
-            <div className="property-row" style={{ marginTop: 4 }}>
-              <div className="property-field">
-                <span className="property-label">Radial Segs</span>
+            <div className="flex gap-1.25" style={{ marginTop: 4 }}>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radial Segs</span>
                 <input type="number" value={selectedShape.torusRadialSegments ?? 16} min={3} max={64} step={1}
                   onChange={(e) => updateProp('torusRadialSegments', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Tube Segs</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Tube Segs</span>
                 <input type="number" value={selectedShape.torusTubularSegments ?? 32} min={3} max={128} step={1}
                   onChange={(e) => updateProp('torusTubularSegments', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'roof' && (
-          <div className="property-group">
-            <label>Roof</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">W</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Roof</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">W</span>
                 <input type="number" value={selectedShape.roofWidth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roofWidth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">D</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">D</span>
                 <input type="number" value={selectedShape.roofDepth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roofDepth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.roofHeight ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roofHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'roundRoof' && (
-          <div className="property-group">
-            <label>Round Roof</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">W</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Round Roof</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">W</span>
                 <input type="number" value={selectedShape.roundRoofWidth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roundRoofWidth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">D</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">D</span>
                 <input type="number" value={selectedShape.roundRoofDepth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roundRoofDepth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.roundRoofHeight ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('roundRoofHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'wedge' && (
-          <div className="property-group">
-            <label>Wedge</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">W</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Wedge</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">W</span>
                 <input type="number" value={selectedShape.wedgeWidth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('wedgeWidth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">D</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">D</span>
                 <input type="number" value={selectedShape.wedgeDepth ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('wedgeDepth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.wedgeHeight ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('wedgeHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'pyramid' && (
-          <div className="property-group">
-            <label>Pyramid</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Radius</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Pyramid</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radius</span>
                 <input type="number" value={selectedShape.pyramidRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('pyramidRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.pyramidHeight ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('pyramidHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Sides</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Sides</span>
                 <input type="number" value={selectedShape.pyramidSides ?? 4} min={3} max={32} step={1}
                   onChange={(e) => updateProp('pyramidSides', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'halfSphere' && (
-          <div className="property-group">
-            <label>Half Sphere</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Radius</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Half Sphere</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radius</span>
                 <input type="number" value={selectedShape.halfSphereRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('halfSphereRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Segs</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Segs</span>
                 <input type="number" value={selectedShape.halfSphereSegments ?? 32} min={4} max={64} step={1}
                   onChange={(e) => updateProp('halfSphereSegments', parseInt(e.target.value) || 4)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'paraboloid' && (
-          <div className="property-group">
-            <label>Paraboloid</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Radius</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Paraboloid</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radius</span>
                 <input type="number" value={selectedShape.paraboloidRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('paraboloidRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.paraboloidHeight ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('paraboloidHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'tube' && (
-          <div className="property-group">
-            <label>Tube</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Outer R</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tube</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Outer R</span>
                 <input type="number" value={selectedShape.tubeOuterRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('tubeOuterRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Inner R</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Inner R</span>
                 <input type="number" value={selectedShape.tubeInnerRadius ?? 0.7} min={0.05} step={0.1}
                   onChange={(e) => updateProp('tubeInnerRadius', parseFloat(e.target.value) || 0.05)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.tubeHeight ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('tubeHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'star' && (
-          <div className="property-group">
-            <label>Star</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Outer R</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Star</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Outer R</span>
                 <input type="number" value={selectedShape.starOuterRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('starOuterRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Inner R</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Inner R</span>
                 <input type="number" value={selectedShape.starInnerRadius ?? 0.5} min={0.05} step={0.1}
                   onChange={(e) => updateProp('starInnerRadius', parseFloat(e.target.value) || 0.05)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
-            <div className="property-row" style={{ marginTop: 4 }}>
-              <div className="property-field">
-                <span className="property-label">Points</span>
+            <div className="flex gap-1.25" style={{ marginTop: 4 }}>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Points</span>
                 <input type="number" value={selectedShape.starPoints ?? 5} min={3} max={32} step={1}
                   onChange={(e) => updateProp('starPoints', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Depth</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Depth</span>
                 <input type="number" value={selectedShape.starHeight ?? 0.5} min={0.1} step={0.1}
                   onChange={(e) => updateProp('starHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'heart' && (
-          <div className="property-group">
-            <label>Heart</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Size</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Heart</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Size</span>
                 <input type="number" value={selectedShape.heartSize ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('heartSize', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Depth</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Depth</span>
                 <input type="number" value={selectedShape.heartDepth ?? 0.5} min={0.1} step={0.1}
                   onChange={(e) => updateProp('heartDepth', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'polygon' && (
-          <div className="property-group">
-            <label>Polygon</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Radius</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Polygon</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Radius</span>
                 <input type="number" value={selectedShape.polygonRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('polygonRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Sides</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Sides</span>
                 <input type="number" value={selectedShape.polygonSides ?? 6} min={3} max={32} step={1}
                   onChange={(e) => updateProp('polygonSides', parseInt(e.target.value) || 3)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">H</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">H</span>
                 <input type="number" value={selectedShape.polygonHeight ?? 2} min={0.1} step={0.1}
                   onChange={(e) => updateProp('polygonHeight', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'ring' && (
-          <div className="property-group">
-            <label>Ring</label>
-            <div className="property-row">
-              <div className="property-field">
-                <span className="property-label">Inner R</span>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ring</label>
+            <div className="flex gap-1.25">
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Inner R</span>
                 <input type="number" value={selectedShape.innerRadius ?? 0.5} min={0.05} step={0.1}
                   onChange={(e) => updateProp('innerRadius', parseFloat(e.target.value) || 0.05)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Outer R</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Outer R</span>
                 <input type="number" value={selectedShape.outerRadius ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('outerRadius', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {selectedShape.type === 'text3d' && (
-          <div className="property-group">
-            <label>Text</label>
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Text</label>
             <input type="text" value={selectedShape.text ?? 'Hello'}
               onChange={(e) => updateProp('text', e.target.value)}
-              className="property-input" />
-            <div className="property-row" style={{ marginTop: 4 }}>
-              <div className="property-field">
-                <span className="property-label">Font Size</span>
+              className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
+            <div className="flex gap-1.25" style={{ marginTop: 4 }}>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Font Size</span>
                 <input type="number" value={selectedShape.fontSize ?? 1} min={0.1} step={0.1}
                   onChange={(e) => updateProp('fontSize', parseFloat(e.target.value) || 0.1)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
-              <div className="property-field">
-                <span className="property-label">Depth</span>
+              <div className="flex-1 flex items-center gap-0.75">
+                <span className="text-[10px] text-slate-500 whitespace-nowrap">Depth</span>
                 <input type="number" value={selectedShape.textDepth ?? 0.5} min={0.05} step={0.1}
                   onChange={(e) => updateProp('textDepth', parseFloat(e.target.value) || 0.05)}
-                  className="property-input" />
+                  className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
               </div>
             </div>
           </div>
         )}
 
         {/* Position */}
-        <div className="property-group">
-          <label>Position</label>
-          <div className="property-row">
-            <div className="property-field">
-              <span className="axis-label x">X</span>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Position</label>
+          <div className="flex gap-1.25">
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-red-500">X</span>
               <input type="number" value={selectedShape.position[0].toFixed(2)}
                 onChange={(e) => handlePositionChange('x', parseFloat(e.target.value) || 0)}
-                step={0.1} className="property-input" />
+                step={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label y">Y</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-green-500">Y</span>
               <input type="number" value={selectedShape.position[1].toFixed(2)}
                 onChange={(e) => handlePositionChange('y', parseFloat(e.target.value) || 0)}
-                step={0.1} className="property-input" />
+                step={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label z">Z</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-blue-500">Z</span>
               <input type="number" value={selectedShape.position[2].toFixed(2)}
                 onChange={(e) => handlePositionChange('z', parseFloat(e.target.value) || 0)}
-                step={0.1} className="property-input" />
+                step={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
           </div>
         </div>
 
         {/* Rotation */}
-        <div className="property-group">
-          <label>Rotation (degrees)</label>
-          <div className="property-row">
-            <div className="property-field">
-              <span className="axis-label x">X</span>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rotation (degrees)</label>
+          <div className="flex gap-1.25">
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-red-500">X</span>
               <input type="number" value={((selectedShape.rotation[0] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('x', parseFloat(e.target.value) || 0)}
-                step={15} className="property-input" />
+                step={15} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label y">Y</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-green-500">Y</span>
               <input type="number" value={((selectedShape.rotation[1] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('y', parseFloat(e.target.value) || 0)}
-                step={15} className="property-input" />
+                step={15} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label z">Z</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-blue-500">Z</span>
               <input type="number" value={((selectedShape.rotation[2] * 180) / Math.PI).toFixed(1)}
                 onChange={(e) => handleRotationChange('z', parseFloat(e.target.value) || 0)}
-                step={15} className="property-input" />
+                step={15} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
           </div>
         </div>
 
         {/* Scale */}
-        <div className="property-group">
-          <label>Scale</label>
-          <div className="property-row">
-            <div className="property-field">
-              <span className="axis-label x">X</span>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Scale</label>
+          <div className="flex gap-1.25">
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-red-500">X</span>
               <input type="number" value={selectedShape.scale[0].toFixed(2)}
                 onChange={(e) => handleScaleChange('x', parseFloat(e.target.value) || 1)}
-                step={0.1} min={0.1} className="property-input" />
+                step={0.1} min={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label y">Y</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-green-500">Y</span>
               <input type="number" value={selectedShape.scale[1].toFixed(2)}
                 onChange={(e) => handleScaleChange('y', parseFloat(e.target.value) || 1)}
-                step={0.1} min={0.1} className="property-input" />
+                step={0.1} min={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="axis-label z">Z</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[11px] font-bold w-3.5 text-center text-blue-500">Z</span>
               <input type="number" value={selectedShape.scale[2].toFixed(2)}
                 onChange={(e) => handleScaleChange('z', parseFloat(e.target.value) || 1)}
-                step={0.1} min={0.1} className="property-input" />
+                step={0.1} min={0.1} className="w-full p-[4px_6px] border border-slate-200 rounded-[5px] text-[11px] text-slate-900 bg-slate-50 outline-none transition-[border-color] duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.15)]" />
             </div>
           </div>
         </div>
 
         {/* Color */}
-        <div className="property-group">
-          <label>Color</label>
-          <div className="color-picker">
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Color</label>
+          <div className="flex flex-col gap-1.25">
             <input type="color" value={selectedShape.color}
               onChange={(e) => handleColorChange(e.target.value)}
-              className="color-input" />
-            <div className="color-presets">
+              className="w-full h-7 border border-slate-200 rounded-[5px] cursor-pointer p-0.5" />
+            <div className="flex flex-wrap gap-0.75">
               {DEFAULT_COLORS.map((color) => (
                 <button
                   key={color}
-                  className={`color-swatch ${selectedShape.color === color ? 'active' : ''}`}
+                  className="w-4 h-4 border-2 rounded-[3px] cursor-pointer transition-all duration-150 hover:scale-125 border-slate-900 shadow-[0_0_0_2px_white] active"
                   style={{ backgroundColor: color }}
                   onClick={() => handleColorChange(color)}
                 />
@@ -654,48 +654,48 @@ export const PropertiesPanel = () => {
         </div>
 
         {/* Material Properties */}
-        <div className="property-group">
-          <label>Material</label>
-          <div className="property-row">
-            <div className="property-field">
-              <span className="property-label">Metalness</span>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Material</label>
+          <div className="flex gap-1.25">
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[10px] text-slate-500 whitespace-nowrap">Metalness</span>
               <input type="range" min={0} max={1} step={0.05}
                 value={selectedShape.metalness ?? 0.1}
                 onChange={(e) => updateShape(selectedShape.id, { metalness: parseFloat(e.target.value) })}
-                className="property-slider" />
+                className="w-full h-1 appearance-none bg-slate-200 rounded-[2px] outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(0,0,0,0.15)]" />
             </div>
-            <div className="property-field">
-              <span className="property-label">Roughness</span>
+            <div className="flex-1 flex items-center gap-0.75">
+              <span className="text-[10px] text-slate-500 whitespace-nowrap">Roughness</span>
               <input type="range" min={0} max={1} step={0.05}
                 value={selectedShape.roughness ?? 0.7}
                 onChange={(e) => updateShape(selectedShape.id, { roughness: parseFloat(e.target.value) })}
-                className="property-slider" />
+                className="w-full h-1 appearance-none bg-slate-200 rounded-[2px] outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(0,0,0,0.15)]" />
             </div>
           </div>
         </div>
 
         {/* Edge Smoothness */}
-        <div className="property-group">
-          <label>Edge Smoothness</label>
-          <div className="property-row">
-            <div className="property-field" style={{ flex: 1 }}>
+        <div className="mb-3">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Edge Smoothness</label>
+          <div className="flex gap-1.25">
+            <div className="flex-1 flex items-center gap-0.75" style={{ flex: 1 }}>
               <input type="range" min={0} max={1} step={0.01}
                 value={selectedShape.cornerRadius ?? 0}
                 onChange={(e) => updateShape(selectedShape.id, { cornerRadius: parseFloat(e.target.value) })}
-                className="property-slider" />
+                className="w-full h-1 appearance-none bg-slate-200 rounded-[2px] outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(0,0,0,0.15)]" />
             </div>
-            <span className="property-value">{((selectedShape.cornerRadius ?? 0) * 100).toFixed(0)}%</span>
+            <span className="text-[11px] font-semibold text-slate-500 min-w-[32px] text-right select-none">{((selectedShape.cornerRadius ?? 0) * 100).toFixed(0)}%</span>
           </div>
         </div>
 
         {/* Toggles */}
-        <div className="property-group">
-          <label>Options</label>
-          <div className="toggle-row">
-            <button className={`toggle-btn ${selectedShape.isHole ? 'active' : ''}`} onClick={handleHoleToggle}>
+        <div className="mb-3">
+          <label className="text-[11px] font-semibold text-slate-700 mb-1.5 block">Options</label>
+          <div className="flex gap-1">
+            <button className={`px-2 py-1 text-[10px] font-medium rounded-[4px] border transition-all duration-150 ${selectedShape.isHole ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`} onClick={handleHoleToggle}>
               Hole
             </button>
-            <button className={`toggle-btn ${selectedShape.visible ? 'active' : ''}`} onClick={handleVisibilityToggle}>
+            <button className={`px-2 py-1 text-[10px] font-medium rounded-[4px] border transition-all duration-150 ${selectedShape.visible ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`} onClick={handleVisibilityToggle}>
               Visible
             </button>
             <button className={`toggle-btn ${selectedShape.locked ? 'active' : ''}`} onClick={handleLockToggle}>

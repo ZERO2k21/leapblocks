@@ -24,7 +24,7 @@ const ShapeIcon = ({ type }) => {
     group: '\u229E',
   };
 
-  return <span className="shape-list-icon">{iconMap[type] || '?'}</span>;
+  return <span className="text-[13px] mr-1">{iconMap[type] || '?'}</span>;
 };
 
 export const SceneList = () => {
@@ -79,55 +79,55 @@ export const SceneList = () => {
   });
 
   return (
-    <div className="scene-list">
-      <div className="scene-list-header">
-        <h3>Scene</h3>
-        <span className="shape-count">{shapes.length} objects</span>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between p-[8px_12px] border-b border-slate-200">
+        <h3 className="m-0 text-[12px] font-semibold text-slate-900">Scene</h3>
+        <span className="text-[10px] text-slate-400">{shapes.length} objects</span>
       </div>
 
-      <div className="scene-list-content">
+      <div className="flex-1 overflow-y-auto p-1.5">
         {sortedShapes.length === 0 ? (
-          <div className="scene-empty">
-            <p>No objects in scene</p>
-            <p className="hint">Drag shapes from the panel or click to add</p>
+          <div className="p-4 text-center">
+            <p className="m-0 text-[12px] text-slate-400">No objects in scene</p>
+            <p className="text-[10px] mt-1 text-slate-400">Drag shapes from the panel or click to add</p>
           </div>
         ) : (
-          <ul className="shape-list">
+          <ul className="list-none m-0 p-0">
             {sortedShapes.map((shape) => (
               <li
                 key={shape.id}
-                className={`shape-list-item ${selectedIds.includes(shape.id) ? 'selected' : ''} ${!shape.visible ? 'hidden' : ''}`}
+                className={`flex items-center justify-between p-[5px_8px] rounded-md cursor-pointer transition-colors duration-150 hover:bg-slate-100 ${selectedIds.includes(shape.id) ? 'bg-indigo-50' : ''} ${!shape.visible ? 'opacity-40' : ''}`}
                 onClick={(e) => handleShapeClick(shape.id, e)}
               >
-                <div className="shape-list-info">
+                <div className="flex items-center gap-1.5">
                   <input
                     type="checkbox"
-                    className="shape-list-checkbox"
+                    className="w-3.5 h-3.5 cursor-pointer accent-indigo-500 shrink-0 m-0"
                     checked={selectedIds.includes(shape.id)}
                     onChange={() => handleCheckboxChange(shape.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
                   <ShapeIcon type={shape.type} />
-                  <span className="shape-list-name">{shape.name}</span>
+                  <span className="text-[11px] text-slate-900">{shape.name}</span>
                 </div>
 
-                <div className="shape-list-actions">
+                <div className="flex gap-0.5">
                   <button
-                    className={`shape-list-btn ${shape.visible ? '' : 'off'}`}
+                    className={`w-5 h-5 flex items-center justify-center border-none rounded bg-transparent text-[10px] cursor-pointer transition-colors duration-150 text-slate-500 hover:bg-slate-200 ${shape.visible ? '' : 'opacity-35'}`}
                     onClick={(e) => handleVisibilityToggle(shape.id, e)}
                     title={shape.visible ? 'Hide' : 'Show'}
                   >
                     {shape.visible ? '\uD83D\uDC41' : '\uD83D\uDC41\u200D\uD83D\uDDE3\uFE0F'}
                   </button>
                   <button
-                    className={`shape-list-btn ${shape.locked ? 'locked' : ''}`}
+                    className={`w-5 h-5 flex items-center justify-center border-none rounded bg-transparent text-[10px] cursor-pointer transition-colors duration-150 text-slate-500 hover:bg-slate-200 ${shape.locked ? 'text-amber-500' : ''}`}
                     onClick={(e) => handleLockToggle(shape.id, e)}
                     title={shape.locked ? 'Unlock' : 'Lock'}
                   >
                     {shape.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
                   </button>
                   <button
-                    className="shape-list-btn"
+                    className="w-5 h-5 flex items-center justify-center border-none rounded bg-transparent text-[10px] cursor-pointer transition-colors duration-150 text-slate-500 hover:bg-slate-200"
                     onClick={(e) => handleDeleteShape(shape.id, e)}
                     title="Delete"
                     style={{ color: '#ef4444' }}

@@ -211,87 +211,87 @@ export const EdgeInspector = () => {
   const formatAngle = (deg) => `${deg.toFixed(1)}°`;
 
   return (
-    <div className="edge-inspector">
-      <div className="edge-inspector-header">
+    <div className="absolute top-3 left-3 z-[20] bg-white/96 border border-slate-200 rounded-lg shadow-lg text-[11px] text-slate-600 max-w-[280px] max-h-[60vh] overflow-y-auto backdrop-blur-[8px]">
+      <div className="flex items-center gap-1.5 p-[8px_12px] border-b border-slate-200 font-semibold text-[12px] text-slate-800">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="5" y1="19" x2="19" y2="5" strokeWidth="2.5"/>
         </svg>
         <span>Edge Inspector</span>
-        <span className="edge-count">{edgeData.length} selected</span>
+        <span className="ml-auto text-[10px] font-medium text-slate-500 bg-slate-100 p-[2px_6px] rounded">{edgeData.length} selected</span>
       </div>
 
-      <div className="edge-inspector-content">
+      <div className="p-1.5">
         {edgeData.map((data, idx) => (
-          <div key={idx} className="edge-data-card">
-            <div className="edge-data-header">
-              <span className="edge-index">Edge #{idx + 1}</span>
-              <span className={`edge-type ${data.isBoundary ? 'boundary' : data.isManifold ? 'manifold' : 'non-manifold'}`}>
+          <div key={idx} className="p-2 mb-1 rounded-md bg-slate-50 border border-slate-200 last:mb-0">
+            <div className="flex justify-between items-center mb-1.5 font-semibold text-[11px]">
+              <span className="text-slate-600">Edge #{idx + 1}</span>
+              <span className={`text-[9px] p-[1px_6px] rounded font-medium uppercase tracking-[0.5px] ${data.isBoundary ? 'bg-amber-100 text-amber-800' : data.isManifold ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                 {data.isBoundary ? 'Boundary' : data.isManifold ? 'Manifold' : 'Non-Manifold'}
               </span>
             </div>
 
             {/* Length */}
-            <div className="edge-property">
-              <label>Length</label>
-              <div className="edge-value-row">
-                <span className="edge-value">{data.length.toFixed(4)}</span>
-                <span className="edge-unit">units</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Length</label>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.length.toFixed(4)}</span>
+                <span className="text-[9px] text-slate-400">units</span>
               </div>
             </div>
 
             {/* Midpoint */}
-            <div className="edge-property">
-              <label>Midpoint</label>
-              <div className="edge-value-coords">
-                <span className="coord x">X: {data.midpoint[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.midpoint[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.midpoint[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Midpoint</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.midpoint[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.midpoint[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.midpoint[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Vertex A */}
-            <div className="edge-property">
-              <label>Vertex A (idx: {data.edge.a})</label>
-              <div className="edge-value-coords">
-                <span className="coord x">X: {data.vertexA[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.vertexA[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.vertexA[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Vertex A (idx: {data.edge.a})</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.vertexA[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.vertexA[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.vertexA[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Vertex B */}
-            <div className="edge-property">
-              <label>Vertex B (idx: {data.edge.b})</label>
-              <div className="edge-value-coords">
-                <span className="coord x">X: {data.vertexB[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.vertexB[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.vertexB[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Vertex B (idx: {data.edge.b})</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.vertexB[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.vertexB[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.vertexB[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Direction */}
-            <div className="edge-property">
-              <label>Direction</label>
-              <div className="edge-value-coords">
-                <span className="coord x">X: {data.direction[0].toFixed(3)}</span>
-                <span className="coord y">Y: {data.direction[1].toFixed(3)}</span>
-                <span className="coord z">Z: {data.direction[2].toFixed(3)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Direction</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.direction[0].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.direction[1].toFixed(3)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.direction[2].toFixed(3)}</span>
               </div>
             </div>
 
             {/* Connected Edges */}
-            <div className="edge-property">
-              <label>Connected Edges</label>
-              <span className="edge-value">{data.connectedCount}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Connected Edges</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.connectedCount}</span>
             </div>
 
             {/* Angles */}
             {data.angles.length > 0 && (
-              <div className="edge-property">
-                <label>Angles with Connected</label>
-                <div className="edge-angles">
+              <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+                <label className="text-[10px] text-slate-500 font-medium">Angles with Connected</label>
+                <div className="flex gap-1 flex-wrap">
                   {data.angles.map((angle, i) => (
-                    <span key={i} className="angle-chip">{formatAngle(angle)}</span>
+                    <span key={i} className="text-[9px] p-[2px_6px] rounded font-medium bg-slate-100 text-slate-700">{formatAngle(angle)}</span>
                   ))}
                 </div>
               </div>

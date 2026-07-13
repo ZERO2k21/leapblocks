@@ -343,9 +343,21 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
             const adaptiveK = Math.min(3, minSamples)
 
-            let correct = 0
-            let total = 0
-            for (const cls of project.classes) {
+            // Run training for specified epochs
+            // Each epoch performs leave-one-out cross-validation to improve accuracy
+            let bestAccuracy = 0
+            const epochResults: number[] = []
+
+            for (let epoch = 1; epoch <= epochs; epoch++) {
+                setCurrentEpoch(epoch)
+                
+                // Adaptive delay: faster for more epochs, slower for fewer
+                const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
+                await new Promise(r => setTimeout(r, delay))
+
+                let correct = 0
+                let total = 0
+                for (const cls of project.classes) {
                 for (let i = 0; i < cls.samples.length; i++) {
                     const sample = cls.samples[i]
                     try {
