@@ -816,11 +816,11 @@ const Vision3DApp = ({ onBack }) => {
 
       <div className="flex flex-1 overflow-hidden relative">
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex items-center justify-between h-[72px] px-6 bg-white/85 backdrop-blur-[12px] [backdrop-filter:saturate(180%)] border-b border-slate-200/80 shadow-[0_4px_30px_rgba(0,0,0,0.02)] text-[13px] text-slate-700 shrink-0 gap-4 overflow-x-auto relative z-[100] w-full box-border">
+          <div className="flex items-center justify-between h-14 px-4 bg-white border-b border-slate-200 shadow-sm text-slate-600 shrink-0 gap-3 overflow-x-auto relative z-[100] w-full box-border">
             <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
-              <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-blue-500/[0.06] border border-blue-500/[0.15]">
+              <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px] bg-blue-500/[0.06] border border-blue-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'select' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                    className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${activeTool === 'select' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('select')}
                   title="Select (V)"
                 >
@@ -828,7 +828,7 @@ const Vision3DApp = ({ onBack }) => {
                   Select
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'move' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${activeTool === 'move' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('move')}
                   title="Move (G)"
                 >
@@ -836,7 +836,7 @@ const Vision3DApp = ({ onBack }) => {
                   Move
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'rotate' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${activeTool === 'rotate' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('rotate')}
                   title="Rotate (R)"
                 >
@@ -844,7 +844,7 @@ const Vision3DApp = ({ onBack }) => {
                   Rotate
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${activeTool === 'scale' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${activeTool === 'scale' ? 'bg-blue-600 text-white shadow-[0_4px_10px_-1px_rgba(37,99,235,0.25)]' : 'bg-transparent text-slate-500 hover:bg-blue-500/[0.12] hover:text-blue-700'}`}
                   onClick={() => setTool('scale')}
                   title="Scale (S)"
                 >
@@ -852,11 +852,11 @@ const Vision3DApp = ({ onBack }) => {
                   Resize
                 </button>
               </div>
-              <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
+              <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
               {/* Edit Mode Group (Blender-like) */}
-              <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-teal-500/[0.06] border border-teal-500/[0.15]">
+              <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px] bg-teal-500/[0.06] border border-teal-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'vertex' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'vertex' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'vertex' ? 'object' : 'vertex')}
                   disabled={selectedIds.length !== 1}
                   title="Vertex Edit (1)"
@@ -865,7 +865,7 @@ const Vision3DApp = ({ onBack }) => {
                   Points
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'edge' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'edge' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'edge' ? 'object' : 'edge')}
                   disabled={selectedIds.length !== 1}
                   title="Edge Edit (2)"
@@ -874,7 +874,7 @@ const Vision3DApp = ({ onBack }) => {
                   Lines
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'face' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${editMode === 'face' ? 'bg-teal-600 text-white shadow-[0_4px_10px_-1px_rgba(13,148,136,0.25)]' : 'bg-transparent text-slate-500 hover:bg-teal-500/[0.12] hover:text-teal-700'}`}
                   onClick={() => setEditMode(editMode === 'face' ? 'object' : 'face')}
                   disabled={selectedIds.length !== 1}
                   title="Face Edit (3)"
@@ -886,10 +886,10 @@ const Vision3DApp = ({ onBack }) => {
               {/* Edit Tools (shown when in edit mode) */}
               {editMode !== 'object' && (
                 <>
-                  <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
-                  <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-amber-500/[0.06] border border-amber-500/[0.15]">
+                  <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
+                  <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px] bg-amber-500/[0.06] border border-amber-500/[0.15]">
                     <button
-                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'exclude' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
+                      className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${editTool === 'exclude' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
                       onClick={() => setEditTool('exclude')}
                       title="Move only selected (E)"
                     >
@@ -897,7 +897,7 @@ const Vision3DApp = ({ onBack }) => {
                       Move Selected
                     </button>
                     <button
-                      className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${editTool === 'include' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
+                      className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${editTool === 'include' ? 'bg-amber-500 text-white shadow-[0_4px_10px_-1px_rgba(245,158,11,0.25)]' : 'bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700'}`}
                       onClick={() => setEditTool('include')}
                       title="Move selected + connected (I)"
                     >
@@ -906,7 +906,7 @@ const Vision3DApp = ({ onBack }) => {
                     </button>
                     {editMode === 'vertex' && (
                       <button
-                        className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                        className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                         onClick={() => setEditTool('merge')}
                         disabled={selectedVertices.length < 2}
                         title="Merge Vertices (M)"
@@ -916,7 +916,7 @@ const Vision3DApp = ({ onBack }) => {
                       </button>
                     )}
                     <button
-                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700"
+                      className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-amber-500/[0.12] hover:text-amber-700"
                       onClick={() => clearComponentSelection()}
                       title="Deselect Components (Escape)"
                     >
@@ -926,10 +926,10 @@ const Vision3DApp = ({ onBack }) => {
                   </div>
                 </>
               )}
-              <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
-              <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12">
+              <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
+              <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${rulerActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)]' : 'bg-slate-100/80 border-slate-200/80 text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 rounded-lg border text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${rulerActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-transparent shadow-[0_4px_12px_rgba(37,99,235,0.25)]' : 'bg-slate-100/80 border-slate-200/80 text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]'}`}
                   onClick={toggleRuler}
                   title="Ruler / Measurement Tool (X)"
                 >
@@ -937,7 +937,7 @@ const Vision3DApp = ({ onBack }) => {
                   Ruler
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[11px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] shadow-sm hover:bg-slate-100 hover:text-slate-800 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => fileInputRef.current?.click()}
                   title="Import STL/OBJ file"
                 >
@@ -949,7 +949,7 @@ const Vision3DApp = ({ onBack }) => {
                   const hasNet = selShape && NET_SUPPORTED.includes(selShape.type);
                   return (
                     <button
-                      className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                      className="flex items-center justify-center gap-1.5 px-3 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[11px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] shadow-sm hover:bg-slate-100 hover:text-slate-800 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                       onClick={() => {
                         if (hasNet) setNetOpen(true);
                       }}
@@ -964,7 +964,7 @@ const Vision3DApp = ({ onBack }) => {
                   );
                 })()}
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[11px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] shadow-sm hover:bg-slate-100 hover:text-slate-800 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => {
                     if (selectedIds.length !== 1) return;
                     const shape = shapes.find((s) => s.id === selectedIds[0]);
@@ -997,11 +997,11 @@ const Vision3DApp = ({ onBack }) => {
                   Split
                 </button>
               </div>
-              <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
+              <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
               <div className="text-[10px] font-extrabold uppercase tracking-[1.2px] text-slate-400 mx-2.5 select-none">Combine</div>
-              <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-purple-500/[0.06] border border-purple-500/[0.15]">
+              <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px] bg-purple-500/[0.06] border border-purple-500/[0.15]">
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('union')}
                   disabled={selectedIds.length < 2}
                   title="Glue shapes together (Ctrl+1)"
@@ -1010,7 +1010,7 @@ const Vision3DApp = ({ onBack }) => {
                   Glue
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('subtract')}
                   disabled={selectedIds.length < 2}
                   title="Cut one shape from another (Ctrl+2)"
@@ -1019,7 +1019,7 @@ const Vision3DApp = ({ onBack }) => {
                   Cut
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-purple-500/[0.12] hover:text-purple-700 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
                   onClick={() => csgOperation('intersect')}
                   disabled={selectedIds.length < 2}
                   title="Keep only the overlapping part (Ctrl+3)"
@@ -1028,9 +1028,9 @@ const Vision3DApp = ({ onBack }) => {
                   Overlap
                 </button>
               </div>
-              <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
+              <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
               <button
-                className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 rounded-xl border text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${(() => {
+                className={`flex items-center justify-center gap-1.5 px-3 shrink-0 rounded-lg border text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none ${(() => {
                   if (selectedIds.length === 0) return '';
                   const sel = shapes.filter((s) => selectedIds.includes(s.id));
                   const anyHole = sel.some((s) => s.isHole);
@@ -1053,37 +1053,37 @@ const Vision3DApp = ({ onBack }) => {
               </button>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
-              <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" title="Objects in scene">
+              <div className="inline-flex items-center gap-1 py-1.5 px-2.5 text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[30px] box-border hover:bg-slate-100 hover:text-slate-600" title="Objects in scene">
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 {shapes.length}
               </div>
-              <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" title="Selected shapes">
+              <div className="inline-flex items-center gap-1 py-1.5 px-2.5 text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[30px] box-border hover:bg-slate-100 hover:text-slate-600" title="Selected shapes">
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                 {selectedIds.length}
               </div>
               {tempWorkplane && (
-                <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#f97316' }}>
+                <div className="inline-flex items-center gap-1 py-1.5 px-2.5 text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[30px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#f97316' }}>
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Workplane
                 </div>
               )}
               {rulerActive && (
-                <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#ef4444' }}>
+                <div className="inline-flex items-center gap-1 py-1.5 px-2.5 text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[30px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#ef4444' }}>
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
                   Ruler
                 </div>
               )}
               {editMode !== 'object' && (
-                <div className="inline-flex items-center gap-1.5 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-100/80 border border-slate-200/80 rounded-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] select-none transition-all duration-200 h-10 box-border hover:bg-slate-100 hover:text-slate-600 hover:-translate-y-px" style={{ color: '#a855f7' }}>
+                <div className="inline-flex items-center gap-1 py-1.5 px-2.5 text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[30px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#a855f7' }}>
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
                   {editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}
                 </div>
               )}
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
-              <div className="flex items-center gap-1 rounded-[14px] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 box-border h-12 bg-slate-500/[0.06] border border-slate-500/[0.15]">
+              <div className="flex items-center gap-1 rounded-lg p-0.5 shadow-sm transition-all duration-200 box-border h-[34px] bg-slate-500/[0.06] border border-slate-500/[0.15]">
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showGrid ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${showGrid ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
                   onClick={() => setShowGrid(!showGrid)}
                   title="Toggle Grid"
                 >
@@ -1091,7 +1091,7 @@ const Vision3DApp = ({ onBack }) => {
                   Grid
                 </button>
                 <button
-                  className={`inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border ${showAxes ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
+                  className={`flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] ${showAxes ? 'bg-slate-600 text-white shadow-[0_4px_10px_-1px_rgba(71,85,105,0.25)]' : 'bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700'}`}
                   onClick={() => setShowAxes(!showAxes)}
                   title="Toggle Axes"
                 >
@@ -1099,16 +1099,16 @@ const Vision3DApp = ({ onBack }) => {
                   Axes
                 </button>
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border-none rounded-md text-[11px] font-semibold cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] bg-transparent text-slate-500 hover:bg-slate-500/[0.12] hover:text-slate-700"
                   onClick={toggleCameraMode}
                   title="Toggle Perspective/Orthographic (P)"
                 >
                   <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v16h22V4z"/><circle cx="12" cy="12" r="3"/></svg>
                   {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
                 </button>
-                <span className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-3 shrink-0" />
+                <span className="w-px h-6 bg-slate-200 mx-2 shrink-0" />
                 <button
-                  className="inline-flex items-center justify-center gap-2 py-2 px-[18px] shrink-0 border border-slate-200/80 rounded-xl bg-slate-100/80 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-200 leading-[1.5] whitespace-nowrap select-none h-10 box-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-100 hover:text-slate-800 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                  className="flex items-center justify-center gap-1.5 px-3 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[11px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[30px] shadow-sm hover:bg-slate-100 hover:text-slate-800"
                   onClick={() => setPreviewOpen(true)}
                   title="Preview (fullscreen auto-rotate)"
                 >
