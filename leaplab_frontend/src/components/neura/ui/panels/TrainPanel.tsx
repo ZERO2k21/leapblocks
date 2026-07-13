@@ -171,7 +171,7 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
     const f1Score = (2 * (metrics.precision / 100) * (metrics.recall / 100) / ((metrics.precision / 100) + (metrics.recall / 100) || 1))
 
     return (
-        <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-6 overflow-y-auto neura-scrollbar">
             {showCelebration && (
                 <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
                     <div className="text-center animate-bounce">
@@ -304,7 +304,7 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
                 {/* Object Types */}
                 <div className="col-span-12 md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
                     <h4 className="text-base font-bold text-on-surface mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>🏷️ Object Types</h4>
-                    <div className="space-y-3 max-h-48 overflow-y-auto">
+                    <div className="space-y-3 max-h-48 overflow-y-auto neura-scrollbar">
                         {mode.project?.classes.slice(0, 6).map((cls, i) => (
                             <div key={cls.id} className="flex items-center gap-3">
                                 <div className="w-4 h-4 rounded" style={{ backgroundColor: cls.color }} />

@@ -537,7 +537,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== COLLECT MODE ==================== */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -897,7 +897,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== TRAIN MODE ==================== */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -936,7 +936,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== TEST MODE ==================== */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
