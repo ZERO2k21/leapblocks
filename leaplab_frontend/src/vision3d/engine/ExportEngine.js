@@ -4,7 +4,7 @@
  */
 
 import * as THREE from 'three';
-import { createGeometry } from '../utils/helpers';
+import { createGeometry } from '../utils/geometry';
 import { log } from '../utils/logger';
 
 /**

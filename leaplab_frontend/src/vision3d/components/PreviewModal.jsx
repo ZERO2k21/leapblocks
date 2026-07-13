@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { createGeometry } from '../utils/helpers';
+import { createGeometry } from '../utils/geometry';
 import { use3DStore } from '../store/use3DStore';
 
 const SceneShapes = ({ explosionFactor }) => {

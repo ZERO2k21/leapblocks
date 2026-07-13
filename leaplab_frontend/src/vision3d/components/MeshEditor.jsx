@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { use3DStore } from '../store/use3DStore';
 import { debug, warn } from '../utils/logger';
+import { getDirectSelection, getConnectedVertices, applyProportionalFalloff } from './meshEditor/geometryUtils';
+import { applyEditTool as applyEditToolImpl } from './meshEditor/editOperations';
 
 const _raycaster = new THREE.Raycaster();
 const _mouse = new THREE.Vector2();
@@ -18,139 +20,9 @@ const _vB = new THREE.Vector3();
 const _vC = new THREE.Vector3();
 const _edgeMid = new THREE.Vector3();
 const _faceCenter = new THREE.Vector3();
-const _normal = new THREE.Vector3();
 const _delta = new THREE.Vector3();
 const _intersectPlane = new THREE.Plane();
 const _intersectPoint = new THREE.Vector3();
-
-// Get directly selected vertex indices (spatially welded to prevent tearing the selection)
-function getDirectSelection(geo, selectedVertices, selectedEdges, selectedFaces) {
-  const connected = new Set();
-  const idx = geo.index;
-  const posAttr = geo.attributes.position;
-
-  for (const v of selectedVertices) connected.add(v.index);
-  for (const e of selectedEdges) { connected.add(e.a); connected.add(e.b); }
-  for (const f of selectedFaces) {
-    if (idx) {
-      connected.add(idx.getX(f.index * 3));
-      connected.add(idx.getX(f.index * 3 + 1));
-      connected.add(idx.getX(f.index * 3 + 2));
-    } else {
-      connected.add(f.index * 3);
-      connected.add(f.index * 3 + 1);
-      connected.add(f.index * 3 + 2);
-    }
-  }
-
-  const EPSILON = 0.01;
-  const expanded = new Set(connected);
-
-  // Spatial weld selected vertices — find all coincident vertices
-  for (const vi of connected) {
-    _vA.fromBufferAttribute(posAttr, vi);
-    for (let i = 0; i < posAttr.count; i++) {
-      _vB.fromBufferAttribute(posAttr, i);
-      if (_vA.distanceTo(_vB) < EPSILON) {
-        expanded.add(i);
-      }
-    }
-  }
-
-  return expanded;
-}
-
-// Blender-style proportional editing falloff functions
-function falloffSmooth(r) {
-  if (r >= 1) return 0;
-  return 3 * r * r - 2 * r * r * r; // smoothstep
-}
-
-function applyProportionalFalloff(r) {
-  return falloffSmooth(r);
-}
-
-// Get all vertex indices connected to the selected components.
-// Uses spatial coincidence detection based on Euclidean distance for all shapes (indexed or non-indexed).
-function getConnectedVertices(geo, selectedVertices, selectedEdges, selectedFaces) {
-  const connected = new Set();
-  const idx = geo.index;
-  const posAttr = geo.attributes.position;
-
-  // Add selected vertices directly
-  for (const v of selectedVertices) connected.add(v.index);
-
-  // For edges: add both endpoints
-  for (const e of selectedEdges) { connected.add(e.a); connected.add(e.b); }
-
-  // For faces: add all face vertices
-  if (selectedFaces.length > 0) {
-    for (const f of selectedFaces) {
-      if (idx) {
-        connected.add(idx.getX(f.index * 3));
-        connected.add(idx.getX(f.index * 3 + 1));
-        connected.add(idx.getX(f.index * 3 + 2));
-      } else {
-        connected.add(f.index * 3);
-        connected.add(f.index * 3 + 1);
-        connected.add(f.index * 3 + 2);
-      }
-    }
-  }
-
-  const EPSILON = 0.01;
-  const expanded = new Set(connected);
-
-  // STEP 1: Spatial weld selected vertices — find all coincident vertices
-  for (const vi of connected) {
-    _vA.fromBufferAttribute(posAttr, vi);
-    for (let i = 0; i < posAttr.count; i++) {
-      _vB.fromBufferAttribute(posAttr, i);
-      if (_vA.distanceTo(_vB) < EPSILON) {
-        expanded.add(i);
-      }
-    }
-  }
-
-  // STEP 2: Find neighbors — vertices connected by an edge to any selected/welded vertex
-  const neighbors = new Set();
-  if (idx) {
-    for (let i = 0; i < idx.count; i += 3) {
-      const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
-      if (expanded.has(a) && !expanded.has(b)) neighbors.add(b);
-      if (expanded.has(b) && !expanded.has(a)) neighbors.add(a);
-      if (expanded.has(b) && !expanded.has(c)) neighbors.add(c);
-      if (expanded.has(c) && !expanded.has(b)) neighbors.add(b);
-      if (expanded.has(c) && !expanded.has(a)) neighbors.add(a);
-      if (expanded.has(a) && !expanded.has(c)) neighbors.add(c);
-    }
-  } else {
-    for (let i = 0; i < posAttr.count; i += 3) {
-      const a = i, b = i + 1, c = i + 2;
-      if (expanded.has(a) && !expanded.has(b)) neighbors.add(b);
-      if (expanded.has(b) && !expanded.has(a)) neighbors.add(a);
-      if (expanded.has(b) && !expanded.has(c)) neighbors.add(c);
-      if (expanded.has(c) && !expanded.has(b)) neighbors.add(b);
-      if (expanded.has(c) && !expanded.has(a)) neighbors.add(a);
-      if (expanded.has(a) && !expanded.has(c)) neighbors.add(c);
-    }
-  }
-
-  // STEP 3: Spatial weld neighbor vertices — ensure coincident neighbor vertices are grouped
-  const finalNeighbors = new Set(neighbors);
-  for (const ni of neighbors) {
-    _vA.fromBufferAttribute(posAttr, ni);
-    for (let i = 0; i < posAttr.count; i++) {
-      if (expanded.has(i)) continue; // skip selected/welded vertices
-      _vB.fromBufferAttribute(posAttr, i);
-      if (_vA.distanceTo(_vB) < EPSILON) {
-        finalNeighbors.add(i);
-      }
-    }
-  }
-
-  return { selected: expanded, neighbors: finalNeighbors };
-}
 
 /**
  * MeshEditor — active only in vertex/edge/face edit modes.
@@ -218,144 +90,14 @@ export const MeshEditor = () => {
     debug('MeshEditor: cached geometry for ' + editShapeId + ' verts=' + geo.attributes.position.count);
   }, [editMode, editShapeId, scene, cacheGeometry]);
 
-  // Apply edit tool operation — creates new geometry and syncs mesh + refs
+  // Apply edit tool operation — delegates to extracted module
   const applyEditTool = useCallback((tool) => {
-    const geo = geoRef.current;
-    const mesh = meshRef.current;
-    if (!geo || !mesh || !editShapeIdRef.current) return;
-    const shapeId = editShapeIdRef.current;
-
-    // Helper: after tool modifies newGeo, sync everything
-    const commitToolResult = (newGeo) => {
-      newGeo.computeVertexNormals();
-      // Update mesh geometry directly
-      mesh.geometry = newGeo;
-      // Update refs and cache
-      geoRef.current = newGeo;
-      cacheGeometry(shapeId, newGeo);
-      // Persist to store
-      applyGeometryEdit(shapeId, newGeo);
-    };
-
-    if (tool === 'extrude' && selectedFaces.length > 0) {
-      const newGeo = geo.clone();
-      const pos = newGeo.attributes.position;
-      const idx = newGeo.index;
-
-      for (const sel of selectedFaces) {
-        if (sel.shapeId !== shapeId) continue;
-        const faceIdx = sel.index;
-
-        let a, b, c;
-        if (idx) {
-          a = idx.getX(faceIdx * 3);
-          b = idx.getX(faceIdx * 3 + 1);
-          c = idx.getX(faceIdx * 3 + 2);
-        } else {
-          a = faceIdx * 3;
-          b = faceIdx * 3 + 1;
-          c = faceIdx * 3 + 2;
-        }
-
-        _vA.fromBufferAttribute(pos, a);
-        _vB.fromBufferAttribute(pos, b);
-        _vC.fromBufferAttribute(pos, c);
-        _normal.crossVectors(_vB.sub(_vA), _vC.sub(_vA)).normalize();
-
-        const newCount = pos.count;
-        const arr = pos.array;
-        const newArr = new Float32Array(arr.length + 9);
-        newArr.set(arr);
-        newArr[arr.length] = arr[a * 3]; newArr[arr.length + 1] = arr[a * 3 + 1]; newArr[arr.length + 2] = arr[a * 3 + 2];
-        newArr[arr.length + 3] = arr[b * 3]; newArr[arr.length + 4] = arr[b * 3 + 1]; newArr[arr.length + 5] = arr[b * 3 + 2];
-        newArr[arr.length + 6] = arr[c * 3]; newArr[arr.length + 7] = arr[c * 3 + 1]; newArr[arr.length + 8] = arr[c * 3 + 2];
-
-        pos.array = newArr;
-        pos.count = pos.count + 3;
-        pos.needsUpdate = true;
-
-        const extrudeDist = 1.0;
-        for (const vi of [a, b, c]) {
-          pos.array[vi * 3] += _normal.x * extrudeDist;
-          pos.array[vi * 3 + 1] += _normal.y * extrudeDist;
-          pos.array[vi * 3 + 2] += _normal.z * extrudeDist;
-        }
-
-        if (idx) {
-          const newIdx = new Uint32Array(idx.count + 3);
-          newIdx.set(idx.array);
-          newIdx[idx.count] = newCount;
-          newIdx[idx.count + 1] = newCount + 1;
-          newIdx[idx.count + 2] = newCount + 2;
-          newGeo.index = new THREE.BufferAttribute(newIdx, 1);
-        }
-      }
-
-      commitToolResult(newGeo);
-    }
-
-    if (tool === 'inset' && selectedFaces.length > 0) {
-      const newGeo = geo.clone();
-      const pos = newGeo.attributes.position;
-
-      for (const sel of selectedFaces) {
-        if (sel.shapeId !== shapeId) continue;
-        const faceIdx = sel.index;
-
-        let a, b, c;
-        if (newGeo.index) {
-          a = newGeo.index.getX(faceIdx * 3);
-          b = newGeo.index.getX(faceIdx * 3 + 1);
-          c = newGeo.index.getX(faceIdx * 3 + 2);
-        } else {
-          a = faceIdx * 3;
-          b = faceIdx * 3 + 1;
-          c = faceIdx * 3 + 2;
-        }
-
-        _vA.fromBufferAttribute(pos, a);
-        _vB.fromBufferAttribute(pos, b);
-        _vC.fromBufferAttribute(pos, c);
-        _faceCenter.copy(_vA).add(_vB).add(_vC).divideScalar(3);
-
-        const insetFactor = 0.6;
-        _vA.lerp(_faceCenter, 1 - insetFactor);
-        _vB.lerp(_faceCenter, 1 - insetFactor);
-        _vC.lerp(_faceCenter, 1 - insetFactor);
-
-        pos.array[a * 3] = _vA.x; pos.array[a * 3 + 1] = _vA.y; pos.array[a * 3 + 2] = _vA.z;
-        pos.array[b * 3] = _vB.x; pos.array[b * 3 + 1] = _vB.y; pos.array[b * 3 + 2] = _vB.z;
-        pos.array[c * 3] = _vC.x; pos.array[c * 3 + 1] = _vC.y; pos.array[c * 3 + 2] = _vC.z;
-      }
-
-      commitToolResult(newGeo);
-    }
-
-    if (tool === 'merge' && selectedVertices.length >= 2) {
-      const newGeo = geo.clone();
-      const pos = newGeo.attributes.position;
-
-      _faceCenter.set(0, 0, 0);
-      let count = 0;
-      for (const sel of selectedVertices) {
-        if (sel.shapeId !== shapeId) continue;
-        _vA.fromBufferAttribute(pos, sel.index);
-        _faceCenter.add(_vA);
-        count++;
-      }
-      if (count > 0) _faceCenter.divideScalar(count);
-
-      for (const sel of selectedVertices) {
-        if (sel.shapeId !== shapeId) continue;
-        pos.array[sel.index * 3] = _faceCenter.x;
-        pos.array[sel.index * 3 + 1] = _faceCenter.y;
-        pos.array[sel.index * 3 + 2] = _faceCenter.z;
-      }
-
-      commitToolResult(newGeo);
-      clearComponentSelection();
-    }
-  }, [selectedFaces, selectedEdges, selectedVertices, applyGeometryEdit, clearComponentSelection]);
+    applyEditToolImpl(tool, {
+      geoRef, meshRef, editShapeIdRef,
+      selectedFaces, selectedVertices,
+      cacheGeometry, applyGeometryEdit, clearComponentSelection,
+    });
+  }, [selectedFaces, selectedVertices, applyGeometryEdit, clearComponentSelection]);
 
   // Apply tool when editTool changes (skip exclude/include — they are drag-based)
   useEffect(() => {

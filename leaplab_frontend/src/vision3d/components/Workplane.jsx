@@ -15,14 +15,16 @@ export const Workplane = () => {
   const gridSnap = use3DStore((s) => s.gridSnap);
   debug('Workplane: grid=' + showGrid + ' axes=' + showAxes + ' snap=' + gridSnap);
 
-  if (!showGrid) return null;
+  if (!showGrid && !showAxes) return null;
 
   return (
     <group>
-      <gridHelper
-        args={[WORKPLANE_SIZE, gridSnap > 0 ? WORKPLANE_SIZE / gridSnap : 20, '#cbd5e1', '#e2e8f0']}
-        position={[0, 0, 0]}
-      />
+      {showGrid && (
+        <gridHelper
+          args={[WORKPLANE_SIZE, gridSnap > 0 ? WORKPLANE_SIZE / gridSnap : 20, '#cbd5e1', '#e2e8f0']}
+          position={[0, 0, 0]}
+        />
+      )}
 
       {showAxes && (
         <>
@@ -38,10 +40,12 @@ export const Workplane = () => {
         </>
       )}
 
-      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.15, 32]} />
-        <meshBasicMaterial color="#6366f1" />
-      </mesh>
+      {(showGrid || showAxes) && (
+        <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.15, 32]} />
+          <meshBasicMaterial color="#6366f1" />
+        </mesh>
+      )}
     </group>
   );
 };

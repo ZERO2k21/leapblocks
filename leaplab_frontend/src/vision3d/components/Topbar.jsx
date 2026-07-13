@@ -36,6 +36,7 @@ import TopbarShareButton from '../../components/common/TopbarShareButton';
 import { use3DStore } from '../store/use3DStore';
 import { exportShapes, downloadBlob } from '../engine/ExportEngine';
 import { log } from '../utils/logger';
+import { MenuItem, MenuDivider, MobileMenuItem } from './topbar/MenuItems';
 
 export const Topbar = ({
   onBack,
@@ -124,7 +125,7 @@ export const Topbar = ({
 
       <div
         style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
-        className="flex items-center justify-between h-12 pr-[18px] z-[100] select-none border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
+        className="flex items-center justify-between h-12 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
@@ -168,7 +169,7 @@ export const Topbar = ({
                 >
                   <MenuItem icon={<FilePlus size={14} />} iconColor="text-[#7C3AED]/80" label="New Project" shortcut="Ctrl+N" onClick={() => { clearScene(); closeAllMenus(); }} />
                   <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="Open Project" shortcut="Ctrl+O" onClick={() => { onOpenProject?.(); closeAllMenus(); }} />
-                  <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="My Projects" onClick={() => { sessionStorage.setItem('landingActiveTab', 'my-projects'); onBack?.(); closeAllMenus(); }} />
+                  <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="My Projects" onClick={() => { sessionStorage.setItem('landingActiveTab', 'my-projects'); sessionStorage.setItem('myProjectsSelectedMode', 'vision3d'); onBack?.(); closeAllMenus(); }} />
                   <MenuDivider />
                   <MenuItem icon={<Download size={14} />} iconColor="text-[#7C3AED]/80" label="Export as STL" onClick={() => handleExport('stl')} />
                   <MenuItem icon={<Download size={14} />} iconColor="text-[#7C3AED]/80" label="Export as OBJ" onClick={() => handleExport('obj')} />
@@ -328,7 +329,7 @@ export const Topbar = ({
             <span className="text-[13px] font-bold uppercase tracking-[0.1em] px-3 mb-1.5 text-[#93c5fd]/80">File</span>
             <MobileMenuItem icon={<FilePlus size={18} />} label="New Project" onClick={() => { clearScene(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<FolderOpen size={18} />} label="Open Project" onClick={() => { onOpenProject?.(); setMobileMenuOpen(false); }} />
-            <MobileMenuItem icon={<FolderOpen size={18} />} label="My Projects" onClick={() => { sessionStorage.setItem('landingActiveTab', 'my-projects'); onBack?.(); setMobileMenuOpen(false); }} />
+            <MobileMenuItem icon={<FolderOpen size={18} />} label="My Projects" onClick={() => { sessionStorage.setItem('landingActiveTab', 'my-projects'); sessionStorage.setItem('myProjectsSelectedMode', 'vision3d'); onBack?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<FileText size={18} />} label="Save As..." onClick={() => { onSave?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<Download size={18} />} label="Download .leap" onClick={() => { onDownload?.(); setMobileMenuOpen(false); }} />
             <MobileMenuItem icon={<Download size={18} />} label="Export as STL" onClick={() => { handleExport('stl'); setMobileMenuOpen(false); }} />
@@ -376,56 +377,4 @@ export const Topbar = ({
   );
 };
 
-/* Sub-components */
 
-function MenuItem({ icon, iconColor, label, shortcut, disabled, active, onClick }) {
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '7px 14px',
-        border: 'none',
-        background: 'transparent',
-        fontSize: '12px',
-        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-        fontWeight: 500,
-        textAlign: 'left',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.12s ease',
-      }}
-      className={disabled ? 'opacity-40 text-[#374151]/40' : active ? 'text-[#7C3AED] font-semibold hover:bg-[#7C3AED]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span className={iconColor || 'text-[#7C3AED]/80'}>{icon}</span>
-        <span>{label}</span>
-      </div>
-      {shortcut && (
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>
-          {shortcut}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function MenuDivider() {
-  return <div className="h-px bg-black/8 my-1 mx-3.5" />;
-}
-
-function MobileMenuItem({ icon, label, disabled, onClick }) {
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 ${disabled ? 'opacity-35 cursor-not-allowed text-inherit' : 'hover:bg-white/8 text-white/90 hover:text-white cursor-pointer'}`}
-    >
-      <span className="opacity-80 shrink-0">{icon}</span>
-      <span>{label}</span>
-    </button>
-  );
-}

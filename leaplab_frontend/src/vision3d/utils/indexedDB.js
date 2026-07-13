@@ -4,7 +4,7 @@
  */
 
 import { log, debug, warn } from './logger';
-import { serializeGeometry } from './helpers';
+import { serializeGeometry } from './geometry';
 
 const DB_NAME = 'vision3d_db';
 const DB_VERSION = 1;

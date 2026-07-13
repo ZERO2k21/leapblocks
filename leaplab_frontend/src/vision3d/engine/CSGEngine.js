@@ -8,7 +8,8 @@
 
 import * as THREE from 'three';
 import { Evaluator, Brush, ADDITION, SUBTRACTION, INTERSECTION, HOLLOW_SUBTRACTION } from 'three-bvh-csg';
-import { createGeometry, generateShapeId } from '../utils/helpers';
+import { createGeometry } from '../utils/geometry';
+import { generateShapeId } from '../utils/helpers';
 import { log, debug, error } from '../utils/logger';
 
 const evaluator = new Evaluator();

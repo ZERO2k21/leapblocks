@@ -4,201 +4,44 @@
  */
 
 import { create } from 'zustand';
-import { createShape, cloneShape, snapPositionToGrid, generateShapeId, serializeGeometry, deserializeGeometry } from '../utils/helpers';
+import { createShape, cloneShape, snapPositionToGrid, generateShapeId } from '../utils/helpers';
+import { serializeGeometry, deserializeGeometry } from '../utils/geometry';
 import { autoSave, saveProject, loadProject } from '../utils/indexedDB';
 import { performCSG, isCSGValid } from '../engine/CSGEngine';
 import * as THREE from 'three';
 import { log, debug, warn, error } from '../utils/logger';
+
+import { createRulerSlice } from './rulerSlice';
+import { createEditModeSlice } from './editModeSlice';
+import { createCameraSlice } from './cameraSlice';
+import { createMarqueeSlice } from './marqueeSlice';
 
 const MAX_HISTORY = 50;
 
 const GRID_PRESETS = [0, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0];
 
 export const use3DStore = create((set, get) => ({
-  // Initial state
+  ...createRulerSlice(set, get),
+  ...createEditModeSlice(set, get),
+  ...createCameraSlice(set, get),
+  ...createMarqueeSlice(set, get),
+
+  // Remaining state
   shapes: [],
   selectedIds: [],
   activeTool: 'select',
   gridSnap: 0.5,
+  rotationSnap: 1,
   showGrid: true,
   showAxes: true,
   showShapePanel: true,
   showInspector: false,
-  cameraPosition: [8, 6, 8],
   history: [[]],
   historyIndex: 0,
   project: null,
   isProjectDirty: false,
-
-  // ─── Ruler State ───
-  rulerActive: false,
-  rulerOrigin: null,
-  rulerTarget: null,
-  rulerMeasurements: [],
-  toggleRuler: () => {
-    const active = !get().rulerActive;
-    log('toggleRuler:', active);
-    set({ rulerActive: active, rulerOrigin: null, rulerTarget: null });
-  },
-  setRulerOrigin: (pos) => {
-    log('setRulerOrigin:', pos);
-    set({ rulerOrigin: pos });
-  },
-  setRulerTarget: (pos) => {
-    log('setRulerTarget:', pos);
-    set({ rulerTarget: pos });
-  },
-  clearRuler: () => {
-    set({ rulerActive: false, rulerOrigin: null, rulerTarget: null, rulerMeasurements: [] });
-  },
-
-  // ─── Edit Mode State (Blender-like mesh editing) ───
-  editMode: 'object', // 'object' | 'vertex' | 'edge' | 'face'
-  editShapeId: null,   // shape currently being edited in component mode
-  selectedVertices: [], // [{shapeId, index}] — selected vertex indices
-  selectedEdges: [],    // [{shapeId, a, b}] — selected edge pairs (vertex indices)
-  selectedFaces: [],    // [{shapeId, index}] — selected face indices
-  editTool: null,       // null | 'extrude' | 'inset' | 'merge' | 'knife' | 'exclude' | 'include'
-  geometryCache: {},    // { [shapeId]: THREE.BufferGeometry } — cached live geometry
-  geometryVersion: 0,   // incremented on every cacheGeometry call to force re-renders
-  proportionalRadius: 2.0, // radius for proportional editing (Include mode)
-
-  setEditMode: (mode) => {
-    const state = get();
-    log('setEditMode:', mode, state.editMode, '->', mode);
-    if (mode === state.editMode) return;
-    // Exiting edit mode clears component selection and geometry cache
-    if (mode === 'object') {
-      set({
-        editMode: 'object',
-        editShapeId: null,
-        selectedVertices: [],
-        selectedEdges: [],
-        selectedFaces: [],
-        editTool: null,
-        geometryCache: {},
-      });
-    } else {
-      // Entering edit mode — require exactly one selected shape
-      const wasInEdit = state.editMode !== 'object';
-      const shapeId = state.selectedIds.length === 1 ? state.selectedIds[0] : null;
-      set({
-        editMode: mode,
-        editShapeId: shapeId,
-        selectedVertices: wasInEdit ? state.selectedVertices : [],
-        selectedEdges: wasInEdit ? state.selectedEdges : [],
-        selectedFaces: wasInEdit ? state.selectedFaces : [],
-        editTool: null,
-        // Don't clear geometryCache here — MeshEditor will populate it
-      });
-    }
-  },
-
-  setEditTool: (tool) => {
-    log('setEditTool:', tool);
-    set({ editTool: tool });
-  },
-
-  setProportionalRadius: (radius) => {
-    set({ proportionalRadius: Math.max(0.1, radius) });
-  },
-
-  selectVertex: (shapeId, index, multi = false) => {
-    set((state) => {
-      if (multi) {
-        const exists = state.selectedVertices.find(v => v.shapeId === shapeId && v.index === index);
-        return {
-          selectedVertices: exists
-            ? state.selectedVertices.filter(v => !(v.shapeId === shapeId && v.index === index))
-            : [...state.selectedVertices, { shapeId, index }],
-        };
-      }
-      return { selectedVertices: [{ shapeId, index }] };
-    });
-  },
-
-  selectEdge: (shapeId, a, b, multi = false) => {
-    set((state) => {
-      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
-      const newEdge = { shapeId, a: Math.min(a, b), b: Math.max(a, b) };
-      if (multi) {
-        const exists = state.selectedEdges.find(e => key(e) === key(newEdge));
-        return {
-          selectedEdges: exists
-            ? state.selectedEdges.filter(e => key(e) !== key(newEdge))
-            : [...state.selectedEdges, newEdge],
-        };
-      }
-      return { selectedEdges: [newEdge] };
-    });
-  },
-
-  selectEdges: (edges, append = false) => {
-    set((state) => {
-      const key = (e) => `${e.shapeId}:${Math.min(e.a, e.b)}-${Math.max(e.a, e.b)}`;
-      const formatted = edges.map(e => ({
-        shapeId: e.shapeId,
-        a: Math.min(e.a, e.b),
-        b: Math.max(e.a, e.b)
-      }));
-      if (append) {
-        const existingKeys = new Set(state.selectedEdges.map(key));
-        const newEdges = formatted.filter(e => !existingKeys.has(key(e)));
-        return { selectedEdges: [...state.selectedEdges, ...newEdges] };
-      }
-      return { selectedEdges: formatted };
-    });
-  },
-
-  selectFace: (shapeId, index, multi = false) => {
-    set((state) => {
-      if (multi) {
-        const exists = state.selectedFaces.find(f => f.shapeId === shapeId && f.index === index);
-        return {
-          selectedFaces: exists
-            ? state.selectedFaces.filter(f => !(f.shapeId === shapeId && f.index === index))
-            : [...state.selectedFaces, { shapeId, index }],
-        };
-      }
-      return { selectedFaces: [{ shapeId, index }] };
-    });
-  },
-
-  clearComponentSelection: () => {
-    set({ selectedVertices: [], selectedEdges: [], selectedFaces: [] });
-  },
-
-  cacheGeometry: (shapeId, geometry) => {
-    set((state) => ({
-      geometryCache: { ...state.geometryCache, [shapeId]: geometry },
-      geometryVersion: state.geometryVersion + 1,
-    }));
-  },
-
-  removeCachedGeometry: (shapeId) => {
-    set((state) => {
-      const cache = { ...state.geometryCache };
-      delete cache[shapeId];
-      return { geometryCache: cache };
-    });
-  },
-
-  applyGeometryEdit: (shapeId, newGeometry) => {
-    // Apply mutated geometry back to the shape as _customGeometry
-    // and clear parametric cache so it renders from the raw geometry
-    const state = get();
-    const shape = state.shapes.find(s => s.id === shapeId);
-    if (!shape) return;
-    set((s) => ({
-      shapes: s.shapes.map(sh =>
-        sh.id === shapeId ? { ...sh, _customGeometry: newGeometry } : sh
-      ),
-      geometryCache: { ...s.geometryCache, [shapeId]: newGeometry },
-      geometryVersion: s.geometryVersion + 1,
-      isProjectDirty: true,
-    }));
-    get().pushHistory();
-  },
+  lastDuplicateTransform: null,
+  tempWorkplane: null,
 
   // Shape actions
   addShape: (type, position = [0, 1, 0]) => {
@@ -398,24 +241,6 @@ export const use3DStore = create((set, get) => ({
       ),
       isProjectDirty: true,
     }));
-  },
-
-  // Fit selection to view (stores target for camera)
-  fitSelectionTarget: null,
-  setFitSelection: (ids) => {
-    const state = get();
-    const selected = state.shapes.filter((s) => ids.includes(s.id));
-    if (selected.length === 0) return;
-    const center = selected.reduce(
-      (acc, s) => [acc[0] + s.position[0], acc[1] + s.position[1], acc[2] + s.position[2]],
-      [0, 0, 0]
-    );
-    center[0] /= selected.length;
-    center[1] /= selected.length;
-    center[2] /= selected.length;
-    log('setFitSelection:', center);
-    set({ fitSelectionTarget: center });
-    setTimeout(() => set({ fitSelectionTarget: null }), 100);
   },
 
   // Group actions
@@ -715,8 +540,6 @@ export const use3DStore = create((set, get) => ({
   },
 
   // ─── Smart Duplicate with Repeat ───
-  lastDuplicateTransform: null,
-
   smartDuplicate: (ids) => {
     const state = get();
     const shapesToDuplicate = state.shapes.filter((s) => ids.includes(s.id));
@@ -781,21 +604,7 @@ export const use3DStore = create((set, get) => ({
     set({ lastDuplicateTransform: { ids, ...delta } });
   },
 
-  // ─── Camera Mode ───
-  cameraMode: 'perspective',
-  setCameraMode: (mode) => {
-    log('setCameraMode:', mode);
-    set({ cameraMode: mode });
-  },
-  toggleCameraMode: () => {
-    const current = get().cameraMode;
-    const next = current === 'perspective' ? 'orthographic' : 'perspective';
-    log('toggleCameraMode:', current, '->', next);
-    set({ cameraMode: next });
-  },
-
   // ─── Temporary Workplane ───
-  tempWorkplane: null,
   setTempWorkplane: (wp) => {
     log('setTempWorkplane:', wp);
     set({ tempWorkplane: wp });
@@ -803,38 +612,6 @@ export const use3DStore = create((set, get) => ({
   clearTempWorkplane: () => {
     log('clearTempWorkplane');
     set({ tempWorkplane: null });
-  },
-
-  // ─── Marquee Selection ───
-  marqueeActive: false,
-  marqueeStart: null,
-  marqueeEnd: null,
-
-  startMarquee: (point) => {
-    set({ marqueeActive: true, marqueeStart: point, marqueeEnd: point });
-  },
-  updateMarquee: (point) => {
-    set({ marqueeEnd: point });
-  },
-  endMarquee: () => {
-    set({ marqueeActive: false, marqueeStart: null, marqueeEnd: null });
-  },
-
-  // ─── Fit All ───
-  fitAllTarget: null,
-  setFitAll: () => {
-    const state = get();
-    if (state.shapes.length === 0) return;
-    const center = state.shapes.reduce(
-      (acc, s) => [acc[0] + s.position[0], acc[1] + s.position[1], acc[2] + s.position[2]],
-      [0, 0, 0]
-    );
-    center[0] /= state.shapes.length;
-    center[1] /= state.shapes.length;
-    center[2] /= state.shapes.length;
-    log('setFitAll:', center);
-    set({ fitAllTarget: center });
-    setTimeout(() => set({ fitAllTarget: null }), 100);
   },
 
   // ─── Distribution Alignment ───
@@ -866,7 +643,6 @@ export const use3DStore = create((set, get) => ({
   },
 
   // ─── Rotation Snap ───
-  rotationSnap: 1,
   setRotationSnap: (deg) => {
     log('setRotationSnap:', deg);
     set({ rotationSnap: deg });

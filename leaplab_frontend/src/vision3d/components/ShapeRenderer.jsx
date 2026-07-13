@@ -7,7 +7,7 @@
 
 import React, { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
-import { createGeometry } from '../utils/helpers';
+import { createGeometry } from '../utils/geometry';
 import { use3DStore } from '../store/use3DStore';
 
 const setShapeIdRef = (id) => (mesh) => {
