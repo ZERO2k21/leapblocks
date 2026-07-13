@@ -24,7 +24,7 @@ export default function AppInventor({ onBack }) {
     (async () => {
       try {
         if (cancelled) return;
-        appState.loadProject(pendingProject.data);
+        await appState.loadProject(pendingProject.data);
         if (pendingProject.projectName) {
           appState.setAppName(pendingProject.projectName);
         }

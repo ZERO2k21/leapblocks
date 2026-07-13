@@ -2,25 +2,25 @@ import { useEffect } from 'react';
 
 export function useKeyboardShortcuts({ onSave, onSaveAs, onNew, onOpen, onUndo, onRedo }, deps) {
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = async (e) => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-        onSave();
+        await onSave();
       } else if (e.ctrlKey && e.shiftKey && e.key === 'S') {
         e.preventDefault();
-        onSaveAs();
+        await onSaveAs();
       } else if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
-        onNew();
+        await onNew();
       } else if (e.ctrlKey && e.key === 'o') {
         e.preventDefault();
-        onOpen();
+        await onOpen();
       } else if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
-        onUndo();
+        await onUndo();
       } else if (e.ctrlKey && e.key === 'y') {
         e.preventDefault();
-        onRedo();
+        await onRedo();
       }
     };
 

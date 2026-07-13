@@ -141,9 +141,9 @@ export function useBuildApk(appState, {
     }
   }, [appState, setIsBuildModalOpen, setBuildState, setBuildLogs, setApkPath, onTranspileFailMessage]);
 
-  const handleOpenFile = useCallback(() => {
+  const handleOpenFile = useCallback(async () => {
     if (window.electronAPI && window.electronAPI.showInFolder && apkPath && !apkPath.startsWith('http')) {
-      window.electronAPI.showInFolder(apkPath);
+      await window.electronAPI.showInFolder(apkPath);
     } else if (apkPath) {
       window.open(apkPath, '_blank');
     }

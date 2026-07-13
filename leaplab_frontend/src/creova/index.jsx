@@ -18,7 +18,9 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
 
   useEffect(() => {
     if (redirectProjectData && clearRedirectProjectData) {
-      appState.loadProject(redirectProjectData.data);
+      appState.loadProject(redirectProjectData.data).catch((err) => {
+        console.error('[AppInventor] Failed to load redirect project:', err);
+      });
       if (redirectProjectData.projectPath) {
         setProjectPath(redirectProjectData.projectPath);
         const pathParts = redirectProjectData.projectPath.split(/[\\/]/);
@@ -40,7 +42,7 @@ export default function AppInventor({ onBack, onRedirectToElectra, redirectProje
     (async () => {
       try {
         if (cancelled) return;
-        appState.loadProject(pendingProject.data);
+        await appState.loadProject(pendingProject.data);
         if (pendingProject.projectName) {
           appState.setAppName(pendingProject.projectName);
         }
