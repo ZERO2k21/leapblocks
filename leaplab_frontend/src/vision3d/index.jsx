@@ -89,8 +89,6 @@ const Vision3DApp = ({ onBack }) => {
 
   useEffect(() => { log('Vision3DApp: mounted'); }, []);
 
-  useKeyboardShortcuts({ onOpenProject: handleOpenProject });
-
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
   const fileInputRef = useRef(null);
@@ -146,6 +144,8 @@ const Vision3DApp = ({ onBack }) => {
     }
     e.target.value = '';
   }, [clearScene, importShape, setProjectName]);
+
+  useKeyboardShortcuts({ onOpenProject: handleOpenProject });
 
   const handleSave = async () => {
     log('Vision3DApp: save triggered');
