@@ -19,6 +19,7 @@ export default function MediaManager({ appState }) {
     const [previewFile, setPreviewFile] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [isDragOver, setIsDragOver] = useState(false);
     const fileInputRef = useRef(null);
     const audioRef = useRef(null);
 
@@ -68,6 +69,47 @@ export default function MediaManager({ appState }) {
             reader.readAsDataURL(file);
         });
         e.target.value = null; // Reset input
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.currentTarget === e.target) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        const files = Array.from(e.dataTransfer.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                addMedia({
+                    filename: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: event.target.result,
+                    timestamp: Date.now()
+                });
+            };
+            reader.readAsDataURL(file);
+        });
     };
 
     const handleDelete = (filename) => {
@@ -132,7 +174,23 @@ export default function MediaManager({ appState }) {
     }, []);
 
     return (
-        <div className="flex flex-col h-full bg-white overflow-hidden">
+        <div
+            className="flex flex-col h-full bg-white overflow-hidden relative"
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Global drag overlay */}
+            {isDragOver && (
+                <div className="absolute inset-0 z-50 bg-blue-50/95 border-2 border-dashed border-blue-400 rounded-2xl flex flex-col items-center justify-center pointer-events-none">
+                    <div className="p-5 bg-blue-100 rounded-full mb-4">
+                        <Upload size={32} className="text-blue-500" />
+                    </div>
+                    <p className="text-[16px] font-bold text-blue-600 mb-1">Drop files here</p>
+                    <p className="text-[12px] text-blue-400 font-medium">Release to upload your assets</p>
+                </div>
+            )}
             {/* Standardized Header */}
             <div 
                 style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
@@ -241,21 +299,55 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Media Grid/List */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-white leap-panel-body">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white leap-panel-body">
                 {filteredMedia.length === 0 ? (
-                    <div style={{ minHeight: '300px' }} className="flex flex-col items-center justify-center h-full text-slate-900 py-10">
-                        <div className="relative mb-6">
-                            <div className="absolute inset-0 bg-slate-50 rounded-full blur-2xl scale-150 opacity-50"></div>
-                            <FolderOpen className="h-20 w-20 relative text-slate-900" strokeWidth={1} />
+                    <div
+                        style={{ minHeight: '320px' }}
+                        className={`flex flex-col items-center justify-center h-full px-6 py-12 transition-all duration-300 ${isDragOver ? 'bg-blue-50/80 border-2 border-dashed border-blue-400 rounded-3xl mx-4 my-4' : ''}`}
+                    >
+                        {/* Icon */}
+                        <div className={`relative mb-6 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
+                            <div className={`absolute inset-0 rounded-full blur-2xl scale-150 transition-all duration-300 ${isDragOver ? 'bg-blue-300/40' : 'bg-slate-200/50'}`}></div>
+                            <div className={`relative w-[80px] h-[80px] rounded-[24px] flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200'}`}>
+                                <FolderOpen className={`w-9 h-9 transition-colors duration-300 ${isDragOver ? 'text-blue-500' : 'text-slate-400'}`} strokeWidth={1.5} />
+                            </div>
                         </div>
-                        <p style={{ fontSize: '13px' }} className="font-black uppercase tracking-[0.15em] text-slate-900 mb-2">No Assets</p>
-                        <p style={{ fontSize: '13px' }} className="text-slate-900 font-medium">
-                            {searchTerm ? 'Adjust search terms' : 'Upload files to begin'}
-                        </p>
+
+                        {/* Text */}
+                        {isDragOver ? (
+                            <div className="text-center px-6">
+                                <p className="text-[16px] font-bold text-blue-600 mb-2 tracking-tight">Drop your files here</p>
+                                <p className="text-[13px] text-blue-400 font-medium">Release to upload</p>
+                            </div>
+                        ) : (
+                            <div className="text-center px-6">
+                                <p className="text-[16px] font-bold text-slate-700 mb-2 tracking-tight">No Assets Yet</p>
+                                <p className="text-[13px] text-slate-400 font-medium mb-6 max-w-[240px] leading-relaxed">
+                                    {searchTerm ? 'Try different search terms' : 'Drag files here or click below to upload'}
+                                </p>
+                                {!searchTerm && (
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl text-[14px] font-bold tracking-wide transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] hover:-translate-y-0.5"
+                                    >
+                                        <div className="w-6 h-6 bg-white/25 rounded-lg flex items-center justify-center">
+                                            <Upload size={14} strokeWidth={2.5} />
+                                        </div>
+                                        Browse Files
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     viewMode === 'grid' ? (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}>
+                            {isDragOver && (
+                                <div className="col-span-2 flex flex-col items-center justify-center py-8 text-blue-500">
+                                    <Upload size={24} className="mb-2 animate-bounce" />
+                                    <p className="text-[13px] font-semibold">Drop files to upload</p>
+                                </div>
+                            )}
                             {filteredMedia.map((item, index) => (
                                 <div
                                     key={index}
@@ -327,7 +419,13 @@ export default function MediaManager({ appState }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-2.5">
+                        <div className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}>
+                            {isDragOver && (
+                                <div className="flex flex-col items-center justify-center py-6 text-blue-500">
+                                    <Upload size={24} className="mb-2 animate-bounce" />
+                                    <p className="text-[13px] font-semibold">Drop files to upload</p>
+                                </div>
+                            )}
                             {filteredMedia.map((item, index) => (
                                 <div
                                     key={index}

@@ -29,20 +29,20 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, p
   }, []);
 
   const selectedOption = options.find(opt => opt.value === value) || options[0];
-  const colorAccent = primaryColor || '#22d3ee';
+  const colorAccent = primaryColor || '#3b82f6';
 
   return (
     <div ref={containerRef} className="relative select-none">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-[8px] bg-[rgba(15,23,42,0.45)] hover:bg-[rgba(30,41,59,0.6)] text-slate-200 border border-solid border-[rgba(255,255,255,0.08)] hover:border-cyan-500/30 rounded-[8px] p-[6px_12px] text-[11px] font-bold cursor-pointer transition-all duration-200 min-w-[90px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]"
+        className="flex items-center justify-between gap-[8px] bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 hover:border-slate-300 rounded-[10px] p-[8px_12px] text-[12px] font-bold cursor-pointer transition-all duration-200 min-w-[90px]"
       >
         <span>{selectedOption?.label}</span>
-        <ChevronDown size={11} className="text-slate-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }} />
+        <ChevronDown size={12} className="text-slate-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }} />
       </div>
 
       {isOpen && (
-        <div className="absolute bottom-[calc(100%+6px)] left-0 bg-[#0e1017] border border-solid border-[rgba(255,255,255,0.1)] rounded-[10px] py-[4px] min-w-[130px] z-[2000] overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)] animate-[slideDropdownUp_0.15s_cubic-bezier(0.16,1,0.3,1)]">
+        <div className="absolute bottom-[calc(100%+8px)] left-0 bg-white border-2 border-slate-200 rounded-[12px] py-[6px] min-w-[130px] z-[2000] overflow-hidden shadow-lg animate-[slideDropdownUp_0.15s_ease-out]">
           {options.map((opt) => (
             <div
               key={opt.value}
@@ -50,23 +50,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, p
                 onChange(opt.value);
                 setIsOpen(false);
               }}
-              className="p-[6px_12px] text-[11px] font-semibold cursor-pointer transition-colors duration-150"
+              className="px-[12px] py-[8px] text-[12px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-slate-50"
               style={{
-                color: opt.value === value ? colorAccent : '#cbd5e1',
-                backgroundColor: opt.value === value ? `${colorAccent}15` : 'transparent',
+                color: opt.value === value ? colorAccent : '#475569',
+                backgroundColor: opt.value === value ? `${colorAccent}12` : 'transparent',
                 fontWeight: opt.value === value ? 'bold' : 'normal'
-              }}
-              onMouseEnter={(e) => {
-                if (opt.value !== value) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
-                  e.currentTarget.style.color = '#ffffff';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (opt.value !== value) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#cbd5e1';
-                }
               }}
             >
               {opt.label}
@@ -202,16 +190,16 @@ export const SelectionToolbar: React.FC = () => {
   };
 
   const getCategoryIcon = (categoryName: string, primaryColor: string) => {
-    const size = 13;
+    const size = 22;
     const style = { color: primaryColor };
     const category = categoryName.toUpperCase();
-    if (category.includes('MOTOR') || category.includes('ACTUATOR')) return <Zap size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else if (category.includes('SENSOR')) return <Radio size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else if (category.includes('DISPLAY') || category.includes('OUTPUT') || category.includes('LIGHT')) return <Sparkles size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else if (category.includes('BOARD') || category.includes('MCU') || category.includes('CHIP')) return <Cpu size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else if (category.includes('POWER')) return <Power size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else if (category.includes('INPUT') || category.includes('CONTROL')) return <Sliders size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
-    else return <Zap size={size} style={style} className="animate-[pulse_1.5s_infinite]" />;
+    if (category.includes('MOTOR') || category.includes('ACTUATOR')) return <Zap size={size} style={style} strokeWidth={2.5} />;
+    else if (category.includes('SENSOR')) return <Radio size={size} style={style} strokeWidth={2.5} />;
+    else if (category.includes('DISPLAY') || category.includes('OUTPUT') || category.includes('LIGHT')) return <Sparkles size={size} style={style} strokeWidth={2.5} />;
+    else if (category.includes('BOARD') || category.includes('MCU') || category.includes('CHIP')) return <Cpu size={size} style={style} strokeWidth={2.5} />;
+    else if (category.includes('POWER')) return <Power size={size} style={style} strokeWidth={2.5} />;
+    else if (category.includes('INPUT') || category.includes('CONTROL')) return <Sliders size={size} style={style} strokeWidth={2.5} />;
+    else return <Zap size={size} style={style} strokeWidth={2.5} />;
   };
 
   const renderSlider = () => {
@@ -234,12 +222,12 @@ export const SelectionToolbar: React.FC = () => {
     const sliderPercent = ((currentValue - config.min) / (config.max - config.min)) * 100;
 
     return (
-      <div className="flex items-center gap-[12px] bg-[rgba(15,23,42,0.45)] p-[6px_14px] rounded-[10px] border border-solid border-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
-        <Sliders size={13} className="text-slate-400 opacity-80" />
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] min-w-[70px]">{config.label}</span>
-        <input type="range" min={config.min} max={config.max} step={config.step ?? 1} value={currentValue} onChange={handleSliderChange} className="w-[120px] custom-slider-input" style={{ background: `linear-gradient(to right, ${badgeInfo.primary} 0%, ${badgeInfo.primary} ${sliderPercent}%, rgba(255,255,255,0.08) ${sliderPercent}%, rgba(255,255,255,0.08) 100%)` }} />
-        <input type="number" value={currentValue} min={config.min} max={config.max} step={config.step ?? 1} onChange={handleSliderChange} className="w-[72px] bg-[rgba(8,9,12,0.75)] border border-solid border-[rgba(255,255,255,0.1)] rounded-[8px] p-[5px_10px] text-[11px] text-cyan-400 font-bold text-right outline-none focus:border-cyan-400 font-mono" />
-        {config.unit && <span className="text-[10px] font-black text-cyan-400/80 bg-[rgba(34,211,238,0.08)] px-[6px] py-[2px] rounded-[4px] border border-solid border-[rgba(34,211,238,0.15)]" style={{ fontFamily: "'Space Mono', sans-serif" }}>{config.unit}</span>}
+      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
+        <Sliders size={14} className="text-slate-500" />
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px] min-w-[65px]">{config.label}</span>
+        <input type="range" min={config.min} max={config.max} step={config.step ?? 1} value={currentValue} onChange={handleSliderChange} className="w-[120px] custom-slider-input" style={{ background: `linear-gradient(to right, ${badgeInfo.primary} 0%, ${badgeInfo.primary} ${sliderPercent}%, #e2e8f0 ${sliderPercent}%, #e2e8f0 100%)` }} />
+        <input type="number" value={currentValue} min={config.min} max={config.max} step={config.step ?? 1} onChange={handleSliderChange} className="w-[76px] bg-white border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-slate-700 font-bold text-right outline-none focus:border-blue-400 font-mono" />
+        {config.unit && <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-[8px] py-[4px] rounded-[6px] border border-slate-200">{config.unit}</span>}
       </div>
     );
   };
@@ -250,11 +238,11 @@ export const SelectionToolbar: React.FC = () => {
   const renderLEDColorPalette = () => {
     if (nodeType !== 'led' && nodeType !== 'led-ring' && nodeType !== 'led-bar-graph') return null;
     return (
-      <div className="flex gap-[10px] items-center bg-[rgba(15,23,42,0.45)] p-[6px_14px] rounded-[10px] border border-solid border-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px]">LED COLOR</span>
-        <div className="flex gap-[6px] items-center">
+      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">LED COLOR</span>
+        <div className="flex gap-[10px] items-center">
           {LED_COLORS.map((lc) => (
-            <button key={lc.color} onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })} title={lc.name} className={`w-[18px] h-[18px] rounded-full cursor-pointer transition-all duration-200 hover:scale-[1.25] hover:-translate-y-[2px] active:scale-95 border border-solid border-[rgba(255,255,255,0.2)] ${selectedNode?.data?.color === lc.color ? 'border-2 border-solid border-cyan-400 scale-[1.15] shadow-[0_0_10px_rgba(34,211,238,0.6)]' : ''}`} style={{ backgroundColor: lc.color }} />
+            <button key={lc.color} onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })} title={lc.name} className={`w-[26px] h-[26px] rounded-full cursor-pointer transition-all duration-200 hover:scale-110 hover:-translate-y-[1px] active:scale-95 border-[3px] border-white shadow-md ${selectedNode?.data?.color === lc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: lc.color }} />
           ))}
         </div>
       </div>
@@ -264,10 +252,10 @@ export const SelectionToolbar: React.FC = () => {
   const renderColorPalette = () => {
     if (!selectedEdge) return null;
     return (
-      <div className="flex gap-[10px] items-center bg-[rgba(15,23,42,0.45)] p-[6px_14px] rounded-[10px] border border-solid border-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
-        <div className="flex gap-[6px] items-center">
+      <div className="flex items-center bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
+        <div className="flex gap-[10px] items-center">
           {WIRE_COLORS.map((wc) => (
-            <button key={wc.color} onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })} title={wc.name} className={`w-[18px] h-[18px] rounded-full cursor-pointer transition-all duration-200 hover:scale-[1.25] hover:-translate-y-[2px] active:scale-95 border border-solid border-[rgba(255,255,255,0.2)] ${selectedEdge.data?.color === wc.color ? 'border-2 border-solid border-cyan-400 scale-[1.15] shadow-[0_0_10px_rgba(34,211,238,0.6)]' : ''}`} style={{ backgroundColor: wc.color }} />
+            <button key={wc.color} onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })} title={wc.name} className={`w-[26px] h-[26px] rounded-full cursor-pointer transition-all duration-200 hover:scale-110 hover:-translate-y-[1px] active:scale-95 border-[3px] border-white shadow-md ${selectedEdge.data?.color === wc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: wc.color }} />
           ))}
         </div>
       </div>
@@ -277,13 +265,13 @@ export const SelectionToolbar: React.FC = () => {
   const renderIRReceiverInput = () => {
     if (nodeType !== 'ir-receiver') return null;
     return (
-      <div className="flex gap-[10px] items-center bg-[rgba(15,23,42,0.45)] p-[6px_14px] rounded-[10px] border border-solid border-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
-        <Radio size={13} className="text-cyan-400" />
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px]">ADDR</span>
-        <input type="text" value={irAddress} onChange={(e) => setIrAddress(e.target.value)} className="w-[36px] bg-[rgba(8,9,12,0.75)] text-cyan-400 border border-solid border-[rgba(255,255,255,0.1)] rounded-[8px] p-[5px_8px] text-[11px] text-center outline-none focus:border-cyan-400 font-mono" />
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] ml-[4px]">CMD</span>
-        <input type="text" value={irCommand} onChange={(e) => setIrCommand(e.target.value)} className="w-[38px] bg-[rgba(8,9,12,0.75)] text-cyan-400 border border-solid border-[rgba(255,255,255,0.1)] rounded-[8px] p-[5px_8px] text-[11px] text-center outline-none focus:border-cyan-400 font-mono" />
-        <button onClick={() => { const addr = parseInt(irAddress) || 0; const cmd = parseInt(irCommand) || 0; if (selectedNode?.id) import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => circuitEngine.sendIRSignalToReceiver(selectedNode.id, addr, cmd)); }} className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 active:scale-95 text-slate-950 border border-solid border-transparent p-[5px_12px] rounded-[8px] text-[10px] font-black cursor-pointer uppercase tracking-[0.5px] transition-all shadow-[0_0_8px_rgba(34,211,238,0.2)]">Send</button>
+      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
+        <Radio size={14} className="text-blue-500" />
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">ADDR</span>
+        <input type="text" value={irAddress} onChange={(e) => setIrAddress(e.target.value)} className="w-[44px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">CMD</span>
+        <input type="text" value={irCommand} onChange={(e) => setIrCommand(e.target.value)} className="w-[48px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
+        <button onClick={() => { const addr = parseInt(irAddress) || 0; const cmd = parseInt(irCommand) || 0; if (selectedNode?.id) import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => circuitEngine.sendIRSignalToReceiver(selectedNode.id, addr, cmd)); }} className="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white border-none p-[8px_16px] rounded-[10px] text-[11px] font-bold cursor-pointer uppercase tracking-[0.5px] transition-all shadow-md">Send</button>
       </div>
     );
   };
@@ -303,17 +291,17 @@ export const SelectionToolbar: React.FC = () => {
     const arrowColors = [{ value: '', label: 'Dynamic (Orange)' }, { value: 'none', label: 'None (Hidden)' }, { value: 'orange', label: 'Orange' }, { value: 'white', label: 'White' }, { value: 'green', label: 'Green' }, { value: 'blue', label: 'Blue' }, { value: 'yellow', label: 'Yellow' }, { value: 'red', label: 'Red' }];
 
     return (
-      <div className="flex gap-[12px] items-center bg-[rgba(15,23,42,0.45)] p-[6px_14px] rounded-[10px] border border-solid border-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px]">SIZE</span>
+      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">SIZE</span>
         <CustomSelect value={currentSize} onChange={(val) => updateNodeData(selectedNode!.id, { size: parseInt(val) || 23 })} options={sizes} primaryColor={badgeInfo.primary} />
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] ml-[4px]">DISP</span>
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">DISP</span>
         <CustomSelect value={currentDisplay} onChange={(val) => updateNodeData(selectedNode!.id, { display: val })} options={displays} primaryColor={badgeInfo.primary} />
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] ml-[4px]">GEAR</span>
-        <div className="flex items-center gap-[6px]">
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">GEAR</span>
+        <div className="flex items-center gap-[8px]">
           <CustomSelect value={gearOptions.some(opt => opt.value === currentGearRatio) ? currentGearRatio : 'custom'} onChange={(val) => { if (val !== 'custom') updateNodeData(selectedNode!.id, { gearRatio: val }); }} options={gearOptions} primaryColor={badgeInfo.primary} />
-          {(currentGearRatio === 'custom' || !['1:1', '2:1', '2048:200', '64:1', '10:1', '100:1'].includes(currentGearRatio)) && <input type="text" value={currentGearRatio === 'custom' ? '' : currentGearRatio} onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })} className="w-[56px] bg-[rgba(8,9,12,0.75)] text-cyan-400 border border-solid border-[rgba(255,255,255,0.1)] rounded-[8px] p-[5px_8px] text-[11px] outline-none focus:border-cyan-400 font-mono" />}
+          {(currentGearRatio === 'custom' || !['1:1', '2:1', '2048:200', '64:1', '10:1', '100:1'].includes(currentGearRatio)) && <input type="text" value={currentGearRatio === 'custom' ? '' : currentGearRatio} onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })} className="w-[60px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] outline-none focus:border-blue-400 font-mono font-bold" />}
         </div>
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] ml-[4px]">ARROW</span>
+        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">ARROW</span>
         <CustomSelect value={currentArrow} onChange={(val) => updateNodeData(selectedNode!.id, { arrow: val })} options={arrowColors} primaryColor={badgeInfo.primary} />
       </div>
     );
@@ -324,49 +312,45 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-[#0c0d12] p-[8px] rounded-[12px] border border-solid transition-all duration-300 ease-out"
+      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-[12px] rounded-[20px] border-2 border-slate-200 transition-all duration-200 ease-out"
       style={{
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        borderColor: `${badgeInfo.primary}25`,
-        boxShadow: `0 16px 36px rgba(0,0,0,0.8), 0 0 20px 1px ${badgeInfo.primary}10, inset 0 1px 0 rgba(255,255,255,0.05)`
+        animation: 'slideUp 0.25s ease-out',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)'
       }}
     >
       <style>{`
-        @keyframes slideUp { from { transform: translate(-50%, 28px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         @keyframes slideDropdownUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
+
         .custom-slider-input {
           -webkit-appearance: none;
           width: 120px;
-          background: rgba(255, 255, 255, 0.06);
-          height: 4px;
-          border-radius: 2px;
+          height: 8px;
+          border-radius: 4px;
           outline: none;
         }
         .custom-slider-input::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 12px;
-          height: 12px;
-          border-radius: 3px;
-          background: #ffffff;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
           cursor: pointer;
-          box-shadow: 0 0 8px var(--primary-color, #22d3ee), 0 1px 2px rgba(0,0,0,0.6);
-          border: 2px solid var(--primary-color, #22d3ee);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          border: 3px solid var(--primary-color, #3b82f6);
           transition: transform 0.15s ease;
         }
         .custom-slider-input::-webkit-slider-thumb:hover {
           transform: scale(1.15);
         }
         .custom-slider-input::-moz-range-thumb {
-          width: 12px;
-          height: 12px;
-          border-radius: 3px;
-          background: #ffffff;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
           cursor: pointer;
-          border: 2px solid var(--primary-color, #22d3ee);
-          box-shadow: 0 0 8px var(--primary-color, #22d3ee), 0 1px 2px rgba(0,0,0,0.6);
+          border: 3px solid var(--primary-color, #3b82f6);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           transition: transform 0.15s ease;
         }
         .custom-slider-input::-moz-range-thumb:hover {
@@ -374,29 +358,27 @@ export const SelectionToolbar: React.FC = () => {
         }
 
         .icon-box-plate {
-          width: 28px;
-          height: 28px;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          border-radius: 6px;
-          transition: transform 0.2s ease;
+          border-radius: 14px;
+          transition: all 0.2s ease;
         }
         .group:hover .icon-box-plate {
-          transform: scale(1.05);
+          transform: scale(1.05) rotate(-3deg);
         }
 
         .chip-id-plate {
           position: relative;
-          overflow: hidden;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
           transition: all 0.2s ease;
           cursor: default;
         }
         .chip-id-plate:hover {
-          border-color: rgba(255, 255, 255, 0.12);
+          transform: translateY(-2px);
         }
       `}</style>
 
@@ -406,30 +388,26 @@ export const SelectionToolbar: React.FC = () => {
             <div
               className="group chip-id-plate"
               style={{
-                background: `linear-gradient(90deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.05) 0%, rgba(12, 13, 18, 0.8) 100%)`,
-                borderLeft: `2.5px solid ${badgeInfo.primary}`
+                background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}08 100%)`,
+                border: `2px solid ${badgeInfo.primary}30`
               }}
             >
-              <div className="flex items-center gap-[12px] p-[8px_16px_8px_10px]">
+              <div className="flex items-center gap-[12px] p-[10px_16px]">
                 <div
                   className="icon-box-plate"
                   style={{
-                    background: `rgba(${hexToRgb(badgeInfo.primary)}, 0.1)`,
-                    border: `1px solid ${badgeInfo.primary}30`,
-                    boxShadow: `inset 0 1px 2px rgba(0,0,0,0.5), 0 0 10px ${badgeInfo.primary}15`
+                    background: `linear-gradient(145deg, ${badgeInfo.primary}25 0%, ${badgeInfo.primary}10 100%)`,
+                    border: `2px solid ${badgeInfo.primary}40`
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
                 <div className="flex flex-col gap-[3px]">
-                  <div className="flex items-center gap-[6px]">
-                    <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}bf` }}>{badgeInfo.category}</span>
-                    <span className="text-[7px] font-extrabold px-[4px] py-[1px] rounded-[3px] border border-solid tracking-[0.5px] leading-none uppercase" style={{ color: badgeInfo.primary, backgroundColor: `${badgeInfo.primary}15`, borderColor: `${badgeInfo.primary}30` }}>
-                      {getStatusLabel(badgeInfo.category)}
-                    </span>
-                  </div>
-                  <span className="text-[12px] font-black text-slate-100 tracking-[0.5px] leading-none uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <span className="text-[14px] font-bold text-slate-700 tracking-[0.2px] leading-none uppercase" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
                     {badgeInfo.displayName}
+                  </span>
+                  <span className="text-[10px] font-semibold tracking-[0.5px] uppercase leading-none" style={{ color: badgeInfo.primary }}>
+                    {badgeInfo.category}
                   </span>
                 </div>
               </div>
@@ -437,7 +415,7 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-[1px] h-[22px] bg-[rgba(255,255,255,0.08)] self-center mx-[10px]" />
+              <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
               <div className="flex gap-[12px] items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
             </>
           )}
@@ -448,30 +426,26 @@ export const SelectionToolbar: React.FC = () => {
             <div
               className="group chip-id-plate"
               style={{
-                background: `linear-gradient(90deg, rgba(${hexToRgb(badgeInfo.primary)}, 0.05) 0%, rgba(12, 13, 18, 0.8) 100%)`,
-                borderLeft: `2.5px solid ${badgeInfo.primary}`
+                background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}08 100%)`,
+                border: `2px solid ${badgeInfo.primary}30`
               }}
             >
-              <div className="flex items-center gap-[12px] p-[8px_16px_8px_10px]">
+              <div className="flex items-center gap-[12px] p-[10px_16px]">
                 <div
                   className="icon-box-plate"
                   style={{
-                    background: `rgba(${hexToRgb(badgeInfo.primary)}, 0.1)`,
-                    border: `1px solid ${badgeInfo.primary}30`,
-                    boxShadow: `inset 0 1px 2px rgba(0,0,0,0.5), 0 0 10px ${badgeInfo.primary}15`
+                    background: `linear-gradient(145deg, ${badgeInfo.primary}25 0%, ${badgeInfo.primary}10 100%)`,
+                    border: `2px solid ${badgeInfo.primary}40`
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
                 <div className="flex flex-col gap-[3px]">
-                  <div className="flex items-center gap-[6px]">
-                    <span className="text-[7.5px] font-black tracking-[1.5px] uppercase leading-none" style={{ color: `${badgeInfo.primary}bf` }}>{badgeInfo.category}</span>
-                    <span className="text-[7px] font-extrabold px-[4px] py-[1px] rounded-[3px] border border-solid tracking-[0.5px] leading-none uppercase" style={{ color: badgeInfo.primary, backgroundColor: `${badgeInfo.primary}15`, borderColor: `${badgeInfo.primary}30` }}>
-                      {getStatusLabel(badgeInfo.category)}
-                    </span>
-                  </div>
-                  <span className="text-[12px] font-black text-slate-100 tracking-[0.5px] leading-none uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <span className="text-[14px] font-bold text-slate-700 tracking-[0.2px] leading-none uppercase" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
                     {badgeInfo.displayName}
+                  </span>
+                  <span className="text-[10px] font-semibold tracking-[0.5px] uppercase leading-none" style={{ color: badgeInfo.primary }}>
+                    {badgeInfo.category}
                   </span>
                 </div>
               </div>
@@ -479,8 +453,8 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-[1px] h-[22px] bg-[rgba(255,255,255,0.08)] self-center mx-[10px]" />
-              <div className="flex gap-[10px] items-center">{renderColorPalette()}</div>
+              <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
+              <div className="flex gap-[12px] items-center">{renderColorPalette()}</div>
             </>
           )}
         </>
@@ -488,31 +462,14 @@ export const SelectionToolbar: React.FC = () => {
 
       {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
         <>
-          <div className="w-[1px] h-[22px] bg-[rgba(255,255,255,0.08)] self-center mx-[10px]" />
-          <div className="flex gap-[8px] items-center">
+          <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
+          <div className="flex items-center">
             <button
               onClick={handleDelete}
-              title="REMOVE ELEMENT"
-              className="group relative flex items-center justify-center w-[36px] h-[36px] rounded-[8px] cursor-pointer border-none transition-all duration-200"
-              style={{
-                background: 'linear-gradient(180deg, #f43f5e 0%, #e11d48 100%)',
-                color: '#ffffff',
-                boxShadow: '0 2px 6px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255,255,255,0.15)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-0.5px)';
-                e.currentTarget.style.boxShadow = '0 4px 10px rgba(244, 63, 94, 0.35), inset 0 1px 0 rgba(255,255,255,0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 6px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255,255,255,0.15)';
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.transform = 'translateY(0.5px)';
-                e.currentTarget.style.boxShadow = '0 1px 2px rgba(244, 63, 94, 0.15)';
-              }}
+              title="Remove"
+              className="group relative flex items-center justify-center w-[40px] h-[40px] rounded-[12px] cursor-pointer border-2 border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
             >
-              <Trash2 size={15} className="text-white transition-transform duration-200 group-hover:scale-110" />
+              <Trash2 size={18} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
             </button>
           </div>
         </>

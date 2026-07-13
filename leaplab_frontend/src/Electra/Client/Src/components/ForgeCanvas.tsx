@@ -547,11 +547,18 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* ── Pan-drag mode indicator ── */}
         {panDragEnabled && (
-          <Panel position="bottom-center" className="mb-[12px]">
-            <div className="flex items-center gap-[6px] bg-[var(--lp-accent-primary,#3b82f6)] text-white p-[6px_14px] rounded-[20px] text-[12px] font-semibold shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
-              style={{ animation: 'fadeIn 0.2s ease' }}>
-              <Hand size={14} />
-              <span>Pan Mode — drag to move canvas · double-click or Esc to exit</span>
+          <Panel position="bottom-center" className="mb-[16px]">
+            <div className="flex items-center gap-[10px] bg-white p-[10px_18px] rounded-[14px] border-2 border-slate-200 shadow-lg"
+              style={{ animation: 'fadeIn 0.2s ease-out' }}>
+              <div className="flex items-center justify-center w-[28px] h-[28px] bg-blue-50 rounded-[8px] border border-blue-200">
+                <Hand size={14} className="text-blue-500" />
+              </div>
+              <span className="text-[13px] font-semibold text-slate-600">
+                Drag to move canvas
+              </span>
+              <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-[8px] py-[3px] rounded-[6px]">
+                Esc to exit
+              </span>
             </div>
           </Panel>
         )}
