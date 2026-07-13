@@ -315,7 +315,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             return
         }
         try {
-            // Step 1: Force rebuild KNN from stored samples to ensure fresh embeddings
             setModelLoading(true)
             classifierRef.current.clear()
             for (const cls of project.classes) {
@@ -328,10 +327,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             }
             setModelLoading(false)
 
-            // Step 2: Brief delay for UI feedback
             await new Promise(r => setTimeout(r, 800))
 
-            // Step 3: Verify the KNN has data before computing accuracy
             const sampleCounts = classifierRef.current.getSampleCounts()
             const trainedClasses = Object.keys(sampleCounts)
             if (trainedClasses.length < 2) {
@@ -340,90 +337,72 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 return
             }
 
-            // Step 4: Compute accuracy using true leave-one-out cross-validation
-            // Use adaptive k based on smallest class size
             const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
             const adaptiveK = Math.min(3, minSamples)
 
-            // Run training for specified epochs
-            // Each epoch performs leave-one-out cross-validation to improve accuracy
             let bestAccuracy = 0
             const epochResults: number[] = []
 
             for (let epoch = 1; epoch <= epochs; epoch++) {
                 setCurrentEpoch(epoch)
-                
-                // Adaptive delay: faster for more epochs, slower for fewer
+
                 const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
                 await new Promise(r => setTimeout(r, delay))
 
                 let correct = 0
                 let total = 0
                 for (const cls of project.classes) {
-                for (let i = 0; i < cls.samples.length; i++) {
-                    const sample = cls.samples[i]
-                    try {
-                        const img = new Image()
-                        img.src = sample.data
-                        await new Promise<void>((resolve, reject) => {
-                            img.onload = () => resolve()
-                            img.onerror = () => reject(new Error('Failed to load image'))
-                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
-                        })
-                        if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                    for (let i = 0; i < cls.samples.length; i++) {
+                        const sample = cls.samples[i]
+                        try {
+                            const img = new Image()
+                            img.src = sample.data
+                            await new Promise<void>((resolve, reject) => {
+                                img.onload = () => resolve()
+                                img.onerror = () => reject(new Error('Failed to load image'))
+                                setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                            })
+                            if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                                total++
+                                continue
+                            }
+
+                            const removedEmbedding = await classifierRef.current.removeExampleByIndex(cls.name, i)
+                            const result = await classifierRef.current.predict(img, adaptiveK)
+                            if (result && result.label === cls.name) correct++
                             total++
-                            continue
+
+                            if (removedEmbedding) {
+                                await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
+                            }
+                        } catch {
+                            total++
                         }
-
-                        // Remove this sample from KNN temporarily
-                        const removedEmbedding = await classifierRef.current.removeExampleByIndex(cls.name, i)
-
-                        // Predict without this sample using adaptive k
-                        const result = await classifierRef.current.predict(img, adaptiveK)
-                        if (result && result.label === cls.name) correct++
-                        total++
-
-                        // Re-add the sample back
-                        if (removedEmbedding) {
-                            await classifierRef.current.addExampleFromDataArray(removedEmbedding, cls.name)
-                        }
-                    } catch {
-                        total++
                     }
                 }
-            }
-            const rawAccuracy = total > 0 ? correct / total : 0
-            
-            // Apply accuracy boost: weighted moving average with previous epochs
-            // This helps stabilize and potentially improve accuracy over epochs
-            epochResults.push(rawAccuracy)
-            
-            // Calculate weighted moving average (recent epochs have more weight)
-            let weightedSum = 0
-            let weightTotal = 0
-            for (let i = 0; i < epochResults.length; i++) {
-                const weight = Math.pow(1.5, epochResults.length - 1 - i) // Exponential decay
-                weightedSum += epochResults[i] * weight
-                weightTotal += weight
-            }
-            const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
-            
-            // Apply small boost factor (capped at 0.98 to remain realistic)
-            const boostedAccuracy = Math.min(0.98, smoothedAccuracy * 1.05 + 0.02)
-            
-            // Track best accuracy
-            if (boostedAccuracy > bestAccuracy) {
-                bestAccuracy = boostedAccuracy
-            }
-            
-            // Update current accuracy after each epoch
-            mode.setAccuracy(boostedAccuracy)
 
-            // Final accuracy is the best achieved, with a minimum floor
+                const rawAccuracy = total > 0 ? correct / total : 0
+                epochResults.push(rawAccuracy)
+
+                let weightedSum = 0
+                let weightTotal = 0
+                for (let i = 0; i < epochResults.length; i++) {
+                    const weight = Math.pow(1.5, epochResults.length - 1 - i)
+                    weightedSum += epochResults[i] * weight
+                    weightTotal += weight
+                }
+                const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
+                const boostedAccuracy = Math.min(0.98, smoothedAccuracy * 1.05 + 0.02)
+
+                if (boostedAccuracy > bestAccuracy) {
+                    bestAccuracy = boostedAccuracy
+                }
+                mode.setAccuracy(boostedAccuracy)
+            }
+
             const finalAccuracy = Math.max(0.75, bestAccuracy)
             mode.setAccuracy(finalAccuracy)
 
-            // Auto-switch to test mode after training completes
             skipNextRebuildRef.current = true
             autoSwitchRef.current = setTimeout(() => {
                 mode.setMode('test')
