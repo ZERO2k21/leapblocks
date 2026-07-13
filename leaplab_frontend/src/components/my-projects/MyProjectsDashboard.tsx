@@ -72,9 +72,9 @@ const MODULES: Record<string, ModuleMeta> = {
     neura: {
         label: 'Neura',
         icon: 'assets/ml_brain_icon.png',
-        accent: '#A855F7',
-        gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(192, 132, 252, 0.1) 100%)',
-        darkAccent: '#7E22CE',
+        accent: '#4648d4',
+        gradient: 'linear-gradient(135deg, rgba(70, 72, 212, 0.05) 0%, rgba(96, 99, 238, 0.1) 100%)',
+        darkAccent: '#2f2ebe',
     },
     electra: {
         label: 'Electra',

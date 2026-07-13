@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useCallback, useRef, useState } from 'react'
 import { IgniteTopbar } from '../../../Electra/Client/Src/components/Layout/Topbar'
 import type { ProjectType } from '../../../types/neura.types'
 
@@ -11,155 +11,170 @@ const CLASSIFIER_TYPES: {
     type: ProjectType
     name: string
     description: string
-    emoji: string
-    color: string
+    icon: string
     gradient: string
-    glow: string
+    shadowColor: string
 }[] = [
     {
         type: 'image-classifier',
         name: 'Image',
-        description: 'Teach your computer to recognize pictures!',
-        emoji: '📷',
-        color: '#7C3AED',
-        gradient: 'from-violet-500 to-purple-600',
-        glow: 'shadow-violet-500/30'
+        description: 'Teach your computer to see and recognize pictures, objects, or faces.',
+        icon: 'image',
+        gradient: 'linear-gradient(135deg, #4648d4 0%, #6063ee 100%)',
+        shadowColor: 'rgba(70, 72, 212, 0.35)'
     },
     {
         type: 'audio-classifier',
         name: 'Audio',
-        description: 'Train it to understand sounds and voices!',
-        emoji: '🎤',
-        color: '#3B82F6',
-        gradient: 'from-blue-500 to-indigo-600',
-        glow: 'shadow-blue-500/30'
+        description: 'Train models to distinguish sounds, spoken words, or musical patterns.',
+        icon: 'mic',
+        gradient: 'linear-gradient(135deg, #8127cf 0%, #9c48ea 100%)',
+        shadowColor: 'rgba(129, 39, 207, 0.35)'
     },
     {
         type: 'pose-classifier',
         name: 'Pose',
-        description: 'Detect body movements and gestures!',
-        emoji: '🧍',
-        color: '#F97316',
-        gradient: 'from-orange-500 to-red-500',
-        glow: 'shadow-orange-500/30'
+        description: 'Detect body movements, skeletal points, and complex physical gestures.',
+        icon: 'directions_run',
+        gradient: 'linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%)',
+        shadowColor: 'rgba(255, 107, 107, 0.35)'
     },
     {
         type: 'text-classifier',
         name: 'Text',
-        description: 'Classify words and sentences smartly!',
-        emoji: '💬',
-        color: '#10B981',
-        gradient: 'from-emerald-500 to-teal-500',
-        glow: 'shadow-emerald-500/30'
+        description: 'Classify words, sentences, and sentiments using advanced NLP logic.',
+        icon: 'description',
+        gradient: 'linear-gradient(135deg, #006577 0%, #008096 100%)',
+        shadowColor: 'rgba(0, 101, 119, 0.35)'
     },
     {
         type: 'numbers-cr',
         name: 'Numbers',
-        description: 'Draw digits and let AI recognize them!',
-        emoji: '✏️',
-        color: '#EC4899',
-        gradient: 'from-pink-500 to-rose-500',
-        glow: 'shadow-pink-500/30'
+        description: 'Understand numerical data, patterns, and mathematical relationships.',
+        icon: 'calculate',
+        gradient: 'linear-gradient(135deg, #9c48ea 0%, #8127cf 100%)',
+        shadowColor: 'rgba(156, 72, 234, 0.35)'
     },
     {
         type: 'object-detection',
         name: 'Objects',
-        description: 'Find and locate objects in the real world!',
-        emoji: '🔍',
-        color: '#14B8A6',
-        gradient: 'from-teal-500 to-cyan-500',
-        glow: 'shadow-teal-500/30'
+        description: 'Localize multiple objects within a single frame with bounding boxes.',
+        icon: 'search',
+        gradient: 'linear-gradient(135deg, #6063ee 0%, #4648d4 100%)',
+        shadowColor: 'rgba(96, 99, 238, 0.35)'
     }
 ]
 
 const PROJECT_TEMPLATES = [
     {
-        name: 'Fruit Classifier',
-        description: 'Identify different fruits using AI',
-        emoji: '🍎',
+        name: 'Smart Security',
+        description: 'Real-time person and motion detection for surveillance systems.',
+        icon: 'security',
+        classes: ['person', 'motion', 'face', 'intruder'],
+        color: '#4648d4',
+        tags: ['COMPUTER VISION', 'TENSORFLOW']
+    },
+    {
+        name: 'AI Games: RPS',
+        description: 'Play against an AI that recognizes your hand gestures instantly.',
+        icon: 'sports_esports',
+        classes: ['rock', 'paper', 'scissors'],
+        color: '#8127cf',
+        tags: ['POSE NET', 'INTERACTIVE']
+    },
+    {
+        name: 'Virtual Piano',
+        description: 'Convert finger movements into beautiful piano melodies with Pose AI.',
+        icon: 'piano',
+        classes: ['C4', 'D4', 'E4', 'F4', 'G4'],
+        color: '#006577',
+        tags: ['AUDIO SYNTH', 'GESTURES']
+    },
+    {
+        name: 'Fruit Detector',
+        description: 'Identify and categorize various fruits and vegetables for inventory.',
+        icon: 'restaurant',
         classes: ['Apple', 'Banana', 'Orange', 'Grape'],
-        color: '#EF4444',
-        gradient: 'from-red-400 to-orange-500'
+        color: '#6063ee',
+        tags: ['IMAGE CLASS', 'EDGETPU']
     },
     {
-        name: 'Animal Classifier',
-        description: 'Recognize different animals',
-        emoji: '🐶',
+        name: 'Smart Parking',
+        description: 'Automatically monitor and detect available spaces in parking lots.',
+        icon: 'local_parking',
+        classes: ['car', 'truck', 'empty', 'occupied'],
+        color: '#9c48ea',
+        tags: ['OBJ DETECTION', 'CCTV']
+    },
+    {
+        name: 'Pet ID',
+        description: 'Identify different animal breeds and species from photos instantly.',
+        icon: 'pets',
         classes: ['Dog', 'Cat', 'Bird', 'Fish'],
-        color: '#F59E0B',
-        gradient: 'from-amber-400 to-yellow-500'
+        color: '#006577',
+        tags: ['MOBILENET', 'WILDLIFE']
     },
     {
-        name: 'Waste Segregation',
-        description: 'Sort waste into correct categories',
-        emoji: '♻️',
-        classes: ['Wet Waste', 'Dry Waste', 'Recyclable', 'Hazardous'],
-        color: '#10B981',
-        gradient: 'from-emerald-400 to-green-500'
-    },
-    {
-        name: 'Healthy vs Junk Food',
-        description: 'Classify food as healthy or junk',
-        emoji: '🥗',
-        classes: ['Healthy Food', 'Junk Food'],
-        color: '#8B5CF6',
-        gradient: 'from-violet-400 to-purple-500'
-    }
-]
-
-const OBJECT_DETECTION_TEMPLATES = [
-    {
-        name: 'Classroom Object Counter',
-        description: 'Count objects in a classroom setting',
-        emoji: '🏫',
-        classes: ['person', 'chair', 'book', 'backpack', 'laptop', 'bottle', 'cup'],
-        color: '#3B82F6',
-        gradient: 'from-blue-400 to-indigo-500'
-    },
-    {
-        name: 'Smart Parking Detection',
-        description: 'Detect vehicles in parking areas',
-        emoji: '🅿️',
-        classes: ['car', 'truck', 'bus', 'motorcycle', 'bicycle', 'parking meter'],
-        color: '#10B981',
-        gradient: 'from-emerald-400 to-teal-500'
-    },
-    {
-        name: 'Classroom Attendance',
-        description: 'Track people entering the classroom',
-        emoji: '👋',
-        classes: ['person'],
-        color: '#F97316',
-        gradient: 'from-orange-400 to-amber-500'
-    },
-    {
-        name: 'Traffic Vehicle Detection',
-        description: 'Identify vehicles on the road',
-        emoji: '🚗',
-        classes: ['car', 'truck', 'bus', 'motorcycle', 'bicycle', 'traffic light', 'person'],
-        color: '#EF4444',
-        gradient: 'from-red-400 to-rose-500'
+        name: 'Eco-Sort',
+        description: 'Help the environment by automatically sorting recyclables from trash.',
+        icon: 'recycling',
+        classes: ['Paper', 'Plastic', 'Metal', 'Organic'],
+        color: '#004e5c',
+        tags: ['SUSTAINABILITY', 'IMAGING']
     }
 ]
 
 export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
+    const classifierRef = useRef<HTMLDivElement>(null)
+    const [showTypePicker, setShowTypePicker] = useState(false)
+
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const handleSave = React.useCallback(() => {}, [])
+    const handleSave = useCallback(() => {}, [])
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const handleTitleChange = React.useCallback(() => {}, [])
+    const handleTitleChange = useCallback(() => {}, [])
+
+    const handleBlankProject = useCallback(() => {
+        setShowTypePicker(true)
+        setTimeout(() => {
+            classifierRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+    }, [])
+
+    const handlePickType = useCallback((type: ProjectType) => {
+        setShowTypePicker(false)
+        onSelect(type)
+    }, [onSelect])
+
+    useEffect(() => {
+        const cards = document.querySelectorAll('.neura-glass-card')
+        const handleEnter = (e: Event) => {
+            const card = e.currentTarget as HTMLElement
+            const icon = card.querySelector('.material-symbols-outlined')
+            if (icon) (icon as HTMLElement).style.fontVariationSettings = "'FILL' 1"
+        }
+        const handleLeave = (e: Event) => {
+            const card = e.currentTarget as HTMLElement
+            const icon = card.querySelector('.material-symbols-outlined')
+            if (icon) (icon as HTMLElement).style.fontVariationSettings = "'FILL' 0"
+        }
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', handleEnter)
+            card.addEventListener('mouseleave', handleLeave)
+        })
+        return () => {
+            cards.forEach(card => {
+                card.removeEventListener('mouseenter', handleEnter)
+                card.removeEventListener('mouseleave', handleLeave)
+            })
+        }
+    }, [])
 
     return (
-        <div className="h-screen flex flex-col relative overflow-y-auto neura-scrollbar" style={{
-            background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 30%, #ede9fe 60%, #f0f9ff 100%)'
-        }}>
-            {/* Floating gradient orbs */}
-            <div className="absolute top-20 left-10 w-72 h-72 bg-violet-300/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300/15 rounded-full blur-3xl" style={{ animation: 'pulse 4s ease-in-out infinite 1s' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-200/10 rounded-full blur-3xl" />
-
-            {/* Subtle dot grid pattern */}
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: 'radial-gradient(circle, #7C3AED 1px, transparent 1px)',
+        <div className="h-screen flex flex-col relative overflow-y-auto neura-scrollbar neura-mesh-gradient"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+                backgroundImage: 'radial-gradient(circle, #4648d4 1px, transparent 1px)',
                 backgroundSize: '24px 24px'
             }} />
 
@@ -171,171 +186,236 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                 brandName="NEURA"
             />
 
-            {/* Content */}
-            <div className="flex-1 flex flex-col items-center px-6 py-10 relative z-10">
-                <div className="text-center mb-12 animate-[stagger-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)_both]">
-                    <div className="relative inline-block mb-6">
-                        <div className="text-7xl relative z-10" style={{ animation: 'float 3s ease-in-out infinite' }}>🧠</div>
-                        <div className="absolute inset-0 text-7xl blur-xl opacity-40" style={{
-                            background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            animation: 'float 3s ease-in-out infinite 0.2s'
-                        }}>🧠</div>
-                    </div>
-                    <h2 className="text-4xl font-black mb-3" style={{
-                        background: 'linear-gradient(135deg, #1e1b4b 0%, #7C3AED 50%, #3B82F6 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Choose Your Classifier
-                    </h2>
-                    <p className="text-gray-500 max-w-lg text-lg font-medium">
-                        Pick what you want to teach your computer to recognize. Each type uses different AI magic!
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
-                    {CLASSIFIER_TYPES.map((item, index) => (
-                        <button
-                            key={item.type}
-                            onClick={() => onSelect(item.type)}
-                            className="group relative flex flex-col items-center p-8 rounded-3xl transition-all duration-500 hover:scale-[1.04] hover:-translate-y-3 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
-                            style={{
-                                background: 'rgba(255,255,255,0.55)',
-                                backdropFilter: 'blur(20px)',
-                                WebkitBackdropFilter: 'blur(20px)',
-                                border: '1px solid rgba(255,255,255,0.6)',
-                                boxShadow: `0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                                animationDelay: `${100 + index * 80}ms`
-                            }}
-                        >
-                            {/* Gradient top border */}
-                            <div
-                                className="absolute top-0 left-4 right-4 h-1 rounded-b-full opacity-70 group-hover:opacity-100 transition-opacity duration-300"
-                                style={{ background: `linear-gradient(90deg, ${item.color}80, ${item.color})` }}
-                            />
-
-                            {/* Icon container */}
-                            <div
-                                className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-4xl mb-5 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3`}
-                                style={{
-                                    boxShadow: `0 8px 24px ${item.color}40, inset 0 2px 0 rgba(255,255,255,0.3)`
-                                }}
+            <div className="flex-1 overflow-y-auto">
+                {/* ── Hero / Classifier Section ── */}
+                <section ref={classifierRef} className="scroll-mt-20">
+                    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+                        {/* Brain icon */}
+                        <div className="pt-10 mb-6 flex justify-center">
+                            <div className="w-16 h-16 rounded-3xl flex items-center justify-center neura-float overflow-hidden"
+                                style={{ background: 'rgba(70, 72, 212, 0.1)' }}
                             >
-                                {item.emoji}
+                                <span className="text-4xl">🧠</span>
                             </div>
+                        </div>
 
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">{item.name}</h3>
-                            <p className="text-sm text-gray-500 text-center leading-relaxed">{item.description}</p>
-
-                            {/* Hover glow effect */}
-                            <div
-                                className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                                style={{
-                                    boxShadow: `0 20px 60px ${item.color}25, 0 0 40px ${item.color}10`
-                                }}
-                            />
-
-                            {/* Bottom gradient strip */}
-                            <div
-                                className="absolute bottom-0 left-0 right-0 h-1.5 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                style={{ background: `linear-gradient(90deg, ${item.color}60, ${item.color})` }}
-                            />
-                        </button>
-                    ))}
-                </div>
-
-                {/* Quick Start Projects */}
-                <div className="mt-16 max-w-5xl w-full animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]">
-                    <div className="text-center mb-8">
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Quick Start Projects</h3>
-                        <p className="text-sm text-gray-500">Pick a pre-made template to start building in seconds</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {PROJECT_TEMPLATES.map((template, index) => (
-                            <button
-                                key={template.name}
-                                onClick={() => onSelect('image-classifier', { name: template.name, classes: template.classes })}
-                                className="group relative flex flex-col items-center p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:-translate-y-2 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
-                                style={{
-                                    background: 'rgba(255,255,255,0.6)',
-                                    backdropFilter: 'blur(12px)',
-                                    border: '1px solid rgba(255,255,255,0.5)',
-                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                                    animationDelay: `${600 + index * 80}ms`
-                                }}
+                        {/* Heading — centered */}
+                        <div className="text-center mb-12">
+                            <h1 className="text-[48px] font-extrabold tracking-tight mb-4"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#131b2e', lineHeight: 1.1, letterSpacing: '-0.02em' }}
                             >
-                                <div
-                                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.gradient} flex items-center justify-center text-2xl mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}
-                                    style={{ boxShadow: `0 6px 16px ${template.color}30` }}
-                                >
-                                    {template.emoji}
-                                </div>
-                                <h4 className="text-sm font-bold text-gray-800 mb-1">{template.name}</h4>
-                                <p className="text-xs text-gray-400 text-center mb-3">{template.description}</p>
-                                <div className="flex flex-wrap justify-center gap-1">
-                                    {template.classes.slice(0, 3).map(cls => (
-                                        <span key={cls} className="text-[10px] px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 font-medium">
-                                            {cls}
-                                        </span>
-                                    ))}
-                                    {template.classes.length > 3 && (
-                                        <span className="text-[10px] px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 font-medium">
-                                            +{template.classes.length - 3}
-                                        </span>
-                                    )}
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Object Detection Projects */}
-                <div className="mt-12 max-w-5xl w-full animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]">
-                    <div className="text-center mb-8">
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Object Detection Projects</h3>
-                        <p className="text-sm text-gray-500">Detect and locate real-world objects using AI vision</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {OBJECT_DETECTION_TEMPLATES.map((template, index) => (
-                            <button
-                                key={template.name}
-                                onClick={() => onSelect('object-detection', { name: template.name, classes: template.classes })}
-                                className="group relative flex flex-col items-center p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:-translate-y-2 active:scale-95 cursor-pointer animate-[stagger-in_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both]"
-                                style={{
-                                    background: 'rgba(255,255,255,0.6)',
-                                    backdropFilter: 'blur(12px)',
-                                    border: '1px solid rgba(255,255,255,0.5)',
-                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                                    animationDelay: `${800 + index * 80}ms`
-                                }}
+                                Choose Your Classifier
+                            </h1>
+                            <p className="text-lg max-w-2xl mx-auto"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#464554', lineHeight: 1.6 }}
                             >
-                                <div
-                                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.gradient} flex items-center justify-center text-2xl mb-3 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}
-                                    style={{ boxShadow: `0 6px 16px ${template.color}30` }}
+                                Pick what you want to teach your computer to recognize. Each type uses unique AI magic to understand the world!
+                            </p>
+                        </div>
+
+                        {/* Classifier Cards — fills parent container */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {CLASSIFIER_TYPES.map((item, index) => (
+                                <button
+                                    key={item.type}
+                                    onClick={() => onSelect(item.type)}
+                                    className="neura-glass-card rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer group"
+                                    style={{ animationDelay: `${100 + index * 80}ms` }}
                                 >
-                                    {template.emoji}
-                                </div>
-                                <h4 className="text-sm font-bold text-gray-800 mb-1">{template.name}</h4>
-                                <p className="text-xs text-gray-400 text-center mb-3">{template.description}</p>
-                                <div className="flex flex-wrap justify-center gap-1">
-                                    {template.classes.slice(0, 4).map(cls => (
-                                        <span key={cls} className="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full font-medium">
-                                            {cls}
+                                    <div
+                                        className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-110"
+                                        style={{ background: item.gradient, boxShadow: `0 8px 24px ${item.shadowColor}, inset 0 2px 0 rgba(255,255,255,0.3)` }}
+                                    >
+                                        <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                            {item.icon}
                                         </span>
+                                    </div>
+                                    <h3 className="text-xl font-semibold mb-2"
+                                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#131b2e' }}
+                                    >
+                                        {item.name}
+                                    </h3>
+                                    <p className="text-sm leading-relaxed"
+                                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#464554' }}
+                                    >
+                                        {item.description}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Type Picker — shown after blank project click */}
+                        {showTypePicker && (
+                            <div className="mt-8 text-center animate-[scale-in_0.3s_cubic-bezier(0.4,0,0.2,1)]">
+                                <p className="text-sm font-semibold mb-4" style={{ color: '#4648d4' }}>
+                                    Select a classifier type to begin:
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-3">
+                                    {CLASSIFIER_TYPES.map(item => (
+                                        <button
+                                            key={item.type}
+                                            onClick={() => handlePickType(item.type)}
+                                            className="flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                                            style={{
+                                                background: 'rgba(255,255,255,0.7)',
+                                                backdropFilter: 'blur(12px)',
+                                                border: '1px solid rgba(255,255,255,0.6)',
+                                                boxShadow: `0 4px 16px ${item.shadowColor}`,
+                                                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                                                color: '#131b2e',
+                                                fontWeight: 600,
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: item.shadowColor }}>
+                                                {item.icon}
+                                            </span>
+                                            {item.name}
+                                        </button>
                                     ))}
-                                    {template.classes.length > 4 && (
-                                        <span className="text-[10px] px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full font-medium">
-                                            +{template.classes.length - 4}
-                                        </span>
-                                    )}
                                 </div>
-                            </button>
-                        ))}
+                            </div>
+                        )}
                     </div>
-                </div>
+                </section>
+
+                {/* ── Quick Start Projects ── */}
+                <section className="py-10">
+                    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+                        {/* Section header — centered */}
+                        <div className="text-center mb-10">
+                            <h2 className="text-[32px] font-bold mb-2"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#131b2e', letterSpacing: '-0.01em' }}
+                            >
+                                Quick Start Projects
+                            </h2>
+                            <p className="text-base mb-4"
+                                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#464554' }}
+                            >
+                                Pick a pre-made template to start building and deploying in seconds.
+                            </p>
+                            <button className="inline-flex items-center gap-2 font-bold hover:underline"
+                                style={{ color: '#4648d4', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                            >
+                                View All Templates
+                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_forward</span>
+                            </button>
+                        </div>
+
+                        {/* Project cards — fills same parent as classifier grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {PROJECT_TEMPLATES.map((template, index) => (
+                                <button
+                                    key={template.name}
+                                    onClick={() => onSelect('image-classifier', { name: template.name, classes: template.classes })}
+                                    className="neura-glass-card neura-project-card rounded-2xl overflow-hidden flex flex-col text-left cursor-pointer group"
+                                    style={{ animationDelay: `${600 + index * 80}ms` }}
+                                >
+                                    <div className="h-40 w-full relative overflow-hidden"
+                                        style={{ background: `linear-gradient(135deg, ${template.color}15 0%, ${template.color}08 100%)` }}
+                                    >
+                                        <svg className="w-full h-full" viewBox="0 0 200 110" fill="none">
+                                            <defs>
+                                                <pattern id={`grid-${index}`} width="12" height="12" patternUnits="userSpaceOnUse">
+                                                    <path d="M 12 0 L 0 0 0 12" fill="none" stroke={`${template.color}15`} strokeWidth="0.5"/>
+                                                </pattern>
+                                            </defs>
+                                            <rect width="100%" height="100%" fill={`url(#grid-${index})`} />
+                                            <circle cx="100" cy="55" r="30" stroke={template.color} strokeWidth="1" opacity="0.15" fill="none" />
+                                            <circle cx="100" cy="55" r="20" stroke={template.color} strokeWidth="0.75" opacity="0.1" fill="none" strokeDasharray="4 4" />
+                                            <circle cx="100" cy="55" r="6" fill={template.color} opacity="0.2" />
+                                        </svg>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
+                                        <div className="absolute bottom-4 left-4 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                                            style={{ background: template.color }}
+                                        >
+                                            <span className="material-symbols-outlined text-white text-xl">{template.icon}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-5 pt-3 flex flex-col flex-grow">
+                                        <h4 className="text-[17px] font-semibold mb-1"
+                                            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#131b2e' }}
+                                        >
+                                            {template.name}
+                                        </h4>
+                                        <p className="text-[13px] mb-4 flex-grow line-clamp-2"
+                                            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#464554', lineHeight: 1.5 }}
+                                        >
+                                            {template.description}
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {template.tags.map(tag => (
+                                                <span key={tag}
+                                                    className="px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                                                    style={{ fontFamily: "'Geist', sans-serif", background: `${template.color}12`, color: template.color }}
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+
+                            {/* Create Blank Project */}
+                            <button
+                                onClick={handleBlankProject}
+                                className="neura-blank-card rounded-2xl flex flex-col items-center justify-center p-8 cursor-pointer group min-h-[280px]"
+                            >
+                                <div className="w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-300"
+                                    style={{ background: '#eaedff' }}
+                                >
+                                    <span className="material-symbols-outlined text-xl transition-colors duration-300" style={{ color: '#767586' }}>
+                                        add
+                                    </span>
+                                </div>
+                                <span className="mt-4 text-sm font-medium transition-colors duration-300"
+                                    style={{ fontFamily: "'Geist', sans-serif", color: '#464554' }}
+                                >
+                                    Create Blank Project
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
+
+            {/* Footer */}
+            <footer className="py-10 border-t transition-all duration-300 w-full shrink-0"
+                style={{ background: '#eaedff', borderColor: 'rgba(199, 196, 215, 0.3)' }}
+            >
+                <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 lg:px-8 gap-6 max-w-[1100px] mx-auto w-full">
+                    <div className="flex flex-col gap-2 text-center md:text-left">
+                        <div className="text-lg font-bold" style={{ color: '#4648d4' }}>NEURA</div>
+                        <p className="text-xs" style={{ color: 'rgba(70, 69, 84, 0.8)' }}>
+                            &copy; 2024 Neura AI Learning Platform. Visionary. Kinetic. Encouraging.
+                        </p>
+                    </div>
+                    <div className="flex gap-8">
+                        {['Privacy Policy', 'Terms of Service', 'Documentation', 'Support'].map(link => (
+                            <a key={link} href="#"
+                                className="text-xs font-semibold hover:underline transition-colors"
+                                style={{ fontFamily: "'Geist', sans-serif", color: 'rgba(70, 69, 84, 0.8)' }}
+                            >
+                                {link}
+                            </a>
+                        ))}
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+                            style={{ background: 'rgba(255,255,255,0.5)' }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#464554' }}>language</span>
+                        </div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+                            style={{ background: 'rgba(255,255,255,0.5)' }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#464554' }}>mail</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     )
 }

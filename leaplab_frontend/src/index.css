@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* ── Neura Lumina — Google Fonts ─────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
 @theme {
   --color-brand-primary: #100051;
   --color-brand-secondary: #4F46E5;
@@ -479,6 +483,71 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid #7c3aed;
   outline-offset: 2px;
+}
+
+/* ── Neura Lumina — Glass Card System ────────────────────────────────── */
+.neura-glass-card {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(70, 72, 212, 0.05);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neura-glass-card:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(70, 72, 212, 0.1);
+}
+
+/* ── Neura Lumina — Mesh Gradient Background ─────────────────────────── */
+.neura-mesh-gradient {
+  background-color: #faf8ff;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(70, 72, 212, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(129, 39, 207, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(76, 215, 246, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(70, 72, 212, 0.1) 0px, transparent 50%);
+}
+
+/* ── Neura Lumina — Float Animation ──────────────────────────────────── */
+@keyframes neura-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.neura-float {
+  animation: neura-float 6s ease-in-out infinite;
+}
+
+/* ── Neura Lumina — Material Symbol Fill Toggle ──────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Neura Lumina — Project Card Image Hover ─────────────────────────── */
+.neura-project-img {
+  transition: filter 0.5s ease, transform 0.5s ease;
+}
+
+.neura-project-card:hover .neura-project-img {
+  filter: grayscale(0);
+  transform: scale(1.05);
+}
+
+.neura-project-img {
+  filter: grayscale(1);
+}
+
+/* ── Neura Lumina — Create Blank Card ────────────────────────────────── */
+.neura-blank-card {
+  border: 2px dashed rgba(118, 117, 134, 0.3);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neura-blank-card:hover {
+  border-color: rgba(70, 72, 212, 0.5);
 }
 
 /* Sharp Font Rendering Override */
