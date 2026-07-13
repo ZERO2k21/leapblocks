@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { defaultPropsFor } from '../data/defaultProperties';
 import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 
@@ -132,7 +132,7 @@ export function useAppState() {
   const getCurrentScreen = (stateScreens) =>
     stateScreens.find(s => s.id === activeScreen) || stateScreens[0];
 
-  const getNextComponentName = (stateScreens, type) => {
+  const getNextComponentName = useCallback((stateScreens, type) => {
     const screen = getCurrentScreen(stateScreens);
     const allIds = [];
     walkTree(screen.components, comp => allIds.push(comp.id));
@@ -141,9 +141,9 @@ export function useAppState() {
     let idx = 1;
     while (allIds.includes(`${type}${idx}`)) idx += 1;
     return `${type}${idx}`;
-  };
+  }, [activeScreen]);
 
-  const addComponent = (type, options = {}) => {
+  const addComponent = useCallback((type, options = {}) => new Promise((resolve) => {
     const meta = COMPONENT_META.get(type) || {};
     const visible = options.visible ?? meta.visible ?? true;
     const parentIdOverride = options.parentId || null;
@@ -189,9 +189,10 @@ export function useAppState() {
       return nextScreen;
     }));
     if (addedId) setSelectedId(addedId);
-  };
+    resolve();
+  }), [activeScreen, selectedId, getNextComponentName]);
 
-  const updateProp = (id, key, value) => {
+  const updateProp = useCallback((id, key, value) => new Promise((resolve) => {
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
       const next = deepClone(screen);
@@ -229,9 +230,10 @@ export function useAppState() {
 
       return next;
     }));
-  };
+    resolve();
+  }), [activeScreen]);
 
-  const removeComponent = (id) => {
+  const removeComponent = useCallback((id) => new Promise((resolve) => {
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
       const next = deepClone(screen);
@@ -241,10 +243,11 @@ export function useAppState() {
     }));
 
     if (selectedId === id) setSelectedId(null);
-  };
+    resolve();
+  }), [activeScreen, selectedId]);
 
-  const moveComponent = (draggedId, targetId, position = 'after') => {
-    if (draggedId === targetId) return;
+  const moveComponent = useCallback((draggedId, targetId, position = 'after') => new Promise((resolve) => {
+    if (draggedId === targetId) { resolve(); return; }
 
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
@@ -293,22 +296,24 @@ export function useAppState() {
 
       return nextScreen;
     }));
-  };
+    resolve();
+  }), [activeScreen]);
 
-  const addScreen = (name) => {
+  const addScreen = useCallback((name) => new Promise((resolve) => {
     const trimmed = name?.trim();
-    if (!trimmed) return;
+    if (!trimmed) { resolve(); return; }
     setScreens(prev => {
       if (prev.find(s => s.id === trimmed)) return prev;
       return [...prev, makeScreen(trimmed)];
     });
     setActiveScreen(trimmed);
     setSelectedId(null);
-  };
+    resolve();
+  }), []);
 
-  const deleteScreen = (name) => {
+  const deleteScreen = useCallback((name) => new Promise((resolve) => {
     const trimmed = name?.trim();
-    if (!trimmed || trimmed === 'Screen1') return;
+    if (!trimmed || trimmed === 'Screen1') { resolve(); return; }
     setScreens(prev => {
       const nextScreens = prev.filter(s => s.id !== trimmed);
       if (activeScreen === trimmed) {
@@ -317,10 +322,11 @@ export function useAppState() {
       return nextScreens;
     });
     setSelectedId(null);
-  };
+    resolve();
+  }), [activeScreen]);
 
-  const renameComponent = (oldId, newId) => {
-    if (!oldId || !newId || oldId === newId) return;
+  const renameComponent = useCallback((oldId, newId) => new Promise((resolve) => {
+    if (!oldId || !newId || oldId === newId) { resolve(); return; }
 
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
@@ -339,18 +345,21 @@ export function useAppState() {
 
     setBlockLogic(prev => replaceIdInBlockXml(prev, oldId, newId));
     if (selectedId === oldId) setSelectedId(newId);
-  };
+    resolve();
+  }), [activeScreen, selectedId]);
 
-  const addMedia = (mediaItem) => {
+  const addMedia = useCallback((mediaItem) => new Promise((resolve) => {
     setMedia(prev => [...prev, mediaItem]);
-  };
+    resolve();
+  }), []);
 
-  const deleteMedia = (filename) => {
+  const deleteMedia = useCallback((filename) => new Promise((resolve) => {
     setMedia(prev => prev.filter(item => item.filename !== filename));
-  };
+    resolve();
+  }), []);
 
-  const loadProject = (projectData) => {
-    if (!projectData) return;
+  const loadProject = useCallback((projectData) => new Promise((resolve) => {
+    if (!projectData) { resolve(); return; }
     if (projectData.screens) setScreens(projectData.screens);
     if (projectData.screens?.[0]?.id) {
       setActiveScreen(projectData.screens.find(s => s.id === projectData.activeScreen)?.id || projectData.screens[0].id);
@@ -363,9 +372,10 @@ export function useAppState() {
     if (projectData.media) setMedia(projectData.media || []);
     setDesignViewport(projectData.designViewport || DEFAULT_DESIGN_VIEWPORT);
     setSelectedId(null);
-  };
+    resolve();
+  }), []);
 
-  const newProject = () => {
+  const newProject = useCallback(() => new Promise((resolve) => {
     setScreens([makeScreen('Screen1')]);
     setActiveScreen('Screen1');
     setSelectedId(null);
@@ -374,7 +384,8 @@ export function useAppState() {
     setBlockLogic('');
     setMedia([]);
     setDesignViewport(DEFAULT_DESIGN_VIEWPORT);
-  };
+    resolve();
+  }), []);
 
   const currentScreen = useMemo(() => getCurrentScreen(screens), [screens, activeScreen]);
 
@@ -403,7 +414,7 @@ export function useAppState() {
     return currentScreen.nonVisibleComponents?.find(c => c.id === selectedId) || null;
   }, [currentScreen, selectedId, appName]);
 
-  const getSerializedState = () => ({
+  const getSerializedState = useCallback(() => ({
     schemaVersion: 2,
     appName,
     packageName,
@@ -413,10 +424,10 @@ export function useAppState() {
     blockLogic,
     media,
     designViewport
-  });
+  }), [appName, packageName, screens, blockLogic, media, designViewport]);
 
-  const selectComponent = (id) => setSelectedId(id);
-  const deleteComponent = (id) => removeComponent(id);
+  const selectComponent = useCallback((id) => setSelectedId(id), []);
+  const deleteComponent = useCallback((id) => removeComponent(id), [removeComponent]);
 
   return useMemo(() => ({
     screens,
@@ -463,6 +474,20 @@ export function useAppState() {
     designViewport,
     currentScreen,
     selectedComponent,
-    moveComponent
+    addComponent,
+    updateProp,
+    removeComponent,
+    addScreen,
+    deleteScreen,
+    renameComponent,
+    addMedia,
+    deleteMedia,
+    getNextComponentName,
+    loadProject,
+    newProject,
+    moveComponent,
+    getSerializedState,
+    selectComponent,
+    deleteComponent
   ]);
 }

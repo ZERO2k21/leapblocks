@@ -149,7 +149,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     const handleTitleChange = React.useCallback(() => {}, [])
 
     return (
-        <div className="h-screen flex flex-col relative overflow-hidden" style={{
+        <div className="h-screen flex flex-col relative overflow-y-auto neura-scrollbar" style={{
             background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 30%, #ede9fe 60%, #f0f9ff 100%)'
         }}>
             {/* Floating gradient orbs */}
@@ -172,7 +172,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
             />
 
             {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12 relative z-10">
+            <div className="flex-1 flex flex-col items-center px-6 py-10 relative z-10">
                 <div className="text-center mb-12 animate-[stagger-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)_both]">
                     <div className="relative inline-block mb-6">
                         <div className="text-7xl relative z-10" style={{ animation: 'float 3s ease-in-out infinite' }}>🧠</div>

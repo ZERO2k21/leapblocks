@@ -279,7 +279,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     } : null
 
     return (
-        <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-4 overflow-y-auto neura-scrollbar">
             {/* ── Workflow Stepper ── */}
             <div className="mb-6 w-full">
                 <div className="flex justify-between mb-3">

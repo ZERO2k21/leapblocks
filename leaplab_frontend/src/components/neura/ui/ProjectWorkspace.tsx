@@ -261,7 +261,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                     </div>
 
                     {/* Class list */}
-                    <div className="flex-1 overflow-y-auto px-2 space-y-1.5">
+                    <div className="flex-1 overflow-y-auto neura-scrollbar px-2 space-y-1.5">
                         {mode.project?.classes.map((classData, index) => (
                             <ClassCard
                                 key={classData.id}
@@ -345,7 +345,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 </aside>
 
                 {/* Main content area */}
-                <main className="flex-1 overflow-y-auto bg-background">
+                <main className="flex-1 overflow-y-auto neura-scrollbar bg-background">
                     <div key={mode.mode} className="animate-[fade-in_0.3s_ease-out]">
                         {children({ mode })}
                     </div>

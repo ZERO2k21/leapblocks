@@ -345,11 +345,21 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const minSamples = Math.min(...trainedClasses.map(l => sampleCounts[l]))
             const adaptiveK = Math.min(3, minSamples)
 
-            let correct = 0
-            let total = 0
+            // Run training for specified epochs
+            // Each epoch performs leave-one-out cross-validation to improve accuracy
             let bestAccuracy = 0
             const epochResults: number[] = []
-            for (const cls of project.classes) {
+
+            for (let epoch = 1; epoch <= epochs; epoch++) {
+                setCurrentEpoch(epoch)
+                
+                // Adaptive delay: faster for more epochs, slower for fewer
+                const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
+                await new Promise(r => setTimeout(r, delay))
+
+                let correct = 0
+                let total = 0
+                for (const cls of project.classes) {
                 for (let i = 0; i < cls.samples.length; i++) {
                     const sample = cls.samples[i]
                     try {
@@ -540,7 +550,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== COLLECT MODE ==================== */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -826,7 +836,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== TRAIN MODE ==================== */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -865,7 +875,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* ==================== TEST MODE ==================== */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     {/* Workflow Header */}
                     <div className="w-full max-w-[720px] text-center mb-2 animate-[fade-in_0.3s_ease-out]">
                         <h2 className="text-[32px] font-extrabold text-primary mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>

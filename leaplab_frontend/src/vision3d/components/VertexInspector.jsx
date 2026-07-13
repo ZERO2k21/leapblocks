@@ -174,62 +174,62 @@ export const VertexInspector = () => {
   }
 
   return (
-    <div className="vertex-inspector">
-      <div className="vertex-inspector-header">
+    <div className="absolute top-3 left-3 z-[20] bg-white/96 border border-slate-200 rounded-lg shadow-lg text-[11px] text-slate-600 max-w-[280px] max-h-[60vh] overflow-y-auto backdrop-blur-[8px]">
+      <div className="flex items-center gap-1.5 p-[8px_12px] border-b border-slate-200 font-semibold text-[12px] text-slate-800">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="3"/>
         </svg>
         <span>Vertex Inspector</span>
-        <span className="vertex-count">{vertexData.length} selected</span>
+        <span className="ml-auto text-[10px] font-medium text-slate-500 bg-slate-100 p-[2px_6px] rounded">{vertexData.length} selected</span>
       </div>
 
-      <div className="vertex-inspector-content">
+      <div className="p-1.5">
         {vertexData.map((data, idx) => (
-          <div key={idx} className="vertex-data-card">
-            <div className="vertex-data-header">
-              <span className="vertex-index">Vertex #{data.index}</span>
-              <span className={`vertex-type ${data.isBoundary ? 'boundary' : data.isCorner ? 'corner' : 'interior'}`}>
+          <div key={idx} className="p-2 mb-1 rounded-md bg-slate-50 border border-slate-200 last:mb-0">
+            <div className="flex justify-between items-center mb-1.5 font-semibold text-[11px]">
+              <span className="text-slate-600">Vertex #{data.index}</span>
+              <span className={`text-[9px] p-[1px_6px] rounded font-medium uppercase tracking-[0.5px] ${data.isBoundary ? 'bg-amber-100 text-amber-800' : data.isCorner ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800'}`}>
                 {data.isBoundary ? 'Boundary' : data.isCorner ? 'Corner' : 'Interior'}
               </span>
             </div>
 
             {/* Position */}
-            <div className="vertex-property">
-              <label>Position</label>
-              <div className="vertex-value-coords">
-                <span className="coord x">X: {data.position[0].toFixed(4)}</span>
-                <span className="coord y">Y: {data.position[1].toFixed(4)}</span>
-                <span className="coord z">Z: {data.position[2].toFixed(4)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Position</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.position[0].toFixed(4)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.position[1].toFixed(4)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.position[2].toFixed(4)}</span>
               </div>
             </div>
 
             {/* Normal */}
-            <div className="vertex-property">
-              <label>Normal</label>
-              <div className="vertex-value-coords">
-                <span className="coord x">X: {data.normal[0].toFixed(4)}</span>
-                <span className="coord y">Y: {data.normal[1].toFixed(4)}</span>
-                <span className="coord z">Z: {data.normal[2].toFixed(4)}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Normal</label>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] font-medium text-red-500">X: {data.normal[0].toFixed(4)}</span>
+                <span className="font-mono text-[10px] font-medium text-green-500">Y: {data.normal[1].toFixed(4)}</span>
+                <span className="font-mono text-[10px] font-medium text-blue-500">Z: {data.normal[2].toFixed(4)}</span>
               </div>
             </div>
 
             {/* Connected Edges */}
-            <div className="vertex-property">
-              <label>Connected Edges</label>
-              <span className="vertex-value">{data.connectedEdges}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Connected Edges</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.connectedEdges}</span>
             </div>
 
             {/* Connected Faces */}
-            <div className="vertex-property">
-              <label>Connected Faces</label>
-              <span className="vertex-value">{data.connectedFaces}</span>
+            <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+              <label className="text-[10px] text-slate-500 font-medium">Connected Faces</label>
+              <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.connectedFaces}</span>
             </div>
 
             {/* Average Edge Length */}
             {data.avgEdgeLength > 0 && (
-              <div className="vertex-property">
-                <label>Avg Edge Length</label>
-                <span className="vertex-value">{data.avgEdgeLength.toFixed(4)}</span>
+              <div className="flex justify-between items-center py-0.75 border-b border-slate-100 last:border-b-0">
+                <label className="text-[10px] text-slate-500 font-medium">Avg Edge Length</label>
+                <span className="text-[11px] font-semibold text-slate-800 font-mono">{data.avgEdgeLength.toFixed(4)}</span>
               </div>
             )}
           </div>

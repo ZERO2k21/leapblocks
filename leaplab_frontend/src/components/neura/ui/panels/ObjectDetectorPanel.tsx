@@ -373,7 +373,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         mode.mode === 'train' ? (
             <TrainPanel mode={mode} />
         ) : (
-        <div className="flex-1 flex flex-col p-5 overflow-y-auto bg-slate-50/50">
+        <div className="flex-1 flex flex-col p-5 overflow-y-auto neura-scrollbar bg-slate-50/50">
             {/* ── Compact Header ── */}
             <div className="flex items-center justify-between mb-4">
                 <div>
@@ -549,7 +549,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 {currentDetections.length}
                             </span>
                         </div>
-                        <div className="space-y-1 max-h-56 overflow-y-auto">
+                        <div className="space-y-1 max-h-56 overflow-y-auto neura-scrollbar">
                             {currentDetections.map((det, i) => (
                                 <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
                                     <div

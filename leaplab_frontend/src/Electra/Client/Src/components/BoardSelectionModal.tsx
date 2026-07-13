@@ -43,9 +43,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
     return (
         <div
-            className={`fixed inset-0 z-[10000] flex items-center justify-center animate-[overlay-fade-in_0.3s_ease-out] ${
-                isDark ? 'bg-[rgba(8,9,12,0.88)]' : 'bg-[rgba(241,245,249,0.85)]'
-            }`}
+            className={`fixed inset-0 z-[10000] flex items-center justify-center animate-[overlay-fade-in_0.3s_ease-out] ${isDark ? 'bg-[rgba(8,9,12,0.88)]' : 'bg-[rgba(241,245,249,0.85)]'
+                }`}
             style={{
                 backdropFilter: 'blur(20px) saturate(1.2)',
                 WebkitBackdropFilter: 'blur(20px) saturate(1.2)'
@@ -53,19 +52,17 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
         >
             {/* Ambient glow behind modal */}
             <div
-                className={`absolute pointer-events-none w-[600px] h-[400px] rounded-[50%] blur-[60px] ${
-                    isDark
+                className={`absolute pointer-events-none w-[600px] h-[400px] rounded-[50%] blur-[60px] ${isDark
                         ? 'bg-[radial-gradient(ellipse,rgba(59,130,246,0.06)_0%,transparent_70%)]'
                         : 'bg-[radial-gradient(ellipse,rgba(59,130,246,0.04)_0%,transparent_70%)]'
-                }`}
+                    }`}
             />
 
             <div
-                className={`relative max-w-[880px] w-[92%] max-md:max-w-[460px] rounded-[24px] border border-solid ${
-                    isDark
+                className={`relative max-w-[880px] w-[92%] max-md:max-w-[460px] rounded-[24px] border border-solid ${isDark
                         ? 'bg-[linear-gradient(180deg,rgba(15,17,23,0.95)_0%,rgba(10,11,14,0.98)_100%)] border-[rgba(255,255,255,0.06)] shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_25px_60px_-12px_rgba(0, 0, 0, 0.5), 0_0_120px_-40px_rgba(59,130,246,0.08)]'
                         : 'bg-[linear-gradient(180deg,#ffffff_0%,#fafbfc_100%)] border-[rgba(15,23,42,0.08)] shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_25px_50px_-12px_rgba(15, 23, 42, 0.12),0_0_80px_-30px_rgba(59, 130, 246, 0.04)]'
-                }`}
+                    }`}
                 style={{
                     animation: 'modal-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                     padding: '48px 48px 40px 48px',
@@ -75,11 +72,10 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
             >
                 {/* Close Button */}
                 <button
-                    className={`absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200 bg-transparent border-none ${
-                        isDark
+                    className={`absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200 bg-transparent border-none ${isDark
                             ? 'text-[rgba(148,163,184,0.6)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#f8fafc]'
                             : 'text-[rgba(100,116,139,0.5)] hover:bg-[rgba(15,23,42,0.04)] hover:text-[#0f172a]'
-                    }`}
+                        }`}
                     onClick={onClose}
                     aria-label="Close modal"
                 >
@@ -89,16 +85,14 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 {/* Header */}
                 <div className="text-center mb-[36px]">
                     <h1
-                        className={`m-0 font-bold tracking-[-0.02em] text-[30px] leading-normal pt-1.5 mb-[10px] ${
-                            isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
-                        }`}
+                        className={`m-0 font-bold tracking-[-0.02em] text-[30px] leading-normal pt-1.5 mb-[10px] ${isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
+                            }`}
                     >
                         Choose Your Board
                     </h1>
                     <p
-                        className={`m-0 text-[14px] font-normal leading-[1.5] ${
-                            isDark ? 'text-[rgba(148,163,184,0.8)]' : 'text-[rgba(71,85,105,0.8)]'
-                        }`}
+                        className={`m-0 text-[14px] font-normal leading-[1.5] ${isDark ? 'text-[rgba(148,163,184,0.8)]' : 'text-[rgba(71,85,105,0.8)]'
+                            }`}
                     >
                         Select a microcontroller to start your simulation
                     </p>
@@ -112,9 +106,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                         return (
                             <div
                                 key={board.id}
-                                className={`relative cursor-pointer flex flex-col overflow-hidden rounded-[16px] transition-all duration-[0.35s] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                                    isActive ? '-translate-y-[4px]' : 'translate-y-0'
-                                }`}
+                                className={`relative cursor-pointer flex flex-col overflow-hidden rounded-[16px] transition-all duration-[0.35s] ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive ? '-translate-y-[4px]' : 'translate-y-0'
+                                    }`}
                                 style={{
                                     padding: '24px',
                                     display: 'flex',
@@ -139,9 +132,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                             >
                                 {/* Hover glow overlay */}
                                 <div
-                                    className={`absolute inset-0 pointer-events-none rounded-[16px] transition-opacity duration-500 ${
-                                        isActive ? 'opacity-100' : 'opacity-0'
-                                    }`}
+                                    className={`absolute inset-0 pointer-events-none rounded-[16px] transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'
+                                        }`}
                                     style={{
                                         background: `radial-gradient(ellipse at 50% 0%, rgba(${board.accentRgb}, ${isDark ? '0.06' : '0.04'}) 0%, transparent 60%)`,
                                     }}
@@ -149,11 +141,10 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
                                 {/* Image Container */}
                                 <div
-                                    className={`relative w-full flex items-center justify-center overflow-hidden border border-solid ${
-                                        isDark
+                                    className={`relative w-full flex items-center justify-center overflow-hidden border border-solid ${isDark
                                             ? 'bg-[linear-gradient(180deg,rgba(0,0,0,0.3)_0%,rgba(0,0,0,0.15)_100%)] border-[rgba(255,255,255,0.04)]'
                                             : 'bg-[linear-gradient(180deg,#f1f5f9_0%,#e2e8f0_100%)] border-[rgba(15,23,42,0.04)]'
-                                    }`}
+                                        }`}
                                     style={{
                                         width: '100%',
                                         height: '180px',
@@ -167,20 +158,18 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                                 >
                                     {/* Subtle grid pattern */}
                                     <div
-                                        className={`absolute inset-0 pointer-events-none ${
-                                            isDark
+                                        className={`absolute inset-0 pointer-events-none ${isDark
                                                 ? 'bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.015)_1px,transparent_0)]'
                                                 : 'bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.02)_1px,transparent_0)]'
-                                        }`}
+                                            }`}
                                         style={{
                                             backgroundSize: '20px 20px',
                                         }}
                                     />
                                     {/* Accent glow on hover */}
                                     <div
-                                        className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-                                            isActive ? 'opacity-[0.15]' : 'opacity-0'
-                                        }`}
+                                        className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${isActive ? 'opacity-[0.15]' : 'opacity-0'
+                                            }`}
                                         style={{
                                             background: `radial-gradient(circle at center, rgba(${board.accentRgb}, 0.4) 0%, transparent 60%)`,
                                         }}
@@ -201,9 +190,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                                 {/* Content */}
                                 <div className="flex flex-col flex-1 relative z-10" style={{ display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', zIndex: 10 }}>
                                     <h2
-                                        className={`m-0 font-semibold text-[20px] leading-[1.3] ${
-                                            isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
-                                        }`}
+                                        className={`m-0 font-semibold text-[20px] leading-[1.3] ${isDark ? 'text-[#f1f5f9]' : 'text-[#0f172a]'
+                                            }`}
                                         style={{
                                             margin: '0 0 12px 0',
                                             fontWeight: 600,
@@ -216,9 +204,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
                                     {/* Description */}
                                     <p
-                                        className={`m-0 text-[13px] leading-[1.6] ${
-                                            isDark ? 'text-[rgba(148,163,184,0.7)]' : 'text-[rgba(71,85,105,0.7)]'
-                                        }`}
+                                        className={`m-0 text-[13px] leading-[1.6] ${isDark ? 'text-[rgba(148,163,184,0.7)]' : 'text-[rgba(71,85,105,0.7)]'
+                                            }`}
                                         style={{
                                             margin: '0 0 16px 0',
                                             fontSize: '13px',
@@ -277,9 +264,8 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                                         <ArrowRight
                                             size={15}
                                             strokeWidth={2.5}
-                                            className={`transition-all duration-[0.25s] ${
-                                                isActive ? 'translate-x-[4px]' : 'translate-x-0'
-                                            }`}
+                                            className={`transition-all duration-[0.25s] ${isActive ? 'translate-x-[4px]' : 'translate-x-0'
+                                                }`}
                                             style={{
                                                 color: isActive ? board.accent : (isDark ? '#64748b' : '#94a3b8'),
                                             }}
@@ -302,11 +288,10 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
                 >
                     <button
                         onClick={onClose}
-                        className={`cursor-pointer transition-all duration-200 text-[13px] font-medium rounded-[10px] border border-solid ${
-                            isDark
+                        className={`cursor-pointer transition-all duration-200 text-[13px] font-medium rounded-[10px] border border-solid ${isDark
                                 ? 'bg-transparent border-white/10 text-slate-400 hover:bg-white/5 hover:border-white/20 hover:text-white'
                                 : 'bg-transparent border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900'
-                        }`}
+                            }`}
                         style={{
                             padding: '10px 32px',
                         }}

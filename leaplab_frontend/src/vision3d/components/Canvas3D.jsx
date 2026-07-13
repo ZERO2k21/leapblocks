@@ -229,7 +229,7 @@ export const Canvas3D = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="canvas-3d-container">
+    <div ref={containerRef} className="w-full h-full absolute top-0 left-0">
       <Canvas
         shadows={THREE.PCFShadowMap}
         orthographic={cameraMode === 'orthographic'}

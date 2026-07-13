@@ -50,7 +50,7 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
     }
 
     return (
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-72 overflow-y-auto p-1 rounded-2xl bg-gray-50/30">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-72 overflow-y-auto neura-scrollbar p-1 rounded-2xl bg-gray-50/30">
             {samples.map((sample, index) => (
                 <div
                     key={sample.id}

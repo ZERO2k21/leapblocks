@@ -29,64 +29,64 @@ export const ShapePanel = () => {
   };
 
   return (
-    <div className="shape-panel">
-      <div className="shape-panel-header">
-        <h3>Shapes</h3>
+    <div className="flex flex-col h-full">
+      <div className="p-[12px_14px] border-b border-slate-200">
+        <h3 className="m-0 text-[13px] font-semibold text-slate-900">Shapes</h3>
       </div>
 
-      <div className="shape-panel-content">
-        <div className="shape-section">
-          <div className="shape-section-title">Basic</div>
-          <div className="shape-grid">
+      <div className="flex-1 overflow-y-auto p-2.5">
+        <div className="mb-3">
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">Basic</div>
+          <div className="grid grid-cols-2 gap-1.25">
             {basicShapes.map((shapeDef) => (
               <div
                 key={shapeDef.type}
-                className="shape-item"
+                className="flex flex-col items-center p-[8px_4px] bg-slate-50 border border-slate-200 rounded-md cursor-grab transition-all duration-200 select-none hover:bg-slate-100 hover:border-indigo-500 hover:-translate-y-px hover:shadow-[0_3px_8px_rgba(99,102,241,0.12)] active:cursor-grabbing active:translate-y-0"
                 draggable
                 onDragStart={(e) => handleDragStart(e, shapeDef.type)}
                 onClick={() => handleShapeClick(shapeDef.type)}
                 title={shapeDef.name}
               >
-                <div className="shape-icon">{shapeDef.icon}</div>
-                <div className="shape-name">{shapeDef.name}</div>
+                <div className="text-[20px] mb-0.75">{shapeDef.icon}</div>
+                <div className="text-[9px] font-medium text-slate-500 text-center">{shapeDef.name}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="shape-section">
-          <div className="shape-section-title">Extended</div>
-          <div className="shape-grid">
+        <div className="mb-3">
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">Extended</div>
+          <div className="grid grid-cols-2 gap-1.25">
             {extendedShapes.map((shapeDef) => (
               <div
                 key={shapeDef.type}
-                className="shape-item"
+                className="flex flex-col items-center p-[8px_4px] bg-slate-50 border border-slate-200 rounded-md cursor-grab transition-all duration-200 select-none hover:bg-slate-100 hover:border-indigo-500 hover:-translate-y-px hover:shadow-[0_3px_8px_rgba(99,102,241,0.12)] active:cursor-grabbing active:translate-y-0"
                 draggable
                 onDragStart={(e) => handleDragStart(e, shapeDef.type)}
                 onClick={() => handleShapeClick(shapeDef.type)}
                 title={shapeDef.name}
               >
-                <div className="shape-icon">{shapeDef.icon}</div>
-                <div className="shape-name">{shapeDef.name}</div>
+                <div className="text-[20px] mb-0.75">{shapeDef.icon}</div>
+                <div className="text-[9px] font-medium text-slate-500 text-center">{shapeDef.name}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="shape-section">
-          <div className="shape-section-title">Text</div>
-          <div className="shape-grid">
+        <div className="mb-3">
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">Text</div>
+          <div className="grid grid-cols-2 gap-1.25">
             {textShapes.map((shapeDef) => (
               <div
                 key={shapeDef.type}
-                className="shape-item"
+                className="flex flex-col items-center p-[8px_4px] bg-slate-50 border border-slate-200 rounded-md cursor-grab transition-all duration-200 select-none hover:bg-slate-100 hover:border-indigo-500 hover:-translate-y-px hover:shadow-[0_3px_8px_rgba(99,102,241,0.12)] active:cursor-grabbing active:translate-y-0"
                 draggable
                 onDragStart={(e) => handleDragStart(e, shapeDef.type)}
                 onClick={() => handleShapeClick(shapeDef.type)}
                 title={shapeDef.name}
               >
-                <div className="shape-icon">{shapeDef.icon}</div>
-                <div className="shape-name">{shapeDef.name}</div>
+                <div className="text-[20px] mb-0.75">{shapeDef.icon}</div>
+                <div className="text-[9px] font-medium text-slate-500 text-center">{shapeDef.name}</div>
               </div>
             ))}
           </div>
