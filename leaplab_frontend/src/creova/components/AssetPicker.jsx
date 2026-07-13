@@ -3,7 +3,7 @@
  * Asset Picker Component - For selecting media in properties panel
  * Leap App Inventor Style
  */
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Image, Music, Video, File, X, Upload } from 'lucide-react';
 
@@ -15,11 +15,15 @@ export default function AssetPicker({
     isOpen,
     onClose,
     onSelect,
+    onUpload,
     media = [],
     filterType = 'all', // 'image', 'audio', 'video', 'all'
     currentValue = null
 }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef(null);
+    const dragCounterRef = useRef(0);
 
     if (!isOpen) return null;
 
@@ -64,8 +68,69 @@ export default function AssetPicker({
         onClose();
     };
 
+    // Process and upload files
+    const processFiles = useCallback((files) => {
+        if (!onUpload) return;
+        const fileArray = Array.from(files);
+        fileArray.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                onUpload({
+                    filename: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: event.target.result,
+                    timestamp: Date.now()
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }, [onUpload]);
+
+    // Drag and drop handlers
+    const handleDragEnter = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            setIsDragging(true);
+        }
+    }, []);
+
+    const handleDragLeave = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragging(false);
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        dragCounterRef.current = 0;
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processFiles(e.dataTransfer.files);
+        }
+    }, [processFiles]);
+
+    const handleFileInputChange = useCallback((e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            processFiles(e.target.files);
+        }
+        e.target.value = '';
+    }, [processFiles]);
+
     return createPortal(
-        <div 
+        <div
             onClick={onClose}
             style={{
                 position: 'fixed',
@@ -78,8 +143,12 @@ export default function AssetPicker({
                 padding: '16px'
             }}
         >
-            <div 
+            <div
                 onClick={(e) => e.stopPropagation()}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 style={{
                     backgroundColor: '#ffffff',
                     borderRadius: '20px',
@@ -90,9 +159,20 @@ export default function AssetPicker({
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    border: '1px solid #f1f5f9'
+                    border: isDragging ? '2px dashed #4f46e5' : '1px solid #f1f5f9',
+                    transition: 'border 0.2s ease'
                 }}
             >
+                {/* Hidden file input */}
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,audio/*,video/*"
+                    onChange={handleFileInputChange}
+                    style={{ display: 'none' }}
+                />
+
                 {/* Header */}
                 <div style={{
                     display: 'flex',
@@ -213,19 +293,85 @@ export default function AssetPicker({
                 {/* Media Grid */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', minHeight: 0 }}>
                     {filteredMedia.length === 0 ? (
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%',
-                            color: '#94a3b8',
-                            padding: '40px 0'
-                        }}>
-                            <Upload style={{ width: '48px', height: '48px', marginBottom: '12px' }} />
-                            <p style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>No files found</p>
-                            <p style={{ fontSize: '12px', marginTop: '4px', margin: '4px 0 0' }}>
-                                {searchTerm ? 'Try a different search' : 'Upload files in the Media tab'}
+                        <div
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%',
+                                minHeight: '280px',
+                                color: '#94a3b8',
+                                padding: '40px 20px',
+                                border: isDragging
+                                    ? '2px dashed #4f46e5'
+                                    : '2px dashed #e2e8f0',
+                                borderRadius: '16px',
+                                backgroundColor: isDragging ? '#eef2ff' : '#f8fafc',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isDragging) {
+                                    e.currentTarget.style.borderColor = '#c7d2fe';
+                                    e.currentTarget.style.backgroundColor = '#f5f3ff';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isDragging) {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                }
+                            }}
+                        >
+                            <div style={{
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '16px',
+                                backgroundColor: isDragging ? '#c7d2fe' : '#e2e8f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '16px',
+                                transition: 'all 0.2s ease'
+                            }}>
+                                <Upload style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    color: isDragging ? '#4f46e5' : '#94a3b8',
+                                    transition: 'color 0.2s ease'
+                                }} />
+                            </div>
+                            <p style={{
+                                fontSize: '15px',
+                                fontWeight: 700,
+                                margin: 0,
+                                color: isDragging ? '#4f46e5' : '#64748b',
+                                transition: 'color 0.2s ease'
+                            }}>
+                                {isDragging ? 'Drop files here' : 'Drag & drop files here'}
+                            </p>
+                            <p style={{
+                                fontSize: '13px',
+                                marginTop: '8px',
+                                margin: '8px 0 0',
+                                color: '#94a3b8'
+                            }}>
+                                or <span style={{ color: '#4f46e5', fontWeight: 700 }}>browse files</span>
+                            </p>
+                            <p style={{
+                                fontSize: '11px',
+                                marginTop: '12px',
+                                margin: '12px 0 0',
+                                color: '#cbd5e1',
+                                fontWeight: 600
+                            }}>
+                                {searchTerm ? 'Try a different search' : 'Supports images, audio, and video'}
                             </p>
                         </div>
                     ) : (
@@ -346,6 +492,40 @@ export default function AssetPicker({
                                     )}
                                 </button>
                             ))}
+
+                            {/* Upload more card */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{
+                                    borderRadius: '14px',
+                                    border: '2px dashed #e2e8f0',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    transition: 'all 0.2s',
+                                    backgroundColor: '#f8fafc',
+                                    padding: '24px 12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    minHeight: '180px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = '#c7d2fe';
+                                    e.currentTarget.style.backgroundColor = '#f5f3ff';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                }}
+                            >
+                                <Upload style={{ width: '24px', height: '24px', color: '#94a3b8' }} />
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
+                                    Upload more
+                                </span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -354,4 +534,3 @@ export default function AssetPicker({
         document.body
     );
 }
-

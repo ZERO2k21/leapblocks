@@ -95,7 +95,7 @@ export default function PropertiesPanel({ appState }) {
   const {
     screens, activeScreen, selectedId, selectedComponent,
     setSelectedId, updateProp, removeComponent, addScreen, renameComponent,
-    media
+    media, addMedia
   } = appState;
 
   const [newScreenName, setNewScreenName] = useState('');
@@ -620,6 +620,9 @@ export default function PropertiesPanel({ appState }) {
           onSelect={(filename) => {
             updateProp(selectedId, assetPickerProp.key, filename);
             setAssetPickerOpen(false);
+          }}
+          onUpload={(mediaItem) => {
+            addMedia(mediaItem);
           }}
           media={media || []}
           filterType={assetPickerProp.filter}
