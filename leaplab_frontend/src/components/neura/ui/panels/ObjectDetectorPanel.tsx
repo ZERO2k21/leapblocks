@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ensureCocoSsd } from '../../ml/loadScript'
 import TrainPanel from './TrainPanel'
+import AnnotatePanel from './AnnotatePanel'
 
 interface ObjectDetectorPanelProps {
     mode: UseNeuraProjectReturn
@@ -68,6 +69,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
     const [sessionTime] = useState(() => Date.now())
     const [showOriginal, setShowOriginal] = useState(true)
+    const [cameraError, setCameraError] = useState<string | null>(null)
 
     // ── Load COCO-SSD model on mount ──
     useEffect(() => {
@@ -92,6 +94,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     // ── Camera controls ──
     const startCamera = useCallback(async () => {
         try {
+            setCameraError(null)
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 640, height: 480, facingMode: 'user' }
             })
@@ -103,6 +106,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             setCameraOn(true)
         } catch (err) {
             console.error('[ObjectDetector] Camera access denied:', err)
+            setCameraError('Camera access is needed to detect objects. Please allow camera access in your browser settings and try again.')
+            setCameraOn(false)
         }
     }, [])
 
@@ -346,6 +351,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         setUploadedImage(null)
         setUploadedDetections([])
         setShowOriginal(true)
+        startCamera()
     }
 
     const selectedClass = mode.getSelectedClass()
@@ -353,9 +359,6 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const currentDetections = hasUploadedImage ? uploadedDetections : detections
     const totalSamples = mode.getTotalSamples()
     const labelsApplied = mode.project?.classes.length || 0
-
-    const WORKFLOW_STEPS = ['Collect', 'Label Objects', 'Teach AI', 'Find Things']
-    const currentStepIndex = ['collect', 'annotate', 'train', 'test'].indexOf(mode.mode)
 
     const ALL_SUPPORTED_OBJECTS = [
         'person', 'car', 'cat', 'dog', 'chair', 'bottle', 'laptop', 'cell phone',
@@ -369,26 +372,22 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         : ALL_SUPPORTED_OBJECTS
 
     return (
-        // Route to TrainPanel when in train mode
         mode.mode === 'train' ? (
             <TrainPanel mode={mode} />
+        ) : mode.mode === 'annotate' ? (
+            <AnnotatePanel mode={mode} />
         ) : (
         <div className="flex-1 flex flex-col p-5 overflow-y-auto neura-scrollbar bg-slate-50/50">
-            {/* ── Compact Header ── */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h1 className="text-base font-bold text-slate-800">
-                        {WORKFLOW_STEPS[currentStepIndex]}
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                        {mode.mode === 'collect' && 'Capture or upload pictures to detect objects'}
-                        {mode.mode === 'annotate' && 'Draw boxes and label objects'}
-                        {mode.mode === 'test' && 'Test your detector'}
-                    </p>
-                </div>
-                <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                    {currentStepIndex + 1}/4
-                </span>
+            {/* ── Mode Header with Workflow Indicator ── */}
+            <div className="text-center mb-4 animate-[fade-in_0.3s_ease-out]">
+                <h2 className="text-[28px] font-extrabold text-slate-800 mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    {mode.mode === 'collect' ? 'Detect Objects' : 'Test Your Detector'}
+                </h2>
+                <p className="text-sm text-slate-400 font-medium">
+                    {mode.mode === 'collect'
+                        ? 'Point your camera at things — AI will find and name them automatically!'
+                        : 'Try different objects and see what the AI can find!'}
+                </p>
             </div>
 
             {/* ── Stats Row ── */}
@@ -430,6 +429,35 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <p className="text-lg font-bold text-slate-700">{currentDetections.length}</p>
                 </div>
             </div>
+
+            {/* ── Camera Error State ── */}
+            {cameraError && !cameraOn && (
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-red-200 text-center mb-4 animate-[scale-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+                    <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-3">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Camera Access Needed</h3>
+                    <p className="text-sm text-slate-400 mb-4 max-w-sm mx-auto">{cameraError}</p>
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={startCamera}
+                            className="px-5 py-2.5 bg-violet-500 text-white rounded-xl font-bold text-sm hover:bg-violet-600 hover:shadow-lg transition-all"
+                        >
+                            Try Again
+                        </button>
+                        <button
+                            onClick={() => { setCameraError(null); fileInputRef.current?.click() }}
+                            className="px-5 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                        >
+                            Use Upload Only
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* ── Main Content ── */}
             <div className="flex gap-4 mb-4">
