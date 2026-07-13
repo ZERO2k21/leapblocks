@@ -389,7 +389,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     <div className="flex flex-col gap-2 text-center md:text-left">
                         <div className="text-lg font-bold" style={{ color: '#4648d4' }}>NEURA</div>
                         <p className="text-xs" style={{ color: 'rgba(70, 69, 84, 0.8)' }}>
-                            &copy; 2024 Neura AI Learning Platform. Visionary. Kinetic. Encouraging.
+                            &copy; Neura AI Learning Platform. Visionary. Kinetic. Encouraging.
                         </p>
                     </div>
                     <div className="flex gap-8">
