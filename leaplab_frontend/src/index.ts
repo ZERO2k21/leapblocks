@@ -445,7 +445,7 @@ ipcMain.handle('remove-background', async (event, imagePath: string) => {
     ? targetPath
     : path.join(app.getAppPath(), targetPath);
 
-  const scriptPath = path.join(app.getAppPath(), 'remove_bg.py');
+  const scriptPath = path.join(app.getAppPath(), 'src', 'utils', 'remove_bg.py');
   if (!fs.existsSync(scriptPath)) {
     return Promise.resolve({ success: false, error: 'Background removal script not available in this build.' });
   }

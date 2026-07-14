@@ -2,11 +2,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..', '..');
 const FORGE_LIB = path.join(ROOT, 'forge-lib');
 const DATA_DIR = path.join(FORGE_LIB, 'data');
 const CONFIG_FILE = path.join(FORGE_LIB, 'arduino-cli.yaml');
-const CLI_PATH = path.join(ROOT, 'src', 'drivers', 'arduino-cli', 'arduino-cli.exe');
+const CLI_PATH = path.join(__dirname, 'arduino-cli.exe');
 
 async function runCLI(args) {
   return new Promise((resolve) => {

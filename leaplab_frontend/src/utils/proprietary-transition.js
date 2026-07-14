@@ -16,6 +16,7 @@ const excludedPaths = [
     path.normalize('src/modules/electra/elements/leap-elements'),
     path.normalize('src/drivers/cp210x_drivers'),
     path.normalize('src/drivers/arduino-cli'),
+    path.normalize('src/pose-extension'),
     path.normalize('node_modules'),
     path.normalize('server/node_modules'),
     path.normalize('dist'),

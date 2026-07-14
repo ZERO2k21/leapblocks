@@ -3,11 +3,11 @@ const path = require('path');
 const fs = require('fs');
 
 const APP_ROOT = __dirname;
-const FORGE_LIB_DIR = path.join(APP_ROOT, 'forge-lib');
+const FORGE_LIB_DIR = path.join(APP_ROOT, '..', '..', '..', 'forge-lib');
 const FORGE_CLI_YAML = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
 const FORGE_DATA_DIR = path.join(FORGE_LIB_DIR, 'data');
 const FORGE_DOWNLOADS_DIR = path.join(FORGE_LIB_DIR, 'staging');
-const CLI_PATH = path.join(APP_ROOT, '..', 'src', 'drivers', 'arduino-cli', 'arduino-cli.exe');
+const CLI_PATH = path.join(APP_ROOT, 'arduino-cli.exe');
 
 console.log('APP_ROOT:', APP_ROOT);
 console.log('CLI_PATH:', CLI_PATH);
