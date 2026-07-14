@@ -196,8 +196,6 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 onOpen={handleOpenProject}
                 onSaveAs={handleSaveAs}
                 onTitleChange={() => {}}
-                onDownload={handleDownload}
-                onOpen={handleImport}
                 brandName="NEURA"
                 rightContent={
                     <ModeSwitcher

@@ -145,6 +145,57 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     const handleSave = useCallback(() => {}, [])
     const handleTitleChange = useCallback(() => {}, [])
 
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleDownload = useCallback(() => {
+        alert('Create or open a project first to download it as a .leap file.')
+    }, [])
+
+    const handleImport = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    const handleFileImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        try {
+            const data = await fileService.loadProject(file)
+            const validation = fileService.validateNeuraImport(data)
+            if (!validation.isValid) {
+                alert(validation.error || 'Invalid project file.')
+                return
+            }
+            let projectData: NeuraProject
+            if (data.mode === 'neura' && data.classes) {
+                projectData = {
+                    id: data.id || Date.now().toString(36),
+                    type: data.type || 'image-classifier',
+                    name: data.projectName || data.name || 'Imported Project',
+                    classes: data.classes || [],
+                    createdAt: data.createdAt || data.timestamp || Date.now(),
+                    updatedAt: data.updatedAt || Date.now(),
+                    modelTrained: data.modelTrained || false,
+                    accuracy: data.accuracy,
+                    projectData: data.projectData
+                }
+            } else if (data.classes && data.type) {
+                projectData = data as NeuraProject
+            } else {
+                alert('This file does not appear to be a valid Neura project.')
+                return
+            }
+            if (!Array.isArray(projectData.classes)) {
+                alert('Invalid project file: missing classes data.')
+                return
+            }
+            onSelect(projectData.type)
+        } catch (err: any) {
+            console.error('[Neura] Failed to import project:', err)
+            alert('Failed to read project file: ' + (err?.message || 'Unknown error'))
+        }
+        e.target.value = ''
+    }, [onSelect])
+
     return (
         <div className="w-full h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-[#faf8ff] via-white to-[#f0ecfd]">
             {/* Floating background orbs */}
@@ -153,11 +204,20 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
             <FloatingOrb className="w-60 h-60 bottom-20 left-1/4" color="#06b6d4" />
             <FloatingOrb className="w-72 h-72 bottom-0 right-1/3" color="#10b981" />
 
+            <input
+                type="file"
+                ref={fileInputRef}
+                hidden
+                accept=".leap,.lbproject,application/json"
+                onChange={handleFileImport}
+            />
             <IgniteTopbar
                 title="NEURA"
                 onBack={onBack}
                 onSave={handleSave}
                 onTitleChange={handleTitleChange}
+                onDownload={handleDownload}
+                onOpen={handleImport}
                 brandName="NEURA"
             />
 
