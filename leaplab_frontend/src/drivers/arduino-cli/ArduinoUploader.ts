@@ -10,7 +10,7 @@ import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { spawn } from 'child_process';
-import { ensureArduinoCli, getArduinoCliPathIfAvailable } from '../utils/ensureArduinoCli';
+import { ensureArduinoCli, getArduinoCliPathIfAvailable } from '../../utils/ensureArduinoCli';
 
 const execAsync = promisify(exec);
 

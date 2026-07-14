@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { spawn, fork } from 'child_process';
 import * as url from 'url';
 import { SerialManager } from './serial/SerialManager';
-import { ArduinoUploader } from './upload/ArduinoUploader';
+import { ArduinoUploader } from './drivers/arduino-cli/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
 import { getBundledArduinoCliPath } from './utils/ensureArduinoCli';
