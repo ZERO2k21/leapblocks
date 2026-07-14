@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useRef } from 'react'
 import { IgniteTopbar } from '../../Electra/Client/Src/components/Layout/Topbar'
-import type { ProjectType } from '../types/neura.types'
+import { fileService } from '../../Electra/Client/Src/services/FileService'
+import type { ProjectType, NeuraProject } from '../types/neura.types'
 
 interface NeuraHomeProps {
     onSelect: (type: ProjectType, template?: { name: string; classes: string[] }) => void
