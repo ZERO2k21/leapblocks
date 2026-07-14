@@ -9,7 +9,6 @@ files:
   - package.json
   - node_modules/**/*
   - src/creova/apk/**/*
-  - tools/**/*
 asar: true
 asarUnpack:
   - node_modules/serialport/**/*
@@ -42,7 +41,7 @@ extraResources:
     to: public
     filter:
       - "**/*"
-  - from: tools
+  - from: src/creova/apk/tools
     to: tools
     filter:
       - "**/*"

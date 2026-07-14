@@ -20,14 +20,14 @@ function resolveToolPath(toolName) {
   const candidates = [
     // Packaged Electron
     process.resourcesPath && path.join(process.resourcesPath, 'tools', toolName),
-    // Development — project root /tools/
-    path.join(__dirname, '..', '..', '..', 'tools', toolName),
+    // Development — local module tools
+    path.join(__dirname, 'tools', toolName),
   ].filter(Boolean);
 
   for (const candidate of candidates) {
     if (fs.pathExistsSync(candidate)) return candidate;
   }
-  return candidates[1] || candidates[0]; // fallback to project root or packaged path
+  return candidates[1] || candidates[0]; // fallback to local module or packaged path
 }
 
 const TOOLS = {
