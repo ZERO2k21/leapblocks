@@ -297,6 +297,9 @@
 }
 
 /* ── Creova Module — Custom Scrollbars ──────────────────────────────────── */
+.leap-panel-body {
+  padding-right: 6px !important;
+}
 .leap-panel-body,
 .leap-blockly-workspace {
   &::-webkit-scrollbar {
