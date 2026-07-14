@@ -5,6 +5,7 @@ import type { ClassifierMode } from '../hooks/useNeuraProject'
 import { useNeuraProject } from '../hooks/useNeuraProject'
 import { fileService } from '../../Electra/Client/Src/services/FileService'
 import ClassCard from './components/ClassCard'
+import DiscardConfirmModal from './components/DiscardConfirmModal'
 
 interface ProjectWorkspaceProps {
     type: ProjectType
@@ -59,6 +60,8 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
     const mode = useNeuraProject(type, template?.name)
     const [newClassName, setNewClassName] = useState('')
     const [showAddClass, setShowAddClass] = useState(false)
+    const [showDiscardModal, setShowDiscardModal] = useState(false)
+    const [pendingAction, setPendingAction] = useState<'new' | 'open' | null>(null)
 
     const isObjectDetection = type === 'object-detection'
 
@@ -90,6 +93,45 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
         if (!mode.project) return
         fileService.saveProjectLocally(mode.project.name, 'neura', mode.project)
     }, [mode.project])
+
+    const handleSaveAs = useCallback(() => {
+        handleDownload()
+    }, [handleDownload])
+
+    const hasUnsavedWork = mode.project && mode.project.classes.length > 0
+
+    const handleNewProject = useCallback(() => {
+        if (hasUnsavedWork) {
+            setPendingAction('new')
+            setShowDiscardModal(true)
+        } else {
+            onBack()
+        }
+    }, [hasUnsavedWork, onBack])
+
+    const handleOpenProject = useCallback(() => {
+        if (hasUnsavedWork) {
+            setPendingAction('open')
+            setShowDiscardModal(true)
+        } else {
+            fileInputRef.current?.click()
+        }
+    }, [hasUnsavedWork])
+
+    const handleDiscardConfirm = useCallback(() => {
+        setShowDiscardModal(false)
+        if (pendingAction === 'new') {
+            onBack()
+        } else if (pendingAction === 'open') {
+            fileInputRef.current?.click()
+        }
+        setPendingAction(null)
+    }, [pendingAction, onBack])
+
+    const handleDiscardCancel = useCallback(() => {
+        setShowDiscardModal(false)
+        setPendingAction(null)
+    }, [])
 
     const handleImport = useCallback(() => {
         fileInputRef.current?.click()
@@ -149,6 +191,10 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 title={mode.project?.name || 'Classifier'}
                 onBack={onBack}
                 onSave={() => {}}
+                onDownload={handleDownload}
+                onNew={handleNewProject}
+                onOpen={handleOpenProject}
+                onSaveAs={handleSaveAs}
                 onTitleChange={() => {}}
                 brandName="NEURA"
                 rightContent={
@@ -299,6 +345,19 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                     <span className="text-[#4a4455]">{mode.project?.modelTrained ? '✅ Model ready!' : '⏳ No model'}</span>
                 </div>
             </footer>
+
+            <DiscardConfirmModal
+                isOpen={showDiscardModal}
+                classCount={mode.project?.classes.length || 0}
+                onConfirm={handleDiscardConfirm}
+                onCancel={handleDiscardCancel}
+                title={pendingAction === 'new' ? 'Start a new project?' : 'Open another project?'}
+                description={
+                    pendingAction === 'new'
+                        ? 'Any unsaved changes will be lost. Do you want to continue?'
+                        : 'Any unsaved changes will be lost when you open another project.'
+                }
+            />
         </div>
     )
 }
