@@ -87,15 +87,14 @@ export function renderRotate(s, col, onHover, onUnhover) {
 }
 
 export function renderScale(s, col, onHover, onUnhover) {
-  const len = 2.5 * s;
-  const headLen = 0.5 * s;
+  const scaleLen = 3 * s;
   const shaftRad = 0.04 * s;
   const boxS = 0.2 * s;
 
   return ['x', 'y', 'z'].map((ax) => {
     const c = col(ax);
-    const bp = headPos(ax, len / 2.5 * 3);
-    const sp = shaftPos(ax, len / 2.5 * 3);
+    const bp = headPos(ax, scaleLen);
+    const sp = shaftPos(ax, scaleLen);
     const rot = axisRot(ax);
     return (
       <group key={ax}>
@@ -104,7 +103,7 @@ export function renderScale(s, col, onHover, onUnhover) {
           <meshBasicMaterial color={c} depthTest={false} />
         </mesh>
         <mesh position={sp} rotation={rot}>
-          <cylinderGeometry args={[shaftRad, shaftRad, len, 8]} />
+          <cylinderGeometry args={[shaftRad, shaftRad, scaleLen, 8]} />
           <meshBasicMaterial color={c} depthTest={false} transparent opacity={0.8} />
         </mesh>
         <mesh position={bp} {...hitProps(ax, onHover, onUnhover)}>

@@ -88,6 +88,29 @@ const TransformGizmo = () => {
     return pt.clone().sub(origin).dot(axisDir);
   }, [camera, gl]);
 
+  const projectRotationAngle = useCallback((clientX, clientY, axis, origin) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(mouse, camera);
+    const axisDir = AXIS_VEC[axis];
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(axisDir, origin);
+    const pt = new THREE.Vector3();
+    const hit = rc.ray.intersectPlane(plane, pt);
+    if (!hit) return null;
+    const v = pt.clone().sub(origin);
+    if (axis === 'x') {
+      return Math.atan2(v.z, v.y);
+    } else if (axis === 'y') {
+      return Math.atan2(v.x, v.z);
+    } else {
+      return Math.atan2(v.y, v.x);
+    }
+  }, [camera, gl]);
+
   const hitTestGizmo = useCallback((clientX, clientY) => {
     const group = groupRef.current;
     if (!group) return null;
@@ -193,7 +216,11 @@ const TransformGizmo = () => {
           d.origin = origin;
           d.startMouse = { x: startX, y: startY };
           d.lastDelta = 0;
-          startProjected = projectMouse(startX, startY, axis, origin) || 0;
+          if (curMode === 'rotate') {
+            startProjected = projectRotationAngle(startX, startY, axis, origin) || 0;
+          } else {
+            startProjected = projectMouse(startX, startY, axis, origin) || 0;
+          }
           setDragInfo({ axis, mode: curMode, value: 0 });
           if (externalOrbitRef?.current) externalOrbitRef.current.enabled = false;
           canvas.style.cursor = 'grabbing';
@@ -218,10 +245,13 @@ const TransformGizmo = () => {
             else mesh.position.z = val;
           }
         } else if (curMode === 'rotate') {
-          const sv = projectMouse(startX, startY, axis, origin);
-          const cv = projectMouse(ev.clientX, ev.clientY, axis, origin);
-          if (sv === null || cv === null) return;
-          let angle = snapAng(cv - sv, rSnap);
+          let current = projectRotationAngle(ev.clientX, ev.clientY, axis, origin);
+          if (current === null) return;
+          let diff = current - startProjected;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          
+          let angle = snapAng(diff, rSnap);
           d.lastDelta = angle;
           const idx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
           for (let i = 0; i < meshes.length; i++) {
@@ -229,10 +259,9 @@ const TransformGizmo = () => {
             const id = mesh.userData.shapeId;
             const sr = startRotMap.get(id);
             if (!sr) return;
-            const val = sr[idx] + angle;
-            if (idx === 0) mesh.rotation.x = val;
-            else if (idx === 1) mesh.rotation.y = val;
-            else mesh.rotation.z = val;
+            mesh.rotation.x = idx === 0 ? sr[0] + angle : sr[0];
+            mesh.rotation.y = idx === 1 ? sr[1] + angle : sr[1];
+            mesh.rotation.z = idx === 2 ? sr[2] + angle : sr[2];
           }
         } else if (curMode === 'scale') {
           const movement = axis === 'y' ? -(ev.clientY - startY) : ev.clientX - startX;
@@ -271,16 +300,23 @@ const TransformGizmo = () => {
         if (activated) {
           // Commit final state to store (with snap)
           const curStore = use3DStore.getState();
+          const axisIdx = d.axis === 'x' ? 0 : d.axis === 'y' ? 1 : 2;
+          const delta = d.lastDelta;
           for (let i = 0; i < meshes.length; i++) {
             const mesh = meshes[i];
             const id = mesh.userData.shapeId;
+            const sr = startRotMap.get(id);
+            let finalRot = [...sr];
+            if (d.mode === 'rotate') {
+              finalRot[axisIdx] = sr[axisIdx] + delta;
+            }
             curStore.updateShape(id, {
               position: [
                 snapVal(mesh.position.x, gSnap),
                 mesh.position.y,
                 snapVal(mesh.position.z, gSnap),
               ],
-              rotation: [mesh.rotation.x, mesh.rotation.y, mesh.rotation.z],
+              rotation: finalRot,
               scale: [mesh.scale.x, mesh.scale.y, mesh.scale.z],
             });
           }
@@ -297,7 +333,7 @@ const TransformGizmo = () => {
 
     canvas.addEventListener('pointerdown', handleDown, { capture: true });
     return () => canvas.removeEventListener('pointerdown', handleDown, { capture: true });
-  }, [gl, scene, camera, editMode, hitTestGizmo, projectMouse, pushHistory, updateShape]);
+  }, [gl, scene, camera, editMode, hitTestGizmo, projectMouse, projectRotationAngle, pushHistory, updateShape]);
 
   useEffect(() => () => {
     if (externalOrbitRef?.current) externalOrbitRef.current.enabled = true;
