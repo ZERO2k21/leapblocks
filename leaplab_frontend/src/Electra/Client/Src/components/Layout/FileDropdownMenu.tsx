@@ -183,7 +183,7 @@ export const FileDropdownMenu: React.FC<FileDropdownMenuProps> = ({
         }}
         className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
         onClick={() => {
-          const currentModule = brandName === 'CREOVA' ? 'creova' : 'electra';
+          const currentModule = brandName === 'CREOVA' ? 'creova' : brandName === 'NEURA' ? 'neura' : 'electra';
           sessionStorage.setItem('landingActiveTab', 'my-projects');
           sessionStorage.setItem('myProjectsSelectedMode', currentModule);
           onClose();

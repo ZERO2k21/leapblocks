@@ -485,7 +485,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             </button>
             <button
               onClick={() => {
-                const currentModule = brandName === 'CREOVA' ? 'creova' : 'electra';
+                const currentModule = brandName === 'CREOVA' ? 'creova' : brandName === 'NEURA' ? 'neura' : 'electra';
                 sessionStorage.setItem('landingActiveTab', 'my-projects');
                 sessionStorage.setItem('myProjectsSelectedMode', currentModule);
                 setMobileMenuOpen(false);
