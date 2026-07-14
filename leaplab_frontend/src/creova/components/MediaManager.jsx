@@ -341,7 +341,7 @@ export default function MediaManager({ appState }) {
                     </div>
                 ) : (
                     viewMode === 'grid' ? (
-                        <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}>
+                        <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
                             {isDragOver && (
                                 <div className="col-span-2 flex flex-col items-center justify-center py-8 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
@@ -419,7 +419,7 @@ export default function MediaManager({ appState }) {
                             ))}
                         </div>
                     ) : (
-                        <div className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}>
+                        <div className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
                             {isDragOver && (
                                 <div className="flex flex-col items-center justify-center py-6 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
