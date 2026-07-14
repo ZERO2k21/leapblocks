@@ -44,6 +44,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const streamRef = useRef<MediaStream | null>(null)
+    const cameraOnRef = useRef(false)
+    const streamStateRef = useRef<MediaStream | null>(null)
 
     const startCamera = useCallback(async () => {
         try {
@@ -87,6 +89,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         return () => { stopCamera() }
     }, [])
 
+    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
+    useEffect(() => { streamStateRef.current = stream }, [stream])
+
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
             if (skipNextRebuildRef.current && mode.mode === 'test') {
@@ -119,7 +124,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         if (mode.mode !== 'test' || modelLoading) return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (cameraOn && stream && videoRef.current) {
+            if (cameraOnRef.current && streamStateRef.current && videoRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -248,6 +253,23 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         setIsProcessing(false)
         if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
+
+    const handleTestCapture = useCallback(async () => {
+        if (!videoRef.current || !cameraOn || modelLoading) return
+        setIsProcessing(true)
+        try {
+            const start = performance.now()
+            const result = await classifierRef.current.predict(videoRef.current)
+            const elapsed = Math.round(performance.now() - start)
+            if (result) {
+                setPrediction(result)
+                setInferenceTime(elapsed)
+            }
+        } catch (err) {
+            console.error('[Neura] Test capture prediction error:', err)
+        }
+        setIsProcessing(false)
+    }, [cameraOn, modelLoading])
 
     const startBurstCapture = useCallback(() => {
         if (!burstMode || !mode.selectedClassId || !cameraOn) return
@@ -625,7 +647,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             <span className="text-sm font-bold text-[#630ed4]">Loading model... ⏳</span>
                         </div>
                     )}
-                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={() => {}} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} />
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={() => {}} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                 </div>
             )}
         </div>

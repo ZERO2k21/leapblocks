@@ -18,6 +18,7 @@ interface TestPanelProps {
     projectName?: string
     testsRun?: number
     inferenceTime?: number
+    modelLoading?: boolean
     children?: React.ReactNode
 }
 
@@ -38,6 +39,7 @@ export default function TestPanel({
     onFileChange = () => {},
     testsRun = 0,
     inferenceTime = 0,
+    modelLoading = false,
     children
 }: TestPanelProps) {
     if (children) {
@@ -111,6 +113,15 @@ export default function TestPanel({
                                 <div className="absolute inset-0 pointer-events-none border-2 border-[#630ed4]/20 rounded-2xl" />
                                 <div className="absolute left-0 w-full h-0.5 bg-[#630ed4]/60 shadow-[0_0_12px_rgba(99,14,212,0.6)]" style={{ animation: 'scan 3s infinite ease-in-out' }} />
                             </>
+                        )}
+
+                        {modelLoading && (
+                            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+                                <div className="flex items-center gap-3 px-6 py-3 bg-white/90 rounded-2xl">
+                                    <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-sm font-bold text-[#131b2e]">Loading model... ⏳</span>
+                                </div>
+                            </div>
                         )}
 
                         {isProcessing && (
