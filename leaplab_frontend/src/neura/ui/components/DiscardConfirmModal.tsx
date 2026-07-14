@@ -6,9 +6,11 @@ interface DiscardConfirmModalProps {
     classCount: number
     onConfirm: () => void
     onCancel: () => void
+    title?: string
+    description?: string
 }
 
-export default function DiscardConfirmModal({ isOpen, classCount, onConfirm, onCancel }: DiscardConfirmModalProps) {
+export default function DiscardConfirmModal({ isOpen, classCount, onConfirm, onCancel, title, description }: DiscardConfirmModalProps) {
     const modalRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -40,12 +42,16 @@ export default function DiscardConfirmModal({ isOpen, classCount, onConfirm, onC
                 </div>
 
                 <h3 className="text-lg font-extrabold text-[#131b2e] mb-2">
-                    Leave without adding samples?
+                    {title || 'Leave without adding samples?'}
                 </h3>
 
                 <p className="text-sm text-[#4a4455] mb-6 leading-relaxed">
-                    You created <span className="font-bold text-[#630ed4]">{classCount} {classCount === 1 ? 'class' : 'classes'}</span>{' '}
-                    but haven't added any training data yet. Your progress will be lost! 😢
+                    {description || (
+                        <>
+                            You created <span className="font-bold text-[#630ed4]">{classCount} {classCount === 1 ? 'class' : 'classes'}</span>{' '}
+                            but haven't added any training data yet. Your progress will be lost! 😢
+                        </>
+                    )}
                 </p>
 
                 <div className="flex gap-3">
