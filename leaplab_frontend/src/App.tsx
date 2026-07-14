@@ -45,7 +45,7 @@ const AppInventor = lazy(() => {
 // @ts-ignore
 const ElectraWorkspace = lazy(() => import('./Electra/Client/Src/ElectraWorkspace'));
 
-const NeuraApp = lazy(() => import('./NeuraApp'));
+const NeuraApp = lazy(() => import('./neura/NeuraApp'));
 
 const Leap3DApp = lazy(() => import('./vision3d'));
 

@@ -48,7 +48,7 @@ extraResources:
       - "**/*"
   # arduino-cli bundled directly — Electra ONLY uses this binary,
   # never system-installed arduino-cli. See src/utils/ensureArduinoCli.ts
-  - from: arduino-cli
+  - from: src/drivers/arduino-cli
     to: arduino-cli
     filter:
       - "**/*"

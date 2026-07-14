@@ -7,16 +7,16 @@
 
 import React, { useState, lazy, Suspense } from 'react'
 import type { ProjectType } from './types/neura.types'
-import DiscardConfirmModal from './components/neura/ui/components/DiscardConfirmModal'
+import DiscardConfirmModal from './ui/components/DiscardConfirmModal'
 
-const NeuraHome = lazy(() => import('./components/neura/ui/NeuraHome'))
-const ProjectWorkspace = lazy(() => import('./components/neura/ui/ProjectWorkspace'))
-const ImageClassifierPanel = lazy(() => import('./components/neura/ui/panels/ImageClassifierPanel'))
-const AudioClassifierPanel = lazy(() => import('./components/neura/ui/panels/AudioClassifierPanel'))
-const PoseClassifierPanel = lazy(() => import('./components/neura/ui/panels/PoseClassifierPanel'))
-const TextClassifierPanel = lazy(() => import('./components/neura/ui/panels/TextClassifierPanel'))
-const NumberClassifierPanel = lazy(() => import('./components/neura/ui/panels/NumberClassifierPanel'))
-const ObjectDetectorPanel = lazy(() => import('./components/neura/ui/panels/ObjectDetectorPanel'))
+const NeuraHome = lazy(() => import('./ui/NeuraHome'))
+const ProjectWorkspace = lazy(() => import('./ui/ProjectWorkspace'))
+const ImageClassifierPanel = lazy(() => import('./ui/panels/ImageClassifierPanel'))
+const AudioClassifierPanel = lazy(() => import('./ui/panels/AudioClassifierPanel'))
+const PoseClassifierPanel = lazy(() => import('./ui/panels/PoseClassifierPanel'))
+const TextClassifierPanel = lazy(() => import('./ui/panels/TextClassifierPanel'))
+const NumberClassifierPanel = lazy(() => import('./ui/panels/NumberClassifierPanel'))
+const ObjectDetectorPanel = lazy(() => import('./ui/panels/ObjectDetectorPanel'))
 
 interface NeuraAppProps {
     onBack?: () => void
@@ -109,7 +109,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     }
 
     return (
-        <div className="h-screen bg-gray-50">
+        <div className="w-full h-screen bg-gray-50">
             <Suspense fallback={<NeuraLoader />}>
                 {view.screen === 'home' && (
                     <NeuraHome

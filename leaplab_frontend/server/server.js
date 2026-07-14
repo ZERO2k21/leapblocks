@@ -155,7 +155,7 @@ function getCliPath() {
   const bundledLocal = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
   if (fs.existsSync(bundledLocal)) return bundledLocal;
 
-  const bundledParent = path.join(__dirname, '..', 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
+  const bundledParent = path.join(__dirname, '..', 'src', 'drivers', 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
   if (fs.existsSync(bundledParent)) return bundledParent;
 
   return process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
@@ -166,7 +166,7 @@ const CLI_PATH = getCliPath();
 const CLI_CONFIG = (() => {
   const bundledLocal = path.join(__dirname, 'arduino-cli.yaml');
   if (fs.existsSync(bundledLocal)) return bundledLocal;
-  const bundledParent = path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.yaml');
+  const bundledParent = path.join(__dirname, '..', 'src', 'drivers', 'arduino-cli', 'arduino-cli.yaml');
   if (fs.existsSync(bundledParent)) return bundledParent;
   return null;
 })();

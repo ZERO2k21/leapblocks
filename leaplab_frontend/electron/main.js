@@ -26,7 +26,7 @@ const FORGE_LIB_LIBRARIES = path.join(FORGE_LIB_DIR, 'libraries');
 const FORGE_CLI_YAML = path.join(FORGE_LIB_DIR, 'arduino-cli.yaml');
 
 const CLI_PATH = isDev
-  ? path.join(APP_ROOT, 'arduino-cli', 'arduino-cli.exe')
+  ? path.join(APP_ROOT, 'src', 'drivers', 'arduino-cli', 'arduino-cli.exe')
   : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
 /** Run arduino-cli with the forge-lib config and return { stdout, stderr, code } */
@@ -116,7 +116,7 @@ function startCompileServer() {
       PORT: '3001',
       // Point arduino-cli to the bundled binary
       ARDUINO_CLI_PATH: isDev
-        ? path.join(__dirname, '..', 'arduino-cli', 'arduino-cli.exe')
+        ? path.join(__dirname, '..', 'src', 'drivers', 'arduino-cli', 'arduino-cli.exe')
         : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe'),
     },
     stdio: ['ignore', 'pipe', 'pipe'],

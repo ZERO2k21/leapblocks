@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import type { ClassData } from '../../../../types/neura.types'
+import type { ClassData } from '../../types/neura.types'
 
 interface ClassCardProps {
     classData: ClassData
@@ -10,45 +10,42 @@ interface ClassCardProps {
     index?: number
 }
 
+const EMOJI_LIST = ['🌟', '⭐', '💫', '✨', '🎯', '🏆', '🎪', '🌈', '🦋', '🌸']
+
 export default function ClassCard({ classData, isSelected, onSelect, onRemove, onRename, index = 0 }: ClassCardProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [editName, setEditName] = useState(classData.name)
 
     const handleRename = () => {
-        if (editName.trim()) {
-            onRename(editName.trim())
-        }
+        if (editName.trim()) onRename(editName.trim())
         setIsEditing(false)
     }
 
     const sampleCount = classData.samples.length
     const progressPercent = Math.min(100, (sampleCount / 15) * 100)
+    const stars = Math.min(5, Math.ceil(sampleCount / 3))
+    const emoji = EMOJI_LIST[index % EMOJI_LIST.length]
 
     return (
         <div
             onClick={onSelect}
-            className={`group flex items-center gap-sm p-sm rounded-r-xl cursor-pointer transition-all duration-200 animate-[stagger-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both] ${
+            className={`group flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all duration-200 animate-fade-in ${
                 isSelected
-                    ? 'class-item-active bg-primary/10'
-                    : 'hover:bg-surface-container-low'
+                    ? 'bg-[#eaedff] border-l-4 border-[#630ed4] shadow-sm'
+                    : 'border-l-4 border-transparent hover:bg-[#f2f3ff]'
             }`}
-            style={{
-                animationDelay: `${index * 60}ms`,
-                borderLeft: isSelected ? '4px solid #7c3aed' : '4px solid transparent'
-            }}
         >
-            {/* Class avatar */}
+            {/* Class avatar with emoji */}
             <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shrink-0 transition-all duration-200"
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 transition-all duration-200 shadow-sm"
                 style={{
                     backgroundColor: isSelected ? classData.color : '#dae2fd',
                     color: isSelected ? '#ffffff' : '#630ed4'
                 }}
             >
-                {classData.name.charAt(0).toUpperCase()}
+                {emoji}
             </div>
 
-            {/* Class info */}
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
                     {isEditing ? (
@@ -61,12 +58,12 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                                 if (e.key === 'Enter') handleRename()
                                 if (e.key === 'Escape') setIsEditing(false)
                             }}
-                            className="w-full text-sm font-semibold text-on-surface bg-white rounded-lg px-2 py-1 border border-outline-variant focus:outline-none focus:border-primary"
+                            className="w-full text-sm font-bold text-[#131b2e] bg-white rounded-lg px-2 py-1 border border-[#630ed4]/30 focus:outline-none focus:border-[#630ed4]"
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
                         <span
-                            className="font-label-md text-label-md text-on-surface truncate"
+                            className="text-sm font-bold text-[#131b2e] truncate"
                             onDoubleClick={(e) => {
                                 e.stopPropagation()
                                 setIsEditing(true)
@@ -76,36 +73,28 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                         </span>
                     )}
                     {sampleCount > 0 && (
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 rounded-full font-bold">
+                        <span className="text-[10px] bg-[#eaedff] text-[#630ed4] px-2 py-0.5 rounded-full font-bold ml-1">
                             {sampleCount}
                         </span>
                     )}
                 </div>
 
-                {/* Sample count with dot */}
                 <div className="flex items-center gap-1 mt-0.5">
-                    <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: isSelected ? classData.color : '#dae2fd' }}
-                    />
-                    <p className="text-[10px] text-on-surface-variant">
-                        {sampleCount} {sampleCount === 1 ? 'sample' : 'samples'}
-                    </p>
+                    <div className="flex gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i} className={`text-[8px] ${i < stars ? 'opacity-100' : 'opacity-20'}`}>⭐</span>
+                        ))}
+                    </div>
+                    <span className="text-[9px] text-[#4a4455] ml-1">{sampleCount} sample{sampleCount !== 1 ? 's' : ''}</span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full bg-outline-variant h-1 rounded-full mt-1 overflow-hidden">
+                <div className="w-full bg-[#ccc3d8]/30 h-1.5 rounded-full mt-1 overflow-hidden">
                     <div
                         className="h-full rounded-full transition-all duration-500 ease-out"
-                        style={{
-                            width: `${progressPercent}%`,
-                            backgroundColor: '#7c3aed'
-                        }}
+                        style={{ width: `${progressPercent}%`, backgroundColor: classData.color }}
                     />
                 </div>
-
-                {/* Hint text */}
-                <p className="text-[9px] text-outline mt-0.5">Aim for 10-15</p>
             </div>
 
             {/* Remove button */}
@@ -114,11 +103,9 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                     e.stopPropagation()
                     onRemove()
                 }}
-                className="w-6 h-6 rounded-md flex items-center justify-center text-outline-variant hover:text-error hover:bg-error-container/20 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-[#ccc3d8] hover:text-[#ba1a1a] hover:bg-[#ffdad6] opacity-0 group-hover:opacity-100 transition-all duration-200 text-sm"
             >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                🗑️
             </button>
         </div>
     )

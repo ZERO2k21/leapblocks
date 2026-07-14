@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { NeuraProject, ClassData, Sample, ProjectType, BoundingBox, Annotation, AnnotationToolType } from '../../../types/neura.types'
-import { MAX_SAMPLES_PER_CLASS } from '../../../types/neura.types'
+import type { NeuraProject, ClassData, Sample, ProjectType, BoundingBox, Annotation, AnnotationToolType } from '../types/neura.types'
+import { MAX_SAMPLES_PER_CLASS } from '../types/neura.types'
 
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
 
