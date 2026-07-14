@@ -291,7 +291,7 @@ export default function AssetPicker({
                 </div>
 
                 {/* Media Grid */}
-                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 20px 16px 24px', minHeight: 0 }}>
+                <div className="neura-scrollbar" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 24px 16px 24px', minHeight: 0 }}>
                     {filteredMedia.length === 0 ? (
                         <div
                             onDragEnter={handleDragEnter}
