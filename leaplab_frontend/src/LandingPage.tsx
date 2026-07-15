@@ -687,7 +687,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                       <div style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,0.15)', borderTopColor: '#6366F1', borderRadius: '50%', animation: 'hero3d-spin 0.8s linear infinite' }} />
                     </div>
                   }>
-                    <Robot3DAnimation />
+                    <Robot3DAnimation onSelect={onSelect} />
                   </Suspense>
                 </div>
               </div>

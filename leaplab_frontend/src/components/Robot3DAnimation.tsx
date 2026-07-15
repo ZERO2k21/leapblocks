@@ -13,7 +13,7 @@ import * as THREE from 'three';
 // Configure Draco decoder path in case the GLB model is Draco-compressed
 useGLTF.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
-const MODEL_PATH = 'assets/sprites/robot/Copilot3D-398ee172-2137-410a-8037-6c4db796610a.glb';
+const MODEL_PATH = 'assets/sprites/robot/robot_bright_colors_1.glb';
 
 /**
  * Modifies the texture at runtime to replace the dark charcoal body parts
@@ -105,12 +105,14 @@ const Model: React.FC<ModelProps> = ({ url }) => {
             const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
             materials.forEach((mat: any) => {
               if (mat && mat.map) {
-                if (!processedTextures.has(mat.map)) {
-                  const whiteTex = makeTextureWhite(mat.map);
-                  processedTextures.set(mat.map, whiteTex);
+                if (!url.includes('bright_colors')) {
+                  if (!processedTextures.has(mat.map)) {
+                    const whiteTex = makeTextureWhite(mat.map);
+                    processedTextures.set(mat.map, whiteTex);
+                  }
+                  mat.map = processedTextures.get(mat.map)!;
+                  mat.needsUpdate = true;
                 }
-                mat.map = processedTextures.get(mat.map)!;
-                mat.needsUpdate = true;
               }
             });
           }
@@ -144,7 +146,7 @@ const Model: React.FC<ModelProps> = ({ url }) => {
   useFrame((state) => {
     if (groupRef.current) {
       // 1. Mouse parallax tilt (tilt based on pointer position)
-      const targetRotationX = state.pointer.y * 0.20; // Vertical tilt
+      const targetRotationX = -state.pointer.y * 0.20; // Vertical tilt
       const targetRotationY = state.pointer.x * 0.25; // Horizontal tilt
       
       groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotationX, 0.08);
@@ -207,10 +209,63 @@ const FloatingParticles: React.FC = () => {
   );
 };
 
-const Robot3DAnimation: React.FC = () => {
+interface Robot3DAnimationProps {
+  onSelect?: (mode: string) => void;
+}
+
+const Robot3DAnimation: React.FC<Robot3DAnimationProps> = ({ onSelect }) => {
   return (
     <div className="robot-3d-container">
       <style>{`
+        :root {
+          --orbit-radius: 170px;
+          --card-width: 110px;
+          --card-height: 110px;
+          --icon-size: 96px;
+          --orbit-offset-y: 40px;
+        }
+
+        @media (max-width: 1024px) {
+          :root {
+            --orbit-radius: 140px;
+            --card-width: 90px;
+            --card-height: 90px;
+            --icon-size: 80px;
+            --orbit-offset-y: 30px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          :root {
+            --orbit-radius: 100px;
+            --card-width: 70px;
+            --card-height: 70px;
+            --icon-size: 60px;
+            --orbit-offset-y: 20px;
+          }
+        }
+
+        @keyframes autoRun3d {
+          from {
+            transform: rotateY(-360deg);
+          }
+          to {
+            transform: rotateY(0deg);
+          }
+        }
+
+        @keyframes animateBrightness {
+          10% {
+            filter: brightness(1) drop-shadow(0 0 10px rgba(99, 102, 241, 0.25));
+          }
+          50% {
+            filter: brightness(0.2) drop-shadow(0 0 2px rgba(99, 102, 241, 0.05));
+          }
+          90% {
+            filter: brightness(1) drop-shadow(0 0 10px rgba(99, 102, 241, 0.25));
+          }
+        }
+
         .robot-3d-container {
           width: 100%;
           height: 100%;
@@ -229,6 +284,8 @@ const Robot3DAnimation: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
+          transform-style: preserve-3d;
+          perspective: 1000px;
         }
 
         .robot-3d-canvas {
@@ -237,6 +294,103 @@ const Robot3DAnimation: React.FC = () => {
           max-height: 450px;
           opacity: 1;
           outline: none;
+          transform: translateZ(0);
+        }
+
+        .card-3d {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          transform-style: preserve-3d;
+          pointer-events: none;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: autoRun3d 24s linear infinite;
+          will-change: transform;
+        }
+
+        .carousel-card-wrapper {
+          position: absolute;
+          width: var(--card-width);
+          height: var(--card-height);
+          top: calc(50% - (var(--card-height) / 2) + var(--orbit-offset-y));
+          left: calc(50% - (var(--card-width) / 2));
+          transform-style: preserve-3d;
+          animation: animateBrightness 24s linear infinite;
+          will-change: transform, filter;
+        }
+
+        .carousel-card-inner {
+          pointer-events: auto;
+          width: 100%;
+          height: 100%;
+          background: transparent;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          cursor: pointer;
+        }
+
+        .carousel-card-inner img {
+          width: var(--icon-size);
+          height: var(--icon-size);
+          object-fit: contain;
+          transition: transform 0.3s ease, filter 0.3s ease;
+          filter: drop-shadow(0 4px 10px rgba(16, 0, 81, 0.12));
+        }
+
+        .carousel-card-inner:hover {
+          transform: scale(1.12);
+        }
+
+        .carousel-card-inner:hover img {
+          transform: scale(1.1);
+          filter: drop-shadow(0 8px 20px rgba(99, 102, 241, 0.45));
+        }
+
+        .card-3d:hover,
+        .card-3d:hover .carousel-card-wrapper {
+          animation-play-state: paused !important;
+        }
+
+        /* 3D positioning for 8 cards */
+        .carousel-card-wrapper:nth-child(1) {
+          transform: rotateY(0deg) translateZ(var(--orbit-radius));
+          animation-delay: -0s;
+        }
+        .carousel-card-wrapper:nth-child(2) {
+          transform: rotateY(45deg) translateZ(var(--orbit-radius));
+          animation-delay: -3s;
+        }
+        .carousel-card-wrapper:nth-child(3) {
+          transform: rotateY(90deg) translateZ(var(--orbit-radius));
+          animation-delay: -6s;
+        }
+        .carousel-card-wrapper:nth-child(4) {
+          transform: rotateY(135deg) translateZ(var(--orbit-radius));
+          animation-delay: -9s;
+        }
+        .carousel-card-wrapper:nth-child(5) {
+          transform: rotateY(180deg) translateZ(var(--orbit-radius));
+          animation-delay: -12s;
+        }
+        .carousel-card-wrapper:nth-child(6) {
+          transform: rotateY(225deg) translateZ(var(--orbit-radius));
+          animation-delay: -15s;
+        }
+        .carousel-card-wrapper:nth-child(7) {
+          transform: rotateY(270deg) translateZ(var(--orbit-radius));
+          animation-delay: -18s;
+        }
+        .carousel-card-wrapper:nth-child(8) {
+          transform: rotateY(315deg) translateZ(var(--orbit-radius));
+          animation-delay: -21s;
         }
 
         @media (max-width: 1024px) {
@@ -287,6 +441,50 @@ const Robot3DAnimation: React.FC = () => {
             <Model url={MODEL_PATH} />
           </Canvas>
         </Suspense>
+
+        {/* 3D Orbiting Cards */}
+        <div className="card-3d">
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('pulse')}>
+              <img src="assets/quiz_icon.png" alt="Pulse" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('creova')}>
+              <img src="assets/app_game_dev_icon.png" alt="Creova" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('vision3d')}>
+              <img src="assets/vision3d_icon.png" alt="Vision3D" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('electra')}>
+              <img src="assets/creocad_icon.png" alt="Electra" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('neura')}>
+              <img src="assets/ml_brain_icon.png" alt="Neura" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('python')}>
+              <img src="assets/python_icon.png" alt="Logix" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('intermediate')}>
+              <img src="assets/arduino_icon.png" alt="Embed" />
+            </div>
+          </div>
+          <div className="carousel-card-wrapper">
+            <div className="carousel-card-inner" onClick={() => onSelect?.('junior')}>
+              <img src="assets/ignite_icon.png" alt="Ignite" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
