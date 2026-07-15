@@ -125,8 +125,18 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
     }, [mode.mode])
 
+    const testCameraStartedRef = useRef(false)
+    useEffect(() => {
+        if (mode.mode !== 'test') testCameraStartedRef.current = false
+    }, [mode.mode])
+
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
+        // Auto-start camera when entering test mode
+        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
+            testCameraStartedRef.current = true
+            startCamera()
+        }
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (cameraOnRef.current && streamStateRef.current && videoRef.current) {
