@@ -20,12 +20,12 @@ const MODEL_PATH = 'assets/sprites/robot/Copilot3D-398ee172-2137-410a-8037-6c4db
  * with a premium white/light grey color, while preserving shadows, highlights, and screens.
  */
 const makeTextureWhite = (texture: THREE.Texture) => {
-  const image = texture.image;
+  const image = texture.image as any;
   if (!image) return texture;
 
   const canvas = document.createElement('canvas');
-  canvas.width = image.width || (image as any).naturalWidth || 1024;
-  canvas.height = image.height || (image as any).naturalHeight || 1024;
+  canvas.width = image.width || image.naturalWidth || 1024;
+  canvas.height = image.height || image.naturalHeight || 1024;
   const ctx = canvas.getContext('2d');
   if (!ctx) return texture;
 
