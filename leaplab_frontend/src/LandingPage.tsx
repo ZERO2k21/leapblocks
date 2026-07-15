@@ -3,11 +3,13 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import LeapLabAuthButton from './auth/LeapLabAuthButton';
 import MyProjectsDashboard from './components/my-projects/MyProjectsDashboard';
 import './components/my-projects/my-projects.css';
-// JSZip lazy-loaded only when Lottie animation needs to be parsed
+
+/** 3D hero animation — lazy loaded for performance */
+const Robot3DAnimation = lazy(() => import('./components/Robot3DAnimation'));
 
 interface LandingPageProps {
   onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | 'vision3d' | any) => void;
@@ -85,85 +87,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     (window as any).showComingSoon = (name: string) => {
       setToast({ message: `${name} is coming soon.`, visible: true });
       setTimeout(() => setToast({ message: '', visible: false }), 2500);
-    };
-
-    let script: HTMLScriptElement | null = null;
-    if (!(window as any).lottie) {
-      script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
-      script.async = true;
-      script.onload = initLottie;
-      script.onerror = initLottie;
-      document.body.appendChild(script);
-    } else {
-      initLottie();
-    }
-
-    function renderLottieFallback(container: HTMLElement, message = 'Animation unavailable.') {
-      container.style.cssText = `
-        display:flex; align-items:center; justify-content:center;
-        flex-direction:column; gap:18px;
-        background: radial-gradient(ellipse at 38% 38%, rgba(124,92,252,0.12), transparent 60%),
-                    radial-gradient(ellipse at 66% 66%, rgba(31,220,232,0.08), transparent 60%);
-        border-radius:20px; min-height:400px;
-      `;
-      container.innerHTML = `
-        <div style="text-align:center; padding:24px; color:#1a1a2e; font-weight:600;">
-          ${message}
-        </div>
-      `;
-    }
-
-    async function initLottie() {
-      const container = document.getElementById('lottie-anim');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const lottieLib = (window as any).lottie;
-      if (!lottieLib) {
-        renderLottieFallback(container);
-        return;
-      }
-
-      try {
-        const response = await fetch('assets/robot.lottie');
-        if (!response.ok) throw new Error(`Failed to fetch .lottie (${response.status})`);
-        const buffer = await response.arrayBuffer();
-
-        // Lazy-load JSZip only when needed for Lottie parsing
-        const { default: JSZip } = await import('jszip');
-        const zip = await JSZip.loadAsync(buffer);
-
-        const manifestFile = zip.file('manifest.json');
-        if (!manifestFile) throw new Error('Missing manifest.json in .lottie');
-        const manifestText = await manifestFile.async('text');
-        const manifest = JSON.parse(manifestText);
-        const animationId = manifest.animations?.[0]?.id;
-        if (!animationId) throw new Error('Missing animation ID in .lottie manifest');
-        const animationFile = zip.file(`animations/${animationId}.json`);
-        if (!animationFile) throw new Error(`Missing animations/${animationId}.json in .lottie`);
-        const animationText = await animationFile.async('text');
-        const animationData = JSON.parse(animationText);
-
-        const anim = lottieLib.loadAnimation({
-          container,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          animationData,
-        });
-        anim.setSpeed(0.5);
-        anim.addEventListener('data_failed', () => renderLottieFallback(container, 'Animation data failed to load.'));
-      } catch (err) {
-        console.error('[LandingPage] .lottie load error:', err);
-        renderLottieFallback(container);
-      }
-    }
-
-    return () => {
-      if (script) document.body.removeChild(script);
-      const container = document.getElementById('lottie-anim');
-      if (container) container.innerHTML = '';
     };
   }, []);
 
@@ -483,25 +406,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   66%       { transform: translate(-20px, 30px) rotate(-5deg); }
 }
 
-/* RIGHT — Lottie */
+/* RIGHT — 3D Hero Scene */
 .landing-page-container .hero-right {
   display: flex; align-items: center; justify-content: center; position: relative;
+  width: 100%; height: 100%; min-height: 400px;
 }
 .landing-page-container .hero-right::after {
   content: ''; position: absolute; width: 120%; height: 120%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
   z-index: -1; animation: float-glow 6s ease-in-out infinite;
+  pointer-events: none;
 }
 @keyframes float-glow {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50%       { transform: scale(1.1); opacity: 0.8; }
 }
-.landing-page-container #lottie-anim {
-  width:100%; max-height: 48vh; max-width: max(260px, 46vh);
-  aspect-ratio:1; border-radius:24px; overflow:hidden;
-}
 @media (max-width: 1024px) {
-  .landing-page-container #lottie-anim { max-height: 35vh; max-width: max(220px, 35vh); margin: 0 auto; }
+  .landing-page-container .hero-right { min-height: 300px; max-height: 45vh; }
+}
+@media (max-width: 768px) {
+  .landing-page-container .hero-right { min-height: 250px; max-height: 35vh; }
 }
 
 /* ─── CARDS ROW ─── */
@@ -728,142 +652,148 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <>
               {/* HERO */}
               <div className="hero-grid">
-            <div className="hero-left">
-              <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
-              <h1 className="hero-title">
-                Learn to <span className="hw-code">code</span><br />
-                the <span className="hw-bold">bold</span> way
-              </h1>
-              <p className="hero-sub">
-                Eight unique tracks from junior picture-blocks all the way to AI,
-                robotics, and machine vision. Pick your adventure.
-              </p>
-              <div className="hero-btns">
-                <button
-                  className="btn-adventure"
-                  onClick={() => {
-                    if (highlightCards) {
-                      stopCardScan();
-                    } else {
-                      startCardScan();
-                      document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  Choose your adventure
-                </button>
-                <button className="btn-demo">Watch 2-min demo</button>
-              </div>
-            </div>
-
-            {/* RIGHT: Lottie animation */}
-            <div className="hero-right">
-              <div id="lottie-anim"></div>
-            </div>
-          </div>
-
-          {/* 7 TRACK CARDS */}
-          <div className="cards-wrap">
-            <div className={`cards-row ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
-
-              {/* 1 IGNITE */}
-              <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
-                <div className="tc-icon">
-                  <img src="assets/ignite_icon.png" alt="Ignite Robot" />
+                <div className="hero-left">
+                  <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
+                  <h1 className="hero-title">
+                    Learn to <span className="hw-code">code</span><br />
+                    the <span className="hw-bold">bold</span> way
+                  </h1>
+                  <p className="hero-sub">
+                    Eight unique tracks from junior picture-blocks all the way to AI,
+                    robotics, and machine vision. Pick your adventure.
+                  </p>
+                  <div className="hero-btns">
+                    <button
+                      className="btn-adventure"
+                      onClick={() => {
+                        if (highlightCards) {
+                          stopCardScan();
+                        } else {
+                          startCardScan();
+                          document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      Choose your adventure
+                    </button>
+                    <button className="btn-demo">Watch 2-min demo</button>
+                  </div>
                 </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Ignite</div>
-                  <div className="tc-desc">leap & block coding</div>
+
+                {/* RIGHT: 3D Hero Scene */}
+                <div className="hero-right">
+                  <Suspense fallback={
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,0.15)', borderTopColor: '#6366F1', borderRadius: '50%', animation: 'hero3d-spin 0.8s linear infinite' }} />
+                    </div>
+                  }>
+                    <Robot3DAnimation />
+                  </Suspense>
                 </div>
               </div>
 
-              {/* 2 EMBED */}
-              <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
-                <div className="tc-icon">
-                  <img src="assets/arduino_icon.png" alt="Circuit Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Embed</div>
-                  <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
+              {/* 7 TRACK CARDS */}
+              <div className="cards-wrap">
+                <div className={`cards-row ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
+
+                  {/* 1 IGNITE */}
+                  <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
+                    <div className="tc-icon">
+                      <img src="assets/ignite_icon.png" alt="Ignite Robot" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Ignite</div>
+                      <div className="tc-desc">leap & block coding</div>
+                    </div>
+                  </div>
+
+                  {/* 2 EMBED */}
+                  <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
+                    <div className="tc-icon">
+                      <img src="assets/arduino_icon.png" alt="Circuit Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Embed</div>
+                      <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
+                    </div>
+                  </div>
+
+                  {/* 3 Logix */}
+                  <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
+                    <div className="tc-icon">
+                      <img src="assets/python_icon.png" alt="Logix Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Logix</div>
+                      <div className="tc-desc">Python Programming</div>
+                    </div>
+                  </div>
+
+                  {/* 4 NEURA */}
+                  <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
+                    <div className="tc-icon">
+                      <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Neura</div>
+                      <div className="tc-desc">AI Logic & Advanced Block Programming</div>
+                    </div>
+                  </div>
+
+                  {/* 5 ELECTRA */}
+                  <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
+                    <div className="tc-icon">
+                      <img src="assets/creocad_icon.png" alt="Forge Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Electra</div>
+                      <div className="tc-desc">Circuit Design & Simulation</div>
+                    </div>
+                  </div>
+
+                  {/* 6 VISION3D */}
+                  <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
+                    <div className="tc-icon">
+                      <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Vision3D</div>
+                      <div className="tc-desc">3D Design & Modeling </div>
+                    </div>
+                  </div>
+
+                  {/* 7 CREOVA */}
+                  <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
+                    <div className="tc-icon">
+                      <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Creova</div>
+                      <div className="tc-desc">App & Game Development</div>
+                    </div>
+                  </div>
+
+                  {/* 8 PULSE */}
+                  <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
+                    <div className="tc-icon">
+                      <img src="assets/quiz_icon.png" alt="Quiz Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Pulse</div>
+                      <div className="tc-desc">Assessment & Quiz Creation</div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
-
-              {/* 3 Logix */}
-              <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
-                <div className="tc-icon">
-                  <img src="assets/python_icon.png" alt="Logix Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Logix</div>
-                  <div className="tc-desc">Python Programming</div>
-                </div>
-              </div>
-
-              {/* 4 NEURA */}
-              <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
-                <div className="tc-icon">
-                  <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Neura</div>
-                  <div className="tc-desc">AI Logic & Advanced Block Programming</div>
-                </div>
-              </div>
-
-              {/* 5 ELECTRA */}
-              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
-                <div className="tc-icon">
-                  <img src="assets/creocad_icon.png" alt="Forge Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Electra</div>
-                  <div className="tc-desc">Circuit Design & Simulation</div>
-                </div>
-              </div>
-
-              {/* 6 VISION3D */}
-              <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
-                <div className="tc-icon">
-                  <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Vision3D</div>
-                  <div className="tc-desc">3D Design & Modeling </div>
-                </div>
-              </div>
-
-              {/* 7 CREOVA */}
-              <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
-                <div className="tc-icon">
-                  <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Creova</div>
-                  <div className="tc-desc">App & Game Development</div>
-                </div>
-              </div>
-
-              {/* 8 PULSE */}
-              <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
-                <div className="tc-icon">
-                  <img src="assets/quiz_icon.png" alt="Quiz Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Pulse</div>
-                  <div className="tc-desc">Assessment & Quiz Creation</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
             </>
           )}
 
