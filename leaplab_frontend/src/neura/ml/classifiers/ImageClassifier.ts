@@ -6,6 +6,44 @@ export interface ImagePrediction {
     confidences: Record<string, number>
 }
 
+// Singleton listener for WebGL context loss — shows recovery banner
+let contextLossHandled = false
+function setupContextLossListener() {
+    if (contextLossHandled || typeof document === 'undefined') return
+    contextLossHandled = true
+    const onContextLost = (e: Event) => {
+        e.preventDefault()
+        console.error('[Neura] WebGL context lost — GPU memory exhausted')
+        // Show recovery banner
+        if (!document.getElementById('neura-context-loss-banner')) {
+            const banner = document.createElement('div')
+            banner.id = 'neura-context-loss-banner'
+            banner.innerHTML = `
+                <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:white;padding:12px 20px;text-align:center;font-family:system-ui;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;">
+                    <span>GPU memory exhausted. The page needs to reload to recover.</span>
+                    <button onclick="location.reload()" style="background:white;color:#dc2626;border:none;padding:6px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Reload Now</button>
+                </div>
+            `
+            document.body.appendChild(banner)
+        }
+    }
+    // Listen on the canvas element used by TF.js
+    const origGetContext = HTMLCanvasElement.prototype.getContext as any
+    HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
+        const ctx = origGetContext.apply(this, args)
+        if (ctx && (args[0] === 'webgl' || args[0] === 'webgl2' || args[0] === 'experimental-webgl')) {
+            const canvas = this as HTMLCanvasElement
+            canvas.addEventListener('webglcontextlost', onContextLost, { once: true })
+            canvas.addEventListener('webglcontextrestored', () => {
+                const banner = document.getElementById('neura-context-loss-banner')
+                if (banner) banner.remove()
+                console.log('[Neura] WebGL context restored')
+            }, { once: true })
+        }
+        return ctx
+    }
+}
+
 export class ImageClassifier {
     private knn = new KNNClassifier()
     private mobilenetModel: any = null
@@ -13,6 +51,7 @@ export class ImageClassifier {
 
     private async ensureModel() {
         if (this.mobilenetModel) return this.mobilenetModel
+        setupContextLossListener()
         const mobilenet = await ensureMobileNet()
         this.mobilenetModule = mobilenet
         this.mobilenetModel = await mobilenet.load()
@@ -22,36 +61,30 @@ export class ImageClassifier {
     /**
      * Preprocess an image element to ensure consistent 224x224 input for MobileNet.
      * Center-crops to square then resizes, matching MobileNet's expected input.
+     * Uses tf.tidy to auto-dispose all intermediate tensors and prevent GPU memory leaks.
      */
     private async preprocessImage(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
     ): Promise<any> {
         const tf = await ensureTf()
 
-        // Convert to tensor
-        let tensor = tf.browser.fromPixels(input).toFloat()
-
-        // Get dimensions
-        const [h, w] = tensor.shape
-
-        // Center crop to square
-        const size = Math.min(h, w)
-        const top = Math.floor((h - size) / 2)
-        const left = Math.floor((w - size) / 2)
-        tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
-
-        // Resize to 224x224 with bilinear interpolation
-        tensor = tf.image.resizeBilinear(tensor, [224, 224])
-
-        // MobileNet expects [-1, 1] normalization
-        tensor = tensor.div(127.5).sub(1)
-
-        return tensor
+        // Use tf.tidy to auto-dispose all intermediate tensors (slice, resize, div, sub)
+        return tf.tidy(() => {
+            let tensor = tf.browser.fromPixels(input).toFloat()
+            const [h, w] = tensor.shape
+            const size = Math.min(h, w)
+            const top = Math.floor((h - size) / 2)
+            const left = Math.floor((w - size) / 2)
+            tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
+            tensor = tf.image.resizeBilinear(tensor, [224, 224])
+            return tensor.div(127.5).sub(1)
+        })
     }
 
     /**
      * Extract a rich embedding by combining multiple layer outputs from MobileNet.
      * This produces more discriminative features than a single layer.
+     * Uses tf.tidy to ensure no GPU tensors leak.
      */
     private async extractEmbedding(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<any> {
         const tf = await ensureTf()
@@ -70,6 +103,9 @@ export class ImageClassifier {
             return tf.div(embedding, tf.maximum(norm, 1e-10))
         })
         embedding.dispose()
+
+        // Yield to browser to allow GPU memory cleanup
+        await new Promise(r => setTimeout(r, 0))
 
         return normalized
     }
@@ -176,6 +212,8 @@ export class ImageClassifier {
      * Generate augmented versions of an image for training data diversity.
      * Returns an array of canvas elements with random transforms applied.
      */
+    // Reduced from 6 to 3 augmentations to prevent GPU memory exhaustion.
+    // Each augmentation runs a full MobileNet inference; fewer = less GPU pressure.
     static augmentations = [
         // Original (no transform)
         (ctx: CanvasRenderingContext2D, w: number, h: number) => {},
@@ -184,31 +222,16 @@ export class ImageClassifier {
             ctx.translate(w, 0)
             ctx.scale(-1, 1)
         },
-        // Slight rotation (+15deg)
+        // Brightness adjustment
         (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            ctx.translate(w / 2, h / 2)
-            ctx.rotate(15 * Math.PI / 180)
-            ctx.translate(-w / 2, -h / 2)
-        },
-        // Slight rotation (-15deg)
-        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            ctx.translate(w / 2, h / 2)
-            ctx.rotate(-15 * Math.PI / 180)
-            ctx.translate(-w / 2, -h / 2)
-        },
-        // Brightness up
-        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            ctx.filter = 'brightness(1.3)'
-        },
-        // Brightness down
-        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            ctx.filter = 'brightness(0.7)'
+            ctx.filter = 'brightness(1.2)'
         },
     ]
 
     /**
      * Add a sample with data augmentation for richer training data.
      * Each source image generates multiple augmented variants.
+     * Yields to browser between iterations to prevent GPU memory buildup.
      */
     async addSampleAugmented(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, label: string): Promise<number> {
         const tf = await ensureTf()
@@ -244,6 +267,9 @@ export class ImageClassifier {
                     await this.addSample(augImg, label)
                     added++
                 }
+
+                // Yield to browser event loop to allow GPU memory cleanup between augmentations
+                await new Promise(r => setTimeout(r, 0))
             } catch {
                 // skip failed augmentation
             }
@@ -254,5 +280,6 @@ export class ImageClassifier {
     dispose(): void {
         this.knn.dispose()
         this.mobilenetModel = null
+        this.mobilenetModule = null
     }
 }

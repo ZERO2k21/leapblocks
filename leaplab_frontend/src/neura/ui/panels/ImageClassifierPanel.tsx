@@ -24,6 +24,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const autoSwitchRef = useRef<NodeJS.Timeout | null>(null)
     const skipNextRebuildRef = useRef(false)
     const isPredictingRef = useRef(false)
+    const rebuildAbortRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
@@ -100,11 +101,15 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 return
             }
             skipNextRebuildRef.current = false
+            // Abort any in-flight rebuild to prevent redundant GPU work
+            const thisBuild = ++rebuildAbortRef.current
             let cancelled = false
             setModelLoading(true)
             const rebuild = async () => {
                 classifierRef.current.clear()
                 for (const cls of mode.project!.classes) {
+                    // Check if a newer rebuild has started — abort this one
+                    if (thisBuild !== rebuildAbortRef.current) return
                     if (cls.samples.length > 0) {
                         await classifierRef.current.rebuildClass(
                             cls.name,
@@ -113,9 +118,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         )
                     }
                 }
-                if (!cancelled) setModelLoading(false)
+                if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
             }
-            rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
+            rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
             return () => { cancelled = true }
         }
     }, [mode.mode])
@@ -305,6 +310,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
         try {
             setModelLoading(true)
+            // Single rebuild pass — reuse classifierRef for both training and LOO
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
@@ -324,6 +330,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 setIsTraining(false)
                 return
             }
+            // Build LOO classifier without augmentation (reuses same data, no extra GPU load)
             const { ImageClassifier } = await import('../../ml/classifiers/ImageClassifier')
             const loClassifier = new ImageClassifier()
             for (const cls of project.classes) {
@@ -362,6 +369,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             if (removedEmbedding) {
                                 await loClassifier.addExampleFromDataArray(removedEmbedding, cls.name)
                             }
+                            // Yield to browser between LOO predictions to prevent GPU buildup
+                            await new Promise(r => setTimeout(r, 0))
                         } catch { total++ }
                     }
                 }
@@ -404,16 +413,21 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         warningTitle = 'Add more samples per class'; warningDesc = 'Each class needs at least 2 samples for reliable training. 5+ recommended for 90%+ accuracy.'
     }
 
+    const removeDebounceRef = useRef<NodeJS.Timeout | null>(null)
     const handleRemoveSample = async (classId: string, sampleId: string) => {
         mode.removeSample(classId, sampleId)
-        const project = mode.project
-        if (project) {
-            const cls = project.classes.find(c => c.id === classId)
-            if (cls) {
-                const remainingSamples = cls.samples.filter(s => s.id !== sampleId)
-                await classifierRef.current.rebuildClass(cls.name, remainingSamples.map(s => s.data), augmentMode)
+        // Debounce rebuilds when removing multiple samples quickly
+        if (removeDebounceRef.current) clearTimeout(removeDebounceRef.current)
+        removeDebounceRef.current = setTimeout(() => {
+            const project = mode.project
+            if (project) {
+                const cls = project.classes.find(c => c.id === classId)
+                if (cls) {
+                    const remainingSamples = cls.samples.filter(s => s.id !== sampleId)
+                    classifierRef.current.rebuildClass(cls.name, remainingSamples.map(s => s.data), augmentMode)
+                }
             }
-        }
+        }, 300)
     }
 
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
