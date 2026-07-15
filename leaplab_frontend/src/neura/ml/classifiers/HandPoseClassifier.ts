@@ -146,6 +146,10 @@ export class HandPoseClassifier {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+        ctx.save()
+        ctx.scale(-1, 1)
+        ctx.translate(-canvas.width, 0)
+
         // Draw connections
         ctx.strokeStyle = drawColor
         ctx.lineWidth = 3
@@ -187,6 +191,8 @@ export class HandPoseClassifier {
                 ctx.fillText(fingerNames[i], kp.x, kp.y - 12)
             }
         }
+
+        ctx.restore()
     }
 
     getSampleCounts(): Record<string, number> {
