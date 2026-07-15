@@ -41,10 +41,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     useEffect(() => { return () => { stopCamera() } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            startCamera()
+        if (mode.mode !== 'collect' && mode.mode !== 'test') {
+            stopCamera()
         }
-        return () => stopCamera()
     }, [mode.mode])
 
     useEffect(() => {
@@ -140,7 +139,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🤸 Pose Master!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🤸 Pose Master!</h2>
                         <p className="text-sm text-[#4a4455]">Strike a pose and teach your AI! 🕺</p>
                     </div>
                     <div className="relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3]">
@@ -175,7 +174,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Poses!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Poses!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning your moves! 💃</p>
                     </div>
                     <div className="w-full flex justify-center">
@@ -187,7 +186,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
                         <p className="text-sm text-[#4a4455]">Strike a pose and see if your AI recognizes it! 🎯</p>
                     </div>
                     <div className="relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3]">

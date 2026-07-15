@@ -180,7 +180,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🎤 Sound Catcher!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🎤 Sound Catcher!</h2>
                         <p className="text-sm text-[#4a4455]">Record sounds to teach your AI!</p>
                     </div>
                     <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-[#1e1b4b] to-[#581c87] w-full max-w-[520px] aspect-[4/3]">
@@ -230,7 +230,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Sounds!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Sounds!</h2>
                         <p className="text-sm text-[#4a4455]">Watch your AI learn to recognize sounds! 👂</p>
                     </div>
                     <div className="w-full flex justify-center">
@@ -242,7 +242,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
                         <p className="text-sm text-[#4a4455]">See if your AI can recognize sounds! 🎯</p>
                     </div>
                     <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-[#1e1b4b] to-[#581c87] w-full max-w-[520px] aspect-[4/3]">

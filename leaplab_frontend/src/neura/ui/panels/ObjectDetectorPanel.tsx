@@ -115,12 +115,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     useEffect(() => { return () => { stopCamera(); if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current) } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            if (!cameraOn && !isLoadingModel) startCamera()
-        } else {
+        if (mode.mode !== 'collect' && mode.mode !== 'test') {
             stopCamera()
         }
-    }, [mode.mode, isLoadingModel])
+    }, [mode.mode])
 
     const showFlash = useCallback(() => { setCaptureFlash(true); setTimeout(() => setCaptureFlash(false), 300) }, [])
 
@@ -258,35 +256,35 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 )}
 
                 <div className="text-center mb-4 animate-fade-in">
-                    <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">
                         {mode.mode === 'collect' ? '🔍 Object Finder!' : '🧪 Test Your Finder!'}
                     </h2>
-                    <p className="text-sm text-[#4a4455] font-medium">
+                    <p className="text-xs sm:text-sm text-[#4a4455] font-medium">
                         {mode.mode === 'collect' ? 'Point your camera at things — AI will find and name them! 🎯' : 'Try different objects and see what AI can find! 🕵️'}
                     </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-[#dae2fd] shadow-sm">
                         <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-lg">🖼️</span>
-                            <span className="text-[10px] font-medium text-[#4a4455]">Pictures</span>
+                            <span className="text-base sm:text-lg">🖼️</span>
+                            <span className="text-[9px] sm:text-[10px] font-medium text-[#4a4455]">Pictures</span>
                         </div>
-                        <p className="text-lg font-bold text-[#131b2e]">{totalSamples}</p>
+                        <p className="text-base sm:text-lg font-bold text-[#131b2e]">{totalSamples}</p>
                     </div>
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-[#dae2fd] shadow-sm">
                         <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-lg">🏷️</span>
-                            <span className="text-[10px] font-medium text-[#4a4455]">Labels</span>
+                            <span className="text-base sm:text-lg">🏷️</span>
+                            <span className="text-[9px] sm:text-[10px] font-medium text-[#4a4455]">Labels</span>
                         </div>
-                        <p className="text-lg font-bold text-[#131b2e]">{labelsApplied}</p>
+                        <p className="text-base sm:text-lg font-bold text-[#131b2e]">{labelsApplied}</p>
                     </div>
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-[#dae2fd] shadow-sm">
                         <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-lg">🎯</span>
-                            <span className="text-[10px] font-medium text-[#4a4455]">Found</span>
+                            <span className="text-base sm:text-lg">🎯</span>
+                            <span className="text-[9px] sm:text-[10px] font-medium text-[#4a4455]">Found</span>
                         </div>
-                        <p className="text-lg font-bold text-[#131b2e]">{currentDetections.length}</p>
+                        <p className="text-base sm:text-lg font-bold text-[#131b2e]">{currentDetections.length}</p>
                     </div>
                 </div>
 
@@ -308,7 +306,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     </div>
                 )}
 
-                <div className="flex gap-4 mb-4">
+                <div className="flex flex-col lg:flex-row gap-4 mb-4">
                     <div className="flex-1">
                         <div className="relative rounded-2xl overflow-hidden bg-[#eaedff] border border-[#dae2fd] shadow-sm aspect-[4/3]">
                             {isLoadingModel && (
@@ -372,7 +370,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     </div>
 
                     {currentDetections.length > 0 && (
-                        <div className="w-64 bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-[#dae2fd] shadow-sm">
+                        <div className="lg:w-64 w-full bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-[#dae2fd] shadow-sm">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-xs font-bold text-[#131b2e]">🎯 Detected</h3>
                                 <span className="text-[10px] text-[#4a4455] font-bold bg-[#eaedff] px-1.5 py-0.5 rounded">
