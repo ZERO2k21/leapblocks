@@ -61,7 +61,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
     const [newClassName, setNewClassName] = useState('')
     const [showAddClass, setShowAddClass] = useState(false)
     const [showDiscardModal, setShowDiscardModal] = useState(false)
-    const [pendingAction, setPendingAction] = useState<'new' | 'open' | null>(null)
+    const [pendingAction, setPendingAction] = useState<'home' | 'new' | 'open' | null>(null)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [isMobile, setIsMobile] = useState(false)
 
@@ -119,6 +119,16 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             setPendingAction('new')
             setShowDiscardModal(true)
         } else {
+            mode.resetProject()
+            localStorage.removeItem(`neura-project-${type}`)
+        }
+    }, [hasUnsavedWork, mode, type])
+
+    const handleHomeClick = useCallback(() => {
+        if (hasUnsavedWork) {
+            setPendingAction('home')
+            setShowDiscardModal(true)
+        } else {
             onBack()
         }
     }, [hasUnsavedWork, onBack])
@@ -134,13 +144,24 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const handleDiscardConfirm = useCallback(() => {
         setShowDiscardModal(false)
-        if (pendingAction === 'new') {
+        if (pendingAction === 'home') {
             onBack()
+        } else if (pendingAction === 'new') {
+            mode.resetProject()
+            localStorage.removeItem(`neura-project-${type}`)
+            // Re-add template classes after reset
+            if (template && template.classes.length > 0) {
+                setTimeout(() => {
+                    template.classes.forEach(className => {
+                        mode.addClass(className)
+                    })
+                }, 100)
+            }
         } else if (pendingAction === 'open') {
             fileInputRef.current?.click()
         }
         setPendingAction(null)
-    }, [pendingAction, onBack])
+    }, [pendingAction, onBack, mode, type, template])
 
     const handleDiscardCancel = useCallback(() => {
         setShowDiscardModal(false)
@@ -334,7 +355,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             />
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
-                onBack={onBack}
+                onBack={handleHomeClick}
                 onSave={handleDownload}
                 onDownload={handleDownload}
                 onNew={handleNewProject}
@@ -405,11 +426,26 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 classCount={mode.project?.classes.length || 0}
                 onConfirm={handleDiscardConfirm}
                 onCancel={handleDiscardCancel}
-                title={pendingAction === 'new' ? 'Start a new project?' : 'Open another project?'}
+                title={
+                    pendingAction === 'home'
+                        ? 'Leave without saving?'
+                        : pendingAction === 'new'
+                            ? 'Start a new project?'
+                            : 'Open another project?'
+                }
                 description={
-                    pendingAction === 'new'
-                        ? 'Any unsaved changes will be lost. Do you want to continue?'
-                        : 'Any unsaved changes will be lost when you open another project.'
+                    pendingAction === 'home'
+                        ? `You created ${mode.project?.classes.length || 0} ${(mode.project?.classes.length || 0) === 1 ? 'class' : 'classes'} but haven't added any training data yet. Your progress will be lost! 😢`
+                        : pendingAction === 'new'
+                            ? 'This will reset your workspace and remove all classes. You can start fresh with a new project!'
+                            : 'Any unsaved changes will be lost when you open another project.'
+                }
+                confirmText={
+                    pendingAction === 'home'
+                        ? 'Leave 🚪'
+                        : pendingAction === 'new'
+                            ? 'Reset 🔄'
+                            : 'Leave 🚪'
                 }
             />
         </div>
