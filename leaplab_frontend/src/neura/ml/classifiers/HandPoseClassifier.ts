@@ -46,20 +46,61 @@ const HAND_DRAW_COLOR_LIGHT = '#7dd3fc'
 export class HandPoseClassifier {
     private knn = new KNNClassifier()
     private handModel: any = null
+    private modelPromise: Promise<any> | null = null
+    private webglLostHandler: (() => void) | null = null
+    private webglRestoredHandler: (() => void) | null = null
 
     private async ensureModel() {
         if (this.handModel) return this.handModel
-        const handPoseDetection = await ensureHandPose()
-        await ensureTf()
-        this.handModel = await handPoseDetection.createDetector(
-            handPoseDetection.SupportedModels.MediaPipeHands,
-            {
-                runtime: 'tfjs',
-                maxNumHands: 1,
-                modelComplexity: 0
+        if (this.modelPromise) return this.modelPromise
+
+        this.modelPromise = (async () => {
+            try {
+                const handPoseDetection = await ensureHandPose()
+                await ensureTf()
+                const detector = await handPoseDetection.createDetector(
+                    handPoseDetection.SupportedModels.MediaPipeHands,
+                    {
+                        runtime: 'tfjs',
+                        maxNumHands: 1,
+                        modelComplexity: 0
+                    }
+                )
+                this.handModel = detector
+                this.modelPromise = null
+                return detector
+            } catch (e) {
+                this.modelPromise = null
+                this.handModel = null
+                throw e
             }
-        )
-        return this.handModel
+        })()
+
+        return this.modelPromise
+    }
+
+    attachWebGLHandlers(canvas: HTMLCanvasElement) {
+        this.detachWebGLHandlers()
+        this.webglLostHandler = () => {
+            console.warn('[HandPose] WebGL context lost — disposing model')
+            this.dispose()
+        }
+        this.webglRestoredHandler = () => {
+            console.warn('[HandPose] WebGL context restored — model will re-initialize on next use')
+        }
+        canvas.addEventListener('webglcontextlost', this.webglLostHandler)
+        canvas.addEventListener('webglcontextrestored', this.webglRestoredHandler)
+    }
+
+    detachWebGLHandlers() {
+        if (this.webglLostHandler) {
+            document.querySelector('canvas')?.removeEventListener('webglcontextlost', this.webglLostHandler)
+            this.webglLostHandler = null
+        }
+        if (this.webglRestoredHandler) {
+            document.querySelector('canvas')?.removeEventListener('webglcontextrestored', this.webglRestoredHandler)
+            this.webglRestoredHandler = null
+        }
     }
 
     normalizeKeypoints(keypoints: HandKeypoint[]): Float32Array {
@@ -75,9 +116,9 @@ export class HandPoseClassifier {
 
         const normalized = new Float32Array(63)
         for (let i = 0; i < keypoints.length && i < 21; i++) {
-            normalized[i * 3] = (keypoints[i].x - minX) / rangeX
-            normalized[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
-            normalized[i * 3 + 2] = keypoints[i].z ?? 0
+            normalized[i * 3] = Math.max(0, Math.min(1, (keypoints[i].x - minX) / rangeX))
+            normalized[i * 3 + 1] = Math.max(0, Math.min(1, (keypoints[i].y - minY) / rangeY))
+            normalized[i * 3 + 2] = Math.max(-1, Math.min(1, (keypoints[i].z ?? 0)))
         }
         return normalized
     }
@@ -216,7 +257,12 @@ export class HandPoseClassifier {
     }
 
     dispose(): void {
+        this.detachWebGLHandlers()
         this.knn.dispose()
-        this.handModel = null
+        if (this.handModel) {
+            try { if (typeof this.handModel.dispose === 'function') this.handModel.dispose() } catch { /* ignore */ }
+            this.handModel = null
+        }
+        this.modelPromise = null
     }
 }
