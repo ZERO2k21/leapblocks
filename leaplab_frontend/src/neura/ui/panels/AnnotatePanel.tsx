@@ -241,7 +241,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const previewBox = isDrawing && drawStart && drawCurrent ? { x: Math.min(drawStart.x, drawCurrent.x), y: Math.min(drawStart.y, drawCurrent.y), width: Math.abs(drawCurrent.x - drawStart.x), height: Math.abs(drawCurrent.y - drawStart.y) } : null
 
     return (
-        <div className="flex-1 flex gap-4 p-4 overflow-hidden neura-scrollbar">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden neura-scrollbar">
             {savedMessage && (
                 <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
@@ -363,7 +363,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                 </div>
             </div>
 
-            <div className="w-64 flex flex-col gap-3 shrink-0">
+            <div className="lg:w-64 w-full flex flex-col gap-3 shrink-0">
                 <div className="bg-white/80 backdrop-blur-sm border border-[#dae2fd] rounded-2xl p-3 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-xs font-bold text-[#131b2e]">📦 Boxes ({totalBoxes})</h3>

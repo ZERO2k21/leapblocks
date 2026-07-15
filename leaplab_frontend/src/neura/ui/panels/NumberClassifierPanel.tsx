@@ -172,7 +172,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">✏️ Number Ninja!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">✏️ Number Ninja!</h2>
                         <p className="text-sm text-[#4a4455]">Draw numbers to teach your AI! 🔢</p>
                     </div>
 
@@ -181,7 +181,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             ref={canvasRef}
                             width={360}
                             height={360}
-                            className="rounded-2xl bg-white touch-none cursor-crosshair shadow-inner w-80 h-80"
+                            className="rounded-2xl bg-white touch-none cursor-crosshair shadow-inner w-full max-w-80 aspect-square"
                             onMouseDown={handleStart}
                             onMouseMove={handleMove}
                             onMouseUp={handleEnd}
@@ -224,7 +224,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Numbers!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Numbers!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning to count! 🔢</p>
                     </div>
                     <div className="w-full flex justify-center">
@@ -236,11 +236,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
                         <p className="text-sm text-[#4a4455]">Draw a number and see if your AI knows it! 🎯</p>
                     </div>
                     <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-4 border border-[#dae2fd] shadow-sm">
-                        <canvas ref={canvasRef} width={360} height={360} className="rounded-2xl bg-white touch-none cursor-crosshair shadow-inner w-80 h-80" onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd} onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} />
+                        <canvas ref={canvasRef} width={360} height={360} className="rounded-2xl bg-white touch-none cursor-crosshair shadow-inner w-full max-w-80 aspect-square" onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd} onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} />
                         <div className="flex justify-center mt-3">
                             <button onClick={clearCanvas} className="flex items-center gap-1.5 px-4 py-2 bg-[#fee2e2] text-[#991b1b] rounded-xl text-xs font-bold hover:bg-[#fecaca] transition-all">🗑️ Clear</button>
                         </div>

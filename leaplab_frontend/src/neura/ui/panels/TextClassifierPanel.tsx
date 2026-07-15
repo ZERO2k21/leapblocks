@@ -90,7 +90,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             {mode.mode === 'collect' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">📝 Word Wizard!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">📝 Word Wizard!</h2>
                         <p className="text-sm text-[#4a4455]">Type words to teach your AI to read! 🔤</p>
                     </div>
 
@@ -136,7 +136,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Words!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Words!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning to read! 📖</p>
                     </div>
                     <div className="w-full flex justify-center">
@@ -148,7 +148,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             {mode.mode === 'test' && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
                     <div className="text-center animate-fade-in">
-                        <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
                         <p className="text-sm text-[#4a4455]">Type something and see if your AI understands! 🎯</p>
                     </div>
                     <div className="w-full max-w-[520px] bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-[#dae2fd] shadow-sm">
