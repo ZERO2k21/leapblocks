@@ -19,7 +19,6 @@ const COCO_SSD_VERSION = '2.2.3'
 const POSE_DETECTION_VERSION = '2.1.3'
 const HAND_POSE_VERSION = '2.0.1'
 const USE_VERSION = '1.3.3'
-const MEDIAPIPE_HANDS_VERSION = '0.4.1675469240'
 
 function loadScript(src: string, retries = 2): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -135,10 +134,7 @@ export async function ensureHandPose(): Promise<any> {
 
     handPosePromise = (async () => {
         try {
-            await Promise.all([
-                loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@${HAND_POSE_VERSION}/dist/hand-pose-detection.min.js`),
-                loadScript(`https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/hands.min.js`),
-            ])
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@${HAND_POSE_VERSION}/dist/hand-pose-detection.min.js`)
             return window.handPoseDetection
         } catch (e) {
             handPosePromise = null

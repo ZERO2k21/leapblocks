@@ -260,8 +260,13 @@ export function useNeuraProject(
     }, [currentAnnotation])
 
     useEffect(() => {
-        if (project && project.classes.length > 0 && !selectedClassId) {
-            setSelectedClassId(project.classes[0].id)
+        if (project && project.classes.length > 0) {
+            const selectedStillExists = selectedClassId && project.classes.some(c => c.id === selectedClassId)
+            if (!selectedStillExists) {
+                setSelectedClassId(project.classes[0].id)
+            }
+        } else if (project && project.classes.length === 0) {
+            setSelectedClassId(null)
         }
     }, [project, selectedClassId])
 

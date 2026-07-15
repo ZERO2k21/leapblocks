@@ -14,6 +14,7 @@ const ProjectWorkspace = lazy(() => import('./ui/ProjectWorkspace'))
 const ImageClassifierPanel = lazy(() => import('./ui/panels/ImageClassifierPanel'))
 const AudioClassifierPanel = lazy(() => import('./ui/panels/AudioClassifierPanel'))
 const PoseClassifierPanel = lazy(() => import('./ui/panels/PoseClassifierPanel'))
+const HandPoseClassifierPanel = lazy(() => import('./ui/panels/HandPoseClassifierPanel'))
 const TextClassifierPanel = lazy(() => import('./ui/panels/TextClassifierPanel'))
 const NumberClassifierPanel = lazy(() => import('./ui/panels/NumberClassifierPanel'))
 const ObjectDetectorPanel = lazy(() => import('./ui/panels/ObjectDetectorPanel'))
@@ -43,6 +44,8 @@ function getClassifierPanel(type: ProjectType) {
             return AudioClassifierPanel
         case 'pose-classifier':
             return PoseClassifierPanel
+        case 'hand-pose-classifier':
+            return HandPoseClassifierPanel
         case 'text-classifier':
             return TextClassifierPanel
         case 'numbers-cr':
