@@ -69,6 +69,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
     const [showOriginal, setShowOriginal] = useState(true)
     const [cameraError, setCameraError] = useState<string | null>(null)
+    const [captureFlash, setCaptureFlash] = useState(false)
+    const [savedMessage, setSavedMessage] = useState<string | null>(null)
 
     useEffect(() => {
         let cancelled = false
@@ -112,6 +114,18 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     useEffect(() => { return () => { stopCamera(); if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current) } }, [])
 
+    useEffect(() => {
+        if (mode.mode === 'collect' || mode.mode === 'test') {
+            if (!cameraOn && !isLoadingModel) startCamera()
+        } else {
+            stopCamera()
+        }
+    }, [mode.mode, isLoadingModel])
+
+    const showFlash = useCallback(() => { setCaptureFlash(true); setTimeout(() => setCaptureFlash(false), 300) }, [])
+
+    const showSaved = useCallback((msg: string) => { setSavedMessage(msg); setTimeout(() => setSavedMessage(null), 2000) }, [])
+
     const detectFrame = useCallback(async (): Promise<Detection[]> => {
         if (!model || !videoRef.current || !videoRef.current.srcObject) return []
         const video = videoRef.current
@@ -126,6 +140,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         canvas.width = video.videoWidth; canvas.height = video.videoHeight
         const ctx = canvas.getContext('2d')!
         ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.save()
+        ctx.scale(-1, 1)
+        ctx.translate(-canvas.width, 0)
         dets.forEach((det) => {
             const [x, y, w, h] = det.bbox; const color = getColorForObject(det.class)
             ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.shadowColor = color; ctx.shadowBlur = 8
@@ -137,6 +154,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x, labelY - 20, textWidth + 16, 22, 6); ctx.fill()
             ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 8, labelY - 9)
         })
+        ctx.restore()
     }, [])
 
     useEffect(() => {
@@ -165,7 +183,12 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         const video = videoRef.current; const tempCanvas = document.createElement('canvas')
         tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight
         const ctx = tempCanvas.getContext('2d')!; ctx.drawImage(video, 0, 0)
-        mode.addSample(mode.selectedClassId, { type: 'image', data: tempCanvas.toDataURL('image/png') })
+        const imageData = tempCanvas.toDataURL('image/png')
+        const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
+        if (!saved) { showSaved('⚠️ Sample limit reached! (20 per class)'); return }
+        showFlash()
+        const className = mode.getSelectedClass()?.name || 'class'
+        showSaved(`📸 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
     }
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,6 +227,14 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
+    const handleSaveUploadedImage = useCallback(() => {
+        if (!uploadedImage || !mode.selectedClassId) return
+        const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: uploadedImage.originalUrl })
+        if (!saved) { showSaved('⚠️ Sample limit reached! (20 per class)'); return }
+        const className = mode.getSelectedClass()?.name || 'class'
+        showSaved(`📂 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
+    }, [uploadedImage, mode, showSaved])
+
     const handleResetUpload = () => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true); startCamera() }
 
     const selectedClass = mode.getSelectedClass()
@@ -219,6 +250,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             <AnnotatePanel mode={mode} />
         ) : (
             <div className="flex-1 flex flex-col p-5 overflow-y-auto neura-scrollbar bg-[#faf8ff]">
+                {captureFlash && <div className="fixed inset-0 bg-white/40 z-50 pointer-events-none animate-fade-in" />}
+                {savedMessage && (
+                    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                        {savedMessage}
+                    </div>
+                )}
+
                 <div className="text-center mb-4 animate-fade-in">
                     <h2 className="text-2xl font-extrabold text-[#630ed4] mb-1">
                         {mode.mode === 'collect' ? '🔍 Object Finder!' : '🧪 Test Your Finder!'}
@@ -251,6 +289,12 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         <p className="text-lg font-bold text-[#131b2e]">{currentDetections.length}</p>
                     </div>
                 </div>
+
+                {!selectedClass && mode.mode === 'collect' && (
+                    <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-2xl px-5 py-3 mb-4">
+                        <p className="text-xs font-bold text-[#f97316] text-center">⚠️ Add or select a class first to start capturing!</p>
+                    </div>
+                )}
 
                 {cameraError && !cameraOn && (
                     <div className="bg-white rounded-3xl p-6 shadow-md border border-[#fecaca] text-center mb-4 animate-scale-in">
@@ -377,12 +421,42 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <button onClick={() => fileInputRef.current?.click()} disabled={isLoadingModel} className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                         📂 Upload Image
                     </button>
+                    {hasUploadedImage && mode.selectedClassId && (
+                        <button onClick={handleSaveUploadedImage} className="px-4 py-2 bg-[#006c44] text-white rounded-xl text-xs font-bold hover:shadow-md active:scale-95 transition-all">
+                            💾 Save Image
+                        </button>
+                    )}
                     {hasUploadedImage && (
                         <button onClick={handleResetUpload} className="px-4 py-2 bg-[#eaedff] text-[#4a4455] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all">
                             🔄 Back to Camera
                         </button>
                     )}
                 </div>
+
+                {totalSamples > 0 && (
+                    <div className="mt-4">
+                        <h3 className="text-xs font-bold text-[#131b2e] mb-2">🖼️ Collected Samples ({totalSamples})</h3>
+                        <div className="flex gap-2 overflow-x-auto pb-2 neura-scrollbar">
+                            {mode.project?.classes.map(cls =>
+                                cls.samples.slice(-10).map(sample => {
+                                    let imageUrl = sample.data
+                                    try {
+                                        const parsed = JSON.parse(sample.data)
+                                        if (parsed.imageUrl) imageUrl = parsed.imageUrl
+                                    } catch { /* raw data URL */ }
+                                    return (
+                                        <div key={sample.id} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-white shadow-sm border border-[#dae2fd]">
+                                            <img src={imageUrl} alt={cls.name} className="w-full h-full object-cover" />
+                                            <div className="absolute bottom-0 left-0 right-0 px-1 py-0.5 bg-black/40">
+                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cls.color }} />
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         )
     )

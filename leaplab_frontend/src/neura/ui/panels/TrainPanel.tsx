@@ -51,10 +51,19 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
     useEffect(() => { if (isComplete) { setShowCelebration(true); setTimeout(() => setShowCelebration(false), 5000) } }, [isComplete])
 
     const runTrainingEpoch = useCallback((epoch: number) => {
-        if (epoch > maxEpochs) { setIsTraining(false); setIsComplete(true); if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }; return }
+        if (epoch > maxEpochs) {
+            setIsTraining(false); setIsComplete(true)
+            if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }
+            setMetrics(prev => {
+                mode.setAccuracy(prev.map50 / 100)
+                mode.setModelTrained(true)
+                return prev
+            })
+            return
+        }
         setCurrentEpoch(epoch); setTrainingProgress(Math.floor((epoch / maxEpochs) * 100))
         setMetrics(prev => { const { metrics: newMetrics, epochData } = calculateEpochMetrics(epoch, maxEpochs, totalSamples, totalClasses, prev); setEpochHistory(h => [...h, epochData]); return newMetrics })
-    }, [maxEpochs, totalSamples, totalClasses])
+    }, [maxEpochs, totalSamples, totalClasses, mode])
 
     const handleStartTraining = useCallback(() => {
         setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
@@ -171,6 +180,43 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
                     <div className="flex justify-between text-[10px] text-[#4a4455]"><span>Low 📉</span><span>Medium 📊</span><span>High 📈</span></div>
                 </div>
             </div>
+
+            {totalSamples > 0 && (
+                <div className="mt-6">
+                    <h3 className="text-sm font-extrabold text-[#131b2e] mb-3">🖼️ Labeled Data Preview</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        {mode.project?.classes.map(cls =>
+                            cls.samples.map(sample => {
+                                let imageUrl = sample.data
+                                let boxCount = 0
+                                try {
+                                    const parsed = JSON.parse(sample.data)
+                                    if (parsed.imageUrl) {
+                                        imageUrl = parsed.imageUrl
+                                        boxCount = parsed.boxes?.length || 0
+                                    }
+                                } catch { /* raw data URL */ }
+                                return (
+                                    <div key={sample.id} className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm border border-[#dae2fd]">
+                                        <img src={imageUrl} alt={cls.name} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cls.color }} />
+                                                <span className="text-white text-[9px] font-bold truncate">{cls.name}</span>
+                                            </div>
+                                            {boxCount > 0 && <span className="text-white/70 text-[8px] font-bold">{boxCount} boxes</span>}
+                                        </div>
+                                        <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/40 backdrop-blur-sm rounded text-white text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {cls.name}
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
