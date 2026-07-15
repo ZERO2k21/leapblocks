@@ -115,12 +115,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     useEffect(() => { return () => { stopCamera(); if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current) } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            if (!cameraOn && !isLoadingModel) startCamera()
-        } else {
+        if (mode.mode !== 'collect' && mode.mode !== 'test') {
             stopCamera()
         }
-    }, [mode.mode, isLoadingModel])
+    }, [mode.mode])
 
     const showFlash = useCallback(() => { setCaptureFlash(true); setTimeout(() => setCaptureFlash(false), 300) }, [])
 

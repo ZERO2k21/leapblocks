@@ -41,10 +41,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     useEffect(() => { return () => { stopCamera() } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            startCamera()
+        if (mode.mode !== 'collect' && mode.mode !== 'test') {
+            stopCamera()
         }
-        return () => stopCamera()
     }, [mode.mode])
 
     useEffect(() => {

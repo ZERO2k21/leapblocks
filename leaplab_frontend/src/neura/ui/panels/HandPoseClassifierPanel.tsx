@@ -64,10 +64,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     useEffect(() => { return () => { stopCamera(); cancelAnimationFrame(animFrameRef.current) } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect' || mode.mode === 'test') {
-            startCamera()
+        if (mode.mode !== 'collect' && mode.mode !== 'test') {
+            stopCamera()
         }
-        return () => stopCamera()
     }, [mode.mode])
 
     useEffect(() => {
