@@ -18,62 +18,62 @@ const CLASSIFIER_TYPES: {
     badge: string
     hasToggle?: boolean
 }[] = [
-    {
-        type: 'image-classifier',
-        name: 'Image Detective',
-        emoji: '📸',
-        description: 'Teach your computer to SEE and recognize things!',
-        color: '#630ed4',
-        gradient: 'from-[#630ed4] via-[#7c3aed] to-[#a855f7]',
-        badge: '👁️ Vision'
-    },
-    {
-        type: 'audio-classifier',
-        name: 'Sound Catcher',
-        emoji: '🎤',
-        description: 'Train AI to LISTEN and tell sounds apart!',
-        color: '#7c3aed',
-        gradient: 'from-[#7c3aed] via-[#a855f7] to-[#d946ef]',
-        badge: '👂 Sound'
-    },
-    {
-        type: 'pose-classifier',
-        name: 'Body & Hand Poses',
-        emoji: '🤸',
-        description: 'Teach AI to read body poses AND hand gestures!',
-        color: '#c32c00',
-        gradient: 'from-[#c32c00] via-[#ef4444] to-[#f97316]',
-        badge: '💃 Motion',
-        hasToggle: true
-    },
-    {
-        type: 'text-classifier',
-        name: 'Word Wizard',
-        emoji: '📝',
-        description: 'Classify words and sentences with smart word magic!',
-        color: '#006c44',
-        gradient: 'from-[#006c44] via-[#10b981] to-[#34d399]',
-        badge: '🔤 Words'
-    },
-    {
-        type: 'numbers-cr',
-        name: 'Number Ninja',
-        emoji: '🔢',
-        description: 'Understand numbers and patterns like a genius!',
-        color: '#a855f7',
-        gradient: 'from-[#a855f7] via-[#d946ef] to-[#f472b6]',
-        badge: '🧮 Math'
-    },
-    {
-        type: 'object-detection',
-        name: 'Object Finder',
-        emoji: '🔍',
-        description: 'Find and spot multiple things in one picture!',
-        color: '#630ed4',
-        gradient: 'from-[#630ed4] via-[#3b82f6] to-[#06b6d4]',
-        badge: '🎯 Spot'
-    }
-]
+        {
+            type: 'image-classifier',
+            name: 'Image Detective',
+            emoji: '📸',
+            description: 'Teach your computer to SEE and recognize things!',
+            color: '#630ed4',
+            gradient: 'from-[#630ed4] via-[#7c3aed] to-[#a855f7]',
+            badge: '👁️ Vision'
+        },
+        {
+            type: 'audio-classifier',
+            name: 'Sound Catcher',
+            emoji: '🎤',
+            description: 'Train AI to LISTEN and tell sounds apart!',
+            color: '#7c3aed',
+            gradient: 'from-[#7c3aed] via-[#a855f7] to-[#d946ef]',
+            badge: '👂 Sound'
+        },
+        {
+            type: 'pose-classifier',
+            name: 'Body & Hand Poses',
+            emoji: '🤸',
+            description: 'Teach AI to read body poses AND hand gestures!',
+            color: '#c32c00',
+            gradient: 'from-[#c32c00] via-[#ef4444] to-[#f97316]',
+            badge: '💃 Motion',
+            hasToggle: true
+        },
+        {
+            type: 'text-classifier',
+            name: 'Word Wizard',
+            emoji: '📝',
+            description: 'Classify words and sentences with smart word magic!',
+            color: '#006c44',
+            gradient: 'from-[#006c44] via-[#10b981] to-[#34d399]',
+            badge: '🔤 Words'
+        },
+        {
+            type: 'numbers-cr',
+            name: 'Number Ninja',
+            emoji: '🔢',
+            description: 'Understand numbers and patterns like a genius!',
+            color: '#a855f7',
+            gradient: 'from-[#a855f7] via-[#d946ef] to-[#f472b6]',
+            badge: '🧮 Math'
+        },
+        {
+            type: 'object-detection',
+            name: 'Object Finder',
+            emoji: '🔍',
+            description: 'Find and spot multiple things in one picture!',
+            color: '#630ed4',
+            gradient: 'from-[#630ed4] via-[#3b82f6] to-[#06b6d4]',
+            badge: '🎯 Spot'
+        }
+    ]
 
 const PROJECT_TEMPLATES = [
     {
@@ -157,8 +157,8 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
         onSelect(type)
     }, [onSelect])
 
-    const handleSave = useCallback(() => {}, [])
-    const handleTitleChange = useCallback(() => {}, [])
+    const handleSave = useCallback(() => { }, [])
+    const handleTitleChange = useCallback(() => { }, [])
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -432,45 +432,45 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             {PROJECT_TEMPLATES.map((template) => {
                                 const isTemplateHovered = hoveredCard === `tpl-${template.name}`
                                 return (
-                                <button
-                                    key={template.name}
-                                    onClick={() => onSelect((template as any).projectType || 'image-classifier', { name: template.name, classes: template.classes })}
-                                    onMouseEnter={() => setHoveredCard(`tpl-${template.name}`)}
-                                    onMouseLeave={() => setHoveredCard(null)}
-                                    className="group relative w-full bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col text-left cursor-pointer border border-[#dae2fd]/60 hover:border-transparent transition-all duration-500 shadow-sm hover:shadow-xl hover:-translate-y-1"
-                                >
-                                    {/* Hover gradient overlay */}
-                                    <div
-                                        className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500 rounded-2xl pointer-events-none`}
-                                        style={{ background: `linear-gradient(135deg, ${template.color}33, transparent)` }}
-                                    />
-
-                                    {/* Icon strip */}
-                                    <div className={`h-32 w-full flex items-center justify-center gap-3 bg-gradient-to-br ${template.bg} border-b border-[#dae2fd]/60 transition-all duration-500 group-hover:gap-4`}>
-                                        <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">{template.icon}</span>
-                                        <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-0" style={{ transitionDelay: '50ms' }}>{template.icon2}</span>
-                                        <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6" style={{ transitionDelay: '100ms' }}>{template.icon3}</span>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-5 relative flex-1 flex flex-col">
+                                    <button
+                                        key={template.name}
+                                        onClick={() => onSelect((template as any).projectType || 'image-classifier', { name: template.name, classes: template.classes })}
+                                        onMouseEnter={() => setHoveredCard(`tpl-${template.name}`)}
+                                        onMouseLeave={() => setHoveredCard(null)}
+                                        className="group relative w-full bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col text-left cursor-pointer border border-[#dae2fd]/60 hover:border-transparent transition-all duration-500 shadow-sm hover:shadow-xl hover:-translate-y-1"
+                                    >
+                                        {/* Hover gradient overlay */}
                                         <div
-                                            className="absolute top-0 left-4 right-4 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                                            style={{ backgroundColor: template.color }}
+                                            className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500 rounded-2xl pointer-events-none`}
+                                            style={{ background: `linear-gradient(135deg, ${template.color}33, transparent)` }}
                                         />
-                                        <h4 className="text-base font-bold text-[#131b2e] mb-1.5">{template.name}</h4>
-                                        <p className="text-xs text-[#4a4455]/70 mb-3 line-clamp-2 leading-relaxed flex-1">{template.description}</p>
-                                        <div className="flex items-center justify-between">
-                                            <span
-                                                className={`inline-block px-2.5 py-1 rounded-full text-[9px] font-bold transition-all duration-300 ${isTemplateHovered ? 'text-white' : 'bg-[#eaedff] text-[#630ed4]'}`}
-                                                style={isTemplateHovered ? { backgroundColor: template.color } : {}}
-                                            >
-                                                {template.tag}
-                                            </span>
-                                            <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[#630ed4] font-bold">Start →</span>
+
+                                        {/* Icon strip */}
+                                        <div className={`h-32 w-full flex items-center justify-center gap-3 bg-gradient-to-br ${template.bg} border-b border-[#dae2fd]/60 transition-all duration-500 group-hover:gap-4`}>
+                                            <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">{template.icon}</span>
+                                            <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-0" style={{ transitionDelay: '50ms' }}>{template.icon2}</span>
+                                            <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6" style={{ transitionDelay: '100ms' }}>{template.icon3}</span>
                                         </div>
-                                    </div>
-                                </button>
+
+                                        {/* Content */}
+                                        <div className="p-5 relative flex-1 flex flex-col">
+                                            <div
+                                                className="absolute top-0 left-4 right-4 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                                style={{ backgroundColor: template.color }}
+                                            />
+                                            <h4 className="text-base font-bold text-[#131b2e] mb-1.5">{template.name}</h4>
+                                            <p className="text-xs text-[#4a4455]/70 mb-3 line-clamp-2 leading-relaxed flex-1">{template.description}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span
+                                                    className={`inline-block px-2.5 py-1 rounded-full text-[9px] font-bold transition-all duration-300 ${isTemplateHovered ? 'text-white' : 'bg-[#eaedff] text-[#630ed4]'}`}
+                                                    style={isTemplateHovered ? { backgroundColor: template.color } : {}}
+                                                >
+                                                    {template.tag}
+                                                </span>
+                                                <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[#630ed4] font-bold">Start →</span>
+                                            </div>
+                                        </div>
+                                    </button>
                                 )
                             })}
                         </div>

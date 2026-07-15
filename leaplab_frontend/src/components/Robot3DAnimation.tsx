@@ -13,7 +13,7 @@ import * as THREE from 'three';
 // Configure Draco decoder path in case the GLB model is Draco-compressed
 useGLTF.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
-const MODEL_PATH = 'assets/sprites/robot/robot_bright_colors_1.glb';
+const MODEL_PATH = 'assets/sprites/robot/robot_bright_colors_smile.glb';
 
 /**
  * Modifies the texture at runtime to replace the dark charcoal body parts
