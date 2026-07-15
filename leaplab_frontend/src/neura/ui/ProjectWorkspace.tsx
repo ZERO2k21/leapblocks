@@ -190,12 +190,12 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
                 onBack={onBack}
-                onSave={() => {}}
+                onSave={handleDownload}
                 onDownload={handleDownload}
                 onNew={handleNewProject}
                 onOpen={handleOpenProject}
                 onSaveAs={handleSaveAs}
-                onTitleChange={() => {}}
+                onTitleChange={(name) => mode.setProjectName(name)}
                 brandName="NEURA"
                 rightContent={
                     <ModeSwitcher
@@ -339,6 +339,8 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                     <span className="flex items-center gap-1"><span className="text-sm">🖼️</span> {mode.getTotalSamples()} pictures</span>
                     <span className="text-[#ccc3d8]">|</span>
                     <span className="flex items-center gap-1"><span className="text-sm">📁</span> {mode.project?.classes.length || 0} types</span>
+                    <span className="text-[#ccc3d8]">|</span>
+                    <span className="flex items-center gap-1 text-[#006c44]"><span className="text-sm">💾</span> Auto-saved</span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px]">
                     <div className={`w-2 h-2 rounded-full ${mode.project?.modelTrained ? 'bg-[#006c44] animate-pulse' : 'bg-[#ccc3d8]'}`} />

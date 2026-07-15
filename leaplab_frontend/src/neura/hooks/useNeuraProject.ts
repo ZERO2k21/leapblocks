@@ -26,6 +26,7 @@ export interface UseNeuraProjectReturn {
     setAccuracy: (acc: number | null) => void
     modelTrained: boolean
     setModelTrained: (trained: boolean) => void
+    setProjectName: (name: string) => void
     addClass: (name: string) => void
     removeClass: (classId: string) => void
     renameClass: (classId: string, name: string) => void
@@ -91,7 +92,13 @@ export function useNeuraProject(
 
     const [mode, setMode] = useState<ClassifierMode>('collect')
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
-    const [accuracy, setAccuracy] = useState<number | null>(null)
+    const [accuracy, setAccuracy] = useState<number | null>(() => {
+        const saved = localStorage.getItem(`neura-project-${type}`)
+        if (saved) {
+            try { return (JSON.parse(saved) as NeuraProject).accuracy ?? null } catch { /* ignore */ }
+        }
+        return null
+    })
     const [modelTrained, setModelTrainedState] = useState<boolean>(() => {
         const saved = localStorage.getItem(`neura-project-${type}`)
         if (saved) {
@@ -103,6 +110,10 @@ export function useNeuraProject(
     const setModelTrained = useCallback((trained: boolean) => {
         setModelTrainedState(trained)
         setProject(prev => ({ ...prev, modelTrained: trained, updatedAt: Date.now() }))
+    }, [])
+
+    const setProjectName = useCallback((name: string) => {
+        setProject(prev => ({ ...prev, name, updatedAt: Date.now() }))
     }, [])
 
     // Annotation state
@@ -283,16 +294,34 @@ export function useNeuraProject(
         if (project) {
             try {
                 const data = JSON.stringify(project)
-                // Warn if approaching localStorage limit (~5MB typical)
                 if (data.length > 4 * 1024 * 1024) {
-                    console.warn('[Neura] Project is large (' + Math.round(data.length / 1024 / 1024 * 10) / 10 + 'MB). Consider downloading your project to avoid data loss.')
+                    console.warn('[Neura] Project is large (' + Math.round(data.length / 1024 / 1024 * 10) / 10 + 'MB). Auto-downloading backup to prevent data loss.')
+                    autoDownloadBackup(project)
                 }
                 localStorage.setItem(`neura-project-${type}`, data)
             } catch (e) {
-                console.warn('[Neura] Project too large to save locally (' + Math.round(JSON.stringify(project).length / 1024) + 'KB). Use "Save Project" to download a backup. Your samples are still in memory.')
+                console.warn('[Neura] localStorage full! Auto-downloading project backup.')
+                autoDownloadBackup(project)
             }
         }
     }, [project, type])
+
+    const autoDownloadBackup = useCallback((proj: NeuraProject) => {
+        try {
+            const data = JSON.stringify(proj, null, 2)
+            const blob = new Blob([data], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${proj.name.replace(/[^a-z0-9]/gi, '_')}_backup_${new Date().toISOString().slice(0, 10)}.neura`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('[Neura] Auto-download backup failed:', err)
+        }
+    }, [])
 
     return {
         project,
@@ -304,6 +333,7 @@ export function useNeuraProject(
         setAccuracy,
         modelTrained,
         setModelTrained,
+        setProjectName,
         addClass,
         removeClass,
         renameClass,
