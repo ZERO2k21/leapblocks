@@ -260,18 +260,28 @@ export function useNeuraProject(
     }, [currentAnnotation])
 
     useEffect(() => {
-        if (project && project.classes.length > 0 && !selectedClassId) {
-            setSelectedClassId(project.classes[0].id)
+        if (project && project.classes.length > 0) {
+            const selectedStillExists = selectedClassId && project.classes.some(c => c.id === selectedClassId)
+            if (!selectedStillExists) {
+                setSelectedClassId(project.classes[0].id)
+            }
+        } else if (project && project.classes.length === 0) {
+            setSelectedClassId(null)
         }
     }, [project, selectedClassId])
 
-    // Save to localStorage on every project change
+    // Save to localStorage on every project change (with size awareness)
     useEffect(() => {
         if (project) {
             try {
-                localStorage.setItem(`neura-project-${type}`, JSON.stringify(project))
+                const data = JSON.stringify(project)
+                // Warn if approaching localStorage limit (~5MB typical)
+                if (data.length > 4 * 1024 * 1024) {
+                    console.warn('[Neura] Project is large (' + Math.round(data.length / 1024 / 1024 * 10) / 10 + 'MB). Consider downloading your project to avoid data loss.')
+                }
+                localStorage.setItem(`neura-project-${type}`, data)
             } catch (e) {
-                console.warn('[Neura] Project too large to save locally. Consider downloading your project.')
+                console.warn('[Neura] Project too large to save locally (' + Math.round(JSON.stringify(project).length / 1024) + 'KB). Use "Save Project" to download a backup. Your samples are still in memory.')
             }
         }
     }, [project, type])

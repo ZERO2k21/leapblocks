@@ -117,12 +117,20 @@ export class PoseClassifier {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        const connections = [
-            [0, 1], [1, 2], [2, 3], [3, 4],
-            [0, 5], [5, 6], [6, 7], [7, 8],
-            [0, 9], [9, 10], [10, 11], [11, 12],
-            [0, 13], [13, 14], [14, 15], [15, 16],
-            [0, 17], [17, 18], [18, 19], [19, 20]
+        // COCO 17-keypoint body skeleton connections
+        const connections: [number, number][] = [
+            // Torso
+            [5, 6], [5, 11], [6, 12], [11, 12],
+            // Left arm
+            [5, 7], [7, 9],
+            // Right arm
+            [6, 8], [8, 10],
+            // Left leg
+            [11, 13], [13, 15],
+            // Right leg
+            [12, 14], [14, 16],
+            // Neck to shoulders
+            [0, 5], [0, 6]
         ]
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)

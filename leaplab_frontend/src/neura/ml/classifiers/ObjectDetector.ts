@@ -12,6 +12,41 @@ export interface DetectionResult {
     timestamp: number
 }
 
+// Reuse context loss setup from ImageClassifier if available
+let contextLossHandled = false
+function setupContextLossListener() {
+    if (contextLossHandled || typeof document === 'undefined') return
+    contextLossHandled = true
+    const onContextLost = (e: Event) => {
+        e.preventDefault()
+        console.error('[Neura] WebGL context lost during object detection')
+        if (!document.getElementById('neura-context-loss-banner')) {
+            const banner = document.createElement('div')
+            banner.id = 'neura-context-loss-banner'
+            banner.innerHTML = `
+                <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:white;padding:12px 20px;text-align:center;font-family:system-ui;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;">
+                    <span>GPU memory exhausted. The page needs to reload to recover.</span>
+                    <button onclick="location.reload()" style="background:white;color:#dc2626;border:none;padding:6px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Reload Now</button>
+                </div>
+            `
+            document.body.appendChild(banner)
+        }
+    }
+    const origGetContext = HTMLCanvasElement.prototype.getContext as any
+    HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
+        const ctx = origGetContext.apply(this, args)
+        if (ctx && (args[0] === 'webgl' || args[0] === 'webgl2' || args[0] === 'experimental-webgl')) {
+            const canvas = this as HTMLCanvasElement
+            canvas.addEventListener('webglcontextlost', onContextLost, { once: true })
+            canvas.addEventListener('webglcontextrestored', () => {
+                const banner = document.getElementById('neura-context-loss-banner')
+                if (banner) banner.remove()
+            }, { once: true })
+        }
+        return ctx
+    }
+}
+
 const LABEL_MAP: Record<string, string> = {
     'cell phone': 'phone',
     'potted plant': 'plant',
@@ -47,6 +82,7 @@ export class ObjectDetector {
 
     async loadModel(): Promise<void> {
         if (this.model) return
+        setupContextLossListener()
         const cocoSsd = await ensureCocoSsd()
         this.model = await cocoSsd.load()
     }

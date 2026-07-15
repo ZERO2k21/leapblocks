@@ -41,6 +41,13 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     useEffect(() => { return () => { stopCamera() } }, [])
 
     useEffect(() => {
+        if (mode.mode === 'collect' || mode.mode === 'test') {
+            startCamera()
+        }
+        return () => stopCamera()
+    }, [mode.mode])
+
+    useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
             let cancelled = false; setModelLoading(true)
             const rebuild = async () => {
@@ -57,7 +64,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             rebuild().catch(() => { if (!cancelled) setModelLoading(false) })
             return () => { cancelled = true }
         }
-    }, [mode.mode])
+    }, [mode.mode, mode.project])
 
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
@@ -68,8 +75,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 try {
                     const ctx = canvasRef.current.getContext('2d')
                     if (ctx) {
+                        canvasRef.current.width = 640
+                        canvasRef.current.height = 480
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
-                        const result = await classifierRef.current.predict(canvasRef.current)
+                        const result = await classifierRef.current.predictFromImage(canvasRef.current)
                         if (result) setPrediction(result)
                     }
                 } catch { /* ignore */ }
@@ -94,10 +103,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             canvas.width = video.videoWidth; canvas.height = video.videoHeight
             const ctx = canvas.getContext('2d')!
             ctx.drawImage(video, 0, 0)
-            const keypoints = await classifierRef.current.extractKeypoints(canvas)
-            if (keypoints) {
+            const keypoints = await classifierRef.current.detectPose(canvas)
+            if (keypoints && keypoints.length > 0) {
                 mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(keypoints) })
-                classifierRef.current.addSample(keypoints, mode.getSelectedClass()?.name || '').catch(() => {})
+                classifierRef.current.addSampleFromKeypoints(keypoints, mode.getSelectedClass()?.name || '').catch(() => {})
             }
         } catch { /* ignore */ }
         finally { setTimeout(() => setIsCapturing(false), 300) }

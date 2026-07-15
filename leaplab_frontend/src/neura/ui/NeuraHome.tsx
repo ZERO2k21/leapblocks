@@ -16,6 +16,7 @@ const CLASSIFIER_TYPES: {
     color: string
     gradient: string
     badge: string
+    hasToggle?: boolean
 }[] = [
     {
         type: 'image-classifier',
@@ -37,12 +38,13 @@ const CLASSIFIER_TYPES: {
     },
     {
         type: 'pose-classifier',
-        name: 'Pose Master',
+        name: 'Body & Hand Poses',
         emoji: '🤸',
-        description: 'Detect body moves and dance poses!',
+        description: 'Teach AI to read body poses AND hand gestures!',
         color: '#c32c00',
         gradient: 'from-[#c32c00] via-[#ef4444] to-[#f97316]',
-        badge: '💃 Dance'
+        badge: '💃 Motion',
+        hasToggle: true
     },
     {
         type: 'text-classifier',
@@ -108,6 +110,18 @@ const PROJECT_TEMPLATES = [
         tag: '🐾 Pets'
     },
     {
+        name: 'Finger Counter',
+        description: 'Count fingers with AI hand tracking!',
+        icon: '✋',
+        icon2: '☝️',
+        icon3: '🖖',
+        classes: ['One', 'Two', 'Three', 'Four', 'Five'],
+        color: '#0ea5e9',
+        bg: 'from-[#0ea5e9]/10 to-[#38bdf8]/10',
+        tag: '✋ Hands',
+        projectType: 'hand-pose-classifier' as ProjectType
+    },
+    {
         name: 'Eco Sorter',
         description: 'Help save the planet by sorting trash!',
         icon: '♻️',
@@ -132,6 +146,7 @@ function FloatingOrb({ className, color }: { className: string; color: string })
 export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
     const [showTypePicker, setShowTypePicker] = useState(false)
     const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+    const [poseMode, setPoseMode] = useState<'body' | 'hand'>('body')
 
     const handleBlankProject = useCallback(() => {
         setShowTypePicker(true)
@@ -271,9 +286,27 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             {CLASSIFIER_TYPES.map((item) => {
                                 const isHovered = hoveredCard === item.type
                                 return (
-                                    <button
+                                    <div
                                         key={item.type}
-                                        onClick={() => onSelect(item.type)}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => {
+                                            if (item.hasToggle) {
+                                                onSelect(poseMode === 'body' ? 'pose-classifier' : 'hand-pose-classifier')
+                                            } else {
+                                                onSelect(item.type)
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                if (item.hasToggle) {
+                                                    onSelect(poseMode === 'body' ? 'pose-classifier' : 'hand-pose-classifier')
+                                                } else {
+                                                    onSelect(item.type)
+                                                }
+                                            }
+                                        }}
                                         onMouseEnter={() => setHoveredCard(item.type)}
                                         onMouseLeave={() => setHoveredCard(null)}
                                         className="group relative w-full bg-white/50 backdrop-blur-sm rounded-3xl p-7 flex flex-col items-center text-center cursor-pointer border border-[#dae2fd]/60 hover:border-transparent transition-all duration-500 shadow-sm hover:shadow-xl overflow-hidden"
@@ -312,6 +345,27 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                         <h3 className="text-xl font-bold text-[#131b2e] mb-1.5">{item.name}</h3>
                                         <p className="text-sm text-[#4a4455]/85 leading-relaxed">{item.description}</p>
 
+                                        {/* Toggle switch for pose classifier */}
+                                        {item.hasToggle && (
+                                            <div
+                                                className="flex items-center gap-1 bg-white/40 rounded-lg p-0.5 mt-3 relative z-30"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <button
+                                                    onClick={() => setPoseMode('body')}
+                                                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all duration-200 ${poseMode === 'body' ? 'bg-white text-[#c32c00] shadow-sm' : 'text-[#4a4455]/60 hover:text-[#4a4455]'}`}
+                                                >
+                                                    🤸 Body
+                                                </button>
+                                                <button
+                                                    onClick={() => setPoseMode('hand')}
+                                                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all duration-200 ${poseMode === 'hand' ? 'bg-white text-[#0ea5e9] shadow-sm' : 'text-[#4a4455]/60 hover:text-[#4a4455]'}`}
+                                                >
+                                                    ✋ Hand
+                                                </button>
+                                            </div>
+                                        )}
+
                                         {/* Hover sparkles container (Prevents layout height shifting) */}
                                         <div className="h-6 mt-4 flex items-center justify-center">
                                             <div className={`flex gap-1.5 transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
@@ -320,7 +374,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                                 <span className="text-sm animate-bounce" style={{ animationDelay: '300ms' }}>⭐</span>
                                             </div>
                                         </div>
-                                    </button>
+                                    </div>
                                 )
                             })}
                         </div>
@@ -380,7 +434,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                 return (
                                 <button
                                     key={template.name}
-                                    onClick={() => onSelect('image-classifier', { name: template.name, classes: template.classes })}
+                                    onClick={() => onSelect((template as any).projectType || 'image-classifier', { name: template.name, classes: template.classes })}
                                     onMouseEnter={() => setHoveredCard(`tpl-${template.name}`)}
                                     onMouseLeave={() => setHoveredCard(null)}
                                     className="group relative w-full bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col text-left cursor-pointer border border-[#dae2fd]/60 hover:border-transparent transition-all duration-500 shadow-sm hover:shadow-xl hover:-translate-y-1"
