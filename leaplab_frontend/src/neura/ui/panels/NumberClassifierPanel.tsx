@@ -605,7 +605,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     {/* Camera feed */}
                     {inputMode === 'camera' && (
                         <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[420px] transition-all duration-300 aspect-[4/3] ${cameraOn ? '' : 'hidden'}`}>
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-3xl" />
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-3xl bg-black" />
                             <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
                                 <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
                                 <span className="text-white text-[10px] font-bold tracking-wide">LIVE</span>
@@ -752,6 +752,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             testImage={testImage}
                             videoRef={videoRef}
                             canvasRef={cameraCanvasRef}
+                            videoFit="contain"
                             onCapture={() => {
                                 if (!videoRef.current || !cameraOn) return
                                 const video = videoRef.current
