@@ -51,6 +51,7 @@ export interface TrainingConfig {
     epochs: number;
     batchSize: number;
     learningRate: number;
+    numLayers: number;
 }
 
 export interface TestResult {

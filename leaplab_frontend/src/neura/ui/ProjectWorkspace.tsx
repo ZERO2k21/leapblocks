@@ -20,13 +20,14 @@ const MODE_EMOJI: Record<string, string> = {
     collect: '📸',
     train: '🏋️',
     test: '🧪',
-    annotate: '🏷️'
+    annotate: '🏷️',
+    evaluate: '📊'
 }
 
 function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: ClassifierMode; onModeChange: (m: ClassifierMode) => void; canTrain: boolean; projectType: ProjectType }) {
     const isObjectDetection = projectType === 'object-detection'
     const modes = isObjectDetection
-        ? [{ id: 'collect' as const, label: 'Collect', emoji: '📸' }, { id: 'annotate' as const, label: 'Label', emoji: '🏷️' }, { id: 'train' as const, label: 'Train', emoji: '🏋️' }, { id: 'test' as const, label: 'Test', emoji: '🧪' }]
+        ? [{ id: 'collect' as const, label: 'Collect', emoji: '📸' }, { id: 'annotate' as const, label: 'Label', emoji: '🏷️' }, { id: 'train' as const, label: 'Train', emoji: '🏋️' }, { id: 'evaluate' as const, label: 'Evaluate', emoji: '📊' }, { id: 'test' as const, label: 'Test', emoji: '🧪' }]
         : [{ id: 'collect' as const, label: 'Collect', emoji: '📸' }, { id: 'train' as const, label: 'Train', emoji: '🏋️' }, { id: 'test' as const, label: 'Test', emoji: '🧪' }]
 
     return (
@@ -365,11 +366,11 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             <div style={{ padding: '12px 14px', borderTop: '1.5px solid #e5e7eb' }}>
                 {isObjectDetection ? (
                     <div className="flex items-center justify-between">
-                        {['Collect', 'Label', 'Train', 'Test'].map((step, idx) => {
-                            const modeId = ['collect', 'annotate', 'train', 'test'][idx] as ClassifierMode
+                        {['Collect', 'Label', 'Train', 'Eval', 'Test'].map((step, idx) => {
+                            const modeId = ['collect', 'annotate', 'train', 'evaluate', 'test'][idx] as ClassifierMode
                             const isCurrent = mode.mode === modeId
-                            const isCompleted = idx < ['collect', 'annotate', 'train', 'test'].indexOf(mode.mode)
-                            const stepEmojis = ['📸', '🏷️', '🏋️', '🧪']
+                            const isCompleted = idx < ['collect', 'annotate', 'train', 'evaluate', 'test'].indexOf(mode.mode)
+                            const stepEmojis = ['📸', '🏷️', '🏋️', '📊', '🧪']
                             return (
                                 <button
                                     key={step}

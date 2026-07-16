@@ -14,7 +14,7 @@ function getNextColor(existingColors: string[]): string {
     return CLASS_COLORS.find(c => !existingColors.includes(c)) || CLASS_COLORS[0]
 }
 
-export type ClassifierMode = 'collect' | 'annotate' | 'train' | 'test'
+export type ClassifierMode = 'collect' | 'annotate' | 'train' | 'evaluate' | 'test'
 
 export interface UseNeuraProjectReturn {
     project: NeuraProject | null
