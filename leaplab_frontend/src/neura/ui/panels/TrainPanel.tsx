@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import type { ObjectDetectionTrainer, DetectionTrainingState } from '../../ml/ObjectDetectionTrainer'
 
 interface TrainPanelProps {
     mode: UseNeuraProjectReturn
+    trainer?: ObjectDetectionTrainer
+    onTrained?: () => void
 }
 
 interface TrainingMetrics {
@@ -31,7 +34,7 @@ function calculateEpochMetrics(epoch: number, maxEpochs: number, totalSamples: n
     return { metrics: { loss: newLoss, boxLoss: newBoxLoss, clsLoss: newClsLoss, objLoss: newObjLoss, map50: Math.min(ceiling * 100, prevMetrics.map50 + mapGain * 100), map5095: Math.min(ceiling * 75, prevMetrics.map5095 + mapGain * 70), recall: Math.min(ceiling * 110, prevMetrics.recall + mapGain * 90), precision: Math.min(ceiling * 105, prevMetrics.precision + mapGain * 85), fps: 30 + Math.random() * 5, latency: 28 + Math.random() * 8 }, epochData: { epoch, loss: newLoss, map50: Math.min(ceiling * 100, prevMetrics.map50 + mapGain * 100), boxLoss: newBoxLoss, clsLoss: newClsLoss, objLoss: newObjLoss } }
 }
 
-export default function TrainPanel({ mode }: TrainPanelProps) {
+export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps) {
     const [isTraining, setIsTraining] = useState(false)
     const [isComplete, setIsComplete] = useState(false)
     const [trainingProgress, setTrainingProgress] = useState(0)
@@ -41,20 +44,64 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
     const [epochHistory, setEpochHistory] = useState<EpochData[]>([])
     const [estimatedTime, setEstimatedTime] = useState(0)
     const [showCelebration, setShowCelebration] = useState(false)
+    const [realTrainingRegions, setRealTrainingRegions] = useState(0)
+    const [realClassCounts, setRealClassCounts] = useState<Record<string, number>>({})
     const trainingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const trainerUnsubscribeRef = useRef<(() => void) | null>(null)
 
     const totalSamples = mode.getTotalSamples(); const totalClasses = mode.project?.classes.length || 0
+    const isObjectDetection = mode.project?.type === 'object-detection' && trainer
     const WORKFLOW_STEPS = ['Collect', 'Label Objects', 'Teach AI', 'Find Things']; const currentStepIndex = 2
 
     useEffect(() => { setEstimatedTime(Math.max(5, Math.floor(14 + totalSamples / 100 + totalClasses / 5))) }, [totalSamples, totalClasses])
-    useEffect(() => { return () => { if (trainingIntervalRef.current) clearInterval(trainingIntervalRef.current) } }, [])
+    useEffect(() => { return () => { if (trainingIntervalRef.current) clearInterval(trainingIntervalRef.current); if (trainerUnsubscribeRef.current) trainerUnsubscribeRef.current() } }, [])
     useEffect(() => { if (isComplete) { setShowCelebration(true); setTimeout(() => setShowCelebration(false), 5000) } }, [isComplete])
     useEffect(() => {
         if (isComplete) {
             mode.setAccuracy(metrics.map50 / 100)
             mode.setModelTrained(true)
+            if (onTrained) onTrained()
         }
     }, [isComplete, metrics.map50])
+
+    // Subscribe to real trainer updates when in object detection mode
+    useEffect(() => {
+        if (!trainer || !isObjectDetection) return
+        const unsub = trainer.onProgress((state: DetectionTrainingState) => {
+            setIsTraining(state.isTraining)
+            setIsComplete(state.isComplete)
+            setTrainingProgress(state.progress)
+            setCurrentEpoch(state.currentEpoch)
+            setRealTrainingRegions(state.totalRegions)
+            setRealClassCounts(state.classCounts)
+            if (state.metrics) {
+                setMetrics({
+                    loss: state.metrics.loss,
+                    boxLoss: state.metrics.boxLoss,
+                    clsLoss: state.metrics.clsLoss,
+                    objLoss: state.metrics.objLoss,
+                    map50: state.metrics.map50,
+                    map5095: state.metrics.map5095,
+                    recall: state.metrics.recall,
+                    precision: state.metrics.precision,
+                    fps: state.metrics.fps,
+                    latency: state.metrics.latency
+                })
+            }
+            if (state.epochHistory.length > 0) {
+                setEpochHistory(state.epochHistory.map(e => ({
+                    epoch: e.epoch,
+                    loss: e.loss,
+                    map50: e.map50,
+                    boxLoss: e.boxLoss,
+                    clsLoss: e.clsLoss,
+                    objLoss: e.objLoss
+                })))
+            }
+        })
+        trainerUnsubscribeRef.current = unsub
+        return () => unsub()
+    }, [trainer, isObjectDetection])
 
     const runTrainingEpoch = useCallback((epoch: number) => {
         if (epoch > maxEpochs) {
@@ -66,14 +113,34 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
         setMetrics(prev => { const { metrics: newMetrics, epochData } = calculateEpochMetrics(epoch, maxEpochs, totalSamples, totalClasses, prev); setEpochHistory(h => [...h, epochData]); return newMetrics })
     }, [maxEpochs, totalSamples, totalClasses])
 
-    const handleStartTraining = useCallback(() => {
-        setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
-        setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
-        let epoch = 1; trainingIntervalRef.current = setInterval(() => { runTrainingEpoch(epoch); epoch++ }, 400)
-    }, [totalSamples, totalClasses, runTrainingEpoch])
+    const handleStartTraining = useCallback(async () => {
+        if (isObjectDetection && trainer) {
+            // Real training for object detection
+            setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
+            setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
+            await trainer.startTraining(mode.project!)
+        } else {
+            // Simulated training for image classifier
+            setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
+            setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
+            let epoch = 1; trainingIntervalRef.current = setInterval(() => { runTrainingEpoch(epoch); epoch++ }, 400)
+        }
+    }, [totalSamples, totalClasses, runTrainingEpoch, isObjectDetection, trainer, mode.project])
 
-    const handleStopTraining = useCallback(() => { if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }; setIsTraining(false) }, [])
-    const handleResetTraining = useCallback(() => { setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([]); setMetrics(calculateInitialMetrics(totalSamples, totalClasses)) }, [totalSamples, totalClasses])
+    const handleStopTraining = useCallback(() => {
+        if (isObjectDetection && trainer) {
+            trainer.stopTraining()
+        } else {
+            if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }
+        }
+        setIsTraining(false)
+    }, [isObjectDetection, trainer])
+
+    const handleResetTraining = useCallback(() => {
+        if (isObjectDetection && trainer) trainer.reset()
+        setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
+        setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
+    }, [totalSamples, totalClasses, isObjectDetection, trainer])
 
     const handleExportReport = useCallback(() => {
         const report = {
@@ -186,7 +253,23 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
                     <h3 className="text-sm font-extrabold text-[#131b2e] mb-4">📊 Dataset Health</h3>
                     <div className="space-y-4">
                         <div className="p-4 bg-white border border-[#dae2fd] rounded-xl"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-[#4a4455]">🖼️ Pictures</span><span className="text-base font-bold text-[#630ed4]">{totalSamples}</span></div><div className="w-full bg-[#dae2fd] h-2 rounded-full overflow-hidden"><div className="bg-[#630ed4] h-full rounded-full" style={{ width: `${Math.min(totalSamples / 10, 100)}%` }} /></div></div>
+                        {isObjectDetection && realTrainingRegions > 0 && (
+                            <div className="p-4 bg-white border border-[#dae2fd] rounded-xl"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-[#4a4455]">📦 Training Regions</span><span className="text-base font-bold text-[#006c44]">{realTrainingRegions}</span></div><div className="w-full bg-[#dae2fd] h-2 rounded-full overflow-hidden"><div className="bg-[#006c44] h-full rounded-full" style={{ width: `${Math.min(realTrainingRegions / 50, 100)}%` }} /></div><p className="text-[9px] text-[#4a4455] mt-1">Bounding box regions extracted from annotations</p></div>
+                        )}
                         <div className="p-4 bg-white border border-[#dae2fd] rounded-xl"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-[#4a4455]">🏷️ Object Types</span><span className="text-base font-bold text-[#630ed4]">{totalClasses}</span></div><div className="w-full bg-[#dae2fd] h-2 rounded-full overflow-hidden"><div className="bg-gradient-to-r from-[#006c44] to-[#10b981] h-full rounded-full" style={{ width: `${Math.min(totalClasses / 8, 100)}%` }} /></div></div>
+                        {isObjectDetection && Object.keys(realClassCounts).length > 0 && (
+                            <div className="p-4 bg-white border border-[#dae2fd] rounded-xl">
+                                <span className="text-xs font-bold text-[#4a4455] block mb-2">📋 Regions per Class</span>
+                                <div className="space-y-1.5">
+                                    {Object.entries(realClassCounts).map(([cls, count]) => (
+                                        <div key={cls} className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-[#131b2e] truncate">{cls}</span>
+                                            <span className="text-[10px] font-bold text-[#630ed4]">{count as number}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="p-4 bg-white border border-[#dae2fd] rounded-xl"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-[#4a4455]">✨ Enhancements</span><span className="text-base font-bold text-[#630ed4]">ON</span></div><div className="flex flex-wrap gap-2"><span className="px-3 py-1 bg-[#eaedff] rounded-full text-[10px] font-bold">FLIP 🔄</span><span className="px-3 py-1 bg-[#eaedff] rounded-full text-[10px] font-bold">ROTATE 🔃</span><span className="px-3 py-1 bg-[#eaedff] rounded-full text-[10px] font-bold">BRIGHT ☀️</span></div></div>
                     </div>
                 </div>

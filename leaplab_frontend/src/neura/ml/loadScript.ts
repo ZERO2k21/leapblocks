@@ -54,6 +54,8 @@ export async function ensureTf(): Promise<any> {
     tfPromise = (async () => {
         try {
             await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
+            // Initialize the default backend (webgl) so inference works immediately
+            await window.tf.ready()
             window._tfLoaded = true
             return window.tf
         } catch (e) {
