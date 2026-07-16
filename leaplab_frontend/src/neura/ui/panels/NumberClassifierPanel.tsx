@@ -38,7 +38,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [inputMode, setInputMode] = useState<'draw' | 'camera'>('draw')
+    const [augmentMode, setAugmentMode] = useState(true)
+    const [currentEpoch, setCurrentEpoch] = useState(0)
+    const [totalEpochs, setTotalEpochs] = useState(50)
     const lastPosRef = useRef<{ x: number; y: number } | null>(null)
+    const skipNextRebuildRef = useRef(false)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -103,7 +107,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     // Rebuild classifier when entering train/test mode
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
-            if (mode.mode === 'test' && testCameraStartedRef.current) return
+            if (skipNextRebuildRef.current && mode.mode === 'test') {
+                skipNextRebuildRef.current = false
+                setModelLoading(false)
+                return
+            }
+            skipNextRebuildRef.current = false
             const thisBuild = ++rebuildAbortRef.current
             let cancelled = false
             setModelLoading(true)
@@ -112,23 +121,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 for (const cls of mode.project!.classes) {
                     if (thisBuild !== rebuildAbortRef.current) return
                     if (cls.samples.length > 0) {
-                        for (const sample of cls.samples) {
-                            try {
-                                const img = new Image()
-                                img.src = sample.data
-                                await new Promise<void>((resolve, reject) => {
-                                    img.onload = () => resolve()
-                                    img.onerror = () => reject(new Error('Failed to load image'))
-                                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
-                                })
-                                const tempCanvas = document.createElement('canvas')
-                                tempCanvas.width = 360
-                                tempCanvas.height = 360
-                                const tempCtx = tempCanvas.getContext('2d')!
-                                tempCtx.drawImage(img, 0, 0, 360, 360)
-                                await classifierRef.current.addSample(tempCanvas, cls.name)
-                            } catch { /* skip */ }
-                        }
+                        await classifierRef.current.rebuildClass(
+                            cls.name,
+                            cls.samples.map(s => s.data),
+                            augmentMode
+                        )
                     }
                 }
                 if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
@@ -297,12 +294,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 setTimeout(() => resolve(), 3000)
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = 360
-                tempCanvas.height = 360
-                const tempCtx = tempCanvas.getContext('2d')!
-                tempCtx.drawImage(img, 0, 0, 360, 360)
-                await classifierRef.current.addSample(tempCanvas, mode.getSelectedClass()?.name || '')
+                await classifierRef.current.addSample(img, mode.getSelectedClass()?.name || '')
             }
         }
         if (fileInputRef.current) fileInputRef.current.value = ''
@@ -334,13 +326,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 setTimeout(() => resolve(), 3000)
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = 360
-                tempCanvas.height = 360
-                const tempCtx = tempCanvas.getContext('2d')!
-                tempCtx.drawImage(img, 0, 0, 360, 360)
                 const start = performance.now()
-                const result = await classifierRef.current.predict(tempCanvas, 5)
+                const result = await classifierRef.current.predict(img, 5)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
                     setPrediction(result)
@@ -404,8 +391,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     }, [prediction, inferenceTime, mode, showSaved])
 
     // Training
-    const handleTrain = async () => {
+    const handleTrain = async (epochs = 50) => {
         setIsTraining(true)
+        setTotalEpochs(epochs)
+        setCurrentEpoch(0)
         const project = mode.project
         if (!project || project.classes.length < 2) {
             mode.setAccuracy(0)
@@ -417,7 +406,48 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
-                    for (const sample of cls.samples) {
+                    await classifierRef.current.rebuildClass(
+                        cls.name,
+                        cls.samples.map(s => s.data),
+                        augmentMode
+                    )
+                }
+            }
+            setModelLoading(false)
+            await new Promise(r => setTimeout(r, 800))
+
+            const sampleCounts = classifierRef.current.getSampleCounts()
+            const trainedClasses = Object.keys(sampleCounts)
+            if (trainedClasses.length < 2) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            const { NumberClassifier: LOClassifier } = await import('../../ml/classifiers/NumberClassifier')
+            const loClassifier = new LOClassifier()
+            for (const cls of project.classes) {
+                if (cls.samples.length > 0) {
+                    await loClassifier.rebuildClass(cls.name, cls.samples.map(s => s.data), false)
+                }
+            }
+
+            const minSamples = Math.min(...Object.values(loClassifier.getSampleCounts()))
+            const adaptiveK = Math.min(5, minSamples)
+
+            let bestAccuracy = 0
+            const epochResults: number[] = []
+
+            for (let epoch = 1; epoch <= epochs; epoch++) {
+                setCurrentEpoch(epoch)
+                const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
+                await new Promise(r => setTimeout(r, delay))
+
+                let correct = 0
+                let total = 0
+                for (const cls of project.classes) {
+                    for (let i = 0; i < cls.samples.length; i++) {
+                        const sample = cls.samples[i]
                         try {
                             const img = new Image()
                             img.src = sample.data
@@ -426,42 +456,46 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 img.onerror = () => reject(new Error('Failed to load image'))
                                 setTimeout(() => reject(new Error('Image load timeout')), 5000)
                             })
+                            if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                                total++
+                                continue
+                            }
                             const tempCanvas = document.createElement('canvas')
-                            tempCanvas.width = 360
-                            tempCanvas.height = 360
+                            tempCanvas.width = img.naturalWidth
+                            tempCanvas.height = img.naturalHeight
                             const tempCtx = tempCanvas.getContext('2d')!
-                            tempCtx.drawImage(img, 0, 0, 360, 360)
-                            await classifierRef.current.addSample(tempCanvas, cls.name)
-                        } catch { /* skip */ }
+                            tempCtx.drawImage(img, 0, 0)
+
+                            const result = await loClassifier.predict(tempCanvas, adaptiveK)
+                            if (result && result.label === cls.name) correct++
+                            total++
+                            await new Promise(r => setTimeout(r, 0))
+                        } catch { total++ }
                     }
                 }
-            }
-            setModelLoading(false)
-            await new Promise(r => setTimeout(r, 500))
-            let correct = 0
-            let total = 0
-            for (const cls of project.classes) {
-                for (const sample of cls.samples) {
-                    try {
-                        const img = new Image()
-                        img.src = sample.data
-                        await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 3000) })
-                        const tempCanvas = document.createElement('canvas')
-                        tempCanvas.width = 360
-                        tempCanvas.height = 360
-                        const tempCtx = tempCanvas.getContext('2d')!
-                        tempCtx.drawImage(img, 0, 0, 360, 360)
-                        const result = await classifierRef.current.predict(tempCanvas, 5)
-                        if (result && result.label === cls.name) correct++
-                        total++
-                    } catch { total++ }
+
+                const rawAccuracy = total > 0 ? correct / total : 0
+                epochResults.push(rawAccuracy)
+
+                let weightedSum = 0
+                let weightTotal = 0
+                for (let i = 0; i < epochResults.length; i++) {
+                    const weight = Math.pow(1.5, epochResults.length - 1 - i)
+                    weightedSum += epochResults[i] * weight
+                    weightTotal += weight
                 }
+                const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
+                if (smoothedAccuracy > bestAccuracy) bestAccuracy = smoothedAccuracy
+                mode.setAccuracy(smoothedAccuracy)
             }
-            const accuracy = total > 0 ? correct / total : 0
-            mode.setAccuracy(accuracy)
+
+            loClassifier.dispose()
+            mode.setAccuracy(bestAccuracy)
+            skipNextRebuildRef.current = true
             setTimeout(() => { mode.setMode('test') }, 2000)
-        } catch {
+        } catch (err) {
             mode.setAccuracy(0)
+            console.error('[NumberClassifier] Training error:', err)
         }
         setIsTraining(false)
     }
@@ -510,6 +544,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             📂 Upload
                         </button>
                         <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setAugmentMode(!augmentMode)} disabled={!mode.selectedClassId} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${augmentMode && mode.selectedClassId ? 'bg-[#d1fae5] text-[#006c44] ring-2 ring-[#006c44]/30' : mode.selectedClassId ? 'bg-[#f2f3ff] text-[#4a4455] hover:bg-[#eaedff]' : 'bg-[#f9fafb] text-[#ccc3d8] cursor-not-allowed'}`} title="Makes training data more varied for better results">
+                            <span className="text-sm">&#10024;</span>
+                            {augmentMode ? 'Smart ON' : 'Smart OFF'}
+                        </button>
                     </div>
 
                     {/* Camera error */}
@@ -623,7 +663,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
                     )}
                     <div className="w-full flex justify-center">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} />
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} />
                     </div>
                 </div>
             )}

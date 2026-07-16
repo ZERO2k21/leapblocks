@@ -19,7 +19,6 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
     const currentIndex = modeOrder.indexOf(mode)
 
     return (
-<<<<<<< HEAD
         <div className="w-full max-w-[500px] mx-auto">
             <div className="flex items-center justify-between relative">
                 {/* Connecting line */}
@@ -30,18 +29,6 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                     />
                 </div>
 
-=======
-        <div className="w-full max-w-[520px] mx-auto">
-            <div
-                className="flex items-center justify-between rounded-2xl"
-                style={{
-                    background: '#fff',
-                    border: '1.5px solid #e5e7eb',
-                    padding: '16px 24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-                }}
-            >
->>>>>>> d2abbcce72fb46e64b3c7aaf4af4ae8d3445c17c
                 {STEPS.map((step, index) => {
                     const isActive = mode === step.id
                     const isCompleted = index < currentIndex
