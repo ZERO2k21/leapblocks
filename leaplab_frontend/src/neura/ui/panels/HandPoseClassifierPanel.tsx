@@ -38,7 +38,6 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
-    const [modelReady, setModelReady] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
     const [cameraError, setCameraError] = useState<string | null>(null)
@@ -50,6 +49,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     })
     const [inferenceTime, setInferenceTime] = useState(0)
     const [trainingError, setTrainingError] = useState<string | null>(null)
+    const [augmentMode, setAugmentMode] = useState(true)
+    const [batchCapturing, setBatchCapturing] = useState(false)
+    const [batchCountdown, setBatchCountdown] = useState(0)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -122,37 +124,32 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         if (mode.mode !== 'test') testCameraStartedRef.current = false
     }, [mode.mode])
 
-    // Rebuild KNN classifier from saved samples (with abort pattern)
+    // Rebuild KNN classifier from saved samples (with abort pattern and augmentation)
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
             const thisBuild = ++rebuildAbortRef.current
             let cancelled = false
             setModelLoading(true)
-            setModelReady(false)
             const rebuild = async () => {
                 classifierRef.current.clear()
                 for (const cls of mode.project!.classes) {
                     if (thisBuild !== rebuildAbortRef.current) return
                     if (cls.samples.length > 0) {
-                        for (const sample of cls.samples) {
-                            try {
-                                const data = JSON.parse(sample.data)
-                                const features = new Float32Array(data)
-                                await classifierRef.current.addSample(features, cls.name)
-                            } catch (e) { console.warn('[HandPose] Failed to load sample:', e) }
-                        }
+                        await classifierRef.current.rebuildClass(
+                            cls.name,
+                            cls.samples.map(s => s.data),
+                            augmentMode
+                        )
                     }
                 }
                 if (!cancelled && thisBuild === rebuildAbortRef.current) {
                     setModelLoading(false)
-                    setModelReady(true)
                 }
             }
             rebuild().catch((e) => {
                 console.error('[HandPose] Rebuild failed:', e)
                 if (!cancelled && thisBuild === rebuildAbortRef.current) {
                     setModelLoading(false)
-                    setModelReady(false)
                 }
             })
             return () => { cancelled = true }
@@ -179,7 +176,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
-                        const result = await classifierRef.current.predictFromImage(canvasRef.current)
+                        const result = await classifierRef.current.predictFromImage(canvasRef.current, 3)
                         const elapsed = Math.round(performance.now() - start)
                         if (result) {
                             setPrediction(result)
@@ -265,7 +262,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
             if (keypoints && keypoints.length > 0) {
                 setCaptureStatus('success')
-                const features = classifierRef.current.normalizeKeypoints(keypoints)
+                const features = classifierRef.current.extractFeatures(keypoints)
                 const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
                 if (added) {
                     classifierRef.current.addSample(features, mode.getSelectedClass()?.name || '').catch(() => {})
@@ -293,12 +290,12 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             setModelLoading(true)
             classifierRef.current.clear()
             for (const cls of project.classes) {
-                for (const sample of cls.samples) {
-                    try {
-                        const data = JSON.parse(sample.data)
-                        const features = new Float32Array(data)
-                        await classifierRef.current.addSample(features, cls.name)
-                    } catch { /* skip bad sample */ }
+                if (cls.samples.length > 0) {
+                    await classifierRef.current.rebuildClass(
+                        cls.name,
+                        cls.samples.map(s => s.data),
+                        augmentMode
+                    )
                 }
             }
             setModelLoading(false)
@@ -309,16 +306,16 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     try {
                         const data = JSON.parse(sample.data)
                         const features = new Float32Array(data)
-                        const result = await classifierRef.current.predict(features, 5)
+                        // Pad legacy63-d vectors to78-d
+                        const padded = features.length < 78 ? (() => { const p = new Float32Array(78); p.set(features); return p })() : features
+                        const result = await classifierRef.current.predict(padded, 3)
                         if (result && result.label === cls.name) correct++
                         total++
                     } catch { total++ }
-                    // Yield to browser between predictions
                     await new Promise(r => setTimeout(r, 0))
                 }
             }
             mode.setAccuracy(total > 0 ? correct / total : 0)
-            setModelReady(true)
             setTimeout(() => { mode.setMode('test') }, 2000)
         } catch (e) {
             mode.setAccuracy(0)
@@ -351,6 +348,70 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             }
         }, 300)
     }, [mode.project, mode.removeSample])
+
+    const handleBatchCapture = useCallback(async () => {
+        if (!videoRef.current || !mode.selectedClassId || !stream || batchCapturing) return
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
+
+        setBatchCapturing(true)
+        const captureOne = async (): Promise<boolean> => {
+            if (!videoRef.current || !mode.selectedClassId || !stream) return false
+            const cls = mode.getSelectedClass()
+            if (cls && cls.samples.length >= MAX_SAMPLES_PER_CLASS) return false
+            try {
+                const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                if (keypoints && keypoints.length > 0) {
+                    const features = classifierRef.current.extractFeatures(keypoints)
+                    mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
+                    return true
+                }
+            } catch { /* skip failed capture */ }
+            return false
+        }
+
+        for (let i = 0; i < 5; i++) {
+            setBatchCountdown(5 - i)
+            await new Promise(r => setTimeout(r, 1000))
+            await captureOne()
+        }
+        setBatchCountdown(0)
+        setBatchCapturing(false)
+    }, [mode.selectedClassId, mode.getSelectedClass, mode.addSample, stream, batchCapturing])
+
+    const handleExportTestReport = useCallback(() => {
+        const project = mode.project
+        if (!project) return
+
+        const sampleCounts: Record<string, number> = {}
+        for (const cls of project.classes) {
+            sampleCounts[cls.name] = cls.samples.length
+        }
+
+        const report = {
+            projectName: project.name,
+            classifierType: 'hand-pose-classifier',
+            exportedAt: new Date().toISOString(),
+            accuracy: mode.accuracy,
+            classCount: project.classes.length,
+            totalSamples: mode.getTotalSamples(),
+            sampleCounts,
+            deviceInfo: {
+                userAgent: navigator.userAgent,
+                cameraAvailable: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+            },
+        }
+
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${project.name.replace(/\s+/g, '_')}_handpose_test_report.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }, [mode.project, mode.accuracy, mode.getTotalSamples])
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
@@ -561,18 +622,43 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     {/* Controls */}
                     <div className="flex items-center gap-3 flex-wrap justify-center">
                         <CameraToggle />
+                        <label className="flex items-center gap-2 px-3 py-2 bg-white/80 rounded-xl border border-[#dae2fd] cursor-pointer select-none text-xs font-bold text-[#4a4455] hover:bg-white transition-all">
+                            <input
+                                type="checkbox"
+                                checked={augmentMode}
+                                onChange={(e) => setAugmentMode(e.target.checked)}
+                                className="accent-[#0ea5e9]"
+                            />
+                            Augment (5x)
+                        </label>
                     </div>
 
                     {/* Capture */}
                     {cameraOn && (
-                        <CaptureButton
-                            onClick={handleCapture}
-                            disabled={getCaptureDisabled()}
-                            label={getCaptureLabel()}
-                            icon="pose"
-                            color={captureStatus === 'success' ? '#006c44' : captureStatus === 'no-hand' ? '#f97316' : selectedClass?.color || '#0ea5e9'}
-                            pulse={!isCapturing && !!canAddSamples && !!stream}
-                        />
+                        <div className="flex items-center gap-3 flex-wrap justify-center">
+                            <CaptureButton
+                                onClick={handleCapture}
+                                disabled={getCaptureDisabled()}
+                                label={getCaptureLabel()}
+                                icon="pose"
+                                color={captureStatus === 'success' ? '#006c44' : captureStatus === 'no-hand' ? '#f97316' : selectedClass?.color || '#0ea5e9'}
+                                pulse={!isCapturing && !!canAddSamples && !!stream}
+                            />
+                            <button
+                                onClick={handleBatchCapture}
+                                disabled={batchCapturing || getCaptureDisabled()}
+                                className="px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 border-2"
+                                style={{
+                                    background: batchCapturing ? 'linear-gradient(135deg, #e0f2fe, #bae6fd)' : 'white',
+                                    borderColor: batchCapturing ? '#0ea5e9' : '#0ea5e9/30',
+                                    color: '#0ea5e9',
+                                    opacity: batchCapturing || getCaptureDisabled() ? 0.5 : 1,
+                                    cursor: batchCapturing || getCaptureDisabled() ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                {batchCapturing ? `⏳ ${batchCountdown}` : '📸 Batch (5)'}
+                            </button>
+                        </div>
                     )}
 
                     <StatsBar totalClasses={mode.project?.classes.length || 0} totalImages={mode.getTotalSamples()} imagesPerClass={(mode.project?.classes.length || 0) > 0 ? Math.round(mode.getTotalSamples() / (mode.project?.classes.length || 1)) : 0} recommended={10} />
@@ -622,7 +708,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <span className="text-sm font-bold text-[#0ea5e9]">Loading model... ⏳</span>
                         </div>
                     )}
-                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={() => {}} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                 </div>
             )}
         </div>

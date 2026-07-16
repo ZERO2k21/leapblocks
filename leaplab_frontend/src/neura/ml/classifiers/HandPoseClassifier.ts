@@ -15,33 +15,37 @@ export interface HandKeypoint {
 }
 
 // MediaPipe Hands 21 landmark names
-const HAND_landmark_NAMES = [
-    'WRIST',
-    'THUMB_CMC', 'THUMB_MCP', 'THUMB_IP', 'THUMB_TIP',
-    'INDEX_FINGER_MCP', 'INDEX_FINGER_PIP', 'INDEX_FINGER_DIP', 'INDEX_FINGER_TIP',
-    'MIDDLE_FINGER_MCP', 'MIDDLE_FINGER_PIP', 'MIDDLE_FINGER_DIP', 'MIDDLE_FINGER_TIP',
-    'RING_FINGER_MCP', 'RING_FINGER_PIP', 'RING_FINGER_DIP', 'RING_FINGER_TIP',
-    'PINKY_MCP', 'PINKY_PIP', 'PINKY_DIP', 'PINKY_TIP'
-]
 
 // Hand skeleton connections for drawing
 const HAND_CONNECTIONS: [number, number][] = [
-    // Wrist to thumb
     [0, 1], [1, 2], [2, 3], [3, 4],
-    // Wrist to index
     [0, 5], [5, 6], [6, 7], [7, 8],
-    // Wrist to middle
     [0, 9], [9, 10], [10, 11], [11, 12],
-    // Wrist to ring
     [0, 13], [13, 14], [14, 15], [15, 16],
-    // Wrist to pinky
     [0, 17], [17, 18], [18, 19], [19, 20],
-    // Palm connections
     [5, 9], [9, 13], [13, 17]
 ]
 
 const HAND_DRAW_COLOR = '#0ea5e9'
 const HAND_DRAW_COLOR_LIGHT = '#7dd3fc'
+
+// Feature vector size: 63 raw landmarks + 5 finger flags + 5 tip-wrist distances + 5 inter-finger distances = 78
+const FEATURE_SIZE = 78
+const LEGACY_FEATURE_SIZE = 63
+
+// Landmark indices
+const WRIST = 0
+const THUMB_TIP = 4, THUMB_IP = 3
+const INDEX_MCP = 5, INDEX_PIP = 6, INDEX_TIP = 8
+const MIDDLE_MCP = 9, MIDDLE_PIP = 10, MIDDLE_TIP = 12
+const RING_PIP = 14, RING_TIP = 16
+const PINKY_PIP = 18, PINKY_TIP = 20
+
+function euclidean(a: { x: number; y: number }, b: { x: number; y: number }): number {
+    const dx = a.x - b.x
+    const dy = a.y - b.y
+    return Math.sqrt(dx * dx + dy * dy)
+}
 
 export class HandPoseClassifier {
     private knn = new KNNClassifier()
@@ -103,9 +107,13 @@ export class HandPoseClassifier {
         }
     }
 
+    /**
+     * Normalize raw landmark coordinates to [0,1] relative to hand bounding box.
+     * Returns a63-d Float32Array (21 keypoints × 3).
+     */
     normalizeKeypoints(keypoints: HandKeypoint[]): Float32Array {
         const validKeypoints = keypoints.filter(kp => kp.score > 0.3)
-        if (validKeypoints.length === 0) return new Float32Array(63)
+        if (validKeypoints.length === 0) return new Float32Array(LEGACY_FEATURE_SIZE)
 
         const minX = Math.min(...validKeypoints.map(kp => kp.x))
         const maxX = Math.max(...validKeypoints.map(kp => kp.x))
@@ -114,13 +122,72 @@ export class HandPoseClassifier {
         const rangeX = maxX - minX || 1
         const rangeY = maxY - minY || 1
 
-        const normalized = new Float32Array(63)
+        const normalized = new Float32Array(LEGACY_FEATURE_SIZE)
         for (let i = 0; i < keypoints.length && i < 21; i++) {
             normalized[i * 3] = Math.max(0, Math.min(1, (keypoints[i].x - minX) / rangeX))
             normalized[i * 3 + 1] = Math.max(0, Math.min(1, (keypoints[i].y - minY) / rangeY))
             normalized[i * 3 + 2] = Math.max(-1, Math.min(1, (keypoints[i].z ?? 0)))
         }
         return normalized
+    }
+
+    /**
+     * Extract78-d feature vector from raw keypoints:
+     * - 63 values: normalized x, y, z for 21 landmarks
+     * - 5 values: binary finger extension flags (1=extended, 0=curled)
+     * - 5 values: normalized Euclidean distance from each fingertip to wrist
+     * - 5 values: normalized Euclidean distances between adjacent fingertips
+     */
+    extractFeatures(keypoints: HandKeypoint[]): Float32Array {
+        const raw = this.normalizeKeypoints(keypoints)
+        const features = new Float32Array(FEATURE_SIZE)
+
+        // Copy raw63-d landmarks
+        features.set(raw, 0)
+
+        // Compute derived features only if we have valid landmarks
+        if (keypoints.length < 21) return features
+
+        const kp = keypoints
+
+        // --- Finger extension flags (indices 63-67) ---
+        // Index/Middle/Ring/Pinky: tip.y < PIP.y means extended (screen y increases downward)
+        features[63] = kp[INDEX_TIP].y < kp[INDEX_PIP].y ? 1 : 0
+        features[64] = kp[MIDDLE_TIP].y < kp[MIDDLE_PIP].y ? 1 : 0
+        features[65] = kp[RING_TIP].y < kp[RING_PIP].y ? 1 : 0
+        features[66] = kp[PINKY_TIP].y < kp[PINKY_PIP].y ? 1 : 0
+        // Thumb: tip.x farther from palm center than IP joint
+        // Use both directions — if hand is mirrored, thumb extends in +x direction
+        const thumbOutward = Math.abs(kp[THUMB_TIP].x - kp[INDEX_MCP].x) > Math.abs(kp[THUMB_IP].x - kp[INDEX_MCP].x)
+        features[67] = thumbOutward ? 1 : 0
+
+        // --- Tip-to-wrist distances (indices 68-72), normalized by hand size ---
+        const handSize = euclidean(kp[WRIST], kp[MIDDLE_MCP]) || 1
+        features[68] = euclidean(kp[THUMB_TIP], kp[WRIST]) / handSize
+        features[69] = euclidean(kp[INDEX_TIP], kp[WRIST]) / handSize
+        features[70] = euclidean(kp[MIDDLE_TIP], kp[WRIST]) / handSize
+        features[71] = euclidean(kp[RING_TIP], kp[WRIST]) / handSize
+        features[72] = euclidean(kp[PINKY_TIP], kp[WRIST]) / handSize
+
+        // --- Inter-finger distances (indices 73-77), normalized by hand size ---
+        features[73] = euclidean(kp[THUMB_TIP], kp[INDEX_TIP]) / handSize
+        features[74] = euclidean(kp[INDEX_TIP], kp[MIDDLE_TIP]) / handSize
+        features[75] = euclidean(kp[MIDDLE_TIP], kp[RING_TIP]) / handSize
+        features[76] = euclidean(kp[RING_TIP], kp[PINKY_TIP]) / handSize
+        features[77] = euclidean(kp[INDEX_TIP], kp[PINKY_TIP]) / handSize
+
+        return features
+    }
+
+    /**
+     * Pad a legacy63-d feature vector to78-d by appending zeros for the derived features.
+     * This allows old samples to still classify (with reduced accuracy for new features).
+     */
+    private padLegacyFeatures(data: number[] | Float32Array): Float32Array {
+        if (data.length >= FEATURE_SIZE) return new Float32Array(data)
+        const padded = new Float32Array(FEATURE_SIZE)
+        padded.set(data, 0)
+        return padded
     }
 
     async addSample(features: Float32Array, label: string) {
@@ -131,11 +198,9 @@ export class HandPoseClassifier {
     }
 
     async addSampleFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, label: string) {
-        const detector = await this.ensureModel()
-        const estimation = await detector.estimateHands(imageElement)
-        if (estimation.length > 0) {
-            const keypoints = estimation[0].keypoints as HandKeypoint[]
-            const features = this.normalizeKeypoints(keypoints)
+        const keypoints = await this.detectHand(imageElement)
+        if (keypoints.length > 0) {
+            const features = this.extractFeatures(keypoints)
             const tf = await ensureTf()
             const embedding = tf.tensor1d(features)
             await this.knn.addExample(embedding, label)
@@ -144,8 +209,8 @@ export class HandPoseClassifier {
     }
 
     async addSampleFromKeypoints(keypoints: HandKeypoint[], label: string) {
+        const features = this.extractFeatures(keypoints)
         const tf = await ensureTf()
-        const features = this.normalizeKeypoints(keypoints)
         const embedding = tf.tensor1d(features)
         await this.knn.addExample(embedding, label)
         embedding.dispose()
@@ -160,7 +225,7 @@ export class HandPoseClassifier {
         return []
     }
 
-    async predict(features: Float32Array, k = 5): Promise<HandPosePrediction | null> {
+    async predict(features: Float32Array, k = 3): Promise<HandPosePrediction | null> {
         const tf = await ensureTf()
         const embedding = tf.tensor1d(features)
         const result = await this.knn.predictClass(embedding, k)
@@ -168,15 +233,96 @@ export class HandPoseClassifier {
         return result
     }
 
-    async predictFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<HandPosePrediction | null> {
-        const tf = await ensureTf()
+    async predictFromImage(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<HandPosePrediction | null> {
         const keypoints = await this.detectHand(imageElement)
         if (keypoints.length === 0) return null
-        const features = this.normalizeKeypoints(keypoints)
+        const features = this.extractFeatures(keypoints)
+        const tf = await ensureTf()
         const embedding = tf.tensor1d(features)
         const result = await this.knn.predictClass(embedding, k)
         embedding.dispose()
         return result
+    }
+
+    /**
+     * Rebuild a class from stored sample data (JSON-stringified number arrays).
+     * Automatically pads legacy63-d vectors to78-d.
+     */
+    async rebuildClass(label: string, sampleDataStrings: string[], augment = false): Promise<number> {
+        this.knn.clearClass(label)
+        let loaded = 0
+        for (const dataStr of sampleDataStrings) {
+            try {
+                if (!dataStr) continue
+                const data = JSON.parse(dataStr) as number[]
+                const features = this.padLegacyFeatures(data)
+                if (augment) {
+                    loaded += await this.addSampleAugmented(features, label)
+                } else {
+                    await this.addSample(features, label)
+                    loaded++
+                }
+            } catch { /* skip bad sample */ }
+        }
+        return loaded
+    }
+
+    /**
+     * Hand-pose augmentation — applies realistic variations to the feature vector:
+     * 1. Original
+     * 2. Wrist shift X (±5% of range)
+     * 3. Wrist shift Y (±5% of range)
+     * 4. Scale variation (0.95x — 1.05x)
+     * 5. Joint jitter (±2% noise on all coordinates)
+     */
+    async addSampleAugmented(features: Float32Array, label: string): Promise<number> {
+        let added = 0
+
+        // 1. Original
+        await this.addSample(features, label)
+        added++
+
+        // 2. Wrist shift X
+        const shiftX = (Math.random() * 0.1 - 0.05)
+        const shiftedX = new Float32Array(features)
+        for (let i = 0; i < 63; i += 3) {
+            shiftedX[i] = Math.max(0, Math.min(1, shiftedX[i] + shiftX))
+        }
+        await this.addSample(shiftedX, label)
+        added++
+
+        // 3. Wrist shift Y
+        const shiftY = (Math.random() * 0.1 - 0.05)
+        const shiftedY = new Float32Array(features)
+        for (let i = 1; i < 63; i += 3) {
+            shiftedY[i] = Math.max(0, Math.min(1, shiftedY[i] + shiftY))
+        }
+        await this.addSample(shiftedY, label)
+        added++
+
+        // 4. Scale variation
+        const scale = 0.95 + Math.random() * 0.1
+        const scaled = new Float32Array(features)
+        for (let i = 0; i < 63; i += 3) {
+            scaled[i] = Math.max(0, Math.min(1, (scaled[i] - 0.5) * scale + 0.5))
+            scaled[i + 1] = Math.max(0, Math.min(1, (scaled[i + 1] - 0.5) * scale + 0.5))
+        }
+        await this.addSample(scaled, label)
+        added++
+
+        // 5. Joint jitter
+        const jittered = new Float32Array(features)
+        for (let i = 0; i < 63; i++) {
+            jittered[i] = Math.max(0, Math.min(1, jittered[i] + (Math.random() * 0.04 - 0.02)))
+        }
+        // Copy derived features (extension flags, distances) — jitter the distances but not the binary flags
+        for (let i = 68; i < 78; i++) {
+            jittered[i] = Math.max(0, jittered[i] + (Math.random() * 0.06 - 0.03))
+        }
+        await this.addSample(jittered, label)
+        added++
+
+        return added
     }
 
     drawHand(canvas: HTMLCanvasElement, keypoints: HandKeypoint[], color?: string) {
