@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { AudioClassifier } from '../../ml/classifiers/AudioClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
-import CaptureButton from '../components/CaptureButton'
+import WorkflowIndicator from '../components/WorkflowIndicator'
+import StatsBar from '../components/StatsBar'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
@@ -25,6 +26,8 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const [isProcessing, setIsProcessing] = useState(false)
     const [waveform, setWaveform] = useState<number[]>([])
     const [modelLoading, setModelLoading] = useState(false)
+    const [currentEpoch, setCurrentEpoch] = useState(0)
+    const [totalEpochs, setTotalEpochs] = useState(50)
 
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
@@ -61,10 +64,46 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             audioContextRef.current = ctx
             analyserRef.current = analyser
             const draw = () => {
-                if (!analyserRef.current || !canvasRef.current) return
+                if (!analyserRef.current) return
                 const data = new Uint8Array(analyserRef.current.frequencyBinCount)
                 analyserRef.current.getByteFrequencyData(data)
                 setWaveform(Array.from(data))
+
+                const canvas = canvasRef.current
+                if (canvas) {
+                    const ctx = canvas.getContext('2d')
+                    if (ctx) {
+                        if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                            canvas.width = canvas.clientWidth
+                            canvas.height = canvas.clientHeight
+                        }
+                        ctx.fillStyle = 'rgba(21, 16, 48, 0.22)'
+                        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                        const barWidth = (canvas.width / (data.length * 0.55))
+                        let x = 0
+                        
+                        ctx.shadowBlur = 10
+                        ctx.shadowColor = 'rgba(124, 58, 237, 0.35)'
+
+                        for (let i = 0; i < data.length * 0.55; i++) {
+                            const percent = data[i] / 255
+                            const barHeight = percent * canvas.height * 0.7
+
+                            const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight)
+                            gradient.addColorStop(0, 'rgba(99, 14, 212, 0.15)')
+                            gradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.55)')
+                            gradient.addColorStop(1, 'rgba(6, 182, 212, 0.8)')
+
+                            ctx.fillStyle = gradient
+                            ctx.beginPath()
+                            ctx.roundRect(x, canvas.height - barHeight, barWidth - 2, barHeight, [4, 4, 0, 0])
+                            ctx.fill()
+
+                            x += barWidth
+                        }
+                    }
+                }
                 animFrameRef.current = requestAnimationFrame(draw)
             }
             draw()
@@ -144,15 +183,39 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
         finally { setTimeout(() => setIsRecording(false), 300) }
     }
 
-    const handleTrain = async () => {
+    const handleTrain = async (epochsToTrain: number = 50) => {
+        setTotalEpochs(epochsToTrain)
+        setCurrentEpoch(0)
         setIsTraining(true)
         const project = mode.project
         if (!project || project.classes.length < 2) { mode.setAccuracy(0); setIsTraining(false); return }
+        
         try {
-            await new Promise(r => setTimeout(r, 1500))
+            // Rebuild model samples
+            classifierRef.current.clear()
+            for (const cls of project.classes) {
+                if (cls.samples.length > 0) {
+                    for (const sample of cls.samples) {
+                        try {
+                            const features = JSON.parse(sample.data)
+                            await classifierRef.current.addSample(features, cls.name)
+                        } catch { /* skip */ }
+                    }
+                }
+            }
+
+            // Simulate epoch progression for UI
+            const epochDelay = Math.max(10, Math.min(60, 2000 / epochsToTrain))
+            for (let e = 1; e <= epochsToTrain; e++) {
+                await new Promise(r => setTimeout(r, epochDelay))
+                setCurrentEpoch(e)
+            }
+
+            // Compute accuracy
             const sampleCounts = classifierRef.current.getSampleCounts()
             const trainedClasses = Object.keys(sampleCounts)
             if (trainedClasses.length < 2) { mode.setAccuracy(0); setIsTraining(false); return }
+            
             let correct = 0; let total = 0
             for (const cls of project.classes) {
                 for (const sample of cls.samples) {
@@ -165,8 +228,11 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                 }
             }
             mode.setAccuracy(total > 0 ? correct / total : 0)
-            setTimeout(() => { mode.setMode('test') }, 2000)
-        } catch { mode.setAccuracy(0) }
+            setTimeout(() => { mode.setMode('test') }, 1500)
+        } catch (err) { 
+            console.error('Audio training failed:', err)
+            mode.setAccuracy(0) 
+        }
         setIsTraining(false)
     }
 
@@ -175,104 +241,283 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
+    const averageVolume = waveform.length > 0 ? waveform.reduce((a, b) => a + b, 0) / waveform.length : 0
+    const micScale = 1 + (averageVolume / 255) * 0.16
+
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+            {/* Header + Workflow - centered */}
+            <div className="w-full flex flex-col items-center animate-fade-in">
+                <div className="text-center mb-1">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎤 Sound Catcher!</h2>
+                    <p className="text-xs text-[#4a4455]">Record sounds to teach your AI!</p>
+                </div>
+                <div className="w-full max-w-[720px]">
+                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="audio" />
+                </div>
+            </div>
+
+            {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-                    <div className="text-center animate-fade-in">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🎤 Sound Catcher!</h2>
-                        <p className="text-sm text-[#4a4455]">Record sounds to teach your AI!</p>
+                <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '10px' }}>
+                    {/* Left half - Waveform visualizer */}
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative', minHeight: '300px' }}>
+                            <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
+
+                            {/* LIVE indicator */}
+                            <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                                <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>LIVE</span>
+                            </div>
+
+                            {/* Class name badge */}
+                            {selectedClass && (
+                                <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', background: selectedClass.color, color: '#fff', fontSize: '10px', fontWeight: 700, zIndex: 10 }}>
+                                    {selectedClass.name}
+                                </div>
+                            )}
+
+                            {/* Sample count */}
+                            {selectedClass && (
+                                <div style={{ position: 'absolute', bottom: '10px', right: '10px', padding: '3px 8px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '5px', zIndex: 10 }}>
+                                    <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>
+                                        {selectedClass.samples.length} samples
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Center mic icon */}
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                                <div style={{
+                                    width: '72px',
+                                    height: '72px',
+                                    borderRadius: '50%',
+                                    background: isRecording ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
+                                    border: isRecording ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.25)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: `scale(${micScale})`,
+                                    transition: 'transform 0.05s ease-out, background-color 0.2s, border-color 0.2s',
+                                    boxShadow: isRecording ? '0 0 24px rgba(239,68,68,0.4)' : '0 0 16px rgba(255,255,255,0.05)',
+                                    marginBottom: '10px',
+                                }}>
+                                    <span style={{ fontSize: '2rem' }}>{isRecording ? '🎙️' : '🎤'}</span>
+                                </div>
+                                <div style={{ padding: '4px 12px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                        {isRecording ? '🔴 Recording...' : '🎤 Listening...'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-[#1e1b4b] to-[#581c87] w-full max-w-[520px] aspect-[4/3]">
-                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60" />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-1 mb-4">
-                                {waveform.slice(0, 40).map((v, i) => (
-                                    <div key={i} className="w-1.5 bg-white/80 rounded-full transition-all duration-75" style={{ height: `${Math.max(4, v / 4)}px` }} />
-                                ))}
-                            </div>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-black/30 backdrop-blur-md rounded-xl">
-                                <span className="text-white text-sm font-bold">🎤 Listening...</span>
+
+                    {/* Right half - Controls, Stats, Samples */}
+                    <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {/* Tips */}
+                        <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '8px 12px', border: '1px solid rgba(99,14,212,0.1)' }}>
+                            <div className="flex items-center" style={{ gap: '6px' }}>
+                                <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>💡</div>
+                                <div className="flex flex-wrap" style={{ gap: '2px 10px' }}>
+                                    {['Record in quiet environment', 'Speak clearly', 'Try different volumes', 'Record 5+ samples'].map((tip) => (
+                                        <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '9px', color: '#4b5563' }}>
+                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                            {tip}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                            <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
-                            <span className="text-white text-[10px] font-bold tracking-wide">🔴 LIVE</span>
+
+                        {/* Controls */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={startAudio}
+                                style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: 'linear-gradient(135deg, #630ed4, #8b5cf6)',
+                                    color: '#fff',
+                                    boxShadow: '0 4px 14px rgba(99,14,212,0.35)',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>🎙️</span>
+                                Mic On
+                            </button>
+                            <button
+                                onClick={handleCapture}
+                                disabled={!canAddSamples || isRecording}
+                                style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: canAddSamples && !isRecording ? 'pointer' : 'not-allowed',
+                                    background: isRecording
+                                        ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                        : atSampleLimit
+                                            ? 'linear-gradient(135deg, #d1d5db, #9ca3af)'
+                                            : 'linear-gradient(135deg, #630ed4, #8b5cf6)',
+                                    color: '#fff',
+                                    boxShadow: isRecording
+                                        ? '0 4px 14px rgba(239,68,68,0.4)'
+                                        : '0 4px 14px rgba(99,14,212,0.35)',
+                                    opacity: canAddSamples || isRecording ? 1 : 0.5,
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>{isRecording ? '⏹️' : '🔴'}</span>
+                                {isRecording ? 'Stop' : 'Record'}
+                            </button>
                         </div>
-                        {selectedClass && (
-                            <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md" style={{ backgroundColor: `${selectedClass.color}CC` }}>
-                                {selectedClass.name}
+
+                        {/* Stats */}
+                        <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                            <div className="flex justify-between" style={{ marginBottom: '6px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Total Samples</span>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.getTotalSamples()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Classes</span>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.project?.classes.length || 0}</span>
+                            </div>
+                        </div>
+
+                        {/* Samples */}
+                        {selectedClass && selectedClass.samples.length > 0 && (
+                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
+                                    <div className="flex items-center" style={{ gap: '6px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                                    </div>
+                                    <span style={{
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        padding: '2px 6px',
+                                        borderRadius: '5px',
+                                        background: atSampleLimit ? '#fef3c7' : '#f5f3ff',
+                                        color: atSampleLimit ? '#c32c00' : '#630ed4',
+                                    }}>
+                                        {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
+                                    </span>
+                                </div>
+                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                    <SampleGrid samples={selectedClass.samples} type="audio" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
+                                </div>
                             </div>
                         )}
                     </div>
-
-                    <CaptureButton onClick={handleCapture} disabled={!canAddSamples || isRecording} label={isRecording ? '🔴 Recording...' : atSampleLimit ? 'Max Reached 🎯' : 'Record Sound 🎤'} icon="mic" color={selectedClass?.color || '#630ed4'} pulse={!isRecording && !!canAddSamples} />
-
-                    {selectedClass && selectedClass.samples.length > 0 && (
-                        <div className="w-full max-w-[520px]">
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#dae2fd]">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
-                                        <h3 className="text-sm font-bold text-[#131b2e]">{selectedClass.name}</h3>
-                                    </div>
-                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${atSampleLimit ? 'text-[#c32c00] bg-[#fef3c7]' : 'text-[#4a4455] bg-[#f2f3ff]'}`}>
-                                        {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} recordings
-                                    </span>
-                                </div>
-                                <SampleGrid samples={selectedClass.samples} type="audio" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
 
+            {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="text-center animate-fade-in">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Sounds!</h2>
-                        <p className="text-sm text-[#4a4455]">Watch your AI learn to recognize sounds! 👂</p>
+                <div className="w-full" style={{ marginTop: '16px', marginBottom: '20px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <TrainPanel 
+                        isTraining={isTraining} 
+                        accuracy={mode.accuracy} 
+                        canTrain={canTrain} 
+                        onTrain={handleTrain} 
+                        classCount={mode.project?.classes.length || 0} 
+                        totalSamples={mode.getTotalSamples()} 
+                        currentEpoch={currentEpoch}
+                        totalEpochs={totalEpochs}
+                        sampleType="sounds"
+                    />
+                </div>
+            )}
+
+            {/* TEST MODE */}
+            {mode.mode === 'test' && (
+                <div className="w-full" style={{ marginTop: '10px', marginBottom: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    {/* Header */}
+                    <div className="w-full flex flex-col items-center mb-2">
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎯 Test Your AI!</h2>
+                        <p className="text-xs text-[#4a4455]">Speak into the mic to see predictions</p>
                     </div>
-                    <div className="w-full flex justify-center">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} />
+
+                    {/* Horizontal split */}
+                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0 }}>
+                        {/* Left half - Waveform visualizer */}
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative', minHeight: '300px' }}>
+                                <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
+
+                                {/* TESTING badge */}
+                                <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,108,68,0.8)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                                    <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>TESTING</span>
+                                </div>
+
+                                {/* Center content */}
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                                    {modelLoading && (
+                                        <div className="flex items-center" style={{ gap: '6px', padding: '6px 14px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '14px' }}>
+                                            <div style={{ width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                            <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>Loading model...</span>
+                                        </div>
+                                    )}
+
+                                    <div style={{
+                                        width: '72px',
+                                        height: '72px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(255,255,255,0.08)',
+                                        border: '2px solid rgba(255,255,255,0.25)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transform: `scale(${micScale})`,
+                                        transition: 'transform 0.05s ease-out',
+                                        boxShadow: '0 0 16px rgba(255,255,255,0.05)',
+                                        marginBottom: '10px',
+                                    }}>
+                                        <span style={{ fontSize: '2rem' }}>🎤</span>
+                                    </div>
+
+                                    {prediction && (
+                                        <div className="flex flex-col items-center" style={{ gap: '4px', padding: '8px 16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Prediction</span>
+                                            <div className="flex items-center" style={{ gap: '6px' }}>
+                                                <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800, textTransform: 'capitalize' }}>{prediction.label}</span>
+                                                <span style={{ color: '#34d399', fontSize: '11px', fontWeight: 800 }}>
+                                                    {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right half - Test results */}
+                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <TestPanel prediction={prediction} isProcessing={isProcessing}><div /></TestPanel>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-                    <div className="text-center animate-fade-in">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
-                        <p className="text-sm text-[#4a4455]">See if your AI can recognize sounds! 🎯</p>
-                    </div>
-                    <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-[#1e1b4b] to-[#581c87] w-full max-w-[520px] aspect-[4/3]">
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            {modelLoading && (
-                                <div className="flex items-center gap-3 px-4 py-3 bg-black/30 backdrop-blur-md rounded-xl mb-4 animate-fade-in">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-xs font-bold text-white">Loading model... ⏳</span>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1 mb-4">
-                                {waveform.slice(0, 40).map((v, i) => (
-                                    <div key={i} className="w-1.5 bg-white/80 rounded-full transition-all duration-75" style={{ height: `${Math.max(4, v / 4)}px` }} />
-                                ))}
-                            </div>
-                            {prediction && (
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-black/50 backdrop-blur-md rounded-2xl">
-                                    <span className="text-white text-lg font-bold">{prediction.label}</span>
-                                    <span className="text-white/70 text-sm ml-2">{Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-[#006c44]/80 backdrop-blur-md rounded-xl">
-                            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                            <span className="text-white text-[10px] font-bold tracking-wide">🧪 TESTING</span>
-                        </div>
-                    </div>
-                    <TestPanel prediction={prediction} isProcessing={isProcessing}><div /></TestPanel>
-                </div>
-            )}
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     )
 }

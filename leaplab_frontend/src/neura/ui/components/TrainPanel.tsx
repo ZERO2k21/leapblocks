@@ -12,6 +12,7 @@ interface TrainPanelProps {
     trainingError?: string | null
     currentEpoch?: number
     totalEpochs?: number
+    sampleType?: string
 }
 
 const ENCOURAGEMENTS = [
@@ -33,7 +34,8 @@ export default function TrainPanel({
     warningDesc,
     trainingError,
     currentEpoch = 0,
-    totalEpochs = 50
+    totalEpochs = 50,
+    sampleType = 'pictures'
 }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -73,30 +75,46 @@ export default function TrainPanel({
     const epochPresets = [10, 25, 50, 100]
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="flex flex-col lg:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
-                {/* Main training visualization */}
+        <div className="animate-fade-in flex flex-col items-center" style={{ height: '100%' }}>
+            {/* Header - centered */}
+            <div className="w-full flex flex-col items-center mb-2">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">
+                    {isTraining ? '🧠 Teaching Time!' : accuracy !== null ? '🎉 Training Complete!' : '🤖 Ready to Train!'}
+                </h2>
+                <p className="text-xs text-[#4a4455]">
+                    {isTraining
+                        ? `Teaching round ${currentEpoch} of ${epochs}`
+                        : accuracy !== null
+                            ? `Accuracy: ${displayAccuracy}%`
+                            : `Learning from ${totalSamples} ${sampleType} across ${classCount} classes`}
+                </p>
+            </div>
+
+            {/* Horizontal split */}
+            <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0 }}>
+                {/* Left half - Training visualization */}
                 <div
-                    className="flex-1 w-full flex flex-col items-center justify-center"
                     style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         background: 'rgba(255,255,255,0.85)',
                         backdropFilter: 'blur(12px)',
                         borderRadius: '20px',
-                        padding: '32px 24px',
+                        padding: '24px 20px',
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                         position: 'relative',
                         overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
                     }}
                 >
                     {/* AI Brain */}
                     <div className="relative flex flex-col items-center z-10">
                         {/* Icon with animated gradient ring */}
-                        <div className="relative" style={{ marginBottom: '28px' }}>
+                        <div className="relative" style={{ marginBottom: '20px' }}>
                             {/* Spinning gradient ring */}
                             <div
                                 style={{
@@ -125,8 +143,8 @@ export default function TrainPanel({
                             <div
                                 className={`relative flex items-center justify-center transition-transform duration-300 ${isTraining ? 'animate-pulse' : ''}`}
                                 style={{
-                                    width: '120px',
-                                    height: '120px',
+                                    width: '100px',
+                                    height: '100px',
                                     borderRadius: '50%',
                                     background: isTraining
                                         ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)'
@@ -135,18 +153,18 @@ export default function TrainPanel({
                                             : 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
                                 }}
                             >
-                                <span style={{ fontSize: '3.2rem' }}>{isTraining ? '🧠' : accuracy !== null ? '🎉' : '🤖'}</span>
+                                <span style={{ fontSize: '2.8rem' }}>{isTraining ? '🧠' : accuracy !== null ? '🎉' : '🤖'}</span>
                             </div>
                             {/* SVG progress ring overlay */}
                             {(isTraining || accuracy !== null) && (
                                 <svg className="absolute inset-0 w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                                     <circle
-                                        cx="60" cy="60" r="57"
+                                        cx="50" cy="50" r="47"
                                         fill="transparent"
                                         stroke={accuracy !== null ? '#059669' : '#630ed4'}
                                         strokeWidth="4"
-                                        strokeDasharray={2 * Math.PI * 57}
-                                        strokeDashoffset={2 * Math.PI * 57 - (progress / 100) * 2 * Math.PI * 57}
+                                        strokeDasharray={2 * Math.PI * 47}
+                                        strokeDashoffset={2 * Math.PI * 47 - (progress / 100) * 2 * Math.PI * 47}
                                         strokeLinecap="round"
                                         className="transition-[stroke-dashoffset] duration-[350ms] ease-out"
                                         style={{ opacity: 0.9 }}
@@ -155,36 +173,15 @@ export default function TrainPanel({
                             )}
                         </div>
 
-                        {/* Title */}
-                        <h2
-                            className="text-center mb-2"
-                            style={{ fontSize: '1.35rem', fontWeight: 800, color: '#131b2e', lineHeight: 1.3 }}
-                        >
-                            {encouragement}
-                        </h2>
-                        {/* Subtitle */}
-                        <p
-                            className="text-center"
-                            style={{ fontSize: '14px', color: '#6b7280', maxWidth: '300px', lineHeight: 1.5 }}
-                        >
-                            {isTraining
-                                ? `Teaching round ${currentEpoch} of ${epochs}`
-                                : accuracy !== null
-                                    ? `Accuracy: ${displayAccuracy}% — Your AI learned from ${totalSamples} pictures!`
-                                    : `Learning from ${totalSamples} pictures across ${classCount} classes`}
-                        </p>
-                    </div>
-
-                    {/* Train button */}
-                    <div className="mt-8 z-10">
+                        {/* Train button */}
                         <button
                             onClick={() => onTrain(epochs)}
                             disabled={!canTrain || isTraining}
                             className="flex items-center gap-2 transition-all duration-200"
                             style={{
-                                padding: '14px 40px',
-                                borderRadius: '16px',
-                                fontSize: '15px',
+                                padding: '12px 32px',
+                                borderRadius: '14px',
+                                fontSize: '14px',
                                 fontWeight: 700,
                                 border: 'none',
                                 cursor: canTrain && !isTraining ? 'pointer' : 'not-allowed',
@@ -207,8 +204,8 @@ export default function TrainPanel({
                                 <>
                                     <div
                                         style={{
-                                            width: '16px',
-                                            height: '16px',
+                                            width: '14px',
+                                            height: '14px',
                                             border: '2px solid rgba(255,255,255,0.4)',
                                             borderTopColor: '#fff',
                                             borderRadius: '50%',
@@ -219,12 +216,12 @@ export default function TrainPanel({
                                 </>
                             ) : accuracy !== null ? (
                                 <>
-                                    <span style={{ fontSize: '18px' }}>🧪</span>
+                                    <span style={{ fontSize: '16px' }}>🧪</span>
                                     <span>Test Your AI!</span>
                                 </>
                             ) : (
                                 <>
-                                    <span style={{ fontSize: '18px' }}>🚀</span>
+                                    <span style={{ fontSize: '16px' }}>🚀</span>
                                     <span>Start Teaching!</span>
                                 </>
                             )}
@@ -232,8 +229,8 @@ export default function TrainPanel({
                     </div>
                 </div>
 
-                {/* Sidebar settings */}
-                <div className="w-full lg:w-56 flex flex-col gap-3" style={{ flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+                {/* Right half - Settings */}
+                <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Epochs */}
                     <div
                         style={{
@@ -299,7 +296,6 @@ export default function TrainPanel({
                             padding: '12px',
                             border: '1px solid #e5e7eb',
                             boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                            flex: 1,
                         }}
                     >
                         <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
@@ -337,7 +333,6 @@ export default function TrainPanel({
                             padding: '12px',
                             border: '1px solid #e5e7eb',
                             boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                            flex: 1,
                         }}
                     >
                         <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>

@@ -5,15 +5,18 @@ interface WorkflowIndicatorProps {
     mode: ClassifierMode
     onModeChange: (mode: ClassifierMode) => void
     canTrain: boolean
+    type?: string
 }
 
-const STEPS: { id: ClassifierMode; number: number; label: string; emoji: string; tip: string }[] = [
-    { id: 'collect', number: 1, label: 'Collect', emoji: '📸', tip: 'Take pictures!' },
-    { id: 'train', number: 2, label: 'Train', emoji: '🏋️', tip: 'Teach your AI!' },
-    { id: 'test', number: 3, label: 'Test', emoji: '🧪', tip: 'Test your AI!' }
-]
+export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }: WorkflowIndicatorProps) {
+    const isAudio = type === 'audio' || type === 'audio-classifier'
+    const isPose = type === 'pose' || type === 'pose-classifier' || type === 'hand-pose' || type === 'hand-pose-classifier'
 
-export default function WorkflowIndicator({ mode, onModeChange, canTrain }: WorkflowIndicatorProps) {
+    const steps = [
+        { id: 'collect' as ClassifierMode, number: 1, label: 'Collect', emoji: isAudio ? '🎤' : isPose ? '🧘' : '📸', tip: isAudio ? 'Record sounds!' : isPose ? 'Strike a pose!' : 'Take pictures!' },
+        { id: 'train' as ClassifierMode, number: 2, label: 'Train', emoji: '🏋️', tip: 'Teach your AI!' },
+        { id: 'test' as ClassifierMode, number: 3, label: 'Test', emoji: '🧪', tip: 'Test your AI!' }
+    ]
     const modeOrder: ClassifierMode[] = ['collect', 'train', 'test']
     const currentIndex = modeOrder.indexOf(mode)
 
@@ -38,7 +41,7 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                     position: 'relative',
                 }}
             >
-                {STEPS.map((step, index) => {
+                {steps.map((step, index) => {
                     const isActive = mode === step.id
                     const isCompleted = index < currentIndex
 
@@ -115,7 +118,7 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                             </button>
 
                             {/* Connector arrow */}
-                            {index < STEPS.length - 1 && (
+                            {index < steps.length - 1 && (
                                 <div
                                     style={{
                                         display: 'flex',
