@@ -108,7 +108,7 @@ const Connections: React.FC = () => {
       {CONNECTION_PAIRS.map(([a, b], i) => (
         <line
           key={`l${i}`}
-          ref={(el: THREE.Line | null) => { linesRef.current[i] = el; }}
+          ref={(el: any) => { linesRef.current[i] = el; }}
         >
           <bufferGeometry />
           <primitive object={lineMaterials[i % lineMaterials.length]} attach="material" />
