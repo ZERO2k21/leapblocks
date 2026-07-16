@@ -1,6 +1,6 @@
 /**
  * Number/Digit Classifier using MobileNet feature extraction + KNN.
- * Produces far more accurate results than raw pixel comparison.
+ * Optimized for digit recognition with strong augmentation and smart preprocessing.
  */
 
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
@@ -17,18 +17,7 @@ function setupContextLossListener() {
     contextLossHandled = true
     const onContextLost = (e: Event) => {
         e.preventDefault()
-        console.error('[NumberClassifier] WebGL context lost — GPU memory exhausted')
-        if (!document.getElementById('neura-context-loss-banner')) {
-            const banner = document.createElement('div')
-            banner.id = 'neura-context-loss-banner'
-            banner.innerHTML = `
-                <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:white;padding:12px 20px;text-align:center;font-family:system-ui;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;">
-                    <span>GPU memory exhausted. The page needs to reload to recover.</span>
-                    <button onclick="location.reload()" style="background:white;color:#dc2626;border:none;padding:6px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Reload Now</button>
-                </div>
-            `
-            document.body.appendChild(banner)
-        }
+        console.error('[NumberClassifier] WebGL context lost')
     }
     const origGetContext = HTMLCanvasElement.prototype.getContext as any
     HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
@@ -36,14 +25,77 @@ function setupContextLossListener() {
         if (ctx && (args[0] === 'webgl' || args[0] === 'webgl2' || args[0] === 'experimental-webgl')) {
             const canvas = this as HTMLCanvasElement
             canvas.addEventListener('webglcontextlost', onContextLost, { once: true })
-            canvas.addEventListener('webglcontextrestored', () => {
-                const banner = document.getElementById('neura-context-loss-banner')
-                if (banner) banner.remove()
-                console.log('[NumberClassifier] WebGL context restored')
-            }, { once: true })
         }
         return ctx
     }
+}
+
+/**
+ * Isolate the digit from background by detecting the bounding box of dark pixels,
+ * centering the digit, and adding padding. Returns a clean canvas with the digit
+ * centered on a white background.
+ */
+function isolateDigit(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
+    const ctx = sourceCanvas.getContext('2d')
+    if (!ctx) return sourceCanvas
+
+    const { width, height } = sourceCanvas
+    const imageData = ctx.getImageData(0, 0, width, height)
+    const data = imageData.data
+
+    // Find bounding box of non-white pixels (the digit)
+    let minX = width, maxX = 0, minY = height, maxY = 0
+    let hasContent = false
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2]
+            // Consider pixel as "digit" if it's darker than threshold
+            const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+            if (brightness < 200) {
+                hasContent = true
+                if (x < minX) minX = x
+                if (x > maxX) maxX = x
+                if (y < minY) minY = y
+                if (y > maxY) maxY = y
+            }
+        }
+    }
+
+    // If no digit found, return original
+    if (!hasContent || maxX < minX || maxY < minY) return sourceCanvas
+
+    // Add 20% padding around the digit
+    const digitW = maxX - minX + 1
+    const digitH = maxY - minY + 1
+    const padX = Math.floor(digitW * 0.2)
+    const padY = Math.floor(digitH * 0.2)
+    const cropX = Math.max(0, minX - padX)
+    const cropY = Math.max(0, minY - padY)
+    const cropW = Math.min(width - cropX, digitW + padX * 2)
+    const cropH = Math.min(height - cropY, digitH + padY * 2)
+
+    // Create a square canvas with the digit centered
+    const outCanvas = document.createElement('canvas')
+    outCanvas.width = 224
+    outCanvas.height = 224
+    const outCtx = outCanvas.getContext('2d')!
+
+    // Fill white background
+    outCtx.fillStyle = '#ffffff'
+    outCtx.fillRect(0, 0, 224, 224)
+
+    // Draw the cropped digit centered and scaled to fit
+    const scale = Math.min(200 / cropW, 200 / cropH)
+    const drawW = cropW * scale
+    const drawH = cropH * scale
+    const drawX = (224 - drawW) / 2
+    const drawY = (224 - drawH) / 2
+
+    outCtx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, drawX, drawY, drawW, drawH)
+
+    return outCanvas
 }
 
 export class NumberClassifier {
@@ -61,20 +113,32 @@ export class NumberClassifier {
     }
 
     /**
-     * Preprocess input to 224x224 for MobileNet.
-     * Center-crops to square then resizes.
+     * Smart preprocessing: isolate digit from background, center it, then
+     * prepare for MobileNet (224x224 with normalization).
      */
     private async preprocessImage(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
     ): Promise<any> {
         const tf = await ensureTf()
+
+        // First, draw input to a temp canvas for digit isolation
+        const tempCanvas = document.createElement('canvas')
+        const w = input instanceof HTMLCanvasElement
+            ? input.width
+            : (input as HTMLImageElement).naturalWidth || (input as HTMLVideoElement).videoWidth || 224
+        const h = input instanceof HTMLCanvasElement
+            ? input.height
+            : (input as HTMLImageElement).naturalHeight || (input as HTMLVideoElement).videoHeight || 224
+        tempCanvas.width = w
+        tempCanvas.height = h
+        const tempCtx = tempCanvas.getContext('2d')!
+        tempCtx.drawImage(input as CanvasImageSource, 0, 0, w, h)
+
+        // Isolate the digit (center, crop, pad)
+        const isolated = isolateDigit(tempCanvas)
+
         return tf.tidy(() => {
-            let tensor = tf.browser.fromPixels(input).toFloat()
-            const [h, w] = tensor.shape
-            const size = Math.min(h, w)
-            const top = Math.floor((h - size) / 2)
-            const left = Math.floor((w - size) / 2)
-            tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
+            let tensor = tf.browser.fromPixels(isolated).toFloat()
             tensor = tf.image.resizeBilinear(tensor, [224, 224])
             return tensor.div(127.5).sub(1)
         })
@@ -104,7 +168,10 @@ export class NumberClassifier {
         embedding.dispose()
     }
 
-    async predict(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<NumberPrediction | null> {
+    /**
+     * Predict with k=3 (better for small datasets of 5-10 samples per class).
+     */
+    async predict(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 3): Promise<NumberPrediction | null> {
         try {
             const embedding = await this.extractEmbedding(input)
             try {
@@ -121,7 +188,6 @@ export class NumberClassifier {
 
     /**
      * Rebuild a class from an array of image data URLs.
-     * Returns the number of successfully loaded samples.
      */
     async rebuildClass(label: string, imageDataUrls: string[], augment = false): Promise<number> {
         this.knn.clearClass(label)
@@ -151,18 +217,53 @@ export class NumberClassifier {
     }
 
     /**
-     * Data augmentation: original + horizontal flip + brightness adjustment.
-     * Generates 3 variants per source image for richer training data.
+     * Strong data augmentation for digits:
+     * - Original
+     * - Horizontal flip
+     * - Slight rotation (-8 to +8 degrees)
+     * - Brightness variation
+     * - Scale variation (0.9x to 1.1x)
+     * - Translation shift
      */
     static augmentations = [
-        // Original (no transform)
+        // Original
         (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => { /* no-op */ },
-        (ctx: CanvasRenderingContext2D, w: number, _h: number) => {
-            ctx.translate(w, 0)
-            ctx.scale(-1, 1)
+        // Horizontal flip (some digits are symmetric)
+        (_ctx: CanvasRenderingContext2D, w: number, _h: number) => {
+            _ctx.translate(w, 0)
+            _ctx.scale(-1, 1)
         },
-        (ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
-            ctx.filter = 'brightness(1.2)'
+        // Slight clockwise rotation
+        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            _ctx.translate(w / 2, h / 2)
+            _ctx.rotate(6 * Math.PI / 180)
+            _ctx.translate(-w / 2, -h / 2)
+        },
+        // Slight counter-clockwise rotation
+        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            _ctx.translate(w / 2, h / 2)
+            _ctx.rotate(-6 * Math.PI / 180)
+            _ctx.translate(-w / 2, -h / 2)
+        },
+        // Brightness up
+        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
+            _ctx.filter = 'brightness(1.3)'
+        },
+        // Brightness down
+        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
+            _ctx.filter = 'brightness(0.8)'
+        },
+        // Scale up slightly
+        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            _ctx.translate(w / 2, h / 2)
+            _ctx.scale(1.1, 1.1)
+            _ctx.translate(-w / 2, -h / 2)
+        },
+        // Scale down slightly
+        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            _ctx.translate(w / 2, h / 2)
+            _ctx.scale(0.9, 0.9)
+            _ctx.translate(-w / 2, -h / 2)
         },
     ]
 

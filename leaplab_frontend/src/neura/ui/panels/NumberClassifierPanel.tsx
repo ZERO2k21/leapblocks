@@ -168,7 +168,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         const ctx = canvas.getContext('2d')!
                         ctx.drawImage(videoRef.current, 0, 0)
                         const start = performance.now()
-                        const result = await classifierRef.current.predict(canvas, 5)
+                        const result = await classifierRef.current.predict(canvas, 3)
                         const elapsed = Math.round(performance.now() - start)
                         if (result) {
                             setPrediction(result)
@@ -335,7 +335,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
                 const start = performance.now()
-                const result = await classifierRef.current.predict(img, 5)
+                const result = await classifierRef.current.predict(img, 3)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
                     setPrediction(result)
@@ -353,7 +353,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         setIsProcessing(true)
         try {
             const start = performance.now()
-            const result = await classifierRef.current.predict(drawCanvasRef.current, 5)
+            const result = await classifierRef.current.predict(drawCanvasRef.current, 3)
             const elapsed = Math.round(performance.now() - start)
             if (result) {
                 setPrediction(result)
@@ -763,7 +763,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 setTestImage(canvas.toDataURL('image/png'))
                                 stopCamera()
                                 setIsProcessing(true)
-                                classifierRef.current.predict(canvas, 5).then(result => {
+                                classifierRef.current.predict(canvas, 3).then(result => {
                                     if (result) {
                                         setPrediction(result)
                                         setInferenceTime(0)
