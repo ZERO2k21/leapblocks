@@ -30,7 +30,7 @@ const BASE_PATH = '/assets/neura-datasets'
 
 function generateImages(subcategoryId: string, count: number): DatasetImage[] {
     return Array.from({ length: count }, (_, i) => ({
-        filename: `${subcategoryId}_${String(i + 1).padStart(2, '0')}.jpg`,
+        filename: `${subcategoryId}_${String(i + 1).padStart(2, '0')}.png`,
         label: subcategoryId
     }))
 }

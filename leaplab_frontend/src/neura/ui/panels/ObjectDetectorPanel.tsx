@@ -11,6 +11,9 @@ import SampleGrid from '../components/SampleGrid'
 import TrainPanel from './TrainPanel'
 import AnnotatePanel from './AnnotatePanel'
 import ImageDatasetBrowser from '../components/ImageDatasetBrowser'
+import KaggleDatasetBrowser from '../components/KaggleDatasetBrowser'
+import KaggleSettings from '../components/KaggleSettings'
+import { getStoredCredentials, hasCredentials, type KaggleCredentials } from '../../ml/KaggleDatasetProvider'
 import EvaluatePanel from './EvaluatePanel'
 import { exportJSON, exportTFJS, exportONNX, exportTFLite, getExportSizeEstimate } from '../../ml/ModelExporter'
 
@@ -89,6 +92,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [customModelTrained, setCustomModelTrained] = useState(false)
     const [useCustomModel, setUseCustomModel] = useState(false)
     const [collectTab, setCollectTab] = useState<'camera' | 'upload' | 'download'>('camera')
+    const [downloadSource, setDownloadSource] = useState<'local' | 'kaggle'>('local')
+    const [kaggleCredentials, setKaggleCredentials] = useState<KaggleCredentials | null>(() => getStoredCredentials())
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -613,7 +618,49 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             {/* Download tab content */}
             {collectTab === 'download' && (
                 <div className="w-full max-w-[520px]">
-                    <ImageDatasetBrowser mode={mode} onImagesAdded={(count) => showSaved(`📥 Added ${count} images!`)} />
+                    {/* Local / Kaggle toggle */}
+                    <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-[#dae2fd] mb-4">
+                        <button
+                            onClick={() => setDownloadSource('local')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                                downloadSource === 'local'
+                                    ? 'bg-[#630ed4] text-white shadow-sm'
+                                    : 'text-[#4a4455] hover:bg-[#eaedff]'
+                            }`}
+                        >
+                            📁 Local Dataset
+                        </button>
+                        <button
+                            onClick={() => setDownloadSource('kaggle')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                                downloadSource === 'kaggle'
+                                    ? 'bg-[#630ed4] text-white shadow-sm'
+                                    : 'text-[#4a4455] hover:bg-[#eaedff]'
+                            }`}
+                        >
+                            🔍 Kaggle
+                        </button>
+                    </div>
+
+                    {downloadSource === 'local' ? (
+                        <ImageDatasetBrowser mode={mode} onImagesAdded={(count) => showSaved(`📥 Added ${count} images!`)} />
+                    ) : kaggleCredentials ? (
+                        <KaggleDatasetBrowser
+                            mode={mode}
+                            credentials={kaggleCredentials}
+                            onImagesAdded={(count) => showSaved(`📥 Added ${count} images from Kaggle!`)}
+                        />
+                    ) : (
+                        <div className="py-8">
+                            <KaggleSettings
+                                compact
+                                onCredentialsSaved={() => setKaggleCredentials(getStoredCredentials())}
+                            />
+                            <p className="text-xs text-[#4a4455] text-center mt-4">
+                                Connect your Kaggle account to download datasets
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 
