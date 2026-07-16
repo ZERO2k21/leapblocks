@@ -49,21 +49,22 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
     useEffect(() => { setEstimatedTime(Math.max(5, Math.floor(14 + totalSamples / 100 + totalClasses / 5))) }, [totalSamples, totalClasses])
     useEffect(() => { return () => { if (trainingIntervalRef.current) clearInterval(trainingIntervalRef.current) } }, [])
     useEffect(() => { if (isComplete) { setShowCelebration(true); setTimeout(() => setShowCelebration(false), 5000) } }, [isComplete])
+    useEffect(() => {
+        if (isComplete) {
+            mode.setAccuracy(metrics.map50 / 100)
+            mode.setModelTrained(true)
+        }
+    }, [isComplete, metrics.map50])
 
     const runTrainingEpoch = useCallback((epoch: number) => {
         if (epoch > maxEpochs) {
             setIsTraining(false); setIsComplete(true)
             if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }
-            setMetrics(prev => {
-                mode.setAccuracy(prev.map50 / 100)
-                mode.setModelTrained(true)
-                return prev
-            })
             return
         }
         setCurrentEpoch(epoch); setTrainingProgress(Math.floor((epoch / maxEpochs) * 100))
         setMetrics(prev => { const { metrics: newMetrics, epochData } = calculateEpochMetrics(epoch, maxEpochs, totalSamples, totalClasses, prev); setEpochHistory(h => [...h, epochData]); return newMetrics })
-    }, [maxEpochs, totalSamples, totalClasses, mode])
+    }, [maxEpochs, totalSamples, totalClasses])
 
     const handleStartTraining = useCallback(() => {
         setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
@@ -73,6 +74,35 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
 
     const handleStopTraining = useCallback(() => { if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }; setIsTraining(false) }, [])
     const handleResetTraining = useCallback(() => { setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([]); setMetrics(calculateInitialMetrics(totalSamples, totalClasses)) }, [totalSamples, totalClasses])
+
+    const handleExportReport = useCallback(() => {
+        const report = {
+            projectName: mode.project?.name || 'Untitled',
+            projectType: mode.project?.type || 'object-detection',
+            exportedAt: new Date().toISOString(),
+            summary: {
+                totalSamples: mode.getTotalSamples(),
+                totalClasses: mode.project?.classes.length || 0,
+                classes: mode.project?.classes.map(c => ({ name: c.name, color: c.color, sampleCount: c.samples.length })),
+                accuracy: mode.accuracy
+            },
+            training: {
+                maxEpochs,
+                completedEpochs: currentEpoch,
+                finalMetrics: { loss: metrics.loss, boxLoss: metrics.boxLoss, clsLoss: metrics.clsLoss, objLoss: metrics.objLoss, map50: metrics.map50, map5095: metrics.map5095, recall: metrics.recall, precision: metrics.precision },
+                epochHistory
+            }
+        }
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${(mode.project?.name || 'report').replace(/[^a-z0-9]/gi, '_')}_training_report.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }, [mode, metrics, currentEpoch, maxEpochs, epochHistory])
 
     const lossChartData = epochHistory.length > 0 ? epochHistory.map(e => e.loss) : [metrics.loss]
     const mapChartData = epochHistory.length > 0 ? epochHistory.map(e => e.map50) : [metrics.map50]
@@ -87,11 +117,15 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
     return (
         <div className="flex-1 flex flex-col p-6 overflow-y-auto neura-scrollbar">
             {showCelebration && (
-                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-                    <div className="text-center animate-bounce">
-                        <div className="text-6xl mb-4">🎉</div>
-                        <div className="text-2xl font-extrabold text-[#630ed4]">Great Job! 🌟</div>
-                        <div className="text-lg text-[#4a4455]">Your AI is ready to find objects!</div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in" style={{ background: 'radial-gradient(circle at center, rgba(99,14,212,0.15) 0%, rgba(0,0,0,0.3) 100%)' }}>
+                    <div className="text-center animate-scale-in bg-white/90 backdrop-blur-md rounded-3xl p-10 shadow-2xl max-w-sm mx-4">
+                        <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                        <div className="text-2xl font-extrabold text-[#630ed4] mb-2">Great Job! 🌟</div>
+                        <div className="text-sm text-[#4a4455] mb-4">Your AI is ready to find objects!</div>
+                        <div className="flex items-center justify-center gap-2 text-xs text-[#006c44] font-bold">
+                            <span className="w-2 h-2 rounded-full bg-[#006c44] animate-pulse" />
+                            Accuracy: {Math.round(metrics.map50)}%
+                        </div>
                     </div>
                 </div>
             )}
@@ -139,7 +173,7 @@ export default function TrainPanel({ mode }: TrainPanelProps) {
                         <div className="flex gap-4 justify-center">
                             {!isTraining && !isComplete && <button onClick={handleStartTraining} disabled={totalSamples === 0} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-10 py-4 rounded-xl font-bold text-base hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">🚀 Start Teaching</button>}
                             {isTraining && <button onClick={handleStopTraining} className="bg-[#fee2e2] text-[#991b1b] px-8 py-4 rounded-xl font-bold text-base hover:opacity-90 transition-all flex items-center gap-2">⏸️ Pause</button>}
-                            {isComplete && <><button onClick={handleResetTraining} className="bg-[#eaedff] text-[#131b2e] px-6 py-4 rounded-xl font-bold text-base hover:bg-[#dae2fd] transition-all">🔄 Teach Again</button><button onClick={() => mode.setMode('test')} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-8 py-4 rounded-xl font-bold text-base hover:shadow-md transition-all flex items-center gap-2">🔍 Find Things</button></>}
+                            {isComplete && <><button onClick={handleResetTraining} className="bg-[#eaedff] text-[#131b2e] px-6 py-4 rounded-xl font-bold text-base hover:bg-[#dae2fd] transition-all">🔄 Teach Again</button><button onClick={handleExportReport} className="bg-[#d1fae5] text-[#006c44] px-6 py-4 rounded-xl font-bold text-base hover:bg-[#a7f3d0] transition-all flex items-center gap-2">💾 Save Report</button><button onClick={() => mode.setMode('test')} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-8 py-4 rounded-xl font-bold text-base hover:shadow-md transition-all flex items-center gap-2">🔍 Find Things</button></>}
                         </div>
                         <div className="mt-6 flex justify-center gap-6">
                             <div className="flex items-center gap-1 text-[#4a4455] text-xs font-bold"><span className="text-base">🧠</span> AI Engine: Ready</div>

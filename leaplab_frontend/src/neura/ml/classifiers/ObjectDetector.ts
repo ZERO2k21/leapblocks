@@ -76,15 +76,32 @@ const DEFAULT_COLOR = '#64748B'
 
 export class ObjectDetector {
     private model: any = null
+    private loadPromise: Promise<any> | null = null
     private isDetecting = false
+    private detectGeneration = 0
     private lastResult: DetectionResult | null = null
     private listeners: Set<(result: DetectionResult) => void> = new Set()
 
     async loadModel(): Promise<void> {
         if (this.model) return
-        setupContextLossListener()
-        const cocoSsd = await ensureCocoSsd()
-        this.model = await cocoSsd.load()
+        if (this.loadPromise) return this.loadPromise
+
+        this.loadPromise = (async () => {
+            try {
+                setupContextLossListener()
+                const cocoSsd = await ensureCocoSsd()
+                const model = await cocoSsd.load()
+                this.model = model
+                this.loadPromise = null
+                return model
+            } catch (e) {
+                this.loadPromise = null
+                this.model = null
+                throw e
+            }
+        })()
+
+        return this.loadPromise
     }
 
     isModelLoaded(): boolean {
@@ -100,9 +117,11 @@ export class ObjectDetector {
             return this.lastResult || { objects: [], timestamp: Date.now() }
         }
 
+        const generation = ++this.detectGeneration
         this.isDetecting = true
         try {
             const predictions = await this.model.detect(videoElement)
+            if (generation !== this.detectGeneration) return this.lastResult || { objects: [], timestamp: Date.now() }
             const objects: DetectedObject[] = predictions.map((pred: any) => ({
                 label: LABEL_MAP[pred.class] || pred.class,
                 confidence: pred.score,
@@ -132,7 +151,9 @@ export class ObjectDetector {
     }
 
     private notifyListeners(result: DetectionResult) {
-        this.listeners.forEach(cb => cb(result))
+        this.listeners.forEach(cb => {
+            try { cb(result) } catch (e) { console.warn('[ObjectDetector] Listener error:', e) }
+        })
     }
 
     drawDetections(
@@ -188,7 +209,9 @@ export class ObjectDetector {
     }
 
     dispose(): void {
+        this.detectGeneration++
         this.model = null
+        this.loadPromise = null
         this.listeners.clear()
         this.lastResult = null
     }

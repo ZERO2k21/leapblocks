@@ -18,6 +18,8 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const canvasRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const labelInputRef = useRef<HTMLInputElement>(null)
+    const autoDetectModelRef = useRef<any>(null)
+    const autoDetectGenerationRef = useRef(0)
     const [isDrawing, setIsDrawing] = useState(false)
     const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null)
     const [drawCurrent, setDrawCurrent] = useState<{ x: number; y: number } | null>(null)
@@ -63,7 +65,12 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
         if (!file || !file.type.startsWith('image/')) return
         const dataUrl = await new Promise<string>((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsDataURL(file) })
         const img = new Image(); img.src = dataUrl
-        await new Promise<void>((resolve) => { img.onload = () => resolve() })
+        await new Promise<void>((resolve) => {
+            img.onload = () => resolve()
+            img.onerror = () => resolve()
+            setTimeout(() => resolve(), 5000)
+        })
+        if (!img.complete || img.naturalWidth === 0) return
         setAnnotationImage(dataUrl); setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
         mode.addAnnotation({ imageUrl: dataUrl, boxes: [], imageName: file.name })
         if (fileInputRef.current) fileInputRef.current.value = ''
@@ -77,7 +84,13 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const formatTime = (seconds: number) => { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` }
 
     const saveUndoState = useCallback(() => {
-        if (mode.currentAnnotation) { setUndoStack(prev => [...prev, [...mode.currentAnnotation!.boxes]]); setRedoStack([]) }
+        if (mode.currentAnnotation) {
+            setUndoStack(prev => {
+                const next = [...prev, [...mode.currentAnnotation!.boxes]]
+                return next.length > 50 ? next.slice(-50) : next
+            })
+            setRedoStack([])
+        }
     }, [mode.currentAnnotation])
 
     const handleUndo = useCallback(() => {
@@ -170,13 +183,24 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const handleAutoDetect = useCallback(async () => {
         if (!annotationImage || !canvasRef.current) return
         setIsAutoDetecting(true)
+        const generation = ++autoDetectGenerationRef.current
         try {
-            const cocoSsd = await ensureCocoSsd()
-            const model = await cocoSsd.load()
+            if (!autoDetectModelRef.current) {
+                const cocoSsd = await ensureCocoSsd()
+                autoDetectModelRef.current = await cocoSsd.load()
+            }
+            if (generation !== autoDetectGenerationRef.current) return
             const img = new Image()
             img.src = annotationImage
-            await new Promise<void>((resolve) => { img.onload = () => resolve() })
-            const results = await model.detect(img)
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(() => resolve(), 5000)
+            })
+            if (!img.complete || img.naturalWidth === 0) { setIsAutoDetecting(false); return }
+            if (generation !== autoDetectGenerationRef.current) return
+            const results = await autoDetectModelRef.current.detect(img)
+            if (generation !== autoDetectGenerationRef.current) return
             const canvasRect = canvasRef.current.getBoundingClientRect()
             const imgElement = canvasRef.current.querySelector('img')
             if (!imgElement) { setIsAutoDetecting(false); return }
