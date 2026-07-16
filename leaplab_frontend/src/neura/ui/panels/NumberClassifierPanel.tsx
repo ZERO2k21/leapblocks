@@ -168,7 +168,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         const ctx = canvas.getContext('2d')!
                         ctx.drawImage(videoRef.current, 0, 0)
                         const start = performance.now()
-                        const result = await classifierRef.current.predict(canvas, 5)
+                        const result = await classifierRef.current.predict(canvas, 3)
                         const elapsed = Math.round(performance.now() - start)
                         if (result) {
                             setPrediction(result)
@@ -335,7 +335,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
                 const start = performance.now()
-                const result = await classifierRef.current.predict(img, 5)
+                const result = await classifierRef.current.predict(img, 3)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
                     setPrediction(result)
@@ -353,7 +353,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         setIsProcessing(true)
         try {
             const start = performance.now()
-            const result = await classifierRef.current.predict(drawCanvasRef.current, 5)
+            const result = await classifierRef.current.predict(drawCanvasRef.current, 3)
             const elapsed = Math.round(performance.now() - start)
             if (result) {
                 setPrediction(result)
@@ -605,7 +605,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     {/* Camera feed */}
                     {inputMode === 'camera' && (
                         <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[420px] transition-all duration-300 aspect-[4/3] ${cameraOn ? '' : 'hidden'}`}>
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-3xl" />
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-3xl bg-black" />
                             <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
                                 <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
                                 <span className="text-white text-[10px] font-bold tracking-wide">LIVE</span>
@@ -752,6 +752,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             testImage={testImage}
                             videoRef={videoRef}
                             canvasRef={cameraCanvasRef}
+                            videoFit="contain"
                             onCapture={() => {
                                 if (!videoRef.current || !cameraOn) return
                                 const video = videoRef.current
@@ -763,7 +764,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 setTestImage(canvas.toDataURL('image/png'))
                                 stopCamera()
                                 setIsProcessing(true)
-                                classifierRef.current.predict(canvas, 5).then(result => {
+                                classifierRef.current.predict(canvas, 3).then(result => {
                                     if (result) {
                                         setPrediction(result)
                                         setInferenceTime(0)

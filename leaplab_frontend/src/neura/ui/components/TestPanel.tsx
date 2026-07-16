@@ -19,6 +19,7 @@ interface TestPanelProps {
     testsRun?: number
     inferenceTime?: number
     modelLoading?: boolean
+    videoFit?: 'cover' | 'contain'
     children?: React.ReactNode
 }
 
@@ -40,6 +41,7 @@ export default function TestPanel({
     testsRun = 0,
     inferenceTime = 0,
     modelLoading = false,
+    videoFit = 'cover',
     children
 }: TestPanelProps) {
     if (children) {
@@ -168,7 +170,7 @@ export default function TestPanel({
                         }}
                     >
                         {cameraOn && (
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+                            <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full rounded-2xl -scale-x-100 ${videoFit === 'contain' ? 'object-contain bg-black' : 'object-cover'}`} />
                         )}
                         {!cameraOn && testImage && (
                             <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

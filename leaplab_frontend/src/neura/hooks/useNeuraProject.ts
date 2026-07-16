@@ -289,19 +289,15 @@ export function useNeuraProject(
         }
     }, [project, selectedClassId])
 
-    // Save to localStorage on every project change (with size awareness)
+    // Save to localStorage on every project change (no auto-download)
     useEffect(() => {
         if (project) {
             try {
                 const data = JSON.stringify(project)
-                if (data.length > 50 * 1024 * 1024) {
-                    console.warn('[Neura] Project is large (' + Math.round(data.length / 1024 / 1024 * 10) / 10 + 'MB). Auto-downloading backup to prevent data loss.')
-                    autoDownloadBackup(project)
-                }
                 localStorage.setItem(`neura-project-${type}`, data)
-            } catch (e) {
-                console.warn('[Neura] localStorage full! Auto-downloading project backup.')
-                autoDownloadBackup(project)
+            } catch {
+                // localStorage full — silently ignore; user can manually export
+                console.warn('[Neura] localStorage full. Use File > Save to export your project.')
             }
         }
     }, [project, type])
