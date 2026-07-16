@@ -95,9 +95,17 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     useEffect(() => {
         if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
             videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => {})
+            videoRef.current.play().catch(() => undefined)
         }
     }, [stream])
+
+    // Re-sync when cameraOn changes (video element may mount after stream is set)
+    useEffect(() => {
+        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => undefined)
+        }
+    }, [cameraOn])
 
     // Cleanup on unmount
     useEffect(() => { return () => { stopCamera(); cancelAnimationFrame(animFrameRef.current); classifierRef.current.dispose() } }, [])
