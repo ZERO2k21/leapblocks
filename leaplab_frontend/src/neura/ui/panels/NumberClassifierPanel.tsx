@@ -659,19 +659,13 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="text-center animate-fade-in">
+                <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto neura-scrollbar">
+                    <div className="w-full max-w-4xl mx-auto text-center mb-2 animate-fade-in">
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Numbers!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning to count! 🔢</p>
                     </div>
-                    {modelLoading && (
-                        <div className="flex items-center gap-3 px-6 py-4 bg-[#eaedff] rounded-2xl border border-[#630ed4]/20 animate-fade-in">
-                            <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm font-bold text-[#630ed4]">Loading model... ⏳</span>
-                        </div>
-                    )}
-                    <div className="w-full flex justify-center">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} />
+                    <div className="w-full max-w-4xl mx-auto">
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} sampleType="numbers" />
                     </div>
                 </div>
             )}

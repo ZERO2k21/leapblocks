@@ -134,13 +134,13 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             )}
 
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="text-center animate-fade-in">
+                <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto neura-scrollbar">
+                    <div className="w-full max-w-4xl mx-auto text-center mb-2 animate-fade-in">
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Words!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning to read! 📖</p>
                     </div>
-                    <div className="w-full flex justify-center">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} />
+                    <div className="w-full max-w-4xl mx-auto">
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" />
                     </div>
                 </div>
             )}

@@ -545,7 +545,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         <p className="text-sm text-[#4a4455]">Show your hand to the camera and teach your AI! 🖐️</p>
                     </div>
 
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
 
                     {/* Tips */}
                     <div className="w-full max-w-[720px] animate-fade-in">
@@ -574,11 +574,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
                     )}
 
-                    {!selectedClass && !cameraError && (
-                        <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-2xl px-5 py-3 max-w-[520px] w-full">
-                            <p className="text-xs font-bold text-[#f97316] text-center">⚠️ Select or add a class first to start capturing!</p>
-                        </div>
-                    )}
+
 
                     {/* Camera feed */}
                     <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
@@ -682,14 +678,16 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-[720px] text-center mb-2 animate-fade-in">
+                <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto neura-scrollbar">
+                    <div className="w-full max-w-4xl mx-auto text-center mb-2 animate-fade-in">
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-1">🏋️ Teach Your AI Hands!</h2>
                         <p className="text-sm text-[#4a4455]">Your AI is learning your hand gestures! ✋</p>
                     </div>
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    <div className="w-full flex justify-center">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} />
+                    <div className="w-full max-w-4xl mx-auto">
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                    </div>
+                    <div className="w-full max-w-4xl mx-auto">
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" />
                     </div>
                 </div>
             )}
@@ -701,13 +699,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-1">🧪 Test Your AI!</h2>
                         <p className="text-sm text-[#4a4455]">Show a hand gesture and see if your AI recognizes it! 🎯</p>
                     </div>
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    {modelLoading && (
-                        <div className="flex items-center gap-3 px-6 py-4 bg-[#e0f2fe] rounded-2xl border border-[#0ea5e9]/20 animate-fade-in">
-                            <div className="w-5 h-5 border-2 border-[#0ea5e9] border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm font-bold text-[#0ea5e9]">Loading model... ⏳</span>
-                        </div>
-                    )}
+                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                     <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                 </div>
             )}

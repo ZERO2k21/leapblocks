@@ -91,12 +91,11 @@ export default function TrainPanel({
             </div>
 
             {/* Horizontal split */}
-            <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0 }}>
+            <div className="w-full flex flex-col md:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
                 {/* Left half - Training visualization */}
                 <div
+                    className="flex-1 min-w-0"
                     style={{
-                        flex: 1,
-                        minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -230,7 +229,7 @@ export default function TrainPanel({
                 </div>
 
                 {/* Right half - Settings */}
-                <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="flex-1 min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Epochs */}
                     <div
                         style={{
@@ -352,21 +351,22 @@ export default function TrainPanel({
             {/* Warning */}
             {!canTrain && warningTitle && (
                 <div
-                    className="flex items-center animate-fade-in"
+                    className="flex items-center animate-fade-in shadow-sm"
                     style={{
                         gap: '10px',
                         padding: '12px 16px',
-                        background: '#fef3c7',
-                        borderRadius: '12px',
+                        background: '#fffbeb',
+                        borderRadius: '16px',
                         border: '1px solid #fde68a',
-                        maxWidth: '900px',
+                        width: '100%',
+                        maxWidth: '760px',
                         margin: '16px auto 0',
                     }}
                 >
                     <span style={{ fontSize: '18px' }}>⚠️</span>
-                    <div>
-                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#92400e' }}>{warningTitle}</p>
-                        <p style={{ fontSize: '11px', color: '#a16207' }}>{warningDesc}</p>
+                    <div style={{ textAlign: 'left' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 800, color: '#b45309', margin: 0 }}>{warningTitle}</p>
+                        <p style={{ fontSize: '11px', color: '#d97706', margin: 0 }}>{warningDesc}</p>
                     </div>
                 </div>
             )}
@@ -374,20 +374,21 @@ export default function TrainPanel({
             {/* Error */}
             {trainingError && (
                 <div
-                    className="flex items-center animate-fade-in"
+                    className="flex items-center animate-fade-in shadow-sm"
                     style={{
                         gap: '10px',
                         padding: '12px 16px',
                         background: '#fef2f2',
-                        borderRadius: '12px',
+                        borderRadius: '16px',
                         border: '1px solid #fecaca',
-                        maxWidth: '900px',
+                        width: '100%',
+                        maxWidth: '760px',
                         margin: '16px auto 0',
                     }}
                 >
                     <span style={{ fontSize: '18px' }}>❌</span>
-                    <div>
-                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b' }}>{trainingError}</p>
+                    <div style={{ textAlign: 'left' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 800, color: '#991b1b', margin: 0 }}>{trainingError}</p>
                     </div>
                 </div>
             )}

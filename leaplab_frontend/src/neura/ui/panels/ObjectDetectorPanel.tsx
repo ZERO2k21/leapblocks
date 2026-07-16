@@ -536,11 +536,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         </div>
                     )}
 
-                    {!selectedClass && !cameraError && (
-                        <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-2xl px-5 py-3 max-w-[520px] w-full">
-                            <p className="text-xs font-bold text-[#f97316] text-center">⚠️ Select or add a class first to start capturing!</p>
-                        </div>
-                    )}
+
 
                     {/* Camera feed */}
                     <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
