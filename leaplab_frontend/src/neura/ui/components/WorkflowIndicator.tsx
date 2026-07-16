@@ -10,11 +10,12 @@ interface WorkflowIndicatorProps {
 const STEPS: { id: ClassifierMode; number: number; label: string; emoji: string; tip: string }[] = [
     { id: 'collect', number: 1, label: 'Collect', emoji: '📸', tip: 'Take pictures!' },
     { id: 'train', number: 2, label: 'Train', emoji: '🏋️', tip: 'Teach your AI!' },
-    { id: 'test', number: 3, label: 'Test', emoji: '🧪', tip: 'Test your AI!' }
+    { id: 'evaluate', number: 3, label: 'Evaluate', emoji: '📊', tip: 'Check quality!' },
+    { id: 'test', number: 4, label: 'Test', emoji: '🧪', tip: 'Test your AI!' }
 ]
 
 export default function WorkflowIndicator({ mode, onModeChange, canTrain }: WorkflowIndicatorProps) {
-    const modeOrder: ClassifierMode[] = ['collect', 'train', 'test']
+    const modeOrder: ClassifierMode[] = ['collect', 'train', 'evaluate', 'test']
     const currentIndex = modeOrder.indexOf(mode)
 
     return (
@@ -24,7 +25,7 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                 <div className="absolute top-5 left-[12%] right-[12%] h-1 bg-[#dae2fd] rounded-full z-0">
                     <div
                         className="h-full bg-gradient-to-r from-[#630ed4] to-[#006c44] rounded-full transition-all duration-500"
-                        style={{ width: `${(currentIndex / 2) * 100}%` }}
+                        style={{ width: `${(currentIndex / 3) * 100}%` }}
                     />
                 </div>
 

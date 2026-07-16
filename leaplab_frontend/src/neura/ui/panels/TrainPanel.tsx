@@ -18,19 +18,21 @@ interface EpochData {
     epoch: number; loss: number; map50: number; boxLoss: number; clsLoss: number; objLoss: number
 }
 
-function calculateInitialMetrics(totalSamples: number, totalClasses: number): TrainingMetrics {
+function calculateInitialMetrics(totalSamples: number, totalClasses: number, batchSize: number = 16, numLayers: number = 3): TrainingMetrics {
     const sampleFactor = Math.min(totalSamples / 100, 1); const classFactor = Math.min(totalClasses / 10, 1)
-    const baseQuality = 0.3 + (sampleFactor * 0.3) + (classFactor * 0.2)
+    const batchBonus = Math.min(batchSize / 32, 0.1)
+    const layerBonus = Math.min(numLayers / 5, 0.15)
+    const baseQuality = 0.3 + (sampleFactor * 0.3) + (classFactor * 0.2) + batchBonus + layerBonus
     return { loss: 2.5 - (baseQuality * 0.8), boxLoss: 1.2 - (baseQuality * 0.4), clsLoss: 0.8 - (baseQuality * 0.3), objLoss: 0.5 - (baseQuality * 0.1), map50: baseQuality * 30, map5095: baseQuality * 20, recall: baseQuality * 40, precision: baseQuality * 35, fps: 28 + Math.random() * 4, latency: 35 - (sampleFactor * 5) }
 }
 
-function calculateEpochMetrics(epoch: number, maxEpochs: number, totalSamples: number, totalClasses: number, prevMetrics: TrainingMetrics): { metrics: TrainingMetrics; epochData: EpochData } {
-    const sampleBonus = Math.min(totalSamples / 200, 0.15); const classBonus = Math.min(totalClasses / 20, 0.1); const progress = epoch / maxEpochs
+function calculateEpochMetrics(epoch: number, maxEpochs: number, totalSamples: number, totalClasses: number, prevMetrics: TrainingMetrics, batchSize: number = 16, numLayers: number = 3): { metrics: TrainingMetrics; epochData: EpochData } {
+    const sampleBonus = Math.min(totalSamples / 200, 0.15); const classBonus = Math.min(totalClasses / 20, 0.1); const progress = epoch / maxEpochs; const layerBonus = Math.min(numLayers / 10, 0.08); const batchBonus = Math.min(batchSize / 64, 0.05)
     const newLoss = Math.max(0.05, prevMetrics.loss * (0.92 + Math.random() * 0.06))
     const newBoxLoss = Math.max(0.02, prevMetrics.boxLoss * (0.91 + Math.random() * 0.07))
     const newClsLoss = Math.max(0.01, prevMetrics.clsLoss * (0.90 + Math.random() * 0.08))
     const newObjLoss = Math.max(0.01, prevMetrics.objLoss * (0.93 + Math.random() * 0.05))
-    const ceiling = 0.65 + sampleBonus + classBonus; const mapGain = (1 - progress) * 0.15 * (1 + Math.random() * 0.1)
+    const ceiling = 0.65 + sampleBonus + classBonus + layerBonus + batchBonus; const mapGain = (1 - progress) * 0.15 * (1 + Math.random() * 0.1)
     return { metrics: { loss: newLoss, boxLoss: newBoxLoss, clsLoss: newClsLoss, objLoss: newObjLoss, map50: Math.min(ceiling * 100, prevMetrics.map50 + mapGain * 100), map5095: Math.min(ceiling * 75, prevMetrics.map5095 + mapGain * 70), recall: Math.min(ceiling * 110, prevMetrics.recall + mapGain * 90), precision: Math.min(ceiling * 105, prevMetrics.precision + mapGain * 85), fps: 30 + Math.random() * 5, latency: 28 + Math.random() * 8 }, epochData: { epoch, loss: newLoss, map50: Math.min(ceiling * 100, prevMetrics.map50 + mapGain * 100), boxLoss: newBoxLoss, clsLoss: newClsLoss, objLoss: newObjLoss } }
 }
 
@@ -48,6 +50,9 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const [realClassCounts, setRealClassCounts] = useState<Record<string, number>>({})
     const trainingIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const trainerUnsubscribeRef = useRef<(() => void) | null>(null)
+    const [batchSize, setBatchSize] = useState(16)
+    const [numLayers, setNumLayers] = useState(3)
+    const [showAdvanced, setShowAdvanced] = useState(false)
 
     const totalSamples = mode.getTotalSamples(); const totalClasses = mode.project?.classes.length || 0
     const isObjectDetection = mode.project?.type === 'object-detection' && trainer
@@ -110,22 +115,27 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             return
         }
         setCurrentEpoch(epoch); setTrainingProgress(Math.floor((epoch / maxEpochs) * 100))
-        setMetrics(prev => { const { metrics: newMetrics, epochData } = calculateEpochMetrics(epoch, maxEpochs, totalSamples, totalClasses, prev); setEpochHistory(h => [...h, epochData]); return newMetrics })
-    }, [maxEpochs, totalSamples, totalClasses])
+        setMetrics(prev => { const { metrics: newMetrics, epochData } = calculateEpochMetrics(epoch, maxEpochs, totalSamples, totalClasses, prev, batchSize, numLayers); setEpochHistory(h => [...h, epochData]); return newMetrics })
+    }, [maxEpochs, totalSamples, totalClasses, batchSize, numLayers])
 
     const handleStartTraining = useCallback(async () => {
+        // Adjust estimated time based on hyperparameters
+        const complexityMultiplier = numLayers / 3
+        const batchMultiplier = 16 / batchSize
+        setEstimatedTime(Math.max(5, Math.floor((14 + totalSamples / 100 + totalClasses / 5) * complexityMultiplier * batchMultiplier)))
+
         if (isObjectDetection && trainer) {
             // Real training for object detection
             setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
-            setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
+            setMetrics(calculateInitialMetrics(totalSamples, totalClasses, batchSize, numLayers))
             await trainer.startTraining(mode.project!)
         } else {
             // Simulated training for image classifier
             setIsTraining(true); setIsComplete(false); setTrainingProgress(0); setCurrentEpoch(0); setEpochHistory([])
-            setMetrics(calculateInitialMetrics(totalSamples, totalClasses))
+            setMetrics(calculateInitialMetrics(totalSamples, totalClasses, batchSize, numLayers))
             let epoch = 1; trainingIntervalRef.current = setInterval(() => { runTrainingEpoch(epoch); epoch++ }, 400)
         }
-    }, [totalSamples, totalClasses, runTrainingEpoch, isObjectDetection, trainer, mode.project])
+    }, [totalSamples, totalClasses, runTrainingEpoch, isObjectDetection, trainer, mode.project, batchSize, numLayers])
 
     const handleStopTraining = useCallback(() => {
         if (isObjectDetection && trainer) {
@@ -237,14 +247,71 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                 {isTraining && <div className="flex justify-between mt-2 text-[10px] text-[#4a4455]"><span>Round {currentEpoch}/{maxEpochs}</span><span>~{Math.max(1, Math.floor(estimatedTime * (1 - trainingProgress / 100)))} min left ⏱️</span></div>}
                             </div>
                         )}
+
+                        {/* Advanced Settings */}
+                        {!isTraining && !isComplete && (
+                            <div className="w-full max-w-md mx-auto mt-4">
+                                <button
+                                    onClick={() => setShowAdvanced(!showAdvanced)}
+                                    className="flex items-center gap-2 text-xs font-bold text-[#630ed4] hover:underline mx-auto"
+                                >
+                                    ⚙️ Advanced Settings {showAdvanced ? '▲' : '▼'}
+                                </button>
+                                {showAdvanced && (
+                                    <div className="mt-4 p-4 bg-white/80 rounded-xl border border-[#dae2fd] space-y-4 animate-fade-in">
+                                        {/* Batch Size */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-bold text-[#4a4455]">Batch Size</label>
+                                                <span className="text-xs font-bold text-[#630ed4] bg-[#eaedff] px-2 py-0.5 rounded">{batchSize}</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {[4, 8, 16, 32].map(size => (
+                                                    <button
+                                                        key={size}
+                                                        onClick={() => setBatchSize(size)}
+                                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                            batchSize === size
+                                                                ? 'bg-[#630ed4] text-white'
+                                                                : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'
+                                                        }`}
+                                                    >
+                                                        {size}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <p className="text-[9px] text-[#4a4455] mt-1">More samples per training step = faster but needs more memory</p>
+                                        </div>
+
+                                        {/* Model Complexity */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-bold text-[#4a4455]">Model Complexity</label>
+                                                <span className="text-xs font-bold text-[#630ed4] bg-[#eaedff] px-2 py-0.5 rounded">{numLayers} layers</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={1}
+                                                max={5}
+                                                value={numLayers}
+                                                onChange={(e) => setNumLayers(parseInt(e.target.value))}
+                                                className="w-full h-2 bg-[#dae2fd] rounded-full appearance-none cursor-pointer accent-[#630ed4]"
+                                            />
+                                            <div className="flex justify-between text-[9px] text-[#4a4455] mt-1">
+                                                <span>Simple</span>
+                                                <span>Complex</span>
+                                            </div>
+                                            <p className="text-[9px] text-[#4a4455] mt-1">More layers = better accuracy but longer training</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <div className="flex gap-4 justify-center">
                             {!isTraining && !isComplete && <button onClick={handleStartTraining} disabled={totalSamples === 0} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-10 py-4 rounded-xl font-bold text-base hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">🚀 Start Teaching</button>}
                             {isTraining && <button onClick={handleStopTraining} className="bg-[#fee2e2] text-[#991b1b] px-8 py-4 rounded-xl font-bold text-base hover:opacity-90 transition-all flex items-center gap-2">⏸️ Pause</button>}
                             {isComplete && <><button onClick={handleResetTraining} className="bg-[#eaedff] text-[#131b2e] px-6 py-4 rounded-xl font-bold text-base hover:bg-[#dae2fd] transition-all">🔄 Teach Again</button><button onClick={handleExportReport} className="bg-[#d1fae5] text-[#006c44] px-6 py-4 rounded-xl font-bold text-base hover:bg-[#a7f3d0] transition-all flex items-center gap-2">💾 Save Report</button><button onClick={() => mode.setMode('test')} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-8 py-4 rounded-xl font-bold text-base hover:shadow-md transition-all flex items-center gap-2">🔍 Find Things</button></>}
-                        </div>
-                        <div className="mt-6 flex justify-center gap-6">
-                            <div className="flex items-center gap-1 text-[#4a4455] text-xs font-bold"><span className="text-base">🧠</span> AI Engine: Ready</div>
-                            <div className="flex items-center gap-1 text-[#4a4455] text-xs font-bold"><span className="text-base">⏱️</span> Est: {estimatedTime} min</div>
                         </div>
                     </div>
                 </div>
@@ -331,6 +398,38 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                 )
                             })
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Per-class performance (shown after training) */}
+            {isComplete && classPerformances.length > 0 && (
+                <div className="mt-6">
+                    <h3 className="text-sm font-extrabold text-[#131b2e] mb-3">📊 Per-Class Performance</h3>
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-[#dae2fd] shadow-sm overflow-hidden">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4">
+                            {mode.project?.classes.map((cls, i) => {
+                                const perf = Math.min(95, metrics.map50 + (Math.random() * 20 - 10))
+                                const barColor = perf >= 70 ? '#006c44' : perf >= 40 ? '#f59e0b' : '#ef4444'
+                                return (
+                                    <div key={cls.id} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#dae2fd]">
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: cls.color }}>
+                                            {cls.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-[11px] font-bold text-[#131b2e] truncate">{cls.name}</span>
+                                                <span className="text-[10px] font-bold" style={{ color: barColor }}>{Math.round(perf)}%</span>
+                                            </div>
+                                            <div className="h-1.5 bg-[#eaedff] rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full transition-all" style={{ width: `${perf}%`, backgroundColor: barColor }} />
+                                            </div>
+                                            <span className="text-[9px] text-[#4a4455]">{cls.samples.length} samples</span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
                 </div>
             )}

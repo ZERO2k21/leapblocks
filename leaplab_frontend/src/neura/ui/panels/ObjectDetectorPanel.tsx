@@ -10,6 +10,9 @@ import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from './TrainPanel'
 import AnnotatePanel from './AnnotatePanel'
+import ImageDatasetBrowser from '../components/ImageDatasetBrowser'
+import EvaluatePanel from './EvaluatePanel'
+import { exportJSON, exportTFJS, exportONNX, exportTFLite, getExportSizeEstimate } from '../../ml/ModelExporter'
 
 interface ObjectDetectorPanelProps {
     mode: UseNeuraProjectReturn
@@ -85,6 +88,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [modelLoadError, setModelLoadError] = useState<string | null>(null)
     const [customModelTrained, setCustomModelTrained] = useState(false)
     const [useCustomModel, setUseCustomModel] = useState(false)
+    const [collectTab, setCollectTab] = useState<'camera' | 'upload' | 'download'>('camera')
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -297,11 +301,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
         const video = videoRef.current
         const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = video.videoWidth
-        tempCanvas.height = video.videoHeight
+        // Resize to max 640px on longest side for smaller file size
+        const maxDim = 640
+        const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1)
+        tempCanvas.width = Math.floor(video.videoWidth * scale)
+        tempCanvas.height = Math.floor(video.videoHeight * scale)
         const ctx = tempCanvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0)
-        const imageData = tempCanvas.toDataURL('image/png')
+        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height)
+        // Use JPEG with 0.7 quality for much smaller file size
+        const imageData = tempCanvas.toDataURL('image/jpeg', 0.7)
         const added = mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
         if (!added) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
@@ -381,9 +389,21 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
-    const handleSaveUploadedImage = useCallback(() => {
+    const handleSaveUploadedImage = useCallback(async () => {
         if (!uploadedImage || !mode.selectedClassId) return
-        const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: uploadedImage.originalUrl })
+        // Resize image before saving for smaller file size
+        const img = new Image()
+        img.src = uploadedImage.originalUrl
+        await new Promise<void>((resolve) => { img.onload = () => resolve(); setTimeout(resolve, 3000) })
+        const maxDim = 640
+        const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.floor(img.naturalWidth * scale)
+        canvas.height = Math.floor(img.naturalHeight * scale)
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const resizedUrl = canvas.toDataURL('image/jpeg', 0.7)
+        const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: resizedUrl })
         if (!saved) { showSaved('⚠️ Sample limit reached! (20 per class)'); return }
         const className = mode.getSelectedClass()?.name || 'class'
         showSaved(`📂 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
@@ -444,6 +464,32 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
 
+            {/* Collect sub-tabs */}
+            <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-[#dae2fd]">
+                {[
+                    { id: 'camera' as const, label: 'Camera', emoji: '📷' },
+                    { id: 'upload' as const, label: 'Upload', emoji: '📂' },
+                    { id: 'download' as const, label: 'Download', emoji: '📥' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => {
+                            setCollectTab(tab.id)
+                            if (tab.id === 'camera' && !cameraOn) startCamera()
+                            if (tab.id !== 'camera' && cameraOn) stopCamera()
+                        }}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                            collectTab === tab.id
+                                ? 'bg-[#630ed4] text-white shadow-sm'
+                                : 'text-[#4a4455] hover:bg-[#eaedff]'
+                        }`}
+                    >
+                        <span>{tab.emoji}</span>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                ))}
+            </div>
+
             {/* Tips */}
             <div className="w-full max-w-[720px] animate-fade-in">
                 <div className="bg-gradient-to-r from-[#eaedff] to-[#dbeafe] rounded-2xl px-5 py-4 border border-[#630ed4]/10">
@@ -461,102 +507,114 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 </div>
             </div>
 
-            {/* Camera error */}
-            {cameraError && !cameraOn && (
-                <div className="w-full max-w-[520px] bg-white rounded-3xl p-8 shadow-md border border-[#dae2fd] text-center animate-scale-in">
-                    <span className="text-5xl mb-4 block">🚫</span>
-                    <h3 className="text-lg font-bold text-[#131b2e] mb-2">Camera Access Needed 📷</h3>
-                    <p className="text-sm text-[#4a4455] mb-6 max-w-sm mx-auto">{cameraError}</p>
-                    <div className="flex gap-3 justify-center">
-                        <button onClick={startCamera} className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all">Try Again 🔄</button>
-                        <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} className="px-6 py-3 bg-[#eaedff] text-[#131b2e] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all">Upload Only 📂</button>
-                    </div>
-                </div>
-            )}
+            {/* Camera / Upload tab content */}
+            {collectTab !== 'download' && (
+                <>
+                    {/* Camera error */}
+                    {cameraError && !cameraOn && (
+                        <div className="w-full max-w-[520px] bg-white rounded-3xl p-8 shadow-md border border-[#dae2fd] text-center animate-scale-in">
+                            <span className="text-5xl mb-4 block">🚫</span>
+                            <h3 className="text-lg font-bold text-[#131b2e] mb-2">Camera Access Needed 📷</h3>
+                            <p className="text-sm text-[#4a4455] mb-6 max-w-sm mx-auto">{cameraError}</p>
+                            <div className="flex gap-3 justify-center">
+                                <button onClick={startCamera} className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all">Try Again 🔄</button>
+                                <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} className="px-6 py-3 bg-[#eaedff] text-[#131b2e] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all">Upload Only 📂</button>
+                            </div>
+                        </div>
+                    )}
 
-            {!selectedClass && !cameraError && (
-                <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-2xl px-5 py-3 max-w-[520px] w-full">
-                    <p className="text-xs font-bold text-[#f97316] text-center">⚠️ Select or add a class first to start capturing!</p>
-                </div>
-            )}
+                    {!selectedClass && !cameraError && (
+                        <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-2xl px-5 py-3 max-w-[520px] w-full">
+                            <p className="text-xs font-bold text-[#f97316] text-center">⚠️ Select or add a class first to start capturing!</p>
+                        </div>
+                    )}
 
-            {/* Camera feed */}
-            <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-3xl -scale-x-100" />
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full rounded-3xl pointer-events-none -scale-x-100" />
-                {captureFlash && <div className="absolute inset-0 bg-white/50 animate-flash rounded-3xl" />}
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                    <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
-                    <span className="text-white text-[10px] font-bold tracking-wide">🔍 LIVE</span>
-                </div>
-                <div className="absolute top-4 right-4">
-                    <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#d1fae5] text-[#006c44] hover:bg-[#a7f3d0] transition-all">
-                        📷 Camera On
-                    </button>
-                </div>
-                {selectedClass && (
-                    <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md" style={{ backgroundColor: `${selectedClass.color}CC` }}>
-                        {selectedClass.name}
-                    </div>
-                )}
-                {currentDetections.length > 0 && (
-                    <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-xl">
-                        <span className="text-white text-[11px] font-bold">🎯 {currentDetections.length} found</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Camera off placeholder */}
-            {!cameraOn && !cameraError && (
-                <div className="w-full max-w-[520px] border-2 border-dashed border-[#630ed4]/20 rounded-3xl p-8 text-center transition-all hover:border-[#630ed4]/40 bg-white/70 backdrop-blur-sm">
-                    <div className="flex flex-col items-center justify-center">
-                        <span className="text-6xl mb-4">🔍</span>
-                        <h2 className="text-xl font-extrabold text-[#131b2e] mb-2">Camera is off</h2>
-                        <p className="text-sm text-[#4a4455] mb-6 max-w-sm">Start the camera to detect objects in real-time!</p>
-                        <div className="flex gap-3">
-                            <button onClick={startCamera} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg hover:shadow-[#630ed4]/30 hover:-translate-y-0.5 transition-all">
-                                📷 Turn On Camera
-                            </button>
-                            <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 transition-all shadow-sm ${mode.selectedClassId ? 'bg-white text-[#630ed4] border-2 border-[#630ed4] hover:bg-[#630ed4]/5' : 'bg-[#e5e7eb] text-[#ccc3d8] border-2 border-[#d1d5db] cursor-not-allowed'}`}>
-                                📂 Upload Image
+                    {/* Camera feed */}
+                    <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-3xl -scale-x-100" />
+                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full rounded-3xl pointer-events-none -scale-x-100" />
+                        {captureFlash && <div className="absolute inset-0 bg-white/50 animate-flash rounded-3xl" />}
+                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
+                            <span className="text-white text-[10px] font-bold tracking-wide">🔍 LIVE</span>
+                        </div>
+                        <div className="absolute top-4 right-4">
+                            <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#d1fae5] text-[#006c44] hover:bg-[#a7f3d0] transition-all">
+                                📷 Camera On
                             </button>
                         </div>
+                        {selectedClass && (
+                            <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md" style={{ backgroundColor: `${selectedClass.color}CC` }}>
+                                {selectedClass.name}
+                            </div>
+                        )}
+                        {currentDetections.length > 0 && (
+                            <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-xl">
+                                <span className="text-white text-[11px] font-bold">🎯 {currentDetections.length} found</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Camera off placeholder */}
+                    {!cameraOn && !cameraError && (
+                        <div className="w-full max-w-[520px] border-2 border-dashed border-[#630ed4]/20 rounded-3xl p-8 text-center transition-all hover:border-[#630ed4]/40 bg-white/70 backdrop-blur-sm">
+                            <div className="flex flex-col items-center justify-center">
+                                <span className="text-6xl mb-4">🔍</span>
+                                <h2 className="text-xl font-extrabold text-[#131b2e] mb-2">Camera is off</h2>
+                                <p className="text-sm text-[#4a4455] mb-6 max-w-sm">Start the camera to detect objects in real-time!</p>
+                                <div className="flex gap-3">
+                                    <button onClick={startCamera} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg hover:shadow-[#630ed4]/30 hover:-translate-y-0.5 transition-all">
+                                        📷 Turn On Camera
+                                    </button>
+                                    <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 transition-all shadow-sm ${mode.selectedClassId ? 'bg-white text-[#630ed4] border-2 border-[#630ed4] hover:bg-[#630ed4]/5' : 'bg-[#e5e7eb] text-[#ccc3d8] border-2 border-[#d1d5db] cursor-not-allowed'}`}>
+                                        📂 Upload Image
+                                    </button>
+                                </div>
+                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Controls */}
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                        <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'} disabled:opacity-40`}>
+                            {cameraOn ? '📷 Stop' : '📷 Start'}
+                        </button>
+                        {cameraOn && (
+                            <button onClick={() => setRealtimeEnabled(!realtimeEnabled)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${realtimeEnabled ? 'bg-[#d1fae5] text-[#006c44] border border-[#006c44]/30' : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'}`}>
+                                {realtimeEnabled ? '⚡ Auto' : '✋ Manual'}
+                            </button>
+                        )}
+                        {cameraOn && !realtimeEnabled && (
+                            <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md active:scale-95 transition-all disabled:opacity-40">
+                                {isDetecting ? '⏳ Scanning...' : '🔍 Scan Now'}
+                            </button>
+                        )}
+                        <button onClick={() => fileInputRef.current?.click()} disabled={isLoadingModel} className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md disabled:opacity-40 transition-all">
+                            📂 Upload
+                        </button>
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
                     </div>
-                </div>
+
+                    {/* Capture button */}
+                    {cameraOn && (
+                        <CaptureButton
+                            onClick={handleCapture}
+                            disabled={!canAddSamples || isLoadingModel}
+                            label={atSampleLimit ? 'Max Reached' : !stream ? 'Start Camera First' : 'Capture Object'}
+                            icon="camera"
+                            color={selectedClass?.color || '#630ed4'}
+                            pulse={!isLoadingModel && !!canAddSamples && !!stream}
+                        />
+                    )}
+                </>
             )}
 
-            {/* Controls */}
-            <div className="flex items-center gap-3 flex-wrap justify-center">
-                <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'} disabled:opacity-40`}>
-                    {cameraOn ? '📷 Stop' : '📷 Start'}
-                </button>
-                {cameraOn && (
-                    <button onClick={() => setRealtimeEnabled(!realtimeEnabled)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${realtimeEnabled ? 'bg-[#d1fae5] text-[#006c44] border border-[#006c44]/30' : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'}`}>
-                        {realtimeEnabled ? '⚡ Auto' : '✋ Manual'}
-                    </button>
-                )}
-                {cameraOn && !realtimeEnabled && (
-                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md active:scale-95 transition-all disabled:opacity-40">
-                        {isDetecting ? '⏳ Scanning...' : '🔍 Scan Now'}
-                    </button>
-                )}
-                <button onClick={() => fileInputRef.current?.click()} disabled={isLoadingModel} className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md disabled:opacity-40 transition-all">
-                    📂 Upload
-                </button>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
-            </div>
-
-            {/* Capture button */}
-            {cameraOn && (
-                <CaptureButton
-                    onClick={handleCapture}
-                    disabled={!canAddSamples || isLoadingModel}
-                    label={atSampleLimit ? 'Max Reached' : !stream ? 'Start Camera First' : 'Capture Object'}
-                    icon="camera"
-                    color={selectedClass?.color || '#630ed4'}
-                    pulse={!isLoadingModel && !!canAddSamples && !!stream}
-                />
+            {/* Download tab content */}
+            {collectTab === 'download' && (
+                <div className="w-full max-w-[520px]">
+                    <ImageDatasetBrowser mode={mode} onImagesAdded={(count) => showSaved(`📥 Added ${count} images!`)} />
+                </div>
             )}
 
             <StatsBar totalClasses={mode.project?.classes.length || 0} totalImages={mode.getTotalSamples()} imagesPerClass={(mode.project?.classes.length || 0) > 0 ? Math.round(mode.getTotalSamples() / (mode.project?.classes.length || 1)) : 0} recommended={10} />
@@ -740,6 +798,47 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     💾 Save Test Report
                 </button>
             )}
+
+            {/* Model Export */}
+            {customModelTrained && mode.project && (
+                <div className="w-full max-w-[520px]">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-[#dae2fd]">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-[#131b2e]">📦 Export Model</h3>
+                            <span className="text-[10px] font-bold bg-[#eaedff] text-[#630ed4] px-2 py-0.5 rounded">Trained</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {[
+                                { label: 'JSON', emoji: '📄', format: 'json', color: '#630ed4' },
+                                { label: 'TF.js', emoji: '🌐', format: 'tfjs', color: '#3b82f6' },
+                                { label: 'ONNX', emoji: '⚡', format: 'onnx', color: '#10b981' },
+                                { label: 'TFLite', emoji: '📱', format: 'tflite', color: '#f59e0b' }
+                            ].map(exp => {
+                                const sizes = getExportSizeEstimate(mode.project!)
+                                return (
+                                    <button
+                                        key={exp.format}
+                                        onClick={() => {
+                                            const state = trainerRef.current.getState()
+                                            if (exp.format === 'json') exportJSON(mode.project!, state)
+                                            else if (exp.format === 'tfjs') exportTFJS(mode.project!, state)
+                                            else if (exp.format === 'onnx') exportONNX(mode.project!, state)
+                                            else if (exp.format === 'tflite') exportTFLite(mode.project!, state)
+                                        }}
+                                        className="flex items-center gap-2 p-3 rounded-xl border border-[#dae2fd] hover:border-[#630ed4]/30 hover:shadow-md transition-all group"
+                                    >
+                                        <span className="text-xl group-hover:scale-110 transition-transform">{exp.emoji}</span>
+                                        <div className="text-left">
+                                            <p className="text-xs font-bold text-[#131b2e]">{exp.label}</p>
+                                            <p className="text-[9px] text-[#4a4455]">{sizes[exp.label]}</p>
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 
@@ -803,6 +902,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 <TrainPanel mode={mode} trainer={trainerRef.current} onTrained={() => { setCustomModelTrained(true); setUseCustomModel(true) }} />
             ) : mode.mode === 'annotate' ? (
                 <AnnotatePanel mode={mode} />
+            ) : mode.mode === 'evaluate' ? (
+                <EvaluatePanel mode={mode} metrics={trainerRef.current.getState().metrics} />
             ) : mode.mode === 'test' ? (
                 renderTestMode()
             ) : (
