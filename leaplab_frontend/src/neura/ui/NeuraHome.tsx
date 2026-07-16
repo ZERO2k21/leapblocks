@@ -229,7 +229,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     background: #fff;
                     border-radius: 1.5rem;
                     box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.03);
-                    padding: 2rem 1.5rem;
+                    padding: 2.25rem 1.75rem;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
@@ -390,7 +390,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     {/* ── Superpower Cards Grid ── */}
                     <main className="w-full flex justify-center" style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '24px', paddingBottom: '32px' }}>
                         <div className="w-full max-w-7xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: '28px' }}>
                             {CLASSIFIER_TYPES.map((item) => {
                                 const borderClass =
                                     item.type === 'image-classifier' ? 'neura-border-vision' :
@@ -428,57 +428,102 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                     >
                                         {/* Icon Container */}
                                         <div
-                                            className="flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
+                                            className="flex items-center justify-center transition-transform duration-300 hover:scale-110"
                                             style={{
-                                                width: '72px',
-                                                height: '72px',
-                                                borderRadius: '1.25rem',
-                                                backgroundColor: `${item.color}0A`,
-                                                border: `1.5px solid ${item.color}18`,
-                                                boxShadow: `0 4px 14px ${item.color}12`,
+                                                width: '88px',
+                                                height: '88px',
+                                                borderRadius: '1.5rem',
+                                                backgroundColor: `${item.color}10`,
+                                                border: `2px solid ${item.color}25`,
+                                                boxShadow: `0 6px 20px ${item.color}18`,
+                                                marginBottom: '20px',
                                             }}
                                         >
-                                            <img alt={item.name} className="w-11 h-11 object-contain select-none" src={item.iconUrl} />
+                                            <img alt={item.name} className="w-14 h-14 object-contain select-none" src={item.iconUrl} />
                                         </div>
 
                                         {/* Badge */}
-                                        <span
-                                            className="text-[10px] font-bold uppercase tracking-widest mb-3 px-3 py-1 rounded-full"
+                                        <div
+                                            className="inline-flex items-center rounded-full"
                                             style={{
-                                                color: item.color,
-                                                backgroundColor: `${item.color}0D`,
+                                                padding: '5px 14px 5px 8px',
+                                                backgroundColor: item.color,
+                                                boxShadow: `0 3px 12px ${item.color}35`,
+                                                marginBottom: '14px',
+                                                gap: '6px',
                                             }}
                                         >
-                                            {item.badge}
-                                        </span>
+                                            <span style={{ fontSize: '13px', lineHeight: 1 }}>{item.badge.split(' ')[0]}</span>
+                                            <span className="font-bold" style={{ fontSize: '11px', letterSpacing: '0.05em', color: '#fff' }}>
+                                                {item.badge.split(' ').slice(1).join(' ')}
+                                            </span>
+                                        </div>
 
                                         {/* Title */}
-                                        <h3 className="text-xl font-extrabold text-gray-800 mb-2 leading-snug">
+                                        <h3 className="font-extrabold text-gray-800 leading-snug" style={{ fontSize: '1.4rem', marginBottom: '10px' }}>
                                             {item.name}
                                         </h3>
 
                                         {/* Description */}
-                                        <p className="text-[13px] text-gray-500 leading-relaxed" style={{ maxWidth: '240px' }}>
+                                        <p className="text-gray-500 leading-relaxed font-medium" style={{ fontSize: '14px', maxWidth: '250px' }}>
                                             {item.description}
                                         </p>
 
                                         {/* Toggle switch for pose classifier */}
                                         {item.hasToggle && (
                                             <div
-                                                className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-xl p-1 mt-4"
+                                                className="flex items-center rounded-2xl mt-4"
+                                                style={{
+                                                    background: '#f3f4f6',
+                                                    border: '2px solid #e5e7eb',
+                                                    padding: '5px',
+                                                    gap: '4px',
+                                                }}
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <button
                                                     onClick={() => setPoseMode('body')}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${poseMode === 'body' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                    style={{
+                                                        padding: '10px 18px',
+                                                        borderRadius: '14px',
+                                                        fontSize: '12px',
+                                                        fontWeight: 700,
+                                                        letterSpacing: '0.06em',
+                                                        textTransform: 'uppercase',
+                                                        transition: 'all 0.25s ease',
+                                                        background: poseMode === 'body' ? '#fff' : 'transparent',
+                                                        color: poseMode === 'body' ? '#ea580c' : '#9ca3af',
+                                                        boxShadow: poseMode === 'body' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                    }}
                                                 >
-                                                    🏋️ Body
+                                                    <span style={{ fontSize: '15px' }}>🏋️</span> Body
                                                 </button>
                                                 <button
                                                     onClick={() => setPoseMode('hand')}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${poseMode === 'hand' ? 'bg-white text-blue-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                    style={{
+                                                        padding: '10px 18px',
+                                                        borderRadius: '14px',
+                                                        fontSize: '12px',
+                                                        fontWeight: 700,
+                                                        letterSpacing: '0.06em',
+                                                        textTransform: 'uppercase',
+                                                        transition: 'all 0.25s ease',
+                                                        background: poseMode === 'hand' ? '#fff' : 'transparent',
+                                                        color: poseMode === 'hand' ? '#2563eb' : '#9ca3af',
+                                                        boxShadow: poseMode === 'hand' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                    }}
                                                 >
-                                                    ✋ Hand
+                                                    <span style={{ fontSize: '15px' }}>✋</span> Hand
                                                 </button>
                                             </div>
                                         )}
@@ -508,9 +553,9 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                 onClick={handleBlankProject}
                                 className="neura-blank-card group"
                             >
-                                <div style={{ fontSize: '32px', marginBottom: '12px' }} className="group-hover:scale-125 transition-transform">✨</div>
-                                <span className="text-sm font-bold text-gray-700 group-hover:text-purple-600 transition-colors">Create Blank Project</span>
-                                <span className="text-[10px] text-gray-400 mt-1.5 uppercase tracking-wider font-semibold">Start fresh!</span>
+                                <div style={{ fontSize: '40px', marginBottom: '14px' }} className="group-hover:scale-125 transition-transform">✨</div>
+                                <span className="font-bold text-gray-700 group-hover:text-purple-600 transition-colors" style={{ fontSize: '15px' }}>Create Blank Project</span>
+                                <span className="text-gray-400 mt-1.5 uppercase tracking-wider font-semibold" style={{ fontSize: '11px' }}>Start fresh!</span>
                             </button>
 
                             {PROJECT_TEMPLATES.map((template) => (
@@ -521,17 +566,17 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                 >
                                     <div
                                         className="flex items-center justify-center gap-3"
-                                        style={{ backgroundColor: `${template.color}08`, padding: '28px 16px' }}
+                                        style={{ backgroundColor: `${template.color}10`, padding: '32px 16px' }}
                                     >
-                                        <span className="text-3xl select-none transition-transform duration-300 hover:scale-110">{template.icon}</span>
-                                        <span className="text-3xl select-none transition-transform duration-300 hover:scale-110">{template.icon2}</span>
-                                        <span className="text-3xl select-none transition-transform duration-300 hover:scale-110">{template.icon3}</span>
+                                        <span className="select-none transition-transform duration-300 hover:scale-110" style={{ fontSize: '2.2rem' }}>{template.icon}</span>
+                                        <span className="select-none transition-transform duration-300 hover:scale-110" style={{ fontSize: '2.2rem' }}>{template.icon2}</span>
+                                        <span className="select-none transition-transform duration-300 hover:scale-110" style={{ fontSize: '2.2rem' }}>{template.icon3}</span>
                                     </div>
                                     <div
                                         className="bg-white"
-                                        style={{ padding: '14px 16px', borderTop: `1px solid ${template.color}15` }}
+                                        style={{ padding: '16px', borderTop: `2px solid ${template.color}18` }}
                                     >
-                                        <h4 className="text-sm font-bold text-gray-800">{template.name}</h4>
+                                        <h4 className="font-bold text-gray-800" style={{ fontSize: '14px' }}>{template.name}</h4>
                                     </div>
                                 </button>
                             ))}

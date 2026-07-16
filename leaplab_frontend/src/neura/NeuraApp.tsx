@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback, lazy, Suspense } from 'react'
 import type { ProjectType } from './types/neura.types'
+import Loader from '../components/Loader'
 
 const NeuraHome = lazy(() => import('./ui/NeuraHome'))
 const ProjectWorkspace = lazy(() => import('./ui/ProjectWorkspace'))
@@ -23,17 +24,6 @@ interface NeuraAppProps {
 }
 
 type ViewState = { screen: 'home' } | { screen: 'workspace'; type: ProjectType; template?: { name: string; classes: string[] } }
-
-function NeuraLoader() {
-    return (
-        <div className="h-screen flex items-center justify-center bg-gray-50">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-violet-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-gray-400 font-medium">Loading Neura...</p>
-            </div>
-        </div>
-    )
-}
 
 function getClassifierPanel(type: ProjectType) {
     switch (type) {
@@ -77,7 +67,7 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
 
     return (
         <div className="w-full h-screen bg-gray-50">
-            <Suspense fallback={<NeuraLoader />}>
+            <Suspense fallback={<Loader />}>
                 {view.screen === 'home' && (
                     <NeuraHome
                         onSelect={handleSelectType}

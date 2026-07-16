@@ -30,7 +30,15 @@ function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: Cla
         : [{ id: 'collect' as const, label: 'Collect', emoji: '📸' }, { id: 'train' as const, label: 'Train', emoji: '🏋️' }, { id: 'test' as const, label: 'Test', emoji: '🧪' }]
 
     return (
-        <div className="flex items-center gap-1 bg-white/20 rounded-xl p-0.5">
+        <div
+            className="flex items-center"
+            style={{
+                background: 'rgba(255,255,255,0.15)',
+                borderRadius: '14px',
+                padding: '4px',
+                gap: '3px',
+            }}
+        >
             {modes.map((m) => {
                 const isActive = mode === m.id
                 const isDisabled = m.id === 'train' && !canTrain
@@ -39,15 +47,23 @@ function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: Cla
                         key={m.id}
                         onClick={() => !isDisabled && onModeChange(m.id)}
                         disabled={isDisabled}
-                        className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all ${
-                            isActive
-                                ? 'bg-white text-[#630ed4] shadow-sm'
-                                : isDisabled
-                                    ? 'text-white/30 cursor-not-allowed'
-                                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                        }`}
+                        className="flex items-center"
+                        style={{
+                            gap: '6px',
+                            padding: '7px 14px',
+                            borderRadius: '11px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s ease',
+                            background: isActive ? '#fff' : 'transparent',
+                            color: isActive ? '#630ed4' : isDisabled ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.8)',
+                            boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                            opacity: isDisabled ? 0.5 : 1,
+                        }}
                     >
-                        <span className="text-xs">{m.emoji}</span>
+                        <span style={{ fontSize: '14px' }}>{m.emoji}</span>
                         <span className="hidden sm:inline">{m.label}</span>
                     </button>
                 )
@@ -284,7 +300,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                     <div className="flex flex-col items-center py-10 text-center">
                         <span className="text-2xl sm:text-3xl mb-2">📂</span>
                         <p className="text-[10px] sm:text-xs font-bold text-[#131b2e] mb-0.5">No classes yet</p>
-                        <p className="text-[9px] sm:text-[10px] text-[#4a4455]">Click + to add some! ✨</p>
+                        <p className="text-[9px] sm:text-[10px] text-[#4a4455]">Click + to add some! 👆</p>
                     </div>
                 )}
             </div>
@@ -399,25 +415,86 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 )}
 
                 {/* Main content */}
-                <main className="flex-1 overflow-y-auto neura-scrollbar bg-[#faf8ff] min-w-0">
-                    <div key={mode.mode} className="animate-fade-in">
+                <main className="flex-1 bg-[#faf8ff] min-w-0 flex flex-col overflow-hidden relative">
+                    <div key={mode.mode} className="animate-fade-in flex-1 flex flex-col min-h-0 h-full relative">
                         {children({ mode })}
                     </div>
                 </main>
             </div>
 
             {/* Status Bar */}
-            <footer className="bg-white/80 backdrop-blur-sm border-t border-[#dae2fd] px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-[#4a4455]">
-                    <span className="flex items-center gap-1"><span className="text-xs sm:text-sm">🖼️</span> {mode.getTotalSamples()} pics</span>
-                    <span className="text-[#ccc3d8]">|</span>
-                    <span className="flex items-center gap-1"><span className="text-xs sm:text-sm">📁</span> {mode.project?.classes.length || 0} types</span>
-                    <span className="hidden sm:inline text-[#ccc3d8]">|</span>
-                    <span className="hidden sm:flex items-center gap-1 text-[#006c44]"><span className="text-sm">💾</span> Auto-saved</span>
+            <footer
+                className="flex items-center justify-between"
+                style={{
+                    background: 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    borderTop: '1.5px solid #e5e7eb',
+                    padding: '10px 16px',
+                }}
+            >
+                <div className="flex items-center" style={{ gap: '12px' }}>
+                    {/* Pics */}
+                    <div
+                        className="flex items-center"
+                        style={{
+                            gap: '6px',
+                            padding: '5px 12px',
+                            borderRadius: '10px',
+                            background: '#f3f0ff',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#630ed4',
+                        }}
+                    >
+                        <span style={{ fontSize: '14px' }}>🖼️</span>
+                        <span>{mode.getTotalSamples()} pics</span>
+                    </div>
+                    {/* Types */}
+                    <div
+                        className="flex items-center"
+                        style={{
+                            gap: '6px',
+                            padding: '5px 12px',
+                            borderRadius: '10px',
+                            background: '#f0fdf4',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#006c44',
+                        }}
+                    >
+                        <span style={{ fontSize: '14px' }}>📁</span>
+                        <span>{mode.project?.classes.length || 0} types</span>
+                    </div>
+                    {/* Auto-saved */}
+                    <div
+                        className="hidden sm:flex items-center"
+                        style={{
+                            gap: '6px',
+                            padding: '5px 12px',
+                            borderRadius: '10px',
+                            background: '#ecfdf5',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#059669',
+                        }}
+                    >
+                        <span style={{ fontSize: '14px' }}>💾</span>
+                        <span>Auto-saved</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px]">
-                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${mode.project?.modelTrained ? 'bg-[#006c44] animate-pulse' : 'bg-[#ccc3d8]'}`} />
-                    <span className="text-[#4a4455]">{mode.project?.modelTrained ? '✅ Ready' : '⏳ No model'}</span>
+                <div className="flex items-center" style={{ gap: '8px' }}>
+                    <div
+                        style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: mode.project?.modelTrained ? '#059669' : '#d1d5db',
+                            boxShadow: mode.project?.modelTrained ? '0 0 8px rgba(5,150,105,0.5)' : 'none',
+                        }}
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>
+                        {mode.project?.modelTrained ? '✅ Ready' : '⏳ No model'}
+                    </span>
                 </div>
             </footer>
 
