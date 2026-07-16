@@ -102,6 +102,22 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
     useEffect(() => { streamStateRef.current = stream }, [stream])
 
+    // Sync stream to video element when stream changes
+    useEffect(() => {
+        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => undefined)
+        }
+    }, [stream])
+
+    // Re-sync when cameraOn changes (video element may mount after stream is set)
+    useEffect(() => {
+        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => undefined)
+        }
+    }, [cameraOn])
+
     useEffect(() => {
         if (cameraOn && stream && videoRef.current) {
             videoRef.current.srcObject = stream

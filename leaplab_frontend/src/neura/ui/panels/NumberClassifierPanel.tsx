@@ -96,6 +96,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         streamStateRef.current = streamRef.current
     })
 
+    // Sync stream to video element when cameraOn changes (video element may mount after stream is set)
+    useEffect(() => {
+        if (cameraOn && streamRef.current && videoRef.current && videoRef.current.srcObject !== streamRef.current) {
+            videoRef.current.srcObject = streamRef.current
+            videoRef.current.play().catch(() => undefined)
+        }
+    }, [cameraOn])
+
     useEffect(() => {
         return () => {
             stopCamera()
