@@ -415,40 +415,46 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         <div className="flex flex-col h-full relative">
             {/* Onboarding */}
             {showOnboarding && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
-                        <div className="text-center mb-6">
-                            <div className="text-5xl mb-4">✋</div>
-                            <h3 className="text-xl font-extrabold text-[#131b2e] mb-2">Welcome to Hand Pose Classifier!</h3>
-                            <p className="text-sm text-[#4a4455]">Teach AI to recognize your hand gestures using the camera! 🚀</p>
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ animation: 'onbFadeIn 0.3s ease-out' }}>
+                    <div className="absolute inset-0 bg-[#0a0128]/70 backdrop-blur-lg" />
+                    <div className="relative w-full max-w-[420px] overflow-hidden" style={{ animation: 'onbSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                        <div className="absolute -inset-[1px] rounded-[28px] bg-gradient-to-br from-[#7dd3fc]/40 via-[#38bdf8]/20 to-[#0ea5e9]/40 blur-sm" />
+                        <div className="relative bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_25px_60px_-12px_rgba(14,165,233,0.25),0_0_0_1px_rgba(14,165,233,0.08)] overflow-hidden">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7dd3fc] via-[#0ea5e9] to-[#38bdf8]" />
+                            <div className="px-8 pt-8 pb-5">
+                                <div className="relative w-16 h-16 mx-auto mb-5">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] rounded-2xl rotate-3 shadow-md" />
+                                    <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#e0f2fe]/50">
+                                        <span className="text-3xl">✋</span>
+                                    </div>
+                                </div>
+                                <h3 className="text-[19px] font-extrabold text-[#131b2e] mb-2.5 text-center tracking-tight leading-tight">Welcome to Hand Pose Classifier!</h3>
+                                <p className="text-[13px] text-[#5b5670] leading-[1.65] text-center max-w-[320px] mx-auto">Teach AI to recognize your hand gestures using the camera! 🚀</p>
+                            </div>
+                            <div className="mx-8"><div className="h-px bg-gradient-to-r from-transparent via-[#e0f2fe] to-transparent" /></div>
+                            <div className="px-8 py-5">
+                                <div className="space-y-3 mb-5">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#0ea5e9] shadow-sm">1</div>
+                                        <div><p className="text-sm font-bold text-[#131b2e]">Create Classes 📁</p><p className="text-xs text-[#5b5670]">Click "+" in the sidebar to add gesture categories!</p></div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#0ea5e9] shadow-sm">2</div>
+                                        <div><p className="text-sm font-bold text-[#131b2e]">Capture Gestures ✋</p><p className="text-xs text-[#5b5670]">Show your hand to the camera and capture samples!</p></div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#006c44] shadow-sm">3</div>
+                                        <div><p className="text-sm font-bold text-[#131b2e]">Train & Test 🏋️🧪</p><p className="text-xs text-[#5b5670]">Teach your AI, then test how well it recognizes gestures!</p></div>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-handpose-onboarding-seen', 'true') }} className="w-full py-3.5 rounded-2xl font-bold text-sm text-white shadow-lg shadow-[#0ea5e9]/25 hover:shadow-xl hover:shadow-[#0ea5e9]/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] relative overflow-hidden group">
+                                    <span className="relative z-10">Let's Go! 🚀</span>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="space-y-4 mb-6">
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#0ea5e9]">1</div>
-                                <div>
-                                    <p className="text-sm font-bold text-[#131b2e]">Create Classes 📁</p>
-                                    <p className="text-xs text-[#4a4455]">Click "+" in the sidebar to add gesture categories!</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#0ea5e9]">2</div>
-                                <div>
-                                    <p className="text-sm font-bold text-[#131b2e]">Capture Gestures ✋</p>
-                                    <p className="text-xs text-[#4a4455]">Show your hand to the camera and capture samples!</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-[#d1fae5] flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#006c44]">3</div>
-                                <div>
-                                    <p className="text-sm font-bold text-[#131b2e]">Train & Test 🏋️🧪</p>
-                                    <p className="text-xs text-[#4a4455]">Teach your AI, then test how well it recognizes gestures!</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-handpose-onboarding-seen', 'true') }} className="w-full py-3 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-[#0ea5e9]/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
-                            Let's Go! 🚀
-                        </button>
                     </div>
+                    <style>{`@keyframes onbFadeIn{from{opacity:0}to{opacity:1}}@keyframes onbSlideIn{from{opacity:0;transform:translateY(12px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
                 </div>
             )}
 
