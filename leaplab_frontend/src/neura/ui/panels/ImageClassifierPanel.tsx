@@ -42,11 +42,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [modelLoading, setModelLoading] = useState(false)
     const [augmentMode, setAugmentMode] = useState(true)
     const [inferenceTime, setInferenceTime] = useState(0)
+    const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const streamRef = useRef<MediaStream | null>(null)
     const cameraOnRef = useRef(false)
     const streamStateRef = useRef<MediaStream | null>(null)
+    const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const startCamera = useCallback(async () => {
         try {
@@ -75,6 +77,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             streamRef.current = null
             setStream(null)
         }
+    }, [])
+
+    const showSaved = useCallback((msg: string) => {
+        setSavedMessage(msg)
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+        savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
     }, [])
 
     const toggleCamera = useCallback(() => {
@@ -180,9 +188,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const imageData = canvas.toDataURL('image/png')
             mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
             if (augmentMode) {
-                classifierRef.current.addSampleAugmented(video, mode.getSelectedClass()?.name || '').catch(() => {})
+                classifierRef.current.addSampleAugmented(video, mode.getSelectedClass()?.name || '').catch(() => undefined)
             } else {
-                classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => {})
+                classifierRef.current.addSample(video, mode.getSelectedClass()?.name || '').catch(() => undefined)
             }
         } catch (err) {
             console.warn('[Neura] Capture failed:', err)
@@ -264,7 +272,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     setInferenceTime(elapsed)
                 }
             }
-        } catch {}
+        } catch { /* prediction failed */ }
         setIsProcessing(false)
         if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
@@ -286,6 +294,38 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         setIsProcessing(false)
     }, [cameraOn, modelLoading])
 
+    const handleExportTestReport = useCallback(() => {
+        if (!prediction) return
+        const sortedConfidences = Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a)
+        const report = {
+            projectName: mode.project?.name || 'Untitled',
+            projectType: 'image-classifier',
+            exportedAt: new Date().toISOString(),
+            testResults: {
+                prediction: prediction.label,
+                confidence: sortedConfidences.length > 0 ? sortedConfidences[0][1] : 0,
+                allConfidences: Object.fromEntries(sortedConfidences.map(([k, v]) => [k, Math.round(v * 100) + '%'])),
+                inferenceTime
+            },
+            projectSummary: {
+                totalSamples: mode.getTotalSamples(),
+                totalClasses: mode.project?.classes.length || 0,
+                classes: mode.project?.classes.map(c => ({ name: c.name, sampleCount: c.samples.length })),
+                accuracy: mode.accuracy
+            }
+        }
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${(mode.project?.name || 'report').replace(/[^a-z0-9]/gi, '_')}_test_report.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        showSaved('💾 Test report downloaded!')
+    }, [prediction, inferenceTime, mode, showSaved])
+
     const startBurstCapture = useCallback(() => {
         if (!burstMode || !mode.selectedClassId || !cameraOn) return
         burstIntervalRef.current = setInterval(() => {
@@ -304,10 +344,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         return () => {
             stopBurstCapture()
             if (autoSwitchRef.current) clearTimeout(autoSwitchRef.current)
+            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
         }
     }, [])
 
-    const handleTrain = async (epochs: number = 50) => {
+    const handleTrain = async (epochs = 50) => {
         setIsTraining(true)
         setTrainingError(null)
         setTotalEpochs(epochs)
@@ -449,6 +490,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     return (
         <div className="flex flex-col h-full relative">
+            {/* Toast messages */}
+            {savedMessage && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                    {savedMessage}
+                </div>
+            )}
+
             {/* Onboarding */}
             {showOnboarding && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ animation: 'onbFadeIn 0.3s ease-out' }}>
@@ -607,7 +655,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     {/* Capture */}
                     {cameraOn && (
                         <CaptureButton
-                            onClick={burstMode ? () => {} : handleCapture}
+                            onClick={handleCapture}
                             onMouseDown={burstMode ? startBurstCapture : undefined}
                             onMouseUp={burstMode ? stopBurstCapture : undefined}
                             onTouchStart={burstMode ? startBurstCapture : undefined}
@@ -677,7 +725,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             <span className="text-sm font-bold text-[#630ed4]">Loading model... ⏳</span>
                         </div>
                     )}
-                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={() => {}} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                 </div>
             )}
         </div>
