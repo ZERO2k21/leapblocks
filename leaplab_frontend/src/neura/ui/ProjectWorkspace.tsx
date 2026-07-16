@@ -42,12 +42,10 @@ function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: Cla
         >
             {modes.map((m) => {
                 const isActive = mode === m.id
-                const isDisabled = m.id === 'train' && !canTrain
                 return (
                     <button
                         key={m.id}
-                        onClick={() => !isDisabled && onModeChange(m.id)}
-                        disabled={isDisabled}
+                        onClick={() => onModeChange(m.id)}
                         className="flex items-center"
                         style={{
                             gap: '6px',
@@ -56,12 +54,12 @@ function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: Cla
                             fontSize: '12px',
                             fontWeight: 700,
                             border: 'none',
-                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            cursor: 'pointer',
                             transition: 'all 0.2s ease',
                             background: isActive ? '#fff' : 'transparent',
-                            color: isActive ? '#630ed4' : isDisabled ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.8)',
+                            color: isActive ? '#630ed4' : 'rgba(255, 255, 255, 0.8)',
                             boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                            opacity: isDisabled ? 0.5 : 1,
+                            opacity: 1,
                         }}
                     >
                         <span style={{ fontSize: '14px' }}>{m.emoji}</span>

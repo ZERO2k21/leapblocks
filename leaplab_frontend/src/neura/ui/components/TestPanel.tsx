@@ -74,156 +74,374 @@ export default function TestPanel({
         return prediction.label.charAt(0).toUpperCase() + prediction.label.slice(1)
     }
 
+    const cardStyle: React.CSSProperties = {
+        background: 'rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderRadius: '16px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+    }
+
     return (
-        <div className="w-full max-w-5xl mx-auto animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Camera/Input */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 border border-[#dae2fd] shadow-sm">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] animate-pulse" />
-                            <span className="text-[10px] font-bold text-[#131b2e] tracking-wider">📸 CAMERA</span>
-                        </div>
-                        <div className="flex gap-1">
-                            <button onClick={onToggleCamera} className="p-2 hover:bg-[#eaedff] rounded-full transition-colors text-[#4a4455]" title="Toggle camera">
-                                <span className="text-lg">📷</span>
-                            </button>
-                            <button onClick={onCapture} disabled={!cameraOn} className="p-2 hover:bg-[#eaedff] rounded-full transition-colors text-[#4a4455] disabled:opacity-40" title="Capture">
-                                <span className="text-lg">📸</span>
-                            </button>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Tips */}
+            <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 10px' }}>
+                <div
+                    style={{
+                        background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                        borderRadius: '10px',
+                        padding: '8px 12px',
+                        border: '1px solid rgba(99,14,212,0.1)',
+                    }}
+                >
+                    <div className="flex items-start" style={{ gap: '6px' }}>
+                        <div
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '5px',
+                                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '10px',
+                                flexShrink: 0,
+                            }}
+                        >💡</div>
+                        <div>
+                            <div className="flex flex-wrap" style={{ gap: '2px 12px' }}>
+                                {['Take clear photos', 'Good lighting helps', 'Try different angles', 'Match training conditions'].map((tip) => (
+                                    <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '10px', color: '#4b5563' }}>
+                                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                        {tip}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div className="aspect-video bg-[#eaedff] rounded-2xl relative flex items-center justify-center overflow-hidden group">
+            <div className="flex flex-col lg:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
+                {/* Left - Camera */}
+                <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', padding: '14px', minWidth: 0 }}>
+                    {/* Camera header */}
+                    <div className="flex justify-between items-center" style={{ marginBottom: '10px' }}>
+                        <div className="flex items-center" style={{ gap: '6px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: cameraOn ? '#10b981' : '#ef4444', boxShadow: cameraOn ? '0 0 6px rgba(16,185,129,0.5)' : 'none' }} />
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                {cameraOn ? 'Live Feed' : 'Camera Off'}
+                            </span>
+                        </div>
+                        <button
+                            onClick={onToggleCamera}
+                            style={{
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: cameraOn ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                                color: cameraOn ? '#059669' : '#630ed4',
+                                boxShadow: cameraOn ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(99,14,212,0.12)',
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            <span style={{ fontSize: '12px' }}>{cameraOn ? '📷' : '🚫'}</span>
+                            {cameraOn ? ' On' : ' Off'}
+                        </button>
+                    </div>
+
+                    {/* Camera viewport */}
+                    <div
+                        style={{
+                            flex: 1,
+                            minHeight: 0,
+                            background: '#1e1b4b',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
                         {cameraOn && (
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-2xl -scale-x-100" />
+                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
                         )}
                         {!cameraOn && testImage && (
-                            <img src={testImage} alt="Test" className="w-full h-full object-cover rounded-2xl" />
+                            <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         )}
                         {!cameraOn && !testImage && (
-                            <div className="flex flex-col items-center text-[#7b7487] opacity-50">
-                                <span className="text-5xl mb-2">📷</span>
-                                <p className="text-sm font-semibold">Turn on camera or upload a picture</p>
+                            <div className="flex flex-col items-center text-center" style={{ padding: '24px' }}>
+                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                                    <span style={{ fontSize: '1.5rem' }}>📸</span>
+                                </div>
+                                <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Camera is off</p>
+                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', maxWidth: '180px' }}>Turn on camera or upload a picture</p>
                             </div>
                         )}
 
+                        {/* Scan line */}
                         {cameraOn && (
-                            <>
-                                <div className="absolute inset-0 pointer-events-none border-2 border-[#630ed4]/20 rounded-2xl" />
-                                <div className="absolute left-0 w-full h-0.5 bg-[#630ed4]/60 shadow-[0_0_12px_rgba(99,14,212,0.6)]" style={{ animation: 'scan 3s infinite ease-in-out' }} />
-                            </>
+                            <div style={{
+                                position: 'absolute',
+                                left: 0,
+                                width: '100%',
+                                height: '2px',
+                                background: 'linear-gradient(90deg, transparent, rgba(99,14,212,0.6), transparent)',
+                                boxShadow: '0 0 12px rgba(99,14,212,0.4)',
+                                animation: 'scan 3s infinite ease-in-out',
+                            }} />
                         )}
 
-                        {modelLoading && (
-                            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center rounded-2xl">
-                                <div className="flex items-center gap-3 px-6 py-3 bg-white/90 rounded-2xl">
-                                    <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-sm font-bold text-[#131b2e]">Loading model... ⏳</span>
-                                </div>
+                        {/* LIVE indicator */}
+                        {cameraOn && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '8px',
+                                left: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '3px 8px',
+                                background: 'rgba(0,0,0,0.5)',
+                                backdropFilter: 'blur(8px)',
+                                borderRadius: '5px',
+                            }}>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                                <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>LIVE</span>
                             </div>
                         )}
 
-                        {isProcessing && (
-                            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center rounded-2xl">
-                                <div className="flex items-center gap-3 px-6 py-3 bg-white/90 rounded-2xl">
-                                    <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-sm font-bold text-[#131b2e]">Analyzing... 🔍</span>
-                                </div>
+                        {/* Loading overlay - small center badge only */}
+                        {(modelLoading || isProcessing) && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 18px',
+                                background: 'rgba(255,255,255,0.9)',
+                                backdropFilter: 'blur(8px)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                zIndex: 20,
+                            }}>
+                                <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>{modelLoading ? 'Loading model...' : 'Analyzing...'}</span>
                             </div>
                         )}
-                    </div>
 
-                    <div className="flex justify-center gap-3 mt-5">
-                        <button
-                            onClick={onCapture}
-                            disabled={!cameraOn}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-2xl font-bold transition-all hover:shadow-lg hover:shadow-[#630ed4]/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        >
-                            📸 Take Photo
-                        </button>
-                        <button
-                            onClick={onUpload}
-                            className="flex items-center gap-2 px-6 py-3 border-2 border-[#630ed4] text-[#630ed4] rounded-2xl font-bold transition-all hover:bg-[#630ed4]/5 hover:-translate-y-0.5 active:translate-y-0 text-sm"
-                        >
-                            📂 Upload
-                        </button>
+                        {/* Capture button overlay - always visible when camera is on */}
+                        {cameraOn && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '10px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                display: 'flex',
+                                gap: '8px',
+                                padding: '6px 12px',
+                                background: 'rgba(255,255,255,0.7)',
+                                backdropFilter: 'blur(8px)',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255,255,255,0.4)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            }}>
+                                <button
+                                    onClick={onCapture}
+                                    className="flex items-center"
+                                    style={{
+                                        gap: '4px',
+                                        padding: '6px 14px',
+                                        background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '12px' }}>📸</span>
+                                    Take Photo
+                                </button>
+                                <button
+                                    onClick={onUpload}
+                                    className="flex items-center"
+                                    style={{
+                                        gap: '4px',
+                                        padding: '6px 14px',
+                                        background: '#fff',
+                                        color: '#374151',
+                                        borderRadius: '8px',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        border: '1px solid #e5e7eb',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '12px' }}>📂</span>
+                                    Upload
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChange} className="hidden" />
                     <canvas ref={canvasRef} className="hidden" />
                 </div>
 
-                {/* Results */}
-                <div className="flex flex-col gap-4">
-                    <div className={`bg-white/80 backdrop-blur-sm rounded-3xl p-6 flex flex-col items-center text-center border shadow-sm ${
-                        prediction ? 'border-[#006c44]/30' : 'border-[#dae2fd]'
-                    }`}>
+                {/* Right - Results */}
+                <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {/* Result card */}
+                    <div style={{ ...cardStyle, padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         {prediction ? (
-                            <>
-                                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-[#25fea8] shadow-lg animate-bounce">
-                                    <span className="text-4xl">🎯</span>
+                            <div className="w-full flex flex-col items-center animate-fade-in">
+                                {/* Icon */}
+                                <div style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '12px',
+                                    boxShadow: '0 4px 16px rgba(16,185,129,0.15)',
+                                }}>
+                                    <span style={{ fontSize: '2rem' }}>🎯</span>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#006c44] uppercase tracking-widest mb-1">Result</span>
-                                <h2 className="text-2xl font-extrabold text-[#131b2e] mb-4">
-                                    It's a {getPredictionLabel()}! 🎉
+
+                                {/* Label */}
+                                <span style={{ fontSize: '9px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', background: '#ecfdf5', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                    Prediction
+                                </span>
+                                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', marginBottom: '12px', textAlign: 'center' }}>
+                                    It's a <span style={{ color: '#630ed4' }}>{getPredictionLabel()}</span>! 🎉
                                 </h2>
-                                <div className="w-full max-w-xs space-y-2 mb-6">
-                                    <div className="flex justify-between items-end">
-                                        <span className="text-[10px] font-bold text-[#4a4455] uppercase tracking-wider">Confidence</span>
-                                        <span className={`text-lg font-black ${displayConfidence < 40 ? 'text-[#d97706]' : 'text-[#006c44]'}`}>
+
+                                {/* Confidence */}
+                                <div style={{ width: '100%', marginBottom: '14px' }}>
+                                    <div className="flex justify-between" style={{ marginBottom: '4px' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280' }}>Confidence</span>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: displayConfidence >= 50 ? '#059669' : '#d97706' }}>
                                             {displayConfidence}%
                                         </span>
                                     </div>
-                                    <div className="h-5 bg-[#eaedff] rounded-full overflow-hidden p-0.5">
-                                        <div
-                                            className="h-full rounded-full transition-all duration-1000 ease-out"
-                                            style={{
-                                                width: `${displayConfidence}%`,
-                                                background: displayConfidence < 40 ? '#f59e0b' : '#25fea8'
-                                            }}
-                                        />
+                                    <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <div style={{
+                                            height: '100%',
+                                            borderRadius: '4px',
+                                            background: displayConfidence >= 50 ? 'linear-gradient(90deg, #34d399, #10b981)' : 'linear-gradient(90deg, #fbbf24, #d97706)',
+                                            width: `${displayConfidence}%`,
+                                            transition: 'width 0.6s ease',
+                                        }} />
                                     </div>
-                                    {displayConfidence < 40 && (
-                                        <div className="flex items-start gap-2 px-3 py-2.5 bg-[#fef3c7] border border-[#fde68a] rounded-xl mt-2">
-                                            <span className="text-lg">💡</span>
-                                            <p className="text-[11px] font-medium text-[#92400e]">Add more different pictures to make your AI smarter!</p>
-                                        </div>
-                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 w-full">
-                                    <button onClick={onTryAnother} className="flex items-center justify-center gap-2 py-3.5 bg-[#eaedff] text-[#131b2e] rounded-2xl font-bold hover:bg-[#dae2fd] transition-all text-sm">
+
+                                {/* Class breakdown */}
+                                {sortedConfidences.length > 1 && (
+                                    <div style={{ width: '100%', marginBottom: '14px' }}>
+                                        <span style={{ fontSize: '9px', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>All Classes</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            {sortedConfidences.slice(0, 4).map(([label, confidence]) => {
+                                                const val = Math.round(confidence * 100)
+                                                return (
+                                                    <div key={label}>
+                                                        <div className="flex justify-between" style={{ marginBottom: '2px' }}>
+                                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{label}</span>
+                                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280' }}>{val}%</span>
+                                                        </div>
+                                                        <div style={{ height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #630ed4, #7c3aed)', width: `${val}%`, transition: 'width 0.5s ease' }} />
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Action buttons */}
+                                <div className="flex" style={{ gap: '8px', width: '100%' }}>
+                                    <button
+                                        onClick={onTryAnother}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px',
+                                            background: '#f3f4f6',
+                                            color: '#374151',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: '1px solid #e5e7eb',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
                                         🔄 Try Another
                                     </button>
-                                    <button onClick={onExport} className="flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-2xl font-bold shadow-md hover:shadow-lg transition-all text-sm">
-                                        💾 Save Model
+                                    <button
+                                        onClick={onExport}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px',
+                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                            color: '#fff',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                        }}
+                                    >
+                                        💾 Save Report
                                     </button>
                                 </div>
-                            </>
+                            </div>
                         ) : (
-                            <div className="py-8">
-                                <div className="w-20 h-20 rounded-full bg-[#eaedff] flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-4xl">🤔</span>
+                            <div className="flex flex-col items-center justify-center" style={{ padding: '20px' }}>
+                                <div style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    borderRadius: '50%',
+                                    background: '#f3f4f6',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '12px',
+                                    border: '2px dashed #e5e7eb',
+                                }}>
+                                    <span style={{ fontSize: '1.8rem' }}>🤔</span>
                                 </div>
-                                <p className="text-base font-bold text-[#4a4455]">Waiting for input</p>
-                                <p className="text-sm text-[#7b7487] mt-1">Capture or upload to test your AI!</p>
+                                <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#111827', marginBottom: '4px', textAlign: 'center' }}>Awaiting Input</h3>
+                                <p style={{ fontSize: '10px', color: '#9ca3af', textAlign: 'center', maxWidth: '180px' }}>
+                                    Take a photo or upload an image to test your model
+                                </p>
                             </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-2xl p-4 flex items-center gap-3 bg-[#f2f3ff] border border-[#dae2fd]/30 shadow-sm">
-                            <span className="text-2xl">⚡</span>
+                    {/* Stats row */}
+                    <div className="flex" style={{ gap: '10px' }}>
+                        <div style={{ ...cardStyle, flex: 1, padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>⚡</div>
                             <div>
-                                <p className="text-[10px] text-[#4a4455] opacity-70 font-bold uppercase tracking-wider">Speed</p>
-                                <p className="text-lg font-black text-[#131b2e]">{inferenceTime}ms</p>
+                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Speed</span>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#131b2e' }}>{inferenceTime}ms</span>
                             </div>
                         </div>
-                        <div className="rounded-2xl p-4 flex items-center gap-3 bg-[#f2f3ff] border border-[#dae2fd]/30 shadow-sm">
-                            <span className="text-2xl">📊</span>
+                        <div style={{ ...cardStyle, flex: 1, padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>📊</div>
                             <div>
-                                <p className="text-[10px] text-[#4a4455] opacity-70 font-bold uppercase tracking-wider">Tests</p>
-                                <p className="text-lg font-black text-[#131b2e]">{testsRun}</p>
+                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Tests</span>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#131b2e' }}>{testsRun}</span>
                             </div>
                         </div>
                     </div>
@@ -235,6 +453,10 @@ export default function TestPanel({
                     0% { top: 0%; }
                     50% { top: calc(100% - 2px); }
                     100% { top: 0%; }
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
             `}</style>
         </div>
@@ -248,46 +470,43 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
     const maxConfidence = sortedConfidences.length > 0 ? sortedConfidences[0][1] : 0
 
     return (
-        <div className="w-full max-w-lg">
+        <div style={{ maxWidth: '600px', width: '100%' }}>
             {children}
             {isProcessing && (
-                <div className="flex items-center justify-center gap-3 py-6 animate-fade-in">
-                    <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#630ed4] animate-bounce delay-0 duration-[600ms]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#630ed4] animate-bounce delay-100 duration-[600ms]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#630ed4] animate-bounce delay-[200ms] duration-[600ms]" />
-                    </div>
-                    <span className="text-sm font-bold text-[#4a4455]">Analyzing... 🔍</span>
+                <div className="flex items-center justify-center" style={{ gap: '10px', padding: '20px' }}>
+                    <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>Analyzing... 🔍</span>
                 </div>
             )}
             {prediction && !isProcessing && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-[#dae2fd] shadow-sm">
-                    <div className="text-center mb-6">
-                        <p className="text-[10px] text-[#4a4455] uppercase tracking-wider font-bold mb-2">🎯 Prediction</p>
-                        <div className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-[#eaedff] to-[#dbeafe] rounded-2xl">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#630ed4] to-[#3b82f6] flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                    <div className="text-center" style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '8px' }}>🎯 Prediction</p>
+                        <div className="inline-flex items-center" style={{ gap: '10px', padding: '8px 16px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '14px' }}>
                                 {prediction.label.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-xl font-bold text-[#131b2e]">{prediction.label}</span>
+                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#131b2e' }}>{prediction.label}</span>
                         </div>
-                        <div className="flex items-center justify-center gap-2 mt-3">
-                            <span className="text-sm text-[#4a4455]">Confidence</span>
-                            <span className={`text-lg font-bold ${maxConfidence < 0.4 ? 'text-[#d97706]' : maxConfidence < 0.7 ? 'text-[#c32c00]' : 'text-[#006c44]'}`}>
+                        <div className="flex items-center justify-center" style={{ gap: '6px', marginTop: '8px' }}>
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>Confidence</span>
+                            <span style={{ fontSize: '14px', fontWeight: 800, color: maxConfidence >= 0.7 ? '#059669' : maxConfidence >= 0.4 ? '#d97706' : '#dc2626' }}>
                                 {Math.round(maxConfidence * 100)}%
                             </span>
                         </div>
                     </div>
-                    <div className="space-y-2.5">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {sortedConfidences.map(([label, confidence]) => {
-                            const barColor = confidence >= 0.7 ? 'from-[#25fea8] to-[#006c44]' : confidence >= 0.4 ? 'from-[#fbbf24] to-[#d97706]' : 'from-[#fca5a5] to-[#ef4444]'
-                            const textColor = confidence >= 0.7 ? 'text-[#006c44]' : confidence >= 0.4 ? 'text-[#d97706]' : 'text-[#dc2626]'
+                            const val = Math.round(confidence * 100)
                             return (
-                                <div key={label} className="flex items-center gap-2">
-                                    <span className="text-[11px] font-bold text-[#131b2e] w-20 truncate capitalize">{label}</span>
-                                    <div className="flex-1 h-3 bg-[#eaedff] rounded-full overflow-hidden">
-                                        <div className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-700 ease-out`} style={{ width: `${confidence * 100}%` }} />
+                                <div key={label}>
+                                    <div className="flex justify-between" style={{ marginBottom: '2px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{label}</span>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280' }}>{val}%</span>
                                     </div>
-                                    <span className={`text-[11px] font-bold ${textColor} w-10 text-right`}>{Math.round(confidence * 100)}%</span>
+                                    <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', borderRadius: '3px', background: confidence >= 0.7 ? 'linear-gradient(90deg, #34d399, #10b981)' : confidence >= 0.4 ? 'linear-gradient(90deg, #fbbf24, #d97706)' : 'linear-gradient(90deg, #fca5a5, #ef4444)', width: `${val}%`, transition: 'width 0.5s ease' }} />
+                                    </div>
                                 </div>
                             )
                         })}
@@ -295,12 +514,12 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
                 </div>
             )}
             {!prediction && !isProcessing && (
-                <div className="flex flex-col items-center py-10">
-                    <div className="w-20 h-20 rounded-full bg-[#eaedff] flex items-center justify-center mb-4">
-                        <span className="text-4xl">🤔</span>
+                <div className="flex flex-col items-center" style={{ padding: '40px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '2rem' }}>🤔</span>
                     </div>
-                    <p className="text-sm font-bold text-[#4a4455]">Waiting for input</p>
-                    <p className="text-xs text-[#7b7487] mt-1">Use the camera above to test! 📸</p>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>Waiting for input</p>
+                    <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>Use the camera above to test! 📸</p>
                 </div>
             )}
         </div>

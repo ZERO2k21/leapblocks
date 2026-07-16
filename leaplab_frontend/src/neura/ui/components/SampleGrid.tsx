@@ -22,6 +22,11 @@ const TYPE_COLORS: Record<string, string> = {
     keypoints: 'from-[#fef3c7] to-[#fffbeb]'
 }
 
+function formatTime(timestamp: number): string {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGridProps) {
     const [deletedSample, setDeletedSample] = useState<{ sample: Sample; classId?: string } | null>(null)
     const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -52,61 +57,177 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
 
     if (samples.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 bg-[#faf8ff]/50 rounded-2xl border-2 border-dashed border-[#ccc3d8]/50">
-                <span className="text-3xl mb-2">{TYPE_EMOJI[type]}</span>
-                <p className="text-sm font-bold text-[#7b7487]">No samples yet</p>
-                <p className="text-[11px] text-[#7b7487]/60 mt-1">Capture some to teach your AI! 🚀</p>
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px 16px',
+                    background: 'rgba(250,248,255,0.5)',
+                    borderRadius: '12px',
+                    border: '2px dashed rgba(204,195,216,0.4)',
+                }}
+            >
+                <span style={{ fontSize: '1.75rem', marginBottom: '8px' }}>{TYPE_EMOJI[type]}</span>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: '#7b7487' }}>No samples yet</p>
+                <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>Capture some to teach your AI!</p>
             </div>
         )
     }
 
     return (
-        <div className="relative">
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-72 overflow-y-auto neura-scrollbar p-1 rounded-2xl bg-[#faf8ff]/30">
+        <div style={{ position: 'relative', height: '100%' }}>
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '6px',
+                }}
+            >
                 {samples.map((sample, index) => (
                     <div
                         key={sample.id}
-                        className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md border border-[#dae2fd] animate-fade-in transition-all duration-200"
+                        style={{
+                            position: 'relative',
+                            aspectRatio: '1/1',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            background: '#fff',
+                            border: '1px solid #e5e7eb',
+                            cursor: 'default',
+                            transition: 'all 0.15s ease',
+                        }}
+                        className="group"
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
+                            e.currentTarget.style.transform = 'scale(1.02)'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.transform = 'scale(1)'
+                        }}
                     >
                         {type === 'image' && (
                             <img
                                 src={sample.data}
                                 alt={`Sample ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                }}
                             />
                         )}
                         {type === 'audio' && (
-                            <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TYPE_COLORS[type]}`}>
-                                <span className="text-2xl mb-1">🎵</span>
-                                <span className="text-[8px] text-[#4a4455] font-medium">Audio</span>
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #d1fae5, #ecfdf5)',
+                            }}>
+                                <span style={{ fontSize: '1.25rem' }}>🎵</span>
                             </div>
                         )}
                         {type === 'text' && (
-                            <div className={`w-full h-full flex items-center justify-center p-2 bg-gradient-to-br ${TYPE_COLORS[type]}`}>
-                                <p className="text-[9px] text-[#4a4455] text-center line-clamp-4 leading-tight">{sample.data}</p>
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '6px',
+                                background: 'linear-gradient(135deg, #dbeafe, #eff6ff)',
+                            }}>
+                                <p style={{ fontSize: '8px', color: '#4b5563', textAlign: 'center', overflow: 'hidden' }}>
+                                    {sample.data.slice(0, 50)}
+                                </p>
                             </div>
                         )}
                         {type === 'keypoints' && (
-                            <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TYPE_COLORS[type]}`}>
-                                <span className="text-2xl mb-1">🤸</span>
-                                <span className="text-[8px] text-[#4a4455] font-medium">Pose</span>
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
+                            }}>
+                                <span style={{ fontSize: '1.25rem' }}>🤸</span>
                             </div>
                         )}
 
-                        {/* Remove button */}
+                        {/* Delete button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation()
                                 handleRemove(sample)
                             }}
-                            className="absolute top-1 right-1 w-5 h-5 bg-[#ba1a1a] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 shadow-md text-[10px]"
+                            style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#ef4444',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '10px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
+                                zIndex: 10,
+                            }}
+                            className="opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150"
                         >
                             ✕
                         </button>
 
-                        {/* Sample number */}
-                        <div className="absolute bottom-1 left-1 w-5 h-5 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                            {index + 1}
+                        {/* Time badge */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                bottom: '3px',
+                                left: '3px',
+                                padding: '2px 5px',
+                                borderRadius: '4px',
+                                background: 'rgba(0,0,0,0.55)',
+                                backdropFilter: 'blur(4px)',
+                                zIndex: 10,
+                            }}
+                            className="opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150"
+                        >
+                            <span style={{ color: '#fff', fontSize: '8px', fontWeight: 600 }}>
+                                {formatTime(sample.timestamp)}
+                            </span>
+                        </div>
+
+                        {/* Index number */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                top: '3px',
+                                left: '3px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '4px',
+                                background: 'rgba(0,0,0,0.45)',
+                                backdropFilter: 'blur(4px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <span style={{ color: '#fff', fontSize: '8px', fontWeight: 700 }}>
+                                {index + 1}
+                            </span>
                         </div>
                     </div>
                 ))}
@@ -114,13 +235,41 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
 
             {/* Undo toast */}
             {deletedSample && onUndo && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-                    <div className="flex items-center gap-3 px-5 py-3 bg-[#131b2e]/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-white/10">
-                        <span className="text-lg">🗑️</span>
-                        <span className="text-sm font-medium">Sample deleted</span>
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 50,
+                }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px 16px',
+                            background: 'rgba(19,27,46,0.95)',
+                            backdropFilter: 'blur(12px)',
+                            borderRadius: '14px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                        }}
+                    >
+                        <span style={{ fontSize: '14px' }}>🗑️</span>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Deleted</span>
                         <button
                             onClick={handleUndo}
-                            className="px-3 py-1.5 bg-[#630ed4] hover:bg-[#7c3aed] rounded-lg text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95"
+                            style={{
+                                padding: '5px 10px',
+                                background: '#630ed4',
+                                color: '#fff',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
                         >
                             ↩️ Undo
                         </button>

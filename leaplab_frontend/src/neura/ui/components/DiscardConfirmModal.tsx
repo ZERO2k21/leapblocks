@@ -35,61 +35,153 @@ export default function DiscardConfirmModal({ isOpen, classCount, onConfirm, onC
             ref={modalRef}
             onClick={handleOverlayClick}
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-            style={{ animation: 'modalFadeIn 0.3s ease-out' }}
+            style={{ animation: 'modalFadeIn 0.25s ease-out' }}
         >
-            <div className="absolute inset-0 bg-[#0a0128]/70 backdrop-blur-lg" />
+            {/* Backdrop */}
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,1,40,0.6)', backdropFilter: 'blur(8px)' }} />
 
+            {/* Modal */}
             <div
-                className="relative w-full max-w-[420px] overflow-hidden"
-                style={{ animation: 'modalSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '380px',
+                    animation: 'modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
             >
-                <div className="absolute -inset-[1px] rounded-[28px] bg-gradient-to-br from-[#c084fc]/40 via-[#818cf8]/20 to-[#630ed4]/40 blur-sm" />
+                {/* Glow border */}
+                <div style={{
+                    position: 'absolute',
+                    inset: '-1px',
+                    borderRadius: '24px',
+                    background: 'linear-gradient(135deg, rgba(192,132,252,0.3), rgba(129,140,248,0.2), rgba(99,14,212,0.3))',
+                    filter: 'blur(1px)',
+                }} />
 
-                <div className="relative bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_25px_60px_-12px_rgba(99,14,212,0.25),0_0_0_1px_rgba(99,14,212,0.08)] overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#c084fc] via-[#630ed4] to-[#818cf8]" />
+                {/* Card */}
+                <div style={{
+                    position: 'relative',
+                    background: '#fff',
+                    borderRadius: '24px',
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 60px -12px rgba(99,14,212,0.2), 0 0 0 1px rgba(99,14,212,0.05)',
+                }}>
+                    {/* Top gradient bar */}
+                    <div style={{ height: '4px', background: 'linear-gradient(90deg, #c084fc, #630ed4, #818cf8)' }} />
 
-                    <div className="px-8 pt-8 pb-5">
-                        <div className="relative w-16 h-16 mx-auto mb-5">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#fef3c7] to-[#fde68a] rounded-2xl rotate-3 shadow-md" />
-                            <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-sm border border-[#fde68a]/50">
-                                <span className="text-3xl">⚠️</span>
+                    {/* Content */}
+                    <div style={{ padding: '28px 28px 20px', textAlign: 'center' }}>
+                        {/* Icon */}
+                        <div style={{ position: 'relative', width: '56px', height: '56px', margin: '0 auto 16px' }}>
+                            <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                borderRadius: '16px',
+                                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                transform: 'rotate(3deg)',
+                                boxShadow: '0 4px 12px rgba(245,158,11,0.15)',
+                            }} />
+                            <div style={{
+                                position: 'relative',
+                                width: '100%',
+                                height: '100%',
+                                borderRadius: '16px',
+                                background: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                border: '1px solid rgba(253,230,138,0.3)',
+                            }}>
+                                <span style={{ fontSize: '1.6rem' }}>⚠️</span>
                             </div>
                         </div>
 
-                        <h3 className="text-[19px] font-extrabold text-[#131b2e] mb-2.5 text-center tracking-tight leading-tight">
+                        {/* Title */}
+                        <h3 style={{
+                            fontSize: '1.15rem',
+                            fontWeight: 800,
+                            color: '#131b2e',
+                            marginBottom: '8px',
+                            lineHeight: 1.3,
+                        }}>
                             {title || 'Leave without adding samples?'}
                         </h3>
 
-                        <p className="text-[13px] text-[#5b5670] leading-[1.65] text-center max-w-[320px] mx-auto">
+                        {/* Description */}
+                        <p style={{
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            lineHeight: 1.6,
+                            maxWidth: '300px',
+                            margin: '0 auto',
+                        }}>
                             {description || (
-                                <>
-                                    You created <span className="font-bold text-[#630ed4]">{classCount} {classCount === 1 ? 'class' : 'classes'}</span>{' '}
-                                    but haven't added any training data yet. Your progress will be lost! 😢
-                                </>
+                                <>You created <span style={{ fontWeight: 700, color: '#630ed4' }}>{classCount} {classCount === 1 ? 'class' : 'classes'}</span> but haven't added any training data yet. Your progress will be lost!</>
                             )}
                         </p>
                     </div>
 
-                    <div className="mx-8">
-                        <div className="h-px bg-gradient-to-r from-transparent via-[#e5e1f0] to-transparent" />
-                    </div>
+                    {/* Divider */}
+                    <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e5e7eb, transparent)', margin: '0 24px' }} />
 
-                    <div className="px-8 py-5">
-                        <div className="flex gap-3">
-                            <button
-                                onClick={onCancel}
-                                className="flex-1 py-3.5 rounded-2xl font-bold text-sm text-white shadow-lg shadow-[#630ed4]/25 hover:shadow-xl hover:shadow-[#630ed4]/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] relative overflow-hidden group"
-                            >
-                                <span className="relative z-10">Stay 🏠</span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#7c3aed] to-[#630ed4] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                            </button>
-                            <button
-                                onClick={onConfirm}
-                                className="flex-1 py-3.5 rounded-2xl font-bold text-sm border-2 border-[#e5e0f3] bg-white/80 text-[#4a4455] hover:bg-[#faf8ff] hover:border-[#c084fc]/40 hover:text-[#131b2e] hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-200 relative overflow-hidden group"
-                            >
-                                <span className="relative z-10">{confirmText || 'Leave 🚪'}</span>
-                            </button>
-                        </div>
+                    {/* Buttons */}
+                    <div style={{ padding: '16px 24px 20px', display: 'flex', gap: '10px' }}>
+                        <button
+                            onClick={onCancel}
+                            style={{
+                                flex: 1,
+                                padding: '12px 0',
+                                borderRadius: '14px',
+                                fontSize: '13px',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                color: '#fff',
+                                boxShadow: '0 4px 16px rgba(99,14,212,0.25)',
+                                transition: 'all 0.2s ease',
+                                letterSpacing: '0.02em',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-1px)'
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,14,212,0.3)'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)'
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(99,14,212,0.25)'
+                            }}
+                        >
+                            Stay 🏠
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            style={{
+                                flex: 1,
+                                padding: '12px 0',
+                                borderRadius: '14px',
+                                fontSize: '13px',
+                                fontWeight: 700,
+                                border: '2px solid #e5e7eb',
+                                cursor: 'pointer',
+                                background: '#fff',
+                                color: '#374151',
+                                transition: 'all 0.2s ease',
+                                letterSpacing: '0.02em',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#c084fc'
+                                e.currentTarget.style.background = '#faf5ff'
+                                e.currentTarget.style.transform = 'translateY(-1px)'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#e5e7eb'
+                                e.currentTarget.style.background = '#fff'
+                                e.currentTarget.style.transform = 'translateY(0)'
+                            }}
+                        >
+                            {confirmText || 'Leave 🚪'}
+                        </button>
                     </div>
                 </div>
             </div>

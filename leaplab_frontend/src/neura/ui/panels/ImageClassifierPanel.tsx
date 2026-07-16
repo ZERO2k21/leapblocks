@@ -27,6 +27,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const rebuildAbortRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [isDragging, setIsDragging] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
     const [trainingError, setTrainingError] = useState<string | null>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -961,12 +962,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         width: '100%',
                                         flex: 1,
                                         minHeight: 0,
-                                        background: '#fff',
+                                        background: isDragging ? '#f5f3ff' : '#fff',
                                         borderRadius: '16px',
                                         padding: '40px 24px',
                                         textAlign: 'center',
-                                        border: '2px dashed rgba(99,14,212,0.15)',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                        border: isDragging ? '2px dashed #630ed4' : '2px dashed rgba(99,14,212,0.15)',
+                                        boxShadow: isDragging ? '0 8px 24px rgba(99,14,212,0.08)' : '0 2px 8px rgba(0,0,0,0.03)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
@@ -975,17 +976,15 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     }}
                                     onDragOver={(e) => {
                                         e.preventDefault()
-                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.4)'
-                                        e.currentTarget.style.background = '#faf8ff'
+                                        setIsDragging(true)
                                     }}
                                     onDragLeave={(e) => {
-                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.15)'
-                                        e.currentTarget.style.background = '#fff'
+                                        e.preventDefault()
+                                        setIsDragging(false)
                                     }}
                                     onDrop={(e) => {
                                         e.preventDefault()
-                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.15)'
-                                        e.currentTarget.style.background = '#fff'
+                                        setIsDragging(false)
                                         if (mode.selectedClassId && e.dataTransfer.files.length > 0) {
                                             const syntheticEvent = { target: { files: e.dataTransfer.files } } as any
                                             handleUpload(syntheticEvent)
@@ -997,25 +996,37 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                             width: '72px',
                                             height: '72px',
                                             borderRadius: '18px',
-                                            background: mode.selectedClassId 
-                                                ? 'linear-gradient(135deg, #f3e8ff, #ede9fe)' 
-                                                : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                            background: isDragging 
+                                                ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
+                                                : mode.selectedClassId 
+                                                    ? 'linear-gradient(135deg, #f3e8ff, #ede9fe)' 
+                                                    : 'linear-gradient(135deg, #fef3c7, #fde68a)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             marginBottom: '20px',
-                                            boxShadow: '0 4px 12px rgba(99,14,212,0.1)',
+                                            boxShadow: isDragging ? '0 4px 16px rgba(99,14,212,0.2)' : '0 4px 12px rgba(99,14,212,0.1)',
+                                            transform: isDragging ? 'scale(1.08)' : 'scale(1)',
+                                            transition: 'all 0.2s ease',
                                         }}
                                     >
-                                        <span style={{ fontSize: '2rem' }}>{mode.selectedClassId ? '📸' : '📁'}</span>
+                                        <span style={{ fontSize: '2rem', filter: isDragging ? 'brightness(0) invert(1)' : 'none', transition: 'all 0.2s ease' }}>
+                                            {isDragging ? '📥' : mode.selectedClassId ? '📸' : '📁'}
+                                        </span>
                                     </div>
                                     <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>
-                                        {mode.selectedClassId ? 'Add Photos' : 'Drop Files Here'}
+                                        {isDragging 
+                                            ? 'Drop Images Here! 📥' 
+                                            : mode.selectedClassId 
+                                                ? 'Add Photos' 
+                                                : 'Drop Files Here'}
                                     </h2>
-                                    <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '260px', marginBottom: '24px', lineHeight: 1.5 }}>
-                                        {mode.selectedClassId 
-                                            ? `Take photos or upload images for "${selectedClass?.name || 'your class'}"`
-                                            : 'Select or create a class first, then drop images here'}
+                                    <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '280px', marginBottom: '24px', lineHeight: 1.5 }}>
+                                        {isDragging
+                                            ? 'Drop files to upload instantly to this class'
+                                            : mode.selectedClassId 
+                                                ? `Drag & drop images here, take photos, or click upload for "${selectedClass?.name || 'your class'}"`
+                                                : 'Select or create a class first, then drop images here'}
                                     </p>
                                     <div className="flex items-center justify-center" style={{ gap: '10px' }}>
                                         <button
@@ -1210,17 +1221,42 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-[720px] text-center mb-2 animate-fade-in">
-                        <h2 className="text-3xl font-extrabold text-[#630ed4] mb-2">
-                            🏋️ Teach Your AI!
-                        </h2>
-                        <p className="text-sm text-[#4a4455] font-medium">
-                            Watch your AI learn from your pictures! 🧠
-                        </p>
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
+                    {/* Header */}
+                    <div className="text-center animate-fade-in" style={{ marginBottom: '8px' }}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '8px 18px',
+                                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                                borderRadius: '14px',
+                                border: '1px solid rgba(99,14,212,0.1)',
+                                boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                }}
+                            >
+                                <span style={{ fontSize: '1rem' }}>🏋️</span>
+                            </div>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', margin: 0 }}>
+                                Teach Your AI!
+                            </h2>
+                        </div>
                     </div>
                     <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    <div className="w-full flex justify-center">
+                    <div className="flex-1 min-h-0">
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} />
                     </div>
                 </div>
@@ -1228,23 +1264,44 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-[720px] text-center mb-2 animate-fade-in">
-                        <h2 className="text-3xl font-extrabold text-[#630ed4] mb-2">
-                            🧪 Test Your AI!
-                        </h2>
-                        <p className="text-sm text-[#4a4455] font-medium">
-                            See how smart your AI has become! 🎯
-                        </p>
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
+                    {/* Header */}
+                    <div className="text-center animate-fade-in" style={{ marginBottom: '8px' }}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '8px 18px',
+                                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                                borderRadius: '14px',
+                                border: '1px solid rgba(99,14,212,0.1)',
+                                boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                }}
+                            >
+                                <span style={{ fontSize: '1rem' }}>🧪</span>
+                            </div>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', margin: 0 }}>
+                                Test Your AI!
+                            </h2>
+                        </div>
                     </div>
                     <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    {modelLoading && (
-                        <div className="flex items-center gap-3 px-6 py-4 bg-[#eaedff] rounded-2xl border border-[#630ed4]/20 animate-fade-in">
-                            <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm font-bold text-[#630ed4]">Loading model... ⏳</span>
-                        </div>
-                    )}
-                    <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                    <div className="flex-1 min-h-0">
+                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                    </div>
                 </div>
             )}
         </div>
