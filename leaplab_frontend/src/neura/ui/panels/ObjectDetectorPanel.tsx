@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ObjectDetector } from '../../ml/classifiers/ObjectDetector'
-import type { DetectionResult } from '../../ml/classifiers/ObjectDetector'
+import { ObjectDetectionTrainer } from '../../ml/ObjectDetectionTrainer'
+import type { DetectionTrainingState } from '../../ml/ObjectDetectionTrainer'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
@@ -52,6 +53,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new ObjectDetector())
+    const trainerRef = useRef(new ObjectDetectionTrainer())
     const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
@@ -81,6 +83,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     })
     const [inferenceTime, setInferenceTime] = useState(0)
     const [modelLoadError, setModelLoadError] = useState<string | null>(null)
+    const [customModelTrained, setCustomModelTrained] = useState(false)
+    const [useCustomModel, setUseCustomModel] = useState(false)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -143,6 +147,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
+            trainerRef.current.dispose()
             if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
             if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
         }
@@ -187,15 +192,26 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (video.readyState < 2) return []
         try {
             const start = performance.now()
-            const result = await classifierRef.current.detect(video)
+            let result: { class: string; score: number; bbox: [number, number, number, number] }[] = []
+
+            if (useCustomModel && customModelTrained && trainerRef.current.canClassify) {
+                // Use custom trained model
+                const customResult = await trainerRef.current.detect(video)
+                result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+            } else {
+                // Fall back to COCO-SSD
+                const cocoResult = await classifierRef.current.detect(video)
+                result = cocoResult.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
+            }
+
             const elapsed = Math.round(performance.now() - start)
             setInferenceTime(elapsed)
-            return result.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
+            return result
         } catch (e) {
             console.warn('[ObjectDetector] Detection error:', e)
             return []
         }
-    }, [])
+    }, [useCustomModel, customModelTrained])
 
     const drawDetections = useCallback((dets: { class: string; score: number; bbox: [number, number, number, number] }[], canvas: HTMLCanvasElement, video: HTMLVideoElement) => {
         canvas.width = video.videoWidth
@@ -317,10 +333,18 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (img.complete && img.naturalWidth > 0) {
             try {
                 const start = performance.now()
-                const result = await classifierRef.current.detect(img as any)
+                let dets: { class: string; score: number; bbox: [number, number, number, number] }[] = []
+
+                if (useCustomModel && customModelTrained && trainerRef.current.canClassify) {
+                    const customResult = await trainerRef.current.detect(img)
+                    dets = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+                } else {
+                    const result = await classifierRef.current.detect(img as any)
+                    dets = result.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
+                }
+
                 const elapsed = Math.round(performance.now() - start)
                 setInferenceTime(elapsed)
-                const dets = result.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
                 setUploadedDetections(dets)
                 const canvas = document.createElement('canvas')
                 canvas.width = img.naturalWidth
@@ -590,6 +614,29 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
 
+            {/* Custom model status */}
+            {customModelTrained && (
+                <div className="w-full max-w-[520px] animate-fade-in">
+                    <div className="bg-gradient-to-r from-[#d1fae5] to-[#a7f3d0] rounded-2xl px-5 py-3 border border-[#006c44]/20">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg">🧠</span>
+                                <div>
+                                    <p className="text-[11px] font-bold text-[#006c44]">Custom Model Trained!</p>
+                                    <p className="text-[10px] text-[#006c44]/70">{Object.keys(trainerRef.current.getState().classCounts).length} classes detected</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setUseCustomModel(!useCustomModel)}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${useCustomModel ? 'bg-[#006c44] text-white' : 'bg-white text-[#006c44] border border-[#006c44]/30'}`}
+                            >
+                                {useCustomModel ? '🧠 Custom' : '📦 COCO-SSD'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isLoadingModel && (
                 <div className="flex items-center gap-3 px-6 py-4 bg-[#eaedff] rounded-2xl border border-[#630ed4]/20 animate-fade-in">
                     <div className="w-5 h-5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
@@ -753,7 +800,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
             {/* Mode routing */}
             {mode.mode === 'train' ? (
-                <TrainPanel mode={mode} />
+                <TrainPanel mode={mode} trainer={trainerRef.current} onTrained={() => { setCustomModelTrained(true); setUseCustomModel(true) }} />
             ) : mode.mode === 'annotate' ? (
                 <AnnotatePanel mode={mode} />
             ) : mode.mode === 'test' ? (
