@@ -19,6 +19,7 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
     const currentIndex = modeOrder.indexOf(mode)
 
     return (
+<<<<<<< HEAD
         <div className="w-full max-w-[500px] mx-auto">
             <div className="flex items-center justify-between relative">
                 {/* Connecting line */}
@@ -29,6 +30,18 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                     />
                 </div>
 
+=======
+        <div className="w-full max-w-[520px] mx-auto">
+            <div
+                className="flex items-center justify-between rounded-2xl"
+                style={{
+                    background: '#fff',
+                    border: '1.5px solid #e5e7eb',
+                    padding: '16px 24px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
+                }}
+            >
+>>>>>>> d2abbcce72fb46e64b3c7aaf4af4ae8d3445c17c
                 {STEPS.map((step, index) => {
                     const isActive = mode === step.id
                     const isCompleted = index < currentIndex
@@ -36,37 +49,95 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain }: Work
                     const isPast = index <= currentIndex
 
                     return (
-                        <button
-                            key={step.id}
-                            onClick={() => {
-                                if (step.id === 'train' && !canTrain) return
-                                onModeChange(step.id)
-                            }}
-                            disabled={isDisabled}
-                            className="relative z-10 flex flex-col items-center gap-1.5 group"
-                        >
-                            <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 ${
-                                    isActive
-                                        ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-lg shadow-[#630ed4]/30 scale-110 ring-4 ring-[#eaedff]'
+                        <React.Fragment key={step.id}>
+                            <button
+                                onClick={() => {
+                                    if (step.id === 'train' && !canTrain) return
+                                    onModeChange(step.id)
+                                }}
+                                disabled={isDisabled}
+                                className="flex items-center gap-2.5 group"
+                                style={{
+                                    padding: '8px 12px',
+                                    borderRadius: '14px',
+                                    border: 'none',
+                                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                    background: isActive
+                                        ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
                                         : isCompleted
-                                            ? 'bg-[#006c44] text-white shadow-md'
-                                            : isDisabled
-                                                ? 'bg-[#dae2fd] text-[#ccc3d8] cursor-not-allowed'
-                                                : 'bg-[#eaedff] text-[#630ed4] shadow-sm group-hover:scale-105'
-                                }`}
+                                            ? '#d1fae5'
+                                            : 'transparent',
+                                    opacity: isDisabled ? 0.5 : 1,
+                                    transition: 'all 0.25s ease',
+                                }}
                             >
-                                {isCompleted ? '✅' : step.emoji}
-                            </div>
-                            <span className={`text-[11px] font-bold transition-colors duration-200 ${
-                                isActive ? 'text-[#630ed4]' : isPast ? 'text-[#131b2e]' : 'text-[#7b7487]'
-                            }`}>
-                                {step.label}
-                            </span>
-                            <span className={`text-[8px] ${isActive ? 'text-[#630ed4]/60' : 'text-[#7b7487]/40'}`}>
-                                {step.tip}
-                            </span>
-                        </button>
+                                <div
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '15px',
+                                        background: isActive
+                                            ? 'rgba(255,255,255,0.2)'
+                                            : isCompleted
+                                                ? '#006c44'
+                                                : '#eaedff',
+                                        color: isActive
+                                            ? '#fff'
+                                            : isCompleted
+                                                ? '#fff'
+                                                : '#630ed4',
+                                        boxShadow: isCompleted
+                                            ? '0 2px 6px rgba(0,108,68,0.25)'
+                                            : isActive
+                                                ? 'none'
+                                                : '0 1px 3px rgba(0,0,0,0.06)',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {isCompleted ? '✓' : step.emoji}
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <div
+                                        style={{
+                                            fontSize: '13px',
+                                            fontWeight: 700,
+                                            color: isActive ? '#fff' : isPast ? '#131b2e' : '#7b7487',
+                                            lineHeight: 1.2,
+                                        }}
+                                    >
+                                        {step.label}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: '10px',
+                                            color: isActive ? 'rgba(255,255,255,0.7)' : '#9ca3af',
+                                            lineHeight: 1.3,
+                                        }}
+                                    >
+                                        {step.tip}
+                                    </div>
+                                </div>
+                            </button>
+
+                            {/* Connector line */}
+                            {index < STEPS.length - 1 && (
+                                <div
+                                    style={{
+                                        width: '24px',
+                                        height: '2px',
+                                        borderRadius: '1px',
+                                        background: index < currentIndex
+                                            ? 'linear-gradient(90deg, #006c44, #630ed4)'
+                                            : '#e5e7eb',
+                                        flexShrink: 0,
+                                    }}
+                                />
+                            )}
+                        </React.Fragment>
                     )
                 })}
             </div>
