@@ -294,7 +294,7 @@ export function useNeuraProject(
         if (project) {
             try {
                 const data = JSON.stringify(project)
-                if (data.length > 4 * 1024 * 1024) {
+                if (data.length > 50 * 1024 * 1024) {
                     console.warn('[Neura] Project is large (' + Math.round(data.length / 1024 / 1024 * 10) / 10 + 'MB). Auto-downloading backup to prevent data loss.')
                     autoDownloadBackup(project)
                 }

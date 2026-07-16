@@ -372,13 +372,23 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
         <button
             onClick={toggleCamera}
-            className={`flex items-center gap-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${size === 'sm' ? 'px-3 py-1.5' : 'px-4 py-2'} ${
-                cameraOn
-                    ? 'bg-[#d1fae5] text-[#006c44] hover:bg-[#a7f3d0]'
-                    : 'bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]'
-            }`}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: size === 'sm' ? '8px 12px' : '10px 16px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: cameraOn ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                color: cameraOn ? '#059669' : '#dc2626',
+                boxShadow: cameraOn ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(220,38,38,0.12)',
+                transition: 'all 0.2s ease',
+            }}
         >
-            <span className="text-sm">{cameraOn ? '📷' : '🚫'}</span>
+            <span style={{ fontSize: '14px' }}>{cameraOn ? '📷' : '🚫'}</span>
             {cameraOn ? 'Camera On' : 'Camera Off'}
         </button>
     )

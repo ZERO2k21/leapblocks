@@ -24,9 +24,9 @@ const EMOJI_ICONS: Record<string, string> = {
 }
 
 const SIZE_MAP: Record<string, string> = {
-    sm: 'w-20 h-20 text-3xl',
-    md: 'w-24 h-24 text-4xl',
-    lg: 'w-28 h-28 text-5xl'
+    sm: 'w-14 h-14 text-2xl',
+    md: 'w-16 h-16 text-3xl',
+    lg: 'w-20 h-20 text-4xl'
 }
 
 export default function CaptureButton({

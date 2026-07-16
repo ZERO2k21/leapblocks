@@ -231,33 +231,45 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const sidebarContent = (
         <>
-            <div className="px-3 mb-3">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xs sm:text-sm font-bold text-[#131b2e] flex items-center gap-1.5">
-                        <span className="text-sm sm:text-base">{isObjectDetection ? '🏷️' : '📁'}</span>
+            <div style={{ padding: '16px 14px 12px' }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: '14px' }}>
+                    <h2
+                        className="flex items-center"
+                        style={{
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            color: '#131b2e',
+                            gap: '8px',
+                        }}
+                    >
+                        <span style={{ fontSize: '18px' }}>{isObjectDetection ? '🏷️' : '📁'}</span>
                         {isObjectDetection ? 'Objects' : 'Classes'}
                     </h2>
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => setShowAddClass(true)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#eaedff] text-[#630ed4] flex items-center justify-center hover:bg-[#dae2fd] active:scale-95 transition-all text-sm sm:text-lg"
-                            title={isObjectDetection ? 'Add New Label' : 'Add Class'}
-                        >
-                            ➕
-                        </button>
-                        {isMobile && (
-                            <button
-                                onClick={() => setSidebarOpen(false)}
-                                className="w-7 h-7 rounded-xl bg-[#fee2e2] text-[#991b1b] flex items-center justify-center hover:bg-[#fecaca] transition-all text-sm"
-                            >
-                                ✕
-                            </button>
-                        )}
-                    </div>
+                    <button
+                        onClick={() => setShowAddClass(true)}
+                        style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '16px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(99,14,212,0.3)',
+                            transition: 'all 0.2s ease',
+                        }}
+                        title={isObjectDetection ? 'Add New Label' : 'Add Class'}
+                    >
+                        +
+                    </button>
                 </div>
 
                 {showAddClass && (
-                    <div className="flex gap-1.5 animate-fade-in">
+                    <div className="flex animate-fade-in" style={{ gap: '8px', marginBottom: '12px' }}>
                         <input
                             autoFocus
                             value={newClassName}
@@ -267,20 +279,42 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                                 if (e.key === 'Escape') setShowAddClass(false)
                             }}
                             placeholder={isObjectDetection ? 'Label name...' : 'Class name...'}
-                            className="flex-1 px-2.5 py-2 text-xs font-semibold border border-[#630ed4]/30 rounded-xl focus:outline-none focus:border-[#630ed4] bg-white transition-colors text-[#131b2e] placeholder:text-[#7b7487]"
+                            style={{
+                                flex: 1,
+                                padding: '8px 12px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                border: '1.5px solid #e5e7eb',
+                                borderRadius: '10px',
+                                outline: 'none',
+                                background: '#fff',
+                                color: '#131b2e',
+                                transition: 'border-color 0.2s ease',
+                            }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#630ed4'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                         />
                         <button
                             onClick={handleAddClass}
-                            className="px-3 py-2 bg-[#630ed4] text-white rounded-xl text-xs font-bold hover:shadow-md transition-all"
+                            style={{
+                                padding: '8px 14px',
+                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                color: '#fff',
+                                borderRadius: '10px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                            }}
                         >
-                            ✅
+                            ✓
                         </button>
                     </div>
                 )}
             </div>
 
             {/* Class list */}
-            <div className="flex-1 overflow-y-auto neura-scrollbar px-2 space-y-1">
+            <div className="flex-1 overflow-y-auto neura-scrollbar" style={{ padding: '0 10px' }}>
                 {mode.project?.classes.map((classData, index) => (
                     <ClassCard
                         key={classData.id}
@@ -297,16 +331,38 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 ))}
 
                 {mode.project && mode.project.classes.length === 0 && !showAddClass && (
-                    <div className="flex flex-col items-center py-10 text-center">
-                        <span className="text-2xl sm:text-3xl mb-2">📂</span>
-                        <p className="text-[10px] sm:text-xs font-bold text-[#131b2e] mb-0.5">No classes yet</p>
-                        <p className="text-[9px] sm:text-[10px] text-[#4a4455]">Click + to add some! 👆</p>
+                    <div
+                        className="flex flex-col items-center text-center"
+                        style={{ padding: '40px 16px' }}
+                    >
+                        <div
+                            style={{
+                                width: '56px',
+                                height: '56px',
+                                borderRadius: '16px',
+                                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '28px',
+                                marginBottom: '14px',
+                                boxShadow: '0 4px 12px rgba(245,158,11,0.15)',
+                            }}
+                        >
+                            📂
+                        </div>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#131b2e', marginBottom: '4px' }}>
+                            No classes yet
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#9ca3af' }}>
+                            Click + to add some! 👆
+                        </p>
                     </div>
                 )}
             </div>
 
             {/* Workflow Stepper */}
-            <div className="px-3 py-3 border-t border-[#dae2fd]">
+            <div style={{ padding: '12px 14px', borderTop: '1.5px solid #e5e7eb' }}>
                 {isObjectDetection ? (
                     <div className="flex items-center justify-between">
                         {['Collect', 'Label', 'Train', 'Test'].map((step, idx) => {
@@ -318,24 +374,35 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                                 <button
                                     key={step}
                                     onClick={() => mode.setMode(modeId)}
-                                    className="flex flex-col items-center gap-1 group"
+                                    className="flex flex-col items-center"
+                                    style={{ gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
                                 >
-                                    <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-xs transition-all ${
-                                        isCurrent
-                                            ? 'bg-[#630ed4] text-white shadow-md shadow-[#630ed4]/30 scale-110'
-                                            : isCompleted
-                                                ? 'bg-[#006c44] text-white'
-                                                : 'bg-[#dae2fd] text-[#7b7487] group-hover:bg-[#ccc3d8]'
-                                    }`}>
-                                        {isCompleted ? '✅' : stepEmojis[idx]}
+                                    <div
+                                        style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '12px',
+                                            background: isCurrent ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : isCompleted ? '#d1fae5' : '#f3f4f6',
+                                            color: isCurrent || isCompleted ? '#fff' : '#9ca3af',
+                                            boxShadow: isCurrent ? '0 2px 8px rgba(99,14,212,0.3)' : 'none',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        {isCompleted ? '✓' : stepEmojis[idx]}
                                     </div>
-                                    <span className={`text-[7px] sm:text-[8px] font-semibold ${isCurrent ? 'text-[#630ed4]' : 'text-[#7b7487]'}`}>{step}</span>
+                                    <span style={{ fontSize: '9px', fontWeight: 700, color: isCurrent ? '#630ed4' : '#9ca3af' }}>
+                                        {step}
+                                    </span>
                                 </button>
                             )
                         })}
                     </div>
                 ) : (
-                    <div className="flex gap-1">
+                    <div className="flex" style={{ gap: '6px' }}>
                         {[
                             { id: 'collect' as const, label: 'Collect', emoji: '📸' },
                             { id: 'train' as const, label: 'Train', emoji: '🏋️' },
@@ -344,13 +411,25 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                             <button
                                 key={m.id}
                                 onClick={() => mode.setMode(m.id)}
-                                className={`flex-1 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
-                                    mode.mode === m.id
-                                        ? 'bg-[#630ed4] text-white shadow-sm'
-                                        : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'
-                                }`}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px 0',
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '4px',
+                                    transition: 'all 0.2s ease',
+                                    background: mode.mode === m.id ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : '#f3f0ff',
+                                    color: mode.mode === m.id ? '#fff' : '#6b7280',
+                                    boxShadow: mode.mode === m.id ? '0 2px 8px rgba(99,14,212,0.3)' : 'none',
+                                }}
                             >
-                                <span>{m.emoji}</span>
+                                <span style={{ fontSize: '12px' }}>{m.emoji}</span>
                                 {m.label}
                             </button>
                         ))}
@@ -400,7 +479,15 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Desktop sidebar */}
-                <aside className="hidden md:flex w-56 bg-white/80 backdrop-blur-md border-r border-[#dae2fd] flex-col py-3 z-40 animate-fade-in shrink-0">
+                <aside
+                    className="hidden md:flex flex-col z-40 animate-fade-in shrink-0"
+                    style={{
+                        width: '224px',
+                        background: 'rgba(255,255,255,0.95)',
+                        backdropFilter: 'blur(12px)',
+                        borderRight: '1.5px solid #e5e7eb',
+                    }}
+                >
                     {sidebarContent}
                 </aside>
 
@@ -408,7 +495,35 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 {isMobile && sidebarOpen && (
                     <div className="fixed inset-0 z-50 flex">
                         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-                        <div className="relative w-64 bg-white/95 backdrop-blur-md shadow-2xl flex flex-col py-3 animate-slide-in-left">
+                        <div
+                            className="relative flex flex-col animate-slide-in-left"
+                            style={{
+                                width: '256px',
+                                background: 'rgba(255,255,255,0.98)',
+                                backdropFilter: 'blur(12px)',
+                                boxShadow: '8px 0 32px rgba(0,0,0,0.12)',
+                            }}
+                        >
+                            <div className="flex items-center justify-end" style={{ padding: '12px 14px 0' }}>
+                                <button
+                                    onClick={() => setSidebarOpen(false)}
+                                    style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '8px',
+                                        background: '#fee2e2',
+                                        color: '#991b1b',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '12px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
                             {sidebarContent}
                         </div>
                     </div>

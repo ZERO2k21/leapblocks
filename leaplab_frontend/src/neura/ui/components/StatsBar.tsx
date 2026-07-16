@@ -8,34 +8,103 @@ interface StatsBarProps {
 }
 
 export default function StatsBar({ totalClasses, totalImages, imagesPerClass, recommended }: StatsBarProps) {
+    const stats = [
+        { emoji: '📁', label: 'classes', value: totalClasses, color: '#630ed4', bg: '#f5f3ff' },
+        { emoji: '🖼️', label: 'pics', value: totalImages, color: '#059669', bg: '#ecfdf5' },
+        { emoji: '📊', label: 'Avg', value: `${imagesPerClass}/class`, color: '#d97706', bg: '#fffbeb' },
+    ]
+
     return (
-        <div className="w-full max-w-[720px] animate-fade-in">
-            <div className="flex items-center justify-between gap-3 py-2.5 px-5 bg-white/70 backdrop-blur-sm rounded-2xl border border-[#dae2fd] shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-lg">📁</span>
-                        <span className="text-xs text-[#4a4455]"><span className="font-bold text-[#131b2e]">{totalClasses}</span> classes</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-lg">🖼️</span>
-                        <span className="text-xs text-[#4a4455]"><span className="font-bold text-[#131b2e]">{totalImages}</span> pics</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-lg">📊</span>
-                        <span className="text-xs text-[#4a4455]">Avg: <span className="font-bold text-[#131b2e]">{imagesPerClass}</span>/class</span>
-                    </div>
+        <div style={{ width: '100%', maxWidth: '720px' }} className="animate-fade-in">
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#fff',
+                    borderRadius: '16px',
+                    padding: '12px 20px',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
+                }}
+            >
+                {/* Stats */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {stats.map((stat) => (
+                        <div
+                            key={stat.label}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '8px',
+                                    background: stat.bg,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                }}
+                            >
+                                {stat.emoji}
+                            </div>
+                            <div>
+                                <span style={{ fontSize: '12px', color: '#6b7280' }}>{stat.label}: </span>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: stat.color }}>{stat.value}</span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
-                <div className="h-4 w-px bg-[#ccc3d8]/50" />
+                {/* Divider */}
+                <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
 
-                <div className="flex items-center gap-1.5">
-                    <span className="text-sm">🎯</span>
-                    <span className="text-xs font-bold text-[#006c44]">Goal: {recommended}/class</span>
+                {/* Goal */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                        borderRadius: '8px',
+                    }}
+                >
+                    <span style={{ fontSize: '14px' }}>🎯</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>
+                        Goal: {recommended}/class
+                    </span>
                 </div>
 
-                <div className="h-4 w-px bg-[#ccc3d8]/50" />
+                {/* Divider */}
+                <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
 
-                <span className="text-[9px] font-bold text-[#630ed4] uppercase tracking-widest">🧠 NEURA</span>
+                {/* Brand */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                    }}
+                >
+                    <div
+                        style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: '#630ed4',
+                            boxShadow: '0 0 6px rgba(99,14,212,0.5)',
+                        }}
+                    />
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#630ed4', letterSpacing: '0.08em' }}>
+                        NEURA
+                    </span>
+                </div>
             </div>
         </div>
     )

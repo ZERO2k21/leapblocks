@@ -54,12 +54,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         try {
             setCameraError(null)
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
+                video: { 
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30 }
+                }
             })
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
             streamRef.current = mediaStream
             setStream(mediaStream)
             setCameraOn(true)
@@ -100,6 +101,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
     useEffect(() => { streamStateRef.current = stream }, [stream])
+
+    useEffect(() => {
+        if (cameraOn && stream && videoRef.current) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => {})
+        }
+    }, [cameraOn, stream])
 
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
@@ -482,8 +490,25 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }
 
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
-        <button onClick={toggleCamera} className={`flex items-center gap-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${size === 'sm' ? 'px-3 py-1.5' : 'px-4 py-2'} ${cameraOn ? 'bg-[#d1fae5] text-[#006c44] hover:bg-[#a7f3d0]' : 'bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]'}`}>
-            <span className="text-sm">{cameraOn ? '📷' : '🚫'}</span>
+        <button
+            onClick={toggleCamera}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: size === 'sm' ? '8px 12px' : '10px 16px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: cameraOn ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                color: cameraOn ? '#059669' : '#dc2626',
+                boxShadow: cameraOn ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(220,38,38,0.12)',
+                transition: 'all 0.2s ease',
+            }}
+        >
+            <span style={{ fontSize: '14px' }}>{cameraOn ? '📷' : '🚫'}</span>
             {cameraOn ? 'Camera On' : 'Camera Off'}
         </button>
     )
@@ -609,148 +634,561 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-[720px] text-center mb-2 animate-fade-in">
-                        <h2 className="text-3xl font-extrabold text-[#630ed4] mb-2">
-                            📸 Teach Your AI to See!
-                        </h2>
-                        <p className="text-sm text-[#4a4455] font-medium">
-                            Follow the steps below to teach your AI buddy!
-                        </p>
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
+                    {/* Header */}
+                    <div className="text-center animate-fade-in" style={{ marginBottom: '12px' }}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '10px 20px',
+                                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                                borderRadius: '14px',
+                                border: '1px solid rgba(99,14,212,0.1)',
+                                boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                }}
+                            >
+                                <span style={{ fontSize: '1.1rem' }}>📸</span>
+                            </div>
+                            <h2
+                                style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: 800,
+                                    color: '#131b2e',
+                                    margin: 0,
+                                }}
+                            >
+                                Teach Your AI to See!
+                            </h2>
+                        </div>
                     </div>
 
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                    {/* Workflow and Tips - centered */}
+                    <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 12px' }}>
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
 
-                    {/* Tips */}
-                    <div className="w-full max-w-[720px] animate-fade-in">
-                        <div className="bg-gradient-to-r from-[#eaedff] to-[#dbeafe] rounded-2xl px-5 py-4 border border-[#630ed4]/10">
-                            <div className="flex items-start gap-3">
-                                <span className="text-xl">💡</span>
-                                <div>
-                                    <p className="text-[11px] font-bold text-[#630ed4] mb-1">TIPS FOR BETTER ACCURACY</p>
-                                    <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                        <span className="text-xs text-[#4a4455] flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#630ed4]" /> Take pictures from different angles</span>
-                                        <span className="text-xs text-[#4a4455] flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#630ed4]" /> Try different lighting</span>
-                                        <span className="text-xs text-[#4a4455] flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#630ed4]" /> Change backgrounds</span>
-                                        <span className="text-xs text-[#4a4455] flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#630ed4]" /> Mix close-up & far shots</span>
+                        {/* Tips */}
+                        <div style={{ marginTop: '10px' }} className="animate-fade-in">
+                            <div
+                                style={{
+                                    background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                                    borderRadius: '12px',
+                                    padding: '10px 14px',
+                                    border: '1px solid rgba(99,14,212,0.1)',
+                                }}
+                            >
+                                <div className="flex items-start" style={{ gap: '8px' }}>
+                                    <div
+                                        style={{
+                                            width: '24px',
+                                            height: '24px',
+                                            borderRadius: '6px',
+                                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '12px',
+                                            flexShrink: 0,
+                                        }}
+                                    >💡</div>
+                                    <div>
+                                        <p style={{ fontSize: '9px', fontWeight: 800, color: '#630ed4', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                            Tips for better accuracy
+                                        </p>
+                                        <div className="flex flex-wrap" style={{ gap: '3px 14px' }}>
+                                            {['Take from different angles', 'Try different lighting', 'Change backgrounds', 'Mix close-up & far shots'].map((tip) => (
+                                                <span key={tip} className="flex items-center" style={{ gap: '5px', fontSize: '10px', color: '#4b5563' }}>
+                                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                                    {tip}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Camera error */}
-                    {cameraError && !cameraOn && (
-                        <div className="w-full max-w-[520px] bg-white rounded-3xl p-8 shadow-md border border-[#dae2fd] text-center animate-scale-in">
-                            <span className="text-5xl mb-4 block">🚫</span>
-                            <h3 className="text-lg font-bold text-[#131b2e] mb-2">Camera Access Needed 📷</h3>
-                            <p className="text-sm text-[#4a4455] mb-6 max-w-sm mx-auto">{cameraError}</p>
-                            <div className="flex gap-3 justify-center">
-                                <button onClick={startCamera} className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all">Try Again 🔄</button>
-                                <button onClick={() => { setCameraError(null); setCameraOn(false) }} className="px-6 py-3 bg-[#eaedff] text-[#131b2e] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all">Use Upload Only 📂</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Camera feed */}
-                    <div className={`relative rounded-3xl overflow-hidden bg-[#1e1b4b] w-full max-w-[520px] transition-all duration-300 aspect-[4/3] ${cameraOn ? '' : 'hidden'}`}>
-                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-3xl -scale-x-100" />
-                        {isCapturing && <div className="absolute inset-0 bg-white/50 animate-flash rounded-3xl" />}
-                        <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                            <div className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
-                            <span className="text-white text-[10px] font-bold tracking-wide">📸 LIVE</span>
-                        </div>
-                        {selectedClass && (
-                            <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-lg backdrop-blur-md" style={{ backgroundColor: `${selectedClass.color}CC` }}>
-                                {selectedClass.name}
-                            </div>
-                        )}
-                        {selectedClass && (
-                            <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
-                                <span className="text-white text-[11px] font-bold">{selectedClass.samples.length} samples</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Camera off placeholder */}
-                    {!cameraOn && !cameraError && (
-                        <div className="w-full max-w-[680px] border-2 border-dashed border-[#630ed4]/20 rounded-3xl p-8 text-center transition-all hover:border-[#630ed4]/40 bg-white/70 backdrop-blur-sm">
-                            <div className="flex flex-col items-center justify-center">
-                                <span className="text-6xl mb-4">📸</span>
-                                <h2 className="text-xl font-extrabold text-[#131b2e] mb-2">Camera is off</h2>
-                                <p className="text-sm text-[#4a4455] mb-6 max-w-sm">
-                                    Start by adding object types and uploading pictures for each one!
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                                    <button onClick={startCamera} className="bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg hover:shadow-[#630ed4]/30 hover:-translate-y-0.5 transition-all">
-                                        📷 Turn On Camera
-                                    </button>
-                                    <div className="text-[#4a4455] text-xs font-semibold flex items-center gap-2">
-                                        <div className="h-px w-6 bg-[#ccc3d8]" />or<div className="h-px w-6 bg-[#ccc3d8]" />
-                                    </div>
-                                    <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 transition-all shadow-sm ${mode.selectedClassId ? 'bg-white text-[#630ed4] border-2 border-[#630ed4] hover:bg-[#630ed4]/5' : 'bg-[#e5e7eb] text-[#ccc3d8] border-2 border-[#d1d5db] cursor-not-allowed'}`}>
-                                        📂 Upload Pictures
-                                    </button>
-                                </div>
-                                <p className="mt-3 text-[11px] text-[#7b7487]">PNG, JPG up to 10MB</p>
-                            </div>
-                        </div>
-                    )}
 
                     <canvas ref={canvasRef} className="hidden" />
 
-                    {/* Controls */}
-                    <div className="flex items-center gap-3 flex-wrap justify-center">
-                        <CameraToggle />
-                        <button onClick={() => { setBurstMode(!burstMode); if (burstMode) stopBurstCapture() }} disabled={!cameraOn} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${burstMode && cameraOn ? 'bg-[#eaedff] text-[#630ed4] ring-2 ring-[#630ed4]/30' : cameraOn ? 'bg-[#f2f3ff] text-[#4a4455] hover:bg-[#eaedff]' : 'bg-[#f9fafb] text-[#ccc3d8] cursor-not-allowed'}`}>
-                            <span className="text-sm">⚡</span>
-                            {burstMode ? 'Rapid ON' : 'Rapid OFF'}
-                        </button>
-                        <button onClick={() => setAugmentMode(!augmentMode)} disabled={!mode.selectedClassId} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${augmentMode && mode.selectedClassId ? 'bg-[#d1fae5] text-[#006c44] ring-2 ring-[#006c44]/30' : mode.selectedClassId ? 'bg-[#f2f3ff] text-[#4a4455] hover:bg-[#eaedff]' : 'bg-[#f9fafb] text-[#ccc3d8] cursor-not-allowed'}`} title="Makes training data more varied for better results">
-                            <span className="text-sm">✨</span>
-                            {augmentMode ? 'Smart ON' : 'Smart OFF'}
-                        </button>
-                        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
-                        <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${mode.selectedClassId ? 'bg-[#dbeafe] text-[#1d4ed8] hover:bg-[#bfdbfe] hover:shadow-sm' : 'bg-[#f9fafb] text-[#ccc3d8] cursor-not-allowed'}`}>
-                            <span className="text-sm">📂</span>
-                            Upload
-                        </button>
-                    </div>
-
-                    {/* Capture */}
-                    {cameraOn && (
-                        <CaptureButton
-                            onClick={handleCapture}
-                            onMouseDown={burstMode ? startBurstCapture : undefined}
-                            onMouseUp={burstMode ? stopBurstCapture : undefined}
-                            onTouchStart={burstMode ? startBurstCapture : undefined}
-                            onTouchEnd={burstMode ? stopBurstCapture : undefined}
-                            disabled={!canAddSamples || isCapturing}
-                            label={isCapturing ? '📸 Captured!' : atSampleLimit ? 'Max Reached 🎯' : burstMode ? 'Hold to Capture ⚡' : 'Take Photo 📸'}
-                            icon="camera"
-                            color={selectedClass?.color || '#630ed4'}
-                            pulse={!isCapturing && !!canAddSamples}
-                        />
-                    )}
-
-                    <StatsBar totalClasses={mode.project?.classes.length || 0} totalImages={mode.getTotalSamples()} imagesPerClass={(mode.project?.classes.length || 0) > 0 ? Math.round(mode.getTotalSamples() / (mode.project?.classes.length || 1)) : 0} recommended={15} />
-
-                    {selectedClass && selectedClass.samples.length > 0 && (
-                        <div className="w-full max-w-[520px]">
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#dae2fd]">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedClass.color }} />
-                                        <h3 className="text-sm font-bold text-[#131b2e]">{selectedClass.name}</h3>
+                    {/* Main content - Two column layout */}
+                    <div 
+                        style={{ 
+                            display: 'flex', 
+                            gap: '16px', 
+                            width: '100%', 
+                            flex: 1,
+                            minHeight: 0,
+                        }}
+                    >
+                        {/* Left half - Camera */}
+                        <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                            {/* Camera error */}
+                            {cameraError && !cameraOn && (
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        flex: 1,
+                                        minHeight: 0,
+                                        background: '#fff',
+                                        borderRadius: '16px',
+                                        padding: '40px 32px',
+                                        textAlign: 'center',
+                                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                                        border: '1px solid #e5e7eb',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: '64px',
+                                            height: '64px',
+                                            borderRadius: '16px',
+                                            background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            margin: '0 auto 20px',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '2rem' }}>🚫</span>
                                     </div>
-                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${atSampleLimit ? 'text-[#c32c00] bg-[#fef3c7]' : 'text-[#4a4455] bg-[#f2f3ff]'}`}>
-                                        {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS} pics
-                                    </span>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>
+                                        Camera Access Needed
+                                    </h3>
+                                    <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '300px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+                                        {cameraError}
+                                    </p>
+                                    <div className="flex items-center justify-center" style={{ gap: '10px' }}>
+                                        <button
+                                            onClick={startCamera}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '10px 20px',
+                                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                                color: '#fff',
+                                                borderRadius: '10px',
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            🔄 Try Again
+                                        </button>
+                                        <button
+                                            onClick={() => { setCameraError(null); setCameraOn(false) }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '10px 20px',
+                                                background: '#f5f3ff',
+                                                color: '#630ed4',
+                                                borderRadius: '10px',
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            📂 Upload Only
+                                        </button>
+                                    </div>
                                 </div>
-                                <SampleGrid samples={selectedClass.samples} type="image" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} onUndo={(sample) => mode.addSample(selectedClass.id, { type: sample.type, data: sample.data })} />
+                            )}
+
+                            {/* Camera feed */}
+                            <div 
+                                style={{
+                                    width: '100%',
+                                    flex: 1,
+                                    minHeight: 0,
+                                    position: 'relative',
+                                    borderRadius: '16px',
+                                    overflow: 'hidden',
+                                    background: '#1e1b4b',
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+                                    display: cameraOn ? 'flex' : 'none',
+                                }}
+                            >
+                                <video 
+                                    ref={videoRef} 
+                                    autoPlay 
+                                    playsInline 
+                                    muted 
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        transform: 'scaleX(-1)',
+                                    }}
+                                />
+                                {isCapturing && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        background: 'rgba(255,255,255,0.4)',
+                                        animation: 'flash 0.3s ease-out',
+                                    }} />
+                                )}
+                                
+                                {/* LIVE indicator */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '10px',
+                                    left: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '4px 10px',
+                                    background: 'rgba(0,0,0,0.5)',
+                                    backdropFilter: 'blur(8px)',
+                                    borderRadius: '6px',
+                                }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+                                    <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>LIVE</span>
+                                </div>
+                                
+                                {/* Class name */}
+                                {selectedClass && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '10px',
+                                        left: '10px',
+                                        padding: '5px 12px',
+                                        borderRadius: '6px',
+                                        background: selectedClass.color,
+                                        color: '#fff',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                    }}>
+                                        {selectedClass.name}
+                                    </div>
+                                )}
+                                
+                                {/* Sample count */}
+                                {selectedClass && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '10px',
+                                        right: '10px',
+                                        padding: '4px 8px',
+                                        background: 'rgba(0,0,0,0.5)',
+                                        backdropFilter: 'blur(8px)',
+                                        borderRadius: '6px',
+                                    }}>
+                                        <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>
+                                            {selectedClass.samples.length} samples
+                                        </span>
+                                    </div>
+                                )}
+                                
+                                {/* Capture button */}
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '10px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                }}>
+                                    <button
+                                        onClick={handleCapture}
+                                        onMouseDown={burstMode ? startBurstCapture : undefined}
+                                        onMouseUp={burstMode ? stopBurstCapture : undefined}
+                                        onTouchStart={burstMode ? startBurstCapture : undefined}
+                                        onTouchEnd={burstMode ? stopBurstCapture : undefined}
+                                        disabled={!canAddSamples || isCapturing}
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            borderRadius: '50%',
+                                            background: isCapturing ? '#9ca3af' : (selectedClass?.color || '#630ed4'),
+                                            border: '3px solid rgba(255,255,255,0.9)',
+                                            cursor: canAddSamples && !isCapturing ? 'pointer' : 'not-allowed',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+                                            transition: 'all 0.2s ease',
+                                            opacity: canAddSamples ? 1 : 0.5,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '18px' }}>
+                                            {isCapturing ? '✅' : atSampleLimit ? '🎯' : '📸'}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Camera off placeholder */}
+                            {!cameraOn && !cameraError && (
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        flex: 1,
+                                        minHeight: 0,
+                                        background: '#fff',
+                                        borderRadius: '16px',
+                                        padding: '40px 24px',
+                                        textAlign: 'center',
+                                        border: '2px dashed rgba(99,14,212,0.15)',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onDragOver={(e) => {
+                                        e.preventDefault()
+                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.4)'
+                                        e.currentTarget.style.background = '#faf8ff'
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.15)'
+                                        e.currentTarget.style.background = '#fff'
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault()
+                                        e.currentTarget.style.borderColor = 'rgba(99,14,212,0.15)'
+                                        e.currentTarget.style.background = '#fff'
+                                        if (mode.selectedClassId && e.dataTransfer.files.length > 0) {
+                                            const syntheticEvent = { target: { files: e.dataTransfer.files } } as any
+                                            handleUpload(syntheticEvent)
+                                        }
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: '72px',
+                                            height: '72px',
+                                            borderRadius: '18px',
+                                            background: mode.selectedClassId 
+                                                ? 'linear-gradient(135deg, #f3e8ff, #ede9fe)' 
+                                                : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginBottom: '20px',
+                                            boxShadow: '0 4px 12px rgba(99,14,212,0.1)',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '2rem' }}>{mode.selectedClassId ? '📸' : '📁'}</span>
+                                    </div>
+                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>
+                                        {mode.selectedClassId ? 'Add Photos' : 'Drop Files Here'}
+                                    </h2>
+                                    <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '260px', marginBottom: '24px', lineHeight: 1.5 }}>
+                                        {mode.selectedClassId 
+                                            ? `Take photos or upload images for "${selectedClass?.name || 'your class'}"`
+                                            : 'Select or create a class first, then drop images here'}
+                                    </p>
+                                    <div className="flex items-center justify-center" style={{ gap: '10px' }}>
+                                        <button
+                                            onClick={startCamera}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '12px 22px',
+                                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                                color: '#fff',
+                                                borderRadius: '12px',
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                            }}
+                                        >
+                                            📷 Turn On Camera
+                                        </button>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={!mode.selectedClassId}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '12px 22px',
+                                                background: mode.selectedClassId ? '#fff' : '#f3f4f6',
+                                                color: mode.selectedClassId ? '#630ed4' : '#9ca3af',
+                                                borderRadius: '12px',
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                border: `2px solid ${mode.selectedClassId ? '#630ed4' : '#e5e7eb'}`,
+                                                cursor: mode.selectedClassId ? 'pointer' : 'not-allowed',
+                                            }}
+                                        >
+                                            📂 Upload
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '14px' }}>
+                                        PNG, JPG up to 10MB
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {/* Right half - Controls, Stats, Samples */}
+                        <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {/* Controls */}
+                            <div
+                                style={{
+                                    background: '#fff',
+                                    borderRadius: '12px',
+                                    padding: '10px',
+                                    border: '1px solid #e5e7eb',
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <CameraToggle />
+
+                                    <button
+                                        onClick={() => { setBurstMode(!burstMode); if (burstMode) stopBurstCapture() }}
+                                        disabled={!cameraOn}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            padding: '8px 12px',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: cameraOn ? 'pointer' : 'not-allowed',
+                                            background: burstMode && cameraOn ? '#f5f3ff' : '#f9fafb',
+                                            color: burstMode && cameraOn ? '#630ed4' : cameraOn ? '#374151' : '#9ca3af',
+                                            boxShadow: burstMode && cameraOn ? '0 1px 4px rgba(99,14,212,0.12)' : 'none',
+                                            transition: 'all 0.15s ease',
+                                            opacity: cameraOn ? 1 : 0.5,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '12px' }}>⚡</span>
+                                        {burstMode ? 'Rapid ON' : 'Rapid OFF'}
+                                    </button>
+
+                                    <button
+                                        onClick={() => setAugmentMode(!augmentMode)}
+                                        disabled={!mode.selectedClassId}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            padding: '8px 12px',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: mode.selectedClassId ? 'pointer' : 'not-allowed',
+                                            background: augmentMode && mode.selectedClassId ? '#ecfdf5' : '#f9fafb',
+                                            color: augmentMode && mode.selectedClassId ? '#059669' : mode.selectedClassId ? '#374151' : '#9ca3af',
+                                            boxShadow: augmentMode && mode.selectedClassId ? '0 1px 4px rgba(5,150,105,0.12)' : 'none',
+                                            transition: 'all 0.15s ease',
+                                            opacity: mode.selectedClassId ? 1 : 0.5,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '12px' }}>✨</span>
+                                        {augmentMode ? 'Smart ON' : 'Smart OFF'}
+                                    </button>
+
+                                    <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={!mode.selectedClassId}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            padding: '8px 12px',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: mode.selectedClassId ? 'pointer' : 'not-allowed',
+                                            background: mode.selectedClassId ? '#eff6ff' : '#f9fafb',
+                                            color: mode.selectedClassId ? '#2563eb' : '#9ca3af',
+                                            boxShadow: mode.selectedClassId ? '0 1px 4px rgba(37,99,235,0.1)' : 'none',
+                                            transition: 'all 0.15s ease',
+                                            opacity: mode.selectedClassId ? 1 : 0.5,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '12px' }}>📂</span>
+                                        Upload
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Stats */}
+                            <div style={{ flexShrink: 0 }}>
+                                <StatsBar 
+                                    totalClasses={mode.project?.classes.length || 0} 
+                                    totalImages={mode.getTotalSamples()} 
+                                    imagesPerClass={(mode.project?.classes.length || 0) > 0 ? Math.round(mode.getTotalSamples() / (mode.project?.classes.length || 1)) : 0} 
+                                    recommended={15} 
+                                />
+                            </div>
+
+                            {/* Samples */}
+                            {selectedClass && selectedClass.samples.length > 0 && (
+                                <div
+                                    style={{
+                                        background: '#fff',
+                                        borderRadius: '12px',
+                                        padding: '12px',
+                                        border: '1px solid #e5e7eb',
+                                        boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                                        flex: 1,
+                                        minHeight: 0,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
+                                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                                        </div>
+                                        <span style={{
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            padding: '2px 6px',
+                                            borderRadius: '5px',
+                                            background: atSampleLimit ? '#fef3c7' : '#f5f3ff',
+                                            color: atSampleLimit ? '#c32c00' : '#630ed4',
+                                        }}>
+                                            {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
+                                        </span>
+                                    </div>
+                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                        <SampleGrid samples={selectedClass.samples} type="image" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} onUndo={(sample) => mode.addSample(selectedClass.id, { type: sample.type, data: sample.data })} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
