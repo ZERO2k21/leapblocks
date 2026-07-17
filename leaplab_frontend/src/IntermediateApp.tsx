@@ -142,7 +142,7 @@ import { stageManager } from './engine/StageManager';
 import { spriteManager } from './engine/SpriteManager';
 import { leapRuntime } from './runtime/leapRuntime';
 import { initRuntime, setActiveSpriteId, setFaceVideoElement } from './runtime/RuntimeBridge';
-import { hardwareAdapter } from './hardware/HardwareAdapter';
+import { hardwareAdapter } from './serial/HardwareAdapter';
 
 import SerialMonitor from './components/SerialMonitor';
 

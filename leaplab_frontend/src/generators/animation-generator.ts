@@ -6,7 +6,7 @@
 import Blockly from '@blockly-runtime';
 import type { CompiledScript, ScriptStep } from '../vm/AnimationVM';
 import { animationVM } from '../vm/AnimationVM';
-import { hardwareAdapter } from '../hardware/HardwareAdapter';
+import { hardwareAdapter } from '../serial/HardwareAdapter';
 import { stageManager } from '../engine/StageManager';
 
 /** Convert pen color number (0-200) to hex color */

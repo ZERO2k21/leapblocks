@@ -30,7 +30,7 @@ if not exist "node_modules\" (
 )
 
 REM Check if arduino-cli exists
-set ARDUINO_CLI_PATH=..\arduino-cli\arduino-cli.exe
+set ARDUINO_CLI_PATH=..\src\drivers\arduino-cli\arduino-cli.exe
 if not exist "%ARDUINO_CLI_PATH%" (
     echo [WARNING] arduino-cli not found at %ARDUINO_CLI_PATH%
     echo [INFO] Compilation will use system arduino-cli if available

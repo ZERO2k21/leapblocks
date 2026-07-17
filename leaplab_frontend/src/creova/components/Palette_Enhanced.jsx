@@ -82,18 +82,18 @@ export default function PaletteEnhanced() {
                                 className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:bg-gradient-to-r after:from-blue-500 after:to-cyan-500 after:transition-all after:duration-300 after:ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15 after:w-full' : 'bg-gradient-to-b from-white to-slate-50 after:w-0'}`}
                                 onClick={() => toggleCategory(category)}
                             >
-                                <span className="flex items-center gap-2">
+                                <span className="flex items-center gap-2 min-w-0">
                                     <div className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 scale-[1.08] border-transparent' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-blue-500/15 text-blue-600'}`}>
                                         {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                                     </div>
-                                    <span className="tracking-[0.05em] font-extrabold">{category}</span>
+                                    <span className="tracking-[0.05em] font-extrabold truncate" title={category}>{category}</span>
                                 </span>
-                                <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200">&nbsp;{filteredItems.length}&nbsp;</span>
+                                <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200 shrink-0">&nbsp;{filteredItems.length}&nbsp;</span>
                             </button>
 
                             {/* Category Items */}
                             {!isCollapsed && (
-                                <div className="grid grid-cols-2 gap-3 p-4 bg-gradient-to-b from-slate-50/50 to-white">
+                                <div className="grid grid-cols-2 gap-2 p-2.5 bg-gradient-to-b from-slate-50/50 to-white">
                                     {filteredItems.map(item => (
                                         <div
                                             key={item.type}
@@ -101,7 +101,7 @@ export default function PaletteEnhanced() {
                                             onDragStart={(e) => handleDragStart(e, item)}
                                             onMouseEnter={() => setHoveredComponent(item)}
                                             onMouseLeave={() => setHoveredComponent(null)}
-                                            className="group/item relative flex flex-col items-center gap-2.5 p-4 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10"
+                                            className="group/item relative flex flex-col items-center gap-2 p-2.5 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 min-w-0 overflow-hidden"
                                             title={item.description}
                                         >
                                             <ComponentIcon type={item.type} size={36} className="transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-80 group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:opacity-100" />

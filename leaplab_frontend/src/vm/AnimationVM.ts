@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { Sprite } from '../stage/Sprite';
-import { hardwareAdapter } from '../hardware/HardwareAdapter';
+import { hardwareAdapter } from '../serial/HardwareAdapter';
 import { spriteManager } from '../engine/SpriteManager';
 import { motionEngine } from '../engine/MotionEngine';
 import { costumeEngine } from '../engine/CostumeEngine';

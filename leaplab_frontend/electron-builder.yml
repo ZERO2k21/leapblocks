@@ -9,7 +9,6 @@ files:
   - package.json
   - node_modules/**/*
   - src/creova/apk/**/*
-  - tools/**/*
 asar: true
 asarUnpack:
   - node_modules/serialport/**/*
@@ -42,13 +41,13 @@ extraResources:
     to: public
     filter:
       - "**/*"
-  - from: tools
+  - from: src/creova/apk/tools
     to: tools
     filter:
       - "**/*"
   # arduino-cli bundled directly — Electra ONLY uses this binary,
   # never system-installed arduino-cli. See src/utils/ensureArduinoCli.ts
-  - from: arduino-cli
+  - from: src/drivers/arduino-cli
     to: arduino-cli
     filter:
       - "**/*"

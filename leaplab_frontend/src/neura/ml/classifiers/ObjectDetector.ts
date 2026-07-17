@@ -1,0 +1,218 @@
+import { ensureCocoSsd } from '../loadScript'
+
+export interface DetectedObject {
+    label: string
+    confidence: number
+    bbox: [number, number, number, number]
+    class: string
+}
+
+export interface DetectionResult {
+    objects: DetectedObject[]
+    timestamp: number
+}
+
+// Reuse context loss setup from ImageClassifier if available
+let contextLossHandled = false
+function setupContextLossListener() {
+    if (contextLossHandled || typeof document === 'undefined') return
+    contextLossHandled = true
+    const onContextLost = (e: Event) => {
+        e.preventDefault()
+        console.error('[Neura] WebGL context lost during object detection')
+        if (!document.getElementById('neura-context-loss-banner')) {
+            const banner = document.createElement('div')
+            banner.id = 'neura-context-loss-banner'
+            banner.innerHTML = `
+                <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:white;padding:12px 20px;text-align:center;font-family:system-ui;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;">
+                    <span>GPU memory exhausted. The page needs to reload to recover.</span>
+                    <button onclick="location.reload()" style="background:white;color:#dc2626;border:none;padding:6px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Reload Now</button>
+                </div>
+            `
+            document.body.appendChild(banner)
+        }
+    }
+    const origGetContext = HTMLCanvasElement.prototype.getContext as any
+    HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
+        const ctx = origGetContext.apply(this, args)
+        if (ctx && (args[0] === 'webgl' || args[0] === 'webgl2' || args[0] === 'experimental-webgl')) {
+            const canvas = this as HTMLCanvasElement
+            canvas.addEventListener('webglcontextlost', onContextLost, { once: true })
+            canvas.addEventListener('webglcontextrestored', () => {
+                const banner = document.getElementById('neura-context-loss-banner')
+                if (banner) banner.remove()
+            }, { once: true })
+        }
+        return ctx
+    }
+}
+
+const LABEL_MAP: Record<string, string> = {
+    'cell phone': 'phone',
+    'potted plant': 'plant',
+    'backpack': 'bag',
+    'handbag': 'bag',
+    'suitcase': 'bag',
+    'bicycle': 'bike',
+    'motorcycle': 'bike',
+    'laptop': 'computer',
+    'sports ball': 'ball'
+}
+
+const OBJECT_COLORS: Record<string, string> = {
+    person: '#7C3AED',
+    car: '#3B82F6',
+    cat: '#F97316',
+    dog: '#10B981',
+    bird: '#EC4899',
+    chair: '#6366F1',
+    bottle: '#06B6D4',
+    phone: '#8B5CF6',
+    keyboard: '#14B8A6',
+    book: '#F59E0B'
+}
+
+const DEFAULT_COLOR = '#64748B'
+
+export class ObjectDetector {
+    private model: any = null
+    private loadPromise: Promise<any> | null = null
+    private isDetecting = false
+    private detectGeneration = 0
+    private lastResult: DetectionResult | null = null
+    private listeners: Set<(result: DetectionResult) => void> = new Set()
+
+    async loadModel(): Promise<void> {
+        if (this.model) return
+        if (this.loadPromise) return this.loadPromise
+
+        this.loadPromise = (async () => {
+            try {
+                setupContextLossListener()
+                const cocoSsd = await ensureCocoSsd()
+                const model = await cocoSsd.load()
+                this.model = model
+                this.loadPromise = null
+                return model
+            } catch (e) {
+                this.loadPromise = null
+                this.model = null
+                throw e
+            }
+        })()
+
+        return this.loadPromise
+    }
+
+    isModelLoaded(): boolean {
+        return !!this.model
+    }
+
+    async detect(videoElement: HTMLVideoElement): Promise<DetectionResult> {
+        if (!this.model) {
+            await this.loadModel()
+        }
+
+        if (this.isDetecting) {
+            return this.lastResult || { objects: [], timestamp: Date.now() }
+        }
+
+        const generation = ++this.detectGeneration
+        this.isDetecting = true
+        try {
+            const predictions = await this.model.detect(videoElement)
+            if (generation !== this.detectGeneration) return this.lastResult || { objects: [], timestamp: Date.now() }
+            const objects: DetectedObject[] = predictions.map((pred: any) => ({
+                label: LABEL_MAP[pred.class] || pred.class,
+                confidence: pred.score,
+                bbox: pred.bbox as [number, number, number, number],
+                class: pred.class
+            }))
+
+            this.lastResult = { objects, timestamp: Date.now() }
+            this.notifyListeners(this.lastResult)
+            return this.lastResult
+        } finally {
+            this.isDetecting = false
+        }
+    }
+
+    getColorForObject(label: string): string {
+        return OBJECT_COLORS[label] || DEFAULT_COLOR
+    }
+
+    getFriendlyLabel(className: string): string {
+        return LABEL_MAP[className] || className
+    }
+
+    onDetection(callback: (result: DetectionResult) => void): () => void {
+        this.listeners.add(callback)
+        return () => this.listeners.delete(callback)
+    }
+
+    private notifyListeners(result: DetectionResult) {
+        this.listeners.forEach(cb => {
+            try { cb(result) } catch (e) { console.warn('[ObjectDetector] Listener error:', e) }
+        })
+    }
+
+    drawDetections(
+        canvas: HTMLCanvasElement,
+        result: DetectionResult,
+        videoWidth: number,
+        videoHeight: number
+    ) {
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        const scaleX = canvas.width / videoWidth
+        const scaleY = canvas.height / videoHeight
+
+        for (const obj of result.objects) {
+            const [x, y, w, h] = obj.bbox
+            const color = this.getColorForObject(obj.label)
+
+            ctx.strokeStyle = color
+            ctx.lineWidth = 3
+            ctx.shadowColor = color
+            ctx.shadowBlur = 8
+            ctx.strokeRect(x * scaleX, y * scaleY, w * scaleX, h * scaleY)
+            ctx.shadowBlur = 0
+
+            const label = `${obj.label} ${Math.round(obj.confidence * 100)}%`
+            ctx.font = 'bold 14px system-ui, sans-serif'
+            const textWidth = ctx.measureText(label).width
+            const labelHeight = 22
+            const labelX = x * scaleX
+            const labelY = y * scaleY - labelHeight - 4
+
+            ctx.fillStyle = color
+            ctx.beginPath()
+            ctx.roundRect(labelX, labelY, textWidth + 12, labelHeight, 6)
+            ctx.fill()
+
+            ctx.fillStyle = '#fff'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(label, labelX + 6, labelY + labelHeight / 2)
+        }
+    }
+
+    getObjectsByLabel(result: DetectionResult): Record<string, DetectedObject[]> {
+        const grouped: Record<string, DetectedObject[]> = {}
+        for (const obj of result.objects) {
+            if (!grouped[obj.label]) grouped[obj.label] = []
+            grouped[obj.label].push(obj)
+        }
+        return grouped
+    }
+
+    dispose(): void {
+        this.detectGeneration++
+        this.model = null
+        this.loadPromise = null
+        this.listeners.clear()
+        this.lastResult = null
+    }
+}

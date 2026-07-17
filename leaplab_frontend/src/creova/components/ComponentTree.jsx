@@ -151,47 +151,44 @@ export default function ComponentTree({ appState }) {
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-2 px-2.5 rounded-xl cursor-pointer mx-2 mb-1 border-2 text-[13px] font-bold text-slate-900 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r before:bg-blue-500 transition-all ${isDragOver
-                        ? 'border-blue-500 bg-blue-50/40 text-blue-600 shadow-md scale-[1.01]'
+                    className={`relative flex items-center py-2 px-3 rounded-xl cursor-pointer mx-2 mb-0.5 transition-all ${isDragOver
+                        ? 'bg-purple-100 text-purple-700 shadow-sm'
                         : isSelected
-                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-sm translate-x-0.5 before:h-[80%]'
-                            : 'border-transparent hover:bg-slate-50 hover:translate-x-0.5 before:h-0 hover:before:h-[60%]'
+                            ? 'bg-purple-50 text-purple-700 shadow-sm'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                     style={{ marginLeft: `${depth * 14}px` }}
                     onClick={() => selectComponent(component.id)}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    onDragEnter={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDragOverId(component.id);
-                    }}
-                    onDragLeave={(e) => {
-                        e.stopPropagation();
-                        if (dragOverId === component.id) {
-                            setDragOverId(null);
-                        }
-                    }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverId(component.id); }}
+                    onDragLeave={(e) => { e.stopPropagation(); if (dragOverId === component.id) setDragOverId(null); }}
                     onDrop={(e) => handleDrop(e, component.id)}
                 >
                     {/* Expand/Collapse Arrow */}
-                    {hasChildren && (
+                    {hasChildren ? (
                         <button
-                            className="w-4 h-4 flex items-center justify-center mr-3 text-slate-500 hover:text-slate-900 text-[10px]"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpand(component.id);
-                            }}
+                            className="w-5 h-5 flex items-center justify-center mr-1 rounded-md hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); toggleExpand(component.id); }}
+                            style={{ fontSize: '9px' }}
                         >
                             {isExpanded ? '▼' : '▶'}
                         </button>
+                    ) : (
+                        <span className="w-5 mr-1 flex items-center justify-center">
+                            <span className="w-1.5 h-[2px] bg-slate-300 rounded-full" />
+                        </span>
                     )}
-                    {!hasChildren && <span className="w-4 mr-3"></span>}
 
                     {/* Component Icon */}
-                    <ComponentIcon type={component.type} size={20} className="mr-4 shrink-0" />
+                    <div style={{
+                        width: '24px', height: '24px', borderRadius: '6px',
+                        background: isSelected ? 'linear-gradient(135deg, #ede9fe, #f5f3ff)' : 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginRight: '8px', flexShrink: 0,
+                        border: `1px solid ${isSelected ? '#e9e5f5' : '#e2e8f0'}`
+                    }}>
+                        <ComponentIcon type={component.type} size={14} />
+                    </div>
 
                     {/* Component Name */}
                     {isRenaming ? (
@@ -202,20 +199,17 @@ export default function ComponentTree({ appState }) {
                             onBlur={() => handleRenameSubmit(component.id)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleRenameSubmit(component.id);
-                                if (e.key === 'Escape') {
-                                    setRenamingId(null);
-                                    setRenameValue('');
-                                }
+                                if (e.key === 'Escape') { setRenamingId(null); setRenameValue(''); }
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-2 py-0.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                            className="flex-1 px-2 py-0.5 text-[12px] border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200"
                             autoFocus
                         />
                     ) : (
-                        <div className="flex-1 min-w-0 pl-1.5">
-                            <span className="text-[13.5px] block truncate">{component.id}</span>
-                            <span className="text-[10px] text-slate-500 font-medium block truncate mt-0.5">
-                                {component.props?.Text || component.props?.Hint || component.type}
+                        <div className="flex-1 min-w-0">
+                            <span className="text-[12.5px] font-semibold block truncate">{component.id}</span>
+                            <span className="text-[10px] text-slate-400 font-medium block truncate mt-0.5 uppercase tracking-wider">
+                                {component.type}
                             </span>
                         </div>
                     )}
@@ -253,41 +247,34 @@ export default function ComponentTree({ appState }) {
             >
                 {/* Screen Node */}
                 <div
-                    className={`flex items-center py-2.5 px-4 border-b border-slate-200/60 font-extrabold text-[13px] cursor-pointer sticky top-0 z-10 backdrop-blur-md uppercase tracking-[0.12em] transition-all ${dragOverId === currentScreen.id
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-l-blue-500 scale-[1.01]'
+                    className={`relative flex items-center py-3 px-4 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id
+                        ? 'border-blue-300 bg-blue-50 text-blue-700'
                         : selectedComponent?.id === currentScreen.id
-                            ? 'bg-blue-50/80 text-blue-600 border-l-4 border-l-blue-500'
-                            : 'bg-slate-50/80 text-slate-700 hover:bg-slate-100/80'
+                            ? 'border-purple-200 bg-purple-50/80 text-purple-700'
+                            : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'
                         }`}
                     onClick={() => selectComponent(currentScreen.id)}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    onDragEnter={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDragOverId(currentScreen.id);
-                    }}
-                    onDragLeave={(e) => {
-                        e.stopPropagation();
-                        if (dragOverId === currentScreen.id) {
-                            setDragOverId(null);
-                        }
-                    }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverId(currentScreen.id); }}
+                    onDragLeave={(e) => { e.stopPropagation(); if (dragOverId === currentScreen.id) setDragOverId(null); }}
                     onDrop={(e) => handleDrop(e, currentScreen.id)}
                 >
                     <button
-                        className="w-5 h-5 flex items-center justify-center mr-3 text-slate-500 hover:text-slate-900 text-[10px]"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(currentScreen.id);
-                        }}
+                        className="w-6 h-6 flex items-center justify-center mr-2 rounded-md hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(currentScreen.id); }}
+                        style={{ fontSize: '9px' }}
                     >
                         {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
                     </button>
-                    <ComponentIcon type="Screen" size={20} className="mr-4 shrink-0" />
-                    <span className="truncate pl-1.5">{currentScreen.id}</span>
+                    <div style={{
+                        width: '28px', height: '28px', borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #ede9fe, #f5f3ff)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginRight: '10px', flexShrink: 0, border: '1px solid #e9e5f5'
+                    }}>
+                        <ComponentIcon type="Screen" size={16} />
+                    </div>
+                    <span className="text-[13px] font-bold truncate">{currentScreen.id}</span>
                 </div>
 
                 {/* Visible Components */}
@@ -296,17 +283,28 @@ export default function ComponentTree({ appState }) {
                         {currentScreen.components && currentScreen.components.length > 0 ? (
                             currentScreen.components.map((comp) => renderComponent(comp, 0))
                         ) : (
-                            <div className="px-10 py-16 text-center">
-                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Empty Screen</p>
-                                <p className="text-[11px] text-slate-500 font-medium mt-1">Drag components from palette</p>
+                            <div className="px-8 py-12 text-center">
+                                <div style={{
+                                    width: '48px', height: '48px', borderRadius: '14px',
+                                    background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    margin: '0 auto 12px', border: '1px solid #e2e8f0'
+                                }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <path d="M12 8v8M8 12h8" />
+                                    </svg>
+                                </div>
+                                <p className="text-[11px] font-bold text-slate-500">No Components Yet</p>
+                                <p className="text-[10px] text-slate-400 mt-1">Drag from the palette</p>
                             </div>
                         )}
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
-                            <div className="mt-8 border-t border-slate-200/80 pt-2">
-                                <div className="py-2 px-4 bg-slate-50/90 text-[10px] text-slate-500 font-extrabold uppercase tracking-[0.15em] border-b border-slate-200/60">
-                                    Non-visible components
+                            <div className="mt-6 mx-2">
+                                <div className="py-2 px-3 mb-1 text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
+                                    Non-visible
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
                             </div>

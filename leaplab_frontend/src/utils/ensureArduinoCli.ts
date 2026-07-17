@@ -55,12 +55,12 @@ export function getBundledArduinoCliPath(): string {
   try {
     const { app } = require('electron');
     if (app?.getAppPath) {
-      return path.join(app.getAppPath(), 'arduino-cli', binName);
+      return path.join(app.getAppPath(), 'src', 'drivers', 'arduino-cli', binName);
     }
   } catch { /* not in Electron context */ }
 
   // Fallback: walk up from __dirname (works when not bundled, e.g. ts-node)
-  return path.join(__dirname, '..', '..', 'arduino-cli', binName);
+  return path.join(__dirname, '..', 'drivers', 'arduino-cli', binName);
 }
 
 /**

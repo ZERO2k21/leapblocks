@@ -27,11 +27,11 @@ const BoxFold = ({ data, t }) => {
 
   useFrame(() => {
     const angle = HP * t;
-    if (frontPivot.current) frontPivot.current.rotation.x = angle;
-    if (topPivot.current) topPivot.current.rotation.x = angle;
-    if (backPivot.current) backPivot.current.rotation.x = -angle;
-    if (leftPivot.current) leftPivot.current.rotation.z = -angle;
-    if (rightPivot.current) rightPivot.current.rotation.z = angle;
+    if (frontPivot.current) frontPivot.current.rotation.x = -angle;
+    if (topPivot.current) topPivot.current.rotation.x = -angle;
+    if (backPivot.current) backPivot.current.rotation.x = angle;
+    if (leftPivot.current) leftPivot.current.rotation.y = angle;
+    if (rightPivot.current) rightPivot.current.rotation.y = -angle;
   });
 
   return (

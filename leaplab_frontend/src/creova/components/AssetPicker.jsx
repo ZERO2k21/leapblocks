@@ -291,7 +291,7 @@ export default function AssetPicker({
                 </div>
 
                 {/* Media Grid */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', minHeight: 0 }}>
+                <div className="neura-scrollbar" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 24px 16px 24px', minHeight: 0 }}>
                     {filteredMedia.length === 0 ? (
                         <div
                             onDragEnter={handleDragEnter}
@@ -377,8 +377,9 @@ export default function AssetPicker({
                     ) : (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(2, 1fr)',
-                            gap: '12px'
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: '12px',
+                            padding: '4px 8px 8px 4px'
                         }}>
                             {filteredMedia.map((item, index) => (
                                 <div

@@ -13,12 +13,12 @@ out/
 .kiro/
 .playwright-mcp/
 .storybook/
-arduino-cli/
-cp210x_drivers/
+src/drivers/arduino-cli/
+src/drivers/cp210x_drivers/
 src/neura-ml/
 public/
-scripts/
 storybook-static/
 forge-lib/
+src/pose-extension/
 *.md
 *.log

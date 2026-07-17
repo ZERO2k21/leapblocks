@@ -3,11 +3,13 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import LeapLabAuthButton from './auth/LeapLabAuthButton';
 import MyProjectsDashboard from './components/my-projects/MyProjectsDashboard';
 import './components/my-projects/my-projects.css';
-// JSZip lazy-loaded only when Lottie animation needs to be parsed
+
+/** 3D hero animation — lazy loaded for performance */
+const Robot3DAnimation = lazy(() => import('./components/Robot3DAnimation'));
 
 interface LandingPageProps {
   onSelect: (mode: 'intermediate' | 'junior' | 'python' | 'appinventor' | 'vision3d' | any) => void;
@@ -85,85 +87,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     (window as any).showComingSoon = (name: string) => {
       setToast({ message: `${name} is coming soon.`, visible: true });
       setTimeout(() => setToast({ message: '', visible: false }), 2500);
-    };
-
-    let script: HTMLScriptElement | null = null;
-    if (!(window as any).lottie) {
-      script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
-      script.async = true;
-      script.onload = initLottie;
-      script.onerror = initLottie;
-      document.body.appendChild(script);
-    } else {
-      initLottie();
-    }
-
-    function renderLottieFallback(container: HTMLElement, message = 'Animation unavailable.') {
-      container.style.cssText = `
-        display:flex; align-items:center; justify-content:center;
-        flex-direction:column; gap:18px;
-        background: radial-gradient(ellipse at 38% 38%, rgba(124,92,252,0.12), transparent 60%),
-                    radial-gradient(ellipse at 66% 66%, rgba(31,220,232,0.08), transparent 60%);
-        border-radius:20px; min-height:400px;
-      `;
-      container.innerHTML = `
-        <div style="text-align:center; padding:24px; color:#1a1a2e; font-weight:600;">
-          ${message}
-        </div>
-      `;
-    }
-
-    async function initLottie() {
-      const container = document.getElementById('lottie-anim');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const lottieLib = (window as any).lottie;
-      if (!lottieLib) {
-        renderLottieFallback(container);
-        return;
-      }
-
-      try {
-        const response = await fetch('assets/robot.lottie');
-        if (!response.ok) throw new Error(`Failed to fetch .lottie (${response.status})`);
-        const buffer = await response.arrayBuffer();
-
-        // Lazy-load JSZip only when needed for Lottie parsing
-        const { default: JSZip } = await import('jszip');
-        const zip = await JSZip.loadAsync(buffer);
-
-        const manifestFile = zip.file('manifest.json');
-        if (!manifestFile) throw new Error('Missing manifest.json in .lottie');
-        const manifestText = await manifestFile.async('text');
-        const manifest = JSON.parse(manifestText);
-        const animationId = manifest.animations?.[0]?.id;
-        if (!animationId) throw new Error('Missing animation ID in .lottie manifest');
-        const animationFile = zip.file(`animations/${animationId}.json`);
-        if (!animationFile) throw new Error(`Missing animations/${animationId}.json in .lottie`);
-        const animationText = await animationFile.async('text');
-        const animationData = JSON.parse(animationText);
-
-        const anim = lottieLib.loadAnimation({
-          container,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          animationData,
-        });
-        anim.setSpeed(0.5);
-        anim.addEventListener('data_failed', () => renderLottieFallback(container, 'Animation data failed to load.'));
-      } catch (err) {
-        console.error('[LandingPage] .lottie load error:', err);
-        renderLottieFallback(container);
-      }
-    }
-
-    return () => {
-      if (script) document.body.removeChild(script);
-      const container = document.getElementById('lottie-anim');
-      if (container) container.innerHTML = '';
     };
   }, []);
 
@@ -325,8 +248,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .landing-page-container::-webkit-scrollbar { display: none; }
 
@@ -344,20 +267,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── TOPBAR ─── */
 .landing-page-container nav {
   position: sticky; top: 0; left: 0; right: 0; z-index: 200;
-  height: 10vh;
-  min-height: 50px;
+  height: 64px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(12px, 2vw, 30px);
+  padding: 0 24px;
   background: rgba(248, 250, 252, 0.85);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
+@media (max-width: 640px) {
+  .landing-page-container nav { padding: 0 16px; height: 56px; }
+}
 .landing-page-container .nav-brand {
   display:flex; align-items:center; gap:10px; text-decoration:none;
   filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
 }
-.landing-page-container .brand-logo { height: clamp(50px, 5.5vw, 64px); width:auto; object-fit:contain; }
+.landing-page-container .brand-logo { height: 42px; width:auto; object-fit:contain; }
+@media (max-width: 640px) {
+  .landing-page-container .brand-logo { height: 32px; }
+}
 .landing-page-container .nav-actions {
   display:flex; align-items:center; gap:14px;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
@@ -391,31 +319,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
   display: grid; grid-template-columns: 1.1fr 0.9fr;
-  align-items: center; max-width: 1800px; margin: 0 auto;
-  padding: 0 2vw;
-  gap: 10vw; flex: 1 1 auto; /* Fill remaining space natively */
+  align-items: center; max-width: 1400px; margin: 0 auto;
+  padding: 40px 40px;
+  gap: 60px; flex: 1 1 auto;
 }
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
     grid-template-columns: 1fr; text-align: center;
-    gap: 2vh; padding-top: 2vh; height: 45vh; flex: 0 1 45vh;
+    gap: 40px; padding: 40px 24px; height: auto; flex: 0 1 auto;
   }
   .landing-page-container .hero-left { display: flex; flex-direction: column; align-items: center; }
   .landing-page-container .hero-sub { margin-left: auto; margin-right: auto; max-width: 90%; }
-  .landing-page-container .hero-btns { justify-content: center; width: 100%; gap: 12px; }
+  .landing-page-container .hero-btns { justify-content: center; width: 100%; gap: 16px; }
 }
 @media (max-width: 640px) {
-  .landing-page-container nav { padding: 0 16px; height: 56px; }
-  .landing-page-container .nav-brand { gap: 6px; }
-  .landing-page-container .brand-logo { height: 38px; }
-  .landing-page-container .hero-title { font-size: 5vh; }
-  .landing-page-container .hero-sub { font-size: 2vh; max-width: 100%; padding: 0 1vw; }
-  .landing-page-container .hero-btns { gap: 1vh; }
+  .landing-page-container .hero-grid { padding: 30px 16px; gap: 30px; }
+  .landing-page-container .hero-title { font-size: 2.5rem; }
+  .landing-page-container .hero-sub { font-size: 1rem; max-width: 100%; padding: 0; }
+  .landing-page-container .hero-btns { gap: 12px; flex-direction: column; }
+  .landing-page-container .btn-adventure,
+  .landing-page-container .btn-demo {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
 }
 
 .landing-page-container .hero-title {
-  font-size: min(4.8rem, 7.5vh); font-weight: 900;
-  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 2vh; color: #0F172A;
+  font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 900;
+  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 24px; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
   color: transparent; -webkit-text-stroke: 2px #6366F1;
@@ -428,22 +360,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   letter-spacing: 0.02em; padding: 0 4px;
 }
 .landing-page-container .hero-tagline {
-  display: inline-block; font-size: min(0.7rem, 1.4vh);
+  display: inline-block; font-size: 11px;
   font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 1.5vh; padding: 0.8vh 1.2vw;
+  letter-spacing: 0.25em; margin-bottom: 16px; padding: 8px 16px;
   background: var(--accent); border: 2px solid #000; box-shadow: 2px 2px 0px #000;
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
-  font-size: min(1.25rem, 2.6vh); color: #0f172a;
-  line-height: 1.45; max-width: 600px; margin-bottom: 3vh;
+  font-size: clamp(1rem, 1.8vw, 1.25rem); color: #0f172a;
+  line-height: 1.5; max-width: 600px; margin-bottom: 30px;
   position: relative; z-index: 2; opacity: 0.85;
 }
-.landing-page-container .hero-btns { display:flex; gap:1.2vw; flex-wrap:wrap; }
+.landing-page-container .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
 .landing-page-container .btn-adventure {
   background: var(--brand-primary); border: none; color: #fff;
-  font-size: min(1.05rem, 2.2vh); font-weight: 600; cursor: pointer; font-family: inherit;
-  padding: 1.8vh 1.8vw; border-radius: 12px;
+  font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  padding: 16px 28px; border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 8px 12px -3px rgba(99, 102, 241, 0.3);
 }
@@ -453,8 +385,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 .landing-page-container .btn-demo {
   background: #fff; border: 2px solid #000; color: var(--text-main);
-  font-size: min(1.05rem, 2.2vh); font-weight: 700; cursor: pointer; font-family: inherit;
-  padding: 1.8vh 1.8vw; border-radius: 12px; transition: all 0.2s;
+  font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  padding: 16px 28px; border-radius: 12px; transition: all 0.2s;
   box-shadow: 3px 3px 0px #000;
 }
 .landing-page-container .btn-demo:hover {
@@ -463,7 +395,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── ANIMATIONS ─── */
 @keyframes hero-reveal {
-  0%   { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); }
+  0%   { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(5px); }
   100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
 }
 .hero-tagline { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
@@ -483,62 +415,95 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   66%       { transform: translate(-20px, 30px) rotate(-5deg); }
 }
 
-/* RIGHT — Lottie */
+/* RIGHT — 3D Hero Scene */
 .landing-page-container .hero-right {
   display: flex; align-items: center; justify-content: center; position: relative;
+  width: 100%; height: 100%; min-height: 400px;
 }
 .landing-page-container .hero-right::after {
   content: ''; position: absolute; width: 120%; height: 120%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
   z-index: -1; animation: float-glow 6s ease-in-out infinite;
+  pointer-events: none;
 }
 @keyframes float-glow {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50%       { transform: scale(1.1); opacity: 0.8; }
 }
-.landing-page-container #lottie-anim {
-  width:100%; max-height: 48vh; max-width: max(260px, 46vh);
-  aspect-ratio:1; border-radius:24px; overflow:hidden;
-}
 @media (max-width: 1024px) {
-  .landing-page-container #lottie-anim { max-height: 35vh; max-width: max(220px, 35vh); margin: 0 auto; }
+  .landing-page-container .hero-right { min-height: 300px; max-height: 380px; }
+}
+@media (max-width: 768px) {
+  .landing-page-container .hero-right { min-height: 250px; max-height: 300px; }
 }
 
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
   width: 100%; margin: 0 auto;
-  padding: 2vh 1.5vw 4vh; /* Breating room */
+  padding: 40px 24px;
   flex: 0 1 auto; display: flex; align-items: center; justify-content: center;
 }
 .landing-page-container .cards-row {
-  display:grid; grid-template-columns: repeat(8, 1fr);
-  gap: 1vw; width: 100%; max-width: 1600px; /* Maximize row expanse */
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 1400px;
 }
-@media (max-width: 1440px) {
-  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); }
+@media (max-width: 1400px) {
+  .landing-page-container .cards-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .landing-page-container .cards-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .landing-page-container .cards-row {
+    grid-template-columns: 1fr;
+  }
+  .landing-page-container .cards-wrap {
+    padding: 24px 16px;
+  }
 }
 
 /* ── Card base + scan transitions ── */
 .landing-page-container .tc {
-  border-radius:18px; padding: 1.5vh 0.8vw; cursor:pointer;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
   transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow .5s ease,
               opacity .3s ease;
-  position:relative; overflow:hidden; 
-  height: clamp(140px, 28vh, 260px); /* Massive, properly proportionate height */
-  display:flex; flex-direction:column; justify-content:flex-end;
-  /* 3D Shadows — Contact + Object + Ambient */
+  position: relative;
+  overflow: hidden;
+  height: auto;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   box-shadow: 
     0 1px 2px rgba(0,0,0,0.06), 
     0 4px 8px rgba(0,0,0,0.04),
     0 12px 24px rgba(0,0,0,0.02),
-    inset 0 0 0 1px rgba(255,255,255,0.7); /* Inner Rim Glint */
+    inset 0 0 0 1px rgba(255,255,255,0.7);
   border: 1px solid rgba(0, 0, 0, 0.03);
-  border-top: 1px solid rgba(255, 255, 255, 0.82); /* Rim Light Top */
-  border-left: 1px solid rgba(255, 255, 255, 0.4); /* Rim Light Left */
+  border-top: 1px solid rgba(255, 255, 255, 0.82);
+  border-left: 1px solid rgba(255, 255, 255, 0.4);
+}
+@media (max-width: 560px) {
+  .landing-page-container .tc {
+    min-height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
 }
 .landing-page-container .tc:hover {
-  transform: translateY(-10px) scale(1.015);
+  transform: translateY(-8px) scale(1.02);
   box-shadow: 
     0 2px 4px rgba(0,0,0,0.1), 
     0 12px 28px rgba(0,0,0,0.08), 
@@ -549,7 +514,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* Scanning spotlight — active card (3D Pop Animation) */
 .landing-page-container .tc.tc-scan-active {
-  transform: perspective(1000px) translate3d(0, -10px, 40px) scale(1.08) rotateX(8deg) rotateY(-2deg) !important;
+  transform: perspective(1000px) translate3d(0, -8px, 20px) scale(1.05) rotateX(4deg) !important;
   box-shadow: 
     0 0 0 3px #6366F1, 
     0 15px 35px rgba(99,102,241,0.35),
@@ -561,7 +526,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* Dim non-active cards while scanning */
 .landing-page-container .cards-row.is-scanning .tc:not(.tc-scan-active) {
   opacity: 0.4;
-  transform: perspective(1000px) translateZ(-20px) scale(0.95);
+  transform: scale(0.95);
   box-shadow: none;
 }
 
@@ -570,25 +535,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   box-shadow: 0 0 0 2px rgba(99,102,241,0.35), 0 8px 20px rgba(99,102,241,0.08);
 }
 
-@media (max-width: 1200px) { 
-  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
-}
-@media (max-width: 900px)  { 
-  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
-}
-@media (max-width: 768px)  { 
-  .landing-page-container .cards-wrap { padding: 1vh 1vw; }
-  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
-}
-@media (max-width: 480px)  { 
-  .landing-page-container .cards-row { grid-template-columns: repeat(8, 1fr); gap: 0.5vw; } 
-  .landing-page-container .tc { padding: 0.5vh 0.5vw; }
-}
-
 .landing-page-container .tc-ignite  { background:linear-gradient(155deg,#ffffff 0%, #fff0e5 60%,#fce5d4 100%); border-bottom: 4px solid #F97316; }
 .landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
 .landing-page-container .tc-embed   { background:linear-gradient(155deg,#ffffff 0%, #e5f2f5 60%,#d5f2f7 100%); border-bottom: 4px solid #59aaa4ff; }
-.landing-page-container .tc-embed:hover { box-shadow: 0 20px 40px rgba(15, 118, 109, 0.86), 0 0 0 1px rgba(15,118,110,0.1); }
+.landing-page-container .tc-embed:hover { box-shadow: 0 20px 40px rgba(15, 118, 109, 0.15), 0 0 0 1px rgba(15,118,110,0.1); }
 .landing-page-container .tc-Logix   { background:linear-gradient(155deg,#ffffff 0%, #ebf0fd 60%,#ccdafa 100%); border-bottom: 4px solid #3B82F6; }
 .landing-page-container .tc-Logix:hover { box-shadow: 0 20px 40px rgba(59,130,246,0.15), 0 0 0 1px rgba(59,130,246,0.1); }
 .landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #f0ecfd 60%,#ddd0fb 100%); border-bottom: 4px solid #7C3AED; }
@@ -603,39 +553,71 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .tc-pulse:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
 
 .landing-page-container .tc-icon {
-  flex:1; display:flex; align-items:center; justify-content:center; padding-bottom: 2vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  height: 80px;
 }
-.landing-page-container .tc-icon svg,
 .landing-page-container .tc-icon img {
-  width: 90%; max-height: 12vh; object-fit: contain;
-  transform: scale(1) translateY(0);
-  filter: drop-shadow(0 10px 10px rgba(0,0,0,0.15));
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
-}
-.landing-page-container .tc:hover .tc-icon img {
-  transform: scale(1.12) translateY(-6px);
-  filter: drop-shadow(0 15px 15px rgba(0,0,0,0.25));
-  z-index: 20;
-}
-.landing-page-container .tc-cat-logo {
-  height: clamp(10px, 1.5vh, 16px);
+  height: 100%;
   width: auto;
   object-fit: contain;
-  margin-bottom: 0.4vh;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
+}
+@media (max-width: 560px) {
+  .landing-page-container .tc-icon {
+    margin-bottom: 0;
+    height: 50px;
+    width: 50px;
+    flex: 0 0 50px;
+  }
+  .landing-page-container .tc-icon img {
+    height: 100%;
+    width: 100%;
+  }
+}
+.landing-page-container .tc:hover .tc-icon img {
+  transform: scale(1.08) translateY(-4px);
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.15));
+}
+.landing-page-container .tc-cat-logo {
+  height: 12px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 4px;
   opacity: 0.75;
   display: block;
 }
 .landing-page-container .tc-cat {
-  font-size: min(0.8rem, 1.2vw); font-weight: 900; letter-spacing: 0.05em;
-  text-transform: uppercase; color: #0a0328ff; margin-bottom: 0.5vh; line-height: 1.1; opacity: 0.65;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0a0328;
+  margin-bottom: 4px;
+  line-height: 1.1;
+  opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: min(0.9rem, 1.5vw); font-weight: 1000; letter-spacing: 0.01em;
-  text-transform: uppercase; color: #281746ff; margin-bottom: 0.5vh; line-height: 1.1;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #281746;
+  margin-bottom: 4px;
+  line-height: 1.1;
 }
 .landing-page-container .tc-desc {
-  font-size: min(0.75rem, 1vw); color: #020046b1; line-height: 1.2; font-weight: 600;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 12px;
+  color: #020046b1;
+  line-height: 1.3;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 ` }} />
       <div className="landing-page-container">
@@ -728,160 +710,168 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <>
               {/* HERO */}
               <div className="hero-grid">
-            <div className="hero-left">
-              <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
-              <h1 className="hero-title">
-                Learn to <span className="hw-code">code</span><br />
-                the <span className="hw-bold">bold</span> way
-              </h1>
-              <p className="hero-sub">
-                Eight unique tracks from junior picture-blocks all the way to AI,
-                robotics, and machine vision. Pick your adventure.
-              </p>
-              <div className="hero-btns">
-                <button
-                  className="btn-adventure"
-                  onClick={() => {
-                    if (highlightCards) {
-                      stopCardScan();
-                    } else {
-                      startCardScan();
-                      document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  Choose your adventure
-                </button>
-                <button className="btn-demo">Watch 2-min demo</button>
-              </div>
-            </div>
-
-            {/* RIGHT: Lottie animation */}
-            <div className="hero-right">
-              <div id="lottie-anim"></div>
-            </div>
-          </div>
-
-          {/* 7 TRACK CARDS */}
-          <div className="cards-wrap">
-            <div className={`cards-row ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
-
-              {/* 1 IGNITE */}
-              <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
-                <div className="tc-icon">
-                  <img src="assets/ignite_icon.png" alt="Ignite Robot" />
+                <div className="hero-left">
+                  <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
+                  <h1 className="hero-title">
+                    Learn to <span className="hw-code">code</span><br />
+                    the <span className="hw-bold">bold</span> way
+                  </h1>
+                  <p className="hero-sub">
+                    Eight unique tracks from junior picture-blocks all the way to AI,
+                    robotics, and machine vision. Pick your adventure.
+                  </p>
+                  <div className="hero-btns">
+                    <button
+                      className="btn-adventure"
+                      onClick={() => {
+                        if (highlightCards) {
+                           stopCardScan();
+                        } else {
+                           startCardScan();
+                           document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      Choose your adventure
+                    </button>
+                    <button className="btn-demo" onClick={() => (window as any).showComingSoon('Demo Video')}>Watch 2-min demo</button>
+                  </div>
                 </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Ignite</div>
-                  <div className="tc-desc">leap & block coding</div>
+
+                {/* RIGHT: 3D Hero Scene */}
+                <div className="hero-right">
+                  <Suspense fallback={
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,0.15)', borderTopColor: '#6366F1', borderRadius: '50%', animation: 'hero3d-spin 0.8s linear infinite' }} />
+                    </div>
+                  }>
+                    <Robot3DAnimation onSelect={onSelect} />
+                  </Suspense>
                 </div>
               </div>
 
-              {/* 2 EMBED */}
-              <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
-                <div className="tc-icon">
-                  <img src="assets/arduino_icon.png" alt="Circuit Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Embed</div>
-                  <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
+              {/* 8 TRACK CARDS */}
+              <div className="cards-wrap">
+                <div className={`cards-row ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
+
+                  {/* 1 IGNITE */}
+                  <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
+                    <div className="tc-icon">
+                      <img src="assets/ignite_icon.png" alt="Ignite Robot" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Ignite</div>
+                      <div className="tc-desc">leap & block coding</div>
+                    </div>
+                  </div>
+
+                  {/* 2 EMBED */}
+                  <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
+                    <div className="tc-icon">
+                      <img src="assets/arduino_icon.png" alt="Circuit Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Embed</div>
+                      <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
+                    </div>
+                  </div>
+
+                  {/* 3 Logix */}
+                  <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
+                    <div className="tc-icon">
+                      <img src="assets/python_icon.png" alt="Logix Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Logix</div>
+                      <div className="tc-desc">Python Programming</div>
+                    </div>
+                  </div>
+
+                  {/* 4 NEURA */}
+                  <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
+                    <div className="tc-icon">
+                      <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Neura</div>
+                      <div className="tc-desc">AI Logic & Advanced Block Programming</div>
+                    </div>
+                  </div>
+
+                  {/* 5 ELECTRA */}
+                  <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
+                    <div className="tc-icon">
+                      <img src="assets/creocad_icon.png" alt="Forge Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Electra</div>
+                      <div className="tc-desc">Circuit Design & Simulation</div>
+                    </div>
+                  </div>
+
+                  {/* 6 VISION3D */}
+                  <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
+                    <div className="tc-icon">
+                      <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Vision3D</div>
+                      <div className="tc-desc">3D Design & Modeling </div>
+                    </div>
+                  </div>
+
+                  {/* 7 CREOVA */}
+                  <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
+                    <div className="tc-icon">
+                      <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Creova</div>
+                      <div className="tc-desc">App & Game Development</div>
+                    </div>
+                  </div>
+
+                  {/* 8 PULSE */}
+                  <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
+                    <div className="tc-icon">
+                      <img src="assets/quiz_icon.png" alt="Quiz Icon" />
+                    </div>
+                    <div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
+                      <div className="tc-name">Pulse</div>
+                      <div className="tc-desc">Assessment & Quiz Creation</div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
-
-              {/* 3 Logix */}
-              <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
-                <div className="tc-icon">
-                  <img src="assets/python_icon.png" alt="Logix Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Logix</div>
-                  <div className="tc-desc">Python Programming</div>
-                </div>
-              </div>
-
-              {/* 4 NEURA */}
-              <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
-                <div className="tc-icon">
-                  <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Neura</div>
-                  <div className="tc-desc">AI Logic & Advanced Block Programming</div>
-                </div>
-              </div>
-
-              {/* 5 ELECTRA */}
-              <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
-                <div className="tc-icon">
-                  <img src="assets/creocad_icon.png" alt="Forge Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Electra</div>
-                  <div className="tc-desc">Circuit Design & Simulation</div>
-                </div>
-              </div>
-
-              {/* 6 VISION3D */}
-              <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
-                <div className="tc-icon">
-                  <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Vision3D</div>
-                  <div className="tc-desc">3D Design & Modeling </div>
-                </div>
-              </div>
-
-              {/* 7 CREOVA */}
-              <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
-                <div className="tc-icon">
-                  <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Creova</div>
-                  <div className="tc-desc">App & Game Development</div>
-                </div>
-              </div>
-
-              {/* 8 PULSE */}
-              <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
-                <div className="tc-icon">
-                  <img src="assets/quiz_icon.png" alt="Quiz Icon" />
-                </div>
-                <div>
-                  <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                  <div className="tc-name">Pulse</div>
-                  <div className="tc-desc">Assessment & Quiz Creation</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
             </>
           )}
 
           {/* FOOTER */}
           {activeTab === 'modules' && (
             <footer style={{
-              position: 'sticky',
-              bottom: 0,
-              left: 0,
-              right: 0,
+              position: 'relative',
+              width: '100%',
               textAlign: 'center',
-              padding: '12px 24px',
+              padding: '24px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
               flexShrink: 0,
               zIndex: 10,
+              marginTop: 'auto',
+              borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+              background: 'rgba(248, 250, 252, 0.5)',
+              backdropFilter: 'blur(8px)'
             }}>
               {/* Ambient glow dot */}
               <span style={{
