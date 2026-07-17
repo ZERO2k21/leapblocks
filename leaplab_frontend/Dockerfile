@@ -55,7 +55,7 @@ RUN cd /tmp/server && npm install --production && \
 
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
-COPY src/tools/ ./tools/
+COPY src/creova/apk/tools/ ./tools/
 RUN cp /app/arduino-cli.yaml /app/server/arduino-cli.yaml && \
     chmod 777 /app/server/arduino-cli.yaml
 

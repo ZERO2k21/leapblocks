@@ -49,7 +49,7 @@ RUN cd /tmp/server && npm install --production && \
 
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
-COPY src/tools/ ./tools/
+COPY src/creova/apk/tools/ ./tools/
 
 EXPOSE 3001
 EXPOSE 3002
