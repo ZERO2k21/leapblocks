@@ -214,20 +214,12 @@ export const SelectionToolbar: React.FC = () => {
     else config = { label: 'Value', unit: '', min: 0, max: 1023, step: 1, default: 512, key: 'value' };
 
     const currentValue = config.isTopLevel ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min) : (currentValues?.[config.key] ?? config.default ?? config.min);
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = parseFloat(e.target.value);
-      if (config.isTopLevel) updateNodeData(selectedNode!.id, { [config.key]: val });
-      else updateNodeData(selectedNode!.id, { sensorValues: { ...currentValues, [config.key]: val } });
-    };
-    const sliderPercent = ((currentValue - config.min) / (config.max - config.min)) * 100;
 
     return (
       <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
         <Sliders size={14} className="text-slate-500" />
         <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px] min-w-[65px]">{config.label}</span>
-        <input type="range" min={config.min} max={config.max} step={config.step ?? 1} value={currentValue} onChange={handleSliderChange} className="w-[120px] custom-slider-input" style={{ background: `linear-gradient(to right, ${badgeInfo.primary} 0%, ${badgeInfo.primary} ${sliderPercent}%, #e2e8f0 ${sliderPercent}%, #e2e8f0 100%)` }} />
-        <input type="number" value={currentValue} min={config.min} max={config.max} step={config.step ?? 1} onChange={handleSliderChange} className="w-[76px] bg-white border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-slate-700 font-bold text-right outline-none focus:border-blue-400 font-mono" />
-        {config.unit && <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-[8px] py-[4px] rounded-[6px] border border-slate-200">{config.unit}</span>}
+        <span className="text-[12px] text-slate-700 font-bold">{currentValue}{config.unit && <span className="ml-1 text-[10px] text-slate-500">{config.unit}</span>}</span>
       </div>
     );
   };
