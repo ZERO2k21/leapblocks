@@ -23,31 +23,35 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
 
     const sampleCount = classData.samples.length
     const progressPercent = Math.min(100, (sampleCount / 15) * 100)
-    const stars = Math.min(5, Math.ceil(sampleCount / 3))
     const emoji = EMOJI_LIST[index % EMOJI_LIST.length]
 
     return (
         <div
             onClick={onSelect}
-            className={`group flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all duration-200 animate-fade-in ${
-                isSelected
-                    ? 'bg-[#eaedff] border-l-4 border-[#630ed4] shadow-sm'
-                    : 'border-l-4 border-transparent hover:bg-[#f2f3ff]'
-            }`}
+            className="group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200"
+            style={{
+                background: isSelected ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'transparent',
+                borderLeft: `3px solid ${isSelected ? '#7c3aed' : 'transparent'}`,
+                boxShadow: isSelected ? '0 1px 4px rgba(124,58,237,0.1)' : 'none',
+            }}
         >
-            {/* Class avatar with emoji */}
+            {/* Class icon */}
             <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 transition-all duration-200 shadow-sm"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 transition-all duration-200"
                 style={{
-                    backgroundColor: isSelected ? classData.color : '#dae2fd',
-                    color: isSelected ? '#ffffff' : '#630ed4'
+                    background: isSelected
+                        ? `linear-gradient(135deg, ${classData.color}, ${classData.color}dd)`
+                        : '#f1f0f5',
+                    color: isSelected ? '#fff' : '#7c3aed',
+                    boxShadow: isSelected ? `0 2px 8px ${classData.color}40` : 'none',
                 }}
             >
                 {emoji}
             </div>
 
+            {/* Info */}
             <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
                     {isEditing ? (
                         <input
                             autoFocus
@@ -58,12 +62,12 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                                 if (e.key === 'Enter') handleRename()
                                 if (e.key === 'Escape') setIsEditing(false)
                             }}
-                            className="w-full text-sm font-bold text-[#131b2e] bg-white rounded-lg px-2 py-1 border border-[#630ed4]/30 focus:outline-none focus:border-[#630ed4]"
+                            className="flex-1 text-[13px] font-bold text-[#1e1b4b] bg-white rounded-lg px-2 py-1 border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-200"
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
                         <span
-                            className="text-sm font-bold text-[#131b2e] truncate"
+                            className="text-[13px] font-bold text-[#1e1b4b] truncate"
                             onDoubleClick={(e) => {
                                 e.stopPropagation()
                                 setIsEditing(true)
@@ -72,40 +76,55 @@ export default function ClassCard({ classData, isSelected, onSelect, onRemove, o
                             {classData.name}
                         </span>
                     )}
-                    {sampleCount > 0 && (
-                        <span className="text-[10px] bg-[#eaedff] text-[#630ed4] px-2 py-0.5 rounded-full font-bold ml-1">
-                            {sampleCount}
-                        </span>
-                    )}
                 </div>
 
-                <div className="flex items-center gap-1 mt-0.5">
-                    <div className="flex gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i} className={`text-[8px] ${i < stars ? 'opacity-100' : 'opacity-20'}`}>⭐</span>
-                        ))}
+                <div className="flex items-center gap-2 mt-1">
+                    {/* Sample count pill */}
+                    <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                            background: sampleCount > 0 ? '#ede9fe' : '#f5f5f5',
+                            color: sampleCount > 0 ? '#7c3aed' : '#9ca3af',
+                        }}
+                    >
+                        {sampleCount} {sampleCount === 1 ? 'sample' : 'samples'}
+                    </span>
+
+                    {/* Progress bar */}
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#e5e7eb' }}>
+                        <div
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{
+                                width: `${progressPercent}%`,
+                                background: `linear-gradient(90deg, ${classData.color}, ${classData.color}cc)`,
+                            }}
+                        />
                     </div>
-                    <span className="text-[9px] text-[#4a4455] ml-1">{sampleCount} sample{sampleCount !== 1 ? 's' : ''}</span>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-[#ccc3d8]/30 h-1.5 rounded-full mt-1 overflow-hidden">
-                    <div
-                        className="h-full rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${progressPercent}%`, backgroundColor: classData.color }}
-                    />
                 </div>
             </div>
 
-            {/* Remove button */}
+            {/* Delete button */}
             <button
                 onClick={(e) => {
                     e.stopPropagation()
                     onRemove()
                 }}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-[#ccc3d8] hover:text-[#ba1a1a] hover:bg-[#ffdad6] opacity-0 group-hover:opacity-100 transition-all duration-200 text-sm"
+                className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                style={{
+                    color: '#d1d5db',
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#dc2626'
+                    e.currentTarget.style.background = '#fef2f2'
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#d1d5db'
+                    e.currentTarget.style.background = 'transparent'
+                }}
             >
-                🗑️
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
             </button>
         </div>
     )
