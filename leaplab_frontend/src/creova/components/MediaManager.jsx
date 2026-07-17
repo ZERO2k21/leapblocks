@@ -299,40 +299,59 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Media Grid/List */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white leap-panel-body">
+            <div className={`flex-1 bg-white leap-panel-body ${filteredMedia.length === 0 ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
                 {filteredMedia.length === 0 ? (
                     <div
-                        style={{ minHeight: '320px' }}
-                        className={`flex flex-col items-center justify-center h-full px-6 py-12 transition-all duration-300 ${isDragOver ? 'bg-blue-50/80 border-2 border-dashed border-blue-400 rounded-3xl mx-4 my-4' : ''}`}
+                        className="flex flex-col items-center justify-center h-full px-6 py-8 transition-all duration-300"
+                        style={{ height: '100%' }}
                     >
                         {/* Icon */}
-                        <div className={`relative mb-6 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
-                            <div className={`absolute inset-0 rounded-full blur-2xl scale-150 transition-all duration-300 ${isDragOver ? 'bg-blue-300/40' : 'bg-slate-200/50'}`}></div>
-                            <div className={`relative w-[80px] h-[80px] rounded-[24px] flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200'}`}>
-                                <FolderOpen className={`w-9 h-9 transition-colors duration-300 ${isDragOver ? 'text-blue-500' : 'text-slate-400'}`} strokeWidth={1.5} />
+                        <div className={`relative mb-4 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
+                            <div className={`relative w-[52px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200'}`}>
+                                <FolderOpen className={`w-6 h-6 transition-colors duration-300 ${isDragOver ? 'text-blue-500' : 'text-slate-400'}`} strokeWidth={1.5} />
                             </div>
                         </div>
 
                         {/* Text */}
                         {isDragOver ? (
-                            <div className="text-center px-6">
-                                <p className="text-[16px] font-bold text-blue-600 mb-2 tracking-tight">Drop your files here</p>
-                                <p className="text-[13px] text-blue-400 font-medium">Release to upload</p>
+                            <div className="text-center">
+                                <p className="text-[13px] font-bold text-blue-600 mb-0.5">Drop your files here</p>
+                                <p className="text-[11px] text-blue-400 font-medium">Release to upload</p>
                             </div>
                         ) : (
-                            <div className="text-center px-6">
-                                <p className="text-[16px] font-bold text-slate-700 mb-2 tracking-tight">No Assets Yet</p>
-                                <p className="text-[13px] text-slate-400 font-medium mb-6 max-w-[240px] leading-relaxed">
+                            <div className="text-center">
+                                <p className="text-[13px] font-bold text-slate-600 mb-0.5">No Assets Yet</p>
+                                <p className="text-[11px] text-slate-400 font-medium mb-4 max-w-[200px] leading-relaxed">
                                     {searchTerm ? 'Try different search terms' : 'Drag files here or click below to upload'}
                                 </p>
                                 {!searchTerm && (
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl text-[14px] font-bold tracking-wide transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] hover:-translate-y-0.5"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '8px 18px',
+                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                            color: '#fff',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(99,14,212,0.25)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-1px)'
+                                            e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,14,212,0.35)'
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(99,14,212,0.25)'
+                                        }}
                                     >
-                                        <div className="w-6 h-6 bg-white/25 rounded-lg flex items-center justify-center">
-                                            <Upload size={14} strokeWidth={2.5} />
-                                        </div>
+                                        <Upload size={12} strokeWidth={2.5} />
                                         Browse Files
                                     </button>
                                 )}

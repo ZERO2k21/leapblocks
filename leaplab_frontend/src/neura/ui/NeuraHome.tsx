@@ -359,7 +359,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
 
                             {/* Main Title */}
                             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 tracking-tight leading-tight mb-4">
-                                Choose Your Superpower! ⚡
+                                ⚡ Choose Your Superpower! ⚡
                             </h1>
 
                             <p className="text-gray-500 text-base sm:text-lg max-w-lg mx-auto leading-relaxed mb-6 text-center">
