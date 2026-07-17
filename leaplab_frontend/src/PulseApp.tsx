@@ -420,7 +420,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh',
+    height: '100%',
+    overflowY: 'auto',
     background: '#f8fafc',
     fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
     color: '#0f172a',
