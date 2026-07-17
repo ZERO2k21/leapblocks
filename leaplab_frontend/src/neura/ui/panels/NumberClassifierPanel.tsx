@@ -283,7 +283,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         } else if (eOrFiles && 'target' in eOrFiles) {
             files = eOrFiles.target.files
         }
-        if (!files || files.length === 0 || !mode.selectedClassId) return
+        if (!files || files.length === 0) return
+        // Auto-select first class if none selected
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+        if (!mode.selectedClassId) { alert('Create a class first.'); return }
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             alert(`Maximum ${MAX_SAMPLES_PER_CLASS} samples per class reached.`)
@@ -609,7 +614,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                         <div
                                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                             onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
-                                            onDrop={async (e) => { e.preventDefault(); setIsDragging(false); if (mode.selectedClassId && e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files) }}
+                                            onDrop={async (e) => {
+                                                e.preventDefault()
+                                                setIsDragging(false)
+                                                if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                                                    mode.setSelectedClassId(mode.project.classes[0].id)
+                                                }
+                                                if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
+                                            }}
                                             style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isDragging ? 'rgba(99,14,212,0.05)' : 'transparent' }}
                                         >
                                             <span style={{ fontSize: '3rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '📷'}</span>
@@ -619,9 +631,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                                     📷 Turn On Camera
                                                 </button>
                                                 <span style={{ color: '#9ca3af', fontSize: '10px', fontWeight: 600 }}>or</span>
-                                                <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: mode.selectedClassId ? '2px solid #630ed4' : '2px solid #d1d5db', cursor: mode.selectedClassId ? 'pointer' : 'not-allowed', background: mode.selectedClassId ? '#fff' : '#e5e7eb', color: mode.selectedClassId ? '#630ed4' : '#9ca3af' }}>
+                                                <button onClick={() => fileInputRef.current?.click()} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
                                                     📂 Upload
                                                 </button>
+                                                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                             </div>
                                         </div>
                                     )}
@@ -642,7 +655,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                     <span style={{ fontSize: '13px' }}>📷</span>
                                     Camera
                                 </button>
-                                <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: mode.selectedClassId ? 'pointer' : 'not-allowed', background: 'transparent', color: mode.selectedClassId ? '#6b7280' : '#d1d5db', opacity: mode.selectedClassId ? 1 : 0.6, transition: 'all 0.2s ease' }}>
+                                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'transparent', color: '#6b7280', transition: 'all 0.2s ease' }}>
                                     <span style={{ fontSize: '13px' }}>📂</span>
                                     Upload
                                 </button>

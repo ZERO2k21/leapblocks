@@ -228,7 +228,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
-        if (!files || files.length === 0 || !mode.selectedClassId) return
+        if (!files || files.length === 0) return
+        // Auto-select first class if none selected
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+        if (!mode.selectedClassId) { alert('Create a class first.'); return }
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             alert(`Maximum ${MAX_SAMPLES_PER_CLASS} samples per class reached.`)
@@ -985,7 +990,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     onDrop={(e) => {
                                         e.preventDefault()
                                         setIsDragging(false)
-                                        if (mode.selectedClassId && e.dataTransfer.files.length > 0) {
+                                        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                                            mode.setSelectedClassId(mode.project.classes[0].id)
+                                        }
+                                        if (e.dataTransfer.files.length > 0) {
                                             const syntheticEvent = { target: { files: e.dataTransfer.files } } as any
                                             handleUpload(syntheticEvent)
                                         }
@@ -1050,19 +1058,18 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         </button>
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
-                                            disabled={!mode.selectedClassId}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: '6px',
                                                 padding: '12px 22px',
-                                                background: mode.selectedClassId ? '#fff' : '#f3f4f6',
-                                                color: mode.selectedClassId ? '#630ed4' : '#9ca3af',
+                                                background: '#fff',
+                                                color: '#630ed4',
                                                 borderRadius: '12px',
                                                 fontSize: '13px',
                                                 fontWeight: 700,
-                                                border: `2px solid ${mode.selectedClassId ? '#630ed4' : '#e5e7eb'}`,
-                                                cursor: mode.selectedClassId ? 'pointer' : 'not-allowed',
+                                                border: '2px solid #630ed4',
+                                                cursor: 'pointer',
                                             }}
                                         >
                                             📂 Upload
@@ -1143,7 +1150,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        disabled={!mode.selectedClassId}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1153,12 +1159,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                             fontSize: '11px',
                                             fontWeight: 700,
                                             border: 'none',
-                                            cursor: mode.selectedClassId ? 'pointer' : 'not-allowed',
-                                            background: mode.selectedClassId ? '#eff6ff' : '#f9fafb',
-                                            color: mode.selectedClassId ? '#2563eb' : '#9ca3af',
-                                            boxShadow: mode.selectedClassId ? '0 1px 4px rgba(37,99,235,0.1)' : 'none',
+                                            cursor: 'pointer',
+                                            background: '#eff6ff',
+                                            color: '#2563eb',
+                                            boxShadow: '0 1px 4px rgba(37,99,235,0.1)',
                                             transition: 'all 0.15s ease',
-                                            opacity: mode.selectedClassId ? 1 : 0.5,
                                         }}
                                     >
                                         <span style={{ fontSize: '12px' }}>📂</span>

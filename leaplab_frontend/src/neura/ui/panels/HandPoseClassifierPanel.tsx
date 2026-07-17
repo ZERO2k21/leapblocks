@@ -70,7 +70,12 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         } else if (eOrFiles && 'target' in eOrFiles) {
             files = eOrFiles.target.files
         }
-        if (!files || files.length === 0 || !mode.selectedClassId) return
+        if (!files || files.length === 0) return
+        // Auto-select first class if none selected
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+        if (!mode.selectedClassId) { alert('Create a class first.'); return }
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
@@ -704,7 +709,14 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                     <div
                                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
-                                        onDrop={async (e) => { e.preventDefault(); setIsDragging(false); if (mode.selectedClassId && e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files) }}
+                                        onDrop={async (e) => {
+                                            e.preventDefault()
+                                            setIsDragging(false)
+                                            if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                                                mode.setSelectedClassId(mode.project.classes[0].id)
+                                            }
+                                            if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
+                                        }}
                                         style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isDragging ? 'rgba(14,165,233,0.05)' : 'transparent' }}
                                     >
                                         <span style={{ fontSize: '3.5rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '✋'}</span>
@@ -714,7 +726,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                                 📷 Turn On Camera
                                             </button>
                                             <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>or</span>
-                                            <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: mode.selectedClassId ? '2px solid #0ea5e9' : '2px solid #d1d5db', cursor: mode.selectedClassId ? 'pointer' : 'not-allowed', background: mode.selectedClassId ? '#fff' : '#e5e7eb', color: mode.selectedClassId ? '#0ea5e9' : '#9ca3af' }}>
+                                            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: '2px solid #0ea5e9', cursor: 'pointer', background: '#fff', color: '#0ea5e9' }}>
                                                 📂 Upload
                                             </button>
                                         </div>
@@ -747,7 +759,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 <button onClick={toggleCamera} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: cameraOn ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: cameraOn ? '0 4px 14px rgba(239,68,68,0.35)' : '0 4px 14px rgba(14,165,233,0.35)' }}>
                                     {cameraOn ? '⏹️ Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: mode.selectedClassId ? 'pointer' : 'not-allowed', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: '0 4px 14px rgba(14,165,233,0.35)', opacity: mode.selectedClassId ? 1 : 0.5 }}>
+                                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: '0 4px 14px rgba(14,165,233,0.35)' }}>
                                     📂 Upload
                                 </button>
                             </div>

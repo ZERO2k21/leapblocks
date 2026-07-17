@@ -58,6 +58,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const cameraOffUploadRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new ObjectDetector())
     const trainerRef = useRef(new ObjectDetectionTrainer())
     const streamRef = useRef<MediaStream | null>(null)
@@ -344,10 +345,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (!files || files.length === 0) return
         if (isLoadingModel) { alert('Model is still loading. Please wait.'); return }
 
+        // Auto-select first class if none selected
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+
         // If multiple files are uploaded/dragged, bulk save them directly as samples to the selected class
         if (files.length > 1) {
             if (!mode.selectedClassId) {
-                alert('Please select a class first to upload multiple images.')
+                alert('Please create a class first before uploading images.')
                 return
             }
             const selectedClass = mode.getSelectedClass()
@@ -418,6 +424,45 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             reader.onload = () => resolve(reader.result as string)
             reader.readAsDataURL(file)
         })
+
+        // In collect mode: save directly as a training sample (like multi-file upload)
+        if (mode.mode === 'collect') {
+            if (!mode.selectedClassId) {
+                showSaved('⚠️ Create a class first, then upload images')
+                if (fileInputRef.current) fileInputRef.current.value = ''
+                return
+            }
+            const selectedClass = mode.getSelectedClass()
+            if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+                showSaved('⚠️ Sample limit reached! (20 per class)')
+                if (fileInputRef.current) fileInputRef.current.value = ''
+                return
+            }
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => { img.onload = () => resolve(); setTimeout(resolve, 3000) })
+            if (img.complete && img.naturalWidth > 0) {
+                const maxDim = 640
+                const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1)
+                const canvas = document.createElement('canvas')
+                canvas.width = Math.floor(img.naturalWidth * scale)
+                canvas.height = Math.floor(img.naturalHeight * scale)
+                const ctx = canvas.getContext('2d')!
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                const resizedUrl = canvas.toDataURL('image/jpeg', 0.7)
+                const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: resizedUrl })
+                if (saved) {
+                    const className = mode.getSelectedClass()?.name || 'class'
+                    showSaved(`📂 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
+                } else {
+                    showSaved('⚠️ Sample limit reached! (20 per class)')
+                }
+            }
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+
+        // In test mode: run detection on the uploaded image
         setCameraOn(false)
         stopCamera()
         const img = new Image()
@@ -603,17 +648,25 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 <div
                                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                     onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
-                                    onDrop={async (e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files) }}
-                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? '#f5f3ff' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0 }}
+                                    onDrop={async (e) => {
+                                        e.preventDefault()
+                                        setIsDragging(false)
+                                        if (!mode.selectedClassId) {
+                                            showSaved('⚠️ Select a class first, then drop images')
+                                            return
+                                        }
+                                        if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
+                                    }}
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0, transition: 'all 0.2s ease' }}
                                 >
-                                    <span style={{ fontSize: '36px', marginBottom: '8px' }}>{isDragging ? '📥' : '🔍'}</span>
+                                    <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '🔍'}</span>
                                     <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
-                                    <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Drop files to upload' : 'Start the camera to detect objects!'}</p>
+                                    <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Turn On Camera</button>
-                                        <button onClick={() => fileInputRef.current?.click()} disabled={!mode.selectedClassId} style={{ padding: '8px 16px', background: mode.selectedClassId ? '#fff' : '#e5e7eb', color: mode.selectedClassId ? '#630ed4' : '#ccc3d8', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: `2px solid ${mode.selectedClassId ? '#630ed4' : '#d1d5db'}`, cursor: mode.selectedClassId ? 'pointer' : 'not-allowed' }}>📂 Upload</button>
+                                        <button onClick={() => cameraOffUploadRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', transition: 'all 0.2s' }}>📂 Upload</button>
                                     </div>
-                                    <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+                                    <input ref={cameraOffUploadRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                 </div>
                             )}
 

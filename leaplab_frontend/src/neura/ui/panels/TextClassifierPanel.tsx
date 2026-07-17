@@ -37,7 +37,12 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     }, [mode.mode])
 
     const handleAddText = useCallback(() => {
-        if (!textInput.trim() || !mode.selectedClassId) return
+        if (!textInput.trim()) return
+        // Auto-select first class if none selected
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+        if (!mode.selectedClassId) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
         mode.addSample(mode.selectedClassId, { type: 'text', data: textInput.trim() })
@@ -116,15 +121,15 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     onFocus={(e) => e.target.style.borderColor = '#630ed4'}
                                     onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                                 />
-                                <button onClick={handleAddText} disabled={!textInput.trim() || !mode.selectedClassId || atSampleLimit} style={{
+                                <button onClick={handleAddText} disabled={!textInput.trim() || atSampleLimit} style={{
                                     padding: '12px 24px',
                                     borderRadius: '12px',
                                     fontSize: '14px',
                                     fontWeight: 700,
                                     border: 'none',
-                                    cursor: !textInput.trim() || !mode.selectedClassId || atSampleLimit ? 'not-allowed' : 'pointer',
-                                    background: !textInput.trim() || !mode.selectedClassId || atSampleLimit ? '#e5e7eb' : 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                    color: !textInput.trim() || !mode.selectedClassId || atSampleLimit ? '#9ca3af' : '#fff',
+                                    cursor: !textInput.trim() || atSampleLimit ? 'not-allowed' : 'pointer',
+                                    background: !textInput.trim() || atSampleLimit ? '#e5e7eb' : 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                    color: !textInput.trim() || atSampleLimit ? '#9ca3af' : '#fff',
                                     transition: 'all 0.2s'
                                 }}>➕ Add</button>
                             </div>
