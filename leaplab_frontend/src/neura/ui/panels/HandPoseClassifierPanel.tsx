@@ -683,7 +683,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         {/* Left half - Camera feed */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Camera feed */}
-                            <div style={{ flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', minHeight: '300px' }}>
+                            <div style={{ flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', minHeight: '350px' }}>
                                 {cameraOn ? (
                                     <>
                                         <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
@@ -737,7 +737,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '100%' }} className="neura-scrollbar">
                             {/* Tips */}
                             <div style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', borderRadius: '12px', padding: '10px 14px', border: '1px solid rgba(14,165,233,0.1)' }}>
                                 <div className="flex items-center" style={{ gap: '6px', marginBottom: '6px' }}>
@@ -839,7 +839,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
                             {/* Samples */}
                             {selectedClass && selectedClass.samples.length > 0 && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', maxHeight: '200px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                                     <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
                                         <div className="flex items-center" style={{ gap: '6px' }}>
                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
@@ -880,6 +880,11 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                         </div>
+                        {mode.project && mode.project.classes.some(c => c.samples.length < 2) && (
+                            <div className="w-full max-w-[720px] mt-2 px-4 py-3 rounded-xl text-xs font-bold text-center" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#92400e', border: '1px solid #fbbf24' }}>
+                                ⚠️ Some classes have fewer than 2 samples — predictions may be unreliable. Go back to Collect and add more samples.
+                            </div>
+                        )}
                     </div>
                     <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
