@@ -238,53 +238,85 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         }
     }
 
-    const handleUpload = async (eOrFile: React.ChangeEvent<HTMLInputElement> | File) => {
-        const file = eOrFile instanceof File ? eOrFile : eOrFile.target.files?.[0]
-        if (!file || !file.type.startsWith('image/')) return
-        if (!mode.selectedClassId) return
+    const handleUpload = async (eOrFiles: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
+        let files: FileList | File[] | null = null
+        if (eOrFiles instanceof FileList || Array.isArray(eOrFiles)) {
+            files = eOrFiles
+        } else if (eOrFiles && 'target' in eOrFiles) {
+            files = eOrFiles.target.files
+        }
+        if (!files || files.length === 0 || !mode.selectedClassId) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
+            if (fileInputRef.current) fileInputRef.current.value = ''
             return
         }
-        const dataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(file)
-        })
-        const img = new Image()
-        img.src = dataUrl
-        await new Promise<void>((resolve) => {
-            img.onload = () => resolve()
-            img.onerror = () => resolve()
-            setTimeout(() => resolve(), 5000)
-        })
-        if (img.complete && img.naturalWidth > 0) {
-            try {
-                const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = img.naturalWidth
-                tempCanvas.height = img.naturalHeight
-                const ctx = tempCanvas.getContext('2d')!
-                ctx.drawImage(img, 0, 0)
-                const keypoints = await classifierRef.current.detectPose(tempCanvas)
-                if (keypoints && keypoints.length > 0) {
-                    const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(keypoints) })
-                    if (!added) {
-                        showSaved('⚠️ Sample limit reached! (20 per class)')
-                        return
+
+        let successCount = 0
+        let noPoseCount = 0
+        let limitReached = false
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            if (!file || !file.type.startsWith('image/')) continue
+
+            const currentClass = mode.getSelectedClass()
+            if (currentClass && currentClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+                limitReached = true
+                break
+            }
+
+            const dataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result as string)
+                reader.readAsDataURL(file)
+            })
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(() => resolve(), 5000)
+            })
+
+            if (img.complete && img.naturalWidth > 0) {
+                try {
+                    const tempCanvas = document.createElement('canvas')
+                    tempCanvas.width = img.naturalWidth
+                    tempCanvas.height = img.naturalHeight
+                    const ctx = tempCanvas.getContext('2d')!
+                    ctx.drawImage(img, 0, 0)
+                    const keypoints = await classifierRef.current.detectPose(tempCanvas)
+                    if (keypoints && keypoints.length > 0) {
+                        const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(keypoints) })
+                        if (!added) {
+                            limitReached = true
+                            break
+                        }
+                        classifierRef.current.addSampleFromKeypoints(keypoints, mode.getSelectedClass()?.name || '').catch(() => undefined)
+                        successCount++
+                    } else {
+                        noPoseCount++
                     }
-                    classifierRef.current.addSampleFromKeypoints(keypoints, mode.getSelectedClass()?.name || '').catch(() => undefined)
-                    showFlash()
-                    const className = mode.getSelectedClass()?.name || 'class'
-                    showSaved(`📂 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
-                } else {
-                    showSaved('⚠️ No pose detected in uploaded image!')
+                } catch (err) {
+                    console.warn('[PoseClassifier] Upload failed:', err)
                 }
-            } catch (err) {
-                console.warn('[PoseClassifier] Upload failed:', err)
-                showSaved('⚠️ Failed to process uploaded image.')
             }
         }
+
+        showFlash()
+        const className = mode.getSelectedClass()?.name || 'class'
+        if (successCount > 0) {
+            showSaved(`📂 Saved ${successCount} pose(s) to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
+        }
+        if (noPoseCount > 0) {
+            showSaved(`⚠️ No pose detected in ${noPoseCount} image(s).`)
+        }
+        if (limitReached) {
+            showSaved('⚠️ Sample limit reached! (20 per class)')
+        }
+
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
@@ -543,8 +575,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                         e.preventDefault()
                                         setIsDragging(false)
                                         if (mode.selectedClassId && e.dataTransfer.files.length > 0) {
-                                            const file = e.dataTransfer.files[0]
-                                            await handleUpload(file)
+                                            await handleUpload(e.dataTransfer.files)
                                         }
                                     }}
                                     style={{ 
@@ -580,7 +611,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                             📂 Upload
                                         </button>
                                     </div>
-                                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+                                    <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                 </div>
                             )}
                         </div>
@@ -655,15 +686,18 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-4xl mx-auto text-center mb-2 animate-fade-in">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🏋️ Teach Your AI Poses!</h2>
-                        <p className="text-sm text-[#4a4455]">Your AI is learning your moves! 💃</p>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    {/* Header + Workflow - centered */}
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center" style={{ marginBottom: '12px' }}>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🏋️ Teach Your AI Poses!</h2>
+                            <p className="text-xs text-[#4a4455]">Your AI is learning your moves! 💃</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                        </div>
                     </div>
-                    <div className="w-full max-w-4xl mx-auto">
-                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
-                    </div>
-                    <div className="w-full max-w-4xl mx-auto">
+                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} sampleType="poses" />
                     </div>
                 </div>
@@ -671,32 +705,39 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col items-center gap-6 p-8 overflow-y-auto neura-scrollbar">
-                    <div className="w-full max-w-[720px] text-center mb-2 animate-fade-in">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-1">🧪 Test Your AI!</h2>
-                        <p className="text-sm text-[#4a4455]">Strike a pose and see if your AI recognizes it! 🎯</p>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    {/* Header + Workflow - centered */}
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center mb-1">
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🧪 Test Your AI!</h2>
+                            <p className="text-xs text-[#4a4455]">Strike a pose and see if your AI recognizes it! 🎯</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                        </div>
                     </div>
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
-                    <TestPanel
-                        prediction={prediction}
-                        isProcessing={isProcessing}
-                        cameraOn={cameraOn}
-                        testImage={testImage}
-                        videoRef={videoRef}
-                        canvasRef={canvasRef}
-                        onCapture={handleTestCapture}
-                        onUpload={() => testFileInputRef.current?.click()}
-                        onToggleCamera={toggleCamera}
-                        onReset={() => { setTestImage(null); setPrediction(null) }}
-                        onTryAnother={() => { setTestImage(null); setPrediction(null) }}
-                        onExport={handleExportTestReport}
-                        fileInputRef={testFileInputRef}
-                        onFileChange={handleTestUpload}
-                        projectName={mode.project?.name}
-                        testsRun={prediction ? 1 : 0}
-                        inferenceTime={inferenceTime}
-                        modelLoading={modelLoading}
-                    />
+                    <div className="w-full" style={{ marginTop: '10px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <TestPanel
+                            prediction={prediction}
+                            isProcessing={isProcessing}
+                            cameraOn={cameraOn}
+                            testImage={testImage}
+                            videoRef={videoRef}
+                            canvasRef={canvasRef}
+                            onCapture={handleTestCapture}
+                            onUpload={() => testFileInputRef.current?.click()}
+                            onToggleCamera={toggleCamera}
+                            onReset={() => { setTestImage(null); setPrediction(null) }}
+                            onTryAnother={() => { setTestImage(null); setPrediction(null) }}
+                            onExport={handleExportTestReport}
+                            fileInputRef={testFileInputRef}
+                            onFileChange={handleTestUpload}
+                            projectName={mode.project?.name}
+                            testsRun={prediction ? 1 : 0}
+                            inferenceTime={inferenceTime}
+                            modelLoading={modelLoading}
+                        />
+                    </div>
                 </div>
             )}
         </div>

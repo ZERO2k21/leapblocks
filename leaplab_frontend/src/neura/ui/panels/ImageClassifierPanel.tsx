@@ -1221,42 +1221,18 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
-                    {/* Header */}
-                    <div className="text-center animate-fade-in" style={{ marginBottom: '8px' }}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '8px 18px',
-                                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                                borderRadius: '14px',
-                                border: '1px solid rgba(99,14,212,0.1)',
-                                boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                }}
-                            >
-                                <span style={{ fontSize: '1rem' }}>🏋️</span>
-                            </div>
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', margin: 0 }}>
-                                Teach Your AI!
-                            </h2>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    {/* Header + Workflow - centered */}
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center" style={{ marginBottom: '12px' }}>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🏋️ Teach Your AI!</h2>
+                            <p className="text-xs text-[#4a4455]">Your AI is learning from your images! 📸</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
                         </div>
                     </div>
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    <div className="flex-1 min-h-0">
+                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} />
                     </div>
                 </div>
@@ -1264,42 +1240,18 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
-                    {/* Header */}
-                    <div className="text-center animate-fade-in" style={{ marginBottom: '8px' }}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '8px 18px',
-                                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                                borderRadius: '14px',
-                                border: '1px solid rgba(99,14,212,0.1)',
-                                boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                }}
-                            >
-                                <span style={{ fontSize: '1rem' }}>🧪</span>
-                            </div>
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', margin: 0 }}>
-                                Test Your AI!
-                            </h2>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    {/* Header + Workflow - centered */}
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center mb-1">
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🧪 Test Your AI!</h2>
+                            <p className="text-xs text-[#4a4455]">Take a photo or upload an image to test! 🎯</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
                         </div>
                     </div>
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                    <div className="flex-1 min-h-0">
+                    <div className="w-full" style={{ marginTop: '10px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                 </div>

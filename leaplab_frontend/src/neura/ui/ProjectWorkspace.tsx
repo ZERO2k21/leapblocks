@@ -466,12 +466,6 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                         >
                             {sidebarOpen ? '✕' : '☰'}
                         </button>
-                        <ModeSwitcher
-                            mode={mode.mode}
-                            onModeChange={mode.setMode}
-                            canTrain={canTrain}
-                            projectType={type}
-                        />
                     </div>
                 }
             />

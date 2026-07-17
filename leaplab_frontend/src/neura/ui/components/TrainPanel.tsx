@@ -75,9 +75,9 @@ export default function TrainPanel({
     const epochPresets = [10, 25, 50, 100]
 
     return (
-        <div className="animate-fade-in flex flex-col items-center" style={{ height: '100%' }}>
+        <div className="animate-fade-in flex flex-col items-center" style={{ height: '100%', paddingLeft: '20px', paddingRight: '20px' }}>
             {/* Header - centered */}
-            <div className="w-full flex flex-col items-center mb-2">
+            <div className="w-full flex flex-col items-center" style={{ marginBottom: '16px' }}>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">
                     {isTraining ? '🧠 Teaching Time!' : accuracy !== null ? '🎉 Training Complete!' : '🤖 Ready to Train!'}
                 </h2>
@@ -359,7 +359,6 @@ export default function TrainPanel({
                         borderRadius: '16px',
                         border: '1px solid #fde68a',
                         width: '100%',
-                        maxWidth: '760px',
                         margin: '16px auto 0',
                     }}
                 >
@@ -382,7 +381,6 @@ export default function TrainPanel({
                         borderRadius: '16px',
                         border: '1px solid #fecaca',
                         width: '100%',
-                        maxWidth: '760px',
                         margin: '16px auto 0',
                     }}
                 >

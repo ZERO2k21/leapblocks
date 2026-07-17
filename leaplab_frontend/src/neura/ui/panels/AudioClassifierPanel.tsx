@@ -431,7 +431,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="w-full" style={{ marginTop: '16px', marginBottom: '20px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="w-full" style={{ marginTop: '16px', marginBottom: '20px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <TrainPanel 
                         isTraining={isTraining} 
                         accuracy={mode.accuracy} 

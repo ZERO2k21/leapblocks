@@ -187,7 +187,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const finalMap = mapChartData[mapChartData.length - 1] || 0
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
+        <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px', alignItems: 'center' }}>
             {/* Celebration Modal */}
             {showCelebration && (
                 <div style={{
@@ -270,7 +270,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             </div>
 
             {/* Workflow and Tips - centered */}
-            <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 12px' }}>
+            <div style={{ width: '100%', margin: '0 auto 12px' }}>
                 <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
 
                 {/* Tips */}
@@ -316,7 +316,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             </div>
 
             {/* Two-column layout */}
-            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, width: '100%' }}>
                 {/* Left column - Main training area */}
                 <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Main card */}

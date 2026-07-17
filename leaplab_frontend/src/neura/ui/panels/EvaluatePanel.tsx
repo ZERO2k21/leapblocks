@@ -75,58 +75,50 @@ export default function EvaluatePanel({ mode, metrics }: EvaluatePanelProps) {
 
     if (!mode.project?.modelTrained) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-24 h-24 rounded-full bg-[#eaedff] flex items-center justify-center mb-6">
-                    <span className="text-5xl">📊</span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                    <span style={{ fontSize: '40px' }}>📊</span>
                 </div>
-                <h2 className="text-xl font-extrabold text-[#131b2e] mb-2">No Model Yet</h2>
-                <p className="text-sm text-[#4a4455] mb-6 max-w-sm">Train your model first, then come back to evaluate its performance.</p>
-                <button
-                    onClick={() => mode.setMode('train')}
-                    className="px-8 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all"
-                >
-                    🏋️ Go to Training
-                </button>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>No Model Yet</h2>
+                <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '24px', maxWidth: '320px' }}>Train your model first, then come back to evaluate its performance.</p>
+                <button onClick={() => mode.setMode('train')} style={{ padding: '12px 32px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '14px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(99,14,212,0.3)' }}>🏋️ Go to Training</button>
             </div>
         )
     }
 
     return (
-        <div className="flex-1 flex flex-col p-6 overflow-y-auto neura-scrollbar">
-            <div className="flex items-center justify-between mb-6">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', flexShrink: 0 }}>
                 <div>
-                    <h1 className="text-xl font-extrabold text-[#131b2e]">📊 Model Evaluation</h1>
-                    <p className="text-xs text-[#4a4455] mt-1">See how well your AI performs on each class</p>
+                    <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e' }}>📊 Model Evaluation</h1>
+                    <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>See how well your AI performs on each class</p>
                 </div>
-                <button
-                    onClick={() => mode.setMode('train')}
-                    className="px-4 py-2 bg-[#eaedff] text-[#630ed4] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all"
-                >
-                    🔄 Re-train
-                </button>
+                <button onClick={() => mode.setMode('train')} style={{ padding: '8px 16px', background: '#f5f3ff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>🔄 Re-train</button>
             </div>
 
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-[#dae2fd] shadow-sm text-center">
-                    <div className="text-3xl mb-2">🎯</div>
-                    <p className="text-2xl font-black text-[#630ed4]">{Math.round(meanPrecision * 100)}%</p>
-                    <p className="text-[10px] font-bold text-[#4a4455] uppercase tracking-wider">Mean Precision</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎯</div>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#630ed4' }}>{Math.round(meanPrecision * 100)}%</p>
+                    <p style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Precision</p>
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-[#dae2fd] shadow-sm text-center">
-                    <div className="text-3xl mb-2">🔍</div>
-                    <p className="text-2xl font-black text-[#006c44]">{Math.round(meanRecall * 100)}%</p>
-                    <p className="text-[10px] font-bold text-[#4a4455] uppercase tracking-wider">Mean Recall</p>
+                <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>🔍</div>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#006c44' }}>{Math.round(meanRecall * 100)}%</p>
+                    <p style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recall</p>
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-[#dae2fd] shadow-sm text-center">
-                    <div className="text-3xl mb-2">⚡</div>
-                    <p className="text-2xl font-black text-[#3b82f6]">{Math.round(meanF1 * 100)}%</p>
-                    <p className="text-[10px] font-bold text-[#4a4455] uppercase tracking-wider">Mean F1 Score</p>
+                <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>⚡</div>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#3b82f6' }}>{Math.round(meanF1 * 100)}%</p>
+                    <p style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>F1 Score</p>
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-[#dae2fd] shadow-sm text-center">
-                    <div className="text-3xl mb-2">📦</div>
-                    <p className="text-2xl font-black text-[#f59e0b]">{totalDetections}</p>
-                    <p className="text-[10px] font-bold text-[#4a4455] uppercase tracking-wider">Total Detections</p>
+                <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>📦</div>
+                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#f59e0b' }}>{totalDetections}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Detections</p>
                 </div>
             </div>
 
@@ -299,19 +291,10 @@ export default function EvaluatePanel({ mode, metrics }: EvaluatePanelProps) {
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-3 justify-center mt-6">
-                <button
-                    onClick={() => mode.setMode('train')}
-                    className="px-6 py-3 bg-[#eaedff] text-[#630ed4] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all"
-                >
-                    🔄 Re-train Model
-                </button>
-                <button
-                    onClick={() => mode.setMode('test')}
-                    className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all"
-                >
-                    🧪 Test Model
-                </button>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+                <button onClick={() => mode.setMode('train')} style={{ padding: '10px 20px', background: '#f5f3ff', color: '#630ed4', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>🔄 Re-train Model</button>
+                <button onClick={() => mode.setMode('test')} style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>🧪 Test Model</button>
+            </div>
             </div>
         </div>
     )

@@ -39,31 +39,6 @@ export default function TopBar({ title, mode, onModeChange, onBack, totalSamples
                     <p className="text-[11px] font-semibold text-[#630ed4]">{totalSamples} samples collected! 🎯</p>
                 </div>
             </div>
-
-            <div className="flex items-center gap-1.5 bg-white/50 backdrop-blur-sm rounded-2xl p-1.5 border border-[#dae2fd] shadow-sm">
-                {['collect', 'train', 'test'].map((m) => {
-                    const isActive = mode === m
-                    const isDisabled = m === 'train' && !canTrain
-                    const colors = MODE_COLORS[m]
-                    return (
-                        <button
-                            key={m}
-                            onClick={() => !isDisabled && onModeChange(m as ClassifierMode)}
-                            disabled={isDisabled}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                                isActive
-                                    ? `bg-gradient-to-r ${colors.active} text-white shadow-md ${colors.ring} ring-2 scale-105`
-                                    : isDisabled
-                                        ? 'text-[#ccc3d8] cursor-not-allowed'
-                                        : 'text-[#4a4455] hover:bg-[#eaedff] hover:scale-105'
-                            }`}
-                        >
-                            <span className="text-sm">{MODE_EMOJI[m]}</span>
-                            {m === 'collect' ? 'Collect' : m === 'train' ? 'Train' : 'Test'}
-                        </button>
-                    )
-                })}
-            </div>
         </div>
     )
 }

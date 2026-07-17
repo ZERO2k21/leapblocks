@@ -67,6 +67,8 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
                     background: 'rgba(250,248,255,0.5)',
                     borderRadius: '12px',
                     border: '2px dashed rgba(204,195,216,0.4)',
+                    height: '100%',
+                    minHeight: '80px'
                 }}
             >
                 <span style={{ fontSize: '1.75rem', marginBottom: '8px' }}>{TYPE_EMOJI[type]}</span>
