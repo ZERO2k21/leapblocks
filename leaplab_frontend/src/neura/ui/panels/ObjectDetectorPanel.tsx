@@ -604,7 +604,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                     onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
                                     onDrop={async (e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files) }}
-                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? '#f5f3ff' : 'rgba(255,255,255,0.7)' }}
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? '#f5f3ff' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0 }}
                                 >
                                     <span style={{ fontSize: '36px', marginBottom: '8px' }}>{isDragging ? '📥' : '🔍'}</span>
                                     <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>

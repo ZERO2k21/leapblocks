@@ -364,11 +364,11 @@ export const SelectionToolbar: React.FC = () => {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          border-radius: 14px;
+          border-radius: 12px;
           transition: all 0.2s ease;
         }
         .group:hover .icon-box-plate {
-          transform: scale(1.05) rotate(-3deg);
+          transform: scale(1.05);
         }
 
         .chip-id-plate {
@@ -378,7 +378,8 @@ export const SelectionToolbar: React.FC = () => {
           cursor: default;
         }
         .chip-id-plate:hover {
-          transform: translateY(-2px);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.07);
         }
       `}</style>
 
@@ -388,25 +389,49 @@ export const SelectionToolbar: React.FC = () => {
             <div
               className="group chip-id-plate"
               style={{
-                background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}08 100%)`,
-                border: `2px solid ${badgeInfo.primary}30`
+                background: '#fff',
+                border: '1.5px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                borderRadius: '16px'
               }}
             >
-              <div className="flex items-center gap-[12px] p-[10px_16px]">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 18px' }}>
                 <div
                   className="icon-box-plate"
                   style={{
-                    background: `linear-gradient(145deg, ${badgeInfo.primary}25 0%, ${badgeInfo.primary}10 100%)`,
-                    border: `2px solid ${badgeInfo.primary}40`
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
+                    border: `2px solid ${badgeInfo.primary}35`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-[3px]">
-                  <span className="text-[14px] font-bold text-slate-700 tracking-[0.2px] leading-none uppercase" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#1e293b',
+                    letterSpacing: '0.3px',
+                    lineHeight: 1.2,
+                    textTransform: 'uppercase',
+                    fontFamily: "'Nunito', 'Segoe UI', sans-serif"
+                  }}>
                     {badgeInfo.displayName}
                   </span>
-                  <span className="text-[10px] font-semibold tracking-[0.5px] uppercase leading-none" style={{ color: badgeInfo.primary }}>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.6px',
+                    lineHeight: 1,
+                    textTransform: 'uppercase',
+                    color: badgeInfo.primary
+                  }}>
                     {badgeInfo.category}
                   </span>
                 </div>
@@ -426,25 +451,49 @@ export const SelectionToolbar: React.FC = () => {
             <div
               className="group chip-id-plate"
               style={{
-                background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}08 100%)`,
-                border: `2px solid ${badgeInfo.primary}30`
+                background: '#fff',
+                border: '1.5px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                borderRadius: '16px'
               }}
             >
-              <div className="flex items-center gap-[12px] p-[10px_16px]">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 18px' }}>
                 <div
                   className="icon-box-plate"
                   style={{
-                    background: `linear-gradient(145deg, ${badgeInfo.primary}25 0%, ${badgeInfo.primary}10 100%)`,
-                    border: `2px solid ${badgeInfo.primary}40`
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
+                    border: `2px solid ${badgeInfo.primary}35`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-[3px]">
-                  <span className="text-[14px] font-bold text-slate-700 tracking-[0.2px] leading-none uppercase" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#1e293b',
+                    letterSpacing: '0.3px',
+                    lineHeight: 1.2,
+                    textTransform: 'uppercase',
+                    fontFamily: "'Nunito', 'Segoe UI', sans-serif"
+                  }}>
                     {badgeInfo.displayName}
                   </span>
-                  <span className="text-[10px] font-semibold tracking-[0.5px] uppercase leading-none" style={{ color: badgeInfo.primary }}>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.6px',
+                    lineHeight: 1,
+                    textTransform: 'uppercase',
+                    color: badgeInfo.primary
+                  }}>
                     {badgeInfo.category}
                   </span>
                 </div>

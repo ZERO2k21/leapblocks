@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import WorkflowIndicator from './WorkflowIndicator'
 
 interface TrainPanelProps {
     isTraining: boolean
@@ -13,6 +14,9 @@ interface TrainPanelProps {
     currentEpoch?: number
     totalEpochs?: number
     sampleType?: string
+    mode?: any
+    onModeChange?: (mode: any) => void
+    workflowType?: string
 }
 
 const ENCOURAGEMENTS = [
@@ -35,7 +39,10 @@ export default function TrainPanel({
     trainingError,
     currentEpoch = 0,
     totalEpochs = 50,
-    sampleType = 'pictures'
+    sampleType = 'pictures',
+    mode = 'train',
+    onModeChange,
+    workflowType
 }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -89,6 +96,13 @@ export default function TrainPanel({
                             : `Learning from ${totalSamples} ${sampleType} across ${classCount} classes`}
                 </p>
             </div>
+
+            {/* Workflow Indicator */}
+            {onModeChange && (
+                <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 12px' }}>
+                    <WorkflowIndicator mode={mode} onModeChange={onModeChange} canTrain={canTrain} type={workflowType as any} />
+                </div>
+            )}
 
             {/* Horizontal split */}
             <div className="w-full flex flex-col md:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>

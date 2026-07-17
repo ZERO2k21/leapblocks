@@ -674,7 +674,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '10px' }}>
+                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
                         {/* Left half - Camera feed */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Camera feed */}
@@ -850,18 +850,8 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    {/* Header + Workflow - centered */}
-                    <div className="w-full flex flex-col items-center animate-fade-in">
-                        <div className="text-center" style={{ marginBottom: '12px' }}>
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-0">🏋️ Teach Your AI Hands!</h2>
-                            <p className="text-xs text-[#4a4455]">Your AI is learning your hand gestures! ✋</p>
-                        </div>
-                        <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
-                        </div>
-                    </div>
-                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" />
+                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" />
                     </div>
                 </div>
             )}
@@ -879,7 +869,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                         </div>
                     </div>
-                    <div className="w-full" style={{ marginTop: '10px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                 </div>

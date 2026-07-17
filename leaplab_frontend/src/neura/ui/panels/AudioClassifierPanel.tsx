@@ -246,23 +246,25 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
     return (
         <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-            {/* Header + Workflow - centered */}
-            <div className="w-full flex flex-col items-center animate-fade-in">
-                <div className="text-center mb-1">
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎤 Sound Catcher!</h2>
-                    <p className="text-xs text-[#4a4455]">Record sounds to teach your AI!</p>
+            {/* Header + Workflow - centered (only for collect/test modes) */}
+            {mode.mode !== 'train' && (
+                <div className="w-full flex flex-col items-center animate-fade-in">
+                    <div className="text-center" style={{ marginBottom: '12px' }}>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎤 Sound Catcher!</h2>
+                        <p className="text-xs text-[#4a4455]">Record sounds to teach your AI!</p>
+                    </div>
+                    <div className="w-full max-w-[720px]">
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="audio" />
+                    </div>
                 </div>
-                <div className="w-full max-w-[720px]">
-                    <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="audio" />
-                </div>
-            </div>
+            )}
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '10px' }}>
+                <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
                     {/* Left half - Waveform visualizer */}
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative', minHeight: '300px' }}>
+                        <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative' }}>
                             <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
 
                             {/* LIVE indicator */}
@@ -315,7 +317,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     </div>
 
                     {/* Right half - Controls, Stats, Samples */}
-                    <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: '100%' }}>
                         {/* Tips */}
                         <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '8px 12px', border: '1px solid rgba(99,14,212,0.1)' }}>
                             <div className="flex items-center" style={{ gap: '6px' }}>
@@ -431,35 +433,34 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="w-full" style={{ marginTop: '16px', marginBottom: '20px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <TrainPanel 
-                        isTraining={isTraining} 
-                        accuracy={mode.accuracy} 
-                        canTrain={canTrain} 
-                        onTrain={handleTrain} 
-                        classCount={mode.project?.classes.length || 0} 
-                        totalSamples={mode.getTotalSamples()} 
-                        currentEpoch={currentEpoch}
-                        totalEpochs={totalEpochs}
-                        sampleType="sounds"
-                    />
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <TrainPanel 
+                            isTraining={isTraining} 
+                            accuracy={mode.accuracy} 
+                            canTrain={canTrain} 
+                            onTrain={handleTrain} 
+                            classCount={mode.project?.classes.length || 0} 
+                            totalSamples={mode.getTotalSamples()} 
+                            currentEpoch={currentEpoch}
+                            totalEpochs={totalEpochs}
+                            sampleType="sounds"
+                            mode={mode.mode}
+                            onModeChange={mode.setMode}
+                            workflowType="audio"
+                        />
+                    </div>
                 </div>
             )}
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="w-full" style={{ marginTop: '10px', marginBottom: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    {/* Header */}
-                    <div className="w-full flex flex-col items-center mb-2">
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎯 Test Your AI!</h2>
-                        <p className="text-xs text-[#4a4455]">Speak into the mic to see predictions</p>
-                    </div>
-
+                <div className="w-full" style={{ flex: 1, minHeight: 0, marginTop: '16px', display: 'flex', flexDirection: 'column' }}>
                     {/* Horizontal split */}
                     <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0 }}>
                         {/* Left half - Waveform visualizer */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative', minHeight: '300px' }}>
+                            <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative' }}>
                                 <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
 
                                 {/* TESTING badge */}
@@ -510,7 +511,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         </div>
 
                         {/* Right half - Test results */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: '100%' }}>
                             <TestPanel prediction={prediction} isProcessing={isProcessing}><div /></TestPanel>
                         </div>
                     </div>

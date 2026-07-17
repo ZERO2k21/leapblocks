@@ -516,12 +516,12 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
                 </div>
             )}
             {!prediction && !isProcessing && (
-                <div className="flex flex-col items-center" style={{ padding: '40px' }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '2rem' }}>🤔</span>
+                <div className="flex flex-col items-center justify-center" style={{ padding: '40px', flex: 1 }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '2px dashed #c4b5fd' }}>
+                        <span style={{ fontSize: '20px' }}>🤔</span>
                     </div>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>Waiting for input</p>
-                    <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>Use the camera above to test! 📸</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280' }}>Waiting for input</p>
+                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>Speak into the mic to test! 🎤</p>
                 </div>
             )}
         </div>

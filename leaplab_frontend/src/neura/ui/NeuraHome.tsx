@@ -23,7 +23,7 @@ const CLASSIFIER_TYPES: {
             type: 'image-classifier',
             name: 'Image Detective',
             emoji: '📸',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFV6WP6Ccd3fI57YmAmqM2bIyoaGVESdaQBOoNhq47iHamltyRvW1l99BoFwi1tl0-8OSDfZu2G9MxfYHfPPpTmD37XibvEHG6xWh_nyBM7zmsS_A1Cc0INjMLpedCufcHhQvCcPs74d2tCAivOq_PPHvsgY2vAH2N_q01qF1atytL_gwMGBtVilMNeJ68sB_ji1kn12p2KyPI0QuNwRqJxCbeF7-L5uMWCQS7zuS8iIT3eFWMBDjNM9Ezn2hJVwHH1tdXmAdl4Q',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/coloramera.png',
             description: 'Teach your computer to SEE and recognize things!',
             color: '#8B5CF6',
             gradient: 'from-[#630ed4] via-[#7c3aed] to-[#a855f7]',
@@ -33,7 +33,7 @@ const CLASSIFIER_TYPES: {
             type: 'audio-classifier',
             name: 'Sound Catcher',
             emoji: '🎤',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQnamSDGi56YINT9FErtq2kCV3fSImrmVtd2oHlJHinRPlVa0IlgY2IvcHydU8Ce5gmblkub5WYc1lEAA3yCU_-UVfBzYqGYoDf9_4Dgy1vex4TEYCGOwxZ1XPg0NUpTsp4kW9upu4Eo-OCdCn39tvITj4tpF5JKC7f36X72sUTcxDupTx44Hfzy0IAu8dUNj0oFjmaSSLQ0WBGzoZH5Rgwbpk56wLQ-mN4bbVVlN8Zl88dSKLVTr7DkskzF959W9IzVLJ7qJmyQ',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color microphone.png',
             description: 'Train AI to LISTEN and tell sounds apart!',
             color: '#A855F7',
             gradient: 'from-[#7c3aed] via-[#a855f7] to-[#d946ef]',
@@ -43,7 +43,7 @@ const CLASSIFIER_TYPES: {
             type: 'pose-classifier',
             name: 'Body & Hand Poses',
             emoji: '🤸',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGgUObyyyGa8gle6EgQLb2cZR8GzZLFf77q58ePxR4--asSj6yHlBKsETVLRnkhuPdoka4tggAQm5HAGgW_bySFzbI3sgkx5vgYCoSpl47f0z0xGY7u2FO7zeitNmDc4iqW2AktFahwJ2lBEQ_NBw1auoMi57TmqHPX311QAEXcvi620xzAlxh4rr2RDvTqYFaak8WxxV2Dyvys8PNJ-vAe4BEvsVdiQhFDf5AGsCwc_REWOc5vORvszUH1J4jTUcKJXflBT-JOw',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color person-raising-hand.png',
             description: 'Teach AI to read body poses AND hand gestures!',
             color: '#EA580C',
             gradient: 'from-[#c32c00] via-[#ef4444] to-[#f97316]',
@@ -54,7 +54,7 @@ const CLASSIFIER_TYPES: {
             type: 'text-classifier',
             name: 'Word Wizard',
             emoji: '📝',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDn1qEY1FgfJRanmYYjFVL-BPY_UxnTiFfzAlf70nrcvrRCYGF-vQ7--Hd7TH0AzBWqm51VN1lCoh_f58NaxiKoU001R7Ftzm8CtjmMNB28WG5ODyuJQte_l9mzNT_L7iIqFzaZriXZ8NugsIAGnT3OC6UggOJkQaAc2RZRiX2Ic45ZpA8XdFdf7XHxzW_1eCy8fQ_jKJ8NOMuG22a3wpwI-LI9VNkxDhkz9RoF7ouR7bm5GiMla6ozDmO1fxv4hcBUuVdSIdGXgA',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color memo.png',
             description: 'Classify words and sentences with smart word magic!',
             color: '#059669',
             gradient: 'from-[#006c44] via-[#10b981] to-[#34d399]',
@@ -64,7 +64,7 @@ const CLASSIFIER_TYPES: {
             type: 'numbers-cr',
             name: 'Number Ninja',
             emoji: '🔢',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBlZKi_6lO0LjrZIQaeF1nbNi18Y26MtFJjb6z3MC0dPtioCt9L3_PAHpX6YOSQ_qslem2fCxabiNw3rpbRopTQoYjbnHQBBGC47erhNJS28JMG_zLG3WvJjBNpPSRdZIs-ZPwZblhgjeIR5nHvzK_Ub_cyalRuABWEm3LbzSSwdEIBodd25fXQm9rwycwI4OPX9BLvpdJW2k27NkIkClILIWVgv7Hc4-Ge24SaILqbHMiq58qLFV4LhrlT8410NOV2yuFJAgaILA',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color input-numbers.png',
             description: 'Understand numbers and patterns like a genius!',
             color: '#8B5CF6',
             gradient: 'from-[#a855f7] via-[#d946ef] to-[#f472b6]',
@@ -74,7 +74,7 @@ const CLASSIFIER_TYPES: {
             type: 'object-detection',
             name: 'Object Finder',
             emoji: '🔍',
-            iconUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBgU5-o_BmTfV7QGif79ZrLpy31DZAQCpxkV1cqQDgid7yFziL9H2EXCW1q1SoqYjDr40bL50EsaCx2kTHhiBzzwE0iCkFlKR1sSKlinBD5ndu8ZeuA9xMdYVSLPTx74pxkjvAnuEByfp84L-SfTy08vZEpQCFRz9HPAtR6YlCOKxC6cxX2Qa3aR7J7I-gPUaAL-3JZW47CEg5uLOsedjMGuwjIPWAkjH77RJbOOG5c0IjHYj76FJH4pAmee5kaOy8KLYZP5yWSNg',
+            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color magnifying-glass-tilted-left.png',
             description: 'Find and spot multiple things in one picture!',
             color: '#4F46E5',
             gradient: 'from-[#630ed4] via-[#3b82f6] to-[#06b6d4]',
@@ -374,10 +374,11 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                 {CLASSIFIER_TYPES.map(item => (
                                     <div
                                         key={item.type}
-                                        className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm overflow-hidden bg-white p-0.5"
+                                        className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm overflow-hidden bg-white"
+                                        style={{ fontSize: '16px', background: `linear-gradient(135deg, ${item.color}10, ${item.color}05)` }}
                                         title={item.name}
                                     >
-                                        <img alt={item.name} className="w-full h-full object-contain" src={item.iconUrl} />
+                                        {item.emoji}
                                     </div>
                                 ))}
                             </div>
@@ -437,9 +438,10 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                                 border: `2px solid ${item.color}25`,
                                                 boxShadow: `0 6px 20px ${item.color}18`,
                                                 marginBottom: '20px',
+                                                fontSize: '48px'
                                             }}
                                         >
-                                            <img alt={item.name} className="w-14 h-14 object-contain select-none" src={item.iconUrl} />
+                                            {item.emoji}
                                         </div>
 
                                         {/* Badge */}
@@ -601,39 +603,80 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
             {/* Type Picker Modal */}
             {showTypePicker && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
-                    <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-lg rounded-3xl p-8 border border-white/80 shadow-[0_25px_60px_-15px_rgba(99,14,212,0.15)]">
+                    <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-gray-100 shadow-[0_25px_60px_-15px_rgba(99,14,212,0.18)]" style={{ padding: '36px' }}>
+                        {/* Close button */}
                         <button
                             onClick={() => setShowTypePicker(false)}
-                            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
+                            className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all"
+                            style={{ fontSize: '14px' }}
                         >
                             ✕
                         </button>
 
-                        <div className="text-center mb-8">
-                            <span className="text-3xl mb-2 inline-block">✨</span>
-                            <h3 className="text-2xl font-bold text-[#131b2e]">Select Project Type</h3>
-                            <p className="text-sm text-[#4a4455]/70 mt-1">
-                                Choose the sensory interface you want your custom AI model to process.
+                        {/* Header */}
+                        <div className="text-center" style={{ marginBottom: '32px' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                                <span style={{ fontSize: '28px' }}>✨</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-[#131b2e]" style={{ marginBottom: '6px' }}>Select Project Type</h3>
+                            <p className="text-sm text-gray-500">
+                                Choose what your AI will learn to recognize
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Project types grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: '12px' }}>
                             {CLASSIFIER_TYPES.map(item => (
                                 <button
                                     key={item.type}
                                     onClick={() => handlePickType(item.type)}
-                                    className="group flex items-center gap-4 p-4 rounded-2xl text-left transition-all duration-300 hover:bg-gradient-to-r hover:from-white hover:to-gray-50/50 border border-gray-100/80 hover:border-transparent hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+                                    className="group text-left transition-all duration-200"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '14px',
+                                        padding: '16px',
+                                        borderRadius: '16px',
+                                        border: '1px solid #f3f4f6',
+                                        background: '#fff',
+                                        cursor: 'pointer'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = '#c4b5fd'
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #faf5ff, #f5f3ff)'
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(99,14,212,0.08)'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = '#f3f4f6'
+                                        e.currentTarget.style.background = '#fff'
+                                        e.currentTarget.style.boxShadow = 'none'
+                                    }}
                                 >
-                                    <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 p-2 bg-white border border-gray-100"
+                                    <div style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '12px',
+                                        background: `linear-gradient(135deg, ${item.color}15, ${item.color}08)`,
+                                        border: `1.5px solid ${item.color}25`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        transition: 'transform 0.2s',
+                                        fontSize: '24px'
+                                    }}
+                                    className="group-hover:scale-105"
                                     >
-                                        <img alt={item.name} className="w-8 h-8 object-contain select-none" src={item.iconUrl} />
+                                        {item.emoji}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-sm text-[#131b2e] group-hover:text-[#630ed4] transition-colors">
+                                        <div className="font-semibold text-sm text-[#131b2e]" style={{ transition: 'color 0.2s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.color = '#630ed4'}
+                                            onMouseLeave={(e) => e.currentTarget.style.color = '#131b2e'}
+                                        >
                                             {item.name}
                                         </div>
-                                        <div className="text-xs text-[#4a4455]/60 mt-0.5">
+                                        <div className="text-xs text-gray-400" style={{ marginTop: '2px' }}>
                                             {item.badge}
                                         </div>
                                     </div>

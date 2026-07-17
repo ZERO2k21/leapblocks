@@ -557,7 +557,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '10px' }}>
+                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
                         {/* Left half - Canvas/Camera */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Drawing canvas */}
@@ -719,18 +719,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    {/* Header + Workflow - centered */}
-                    <div className="w-full flex flex-col items-center animate-fade-in">
-                        <div className="text-center" style={{ marginBottom: '12px' }}>
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🏋️ Teach Your AI Numbers!</h2>
-                            <p className="text-xs text-[#4a4455]">Your AI is learning to count! 🔢</p>
-                        </div>
-                        <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                        </div>
-                    </div>
-                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} sampleType="numbers" />
+                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} sampleType="numbers" mode={mode.mode} onModeChange={mode.setMode} />
                     </div>
                 </div>
             )}

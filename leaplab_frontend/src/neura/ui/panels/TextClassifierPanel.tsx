@@ -133,7 +133,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f5f3ff', borderRadius: '10px', border: '1px solid #ede9fe' }}>
                                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: selectedClass.color }} />
                                     <span style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4' }}>Adding to: {selectedClass.name}</span>
-                                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280', marginLeft: 'auto', padding: '2px 8px', background: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#fef3c7' : '#fff', borderRadius: '6px', color: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#c32c00' : '#630ed4' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 600, marginLeft: 'auto', padding: '2px 8px', background: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#fef3c7' : '#fff', borderRadius: '6px', color: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#c32c00' : '#630ed4' }}>
                                         {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                     </span>
                                 </div>
@@ -169,18 +169,8 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    {/* Header + Workflow - centered */}
-                    <div className="w-full flex flex-col items-center animate-fade-in">
-                        <div className="text-center" style={{ marginBottom: '12px' }}>
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🏋️ Teach Your AI Words!</h2>
-                            <p className="text-xs text-[#4a4455]">Your AI is learning to read! 📖</p>
-                        </div>
-                        <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
-                        </div>
-                    </div>
-                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" />
+                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" mode={mode.mode} onModeChange={mode.setMode} />
                     </div>
                 </div>
             )}
