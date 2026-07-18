@@ -117,7 +117,7 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
             >
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#ffffff', margin: 0, tracking: '-0.01em' }}>Share Project</h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>Share Project</h3>
                     <button 
                         style={{ 
                             width: '30px', 
