@@ -79,7 +79,7 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
     }
 
     return (
-        <div style={{ position: 'relative', height: '100%' }}>
+        <div style={{ position: 'relative', height: '100%', overflowY: 'auto', paddingRight: '2px' }}>
             <div
                 style={{
                     display: 'grid',

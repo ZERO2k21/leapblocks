@@ -996,13 +996,17 @@ export default function ForgeElectra({
               >
                 {/* Board badge */}
                 <div
-                  className="flex items-center shrink-0"
                   style={{
-                    gap: '7px',
-                    padding: '4px 12px 4px 10px',
-                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    paddingTop: '5px',
+                    paddingBottom: '5px',
+                    paddingLeft: '12px',
+                    paddingRight: '12px',
+                    borderRadius: '20px',
                     fontSize: '9px',
-                    fontWeight: 800,
+                    fontWeight: 900,
                     fontFamily: "'Outfit', sans-serif",
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
@@ -1016,19 +1020,25 @@ export default function ForgeElectra({
                     boxShadow: uiTheme === 'light'
                       ? 'none'
                       : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.12)',
+                    flexShrink: 0,
+                    boxSizing: 'border-box',
+                    height: '22px'
                   }}
                 >
-                  <div
-                    className="relative"
+                  <span
                     style={{
+                      display: 'block',
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
                       background: 'var(--lp-badge-color, var(--lp-accent-primary))',
                       boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-badge-color, var(--lp-accent-primary))` : 'none',
+                      flexShrink: 0
                     }}
                   />
-                  {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
+                  <span style={{ lineHeight: '1', display: 'inline-block' }}>
+                    {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
+                  </span>
                 </div>
 
                 {/* Divider */}
