@@ -601,23 +601,25 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                         transition: 'all 0.2s ease',
                                     }}
                                 >
-                                    <span style={{ fontSize: '3.5rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>
-                                        {isDragging ? '📥' : '🤸'}
-                                    </span>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', marginBottom: '6px' }}>
-                                        {isDragging ? 'Drop Image Here! 📥' : 'Camera is off'}
-                                    </h3>
-                                    <p style={{ fontSize: '12px', color: '#4a4455', marginBottom: '16px' }}>
-                                        {isDragging ? 'Drop files to upload instantly' : 'Start the camera to capture poses!'}
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
-                                        <button onClick={startCamera} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
-                                            📷 Turn On Camera
-                                        </button>
-                                        <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>or</span>
-                                        <button onClick={() => fileInputRef.current?.click()} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
-                                            📂 Upload
-                                        </button>
+                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                        <span style={{ fontSize: '3.5rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>
+                                            {isDragging ? '📥' : '🤸'}
+                                        </span>
+                                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', marginBottom: '6px' }}>
+                                            {isDragging ? 'Drop Image Here! 📥' : 'Camera is off'}
+                                        </h3>
+                                        <p style={{ fontSize: '12px', color: '#4a4455', marginBottom: '16px' }}>
+                                            {isDragging ? 'Drop files to upload instantly' : 'Start the camera to capture poses!'}
+                                        </p>
+                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
+                                            <button onClick={startCamera} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                                📷 Turn On Camera
+                                            </button>
+                                            <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>or</span>
+                                            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
+                                                📂 Upload
+                                            </button>
+                                        </div>
                                     </div>
                                     <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                 </div>

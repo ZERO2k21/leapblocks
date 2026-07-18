@@ -73,11 +73,12 @@ export class CustomObjectDetector {
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
     // Detection parameters
-    private readonly SCALES = [0.5, 0.6, 0.75, 1.0]
-    private readonly WINDOW_SIZES = [64, 128, 160, 192, 256]
-    private readonly STEP_RATIO = 0.35
-    private readonly CONFIDENCE_THRESHOLD = 0.25
-    private readonly NMS_IOU_THRESHOLD = 0.4
+    private readonly SCALES = [1.0]
+    private readonly WINDOW_SIZES = [64, 96, 128, 176, 240, 320]
+    private readonly ASPECT_RATIOS = [1.0, 1.8, 0.55]
+    private readonly STEP_RATIO = 0.38
+    private readonly CONFIDENCE_THRESHOLD = 0.22
+    private readonly NMS_IOU_THRESHOLD = 0.32
 
     private async ensureModel() {
         if (this.mobilenetModel) return this.mobilenetModel
@@ -167,28 +168,43 @@ export class CustomObjectDetector {
     }
 
     /**
-     * Generate region proposals using a multi-scale sliding window.
+     * Generate region proposals using a multi-scale sliding window with multiple aspect ratios.
      */
     private generateRegionProposals(
         imageWidth: number,
         imageHeight: number
     ): RegionProposal[] {
         const proposals: RegionProposal[] = []
+        const ASPECT_RATIOS = this.ASPECT_RATIOS || [1.0, 1.8, 0.55]
+
         for (const scale of this.SCALES) {
             const scaledW = Math.floor(imageWidth * scale)
             const scaledH = Math.floor(imageHeight * scale)
+
             for (const windowSize of this.WINDOW_SIZES) {
-                const step = Math.max(16, Math.floor(windowSize * this.STEP_RATIO))
-                for (let y = 0; y + windowSize <= scaledH; y += step) {
-                    for (let x = 0; x + windowSize <= scaledW; x += step) {
-                        // Convert back to original scale coordinates
-                        proposals.push({
-                            x: x / scale,
-                            y: y / scale,
-                            width: windowSize / scale,
-                            height: windowSize / scale,
-                            scale
-                        })
+                for (const aspectRatio of ASPECT_RATIOS) {
+                    const wFactor = Math.sqrt(aspectRatio)
+                    const hFactor = 1 / wFactor
+
+                    const winW = Math.round(windowSize * wFactor)
+                    const winH = Math.round(windowSize * hFactor)
+
+                    // Ensure window fits within the scaled image
+                    if (winW > scaledW || winH > scaledH) continue
+
+                    const stepX = Math.max(20, Math.floor(winW * this.STEP_RATIO))
+                    const stepY = Math.max(20, Math.floor(winH * this.STEP_RATIO))
+
+                    for (let y = 0; y + winH <= scaledH; y += stepY) {
+                        for (let x = 0; x + winW <= scaledW; x += stepX) {
+                            proposals.push({
+                                x: x / scale,
+                                y: y / scale,
+                                width: winW / scale,
+                                height: winH / scale,
+                                scale
+                            })
+                        }
                     }
                 }
             }

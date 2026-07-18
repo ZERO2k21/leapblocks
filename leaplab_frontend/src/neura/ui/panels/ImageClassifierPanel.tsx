@@ -999,85 +999,87 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         }
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            width: '72px',
-                                            height: '72px',
-                                            borderRadius: '18px',
-                                            background: isDragging 
-                                                ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
+                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                        <div
+                                            style={{
+                                                width: '72px',
+                                                height: '72px',
+                                                borderRadius: '18px',
+                                                background: isDragging 
+                                                    ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
+                                                    : mode.selectedClassId 
+                                                        ? 'linear-gradient(135deg, #f3e8ff, #ede9fe)' 
+                                                        : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginBottom: '20px',
+                                                boxShadow: isDragging ? '0 4px 16px rgba(99,14,212,0.2)' : '0 4px 12px rgba(99,14,212,0.1)',
+                                                transform: isDragging ? 'scale(1.08)' : 'scale(1)',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '2rem', filter: isDragging ? 'brightness(0) invert(1)' : 'none', transition: 'all 0.2s ease' }}>
+                                                {isDragging ? '📥' : mode.selectedClassId ? '📸' : '📁'}
+                                            </span>
+                                        </div>
+                                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>
+                                            {isDragging 
+                                                ? 'Drop Images Here! 📥' 
                                                 : mode.selectedClassId 
-                                                    ? 'linear-gradient(135deg, #f3e8ff, #ede9fe)' 
-                                                    : 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginBottom: '20px',
-                                            boxShadow: isDragging ? '0 4px 16px rgba(99,14,212,0.2)' : '0 4px 12px rgba(99,14,212,0.1)',
-                                            transform: isDragging ? 'scale(1.08)' : 'scale(1)',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '2rem', filter: isDragging ? 'brightness(0) invert(1)' : 'none', transition: 'all 0.2s ease' }}>
-                                            {isDragging ? '📥' : mode.selectedClassId ? '📸' : '📁'}
-                                        </span>
+                                                    ? 'Add Photos' 
+                                                    : 'Drop Files Here'}
+                                        </h2>
+                                        <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '280px', marginBottom: '24px', lineHeight: 1.5 }}>
+                                            {isDragging
+                                                ? 'Drop files to upload instantly to this class'
+                                                : mode.selectedClassId 
+                                                    ? `Drag & drop images here, take photos, or click upload for "${selectedClass?.name || 'your class'}"`
+                                                    : 'Select or create a class first, then drop images here'}
+                                        </p>
+                                        <div className="flex items-center justify-center" style={{ gap: '10px' }}>
+                                            <button
+                                                onClick={startCamera}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '12px 22px',
+                                                    background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                                    color: '#fff',
+                                                    borderRadius: '12px',
+                                                    fontSize: '13px',
+                                                    fontWeight: 700,
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                                }}
+                                            >
+                                                📷 Turn On Camera
+                                            </button>
+                                            <button
+                                                onClick={() => fileInputRef.current?.click()}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '12px 22px',
+                                                    background: '#fff',
+                                                    color: '#630ed4',
+                                                    borderRadius: '12px',
+                                                    fontSize: '13px',
+                                                    fontWeight: 700,
+                                                    border: '2px solid #630ed4',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                📂 Upload
+                                            </button>
+                                        </div>
+                                        <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '14px' }}>
+                                            PNG, JPG up to 10MB
+                                        </p>
                                     </div>
-                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#131b2e', marginBottom: '8px' }}>
-                                        {isDragging 
-                                            ? 'Drop Images Here! 📥' 
-                                            : mode.selectedClassId 
-                                                ? 'Add Photos' 
-                                                : 'Drop Files Here'}
-                                    </h2>
-                                    <p style={{ fontSize: '13px', color: '#6b7280', maxWidth: '280px', marginBottom: '24px', lineHeight: 1.5 }}>
-                                        {isDragging
-                                            ? 'Drop files to upload instantly to this class'
-                                            : mode.selectedClassId 
-                                                ? `Drag & drop images here, take photos, or click upload for "${selectedClass?.name || 'your class'}"`
-                                                : 'Select or create a class first, then drop images here'}
-                                    </p>
-                                    <div className="flex items-center justify-center" style={{ gap: '10px' }}>
-                                        <button
-                                            onClick={startCamera}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                padding: '12px 22px',
-                                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                                color: '#fff',
-                                                borderRadius: '12px',
-                                                fontSize: '13px',
-                                                fontWeight: 700,
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                            }}
-                                        >
-                                            📷 Turn On Camera
-                                        </button>
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                padding: '12px 22px',
-                                                background: '#fff',
-                                                color: '#630ed4',
-                                                borderRadius: '12px',
-                                                fontSize: '13px',
-                                                fontWeight: 700,
-                                                border: '2px solid #630ed4',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            📂 Upload
-                                        </button>
-                                    </div>
-                                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '14px' }}>
-                                        PNG, JPG up to 10MB
-                                    </p>
                                 </div>
                             )}
                         </div>

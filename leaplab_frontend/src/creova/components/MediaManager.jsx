@@ -22,6 +22,7 @@ export default function MediaManager({ appState }) {
     const [isDragOver, setIsDragOver] = useState(false);
     const fileInputRef = useRef(null);
     const audioRef = useRef(null);
+    const dragCounterRef = useRef(0);
 
     // Format file size
     const formatFileSize = (bytes) => {
@@ -74,19 +75,23 @@ export default function MediaManager({ appState }) {
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragOver(true);
     };
 
     const handleDragEnter = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragOver(true);
+        dragCounterRef.current += 1;
+        if (dragCounterRef.current === 1) {
+            setIsDragOver(true);
+        }
     };
 
     const handleDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (e.currentTarget === e.target) {
+        dragCounterRef.current -= 1;
+        if (dragCounterRef.current <= 0) {
+            dragCounterRef.current = 0;
             setIsDragOver(false);
         }
     };
@@ -94,6 +99,7 @@ export default function MediaManager({ appState }) {
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        dragCounterRef.current = 0;
         setIsDragOver(false);
 
         const files = Array.from(e.dataTransfer.files);

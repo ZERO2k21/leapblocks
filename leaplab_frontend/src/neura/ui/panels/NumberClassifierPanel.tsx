@@ -624,18 +624,20 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                             }}
                                             style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isDragging ? 'rgba(99,14,212,0.05)' : 'transparent' }}
                                         >
-                                            <span style={{ fontSize: '3rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '📷'}</span>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{isDragging ? 'Drop Images Here!' : 'Camera is off'}</p>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
-                                                <button onClick={startCamera} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
-                                                    📷 Turn On Camera
-                                                </button>
-                                                <span style={{ color: '#9ca3af', fontSize: '10px', fontWeight: 600 }}>or</span>
-                                                <button onClick={() => fileInputRef.current?.click()} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
-                                                    📂 Upload
-                                                </button>
-                                                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+                                            <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                                <span style={{ fontSize: '3rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '📷'}</span>
+                                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{isDragging ? 'Drop Images Here!' : 'Camera is off'}</p>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
+                                                    <button onClick={startCamera} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                                        📷 Turn On Camera
+                                                    </button>
+                                                    <span style={{ color: '#9ca3af', fontSize: '10px', fontWeight: 600 }}>or</span>
+                                                    <button onClick={() => fileInputRef.current?.click()} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
+                                                        📂 Upload
+                                                    </button>
+                                                </div>
                                             </div>
+                                            <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                         </div>
                                     )}
                                 </div>

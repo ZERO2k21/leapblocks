@@ -387,21 +387,23 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                                 <img src={annotationImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
                             ) : (
                                 <div style={{ textAlign: 'center' }}>
-                                    {isDragging ? (
-                                        <>
-                                            <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>📥</span>
-                                            <p style={{ fontSize: '16px', fontWeight: 700, color: '#630ed4', marginBottom: '6px' }}>Drop your image here!</p>
-                                            <p style={{ fontSize: '13px', color: '#8b5cf6' }}>Release to upload</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>🖼️</span>
-                                            <p style={{ fontSize: '16px', fontWeight: 700, color: '#4a4455', marginBottom: '6px' }}>Upload a picture to start labeling!</p>
-                                            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px' }}>or use camera from Collect step</p>
-                                            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px' }}>Drag & drop an image here</p>
-                                            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '12px', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload Picture</button>
-                                        </>
-                                    )}
+                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                        {isDragging ? (
+                                            <>
+                                                <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>📥</span>
+                                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#630ed4', marginBottom: '6px' }}>Drop your image here!</p>
+                                                <p style={{ fontSize: '13px', color: '#8b5cf6' }}>Release to upload</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>🖼️</span>
+                                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#4a4455', marginBottom: '6px' }}>Upload a picture to start labeling!</p>
+                                                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px' }}>or use camera from Collect step</p>
+                                                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px' }}>Drag & drop an image here</p>
+                                                <button onClick={() => fileInputRef.current?.click()} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '12px', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload Picture</button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 

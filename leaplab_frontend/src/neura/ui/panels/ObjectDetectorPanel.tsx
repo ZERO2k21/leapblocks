@@ -678,12 +678,14 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     }}
                                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0, transition: 'all 0.2s ease' }}
                                 >
-                                    <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '🔍'}</span>
-                                    <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
-                                    <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Turn On Camera</button>
-                                        <button onClick={() => cameraOffUploadRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', transition: 'all 0.2s' }}>📂 Upload</button>
+                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                        <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '🔍'}</span>
+                                        <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
+                                        <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Turn On Camera</button>
+                                            <button onClick={() => cameraOffUploadRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', transition: 'all 0.2s' }}>📂 Upload</button>
+                                        </div>
                                     </div>
                                     <input ref={cameraOffUploadRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
                                 </div>
@@ -890,11 +892,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 }}
                                 style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : 'transparent'}`, borderRadius: '14px', transition: 'all 0.2s ease' }}
                             >
-                                <span style={{ fontSize: '36px', marginBottom: '6px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
-                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 700, marginBottom: '8px' }}>{isDragging ? 'Drop image here' : 'Camera is off'}</span>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={startCamera} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Start Camera</button>
-                                    <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '6px 12px', background: '#fff', color: '#630ed4', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload</button>
+                                <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                    <span style={{ fontSize: '36px', marginBottom: '6px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
+                                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 700, marginBottom: '8px' }}>{isDragging ? 'Drop image here' : 'Camera is off'}</span>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button onClick={startCamera} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Start Camera</button>
+                                        <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '6px 12px', background: '#fff', color: '#630ed4', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload</button>
+                                    </div>
                                 </div>
                             </div>
                         )}
