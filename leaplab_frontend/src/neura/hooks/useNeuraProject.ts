@@ -117,7 +117,14 @@ export function useNeuraProject(
     }, [])
 
     // Annotation state
-    const [annotations, setAnnotations] = useState<Annotation[]>([])
+    const [annotations, setAnnotations] = useState<Annotation[]>(() => {
+        try {
+            const saved = localStorage.getItem(`neura-annotations-${type}`)
+            return saved ? JSON.parse(saved) : []
+        } catch {
+            return []
+        }
+    })
     const [currentAnnotation, setCurrentAnnotation] = useState<Annotation | null>(null)
     const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null)
     const [activeTool, setActiveTool] = useState<AnnotationToolType>('box')
@@ -198,7 +205,10 @@ export function useNeuraProject(
         }))
         setAccuracy(null)
         setMode('collect')
-    }, [])
+        setAnnotations([])
+        setCurrentAnnotation(null)
+        try { localStorage.removeItem(`neura-annotations-${type}`) } catch {}
+    }, [type])
 
     const getSelectedClass = useCallback(() => {
         return project?.classes.find(c => c.id === selectedClassId)
@@ -301,6 +311,15 @@ export function useNeuraProject(
             }
         }
     }, [project, type])
+
+    // Persist annotations to localStorage
+    useEffect(() => {
+        try {
+            localStorage.setItem(`neura-annotations-${type}`, JSON.stringify(annotations))
+        } catch {
+            // localStorage full — silently ignore
+        }
+    }, [annotations, type])
 
     const autoDownloadBackup = useCallback((proj: NeuraProject) => {
         try {

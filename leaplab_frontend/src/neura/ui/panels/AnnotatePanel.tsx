@@ -56,7 +56,18 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                         setImageSize({ width: 800, height: 600 })
                         mode.setCurrentAnnotation({ id: lastSample.id, imageUrl: parsed.imageUrl, boxes: parsed.boxes || [], imageName: parsed.imageName || 'annotated', timestamp: lastSample.timestamp })
                     }
-                } catch { /* raw data URL, skip */ }
+                } catch {
+                    // Raw data URL (from Collect step) — recover the image
+                    if (lastSample.data && lastSample.data.startsWith('data:image')) {
+                        setAnnotationImage(lastSample.data)
+                        const img = new Image()
+                        img.src = lastSample.data
+                        img.onload = () => {
+                            setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
+                        }
+                        mode.setCurrentAnnotation({ id: lastSample.id, imageUrl: lastSample.data, boxes: [], imageName: lastSample.data.split('/').pop() || 'image', timestamp: lastSample.timestamp })
+                    }
+                }
             }
         }
     }, [mode.selectedClassId])

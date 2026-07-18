@@ -524,7 +524,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
                 {/* Main content */}
                 <main className="flex-1 bg-[#faf8ff] min-w-0 flex flex-col overflow-hidden relative">
-                    <div key={mode.mode} className="animate-fade-in flex-1 flex flex-col min-h-0 h-full relative">
+                    <div className="animate-fade-in flex-1 flex flex-col min-h-0 h-full relative">
                         {children({ mode })}
                     </div>
                 </main>
