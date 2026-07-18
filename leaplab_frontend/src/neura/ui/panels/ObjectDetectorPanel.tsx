@@ -530,6 +530,32 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
 
+    // Register global window drag-and-drop upload handler
+    useEffect(() => {
+        if (mode.mode === 'collect') {
+            const selectedClass = mode.getSelectedClass();
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                        mode.setSelectedClassId(mode.project.classes[0].id)
+                    }
+                    handleUpload(files)
+                },
+                label: selectedClass ? `Class: ${selectedClass.name}` : 'Training Images'
+            }
+        } else if (mode.mode === 'test') {
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    handleUpload(files)
+                },
+                label: 'Test Image'
+            }
+        } else {
+            (window as any).__activeUpload = null
+        }
+        return () => { (window as any).__activeUpload = null }
+    }, [mode.mode, mode.selectedClassId, mode.project])
+
     const handleSaveUploadedImage = useCallback(async () => {
         if (!uploadedImage || !mode.selectedClassId) return
         // Resize image before saving for smaller file size

@@ -150,6 +150,25 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
+    // Register global window drag-and-drop upload handler (collect mode only — test mode uses live camera)
+    useEffect(() => {
+        if (mode.mode === 'collect') {
+            const selectedClass = mode.getSelectedClass();
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                        mode.setSelectedClassId(mode.project.classes[0].id)
+                    }
+                    handleUpload(files)
+                },
+                label: selectedClass ? `Class: ${selectedClass.name}` : 'Hand Pose Samples'
+            }
+        } else {
+            (window as any).__activeUpload = null
+        }
+        return () => { (window as any).__activeUpload = null }
+    }, [mode.mode, mode.selectedClassId, mode.project])
+
     const startCamera = useCallback(async () => {
         setCameraError(null)
         try {
@@ -889,7 +908,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         )}
                     </div>
                     <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onCapture={() => {}} onUpload={() => {}} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                 </div>
             )}

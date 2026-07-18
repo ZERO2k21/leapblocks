@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, lazy, Suspense, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useCallback, useEffect } from 'react';
 import { ToastProvider } from './leapignite/client/components/Toast';
 
 import Loader from './components/Loader';
@@ -143,6 +143,85 @@ export default function App() {
     const [projectUrlReady, setProjectUrlReady] = useState(false);
     const [resolvedProjectUrl, setResolvedProjectUrl] = useState<string | null>(projectUrl);
     const [juniorKey, setJuniorKey] = useState(0);
+
+    // ── Global window-level drag-and-drop file upload ──
+    const [isGlobalDragOver, setIsGlobalDragOver] = useState(false);
+    const [globalDragLabel, setGlobalDragLabel] = useState('');
+
+    useEffect(() => {
+        let dragCounter = 0;
+        let isInternalDrag = false;
+
+        const handleDragStart = () => {
+            isInternalDrag = true;
+        };
+
+        const handleDragEnd = () => {
+            isInternalDrag = false;
+        };
+
+        // Always prevent default for file drags so the browser never navigates away
+        const preventFileNav = (e: DragEvent) => {
+            if (isInternalDrag) return;
+            if (e.dataTransfer?.types?.includes('Files')) {
+                e.preventDefault();
+            }
+        };
+
+        const handleDragEnter = (e: DragEvent) => {
+            if (isInternalDrag) return;
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            const activeUpload = (window as any).__activeUpload;
+            if (!activeUpload) return;
+            e.preventDefault();
+            dragCounter++;
+            if (dragCounter === 1) {
+                setIsGlobalDragOver(true);
+                setGlobalDragLabel(activeUpload.label || 'Files');
+            }
+        };
+
+        const handleDragLeave = (e: DragEvent) => {
+            if (isInternalDrag) return;
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                setIsGlobalDragOver(false);
+            }
+        };
+
+        const handleDrop = (e: DragEvent) => {
+            if (isInternalDrag) return;
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            e.preventDefault();
+            dragCounter = 0;
+            setIsGlobalDragOver(false);
+            const activeUpload = (window as any).__activeUpload;
+            if (activeUpload && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+                activeUpload.handler(e.dataTransfer.files);
+            }
+        };
+
+        window.addEventListener('dragstart', handleDragStart);
+        window.addEventListener('dragend', handleDragEnd);
+        window.addEventListener('dragover', preventFileNav);
+        window.addEventListener('drop', preventFileNav);
+        window.addEventListener('dragenter', handleDragEnter);
+        window.addEventListener('dragleave', handleDragLeave);
+        window.addEventListener('drop', handleDrop);
+
+        return () => {
+            window.removeEventListener('dragstart', handleDragStart);
+            window.removeEventListener('dragend', handleDragEnd);
+            window.removeEventListener('dragover', preventFileNav);
+            window.removeEventListener('drop', preventFileNav);
+            window.removeEventListener('dragenter', handleDragEnter);
+            window.removeEventListener('dragleave', handleDragLeave);
+            window.removeEventListener('drop', handleDrop);
+        };
+    }, []);
 
     // When projectUrl is present, fetch JSON to detect mode before routing
     React.useEffect(() => {
@@ -420,6 +499,41 @@ export default function App() {
                 )}
 
                 {(window as any).electronAPI?.isElectron && <UpdateBanner />}
+
+                {/* Global drag-and-drop overlay */}
+                {isGlobalDragOver && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(99, 14, 212, 0.12)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)',
+                        zIndex: 99999,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'auto',
+                    }}>
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.97)',
+                            border: '3px dashed #630ed4',
+                            borderRadius: '24px',
+                            padding: '40px 60px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: '0 24px 48px rgba(99, 14, 212, 0.18)',
+                        }}>
+                            <span style={{ fontSize: '56px' }}>📥</span>
+                            <h3 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 800 }}>Drop to Upload</h3>
+                            <p style={{ margin: 0, color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>
+                                Release to upload to <span style={{ color: '#630ed4', fontWeight: 800 }}>{globalDragLabel}</span>
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {exitPrompt && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

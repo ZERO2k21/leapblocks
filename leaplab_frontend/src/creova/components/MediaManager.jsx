@@ -24,6 +24,30 @@ export default function MediaManager({ appState }) {
     const audioRef = useRef(null);
     const dragCounterRef = useRef(0);
 
+    // Register global window drag-and-drop upload handler
+    useEffect(() => {
+        window.__activeUpload = {
+            handler: (files) => {
+                const fileList = Array.from(files);
+                fileList.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        addMedia({
+                            filename: file.name,
+                            type: file.type,
+                            size: file.size,
+                            data: event.target.result,
+                            timestamp: Date.now()
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            },
+            label: 'Media Library'
+        };
+        return () => { window.__activeUpload = null; };
+    }, [addMedia]);
+
     // Format file size
     const formatFileSize = (bytes) => {
         if (bytes === 0) return '0 B';

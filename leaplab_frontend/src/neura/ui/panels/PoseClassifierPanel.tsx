@@ -368,6 +368,32 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
 
+    // Register global window drag-and-drop upload handler
+    useEffect(() => {
+        if (mode.mode === 'collect') {
+            const selectedClass = mode.getSelectedClass();
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                        mode.setSelectedClassId(mode.project.classes[0].id)
+                    }
+                    handleUpload({ target: { files } } as any)
+                },
+                label: selectedClass ? `Class: ${selectedClass.name}` : 'Pose Samples'
+            }
+        } else if (mode.mode === 'test') {
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    handleTestUpload({ target: { files } } as any)
+                },
+                label: 'Test Image'
+            }
+        } else {
+            (window as any).__activeUpload = null
+        }
+        return () => { (window as any).__activeUpload = null }
+    }, [mode.mode, mode.selectedClassId, mode.project])
+
     const handleTestCapture = useCallback(async () => {
         if (!videoRef.current || !cameraOn || modelLoading) return
         setIsProcessing(true)

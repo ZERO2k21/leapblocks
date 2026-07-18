@@ -359,6 +359,32 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         if (testFileInputRef.current) testFileInputRef.current.value = ''
     }, [modelLoading, stopCamera])
 
+    // Register global window drag-and-drop upload handler
+    useEffect(() => {
+        if (mode.mode === 'collect') {
+            const selectedClass = mode.getSelectedClass();
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+                        mode.setSelectedClassId(mode.project.classes[0].id)
+                    }
+                    handleUpload({ target: { files } } as any)
+                },
+                label: selectedClass ? `Class: ${selectedClass.name}` : 'Number Samples'
+            }
+        } else if (mode.mode === 'test') {
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    handleTestUpload({ target: { files } } as any)
+                },
+                label: 'Test Image'
+            }
+        } else {
+            (window as any).__activeUpload = null
+        }
+        return () => { (window as any).__activeUpload = null }
+    }, [mode.mode, mode.selectedClassId, mode.project])
+
     // Test capture from drawing canvas
     const handleTestDrawCapture = useCallback(async () => {
         if (!drawCanvasRef.current || modelLoading) return

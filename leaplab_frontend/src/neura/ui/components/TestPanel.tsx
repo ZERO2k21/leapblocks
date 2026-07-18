@@ -199,21 +199,23 @@ export default function TestPanel({
                                     >
                                         📷 Turn On Camera
                                     </button>
-                                    <button
-                                        onClick={onUpload}
-                                        style={{
-                                            padding: '8px 16px',
-                                            background: '#fff',
-                                            color: '#630ed4',
-                                            borderRadius: '10px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: '2px solid #630ed4',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        📂 Upload Image
-                                    </button>
+                                    {fileInputRef && (
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{
+                                                padding: '8px 16px',
+                                                background: '#fff',
+                                                color: '#630ed4',
+                                                borderRadius: '10px',
+                                                fontSize: '11px',
+                                                fontWeight: 700,
+                                                border: '2px solid #630ed4',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            📂 Upload Image
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -309,24 +311,26 @@ export default function TestPanel({
                                         Take Photo
                                     </button>
                                 )}
-                                <button
-                                    onClick={onUpload}
-                                    className="flex items-center"
-                                    style={{
-                                        gap: '4px',
-                                        padding: '6px 14px',
-                                        background: '#fff',
-                                        color: '#374151',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        border: '1px solid #e5e7eb',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <span style={{ fontSize: '12px' }}>📂</span>
-                                    {testImage ? 'Upload Another' : 'Upload'}
-                                </button>
+                                {fileInputRef && (
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center"
+                                        style={{
+                                            gap: '4px',
+                                            padding: '6px 14px',
+                                            background: '#fff',
+                                            color: '#374151',
+                                            borderRadius: '8px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: '1px solid #e5e7eb',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '12px' }}>📂</span>
+                                        {testImage ? 'Upload Another' : 'Upload'}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
