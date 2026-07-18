@@ -19,7 +19,8 @@ import {
     Layers,
     Tv,
     Search,
-    X
+    X,
+    Compass
 } from 'lucide-react';
 import {
     listMyProjects,
@@ -1046,13 +1047,14 @@ const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
 
     return (
         <span 
-            className={`inline-flex items-center py-1.5 px-3 rounded-full text-[10px] font-bold whitespace-nowrap border bg-white shadow-sm leading-none shrink-0`}
+            className={`inline-flex items-center py-1 px-2.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap border shadow-sm leading-none shrink-0`}
             style={{ 
                 color: isEsp32 ? '#7c3aed' : '#008184',
-                borderColor: isEsp32 ? 'rgba(139,92,246,0.15)' : 'rgba(0,151,157,0.15)'
+                borderColor: isEsp32 ? 'rgba(139,92,246,0.2)' : 'rgba(0,151,157,0.2)',
+                background: isEsp32 ? 'linear-gradient(135deg, rgba(124,58,237,0.03), rgba(124,58,237,0.06))' : 'linear-gradient(135deg, rgba(0,129,132,0.03), rgba(0,129,132,0.06))'
             }}
         >
-            <Cpu size={12} style={{ marginRight: '4px' }} />
+            <span className="w-1 h-1 rounded-full mr-1.5 animate-pulse" style={{ backgroundColor: isEsp32 ? '#7c3aed' : '#008184' }} />
             {displayLabel}
         </span>
     );
@@ -1113,6 +1115,24 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const { setPendingProject } = useCloudProjectStore();
 
     const scrollRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Dynamic CSS override to resolve parent flexbox squishing layout bug on page-projects-view
+        const parentPage = containerRef.current?.parentElement;
+        if (parentPage && parentPage.classList.contains('page')) {
+            const originalDisplay = parentPage.style.display;
+            const originalHeight = parentPage.style.height;
+            
+            parentPage.style.display = 'block';
+            parentPage.style.height = 'auto';
+            
+            return () => {
+                parentPage.style.display = originalDisplay;
+                parentPage.style.height = originalHeight;
+            };
+        }
+    }, [selectedMode]);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -1305,6 +1325,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     if (!selectedMode) {
         return (
             <div 
+                ref={containerRef}
                 className="w-full max-w-full m-0 box-border overflow-x-hidden animate-[fadeIn_0.4s_ease-out] [font-family:var(--lp-font-sans)]"
                 style={{
                     paddingLeft: '48px',
@@ -1402,7 +1423,8 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
     return (
         <div
-            className="w-full max-w-[1440px] mx-auto box-border overflow-x-hidden animate-[fadeIn_0.5s_ease-out] page-projects-view"
+            ref={containerRef}
+            className="w-full max-w-full mx-auto box-border overflow-x-hidden animate-[fadeIn_0.5s_ease-out] page-projects-view"
             style={{
                 '--module-accent': meta?.accent || '#6366f1',
                 '--module-gradient': meta?.gradient || '#ffffff',
@@ -1411,9 +1433,22 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
             } as React.CSSProperties}
         >
             {/* Back Button */}
-            <div className="mb-8 animate-[fadeIn_0.4s_ease-out]">
+            <div className="animate-[fadeIn_0.4s_ease-out]" style={{ marginBottom: '24px' }}>
                 <button
-                    className="inline-flex items-center gap-2.5 group bg-white border border-[#e2e8f0] cursor-pointer py-2.5 px-5 rounded-xl text-[#475569] text-[13px] font-semibold transition-all duration-300 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:border-[#cbd5e1]"
+                    className="group inline-flex items-center cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                    style={{
+                        gap: '8px',
+                        padding: '9px 18px',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#475569',
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(226, 232, 240, 0.6)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.03)',
+                    }}
                     onClick={() => {
                         setSelectedMode(null);
                         sessionStorage.removeItem('myProjectsSelectedMode');
@@ -1423,43 +1458,105 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                     aria-label="Back to modules"
                     title="Back to modules"
                 >
-                    <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
+                    <ArrowLeft size={15} strokeWidth={2.2} className="transition-transform duration-300 group-hover:-translate-x-1" />
                     <span>Back to modules</span>
                 </button>
             </div>
 
             {/* Workspace Header */}
-            <div className="relative flex items-center justify-between gap-8 rounded-3xl py-8 px-10 mb-10 overflow-hidden" style={{
-                background: `linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.92) 50%, rgba(241,245,249,0.88) 100%)`,
-                boxShadow: `0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                border: `1px solid rgba(226,232,240,0.5)`
-            }}>
+            <div 
+                className="relative flex items-center justify-between gap-6 rounded-[24px] overflow-hidden"
+                style={{
+                    padding: '28px 36px',
+                    background: 'rgba(255, 255, 255, 0.72)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255, 255, 255, 0.85)',
+                    boxShadow: '0 4px 32px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02)',
+                    marginBottom: '36px'
+                }}
+            >
                 {renderHeaderBackgroundVisual(selectedMode)}
 
-                <div className="flex items-center gap-6 relative z-[2]">
-                    <div className="flex items-center justify-center w-[72px] h-[72px] rounded-2xl shadow-lg transition-transform duration-500 hover:scale-105" style={{
-                        background: `linear-gradient(135deg, ${meta?.accent}12, ${meta?.accent}20)`,
-                        border: `1px solid ${meta?.accent}25`
-                    }}>
+                <div className="flex items-center gap-5 relative z-[2]">
+                    {/* Icon container with subtle glow */}
+                    <div 
+                        className="flex items-center justify-center shrink-0 transition-transform duration-500 hover:scale-105"
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '16px',
+                            background: `linear-gradient(145deg, ${meta?.accent}10, ${meta?.accent}1A)`,
+                            border: `1.5px solid ${meta?.accent}20`,
+                            boxShadow: `0 4px 16px ${meta?.accent}10, 0 1px 3px rgba(0,0,0,0.04)`
+                        }}
+                    >
                         <img
                             src={meta?.icon || 'assets/splash_logo_b.png'}
                             alt={meta?.label || selectedMode}
-                            className="w-12 h-12 object-contain"
+                            className="object-contain"
+                            style={{ width: '34px', height: '34px' }}
                         />
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <h2 className="text-[28px] font-bold text-[#0f172a] m-0 tracking-[-0.02em] leading-[1.2]">{meta?.label || selectedMode} Workspace</h2>
-                        <div className="flex items-center gap-2.5">
-                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold py-1.5 px-3 rounded-lg tracking-[0.02em]" style={{
-                                color: meta?.darkAccent || '#4f46e5',
-                                backgroundColor: `${meta?.accent}10`,
-                                border: `1px solid ${meta?.accent}18`
-                            }}>
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta?.accent }} />
+                    <div className="flex flex-col" style={{ gap: '6px' }}>
+                        <h2 
+                            className="m-0"
+                            style={{
+                                fontSize: '20px',
+                                fontWeight: 750,
+                                color: '#0f172a',
+                                letterSpacing: '-0.025em',
+                                lineHeight: 1.2
+                            }}
+                        >
+                            {meta?.label || selectedMode} Workspace
+                        </h2>
+                        <div className="flex items-center" style={{ gap: '8px' }}>
+                            <span 
+                                className="inline-flex items-center"
+                                style={{
+                                    gap: '5px',
+                                    fontSize: '11px',
+                                    fontWeight: 650,
+                                    padding: '4px 10px',
+                                    borderRadius: '8px',
+                                    color: meta?.darkAccent || '#4f46e5',
+                                    backgroundColor: `${meta?.accent}0C`,
+                                    border: `1px solid ${meta?.accent}15`
+                                }}
+                            >
+                                <span 
+                                    className="rounded-full"
+                                    style={{ 
+                                        width: '5px', 
+                                        height: '5px', 
+                                        backgroundColor: meta?.accent 
+                                    }} 
+                                />
                                 {modeProjects.length} {modeProjects.length === 1 ? 'project' : 'projects'}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#16a34a] bg-[rgba(22,163,74,0.08)] py-1.5 px-3 rounded-lg uppercase tracking-[0.04em] border border-[rgba(22,163,74,0.12)]">
-                                <span className="w-1.5 h-1.5 bg-[#16a34a] rounded-full animate-[pulse_2s_ease-in-out_infinite]" />
+                            <span 
+                                className="inline-flex items-center uppercase"
+                                style={{
+                                    gap: '5px',
+                                    fontSize: '9.5px',
+                                    fontWeight: 750,
+                                    padding: '4px 10px',
+                                    borderRadius: '8px',
+                                    letterSpacing: '0.05em',
+                                    color: '#16a34a',
+                                    backgroundColor: 'rgba(22,163,74,0.06)',
+                                    border: '1px solid rgba(22,163,74,0.10)'
+                                }}
+                            >
+                                <span 
+                                    className="rounded-full animate-[pulse_2s_ease-in-out_infinite]"
+                                    style={{ 
+                                        width: '5px', 
+                                        height: '5px', 
+                                        backgroundColor: '#16a34a' 
+                                    }} 
+                                />
                                 Live System
                             </span>
                         </div>
@@ -1468,23 +1565,47 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
                 {/* Search Bar */}
                 {modeProjects.length > 0 && (
-                    <div className="shrink-0 w-full max-w-[320px] relative z-[2]">
-                        <div className="relative flex items-center w-full bg-white border border-[#e2e8f0] rounded-xl px-4 transition-all duration-300 hover:border-[#cbd5e1] focus-within:border-[var(--module-accent)] focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]">
-                            <Search size={18} className="text-[#94a3b8] mr-3 shrink-0" />
+                    <div className="shrink-0 w-full max-w-[280px] relative z-[2]">
+                        <div 
+                            className="relative flex items-center w-full transition-all duration-300 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.06)]"
+                            style={{
+                                padding: '10px 14px',
+                                background: 'rgba(255,255,255,0.85)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(226,232,240,0.6)',
+                                borderRadius: '14px',
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.03)'
+                            }}
+                        >
+                            <Search size={16} className="shrink-0" style={{ color: '#94a3b8', marginRight: '10px' }} />
                             <input
                                 type="text"
                                 placeholder={`Search ${meta?.label || selectedMode} projects...`}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="flex-1 border-none bg-transparent py-3 text-sm font-medium text-[#0f172a] !outline-none !shadow-none placeholder:text-[#94a3b8]"
+                                className="flex-1 border-none bg-transparent p-0 !outline-none !shadow-none placeholder:text-[#94a3b8]"
+                                style={{
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    color: '#0f172a'
+                                }}
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="bg-[#f1f5f9] border-none cursor-pointer w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] ml-2 transition-all duration-200 hover:bg-[#e2e8f0]"
+                                    className="flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#e2e8f0]"
+                                    style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: '#f1f5f9',
+                                        color: '#64748b',
+                                        marginLeft: '8px'
+                                    }}
                                     aria-label="Clear search"
                                 >
-                                    <X size={14} />
+                                    <X size={13} />
                                 </button>
                             )}
                         </div>
@@ -1495,80 +1616,276 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
             {/* Content Area */}
             {modeProjects.length === 0 ? (
                 <div className="flex justify-center w-full my-16 animate-[fadeIn_0.4s_ease-out]">
-                    <div className="flex flex-col items-center justify-center p-12 py-16 bg-white rounded-3xl border border-[#e2e8f0]/60 w-full max-w-[480px] text-center" style={{
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)'
-                    }}>
-                        <div className="relative mb-6">
-                            <div className="absolute inset-0 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ backgroundColor: `${meta?.accent}10` }} />
-                            <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{
-                                background: `linear-gradient(135deg, ${meta?.accent}10, ${meta?.accent}18)`,
-                                border: `1px solid ${meta?.accent}20`
+                    <div 
+                        className="empty-state-card relative overflow-hidden flex flex-col items-center justify-center px-10 py-14 md:px-14 md:py-16 bg-white rounded-[2rem] border border-slate-200/40 w-full max-w-[520px] text-center"
+                        style={{
+                            background: `radial-gradient(ellipse 60% 50% at 50% 0%, ${meta?.accent || '#6366f1'}06 0%, #ffffff 70%)`,
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.04), 0 2px 4px -2px rgb(0 0 0 / 0.04)'
+                        }}
+                    >
+                        {/* Subtle dot-grid pattern overlay */}
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.35]" style={{
+                            backgroundImage: `radial-gradient(${meta?.accent || '#6366f1'}18 1px, transparent 1px)`,
+                            backgroundSize: '20px 20px'
+                        }} />
+
+                        {/* Icon area with layered design */}
+                        <div className="relative mb-10 flex items-center justify-center" style={{ width: '120px', height: '120px' }}>
+                            {/* Outer concentric pulse ring */}
+                            <div className="empty-state-pulse-ring absolute rounded-full" style={{
+                                width: '110px',
+                                height: '110px',
+                                border: `1.5px dashed ${meta?.accent || '#6366f1'}20`,
+                            }} />
+                            
+                            {/* Soft radial glow behind icon */}
+                            <div className="absolute rounded-full opacity-50 blur-xl" style={{
+                                width: '100px',
+                                height: '100px',
+                                background: `radial-gradient(circle, ${meta?.accent || '#6366f1'}18 0%, transparent 70%)`
+                            }} />
+
+                            {/* Floating decorative particles */}
+                            <div className="empty-state-float-1 absolute w-2.5 h-2.5 rounded-full" style={{
+                                top: '-4px',
+                                left: '8px',
+                                backgroundColor: `${meta?.accent || '#6366f1'}25`
+                            }} />
+                            <div className="empty-state-float-2 absolute w-1.5 h-1.5 rounded-full" style={{
+                                top: '20px',
+                                right: '-8px',
+                                backgroundColor: `${meta?.accent || '#6366f1'}35`
+                            }} />
+                            <div className="empty-state-float-3 absolute font-bold text-sm" style={{
+                                bottom: '6px',
+                                right: '4px',
+                                color: `${meta?.accent || '#6366f1'}40`
+                            }}>+</div>
+                            <div className="empty-state-float-4 absolute w-2 h-2 rounded-full" style={{
+                                bottom: '2px',
+                                left: '2px',
+                                backgroundColor: `${meta?.accent || '#6366f1'}20`
+                            }} />
+
+                            {/* Main icon container - rounded square with inner circle */}
+                            <div className="empty-state-icon-box relative w-20 h-20 rounded-2xl flex items-center justify-center border" style={{
+                                background: `linear-gradient(135deg, ${meta?.accent || '#6366f1'}10 0%, ${meta?.accent || '#6366f1'}18 100%)`,
+                                borderColor: `${meta?.accent || '#6366f1'}15`,
+                                boxShadow: `0 8px 24px -6px ${(meta?.accent || '#6366f1')}20`
                             }}>
-                                <FolderOpen size={36} style={{ color: meta?.accent || '#6366f1' }} />
+                                {/* Inner white circle for icon */}
+                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center" style={{
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                                }}>
+                                    <FolderOpen size={24} style={{ color: meta?.accent || '#6366f1' }} />
+                                </div>
                             </div>
                         </div>
-                        <h3 className="text-[22px] font-bold text-[#1e293b] m-0 mb-3">No projects saved yet</h3>
-                        <p className="text-[14px] text-[#64748b] max-w-[340px] m-0 leading-relaxed mb-8">
-                            Start creating awesome projects in <strong className="font-semibold text-[#334155]">{meta?.label}</strong> and they'll show up right here!
-                        </p>
-                        <button
-                            className="inline-flex items-center gap-2 py-3 px-7 rounded-xl text-white font-semibold text-[14px] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-                            style={{
-                                background: `linear-gradient(135deg, ${meta?.accent}, ${meta?.darkAccent})`,
-                                boxShadow: `0 4px 16px ${meta?.accent}35`
-                            }}
-                            onClick={() => {
-                                setSelectedMode(null);
-                                sessionStorage.removeItem('myProjectsSelectedMode');
-                            }}
-                        >
-                            <ArrowLeft size={16} />
-                            Back to modules
-                        </button>
+
+                        {/* Content */}
+                        <div className="relative z-[1] flex flex-col items-center">
+                            <h3 className="text-[22px] md:text-[24px] font-bold text-slate-800 tracking-[-0.02em] m-0 mb-3">
+                                No projects saved yet
+                            </h3>
+                            <p className="text-[14px] text-slate-500 max-w-[340px] m-0 leading-relaxed mb-10">
+                                Start creating awesome projects in{' '}
+                                <span 
+                                    className="inline-flex items-center px-2.5 py-0.5 mx-1 rounded-full text-[12px] font-semibold border"
+                                    style={{ 
+                                        background: `${meta?.accent || '#6366f1'}08`, 
+                                        borderColor: `${meta?.accent || '#6366f1'}18`,
+                                        color: meta?.darkAccent || meta?.accent || '#4f46e5'
+                                    }}
+                                >
+                                    {meta?.label}
+                                </span>{' '}
+                                and they&apos;ll show up right here!
+                            </p>
+                            
+                            <button
+                                className="group inline-flex items-center gap-2.5 py-3 px-7 rounded-xl text-white font-semibold text-[14px] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                                style={{
+                                    background: `linear-gradient(135deg, ${meta?.accent || '#6366f1'}, ${meta?.darkAccent || '#4f46e5'})`,
+                                    boxShadow: `0 8px 20px ${(meta?.accent || '#6366f1')}25, 0 2px 4px rgba(0,0,0,0.06)`
+                                }}
+                                onClick={() => {
+                                    setSelectedMode(null);
+                                    sessionStorage.removeItem('myProjectsSelectedMode');
+                                }}
+                            >
+                                <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />
+                                Back to modules
+                            </button>
+                        </div>
                     </div>
                 </div>
             ) : filteredProjects.length === 0 ? (
-                <div className="flex justify-center w-full my-16 animate-[fadeIn_0.4s_ease-out]">
-                    <div className="flex flex-col items-center justify-center p-12 py-16 bg-white rounded-3xl border border-[#e2e8f0]/60 w-full max-w-[480px] text-center" style={{
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)'
-                    }}>
-                        <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{
-                            background: `linear-gradient(135deg, ${meta?.accent}10, ${meta?.accent}18)`,
-                            border: `1px solid ${meta?.accent}20`
-                        }}>
-                            <Search size={36} style={{ color: meta?.accent || '#6366f1' }} />
-                        </div>
-                        <h3 className="text-[22px] font-bold text-[#1e293b] m-0 mb-3">No matching projects</h3>
-                        <p className="text-[14px] text-[#64748b] max-w-[340px] m-0 mb-8 leading-relaxed">
-                            We couldn't find anything matching "<strong className="font-semibold text-[#334155]">{searchQuery}</strong>". Try different words!
-                        </p>
-                        <button
-                            className="inline-flex items-center gap-2 py-3 px-7 rounded-xl text-white font-semibold text-[14px] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                <div className="flex justify-center w-full py-16 px-4 animate-[fadeIn_0.5s_ease-out]">
+                    <div 
+                        className="relative flex flex-col items-center justify-center w-full max-w-[520px] text-center rounded-[28px] overflow-hidden"
+                        style={{
+                            padding: '56px 48px 48px',
+                            background: 'rgba(255, 255, 255, 0.72)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.8)',
+                            boxShadow: '0 4px 32px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02)'
+                        }}
+                    >
+                        {/* Subtle decorative gradient blob */}
+                        <div 
+                            className="absolute top-0 left-1/2 -translate-x-1/2 w-[280px] h-[180px] rounded-full pointer-events-none"
                             style={{
-                                background: `linear-gradient(135deg, ${meta?.accent}, ${meta?.darkAccent})`,
-                                boxShadow: `0 4px 16px ${meta?.accent}35`
+                                background: `radial-gradient(ellipse at center, ${meta?.accent || '#22C55E'}0D 0%, transparent 70%)`,
+                                filter: 'blur(30px)',
+                                top: '-40px'
                             }}
-                            onClick={() => setSearchQuery('')}
+                        />
+
+                        {/* Icon with pulse ring */}
+                        <div className="relative mb-8 flex items-center justify-center">
+                            {/* Outer pulse ring */}
+                            <div 
+                                className="absolute w-[88px] h-[88px] rounded-full animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]"
+                                style={{
+                                    border: `1.5px solid ${meta?.accent || '#22C55E'}15`,
+                                }}
+                            />
+                            {/* Background circle */}
+                            <div 
+                                className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
+                                style={{
+                                    background: `linear-gradient(145deg, ${meta?.accent || '#22C55E'}0A, ${meta?.accent || '#22C55E'}14)`,
+                                    border: `1.5px solid ${meta?.accent || '#22C55E'}20`,
+                                }}
+                            >
+                                {/* Inner ring with icon */}
+                                <div 
+                                    className="w-[44px] h-[44px] rounded-full flex items-center justify-center"
+                                    style={{
+                                        border: `2px solid ${meta?.accent || '#22C55E'}`,
+                                        background: 'rgba(255,255,255,0.8)'
+                                    }}
+                                >
+                                    <Search size={20} strokeWidth={2.5} style={{ color: meta?.accent || '#22C55E' }} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Heading */}
+                        <h3 
+                            className="m-0 mb-3"
+                            style={{
+                                fontSize: '22px',
+                                fontWeight: 800,
+                                color: '#0f172a',
+                                letterSpacing: '-0.03em',
+                                lineHeight: 1.2
+                            }}
                         >
-                            Clear Search
-                        </button>
+                            No matching projects
+                        </h3>
+                        
+                        {/* Description */}
+                        <p 
+                            className="m-0 mb-8"
+                            style={{
+                                fontSize: '14px',
+                                color: '#64748b',
+                                lineHeight: 1.7,
+                                maxWidth: '380px'
+                            }}
+                        >
+                            We couldn&apos;t find anything matching{' '}
+                            <span 
+                                className="inline-flex items-center align-middle max-w-[140px] truncate"
+                                style={{ 
+                                    padding: '2px 10px',
+                                    margin: '0 3px',
+                                    borderRadius: '6px',
+                                    fontSize: '12.5px',
+                                    fontWeight: 700,
+                                    fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
+                                    background: `${meta?.accent || '#22C55E'}0C`,
+                                    border: `1px solid ${meta?.accent || '#22C55E'}20`,
+                                    color: meta?.darkAccent || meta?.accent || '#15803D'
+                                }}
+                                title={searchQuery}
+                            >
+                                {searchQuery}
+                            </span>
+                            . Try different keywords or browse our popular categories below.
+                        </p>
+                        
+                        {/* Divider */}
+                        <div 
+                            className="w-full mb-7"
+                            style={{
+                                height: '1px',
+                                background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06) 30%, rgba(0,0,0,0.06) 70%, transparent)'
+                            }}
+                        />
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-3 flex-wrap justify-center">
+                            <button
+                                className="group inline-flex items-center gap-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                                style={{
+                                    padding: '11px 24px',
+                                    borderRadius: '14px',
+                                    fontSize: '13.5px',
+                                    fontWeight: 650,
+                                    color: '#fff',
+                                    border: 'none',
+                                    background: `linear-gradient(135deg, ${meta?.accent || '#22C55E'}, ${meta?.darkAccent || '#15803D'})`,
+                                    boxShadow: `0 4px 16px ${(meta?.accent || '#22C55E')}28, 0 1px 3px rgba(0,0,0,0.06)`
+                                }}
+                                onClick={() => setSearchQuery('')}
+                            >
+                                <X size={15} strokeWidth={2.5} className="transition-transform duration-300 group-hover:rotate-90" />
+                                Clear Search
+                            </button>
+                            <button
+                                className="group inline-flex items-center gap-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]"
+                                style={{
+                                    padding: '11px 24px',
+                                    borderRadius: '14px',
+                                    fontSize: '13.5px',
+                                    fontWeight: 650,
+                                    background: 'rgba(255,255,255,0.9)',
+                                    border: `1.5px solid ${meta?.accent || '#22C55E'}20`,
+                                    color: meta?.darkAccent || meta?.accent || '#15803D',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                                }}
+                                onClick={() => {
+                                    setSelectedMode(null);
+                                    sessionStorage.removeItem('myProjectsSelectedMode');
+                                    setSearchQuery('');
+                                }}
+                            >
+                                <Compass size={15} strokeWidth={2.5} />
+                                Explore All
+                            </button>
+                        </div>
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] justify-center gap-6 pb-8 w-full" ref={scrollRef}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] justify-center gap-6 pb-8 w-full" ref={scrollRef} style={{ paddingTop: '40px' }}>
                     {filteredProjects.map((project) => (
                         <div
                             key={project.id}
-                            className="group relative w-full h-[270px] bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                            className="premium-project-card group relative w-full h-[285px] bg-white rounded-2xl overflow-hidden cursor-pointer flex flex-col"
                             style={{
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)',
-                                border: '1px solid rgba(226,232,240,0.6)'
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.02)',
+                                border: '1px solid rgba(226,232,240,0.7)'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow = `0 8px 32px ${meta?.accent}15, 0 2px 8px rgba(0,0,0,0.04)`;
+                                e.currentTarget.style.boxShadow = `0 12px 32px ${meta?.accent}18, 0 4px 12px rgba(0,0,0,0.02)`;
+                                e.currentTarget.style.borderColor = `${meta?.accent}30`;
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)';
+                                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.02)';
+                                e.currentTarget.style.borderColor = 'rgba(226,232,240,0.7)';
                             }}
                             onClick={() => handleOpenProject(project)}
                             role="button"
@@ -1581,66 +1898,78 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                             }}
                         >
                             {/* Top accent bar */}
-                            <div className="absolute top-0 left-0 w-full h-[3px] bg-[var(--module-accent)] z-[3] transition-all duration-500 group-hover:h-[4px]" />
+                            <div className="premium-card-accent-bar absolute top-0 left-0 w-full h-[3px] z-[3]" style={{
+                                background: `linear-gradient(90deg, ${meta?.accent || '#6366f1'}, ${meta?.darkAccent || '#4f46e5'})`
+                            }} />
 
-                            {/* Floating Board Badge */}
-                            <div className="absolute top-4 right-4 z-[2]">
-                                <ProjectBoardBadge project={project} />
-                            </div>
-
-                            {/* Floating Action Buttons */}
-                            <div className="absolute top-4 left-4 flex items-center gap-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                {renderShareButton(project)}
-                                <button
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/90 backdrop-blur-sm border border-[#e2e8f0]/60 text-[#64748b] transition-all duration-300 hover:bg-[#fee2e2] hover:text-[#ef4444] hover:border-[#fca5a5] shadow-sm"
-                                    onClick={(e) => handleDeleteProject(e, project)}
-                                    disabled={deletingId === project.id}
-                                    title="Delete project"
-                                >
-                                    {deletingId === project.id ? (
-                                        <span className="inline-block w-3 h-3 border-2 border-[rgba(239,68,68,0.2)] border-t-[#ef4444] rounded-full animate-[spin_0.6s_linear_infinite]" />
-                                    ) : (
-                                        <Trash2 size={15} />
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Background Visual or Thumbnail */}
-                            <div className="absolute inset-0 z-0 w-full h-full bg-white flex items-center justify-center overflow-hidden">
+                            {/* Top Visual Section */}
+                            <div className="premium-card-visual-container relative w-full h-[140px] flex items-center justify-center overflow-hidden border-b border-[#e2e8f0]/50 bg-[#fafbfe]">
                                 {project.thumbnailUrl ? (
                                     <img
                                         src={project.thumbnailUrl.startsWith('http')
                                             ? project.thumbnailUrl
                                             : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.thumbnailUrl}`}
                                         alt={project.name}
-                                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.05]"
+                                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.04]"
                                     />
                                 ) : (
                                     <SavedProjectCardVisual projectId={project.id} fileUrl={project.fileUrl} mode={project.mode || selectedMode} projectName={project.name} accent={meta?.accent || '#6366F1'} />
                                 )}
                             </div>
 
-                            {/* Bottom gradient overlay */}
-                            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-[#0f172a]/90 via-[#0f172a]/40 to-transparent z-[1] pointer-events-none" />
-
-                            {/* Bottom text area */}
-                            <div className="absolute inset-x-0 bottom-0 z-[2] px-6 pb-5 pt-4">
-                                <h4 className="text-[17px] font-bold text-white m-0 leading-[1.3] line-clamp-1 break-all drop-shadow-sm" title={project.name}>
-                                    {highlightMatch(project.name, searchQuery)}
-                                </h4>
-                                <p className="text-[11px] font-medium text-slate-300 m-0 mt-1.5 uppercase tracking-[0.04em] transition-all duration-300 group-hover:text-white flex items-center gap-1.5">
-                                    <Calendar size={12} className="opacity-70" />
-                                    {formatDate(project.updatedAt)}
-                                </p>
-                            </div>
-
-                            {/* Arrow button */}
-                            <div className="absolute bottom-5 right-5 w-9 h-9 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-xl transition-all duration-300 z-[2] group-hover:scale-110 shadow-sm" style={{
-                                border: `1px solid ${meta?.accent}30`
+                            {/* Bottom Details Section */}
+                            <div className="flex flex-col justify-between flex-1 bg-white" style={{
+                                padding: '16px 20px',
+                                background: 'linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)'
                             }}>
-                                <ChevronRight size={18} className="transition-colors duration-300 group-hover:text-white" style={{ color: meta?.accent || '#6366F1' }} />
+                                {/* Title and Board Badge */}
+                                <div className="flex items-start justify-between gap-2.5">
+                                    <h4 className="text-[13px] font-extrabold text-slate-800 line-clamp-2 leading-[1.4] m-0 transition-colors duration-200 group-hover:text-[var(--module-dark-accent)]" style={{ color: '#1e293b', fontFamily: 'var(--font-sans)' }}>
+                                        {highlightMatch(project.name, searchQuery)}
+                                    </h4>
+                                    <ProjectBoardBadge project={project} />
+                                </div>
+
+                                {/* Date and Action Buttons */}
+                                <div className="flex items-center justify-between mt-auto">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400/80 tracking-wide uppercase">
+                                        <Calendar size={12} className="opacity-70 text-slate-400" />
+                                        <span>{formatDate(project.updatedAt)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            className="premium-button-action cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center border shadow-sm transition-all duration-200"
+                                            style={{
+                                                background: project.isShared === 1 ? 'rgba(37,99,235,0.08)' : 'rgba(99,102,241,0.04)',
+                                                borderColor: project.isShared === 1 ? 'rgba(37,99,235,0.25)' : 'rgba(99,102,241,0.15)',
+                                                color: project.isShared === 1 ? '#2563eb' : 'var(--module-dark-accent)'
+                                            }}
+                                            onClick={(e) => { e.stopPropagation(); handleShareProject(e, project); }}
+                                            title={project.isShared === 1 ? 'Manage sharing' : 'Share project'}
+                                        >
+                                            <Share2 size={13} />
+                                        </button>
+                                        <button
+                                            className="premium-button-action cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center border text-[#f43f5e] shadow-sm transition-all duration-200"
+                                            style={{
+                                                background: 'rgba(244,63,94,0.03)',
+                                                borderColor: 'rgba(244,63,94,0.15)'
+                                            }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteProject(e, project); }}
+                                            disabled={deletingId === project.id}
+                                            title="Delete project"
+                                        >
+                                            {deletingId === project.id ? (
+                                                <span className="inline-block w-3 h-3 border-2 border-[rgba(244,63,94,0.2)] border-t-[#f43f5e] rounded-full animate-[spin_0.6s_linear_infinite]" />
+                                            ) : (
+                                                <Trash2 size={13} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
+                            {/* Loading Overlay */}
                             {openingId === project.id && (
                                 <div className="absolute inset-0 bg-[rgba(15,23,42,0.88)] backdrop-blur-[4px] flex flex-col items-center justify-center gap-3 text-white text-[13px] font-semibold z-[5] animate-[fadeIn_0.25s_ease-out]">
                                     <div className="w-6 h-6 border-[3px] border-[rgba(255,255,255,0.1)] border-t-[#6366f1] rounded-full animate-[spin_0.6s_linear_infinite]" />
