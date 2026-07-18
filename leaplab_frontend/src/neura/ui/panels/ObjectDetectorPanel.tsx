@@ -93,6 +93,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [customModelTrained, setCustomModelTrained] = useState(false)
     const [useCustomModel, setUseCustomModel] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false)
     const [collectTab, setCollectTab] = useState<'camera' | 'upload' | 'download'>('camera')
     const [downloadSource, setDownloadSource] = useState<'local' | 'kaggle'>('local')
     const [kaggleCredentials, setKaggleCredentials] = useState<KaggleCredentials | null>(() => getStoredCredentials())
@@ -308,31 +309,36 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     }
 
     const handleCapture = async () => {
-        if (!videoRef.current || !mode.selectedClassId || !cameraOn) return
+        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
             return
         }
-        const video = videoRef.current
-        const tempCanvas = document.createElement('canvas')
-        // Resize to max 640px on longest side for smaller file size
-        const maxDim = 640
-        const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1)
-        tempCanvas.width = Math.floor(video.videoWidth * scale)
-        tempCanvas.height = Math.floor(video.videoHeight * scale)
-        const ctx = tempCanvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height)
-        // Use JPEG with 0.7 quality for much smaller file size
-        const imageData = tempCanvas.toDataURL('image/jpeg', 0.7)
-        const added = mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
-        if (!added) {
-            showSaved('⚠️ Sample limit reached! (20 per class)')
-            return
+        setIsCapturing(true)
+        try {
+            const video = videoRef.current
+            const tempCanvas = document.createElement('canvas')
+            // Resize to max 640px on longest side for smaller file size
+            const maxDim = 640
+            const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1)
+            tempCanvas.width = Math.floor(video.videoWidth * scale)
+            tempCanvas.height = Math.floor(video.videoHeight * scale)
+            const ctx = tempCanvas.getContext('2d')!
+            ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height)
+            // Use JPEG with 0.7 quality for much smaller file size
+            const imageData = tempCanvas.toDataURL('image/jpeg', 0.7)
+            const added = mode.addSample(mode.selectedClassId, { type: 'image', data: imageData })
+            if (!added) {
+                showSaved('⚠️ Sample limit reached! (20 per class)')
+                return
+            }
+            showFlash()
+            const className = mode.getSelectedClass()?.name || 'class'
+            showSaved(`📸 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
+        } finally {
+            setIsCapturing(false)
         }
-        showFlash()
-        const className = mode.getSelectedClass()?.name || 'class'
-        showSaved(`📸 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
     }
 
     const handleUpload = async (eOrFiles: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
@@ -634,13 +640,25 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     <button onClick={toggleCamera} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, background: '#d1fae5', color: '#006c44', border: 'none', cursor: 'pointer' }}>📷 On</button>
                                 </div>
                                 {selectedClass && (
-                                    <div style={{ position: 'absolute', bottom: '8px', left: '8px', padding: '5px 10px', borderRadius: '6px', color: '#fff', fontSize: '10px', fontWeight: 700, background: `${selectedClass.color}CC` }}>{selectedClass.name}</div>
+                                    <div style={{ position: 'absolute', bottom: '60px', left: '8px', padding: '5px 10px', borderRadius: '6px', color: '#fff', fontSize: '10px', fontWeight: 700, background: `${selectedClass.color}CC` }}>{selectedClass.name}</div>
                                 )}
                                 {currentDetections.length > 0 && (
-                                    <div style={{ position: 'absolute', bottom: '8px', right: '8px', padding: '4px 8px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px' }}>
+                                    <div style={{ position: 'absolute', bottom: '60px', right: '8px', padding: '4px 8px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px' }}>
                                         <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>🎯 {currentDetections.length} found</span>
                                     </div>
                                 )}
+                                {/* Capture button */}
+                                <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
+                                    <CaptureButton
+                                        onClick={handleCapture}
+                                        disabled={!canAddSamples || isCapturing}
+                                        label={isCapturing ? '📸 Captured!' : atSampleLimit ? 'Max Reached' : 'Capture 📸'}
+                                        icon="camera"
+                                        color={selectedClass?.color || '#630ed4'}
+                                        pulse={!isCapturing && !!canAddSamples}
+                                        size="md"
+                                    />
+                                </div>
                             </div>
 
                             {/* Camera off placeholder */}
@@ -689,9 +707,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     {/* Download tab content */}
                     {collectTab === 'download' && (
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'rgba(255,255,255,0.85)', borderRadius: '10px', padding: '3px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                                <button onClick={() => setDownloadSource('local')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '6px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: downloadSource === 'local' ? '#630ed4' : 'transparent', color: downloadSource === 'local' ? '#fff' : '#4a4455', border: 'none', cursor: 'pointer' }}>📁 Local</button>
-                                <button onClick={() => setDownloadSource('kaggle')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '6px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: downloadSource === 'kaggle' ? '#630ed4' : 'transparent', color: downloadSource === 'kaggle' ? '#fff' : '#4a4455', border: 'none', cursor: 'pointer' }}>🔍 Kaggle</button>
+                            <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '12px', padding: '4px', flexShrink: 0 }}>
+                                <button onClick={() => setDownloadSource('local')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, background: downloadSource === 'local' ? 'white' : 'transparent', color: downloadSource === 'local' ? '#630ed4' : '#6b7280', border: 'none', cursor: 'pointer', boxShadow: downloadSource === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}>📁 Local</button>
+                                <button onClick={() => setDownloadSource('kaggle')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, background: downloadSource === 'kaggle' ? 'white' : 'transparent', color: downloadSource === 'kaggle' ? '#630ed4' : '#6b7280', border: 'none', cursor: 'pointer', boxShadow: downloadSource === 'kaggle' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}>🔍 Kaggle</button>
                             </div>
                             <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                                 {downloadSource === 'local' ? (
@@ -699,9 +717,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 ) : kaggleCredentials ? (
                                     <KaggleDatasetBrowser mode={mode} credentials={kaggleCredentials} onImagesAdded={(count) => showSaved(`📥 Added ${count} images from Kaggle!`)} />
                                 ) : (
-                                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center' }}>
+                                        <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'linear-gradient(135deg, #f3f0ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', border: '1px solid rgba(224,213,255,0.6)' }}>
+                                            <span style={{ fontSize: '36px' }}>🔍</span>
+                                        </div>
+                                        <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>Connect Kaggle</h3>
+                                        <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, maxWidth: '260px', marginBottom: '28px' }}>Search and download real images from Kaggle's free public datasets</p>
                                         <KaggleSettings compact onCredentialsSaved={() => setKaggleCredentials(getStoredCredentials())} />
-                                        <p style={{ fontSize: '10px', color: '#6b7280', marginTop: '8px' }}>Connect Kaggle to download datasets</p>
                                     </div>
                                 )}
                             </div>
@@ -710,9 +732,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 </div>
 
                 {/* Right - Tabs, Tips, Stats, Detections, Samples */}
-                <div style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden', overflowY: 'auto', padding: '0 4px' }}>
                     {/* Collect sub-tabs */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.85)', borderRadius: '8px', padding: '3px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '12px', padding: '4px', flexShrink: 0 }}>
                         {[
                             { id: 'camera' as const, label: 'Camera', emoji: '📷' },
                             { id: 'upload' as const, label: 'Upload', emoji: '📂' },
@@ -726,10 +748,12 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     if (tab.id !== 'camera' && cameraOn) stopCamera()
                                 }}
                                 style={{
-                                    display: 'flex', alignItems: 'center', gap: '3px', padding: '6px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, flex: 1,
-                                    background: collectTab === tab.id ? '#630ed4' : 'transparent',
-                                    color: collectTab === tab.id ? '#fff' : '#4a4455',
-                                    border: 'none', cursor: 'pointer'
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, flex: 1,
+                                    background: collectTab === tab.id ? 'white' : 'transparent',
+                                    color: collectTab === tab.id ? '#630ed4' : '#6b7280',
+                                    border: 'none', cursor: 'pointer',
+                                    boxShadow: collectTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                    transition: 'all 0.2s ease'
                                 }}
                             >
                                 <span>{tab.emoji}</span>
@@ -739,28 +763,28 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     </div>
 
                     {/* Tips */}
-                    <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '10px', border: '1px solid rgba(99,14,212,0.1)', flexShrink: 0 }}>
-                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#630ed4', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💡 TIPS</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '9px', color: '#4a4455' }}>• Point camera at objects</span>
-                            <span style={{ fontSize: '9px', color: '#4a4455' }}>• Good lighting helps</span>
-                            <span style={{ fontSize: '9px', color: '#4a4455' }}>• Capture to save detections</span>
+                    <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(99,14,212,0.1)', flexShrink: 0 }}>
+                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💡 TIPS</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Point camera at objects</span>
+                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Good lighting helps</span>
+                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Capture to save detections</span>
                         </div>
                     </div>
 
                     {/* Detected objects */}
                     {currentDetections.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>🎯 Detected</h3>
-                                <span style={{ fontSize: '8px', fontWeight: 700, background: '#f5f3ff', padding: '2px 6px', borderRadius: '4px', color: '#630ed4' }}>{currentDetections.length}</span>
+                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e' }}>🎯 Detected</h3>
+                                <span style={{ fontSize: '12px', fontWeight: 700, background: '#f5f3ff', padding: '4px 10px', borderRadius: '6px', color: '#630ed4' }}>{currentDetections.length}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '80px', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
                                 {currentDetections.map((det, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 6px', borderRadius: '6px', background: '#faf9ff' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getColorForObject(det.class) }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#131b2e', flex: 1, textTransform: 'capitalize' }}>{det.class}</span>
-                                        <span style={{ fontSize: '8px', fontWeight: 700, padding: '1px 4px', borderRadius: '3px', color: '#fff', background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', background: '#faf9ff' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getColorForObject(det.class) }} />
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#131b2e', flex: 1, textTransform: 'capitalize' }}>{det.class}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: '#fff', background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -772,13 +796,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Collected samples */}
                     {selectedClass && selectedClass.samples.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
-                                    <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</h3>
+                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: selectedClass.color }} />
+                                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</h3>
                                 </div>
-                                <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: atSampleLimit ? '#fef3c7' : '#f5f3ff', color: atSampleLimit ? '#c32c00' : '#4a4455' }}>{selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}</span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: atSampleLimit ? '#fef3c7' : '#f5f3ff', color: atSampleLimit ? '#c32c00' : '#4a4455' }}>{selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}</span>
                             </div>
                             <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                                 <SampleGrid samples={selectedClass.samples} type="image" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} />

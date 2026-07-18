@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import {
+    Link2,
+    X,
+    KeyRound,
+    User,
+    Lightbulb,
+    Loader2,
+    CheckCircle2,
+    Settings,
+    Unlink,
+    AlertCircle
+} from 'lucide-react'
+import {
     getStoredCredentials,
     storeCredentials,
     clearCredentials,
@@ -65,44 +77,77 @@ export default function KaggleSettings({ onCredentialsSaved, compact = false }: 
         setApiKey('')
     }
 
-    // Compact view (just a badge/button)
+    // Compact view (badge or action button)
     if (compact) {
         return (
             <div className="flex items-center gap-2">
                 {isConnected ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#d1fae5] rounded-lg">
-                        <span className="w-2 h-2 rounded-full bg-[#006c44]" />
-                        <span className="text-[10px] font-bold text-[#006c44]">Kaggle Connected</span>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shadow-[0_2px_10px_rgba(16,185,129,0.04)]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Kaggle Connected</span>
                     </div>
                 ) : (
                     <button
                         onClick={() => setShowForm(true)}
-                        className="flex items-center gap-1.5 px-2 py-1 bg-[#eaedff] rounded-lg hover:bg-[#dae2fd] transition-all"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '12px 28px',
+                            background: 'rgb(99, 14, 212)',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            borderRadius: '10px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(99, 14, 212, 0.3)',
+                            transition: 'all 0.2s ease'
+                        }}
                     >
-                        <span className="text-xs">🔗</span>
-                        <span className="text-[10px] font-bold text-[#630ed4]">Connect Kaggle</span>
+                        <Link2 size={18} />
+                        <span>Connect Kaggle</span>
                     </button>
                 )}
 
-                {/* Modal */}
+                {/* Modal Overlay */}
                 {showForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-extrabold text-[#131b2e]">🔗 Connect Kaggle</h3>
-                                <button onClick={() => setShowForm(false)} className="text-[#4a4455] hover:text-[#131b2e]">✕</button>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(8px)' }}>
+                        <div style={{ position: 'relative', width: '100%', maxWidth: '440px', background: 'white', borderRadius: '20px', border: '1px solid rgba(229, 231, 235, 0.8)', boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden' }}>
+                            {/* Close button */}
+                            <button
+                                onClick={() => { setShowForm(false); setError(null) }}
+                                style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', transition: 'all 0.2s' }}
+                            >
+                                <X size={16} />
+                            </button>
+
+                            {/* Hero header */}
+                            <div style={{ position: 'relative', padding: '32px 32px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #630ed4 0%, #7c3aed 100%)' }}>
+                                <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', filter: 'blur(40px)' }} />
+                                <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', height: '24px', background: 'white', borderRadius: '20px 20px 0 0' }} />
+                                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.25)', marginBottom: '16px' }}>
+                                    <Link2 size={26} color="white" />
+                                </div>
+                                <div style={{ position: 'relative' }}>
+                                    <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'white', letterSpacing: '-0.025em', marginBottom: '4px' }}>Connect Kaggle</h3>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: 500 }}>Access free public datasets</p>
+                                </div>
                             </div>
 
-                            <KaggleCredentialsForm
-                                username={username}
-                                apiKey={apiKey}
-                                setUsername={setUsername}
-                                setApiKey={setApiKey}
-                                error={error}
-                                isTesting={isTesting}
-                                onSave={handleTestAndSave}
-                                onCancel={() => setShowForm(false)}
-                            />
+                            {/* Form body */}
+                            <div style={{ position: 'relative', padding: '8px 32px 32px' }}>
+                                <KaggleCredentialsForm
+                                    username={username}
+                                    apiKey={apiKey}
+                                    setUsername={setUsername}
+                                    setApiKey={setApiKey}
+                                    error={error}
+                                    isTesting={isTesting}
+                                    onSave={handleTestAndSave}
+                                    onCancel={() => { setShowForm(false); setError(null) }}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
@@ -110,77 +155,122 @@ export default function KaggleSettings({ onCredentialsSaved, compact = false }: 
         )
     }
 
-    // Full view
+    // Full view (inside settings panel)
     return (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-[#dae2fd] p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-xl">🔗</span>
-                    <h3 className="text-sm font-extrabold text-[#131b2e]">Kaggle Connection</h3>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white shadow-[0_2px_8px_rgba(99,14,212,0.2)]">
+                        <Link2 size={16} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900">Kaggle Connection</h3>
+                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">Free public datasets</p>
+                    </div>
                 </div>
                 {isConnected ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#d1fae5] rounded-lg">
-                        <span className="w-2 h-2 rounded-full bg-[#006c44] animate-pulse" />
-                        <span className="text-[10px] font-bold text-[#006c44]">Connected</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/60 rounded-lg">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_4px_rgba(16,185,129,0.4)]" />
+                        <span className="text-[10px] font-bold text-emerald-600">Connected</span>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#eaedff] rounded-lg">
-                        <span className="w-2 h-2 rounded-full bg-[#ccc3d8]" />
-                        <span className="text-[10px] font-bold text-[#4a4455]">Not connected</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <span className="text-[10px] font-bold text-slate-400">Not Connected</span>
                     </div>
                 )}
             </div>
 
-            {isConnected && !showForm ? (
-                <div>
-                    <p className="text-xs text-[#4a4455] mb-3">
-                        Connected as <span className="font-bold text-[#131b2e]">{username}</span>
-                    </p>
-                    <div className="flex gap-2">
+            {/* Body */}
+            <div className="px-6 py-5">
+                {isConnected && !showForm ? (
+                    <div className="animate-fade-in space-y-4">
+                        <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center text-violet-600 text-xs font-black">
+                                @
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Connected as</p>
+                                <p className="text-sm font-bold text-slate-800">{username}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowForm(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-sm"
+                            >
+                                <Settings size={14} />
+                                <span>Settings</span>
+                            </button>
+                            <button
+                                onClick={handleDisconnect}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-bold hover:bg-red-50 hover:border-red-300 transition-all cursor-pointer shadow-sm"
+                            >
+                                <Unlink size={14} />
+                                <span>Disconnect</span>
+                            </button>
+                        </div>
+                    </div>
+                ) : showForm ? (
+                    <div className="animate-fade-in">
+                        <KaggleCredentialsForm
+                            username={username}
+                            apiKey={apiKey}
+                            setUsername={setUsername}
+                            setApiKey={setApiKey}
+                            error={error}
+                            isTesting={isTesting}
+                            onSave={handleTestAndSave}
+                            onCancel={() => { setShowForm(false); setError(null) }}
+                        />
+                    </div>
+                ) : (
+                    <div className="animate-fade-in space-y-5">
+                        <div className="flex items-start gap-4 px-4 py-4 bg-gradient-to-r from-violet-50/60 to-transparent rounded-xl border border-violet-100/50">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white shadow-[0_2px_8px_rgba(99,14,212,0.15)] shrink-0">
+                                <Link2 size={18} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-slate-800 mb-1">Connect your Kaggle account</p>
+                                <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                                    Search and import thousands of free public datasets directly into NEURA.
+                                </p>
+                            </div>
+                        </div>
                         <button
                             onClick={() => setShowForm(true)}
-                            className="px-4 py-2 bg-[#eaedff] text-[#630ed4] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '12px 28px',
+                                background: 'rgb(99, 14, 212)',
+                                color: 'white',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                borderRadius: '10px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(99, 14, 212, 0.3)',
+                                transition: 'all 0.2s ease'
+                            }}
                         >
-                            ⚙️ Settings
-                        </button>
-                        <button
-                            onClick={handleDisconnect}
-                            className="px-4 py-2 bg-[#fee2e2] text-[#991b1b] rounded-xl text-xs font-bold hover:bg-[#fecaca] transition-all"
-                        >
-                            Disconnect
+                            <Link2 size={18} />
+                            <span>Connect Kaggle</span>
                         </button>
                     </div>
-                </div>
-            ) : showForm ? (
-                <KaggleCredentialsForm
-                    username={username}
-                    apiKey={apiKey}
-                    setUsername={setUsername}
-                    setApiKey={setApiKey}
-                    error={error}
-                    isTesting={isTesting}
-                    onSave={handleTestAndSave}
-                    onCancel={() => { setShowForm(false); setError(null) }}
-                />
-            ) : (
-                <div>
-                    <p className="text-xs text-[#4a4455] mb-3">
-                        Connect your Kaggle account to download datasets directly into NEURA.
-                    </p>
-                    <button
-                        onClick={() => setShowForm(true)}
-                        className="px-4 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md transition-all"
-                    >
-                        🔗 Connect Kaggle
-                    </button>
-                </div>
-            )}
+                )}
 
-            {success && (
-                <div className="mt-3 p-2 bg-[#d1fae5] rounded-lg text-center">
-                    <p className="text-xs font-bold text-[#006c44]">✅ Connected successfully!</p>
-                </div>
-            )}
+                {success && (
+                    <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-center animate-fade-in">
+                        <p className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1.5">
+                            <CheckCircle2 size={14} />
+                            <span>Connected successfully!</span>
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -205,64 +295,96 @@ function KaggleCredentialsForm({
     onCancel: () => void
 }) {
     return (
-        <div className="space-y-4">
-            <div>
-                <label className="text-xs font-bold text-[#4a4455] block mb-1">Kaggle Username</label>
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="your-username"
-                    className="w-full px-3 py-2 text-sm border border-[#dae2fd] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#630ed4]"
-                />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>Kaggle Username</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: '14px', color: '#8b5cf6', opacity: 0.6 }}><User size={16} /></span>
+                    <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="your-username"
+                        style={{ width: '100%', padding: '12px 16px 12px 42px', fontSize: '14px', fontWeight: 500, border: '1px solid #e2e8f0', borderRadius: '12px', outline: 'none', background: '#f8fafc', color: '#1e293b', transition: 'all 0.2s' }}
+                    />
+                </div>
             </div>
-            <div>
-                <label className="text-xs font-bold text-[#4a4455] block mb-1">API Key</label>
-                <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="your-api-key"
-                    className="w-full px-3 py-2 text-sm border border-[#dae2fd] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#630ed4]"
-                />
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>API Key</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: '14px', color: '#8b5cf6', opacity: 0.6 }}><KeyRound size={16} /></span>
+                    <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="your-api-key"
+                        style={{ width: '100%', padding: '12px 16px 12px 42px', fontSize: '14px', fontWeight: 500, border: '1px solid #e2e8f0', borderRadius: '12px', outline: 'none', background: '#f8fafc', color: '#1e293b', transition: 'all 0.2s' }}
+                    />
+                </div>
             </div>
 
-            <div className="bg-[#f2f3ff] rounded-xl p-3">
-                <p className="text-[10px] font-bold text-[#630ed4] mb-1">How to get your API key:</p>
-                <ol className="text-[10px] text-[#4a4455] space-y-0.5 list-decimal list-inside">
-                    <li>Go to <span className="font-bold">kaggle.com</span> and create a free account</li>
-                    <li>Click your profile picture → <span className="font-bold">Settings</span></li>
-                    <li>Scroll to <span className="font-bold">API</span> section</li>
-                    <li>Click <span className="font-bold">Create New Token</span></li>
-                    <li>Copy your username and API key from the downloaded file</li>
-                </ol>
+            {/* Steps Guide */}
+            <div style={{ borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.15)', background: 'rgba(245, 243, 255, 0.5)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid rgba(139, 92, 246, 0.1)' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                        <Lightbulb size={12} />
+                    </div>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed' }}>How to get your API key</p>
+                </div>
+                <ul style={{ padding: '14px 16px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>1</span>
+                        <span>Go to <a href="https://www.kaggle.com" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#7c3aed', textDecoration: 'underline' }}>kaggle.com</a> and sign in.</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>2</span>
+                        <span>Click your profile picture → <span style={{ fontWeight: 600, color: '#334155' }}>Settings</span>.</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>3</span>
+                        <span>Scroll to the <span style={{ fontWeight: 600, color: '#334155' }}>API</span> section.</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>4</span>
+                        <span>Click <span style={{ fontWeight: 600, color: '#7c3aed', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>Create New Token</span>.</span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
+                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>5</span>
+                        <span>Open the downloaded <span style={{ fontWeight: 600, color: '#334155' }}>kaggle.json</span> and copy credentials.</span>
+                    </li>
+                </ul>
             </div>
 
             {error && (
-                <div className="bg-[#fee2e2] rounded-xl px-3 py-2">
-                    <p className="text-xs font-bold text-[#991b1b]">{error}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px 16px' }}>
+                    <AlertCircle style={{ color: '#ef4444', minWidth: '16px', marginTop: '2px' }} size={16} />
+                    <p style={{ fontSize: '12px', fontWeight: 500, color: '#dc2626', lineHeight: 1.5, margin: 0 }}>{error}</p>
                 </div>
             )}
 
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
                 <button
                     onClick={onSave}
                     disabled={isTesting}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: 'white', borderRadius: '12px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(99, 14, 212, 0.25)', transition: 'all 0.2s', opacity: isTesting ? 0.6 : 1 }}
                 >
                     {isTesting ? (
                         <>
-                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Testing...
+                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                            <span>Testing...</span>
                         </>
                     ) : (
-                        <>✅ Save & Test</>
+                        <>
+                            <CheckCircle2 size={16} />
+                            <span>Save & Test</span>
+                        </>
                     )}
                 </button>
                 <button
                     onClick={onCancel}
                     disabled={isTesting}
-                    className="px-4 py-2.5 bg-[#eaedff] text-[#4a4455] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all"
+                    style={{ padding: '12px 24px', background: '#f1f5f9', color: '#475569', borderRadius: '12px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
                 >
                     Cancel
                 </button>

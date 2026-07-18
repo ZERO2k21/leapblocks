@@ -113,10 +113,16 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
 
     if (!selectedClass) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-                <span className="text-4xl mb-3">📁</span>
-                <p className="text-sm font-bold text-[#131b2e] mb-1">Select a class first</p>
-                <p className="text-xs text-[#4a4455]">Choose or create a class in the sidebar, then come back to download images.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', padding: '40px 32px', textAlign: 'center' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'linear-gradient(135deg, #f3f0ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 4px 20px rgba(99,14,212,0.1)', border: '1px solid rgba(224,213,255,0.5)' }}>
+                    <span style={{ fontSize: '36px' }}>📁</span>
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', marginBottom: '8px', letterSpacing: '-0.025em' }}>Select a class first</h3>
+                <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, maxWidth: '260px', fontWeight: 500 }}>Choose or create a class in the sidebar, then come back to browse images.</p>
+                <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', background: '#f8f7ff', border: '1px solid rgba(224,213,255,0.6)' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#630ed4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4' }}>Look in the sidebar</span>
+                </div>
             </div>
         )
     }
@@ -124,20 +130,20 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
     // Download complete
     if (downloadComplete) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
-                <div className="w-20 h-20 rounded-full bg-[#d1fae5] flex items-center justify-center mb-4">
-                    <span className="text-4xl">✅</span>
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center mb-4 shadow-sm">
+                    <span className="text-3xl">✅</span>
                 </div>
-                <h3 className="text-lg font-extrabold text-[#131b2e] mb-2">Images Added!</h3>
-                <p className="text-sm text-[#4a4455] mb-1">
+                <h3 className="text-lg font-extrabold text-[#131b2e] mb-1.5">Images Added!</h3>
+                <p className="text-xs text-[#6b7280] mb-1">
                     {quantity} images added to <span className="font-bold" style={{ color: selectedClass.color }}>{selectedClass.name}</span>
                 </p>
-                <p className="text-xs text-[#4a4455] mb-6">
+                <p className="text-[10px] text-[#9ca3af] mb-5">
                     ({selectedClass.samples.length} total images in this class)
                 </p>
                 <button
                     onClick={handleReset}
-                    className="px-6 py-3 bg-[#eaedff] text-[#630ed4] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all"
+                    className="px-5 py-2.5 bg-[#f3f0ff] text-[#630ed4] rounded-xl text-xs font-bold hover:bg-[#e8e0ff] transition-all"
                 >
                     🔄 Browse More
                 </button>
@@ -148,31 +154,31 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
     // Confirm & download
     if (viewState === 'confirm' && selectedSubcategory) {
         return (
-            <div className="flex flex-col items-center py-6 animate-fade-in">
-                <button onClick={handleBack} className="self-start mb-4 flex items-center gap-1 text-xs font-bold text-[#630ed4] hover:underline">
+            <div className="flex flex-col items-center py-6 px-4 animate-fade-in">
+                <button onClick={handleBack} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline">
                     ← Back
                 </button>
 
-                <div className="text-center mb-6">
-                    <span className="text-5xl mb-3 block">{selectedSubcategory.emoji}</span>
-                    <h3 className="text-xl font-extrabold text-[#131b2e] mb-1">{selectedSubcategory.name} Images</h3>
-                    <p className="text-xs text-[#4a4455]">
+                <div className="text-center mb-5">
+                    <span className="text-4xl mb-2 block">{selectedSubcategory.emoji}</span>
+                    <h3 className="text-base font-extrabold text-[#131b2e] mb-1">{selectedSubcategory.name} Images</h3>
+                    <p className="text-[11px] text-[#6b7280]">
                         Adding to: <span className="font-bold" style={{ color: selectedClass.color }}>{selectedClass.name}</span>
                     </p>
                 </div>
 
                 {/* Quantity selector */}
-                <div className="w-full max-w-xs mb-6">
-                    <label className="text-xs font-bold text-[#4a4455] block mb-2 text-center">How many images?</label>
+                <div className="w-full max-w-[280px] mb-5">
+                    <label className="text-[11px] font-bold text-[#4a4455] block mb-2 text-center">How many images?</label>
                     <div className="flex gap-2 justify-center">
                         {[5, 10, 15, 20].map(q => (
                             <button
                                 key={q}
                                 onClick={() => setQuantity(q)}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                                     quantity === q
                                         ? 'bg-[#630ed4] text-white shadow-md'
-                                        : 'bg-[#eaedff] text-[#4a4455] hover:bg-[#dae2fd]'
+                                        : 'bg-[#f3f0ff] text-[#4a4455] hover:bg-[#e8e0ff]'
                                 }`}
                             >
                                 {q}
@@ -182,23 +188,23 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
                 </div>
 
                 {/* Preview grid */}
-                <div className="grid grid-cols-5 gap-2 mb-6 w-full max-w-sm">
+                <div className="grid grid-cols-5 gap-2 mb-5 w-full max-w-[260px]">
                     {selectedSubcategory.images.slice(0, quantity).map((img, i) => (
                         <div
                             key={i}
-                            className="aspect-square rounded-lg overflow-hidden border border-[#dae2fd]"
-                            style={{ backgroundColor: `${selectedSubcategory.color}15` }}
+                            className="aspect-square rounded-lg overflow-hidden border border-[#e5e7eb]"
+                            style={{ backgroundColor: `${selectedSubcategory.color}12` }}
                         >
                             <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-lg">{selectedSubcategory.emoji}</span>
+                                <span className="text-base">{selectedSubcategory.emoji}</span>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {error && (
-                    <div className="w-full max-w-xs bg-[#fee2e2] rounded-xl px-4 py-3 mb-4 text-center">
-                        <p className="text-xs font-bold text-[#991b1b]">{error}</p>
+                    <div className="w-full max-w-[280px] bg-[#fef2f2] rounded-xl px-4 py-2.5 mb-4 text-center border border-[#fecaca]">
+                        <p className="text-[11px] font-bold text-[#991b1b]">{error}</p>
                     </div>
                 )}
 
@@ -206,11 +212,11 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
                 <button
                     onClick={handleDownload}
                     disabled={isDownloading}
-                    className="px-8 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                     {isDownloading ? (
                         <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Downloading... {downloadProgress}%
                         </>
                     ) : (
@@ -220,8 +226,8 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
 
                 {/* Progress bar */}
                 {isDownloading && (
-                    <div className="w-full max-w-xs mt-4">
-                        <div className="h-2 bg-[#dae2fd] rounded-full overflow-hidden">
+                    <div className="w-full max-w-[280px] mt-3">
+                        <div className="h-1.5 bg-[#e5e7eb] rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] rounded-full transition-all duration-300"
                                 style={{ width: `${downloadProgress}%` }}
@@ -236,27 +242,27 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
     // Subcategories view
     if (viewState === 'subcategories' && selectedCategory) {
         return (
-            <div className="flex flex-col py-6 animate-fade-in">
-                <button onClick={handleBack} className="self-start mb-4 flex items-center gap-1 text-xs font-bold text-[#630ed4] hover:underline">
+            <div className="flex flex-col py-6 px-4 animate-fade-in">
+                <button onClick={handleBack} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline">
                     ← Back to Categories
                 </button>
 
-                <div className="text-center mb-6">
-                    <span className="text-4xl mb-2 block">{selectedCategory.emoji}</span>
-                    <h3 className="text-lg font-extrabold text-[#131b2e] mb-1">{selectedCategory.name}</h3>
-                    <p className="text-xs text-[#4a4455]">{selectedCategory.description}</p>
+                <div className="text-center mb-5">
+                    <span className="text-3xl mb-2 block">{selectedCategory.emoji}</span>
+                    <h3 className="text-base font-extrabold text-[#131b2e] mb-1">{selectedCategory.name}</h3>
+                    <p className="text-[11px] text-[#6b7280]">{selectedCategory.description}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                     {selectedCategory.subcategories.map(sub => (
                         <button
                             key={sub.id}
                             onClick={() => handleSelectSubcategory(sub)}
-                            className="flex flex-col items-center p-4 bg-white rounded-2xl border border-[#dae2fd] hover:border-[#630ed4]/30 hover:shadow-md transition-all group"
+                            className="flex flex-col items-center p-3.5 bg-white rounded-xl border border-[#e5e7eb] hover:border-[#630ed4]/30 hover:shadow-md transition-all group"
                         >
-                            <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">{sub.emoji}</span>
-                            <span className="text-sm font-bold text-[#131b2e]">{sub.name}</span>
-                            <span className="text-[10px] text-[#4a4455]">{sub.images.length} images</span>
+                            <span className="text-2xl mb-1.5 group-hover:scale-110 transition-transform">{sub.emoji}</span>
+                            <span className="text-xs font-bold text-[#131b2e]">{sub.name}</span>
+                            <span className="text-[10px] text-[#9ca3af]">{sub.images.length} images</span>
                         </button>
                     ))}
                 </div>
@@ -266,22 +272,22 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
 
     // Categories view (default)
     return (
-        <div className="flex flex-col py-6 animate-fade-in">
-            <div className="text-center mb-6">
-                <h3 className="text-lg font-extrabold text-[#131b2e] mb-1">📥 Image Dataset</h3>
-                <p className="text-xs text-[#4a4455]">Browse categories and add images to your class</p>
+        <div className="flex flex-col py-6 px-4 animate-fade-in">
+            <div className="text-center mb-5">
+                <h3 className="text-base font-extrabold text-[#131b2e] mb-1">📥 Image Dataset</h3>
+                <p className="text-[11px] text-[#6b7280]">Browse categories and add images to your class</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
                 {DATASET_CATEGORIES.map(category => (
                     <button
                         key={category.id}
                         onClick={() => handleSelectCategory(category)}
-                        className="flex flex-col items-center p-5 bg-white rounded-2xl border border-[#dae2fd] hover:border-[#630ed4]/30 hover:shadow-md transition-all group"
+                        className="flex flex-col items-center p-4 bg-white rounded-xl border border-[#e5e7eb] hover:border-[#630ed4]/30 hover:shadow-md transition-all group"
                     >
-                        <span className="text-4xl mb-2 group-hover:scale-110 transition-transform">{category.emoji}</span>
-                        <span className="text-sm font-bold text-[#131b2e] mb-0.5">{category.name}</span>
-                        <span className="text-[10px] text-[#4a4455]">{category.subcategories.length} types</span>
+                        <span className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">{category.emoji}</span>
+                        <span className="text-xs font-bold text-[#131b2e] mb-0.5">{category.name}</span>
+                        <span className="text-[10px] text-[#9ca3af]">{category.subcategories.length} types</span>
                     </button>
                 ))}
             </div>
