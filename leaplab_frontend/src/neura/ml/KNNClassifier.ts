@@ -68,9 +68,9 @@ export class KNNClassifier {
         for (const label of labels) {
             const examples = this.examples[label]
             const sim = tf.tidy(() => {
-                const normEmb = tf.div(emb, tf.norm(emb))
-                const normEx = tf.div(examples, tf.norm(examples, 2, 1, true))
-                return normEmb.matMul(normEx.transpose()).squeeze()
+                const diff = tf.sub(emb, examples)
+                const sqDist = tf.sum(tf.square(diff), 1)
+                return sqDist.neg().squeeze()
             })
             const vals = await sim.data() as Float32Array
             sim.dispose()
@@ -83,17 +83,17 @@ export class KNNClassifier {
             // Distance-weighted voting: weight each vote by its similarity score
             // Use softmax-like weighting to amplify confident matches
             const weightedSum = topK.reduce((s, v, i) => {
-                const weight = Math.exp(v * 1.5) // exponential weighting favors high similarity
+                const weight = Math.exp(v * 0.8) // exponential weighting favors high similarity
                 return s + v * weight
             }, 0)
-            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 1.5), 0) || 1
+            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 0.8), 0) || 1
             weightedScores[label] = weightedSum / weightTotal
         }
 
         emb.dispose()
 
         // Softmax-style confidence normalization for crisp predictions
-        const temperature = 0.8
+        const temperature = 1.2
         const maxScore = Math.max(...Object.values(weightedScores).map(v => Math.max(0, v)), 0.001)
         const expScores: Record<string, number> = {}
         for (const l of labels) {

@@ -783,7 +783,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     {/* Horizontal split */}
                     <div className="w-full" style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                         {/* Left half - Canvas/Camera */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {modelLoading && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: '#f5f3ff', borderRadius: '12px', border: '1px solid rgba(99,14,212,0.2)', marginBottom: '10px' }}>
                                     <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />

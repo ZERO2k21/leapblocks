@@ -32,7 +32,7 @@ function isolateDigit(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4
             const brightness = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114
-            if (brightness < 200) {
+            if (brightness < 230) {
                 hasContent = true
                 if (x < minX) minX = x
                 if (x > maxX) maxX = x

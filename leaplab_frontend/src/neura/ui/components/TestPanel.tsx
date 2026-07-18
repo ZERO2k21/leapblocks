@@ -173,7 +173,7 @@ export default function TestPanel({
                             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full rounded-2xl -scale-x-100 ${videoFit === 'contain' ? 'object-contain bg-black' : 'object-cover'}`} />
                         )}
                         {!cameraOn && testImage && (
-                            <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         )}
                         {!cameraOn && !testImage && (
                             <div className="flex flex-col items-center text-center animate-fade-in" style={{ padding: '24px' }}>
