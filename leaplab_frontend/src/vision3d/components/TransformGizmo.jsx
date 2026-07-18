@@ -276,8 +276,17 @@ const TransformGizmo = () => {
             const val = Math.max(0.001, ss[idx] * factor);
             if (idx === 0) mesh.scale.x = val;
             else if (idx === 1) mesh.scale.y = val;
-            else mesh.scale.z = val;
           }
+        }
+
+        // Directly update gizmo group position to follow the moved meshes
+        if (groupRef.current && meshes.length > 0) {
+          const newCenter = new THREE.Vector3();
+          for (let i = 0; i < meshes.length; i++) {
+            newCenter.add(meshes[i].position);
+          }
+          newCenter.divideScalar(meshes.length);
+          groupRef.current.position.copy(newCenter);
         }
 
         queueRender();
