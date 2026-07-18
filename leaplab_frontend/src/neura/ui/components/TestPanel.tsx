@@ -176,12 +176,45 @@ export default function TestPanel({
                             <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         )}
                         {!cameraOn && !testImage && (
-                            <div className="flex flex-col items-center text-center" style={{ padding: '24px' }}>
+                            <div className="flex flex-col items-center text-center animate-fade-in" style={{ padding: '24px' }}>
                                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
                                     <span style={{ fontSize: '1.5rem' }}>📸</span>
                                 </div>
                                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Camera is off</p>
-                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', maxWidth: '180px' }}>Turn on camera or upload a picture</p>
+                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', maxWidth: '180px', marginBottom: '16px' }}>Turn on camera or upload a picture</p>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={onToggleCamera}
+                                        style={{
+                                            padding: '8px 16px',
+                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                            color: '#fff',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
+                                        }}
+                                    >
+                                        📷 Turn On Camera
+                                    </button>
+                                    <button
+                                        onClick={onUpload}
+                                        style={{
+                                            padding: '8px 16px',
+                                            background: '#fff',
+                                            color: '#630ed4',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: '2px solid #630ed4',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        📂 Upload Image
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -239,8 +272,8 @@ export default function TestPanel({
                             </div>
                         )}
 
-                        {/* Capture button overlay - always visible when camera is on */}
-                        {cameraOn && (
+                        {/* Capture button overlay - visible when camera is on or test image is uploaded */}
+                        {(cameraOn || testImage) && (
                             <div style={{
                                 position: 'absolute',
                                 bottom: '10px',
@@ -249,30 +282,33 @@ export default function TestPanel({
                                 display: 'flex',
                                 gap: '8px',
                                 padding: '6px 12px',
-                                background: 'rgba(255,255,255,0.7)',
+                                background: 'rgba(255,255,255,0.85)',
                                 backdropFilter: 'blur(8px)',
                                 borderRadius: '12px',
                                 border: '1px solid rgba(255,255,255,0.4)',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                zIndex: 15,
                             }}>
-                                <button
-                                    onClick={onCapture}
-                                    className="flex items-center"
-                                    style={{
-                                        gap: '4px',
-                                        padding: '6px 14px',
-                                        background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                        color: '#fff',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <span style={{ fontSize: '12px' }}>📸</span>
-                                    Take Photo
-                                </button>
+                                {cameraOn && (
+                                    <button
+                                        onClick={onCapture}
+                                        className="flex items-center"
+                                        style={{
+                                            gap: '4px',
+                                            padding: '6px 14px',
+                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
+                                            color: '#fff',
+                                            borderRadius: '8px',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '12px' }}>📸</span>
+                                        Take Photo
+                                    </button>
+                                )}
                                 <button
                                     onClick={onUpload}
                                     className="flex items-center"
@@ -289,7 +325,7 @@ export default function TestPanel({
                                     }}
                                 >
                                     <span style={{ fontSize: '12px' }}>📂</span>
-                                    Upload
+                                    {testImage ? 'Upload Another' : 'Upload'}
                                 </button>
                             </div>
                         )}

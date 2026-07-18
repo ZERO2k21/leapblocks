@@ -890,14 +890,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     setIsDragging(false)
                                     if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                                 }}
-                                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : 'transparent'}`, borderRadius: '14px', transition: 'all 0.2s ease' }}
+                                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : 'transparent'}`, borderRadius: '14px', transition: 'all 0.2s ease', background: 'rgba(30, 27, 75, 0.4)' }}
                             >
-                                <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
-                                    <span style={{ fontSize: '36px', marginBottom: '6px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
-                                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 700, marginBottom: '8px' }}>{isDragging ? 'Drop image here' : 'Camera is off'}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: isDragging ? 'none' : 'auto' }} className="animate-fade-in">
+                                    <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
+                                    <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>Camera is off</h3>
+                                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', fontWeight: 600, marginBottom: '16px', maxWidth: '240px', textAlign: 'center' }}>{isDragging ? 'Drop your image here' : 'Turn on camera or upload an image to test'}</p>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={startCamera} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Start Camera</button>
-                                        <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '6px 12px', background: '#fff', color: '#630ed4', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload</button>
+                                        <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,14,212,0.25)' }}>📷 Start Camera</button>
+                                        <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>📂 Upload Image</button>
                                     </div>
                                 </div>
                             </div>
@@ -910,20 +911,20 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
                         {uploadedImage ? (
                             <>
-                                <button onClick={() => testFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', border: 'none', cursor: 'pointer' }}>📂 Try Another</button>
-                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: '#f5f3ff', color: '#4a4455', border: 'none', cursor: 'pointer' }}>📷 Use Camera</button>
+                                <button onClick={() => testFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,14,212,0.2)' }}>📂 Try Another</button>
+                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#f5f3ff', color: '#4a4455', border: 'none', cursor: 'pointer' }}>📷 Use Camera</button>
                             </>
                         ) : (
                             <>
-                                <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
-                                    {cameraOn ? '📷 Stop' : '📷 Start'}
+                                <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
+                                    {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                                 {cameraOn && (
-                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                                         {isDetecting ? '⏳...' : '🔍 Scan'}
                                     </button>
                                 )}
-                                <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload</button>
+                                <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#fff', color: '#630ed4', border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload Image</button>
                             </>
                         )}
                     </div>
