@@ -193,7 +193,7 @@ export default function MediaManager({ appState }) {
             )}
             {/* Standardized Header */}
             <div 
-                style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
+                style={{ paddingTop: '10px', paddingBottom: '10px', paddingLeft: '16px', paddingRight: '16px' }}
                 className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
             >
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Media</span>
@@ -224,7 +224,10 @@ export default function MediaManager({ appState }) {
             />
 
             {/* Search and Filters Section - Refined Spacing */}
-            <div className="px-4 py-4 space-y-4 bg-white border-b border-slate-100">
+            <div
+                style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}
+                className="bg-white border-b border-slate-100 shrink-0"
+            >
                 {/* Search Bar */}
                 <div className="relative group">
                     <Search 
@@ -241,19 +244,19 @@ export default function MediaManager({ appState }) {
                     />
                 </div>
 
-                {/* Filter Tabs - Precise Pill Style */}
-                <div style={{ gap: '8px' }} className="flex overflow-x-auto pb-0.5 scrollbar-none">
+                {/* Filter Tabs - Precise Pill Style (Non-Scrollable, Wrapping) */}
+                <div style={{ gap: '8px', flexWrap: 'wrap' }} className="flex pb-0.5">
                     {['all', 'image', 'audio', 'video'].map((type) => (
                         <button
                             key={type}
                             onClick={() => setFilterType(type)}
                             style={{
-                                fontSize: '11px',
+                                fontSize: '10px',
                                 fontWeight: '900',
-                                paddingLeft: '14px',
-                                paddingRight: '14px',
-                                paddingTop: '8px',
-                                paddingBottom: '8px'
+                                paddingLeft: '10px',
+                                paddingRight: '10px',
+                                paddingTop: '6px',
+                                paddingBottom: '6px'
                             }}
                             className={`flex-shrink-0 rounded-full uppercase tracking-[0.07em] transition-all duration-200 cursor-pointer ${filterType === type
                                 ? 'bg-slate-900 text-white shadow-md'
@@ -360,7 +363,10 @@ export default function MediaManager({ appState }) {
                     </div>
                 ) : (
                     viewMode === 'grid' ? (
-                        <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
+                        <div
+                            style={isDragOver ? {} : { paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px', paddingTop: '8px' }}
+                            className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}
+                        >
                             {isDragOver && (
                                 <div className="col-span-2 flex flex-col items-center justify-center py-8 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
@@ -438,7 +444,10 @@ export default function MediaManager({ appState }) {
                             ))}
                         </div>
                     ) : (
-                        <div className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
+                        <div
+                            style={isDragOver ? {} : { paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px', paddingTop: '8px' }}
+                            className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}
+                        >
                             {isDragOver && (
                                 <div className="flex flex-col items-center justify-center py-6 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
@@ -493,28 +502,30 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Stats Footer - Standardized Pro Style */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/30">
-                <div className="flex gap-3">
-                    <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Files</div>
-                        <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{stats.total}</div>
+            {media.length > 0 && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
+                    <div className="flex gap-3">
+                        <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
+                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Files</div>
+                            <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{stats.total}</div>
+                        </div>
+                        <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
+                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Size</div>
+                            <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{formatFileSize(stats.totalSize)}</div>
+                        </div>
                     </div>
-                    <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Size</div>
-                        <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{formatFileSize(stats.totalSize)}</div>
-                    </div>
+                    {selectedFile && (
+                        <button
+                            onClick={handleDeleteSelected}
+                            style={{ fontSize: '11px', fontWeight: '900' }}
+                            className="w-full mt-3 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete Selected
+                        </button>
+                    )}
                 </div>
-                {selectedFile && (
-                    <button
-                        onClick={handleDeleteSelected}
-                        style={{ fontSize: '11px', fontWeight: '900' }}
-                        className="w-full mt-3 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Selected
-                    </button>
-                )}
-            </div>
+            )}
             {/* Preview Modal */}
             {previewFile && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/75">
@@ -541,7 +552,7 @@ export default function MediaManager({ appState }) {
                             </button>
                         </div>
 
-                        <div className="flex-1 min-h-0 bg-slate-50 flex items-center justify-center p-6">
+                        <div className="flex-1 min-h-0 bg-slate-950 flex items-center justify-center p-6">
                             {getFileCategory(previewFile.type) === 'image' && (
                                 <img src={previewFile.data} className="max-w-full max-h-[45vh] rounded-xl shadow-lg object-contain" alt="Preview" />
                             )}
@@ -567,7 +578,9 @@ export default function MediaManager({ appState }) {
                                 </div>
                             )}
                             {getFileCategory(previewFile.type) === 'video' && (
-                                <video src={previewFile.data} controls className="max-w-full max-h-[45vh] rounded-xl shadow-lg object-contain" />
+                                <div className="relative rounded-xl overflow-hidden shadow-lg border border-white/10 bg-black flex items-center justify-center max-w-full max-h-[45vh]">
+                                    <video src={previewFile.data} controls className="max-w-full max-h-[45vh] object-contain" />
+                                </div>
                             )}
                             {getFileCategory(previewFile.type) === 'other' && (
                                 <div className="text-center">

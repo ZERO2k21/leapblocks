@@ -429,10 +429,15 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
       {/* Slide-out mobile menu drawer */}
       <div
         ref={mobileMenuRef}
-        className={`fixed top-0 right-0 h-full w-[290px] z-[1000] p-6 shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l ${isElectra
+        className={`fixed top-0 right-0 h-full z-[1000] shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l ${isElectra
             ? 'bg-[#18181b] border-[#27272a] text-[#f4f4f5]'
             : 'bg-[#0b1b42] border-[#bfdbfe]/20 text-white'
           } ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
+        style={{
+          width: '290px',
+          padding: '24px',
+          boxSizing: 'border-box'
+        }}
       >
         {/* Drawer Header */}
         <div className={`flex items-center justify-between border-b pb-4 ${isElectra ? 'border-zinc-800' : 'border-white/10'

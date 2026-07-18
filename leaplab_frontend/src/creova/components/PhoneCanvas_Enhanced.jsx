@@ -1210,43 +1210,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
                 </div>
                 {/* Viewport Toolbar controls */}
                 <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 select-none font-sans">
-                    <style>{`
-                        .viewport-select:hover + .viewport-chevron {
-                            color: #2563eb;
-                        }
-                    `}</style>
- 
-                    {/* Device Selector */}
-                    <div className="relative flex items-center">
-                        <select
-                            value={deviceType}
-                            onChange={(e) => {
-                                const newType = e.target.value;
-                                setDeviceType(newType);
-                                if (newType !== 'custom') {
-                                    setCustomPhoneDimensions(null);
-                                }
-                            }}
-                            style={{
-                                height: '34px',
-                                paddingLeft: '12px',
-                                paddingRight: '28px',
-                                borderRadius: '10px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
-                            }}
-                            className="viewport-select bg-slate-100 hover:bg-slate-200/60 text-slate-800 outline-none appearance-none cursor-pointer border border-slate-200/80 transition-all w-[100px] sm:w-[120px] md:w-auto truncate"
-                        >
-                            <option value="phone">Phone (412×915)</option>
-                            <option value="tablet7">Tablet 7" (600×960)</option>
-                            <option value="tablet10">Tablet 10" (800×1280)</option>
-                            <option value="monitor">Monitor (1280×800)</option>
-                            {customPhoneDimensions && <option value="custom">Custom</option>}
-                        </select>
-                        <ChevronDown className="viewport-chevron absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-colors" />
-                    </div>
  
                     {/* Orientation Toggle */}
                     <button
@@ -1366,9 +1329,15 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {/* Status Bar */}
                         {currentScreen.showStatusBar !== false && (
                             deviceType === 'phone' ? (
-                                <div className="h-12 bg-white text-slate-900 px-[38px] pt-[15px] flex items-center justify-between text-[11px] font-semibold font-sans pointer-events-none select-none relative border-b border-black/[0.015]">
+                                <div 
+                                    style={{ paddingLeft: '48px', paddingRight: '48px', paddingTop: '16px' }}
+                                    className="h-12 bg-white text-slate-900 flex items-center justify-between text-[11px] font-semibold font-sans pointer-events-none select-none relative border-b border-black/[0.015]"
+                                >
                                     <span className="font-bold w-[50px] tracking-[-0.01em]">{currentTime}</span>
-                                    <div className="absolute left-1/2 -translate-x-1/2 w-[95px] h-[24px] bg-black rounded-[12px] top-[11px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_0_4px_rgba(255,255,255,0.12)] after:absolute after:right-[18px] after:top-1/2 after:-translate-y-1/2 after:w-[5px] after:h-[5px] after:bg-slate-900 after:rounded-full after:shadow-[inset_0_0_1px_1px_#1e293b] after:opacity-80" />
+                                    <div 
+                                        style={{ top: '11px' }}
+                                        className="absolute left-1/2 -translate-x-1/2 w-[95px] h-[24px] bg-black rounded-[12px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_0_4px_rgba(255,255,255,0.12)] after:absolute after:right-[18px] after:top-1/2 after:-translate-y-1/2 after:w-[5px] after:h-[5px] after:bg-slate-900 after:rounded-full after:shadow-[inset_0_0_1px_1px_#1e293b] after:opacity-80" 
+                                    />
                                     <div className="flex items-center gap-1.5 w-[50px] justify-end">
                                         <Signal className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
                                         <Wifi className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
