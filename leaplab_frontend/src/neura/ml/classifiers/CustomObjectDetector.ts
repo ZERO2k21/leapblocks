@@ -73,10 +73,10 @@ export class CustomObjectDetector {
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
     // Detection parameters
-    private readonly SCALES = [0.5, 0.75, 1.0]
-    private readonly WINDOW_SIZES = [128, 192, 256]
-    private readonly STEP_RATIO = 0.4
-    private readonly CONFIDENCE_THRESHOLD = 0.35
+    private readonly SCALES = [0.5, 0.6, 0.75, 1.0]
+    private readonly WINDOW_SIZES = [64, 128, 160, 192, 256]
+    private readonly STEP_RATIO = 0.35
+    private readonly CONFIDENCE_THRESHOLD = 0.25
     private readonly NMS_IOU_THRESHOLD = 0.4
 
     private async ensureModel() {
