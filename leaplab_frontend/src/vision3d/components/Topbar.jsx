@@ -145,13 +145,13 @@ export const Topbar = ({
 
           <div className="flex items-center mr-2.5 shrink-0 filter drop-shadow-[0_0_14px_rgba(56,189,248,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
             <img alt="LeapLab" src="assets/leaplab_logo_transparent.png" className="h-12 object-contain" />
-            <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none">
+            <div className="hidden min-[1440px]:flex flex-col justify-center ml-2.5 leading-none">
               <span className="text-[7px] font-black uppercase tracking-[0.18em] font-sans text-[#93c5fd]">LEAPLAB</span>
               <span className="text-sm font-black tracking-[0.08em] font-sans text-white">VISION 3D</span>
             </div>
           </div>
-
-          <div className="hidden xl:flex items-center gap-3 h-full">
+ 
+          <div className="hidden min-[1440px]:flex items-center gap-3 h-full">
             {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
               <button
@@ -161,7 +161,7 @@ export const Topbar = ({
                 File
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${fileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-
+ 
               {fileMenuOpen && (
                 <div
                   style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '240px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
@@ -182,7 +182,7 @@ export const Topbar = ({
                 </div>
               )}
             </div>
-
+ 
             {/* Edit Menu */}
             <div ref={editMenuRef} className="relative">
               <button
@@ -192,7 +192,7 @@ export const Topbar = ({
                 Edit
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${editMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-
+ 
               {editMenuOpen && (
                 <div
                   style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '240px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
@@ -210,7 +210,7 @@ export const Topbar = ({
                 </div>
               )}
             </div>
-
+ 
             {/* View Menu */}
             <div ref={viewMenuRef} className="relative">
               <button
@@ -220,7 +220,7 @@ export const Topbar = ({
                 View
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${viewMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-
+ 
               {viewMenuOpen && (
                 <div
                   style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '200px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
@@ -231,7 +231,7 @@ export const Topbar = ({
                 </div>
               )}
             </div>
-
+ 
             <button className="flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide bg-transparent border-0 text-white hover:bg-white/10">
               <BookOpen size={14} strokeWidth={2.2} className="opacity-90" />
               Tutorials
@@ -239,14 +239,14 @@ export const Topbar = ({
             </button>
           </div>
         </div>
-
+ 
         {/* Center section */}
         <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
           <div
             style={{ paddingLeft: '24px' }}
             className="flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 bg-[#08143a]/55 border-[#93c5fd]/20"
           >
-            <span className="text-[12px] opacity-45 font-bold tracking-[0.01em] hidden xl:inline text-white">Folder</span>
+            <span className="text-[12px] opacity-45 font-bold tracking-[0.01em] hidden min-[1440px]:inline text-white">Folder</span>
             <input
               placeholder="My Project"
               type="text"
@@ -264,10 +264,10 @@ export const Topbar = ({
             </button>
           </div>
         </div>
-
+ 
         {/* Right section */}
         <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
-          <div className="hidden xl:flex items-center gap-3 pr-4 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
+          <div className="hidden min-[1440px]:flex items-center gap-3 pr-4 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
             <TopbarShareButton className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white" size={16} onSave={onSave} projectName={title} />
             <button title="Feedback" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
               <MessageSquareWarning size={16} strokeWidth={2.2} />
@@ -282,19 +282,19 @@ export const Topbar = ({
               <CircleHelp size={20} strokeWidth={2.2} />
             </button>
           </div>
-
+ 
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
             <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
           </div>
-
+ 
           <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
             <img alt="Leap into the AI Future" src="assets/logo-creoleap.png" className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]" />
           </div>
-
+ 
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
-            className="xl:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
+            className="min-[1440px]:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
           >
             <Menu size={20} strokeWidth={2.2} />
           </button>

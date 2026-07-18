@@ -199,7 +199,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               src="assets/leaplab_logo_transparent.png"
               className="h-12 object-contain"
             />
-            <div className="hidden xl:flex flex-col justify-center ml-2.5 leading-none gap-0.5">
+            <div className="hidden min-[1440px]:flex flex-col justify-center ml-2.5 leading-none gap-0.5">
               <span className={`text-[7px] font-black uppercase tracking-[0.18em] font-sans ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]'}`}>
                 LEAPLAB
               </span>
@@ -210,7 +210,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           </div>
 
           {/* Desktop dropdown menus */}
-          <div className="hidden xl:flex items-center gap-3 h-full">
+          <div className="hidden min-[1440px]:flex items-center gap-3 h-full">
             {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
               <button
@@ -301,7 +301,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   <span>{currentBoard === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}</span>
                   <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${boardMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-
+ 
                 <BoardDropdownMenu
                   isOpen={boardMenuOpen}
                   isElectra={isElectra}
@@ -337,7 +337,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             style={{ paddingLeft: '24px' }}
             className={`flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 ${isElectra ? 'bg-[#27272a]/50 border-[#27272a]' : 'bg-[#08143a]/55 border-[#93c5fd]/20'
               }`}>
-            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden xl:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
+            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden min-[1440px]:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
               Folder
             </span>
             <input
@@ -369,7 +369,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         {/* Right section */}
         <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
           {/* Quick actions - Desktop only */}
-          <div className={`hidden xl:flex items-center gap-3 pr-4 border-r h-8 shrink-0 ${isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
+          <div className={`hidden min-[1440px]:flex items-center gap-3 pr-4 border-r h-8 shrink-0 ${isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
             }`}>
             <TopbarShareButton className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`} size={16} onSave={onSave} projectName={title} />
             <button title="Feedback" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
@@ -408,7 +408,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
-            className={`xl:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${isElectra
+            className={`min-[1440px]:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${isElectra
                 ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
                 : 'bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24'
               }`}

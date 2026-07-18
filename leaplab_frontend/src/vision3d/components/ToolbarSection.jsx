@@ -233,30 +233,47 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
         </button>
       </div>
       <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
-        <div className="inline-flex items-center gap-1 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[40px] box-border hover:bg-slate-100 hover:text-slate-600" title="Objects in scene">
-          <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          {shapes.length}
+        <div 
+          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default" 
+          style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box' }}
+          title="Objects in scene"
+        >
+          <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>{shapes.length}</span>
         </div>
-        <div className="inline-flex items-center gap-1 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[40px] box-border hover:bg-slate-100 hover:text-slate-600" title="Selected shapes">
-          <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-          {selectedIds.length}
+        <div 
+          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default" 
+          style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box' }}
+          title="Selected shapes"
+        >
+          <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>{selectedIds.length}</span>
         </div>
         {tempWorkplane && (
-          <div className="inline-flex items-center gap-1 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[40px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#f97316' }}>
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
-            Workplane
+          <div 
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
+            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#f97316' }}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+            <span>Workplane</span>
           </div>
         )}
         {rulerActive && (
-          <div className="inline-flex items-center gap-1 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[40px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#ef4444' }}>
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
-            Ruler
+          <div 
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
+            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#ef4444' }}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
+            <span>Ruler</span>
           </div>
         )}
         {editMode !== 'object' && (
-          <div className="inline-flex items-center gap-1 py-2 px-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md select-none transition-all duration-150 h-[40px] box-border hover:bg-slate-100 hover:text-slate-600" style={{ color: '#a855f7' }}>
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
-            {editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}
+          <div 
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
+            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#a855f7' }}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
+            <span>{editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}</span>
           </div>
         )}
       </div>
