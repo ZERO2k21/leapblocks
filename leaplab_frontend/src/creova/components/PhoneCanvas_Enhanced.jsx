@@ -1137,12 +1137,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
     return (
         <div className="flex flex-col h-full w-full relative overflow-hidden" onClick={() => setSelectedId(currentScreen.id)}>
             {/* Professional Top Bar - Fixed at top of canvas pane */}
-            <div className="w-full bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between gap-6 z-30 shadow-sm" style={{ height: '64px' }}>
-                <div className="flex items-center gap-6">
+            <div className="w-full bg-white border-b border-slate-200 py-3 flex items-center justify-between gap-2 xl:gap-6 z-30 shadow-sm" style={{ height: '64px', paddingLeft: '24px', paddingRight: '24px' }}>
+                <div className="flex items-center gap-2 xl:gap-6" style={{ paddingLeft: '16px' }}>
                     {/* Screen Selector - Tab Style */}
-                    <div className="flex items-center gap-4">
-                        <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider select-none">Screens</span>
-                        <div style={{ height: '38px' }} className="flex bg-slate-200/50 p-1 rounded-xl gap-2 items-center">
+                    <div className="flex items-center gap-2 xl:gap-4">
+                        <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider select-none hidden xl:inline">Screens</span>
+                        <div style={{ height: '38px' }} className="flex bg-slate-200/50 p-1 rounded-xl gap-1.5 xl:gap-2 items-center">
                             {screens.map(screen => (
                                 <div key={screen.id} className="relative group/screen flex items-center">
                                     <button
@@ -1208,15 +1208,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         </div>
                     </div>
                 </div>
-
                 {/* Viewport Toolbar controls */}
-                <div className="flex items-center gap-3 shrink-0 select-none font-sans">
+                <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 select-none font-sans">
                     <style>{`
                         .viewport-select:hover + .viewport-chevron {
                             color: #2563eb;
                         }
                     `}</style>
-
+ 
                     {/* Device Selector */}
                     <div className="relative flex items-center">
                         <select
@@ -1231,14 +1230,14 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             style={{
                                 height: '34px',
                                 paddingLeft: '12px',
-                                paddingRight: '32px',
+                                paddingRight: '28px',
                                 borderRadius: '10px',
                                 fontSize: '12px',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em'
                             }}
-                            className="viewport-select bg-slate-100 hover:bg-slate-200/60 text-slate-800 outline-none appearance-none cursor-pointer border border-slate-200/80 transition-all"
+                            className="viewport-select bg-slate-100 hover:bg-slate-200/60 text-slate-800 outline-none appearance-none cursor-pointer border border-slate-200/80 transition-all w-[100px] sm:w-[120px] md:w-auto truncate"
                         >
                             <option value="phone">Phone (412×915)</option>
                             <option value="tablet7">Tablet 7" (600×960)</option>
@@ -1246,22 +1245,22 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             <option value="monitor">Monitor (1280×800)</option>
                             {customPhoneDimensions && <option value="custom">Custom</option>}
                         </select>
-                        <ChevronDown className="viewport-chevron absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-colors" />
+                        <ChevronDown className="viewport-chevron absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-colors" />
                     </div>
-
+ 
                     {/* Orientation Toggle */}
                     <button
                         onClick={toggleOrientation}
                         style={{ height: '34px', width: '34px', borderRadius: '10px' }}
-                        className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/60 text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer"
+                        className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/60 text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer shrink-0"
                         title={`Switch to ${orientation === 'portrait' ? 'Landscape' : 'Portrait'}`}
                     >
                         <RotateCw className="w-4 h-4" />
                     </button>
-
+ 
                     {/* Dimensions / Inline Editor */}
                     {isEditingDimensions ? (
-                        <div style={{ height: '34px', borderRadius: '10px' }} className="flex items-center gap-1 bg-white border border-blue-400 px-2 shadow-sm">
+                        <div style={{ height: '34px', borderRadius: '10px' }} className="flex items-center gap-1 bg-white border border-blue-400 px-2 shadow-sm shrink-0">
                             <input
                                 type="number"
                                 placeholder="W"
@@ -1309,11 +1308,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 setEditHeight(String(displayHeight));
                                 setIsEditingDimensions(true);
                             }}
-                            style={{ height: '34px', borderRadius: '10px', paddingLeft: '12px', paddingRight: '12px' }}
-                            className="bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+                            style={{ height: '34px', borderRadius: '10px', paddingLeft: '8px', paddingRight: '8px' }}
+                            className="bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1 transition-all cursor-pointer active:scale-98 shrink-0"
                             title="Edit Canvas Dimensions"
                         >
-                            <span>&nbsp;{displayWidth} × {displayHeight} px&nbsp;</span>
+                            <span>&nbsp;{displayWidth}×{displayHeight}<span className="hidden xl:inline"> px</span>&nbsp;</span>
                         </button>
                     )}
                 </div>
@@ -1471,23 +1470,31 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
                 {/* Non-Visible Components Bar Pro */}
                 {nonVisibleComponents.length > 0 && (
-                    <div className="w-full max-w-[360px] mx-auto bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl p-3 shadow-md flex flex-col gap-2 z-10 shrink-0">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                            <span className="text-[10px] font-extrabold text-slate-900 uppercase tracking-[0.15em] whitespace-nowrap mx-auto">Non-Visible Components</span>
-                            <span className="text-[9px] bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-full font-bold">{nonVisibleComponents.length}</span>
+                    <div className="w-full max-w-[420px] mx-auto bg-white/70 backdrop-blur-md border border-slate-200/50 rounded-2xl p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.08)] flex flex-col gap-3.5 z-10 shrink-0 transition-all duration-300 hover:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.12)]">
+                        <div className="flex items-center justify-between border-b border-slate-100/80 pb-2.5">
+                            <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] whitespace-nowrap">
+                                Non-Visible Components
+                            </span>
+                            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100/50 px-2 py-0.5 rounded-full font-extrabold shadow-sm">
+                                {nonVisibleComponents.length}
+                            </span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 justify-center">
+                        <div className="flex flex-wrap gap-2 justify-center">
                             {nonVisibleComponents.map(comp => (
                                 <div
                                     key={comp.id}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-sm border ${selectedId === comp.id ? 'bg-white text-blue-600 border-blue-200 shadow-md scale-105' : 'bg-white text-slate-900 border-slate-200 hover:border-blue-200'}`}
+                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all duration-200 border ${
+                                        selectedId === comp.id
+                                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-md shadow-blue-500/20 scale-[1.03] -translate-y-0.5'
+                                            : 'bg-white text-slate-700 border-slate-200/80 hover:border-blue-400 hover:text-blue-600 hover:-translate-y-0.5 hover:shadow-sm'
+                                    }`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedId(comp.id);
                                     }}
                                 >
                                     <ComponentIcon type={comp.type} size={18} className="shrink-0" />
-                                    <span className="uppercase tracking-[0.08em]">{comp.id}</span>
+                                    <span className="uppercase tracking-[0.08em] font-extrabold">{comp.id}</span>
                                 </div>
                             ))}
                         </div>

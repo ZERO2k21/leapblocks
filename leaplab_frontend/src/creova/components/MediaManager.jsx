@@ -426,11 +426,11 @@ export default function MediaManager({ appState }) {
                                     </div>
 
                                     {/* Dedicated text block */}
-                                    <div className="p-2 flex flex-col gap-0.5 bg-white min-w-0">
-                                        <div className="text-[11px] font-bold text-slate-700 truncate w-full" title={item.filename}>
+                                    <div className="px-3 py-2.5 flex flex-col items-center gap-1 bg-white min-w-0">
+                                        <div className="text-[11px] font-bold text-slate-700 truncate w-full text-center" title={item.filename}>
                                             {item.filename}
                                         </div>
-                                        <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                        <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider text-center">
                                             {formatFileSize(item.size)}
                                         </div>
                                     </div>

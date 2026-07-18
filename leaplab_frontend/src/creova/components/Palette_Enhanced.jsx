@@ -45,7 +45,7 @@ export default function PaletteEnhanced() {
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
             <div
-                style={{ paddingTop: '28px', paddingBottom: '12px', paddingLeft: '24px', paddingRight: '24px' }}
+                style={{ paddingTop: '13px', paddingBottom: '13px', paddingLeft: '24px', paddingRight: '24px' }}
                 className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm"
             >
                 <div className="relative w-full flex items-center">
@@ -82,12 +82,12 @@ export default function PaletteEnhanced() {
                                 className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:bg-gradient-to-r after:from-blue-500 after:to-cyan-500 after:transition-all after:duration-300 after:ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15 after:w-full' : 'bg-gradient-to-b from-white to-slate-50 after:w-0'}`}
                                 onClick={() => toggleCategory(category)}
                             >
-                                <span className="flex items-center gap-2 min-w-0">
-                                    <div className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 scale-[1.08] border-transparent' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-blue-500/15 text-blue-600'}`}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30 scale-100 border-transparent' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-blue-500/15 text-blue-600'}`}>
                                         {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                                     </div>
                                     <span className="tracking-[0.05em] font-extrabold truncate" title={category}>{category}</span>
-                                </span>
+                                </div>
                                 <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200 shrink-0">&nbsp;{filteredItems.length}&nbsp;</span>
                             </button>
 
