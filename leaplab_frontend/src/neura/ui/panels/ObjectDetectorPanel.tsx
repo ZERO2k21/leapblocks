@@ -58,6 +58,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const testFileInputRef = useRef<HTMLInputElement>(null)
     const cameraOffUploadRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new ObjectDetector())
     const trainerRef = useRef(new ObjectDetectionTrainer())
@@ -365,7 +366,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             const selectedClass = mode.getSelectedClass()
             if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
                 showSaved('⚠️ Sample limit reached! (20 per class)')
-                if (fileInputRef.current) fileInputRef.current.value = ''
+                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
                 return
             }
             let successCount = 0
@@ -419,10 +420,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             if (limitReached) {
                 showSaved('⚠️ Sample limit reached! (20 per class)')
             }
-            if (fileInputRef.current) fileInputRef.current.value = ''
+            if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
             return
         }
-
         const file = files[0]
         if (!file || !file.type.startsWith('image/')) return
         const dataUrl = await new Promise<string>((resolve) => {
@@ -435,13 +435,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (mode.mode === 'collect') {
             if (!mode.selectedClassId) {
                 showSaved('⚠️ Create a class first, then upload images')
-                if (fileInputRef.current) fileInputRef.current.value = ''
+                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
                 return
             }
             const selectedClass = mode.getSelectedClass()
             if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
                 showSaved('⚠️ Sample limit reached! (20 per class)')
-                if (fileInputRef.current) fileInputRef.current.value = ''
+                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
                 return
             }
             const img = new Image()
@@ -464,7 +464,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     showSaved('⚠️ Sample limit reached! (20 per class)')
                 }
             }
-            if (fileInputRef.current) fileInputRef.current.value = ''
+            if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
             return
         }
 
@@ -526,7 +526,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 setUploadedImage({ originalUrl: dataUrl, annotatedUrl: null, width: img.naturalWidth, height: img.naturalHeight })
             }
         }
-        if (fileInputRef.current) fileInputRef.current.value = ''
+        if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
 
     const handleSaveUploadedImage = useCallback(async () => {
@@ -843,44 +843,83 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
             {/* Horizontal Split Layout */}
             <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, padding: '10px 20px', overflow: 'hidden' }}>
-                {/* Left - Camera */}
+                {/* Left - Camera / Uploaded Image */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
-                    {/* Camera feed */}
+                    {/* Camera / Image feed */}
                     <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0 }}>
-                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
-                        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
-                        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '8px' }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: cameraOn ? '#ef4444' : '#6b7280', boxShadow: cameraOn ? '0 0 6px rgba(239,68,68,0.6)' : 'none', animation: cameraOn ? 'pulse 2s infinite' : 'none' }} />
-                            <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>{cameraOn ? '🔍 LIVE' : '📷 OFF'}</span>
+                        {/* Live camera feed */}
+                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
+                        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
+
+                        {/* Uploaded image with annotations */}
+                        {uploadedImage && (
+                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                <img src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)} alt="Uploaded test" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                {/* Toggle original/annotated */}
+                                {uploadedImage.annotatedUrl && (
+                                    <button onClick={() => setShowOriginal(!showOriginal)} style={{ position: 'absolute', top: '10px', right: '10px', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: '#fff', color: '#4a4455', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                                        {showOriginal ? '🎯 Show Detections' : '📷 Original'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Status badge */}
+                        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '8px', visibility: cameraOn || uploadedImage ? 'visible' : 'hidden' }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: uploadedImage ? '#10b981' : cameraOn ? '#ef4444' : '#6b7280', boxShadow: cameraOn ? '0 0 6px rgba(239,68,68,0.6)' : 'none', animation: cameraOn ? 'pulse 2s infinite' : 'none' }} />
+                            <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>{uploadedImage ? '📸 IMAGE' : cameraOn ? '🔍 LIVE' : '📷 OFF'}</span>
                         </div>
-                        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                            <button onClick={toggleCamera} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#fff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
-                                📷 {cameraOn ? 'On' : 'Start'}
-                            </button>
-                        </div>
+
+                        {/* Detection count badge */}
                         {currentDetections.length > 0 && (
                             <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', padding: '6px 12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px' }}>
                                 <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>🎯 {currentDetections.length} objects</span>
                             </div>
                         )}
-                        {!cameraOn && !isLoadingModel && (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                <span style={{ fontSize: '32px', marginBottom: '6px' }}>📷</span>
-                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 700 }}>Camera is off</span>
-                                <button onClick={startCamera} style={{ marginTop: '8px', padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Start Camera</button>
+
+                        {/* Camera off / no image placeholder */}
+                        {!cameraOn && !uploadedImage && !isLoadingModel && (
+                            <div
+                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
+                                onDrop={async (e) => {
+                                    e.preventDefault()
+                                    setIsDragging(false)
+                                    if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
+                                }}
+                                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : 'transparent'}`, borderRadius: '14px', transition: 'all 0.2s ease' }}
+                            >
+                                <span style={{ fontSize: '36px', marginBottom: '6px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 700, marginBottom: '8px' }}>{isDragging ? 'Drop image here' : 'Camera is off'}</span>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={startCamera} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Start Camera</button>
+                                    <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '6px 12px', background: '#fff', color: '#630ed4', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload</button>
+                                </div>
                             </div>
                         )}
                     </div>
 
+                    <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+
                     {/* Controls */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
-                        <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
-                            {cameraOn ? '📷 Stop' : '📷 Start'}
-                        </button>
-                        {cameraOn && (
-                            <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                                {isDetecting ? '⏳...' : '🔍 Scan'}
-                            </button>
+                        {uploadedImage ? (
+                            <>
+                                <button onClick={() => testFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', border: 'none', cursor: 'pointer' }}>📂 Try Another</button>
+                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: '#f5f3ff', color: '#4a4455', border: 'none', cursor: 'pointer' }}>📷 Use Camera</button>
+                            </>
+                        ) : (
+                            <>
+                                <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
+                                    {cameraOn ? '📷 Stop' : '📷 Start'}
+                                </button>
+                                {cameraOn && (
+                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                                        {isDetecting ? '⏳...' : '🔍 Scan'}
+                                    </button>
+                                )}
+                                <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload</button>
+                            </>
                         )}
                     </div>
                 </div>

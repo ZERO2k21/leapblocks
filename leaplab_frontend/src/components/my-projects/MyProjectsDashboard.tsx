@@ -2,8 +2,7 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  */
-import React, { useEffect, useState, useRef } from 'react';
-import * as THREE from 'three';
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import {
     ArrowLeft,
     Trash2,
@@ -108,22 +107,22 @@ const renderCardVisual = (mode: string, projectName: string) => {
         case 'electra':
         case 'intermediate':
             return (
-                <div className="project-card-visual visual-electra">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-electra">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <pattern id={`grid-${seed}`} width="12" height="12" patternUnits="userSpaceOnUse">
-                                <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(34, 197, 94, 0.07)" strokeWidth="0.5"/>
+                                <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(34, 197, 94, 0.07)" strokeWidth="0.5" />
                             </pattern>
                         </defs>
                         <rect width="100%" height="100%" fill={`url(#grid-${seed})`} rx="8" />
                         {/* Interactive schematic look */}
                         <path d={`M 20 55 H 80 L 100 ${seed % 2 === 0 ? '25' : '85'} H 140`} stroke={accent} strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
                         <path d={`M 40 85 H 105 L 125 ${seed % 2 === 0 ? '90' : '20'} H 175`} stroke={accent} strokeWidth="1" opacity="0.4" />
-                        
+
                         {/* Glowing Connection Nodes */}
                         <circle cx="100" cy={seed % 2 === 0 ? '25' : '85'} r="3.5" fill={accent} className="animate-pulse" />
                         <circle cx="125" cy={seed % 2 === 0 ? '90' : '20'} r="2.5" fill={accent} />
-                        
+
                         {/* Stylized microcontroller block */}
                         <rect x="80" y="40" width="40" height="30" rx="3" fill="#0F172A" stroke={accent} strokeWidth="1.5" />
                         <line x1="88" y1="36" x2="88" y2="40" stroke={accent} strokeWidth="1" />
@@ -140,7 +139,7 @@ const renderCardVisual = (mode: string, projectName: string) => {
             );
         case 'python':
             return (
-                <div className="project-card-visual visual-python">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-python">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="rgba(59, 130, 246, 0.02)" rx="8" />
                         {/* Stylized code terminal */}
@@ -148,18 +147,18 @@ const renderCardVisual = (mode: string, projectName: string) => {
                         <circle cx="22" cy="22" r="3" fill="#EF4444" />
                         <circle cx="32" cy="22" r="3" fill="#F59E0B" />
                         <circle cx="42" cy="22" r="3" fill="#10B981" />
-                        
+
                         <text x="20" y="45" fontSize="8" fontFamily="monospace" fill="#3B82F6" fontWeight="bold">&gt;&gt; {projectName.substring(0, 14)}</text>
                         <text x="20" y="60" fontSize="7" fontFamily="monospace" fill="#64748B">status: compiled successfully</text>
                         <text x="20" y="75" fontSize="7" fontFamily="monospace" fill="#10B981">executing blockly modules...</text>
-                        
+
                         <path d="M160 70 L170 80 L160 90" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </div>
             );
         case 'neura':
             return (
-                <div className="project-card-visual visual-neura">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-neura">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="rgba(168, 85, 247, 0.02)" rx="8" />
                         {/* Synapse network nodes */}
@@ -168,7 +167,7 @@ const renderCardVisual = (mode: string, projectName: string) => {
                         <line x1="80" y1="25" x2="140" y2="55" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
                         <line x1="80" y1="85" x2="140" y2="55" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" />
                         <line x1="80" y1="25" x2="80" y2="85" stroke="rgba(168, 85, 247, 0.15)" strokeWidth="0.75" />
-                        
+
                         <circle cx="30" cy="55" r="6" fill="#A855F7" />
                         <circle cx="80" cy="25" r="4.5" fill="#C084FC" />
                         <circle cx="80" cy="85" r="4.5" fill="#C084FC" />
@@ -180,7 +179,7 @@ const renderCardVisual = (mode: string, projectName: string) => {
             );
         case 'vision3d':
             return (
-                <div className="project-card-visual visual-vision3d">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-vision3d">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="rgba(99, 102, 241, 0.02)" rx="8" />
                         {/* 3D cube */}
@@ -200,14 +199,14 @@ const renderCardVisual = (mode: string, projectName: string) => {
             );
         case 'creova':
             return (
-                <div className="project-card-visual visual-creova">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-creova">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="rgba(236, 72, 153, 0.02)" rx="8" />
                         {/* Device frame preview */}
                         <rect x="65" y="15" width="70" height="80" rx="8" fill="#1E293B" stroke={accent} strokeWidth="1.5" />
                         <rect x="71" y="21" width="58" height="52" rx="4" fill="#0F172A" />
                         <circle cx="100" cy="84" r="3" fill="#EC4899" />
-                        
+
                         {/* UI Blocks inside preview */}
                         <rect x="77" y="28" width="20" height="12" rx="2" fill="#EC4899" opacity="0.8" />
                         <circle cx="110" cy="34" r="4" fill="#3B82F6" />
@@ -218,7 +217,7 @@ const renderCardVisual = (mode: string, projectName: string) => {
             );
         default:
             return (
-                <div className="project-card-visual visual-default">
+                <div className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden visual-default">
                     <svg viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="rgba(99, 102, 241, 0.02)" rx="8" />
                         <path d="M100 25 L145 75 H55 Z" stroke={accent} strokeWidth="1.5" strokeLinejoin="round" fill="none" />
@@ -231,12 +230,12 @@ const renderCardVisual = (mode: string, projectName: string) => {
 
 const renderHeaderBackgroundVisual = (mode: string) => {
     const accent = MODULES[mode]?.accent || '#6366F1';
-    
+
     switch (mode) {
         case 'electra':
         case 'intermediate':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-electra" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -249,10 +248,10 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                         <path d="M 400 60 H 600 L 620 30 H 680 L 690 60 H 750" stroke={accent} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.25" />
                         <path d="M 500 90 H 550 L 570 110 H 660 L 675 75 H 780" stroke={accent} strokeWidth="1.2" opacity="0.18" />
                         <path d="M 450 30 H 530 L 540 50 H 590 L 600 10 H 700" stroke={accent} strokeWidth="1" opacity="0.12" />
-                        
+
                         <path d="M 648 20 V 40 M 652 20 V 40 M 644 30 H 648 M 652 30 H 656" stroke={accent} strokeWidth="1.5" opacity="0.3" />
                         <path d="M 560 50 H 565 L 568 45 L 571 55 L 574 45 L 577 55 L 580 45 L 583 55 L 586 50 H 590" stroke={accent} strokeWidth="1.5" opacity="0.3" />
-                        
+
                         <circle cx="600" cy="60" r="3.5" fill={accent} opacity="0.4" />
                         <circle cx="620" cy="30" r="2.5" fill={accent} opacity="0.3" />
                         <circle cx="680" cy="30" r="2.5" fill={accent} opacity="0.3" />
@@ -265,7 +264,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
             );
         case 'python':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-python" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -279,17 +278,17 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                         <text x="500" y="45" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.12">    load_modules(active=True)</text>
                         <text x="500" y="60" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.12">    compile_blocks()</text>
                         <text x="500" y="75" fontFamily="monospace" fontSize="9" fill={accent} opacity="0.15">    return System.live_run()</text>
-                        
+
                         <text x="680" y="40" fontFamily="monospace" fontSize="11" fill={accent} opacity="0.25" fontWeight="bold">&lt;/&gt;</text>
                         <text x="710" y="85" fontFamily="monospace" fontSize="10" fill={accent} opacity="0.18">&gt;&gt;&gt; sys.ready</text>
-                        
+
                         <path d="M 450 15 H 750 V 105 H 450 Z" stroke={accent} strokeWidth="1" strokeDasharray="8 8" opacity="0.08" />
                     </svg>
                 </div>
             );
         case 'neura':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-neura" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -307,7 +306,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                         <line x1="680" y1="60" x2="760" y2="90" stroke={accent} strokeWidth="1" opacity="0.15" />
                         <line x1="600" y1="30" x2="600" y2="90" stroke={accent} strokeWidth="0.75" opacity="0.1" />
                         <line x1="680" y1="60" x2="680" y2="10" stroke={accent} strokeWidth="0.75" opacity="0.1" />
-                        
+
                         <circle cx="520" cy="60" r="4" fill={accent} opacity="0.3" />
                         <circle cx="600" cy="30" r="5" fill={accent} opacity="0.25" />
                         <circle cx="600" cy="90" r="5" fill={accent} opacity="0.25" />
@@ -320,7 +319,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
             );
         case 'creova':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-creova" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -333,11 +332,11 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                         <rect x="580" y="20" width="60" height="80" rx="6" stroke={accent} strokeWidth="1" opacity="0.2" fill="none" />
                         <rect x="585" y="25" width="50" height="50" rx="3" stroke={accent} strokeWidth="0.75" opacity="0.15" fill="none" />
                         <circle cx="610" cy="85" r="2.5" fill={accent} opacity="0.25" />
-                        
+
                         <path d="M 520 60 H 580" stroke={accent} strokeWidth="0.75" strokeDasharray="3 3" opacity="0.2" />
                         <path d="M 640 40 H 700 L 720 60 H 760" stroke={accent} strokeWidth="1" opacity="0.18" />
                         <circle cx="700" cy="40" r="2.5" fill={accent} opacity="0.3" />
-                        
+
                         <line x1="680" y1="10" x2="680" y2="110" stroke={accent} strokeWidth="0.5" strokeDasharray="2 4" opacity="0.1" />
                         <line x1="480" y1="80" x2="780" y2="80" stroke={accent} strokeWidth="0.5" strokeDasharray="2 4" opacity="0.1" />
                     </svg>
@@ -345,7 +344,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
             );
         case 'junior':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-junior" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -357,18 +356,18 @@ const renderHeaderBackgroundVisual = (mode: string) => {
                         <rect width="100%" height="100%" fill="url(#header-grad-junior)" />
                         <path d="M 520 40 H 540 A 5 5 0 0 1 550 40 H 570 V 60 A 5 5 0 0 1 570 70 H 520 Z" stroke={accent} strokeWidth="1.2" opacity="0.25" fill="none" />
                         <path d="M 580 60 H 600 A 5 5 0 0 1 610 60 H 630 V 80 A 5 5 0 0 1 630 90 H 580 Z" stroke={accent} strokeWidth="1.2" opacity="0.18" fill="none" />
-                        
+
                         <circle cx="670" cy="30" r="3" fill={accent} opacity="0.2" />
                         <circle cx="700" cy="75" r="4.5" fill={accent} opacity="0.25" />
                         <circle cx="740" cy="45" r="2.5" fill={accent} opacity="0.2" />
-                        
+
                         <path d="M 680 70 C 680 50, 720 50, 720 70 C 720 90, 680 90, 680 70" stroke={accent} strokeWidth="1" strokeDasharray="3 3" opacity="0.15" />
                     </svg>
                 </div>
             );
         case 'vision3d':
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-vision3d" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -401,7 +400,7 @@ const renderHeaderBackgroundVisual = (mode: string) => {
             );
         default:
             return (
-                <div className="my-projects-header-bg-visual">
+                <div className="absolute top-0 right-0 bottom-0 w-[65%] pointer-events-none z-0 opacity-[0.85] mask-image-[linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)] [-webkit-mask-image:linear-gradient(to_left,rgba(0,0,0,1)_0%,rgba(0,0,0,0.8)_40%,rgba(0,0,0,0)_100%)]">
                     <svg viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="header-grad-default" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -437,148 +436,159 @@ const Vision3DCardVisual: React.FC<{ shapes: any[]; accent: string }> = ({ shape
         const width = container.clientWidth || 200;
         const height = container.clientHeight || 110;
 
-        // Renderer
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(width, height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+        let cleanup: (() => void) | null = null;
 
-        // Scene
-        const scene = new THREE.Scene();
+        const initThree = async () => {
+            const THREE = await import('three');
 
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
-        dirLight.position.set(8, 12, 10);
-        scene.add(dirLight);
+            // Renderer
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
 
-        // Group to hold all shapes for bounding box calculations
-        const group = new THREE.Group();
+            // Scene
+            const scene = new THREE.Scene();
 
-        // Build meshes
-        const meshes: THREE.Mesh[] = [];
-        shapes.forEach((shape: any) => {
-            if (shape.visible === false || shape.type === 'group') return;
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+            dirLight.position.set(8, 12, 10);
+            scene.add(dirLight);
 
-            let geometry: THREE.BufferGeometry;
-            const w = shape.width ?? 2;
-            const h = shape.height ?? shape.cylinderHeight ?? shape.coneHeight ?? shape.pyramidHeight ?? shape.tubeHeight ?? shape.polygonHeight ?? 2;
-            const d = shape.depth ?? 2;
+            // Group to hold all shapes for bounding box calculations
+            const group = new THREE.Group();
 
-            switch (shape.type) {
-                case 'box':
-                    geometry = new THREE.BoxGeometry(w, h, d);
-                    break;
-                case 'cylinder':
-                    geometry = new THREE.CylinderGeometry(shape.radiusTop ?? 1, shape.radiusBottom ?? 1, h, 16);
-                    break;
-                case 'sphere':
-                    geometry = new THREE.SphereGeometry(shape.radius ?? 1, 16, 12);
-                    break;
-                case 'cone':
-                    geometry = new THREE.ConeGeometry(shape.coneRadius ?? 1, h, 16);
-                    break;
-                case 'torus':
-                    geometry = new THREE.TorusGeometry(shape.torusRadius ?? 1, shape.tubeRadius ?? 0.4, 8, 24);
-                    break;
-                case 'pyramid':
-                    geometry = new THREE.ConeGeometry(shape.pyramidRadius ?? 1, h, shape.pyramidSides ?? 4);
-                    break;
-                case 'halfSphere':
-                    geometry = new THREE.SphereGeometry(shape.halfSphereRadius ?? 1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-                    break;
-                case 'tube':
-                    geometry = new THREE.CylinderGeometry(shape.tubeOuterRadius ?? 1, shape.tubeOuterRadius ?? 1, h, 16);
-                    break;
-                case 'ring':
-                    geometry = new THREE.RingGeometry(shape.innerRadius ?? 0.5, shape.outerRadius ?? 1, 16);
-                    break;
-                default:
-                    geometry = new THREE.BoxGeometry(w, h, d);
-                    break;
-            }
+            // Build meshes
+            const meshes: any[] = [];
+            shapes.forEach((shape: any) => {
+                if (shape.visible === false || shape.type === 'group') return;
 
-            // Material
-            const isHole = shape.isHole === true;
-            const material = new THREE.MeshStandardMaterial({
-                color: new THREE.Color(isHole ? '#cbd5e1' : (shape.color || accent)),
-                metalness: shape.metalness ?? 0.1,
-                roughness: shape.roughness ?? 0.7,
-                transparent: isHole || (shape.opacity ?? 1) < 1,
-                opacity: isHole ? 0.35 : (shape.opacity ?? 1),
-                wireframe: isHole
-            });
+                let geometry: any;
+                const w = shape.width ?? 2;
+                const h = shape.height ?? shape.cylinderHeight ?? shape.coneHeight ?? shape.pyramidHeight ?? shape.tubeHeight ?? shape.polygonHeight ?? 2;
+                const d = shape.depth ?? 2;
 
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(shape.position?.[0] || 0, shape.position?.[1] || 0, shape.position?.[2] || 0);
-            mesh.rotation.set(shape.rotation?.[0] || 0, shape.rotation?.[1] || 0, shape.rotation?.[2] || 0);
-            mesh.scale.set(shape.scale?.[0] || 1, shape.scale?.[1] || 1, shape.scale?.[2] || 1);
-
-            group.add(mesh);
-            meshes.push(mesh);
-        });
-
-        scene.add(group);
-
-        // Center and compute bounding box to frame the camera
-        const box = new THREE.Box3().setFromObject(group);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-
-        // Move group center to origin for rendering consistency
-        group.position.sub(center);
-
-        // Camera positioning (isometric style view)
-        const maxDim = Math.max(size.x, size.y, size.z, 2);
-        const fov = 45;
-        const cameraValue = maxDim * 1.5;
-        
-        const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 1000);
-        camera.position.set(cameraValue, cameraValue * 0.8, cameraValue);
-        camera.lookAt(0, 0, 0);
-
-        // Grid helper for Tinkercad workspace feel
-        const gridHelper = new THREE.GridHelper(Math.max(maxDim * 3, 10), 10, new THREE.Color(accent), new THREE.Color('#e2e8f0'));
-        gridHelper.position.y = -size.y / 2 - 0.01;
-        scene.add(gridHelper);
-
-        // Single static render
-        renderer.render(scene, camera);
-
-        // Cleanup
-        return () => {
-            if (container.contains(renderer.domElement)) {
-                container.removeChild(renderer.domElement);
-            }
-            meshes.forEach(mesh => {
-                mesh.geometry.dispose();
-                if (Array.isArray(mesh.material)) {
-                    mesh.material.forEach(m => m.dispose());
-                } else {
-                    mesh.material.dispose();
+                switch (shape.type) {
+                    case 'box':
+                        geometry = new THREE.BoxGeometry(w, h, d);
+                        break;
+                    case 'cylinder':
+                        geometry = new THREE.CylinderGeometry(shape.radiusTop ?? 1, shape.radiusBottom ?? 1, h, 16);
+                        break;
+                    case 'sphere':
+                        geometry = new THREE.SphereGeometry(shape.radius ?? 1, 16, 12);
+                        break;
+                    case 'cone':
+                        geometry = new THREE.ConeGeometry(shape.coneRadius ?? 1, h, 16);
+                        break;
+                    case 'torus':
+                        geometry = new THREE.TorusGeometry(shape.torusRadius ?? 1, shape.tubeRadius ?? 0.4, 8, 24);
+                        break;
+                    case 'pyramid':
+                        geometry = new THREE.ConeGeometry(shape.pyramidRadius ?? 1, h, shape.pyramidSides ?? 4);
+                        break;
+                    case 'halfSphere':
+                        geometry = new THREE.SphereGeometry(shape.halfSphereRadius ?? 1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                        break;
+                    case 'tube':
+                        geometry = new THREE.CylinderGeometry(shape.tubeOuterRadius ?? 1, shape.tubeOuterRadius ?? 1, h, 16);
+                        break;
+                    case 'ring':
+                        geometry = new THREE.RingGeometry(shape.innerRadius ?? 0.5, shape.outerRadius ?? 1, 16);
+                        break;
+                    default:
+                        geometry = new THREE.BoxGeometry(w, h, d);
+                        break;
                 }
+
+                // Material
+                const isHole = shape.isHole === true;
+                const material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(isHole ? '#cbd5e1' : (shape.color || accent)),
+                    metalness: shape.metalness ?? 0.1,
+                    roughness: shape.roughness ?? 0.7,
+                    transparent: isHole || (shape.opacity ?? 1) < 1,
+                    opacity: isHole ? 0.35 : (shape.opacity ?? 1),
+                    wireframe: isHole
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(shape.position?.[0] || 0, shape.position?.[1] || 0, shape.position?.[2] || 0);
+                mesh.rotation.set(shape.rotation?.[0] || 0, shape.rotation?.[1] || 0, shape.rotation?.[2] || 0);
+                mesh.scale.set(shape.scale?.[0] || 1, shape.scale?.[1] || 1, shape.scale?.[2] || 1);
+
+                group.add(mesh);
+                meshes.push(mesh);
             });
-            gridHelper.geometry.dispose();
-            if (Array.isArray(gridHelper.material)) {
-                gridHelper.material.forEach(m => m.dispose());
-            } else {
-                gridHelper.material.dispose();
-            }
-            renderer.dispose();
+
+            scene.add(group);
+
+            // Center and compute bounding box to frame the camera
+            const box = new THREE.Box3().setFromObject(group);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+
+            // Move group center to origin for rendering consistency
+            group.position.sub(center);
+
+            // Camera positioning (isometric style view)
+            const maxDim = Math.max(size.x, size.y, size.z, 2);
+            const fov = 45;
+            const cameraValue = maxDim * 1.5;
+
+            const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 1000);
+            camera.position.set(cameraValue, cameraValue * 0.8, cameraValue);
+            camera.lookAt(0, 0, 0);
+
+            // Grid helper for Tinkercad workspace feel
+            const gridHelper = new THREE.GridHelper(Math.max(maxDim * 3, 10), 10, new THREE.Color(accent), new THREE.Color('#e2e8f0'));
+            gridHelper.position.y = -size.y / 2 - 0.01;
+            scene.add(gridHelper);
+
+            // Single static render
+            renderer.render(scene, camera);
+
+            cleanup = () => {
+                if (container.contains(renderer.domElement)) {
+                    container.removeChild(renderer.domElement);
+                }
+                meshes.forEach(mesh => {
+                    mesh.geometry.dispose();
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach((m: any) => m.dispose());
+                    } else {
+                        mesh.material.dispose();
+                    }
+                });
+                gridHelper.geometry.dispose();
+                if (Array.isArray(gridHelper.material)) {
+                    gridHelper.material.forEach(m => m.dispose());
+                } else {
+                    gridHelper.material.dispose();
+                }
+                renderer.dispose();
+            };
+        };
+
+        initThree();
+
+        return () => {
+            cleanup?.();
         };
     }, [shapes, accent]);
 
     return (
-        <div 
-            ref={containerRef} 
-            className="project-card-visual actual-vision3d-canvas"
-            style={{ 
-                width: '100%', 
-                height: '110px', 
-                position: 'relative', 
+        <div
+            ref={containerRef}
+            className="relative flex-1 min-h-0 w-full bg-white flex items-center justify-center overflow-hidden actual-vision3d-canvas"
+            style={{
+                width: '100%',
+                height: '110px',
+                position: 'relative',
                 backgroundColor: 'rgba(99, 102, 241, 0.04)',
                 overflow: 'hidden',
                 display: 'flex',
@@ -612,11 +622,11 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
                 const fullUrl = url.startsWith('http')
                     ? url
                     : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${url}`;
-                
+
                 const response = await fetch(fullUrl);
                 if (!response.ok) throw new Error('Failed to load project content');
                 const text = await response.text();
-                
+
                 let content;
                 try {
                     content = isPacked(text) ? unpack<any>(text) : JSON.parse(text);
@@ -640,8 +650,8 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
 
     if (loading) {
         return (
-            <div className="project-card-visual-loader">
-                <div className="mini-spinner" style={{ '--spinner-color': accent } as React.CSSProperties} />
+            <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <div className="w-5 h-5 border-2 border-[rgba(255,255,255,0.1)] border-t-[var(--spinner-color,#4f46e5)] rounded-full animate-[spin_0.8s_linear_infinite]" style={{ '--spinner-color': accent } as React.CSSProperties} />
             </div>
         );
     }
@@ -678,11 +688,11 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
         const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
 
         return (
-            <div className="project-card-visual actual-circuit-render">
-                <svg viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="actual-circuit-svg">
+            <div className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
+                <svg viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full p-0 transition-all duration-300">
                     <defs>
                         <pattern id="card-circuit-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-                            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="0.5"/>
+                            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="0.5" />
                         </pattern>
                     </defs>
                     <rect x={minX - padding} y={minY - padding} width={width} height={height} fill="url(#card-circuit-grid)" />
@@ -800,20 +810,49 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
         const codeLines = rawCode.split('\n').slice(0, 6);
 
         return (
-            <div className="project-card-visual actual-code-session">
-                <div className="code-session-header">
-                    <span className="dot dot-red" />
-                    <span className="dot dot-yellow" />
-                    <span className="dot dot-green" />
-                    <span className="code-filename">{projectContent.activeFile || 'main.py'}</span>
+            <div className="relative flex-1 min-h-0 w-full flex flex-col p-[8px_10px] font-mono overflow-hidden">
+                <div className="flex items-center gap-[5px] pb-[6px] border-b border-white/[0.08] mb-[6px]">
+                    <span className="dot dot-red w-[7px] h-[7px] rounded-full" />
+                    <span className="dot dot-yellow w-[7px] h-[7px] rounded-full" />
+                    <span className="dot dot-green w-[7px] h-[7px] rounded-full" />
+                    <span className="text-[10px] text-[#94a3b8] ml-1 font-semibold">{projectContent.activeFile || 'main.py'}</span>
                 </div>
-                <div className="code-session-body">
+                <div className="flex flex-col gap-[3px] text-[10px] leading-[1.3]">
                     {codeLines.map((line: string, i: number) => {
-                        const formatted = line.replace(/(import|from|def|class|return|if|else|elif|while|for|in|print|True|False|None|async|await)/g, '<span class="kw">$1</span>');
+                        const keywords = ['import', 'from', 'def', 'class', 'return', 'if', 'else', 'elif', 'while', 'for', 'in', 'print', 'True', 'False', 'None', 'async', 'await'];
+                        const parts: { text: string; isKeyword: boolean }[] = [];
+                        let remaining = line;
+                        while (remaining.length > 0) {
+                            let earliestIndex = remaining.length;
+                            let earliestKeyword = '';
+                            for (const kw of keywords) {
+                                const idx = remaining.indexOf(kw);
+                                if (idx !== -1 && idx < earliestIndex) {
+                                    earliestIndex = idx;
+                                    earliestKeyword = kw;
+                                }
+                            }
+                            if (earliestKeyword && earliestIndex < remaining.length) {
+                                if (earliestIndex > 0) parts.push({ text: remaining.slice(0, earliestIndex), isKeyword: false });
+                                parts.push({ text: earliestKeyword, isKeyword: true });
+                                remaining = remaining.slice(earliestIndex + earliestKeyword.length);
+                            } else {
+                                parts.push({ text: remaining, isKeyword: false });
+                                remaining = '';
+                            }
+                        }
                         return (
-                            <div key={i} className="code-line">
-                                <span className="line-num">{i + 1}</span>
-                                <span className="line-text" dangerouslySetInnerHTML={{ __html: formatted }} />
+                            <div key={i} className="flex gap-2 whitespace-pre overflow-hidden">
+                                <span className="text-[#475569] select-none w-3 text-right">{i + 1}</span>
+                                <span className="text-[#e2e8f0]">
+                                    {parts.map((part, j) =>
+                                        part.isKeyword ? (
+                                            <span key={j} className="kw text-[#3b82f6] font-bold">{part.text}</span>
+                                        ) : (
+                                            <span key={j}>{part.text}</span>
+                                        )
+                                    )}
+                                </span>
                             </div>
                         );
                     })}
@@ -830,59 +869,59 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
         const appTitle = projectContent.appName || activeScreen.name || projectName;
 
         return (
-            <div className="project-card-visual actual-creova-phone">
-                <div className="phone-frame">
-                    <div className="phone-notch" />
-                    <div className="phone-screen" style={{ backgroundColor: activeScreen.backgroundColor || '#F8FAFC' }}>
-                        <div className="phone-app-bar" style={{ backgroundColor: activeScreen.titleBarColor || accent }}>
+            <div className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden p-1.5">
+                <div className="w-[105px] h-[98px] bg-[#0f172a] rounded-xl p-1 shadow-[0_4px_12px_rgba(0,0,0,0.2)] border-[1.5px] border-[#334155] relative flex flex-col">
+                    <div className="w-6 h-[3px] bg-[#334155] rounded-sm mx-auto mb-[3px]" />
+                    <div className="flex-1 rounded-md overflow-hidden flex flex-col shadow-[inset_0_0_4px_rgba(0,0,0,0.1)]" style={{ backgroundColor: activeScreen.backgroundColor || '#F8FAFC' }}>
+                        <div className="h-4 text-white text-[8px] font-bold flex items-center px-[6px] whitespace-nowrap overflow-hidden text-ellipsis" style={{ backgroundColor: activeScreen.titleBarColor || accent }}>
                             <span>{appTitle}</span>
                         </div>
-                        <div className="phone-components-container">
+                        <div className="p-1.5 flex flex-col gap-1 flex-1">
                             {components.length > 0 ? (
                                 components.slice(0, 4).map((comp: any, idx: number) => {
                                     const type = comp.type || comp.componentType || 'Label';
                                     const text = comp.text || comp.props?.text || comp.name || type;
-                                    
+
                                     if (type.includes('Button')) {
                                         return (
-                                            <div key={idx} className="phone-comp-button" style={{ backgroundColor: comp.props?.backgroundColor || accent }}>
+                                            <div key={idx} className="h-[14px] rounded-[3px] text-white text-[7px] font-bold flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.15)]" style={{ backgroundColor: comp.props?.backgroundColor || accent }}>
                                                 {text}
                                             </div>
                                         );
                                     }
                                     if (type.includes('TextBox') || type.includes('Input')) {
                                         return (
-                                            <div key={idx} className="phone-comp-input">
+                                            <div key={idx} className="h-[13px] bg-white border border-[#cbd5e1] rounded-[3px] px-1 text-[7px] text-[#94a3b8] flex items-center">
                                                 <span>{text}</span>
                                             </div>
                                         );
                                     }
                                     if (type.includes('Slider')) {
                                         return (
-                                            <div key={idx} className="phone-comp-slider">
-                                                <div className="slider-track" />
-                                                <div className="slider-thumb" style={{ backgroundColor: accent }} />
+                                            <div key={idx} className="h-2 relative flex items-center">
+                                                <div className="w-full h-[3px] bg-[#cbd5e1] rounded-sm" />
+                                                <div className="w-[6px] h-[6px] rounded-full absolute left-[40%]" style={{ backgroundColor: accent }} />
                                             </div>
                                         );
                                     }
                                     if (type.includes('Switch') || type.includes('Toggle')) {
                                         return (
-                                            <div key={idx} className="phone-comp-switch">
+                                            <div key={idx} className="flex items-center justify-between text-[7px] text-[#334155]">
                                                 <span>{text}</span>
-                                                <div className="switch-pill" />
+                                                <div className="w-3 h-[6px] bg-[#22c55e] rounded-[3px]" />
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div key={idx} className="phone-comp-label" style={{ color: comp.props?.textColor || '#1E293B' }}>
+                                        <div key={idx} className="text-[7px] font-semibold leading-none" style={{ color: comp.props?.textColor || '#1E293B' }}>
                                             {text}
                                         </div>
                                     );
                                 })
                             ) : (
-                                <div className="phone-empty-canvas">
-                                    <div className="phone-mock-btn" style={{ backgroundColor: accent }}>Welcome</div>
-                                    <div className="phone-mock-input">Enter details...</div>
+                                <div className="flex flex-col gap-1 mt-1">
+                                    <div className="h-3 rounded-[3px] text-white text-[7px] flex items-center justify-center" style={{ backgroundColor: accent }}>Welcome</div>
+                                    <div className="h-[11px] bg-white border border-[#e2e8f0] text-[6px] text-[#94a3b8] px-1 flex items-center">Enter details...</div>
                                 </div>
                             )}
                         </div>
@@ -906,28 +945,28 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
     const backdropName = scene.backdropName || scene.name || (mode === 'junior' ? 'Ignite Stage' : 'Embed Stage');
 
     return (
-        <div className="project-card-visual actual-workspace-stage">
-            <div className="stage-bg-grid" />
-            
+        <div className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden flex flex-col p-[6px_8px]">
+            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:10px_10px] opacity-80" />
+
             {/* Stage Top Controls Bar */}
-            <div className="stage-top-bar">
-                <div className="stage-flag-controls">
-                    <span className="mini-flag-btn" title="Run script">🚩</span>
-                    <span className="mini-stop-btn" title="Stop">🛑</span>
+            <div className="flex items-center justify-between z-[2] mb-[6px]">
+                <div className="flex items-center gap-1 bg-[rgba(15,23,42,0.6)] py-[2px] px-[6px] rounded-[10px] border border-white/10">
+                    <span className="text-[10px] cursor-default" title="Run script">🚩</span>
+                    <span className="text-[10px] cursor-default" title="Stop">🛑</span>
                 </div>
-                <span className="stage-title-tag">{backdropName}</span>
+                <span className="text-[9px] font-bold text-[#94a3b8] bg-white/[0.05] py-[2px] px-[6px] rounded uppercase tracking-[0.5px]">{backdropName}</span>
             </div>
 
-            <div className="stage-workspace-split">
+            <div className="flex items-center justify-between flex-1 z-[2] gap-2">
                 {/* Left Column: Visual Blockly Script Preview Stack */}
-                <div className="stage-blocks-stack">
-                    <div className="block-chip block-event">when 🚩 clicked</div>
-                    <div className="block-chip block-motion">move 10 steps</div>
-                    <div className="block-chip block-looks">say Hello!</div>
+                <div className="flex flex-col gap-[2px]">
+                    <div className="py-[3px] px-2 rounded text-[8px] font-bold text-white font-[system-ui,-apple-system,sans-serif] shadow-[0_2px_4px_rgba(0,0,0,0.2)] whitespace-nowrap bg-[#eab308] rounded-tl-[6px] rounded-tr-[6px]">when 🚩 clicked</div>
+                    <div className="py-[3px] px-2 rounded text-[8px] font-bold text-white font-[system-ui,-apple-system,sans-serif] shadow-[0_2px_4px_rgba(0,0,0,0.2)] whitespace-nowrap bg-[#3b82f6]">move 10 steps</div>
+                    <div className="py-[3px] px-2 rounded text-[8px] font-bold text-white font-[system-ui,-apple-system,sans-serif] shadow-[0_2px_4px_rgba(0,0,0,0.2)] whitespace-nowrap bg-[#a855f7]">say Hello!</div>
                 </div>
 
                 {/* Right Column: Character Sprites Stage Canvas */}
-                <div className="stage-sprites-canvas">
+                <div className="flex items-center justify-center flex-1">
                     {Array.isArray(spritesList) && spritesList.length > 0 ? (
                         spritesList.slice(0, 2).map((sprite: any, idx: number) => {
                             const name = sprite.name || `Sprite ${idx + 1}`;
@@ -935,24 +974,24 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
                             const finalSrc = costumeSrc && !costumeSrc.startsWith('http') && !costumeSrc.startsWith('/') ? `/${costumeSrc}` : costumeSrc;
 
                             return (
-                                <div key={idx} className="stage-sprite-character">
+                                <div key={idx} className="flex flex-col items-center gap-1">
                                     {finalSrc ? (
-                                        <img src={finalSrc} alt={name} className="sprite-char-img" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                                        <img src={finalSrc} alt={name} className="w-12 h-12 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)]" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
                                     ) : (
-                                        <div className="sprite-avatar-badge" style={{ backgroundColor: accent }}>
+                                        <div className="w-[42px] h-[42px] rounded-xl flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] border-2 border-white/20" style={{ backgroundColor: accent }}>
                                             <Cpu size={18} color="#FFF" />
                                         </div>
                                     )}
-                                    <span className="sprite-char-name">{name}</span>
+                                    <span className="text-[9px] font-extrabold text-[#f8fafc] bg-[rgba(15,23,42,0.8)] py-[2px] px-[6px] rounded-md border border-white/[0.15]">{name}</span>
                                 </div>
                             );
                         })
                     ) : (
-                        <div className="stage-sprite-character">
-                            <div className="sprite-avatar-badge" style={{ backgroundColor: accent }}>
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="w-[42px] h-[42px] rounded-xl flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] border-2 border-white/20" style={{ backgroundColor: accent }}>
                                 <Cpu size={20} color="#FFF" />
                             </div>
-                            <span className="sprite-char-name">Robot</span>
+                            <span className="text-[9px] font-extrabold text-[#f8fafc] bg-[rgba(15,23,42,0.8)] py-[2px] px-[6px] rounded-md border border-white/[0.15]">Robot</span>
                         </div>
                     )}
                 </div>
@@ -971,7 +1010,7 @@ const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
             try {
                 const parsed = typeof project.metadata === 'string' ? JSON.parse(project.metadata) : project.metadata;
                 if (parsed?.board) return parsed.board;
-            } catch (e) {}
+            } catch (e) { }
         }
         return null;
     });
@@ -994,7 +1033,7 @@ const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
                 if (!cancelled && detectedBoard) {
                     setBoard(detectedBoard);
                 }
-            } catch (err) {}
+            } catch (err) { }
         })();
         return () => { cancelled = true; };
     }, [project.fileUrl, project.metadata, board]);
@@ -1006,7 +1045,13 @@ const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
     const isEsp32 = targetBoard === 'esp32-c3' || targetBoard === 'esp32';
 
     return (
-        <span className={`my-project-board-tag ${isEsp32 ? 'tag-esp32' : 'tag-arduino'}`}>
+        <span 
+            className={`inline-flex items-center py-1.5 px-3 rounded-full text-[10px] font-bold whitespace-nowrap border bg-white shadow-sm leading-none shrink-0`}
+            style={{ 
+                color: isEsp32 ? '#7c3aed' : '#008184',
+                borderColor: isEsp32 ? 'rgba(139,92,246,0.15)' : 'rgba(0,151,157,0.15)'
+            }}
+        >
             <Cpu size={12} style={{ marginRight: '4px' }} />
             {displayLabel}
         </span>
@@ -1021,28 +1066,28 @@ interface DeleteConfirmationModalProps {
 
 const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ projectName, onConfirm, onCancel }) => {
     return (
-        <div className="custom-modal-overlay" onClick={onCancel}>
-            <div className="custom-delete-modal" onClick={(e) => e.stopPropagation()}>
-                <button className="modal-close-btn" onClick={onCancel} title="Close">
+        <div className="fixed inset-0 bg-[rgba(15,23,42,0.4)] backdrop-blur-[6px] flex items-center justify-center z-[9999] p-4 animate-[fadeInOverlay_0.2s_ease-out]" onClick={onCancel}>
+            <div className="w-full max-w-[400px] bg-white border border-[#fee2e2] rounded-2xl p-6 shadow-[0_20px_25px_-5px_rgba(15,23,42,0.12),0_8px_10px_-6px_rgba(239,68,68,0.08)] relative flex flex-col items-center text-center animate-[scaleInModal_0.2s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
+                <button className="absolute top-[14px] right-[14px] bg-transparent border-none text-[#64748b] cursor-pointer p-[6px] rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[#f1f5f9] hover:text-[#0f172a]" onClick={onCancel} title="Close">
                     <X size={18} />
                 </button>
-                
-                <div className="delete-modal-icon-wrapper">
-                    <div className="delete-modal-icon">
+
+                <div className="mb-4">
+                    <div className="w-14 h-14 rounded-full bg-[#fef2f2] border border-[#fca5a5] flex items-center justify-center shadow-[0_0_12px_rgba(239,68,68,0.15)]">
                         <AlertTriangle size={28} color="#EF4444" />
                     </div>
                 </div>
 
-                <h3 className="delete-modal-title">Delete Project</h3>
-                <p className="delete-modal-description">
-                    Are you sure you want to delete <strong className="delete-modal-project-name">"{projectName}"</strong>? This action cannot be undone.
+                <h3 className="m-0 mb-2 text-lg font-bold text-[#0f172a] tracking-[-0.3px]">Delete Project</h3>
+                <p className="m-0 mb-6 text-[13px] leading-relaxed text-[#475569]">
+                    Are you sure you want to delete <strong className="text-[#0f172a] break-words">"{projectName}"</strong>? This action cannot be undone.
                 </p>
 
-                <div className="delete-modal-actions">
-                    <button className="delete-modal-cancel-btn" onClick={onCancel}>
+                <div className="flex items-center gap-3 w-full">
+                    <button className="flex-1 h-10 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] text-[#475569] text-[13px] font-semibold cursor-pointer transition-all duration-150 hover:bg-[#f1f5f9] hover:text-[#0f172a] hover:border-[#cbd5e1]" onClick={onCancel}>
                         Cancel
                     </button>
-                    <button className="delete-modal-confirm-btn" onClick={onConfirm}>
+                    <button className="flex-1 h-10 bg-[#ef4444] border-none rounded-[10px] text-white text-[13px] font-semibold cursor-pointer flex items-center justify-center shadow-[0_4px_12px_rgba(239,68,68,0.25)] transition-all duration-150 hover:bg-[#dc2626] hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(239,68,68,0.35)]" onClick={onConfirm}>
                         <Trash2 size={16} style={{ marginRight: '6px' }} />
                         Delete Project
                     </button>
@@ -1066,7 +1111,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     });
     const [searchQuery, setSearchQuery] = useState('');
     const { setPendingProject } = useCloudProjectStore();
-    
+
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -1169,7 +1214,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
     const renderShareButton = (project: CloudProject) => (
         <button
-            className={`my-project-share-btn ${project.isShared === 1 ? 'shared' : ''}`}
+            className={`cursor-pointer w-8 h-8 rounded-full flex items-center justify-center bg-white border border-[#e2e8f0]/40 text-[#64748b] shadow-sm transition-all duration-300 hover:bg-[rgba(37,99,235,0.08)] hover:text-[#2563eb] hover:border-[rgba(37,99,235,0.2)] hover:scale-110 ${project.isShared === 1 ? 'bg-[rgba(37,99,235,0.1)] text-[#2563eb] border border-[rgba(37,99,235,0.3)]' : ''}`}
             onClick={(e) => handleShareProject(e, project)}
             title={project.isShared === 1 ? 'Manage sharing' : 'Share project'}
         >
@@ -1203,7 +1248,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
             <>
                 {parts.map((part, index) =>
                     part.toLowerCase() === lowerQuery ? (
-                        <mark key={index} className="project-name-highlight">
+                        <mark key={index} className="bg-[#fef08a] text-[#0f172a] px-[2px] rounded font-bold">
                             {part}
                         </mark>
                     ) : (
@@ -1225,20 +1270,20 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
     if (!isAuthenticated) {
         return (
-            <div className="my-projects-empty">
-                <div className="my-projects-empty-icon">
+            <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white/40 backdrop-blur-[12px] border border-[rgba(226,232,240,0.6)] rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] my-6 mx-0">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-[#f1f5f9] text-[#64748b] mb-6">
                     <Lock size={44} />
                 </div>
-                <h3>Sign in to see your projects</h3>
-                <p>Your saved LeapLab projects will appear here after you sign in.</p>
+                <h3 className="text-[22px] font-extrabold text-[#0f172a] m-0 mb-[10px]">Sign in to see your projects</h3>
+                <p className="text-sm text-[#64748b] max-w-[380px] m-0 mb-6 leading-relaxed">Your saved LeapLab projects will appear here after you sign in.</p>
             </div>
         );
     }
 
     if (loading) {
         return (
-            <div className="my-projects-loading">
-                <div className="my-projects-spinner" />
+            <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white/40 backdrop-blur-[12px] border border-[rgba(226,232,240,0.6)] rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] my-6 mx-0">
+                <div className="w-12 h-12 border-4 border-[#f1f5f9] border-t-[#4f46e5] rounded-full animate-[spin_0.8s_linear_infinite] mb-5" />
                 <p>Loading your projects...</p>
             </div>
         );
@@ -1246,12 +1291,12 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
     if (error) {
         return (
-            <div className="my-projects-error">
-                <div className="my-projects-error-icon">
+            <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white/40 backdrop-blur-[12px] border border-[rgba(226,232,240,0.6)] rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] my-6 mx-0">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-[#f1f5f9] text-[#64748b] mb-6">
                     <AlertTriangle size={44} color="#EF4444" />
                 </div>
-                <p>{error}</p>
-                <button onClick={() => window.location.reload()}>Retry</button>
+                <p className="text-sm text-[#64748b] max-w-[380px] m-0 mb-6 leading-relaxed">{error}</p>
+                <button className="py-3 px-6 rounded-full border-none bg-[#4f46e5] text-white font-bold text-sm cursor-pointer shadow-[0_4px_12px_rgba(79,70,229,0.2)] hover:bg-[#4338ca] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(79,70,229,0.3)] transition-all duration-300" onClick={() => window.location.reload()}>Retry</button>
             </div>
         );
     }
@@ -1259,54 +1304,90 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     // Module selection view
     if (!selectedMode) {
         return (
-            <div className="my-projects-dashboard">
-                <h2 className="my-projects-title">My Workspace</h2>
-                <p className="my-projects-subtitle">Select a module category to access your files</p>
-                <div className="my-modules-grid">
+            <div 
+                className="w-full max-w-full m-0 box-border overflow-x-hidden animate-[fadeIn_0.4s_ease-out] [font-family:var(--lp-font-sans)]"
+                style={{
+                    paddingLeft: '48px',
+                    paddingRight: '48px',
+                    paddingTop: '48px',
+                    paddingBottom: '48px'
+                }}
+            >
+                <div 
+                    className="text-center flex flex-col items-center justify-center"
+                    style={{ marginBottom: '48px' }}
+                >
+                    <h2 className="text-[36px] font-extrabold text-[#0f172a] mb-2 tracking-[-0.02em]">My Workspace</h2>
+                    <p className="text-[15px] text-[#64748b] mb-0 font-medium">Select a module category to access your files</p>
+                </div>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] justify-center gap-7 mb-12 w-full max-w-full">
                     {sortedModes.map((mode) => {
                         const meta = MODULES[mode];
                         const modeProjects = groupedProjects[mode] || [];
                         return (
                             <button
                                 key={mode}
-                                className="my-module-card cursor-pointer"
+                                className="relative flex flex-col justify-end text-left rounded-[20px] p-0 w-full max-w-[320px] min-h-[260px] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.15)] hover:-translate-y-1 overflow-hidden cursor-pointer group border-0"
                                 style={{
                                     '--module-accent': meta?.accent || '#6366f1',
                                     '--module-gradient': meta?.gradient || '#ffffff',
-                                    '--module-dark-accent': meta?.darkAccent || '#4f46e5'
+                                    '--module-dark-accent': meta?.darkAccent || '#4f46e5',
+                                    background: `linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(241,245,249,0.9) 40%, rgba(203,213,225,0.85) 100%)`
                                 } as React.CSSProperties}
                                 onClick={() => {
                                     setSelectedMode(mode);
                                     sessionStorage.setItem('myProjectsSelectedMode', mode);
                                 }}
                             >
-                                <div className="my-module-card-banner">
+                                {/* Top accent bar */}
+                                <div className="absolute top-0 left-0 w-full h-[4px] bg-[var(--module-accent)] z-[3] opacity-100" />
+
+                                {/* Icon area */}
+                                <div className="flex-1 flex items-center justify-center overflow-hidden relative w-full">
                                     <img
                                         src={meta?.icon || 'assets/splash_logo_b.png'}
                                         alt={meta?.label || mode}
-                                        className="my-module-card-icon"
+                                        className="w-[65%] h-[65%] object-contain transition-all duration-300 opacity-100 group-hover:scale-[1.08] group-hover:-translate-y-[4px]"
                                     />
-                                    <span className="my-module-card-count">
+                                    {/* Project count badge */}
+                                    <span className="absolute top-4 right-4 text-[11px] font-bold py-1.5 px-3 rounded-full tracking-[0.02em] uppercase z-[2] shadow-sm bg-white" style={{ color: meta?.darkAccent || '#4f46e5' }}>
                                         {modeProjects.length} {modeProjects.length === 1 ? 'project' : 'projects'}
                                     </span>
                                 </div>
-                                <div className="my-module-card-info">
-                                    <h3 className="my-module-card-name">{meta?.label || mode}</h3>
-                                    <p className="my-module-card-hint">Open Workspace</p>
+
+                                {/* Bottom dark gradient overlay */}
+                                <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-[#1e293b]/90 via-[#1e293b]/45 to-transparent z-[1] pointer-events-none" />
+
+                                {/* Bottom text area */}
+                                <div 
+                                    className="flex flex-col justify-end z-[2] w-full"
+                                    style={{
+                                        paddingLeft: '36px',
+                                        paddingRight: '36px',
+                                        paddingBottom: '32px',
+                                        paddingTop: '16px'
+                                    }}
+                                >
+                                    <h3 className="text-[22px] font-extrabold text-white mb-1.5 tracking-[-0.01em] drop-shadow-sm">{meta?.label || mode}</h3>
+                                    <p className="text-[12px] font-bold text-slate-300 m-0 uppercase tracking-[0.06em] transition-all duration-300 group-hover:text-white">Open Workspace</p>
                                 </div>
-                                <div className="my-module-card-arrow">
-                                    <ChevronRight size={18} />
+
+                                {/* Arrow button */}
+                                <div className="absolute bottom-6 right-6 w-10 h-10 flex items-center justify-center bg-white border border-[#e2e8f0]/40 rounded-full transition-all duration-300 z-[2] group-hover:bg-[var(--module-accent)] group-hover:border-[var(--module-accent)] group-hover:scale-110 shadow-sm">
+                                    <ChevronRight size={20} className="transition-colors group-hover:!text-white" style={{ color: meta?.darkAccent || '#4f46e5' }} />
                                 </div>
                             </button>
                         );
                     })}
                 </div>
-                
+
                 {/* Clean design credits footer */}
-                <div className="my-projects-footer">
-                    <span>LeapLab v1.1.0-STABLE</span>
-                    <span className="footer-divider" />
-                    <span>© 2026 Creoleap Technologies Pvt. Ltd. All rights reserved.</span>
+                <div className="flex justify-center w-full" style={{ marginTop: '48px' }}>
+                    <div className="flex items-center justify-center gap-4 py-4 px-6 text-[12px] font-semibold text-[#94a3b8] tracking-[0.02em] bg-white/60 backdrop-blur-[10px] border border-[rgba(226,232,240,0.5)] rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.03)] w-fit">
+                        <span>LeapLab v1.1.0-STABLE</span>
+                        <span className="w-1 h-1 bg-[#cbd5e1] rounded-full" />
+                        <span>© 2026 Creoleap Technologies Pvt. Ltd. All rights reserved.</span>
+                    </div>
                 </div>
             </div>
         );
@@ -1320,17 +1401,19 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     );
 
     return (
-        <div 
-            className="my-projects-dashboard page-projects-view"
+        <div
+            className="w-full max-w-[1440px] mx-auto box-border overflow-x-hidden animate-[fadeIn_0.5s_ease-out] page-projects-view"
             style={{
                 '--module-accent': meta?.accent || '#6366f1',
                 '--module-gradient': meta?.gradient || '#ffffff',
-                '--module-dark-accent': meta?.darkAccent || '#4f46e5'
+                '--module-dark-accent': meta?.darkAccent || '#4f46e5',
+                padding: '40px 48px'
             } as React.CSSProperties}
         >
-            <div className="my-projects-top-nav">
+            {/* Back Button */}
+            <div className="mb-8 animate-[fadeIn_0.4s_ease-out]">
                 <button
-                    className="my-projects-back-btn cursor-pointer"
+                    className="inline-flex items-center gap-2.5 group bg-white border border-[#e2e8f0] cursor-pointer py-2.5 px-5 rounded-xl text-[#475569] text-[13px] font-semibold transition-all duration-300 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:border-[#cbd5e1]"
                     onClick={() => {
                         setSelectedMode(null);
                         sessionStorage.removeItem('myProjectsSelectedMode');
@@ -1340,52 +1423,68 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                     aria-label="Back to modules"
                     title="Back to modules"
                 >
-                    <ArrowLeft size={16} style={{ marginRight: '6px', transition: 'transform 0.2s' }} className="back-btn-arrow" />
+                    <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
                     <span>Back to modules</span>
                 </button>
             </div>
 
-            <div className="my-projects-module-header">
+            {/* Workspace Header */}
+            <div className="relative flex items-center justify-between gap-8 rounded-3xl py-8 px-10 mb-10 overflow-hidden" style={{
+                background: `linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.92) 50%, rgba(241,245,249,0.88) 100%)`,
+                boxShadow: `0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                border: `1px solid rgba(226,232,240,0.5)`
+            }}>
                 {renderHeaderBackgroundVisual(selectedMode)}
 
-                <div className="my-projects-header-left">
-                    <div className="my-module-header-icon-wrapper">
+                <div className="flex items-center gap-6 relative z-[2]">
+                    <div className="flex items-center justify-center w-[72px] h-[72px] rounded-2xl shadow-lg transition-transform duration-500 hover:scale-105" style={{
+                        background: `linear-gradient(135deg, ${meta?.accent}12, ${meta?.accent}20)`,
+                        border: `1px solid ${meta?.accent}25`
+                    }}>
                         <img
                             src={meta?.icon || 'assets/splash_logo_b.png'}
                             alt={meta?.label || selectedMode}
-                            className="my-projects-module-header-icon"
+                            className="w-12 h-12 object-contain"
                         />
                     </div>
-                    <div className="my-projects-header-text">
-                        <h2 className="my-projects-module-header-name">{meta?.label || selectedMode} Workspace</h2>
-                        <div className="my-projects-header-badge-row">
-                            <span className="my-projects-module-header-count">
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-[28px] font-bold text-[#0f172a] m-0 tracking-[-0.02em] leading-[1.2]">{meta?.label || selectedMode} Workspace</h2>
+                        <div className="flex items-center gap-2.5">
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold py-1.5 px-3 rounded-lg tracking-[0.02em]" style={{
+                                color: meta?.darkAccent || '#4f46e5',
+                                backgroundColor: `${meta?.accent}10`,
+                                border: `1px solid ${meta?.accent}18`
+                            }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta?.accent }} />
                                 {modeProjects.length} {modeProjects.length === 1 ? 'project' : 'projects'}
                             </span>
-                            <span className="my-projects-live-badge">Live System</span>
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#16a34a] bg-[rgba(22,163,74,0.08)] py-1.5 px-3 rounded-lg uppercase tracking-[0.04em] border border-[rgba(22,163,74,0.12)]">
+                                <span className="w-1.5 h-1.5 bg-[#16a34a] rounded-full animate-[pulse_2s_ease-in-out_infinite]" />
+                                Live System
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Search Bar aligned to the right inside the header banner */}
+                {/* Search Bar */}
                 {modeProjects.length > 0 && (
-                    <div className="my-projects-header-right">
-                        <div className="my-projects-search-wrapper">
-                            <Search size={18} className="my-projects-search-icon" />
+                    <div className="shrink-0 w-full max-w-[320px] relative z-[2]">
+                        <div className="relative flex items-center w-full bg-white border border-[#e2e8f0] rounded-xl px-4 transition-all duration-300 hover:border-[#cbd5e1] focus-within:border-[var(--module-accent)] focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]">
+                            <Search size={18} className="text-[#94a3b8] mr-3 shrink-0" />
                             <input
                                 type="text"
                                 placeholder={`Search ${meta?.label || selectedMode} projects...`}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="my-projects-search-input"
+                                className="flex-1 border-none bg-transparent py-3 text-sm font-medium text-[#0f172a] !outline-none !shadow-none placeholder:text-[#94a3b8]"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="my-projects-search-clear"
+                                    className="bg-[#f1f5f9] border-none cursor-pointer w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] ml-2 transition-all duration-200 hover:bg-[#e2e8f0]"
                                     aria-label="Clear search"
                                 >
-                                    <X size={16} />
+                                    <X size={14} />
                                 </button>
                             )}
                         </div>
@@ -1393,28 +1492,84 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                 )}
             </div>
 
-            {/* Premium Project Grid Wrapper */}
+            {/* Content Area */}
             {modeProjects.length === 0 ? (
-                <div className="my-projects-category-empty">
-                    <FolderOpen size={44} style={{ opacity: 0.6, marginBottom: '12px', color: meta?.accent }} />
-                    <h3>No projects saved yet</h3>
-                    <p>Open the workspace editor from the main landing page to build and save a project under {meta?.label}.</p>
+                <div className="flex justify-center w-full my-16 animate-[fadeIn_0.4s_ease-out]">
+                    <div className="flex flex-col items-center justify-center p-12 py-16 bg-white rounded-3xl border border-[#e2e8f0]/60 w-full max-w-[480px] text-center" style={{
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)'
+                    }}>
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ backgroundColor: `${meta?.accent}10` }} />
+                            <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{
+                                background: `linear-gradient(135deg, ${meta?.accent}10, ${meta?.accent}18)`,
+                                border: `1px solid ${meta?.accent}20`
+                            }}>
+                                <FolderOpen size={36} style={{ color: meta?.accent || '#6366f1' }} />
+                            </div>
+                        </div>
+                        <h3 className="text-[22px] font-bold text-[#1e293b] m-0 mb-3">No projects saved yet</h3>
+                        <p className="text-[14px] text-[#64748b] max-w-[340px] m-0 leading-relaxed mb-8">
+                            Start creating awesome projects in <strong className="font-semibold text-[#334155]">{meta?.label}</strong> and they'll show up right here!
+                        </p>
+                        <button
+                            className="inline-flex items-center gap-2 py-3 px-7 rounded-xl text-white font-semibold text-[14px] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                            style={{
+                                background: `linear-gradient(135deg, ${meta?.accent}, ${meta?.darkAccent})`,
+                                boxShadow: `0 4px 16px ${meta?.accent}35`
+                            }}
+                            onClick={() => {
+                                setSelectedMode(null);
+                                sessionStorage.removeItem('myProjectsSelectedMode');
+                            }}
+                        >
+                            <ArrowLeft size={16} />
+                            Back to modules
+                        </button>
+                    </div>
                 </div>
             ) : filteredProjects.length === 0 ? (
-                <div className="my-projects-search-empty">
-                    <Search size={44} style={{ opacity: 0.4, marginBottom: '12px', color: meta?.accent }} />
-                    <h3>No matching projects</h3>
-                    <p>We couldn't find any projects matching "{searchQuery}". Try adjusting your keywords.</p>
-                    <button className="clear-search-btn cursor-pointer" onClick={() => setSearchQuery('')}>
-                        Clear Search
-                    </button>
+                <div className="flex justify-center w-full my-16 animate-[fadeIn_0.4s_ease-out]">
+                    <div className="flex flex-col items-center justify-center p-12 py-16 bg-white rounded-3xl border border-[#e2e8f0]/60 w-full max-w-[480px] text-center" style={{
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)'
+                    }}>
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{
+                            background: `linear-gradient(135deg, ${meta?.accent}10, ${meta?.accent}18)`,
+                            border: `1px solid ${meta?.accent}20`
+                        }}>
+                            <Search size={36} style={{ color: meta?.accent || '#6366f1' }} />
+                        </div>
+                        <h3 className="text-[22px] font-bold text-[#1e293b] m-0 mb-3">No matching projects</h3>
+                        <p className="text-[14px] text-[#64748b] max-w-[340px] m-0 mb-8 leading-relaxed">
+                            We couldn't find anything matching "<strong className="font-semibold text-[#334155]">{searchQuery}</strong>". Try different words!
+                        </p>
+                        <button
+                            className="inline-flex items-center gap-2 py-3 px-7 rounded-xl text-white font-semibold text-[14px] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                            style={{
+                                background: `linear-gradient(135deg, ${meta?.accent}, ${meta?.darkAccent})`,
+                                boxShadow: `0 4px 16px ${meta?.accent}35`
+                            }}
+                            onClick={() => setSearchQuery('')}
+                        >
+                            Clear Search
+                        </button>
+                    </div>
                 </div>
             ) : (
-                <div className="my-projects-grid" ref={scrollRef}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] justify-center gap-6 pb-8 w-full" ref={scrollRef}>
                     {filteredProjects.map((project) => (
                         <div
                             key={project.id}
-                            className="my-project-card cursor-pointer"
+                            className="group relative w-full h-[270px] bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                            style={{
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)',
+                                border: '1px solid rgba(226,232,240,0.6)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = `0 8px 32px ${meta?.accent}15, 0 2px 8px rgba(0,0,0,0.04)`;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)';
+                            }}
                             onClick={() => handleOpenProject(project)}
                             role="button"
                             tabIndex={0}
@@ -1425,52 +1580,70 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                 }
                             }}
                         >
-                            {/* Visual schematic panel or project thumbnail cover image */}
-                            {project.thumbnailUrl ? (
-                                <div className="project-card-visual">
+                            {/* Top accent bar */}
+                            <div className="absolute top-0 left-0 w-full h-[3px] bg-[var(--module-accent)] z-[3] transition-all duration-500 group-hover:h-[4px]" />
+
+                            {/* Floating Board Badge */}
+                            <div className="absolute top-4 right-4 z-[2]">
+                                <ProjectBoardBadge project={project} />
+                            </div>
+
+                            {/* Floating Action Buttons */}
+                            <div className="absolute top-4 left-4 flex items-center gap-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {renderShareButton(project)}
+                                <button
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/90 backdrop-blur-sm border border-[#e2e8f0]/60 text-[#64748b] transition-all duration-300 hover:bg-[#fee2e2] hover:text-[#ef4444] hover:border-[#fca5a5] shadow-sm"
+                                    onClick={(e) => handleDeleteProject(e, project)}
+                                    disabled={deletingId === project.id}
+                                    title="Delete project"
+                                >
+                                    {deletingId === project.id ? (
+                                        <span className="inline-block w-3 h-3 border-2 border-[rgba(239,68,68,0.2)] border-t-[#ef4444] rounded-full animate-[spin_0.6s_linear_infinite]" />
+                                    ) : (
+                                        <Trash2 size={15} />
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Background Visual or Thumbnail */}
+                            <div className="absolute inset-0 z-0 w-full h-full bg-white flex items-center justify-center overflow-hidden">
+                                {project.thumbnailUrl ? (
                                     <img
                                         src={project.thumbnailUrl.startsWith('http')
                                             ? project.thumbnailUrl
                                             : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.thumbnailUrl}`}
                                         alt={project.name}
-                                        className="project-card-thumbnail-img"
+                                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.05]"
                                     />
-                                </div>
-                            ) : (
-                                <SavedProjectCardVisual projectId={project.id} fileUrl={project.fileUrl} mode={project.mode || selectedMode} projectName={project.name} accent={meta?.accent || '#6366F1'} />
-                            )}
-
-                            <div className="my-project-card-content">
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-                                    <h4 className="my-project-card-name" title={project.name} style={{ margin: 0, flex: 1 }}>{highlightMatch(project.name, searchQuery)}</h4>
-                                    <ProjectBoardBadge project={project} />
-                                </div>
-                                <div className="my-project-card-footer-row">
-                                    <div className="my-project-card-date">
-                                        <Calendar size={14} style={{ marginRight: '4px', opacity: 0.7 }} />
-                                        <span>{formatDate(project.updatedAt)}</span>
-                                    </div>
-                                    <div className="my-project-card-actions">
-                                        {renderShareButton(project)}
-                                        <button
-                                            className="my-project-delete-btn"
-                                            onClick={(e) => handleDeleteProject(e, project)}
-                                            disabled={deletingId === project.id}
-                                            title="Delete project"
-                                        >
-                                            {deletingId === project.id ? (
-                                                <span className="btn-spinner" />
-                                            ) : (
-                                                <Trash2 size={16} />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <SavedProjectCardVisual projectId={project.id} fileUrl={project.fileUrl} mode={project.mode || selectedMode} projectName={project.name} accent={meta?.accent || '#6366F1'} />
+                                )}
                             </div>
-                            
+
+                            {/* Bottom gradient overlay */}
+                            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-[#0f172a]/90 via-[#0f172a]/40 to-transparent z-[1] pointer-events-none" />
+
+                            {/* Bottom text area */}
+                            <div className="absolute inset-x-0 bottom-0 z-[2] px-6 pb-5 pt-4">
+                                <h4 className="text-[17px] font-bold text-white m-0 leading-[1.3] line-clamp-1 break-all drop-shadow-sm" title={project.name}>
+                                    {highlightMatch(project.name, searchQuery)}
+                                </h4>
+                                <p className="text-[11px] font-medium text-slate-300 m-0 mt-1.5 uppercase tracking-[0.04em] transition-all duration-300 group-hover:text-white flex items-center gap-1.5">
+                                    <Calendar size={12} className="opacity-70" />
+                                    {formatDate(project.updatedAt)}
+                                </p>
+                            </div>
+
+                            {/* Arrow button */}
+                            <div className="absolute bottom-5 right-5 w-9 h-9 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-xl transition-all duration-300 z-[2] group-hover:scale-110 shadow-sm" style={{
+                                border: `1px solid ${meta?.accent}30`
+                            }}>
+                                <ChevronRight size={18} className="transition-colors duration-300 group-hover:text-white" style={{ color: meta?.accent || '#6366F1' }} />
+                            </div>
+
                             {openingId === project.id && (
-                                <div className="my-project-opening">
-                                    <div className="opening-spinner" />
+                                <div className="absolute inset-0 bg-[rgba(15,23,42,0.88)] backdrop-blur-[4px] flex flex-col items-center justify-center gap-3 text-white text-[13px] font-semibold z-[5] animate-[fadeIn_0.25s_ease-out]">
+                                    <div className="w-6 h-6 border-[3px] border-[rgba(255,255,255,0.1)] border-t-[#6366f1] rounded-full animate-[spin_0.6s_linear_infinite]" />
                                     <span>Opening Workspace...</span>
                                 </div>
                             )}
@@ -1479,11 +1652,16 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                 </div>
             )}
 
-            {/* Dynamic Status / Credits footer */}
-            <div className="my-projects-footer">
-                <span>LeapLab v1.1.0-STABLE</span>
-                <span className="footer-divider" />
-                <span>© 2026 Creoleap Technologies Pvt. Ltd. All rights reserved.</span>
+            {/* Footer */}
+            <div className="flex justify-center w-full mt-12">
+                <div className="flex items-center justify-center gap-5 py-4 px-8 text-[12px] font-medium text-[#94a3b8] bg-white/50 backdrop-blur-xl border border-[#e2e8f0]/60 rounded-2xl shadow-sm w-fit">
+                    <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#4f46e5] to-[#6366f1] flex items-center justify-center text-white text-[9px] font-bold">L</span>
+                        LeapLab v1.1.0-STABLE
+                    </span>
+                    <span className="w-px h-4 bg-[#e2e8f0]" />
+                    <span>&copy; 2026 Creoleap Technologies Pvt. Ltd.</span>
+                </div>
             </div>
 
             {sharingProject && (
@@ -1504,4 +1682,3 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
         </div>
     );
 }
-

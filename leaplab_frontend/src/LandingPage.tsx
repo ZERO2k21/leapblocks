@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import LeapLabAuthButton from './auth/LeapLabAuthButton';
 import MyProjectsDashboard from './components/my-projects/MyProjectsDashboard';
-import './components/my-projects/my-projects.css';
+import './components/my-projects/keyframes.css';
 
 /** 3D hero animation — lazy loaded for performance */
 const Robot3DAnimation = lazy(() => import('./components/Robot3DAnimation'));
