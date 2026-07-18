@@ -436,13 +436,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (mode.mode === 'collect') {
             if (!mode.selectedClassId) {
                 showSaved('⚠️ Create a class first, then upload images')
-                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
+                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''; if (cameraOffUploadRef.current) cameraOffUploadRef.current.value = ''
                 return
             }
             const selectedClass = mode.getSelectedClass()
             if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
                 showSaved('⚠️ Sample limit reached! (20 per class)')
-                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
+                if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''; if (cameraOffUploadRef.current) cameraOffUploadRef.current.value = ''
                 return
             }
             const img = new Image()
@@ -465,7 +465,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     showSaved('⚠️ Sample limit reached! (20 per class)')
                 }
             }
-            if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
+            if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''; if (cameraOffUploadRef.current) cameraOffUploadRef.current.value = ''
             return
         }
 
@@ -638,8 +638,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, padding: '10px 20px', overflow: 'hidden' }}>
                 {/* Left - Camera / Canvas */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
-                    {/* Camera / Upload tab content */}
-                    {collectTab !== 'download' && (
+                    {/* Camera tab content */}
+                    {collectTab === 'camera' && (
                         <>
                             {/* Camera error */}
                             {cameraError && !cameraOn && (
@@ -733,6 +733,40 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         </>
                     )}
 
+                    {/* Upload tab content - dedicated upload area for collect mode */}
+                    {collectTab === 'upload' && (
+                        <div
+                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                            onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
+                            onDrop={async (e) => {
+                                e.preventDefault()
+                                setIsDragging(false)
+                                if (!mode.selectedClassId) {
+                                    showSaved('⚠️ Select a class first, then drop images')
+                                    return
+                                }
+                                if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
+                            }}
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0, transition: 'all 0.2s ease', cursor: 'pointer' }}
+                            onClick={() => { if (!isDragging) cameraOffUploadRef.current?.click() }}
+                        >
+                            <div style={{ pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📂'}</span>
+                                <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Images Here!' : 'Upload Training Images'}</h2>
+                                <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to save as samples' : `Click or drag images to save as ${selectedClass?.name || 'class'} samples`}</p>
+                                <div style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700 }}>
+                                    📂 Choose Images
+                                </div>
+                                {selectedClass && (
+                                    <p style={{ fontSize: '10px', color: '#630ed4', marginTop: '10px', fontWeight: 600 }}>
+                                        Saving to: {selectedClass.name} ({selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS})
+                                    </p>
+                                )}
+                            </div>
+                            <input ref={cameraOffUploadRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" onClick={(e) => e.stopPropagation()} />
+                        </div>
+                    )}
+
                     {/* Download tab content */}
                     {collectTab === 'download' && (
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
@@ -775,6 +809,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     setCollectTab(tab.id)
                                     if (tab.id === 'camera' && !cameraOn) startCamera()
                                     if (tab.id !== 'camera' && cameraOn) stopCamera()
+                                    if (tab.id === 'upload') setDetections([])
                                 }}
                                 style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, flex: 1,
