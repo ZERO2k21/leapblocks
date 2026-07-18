@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { shareCloudProject, revokeCloudProjectShare, renameCloudProject, getShareUrl, CloudProject } from '../../services/cloudProjectApi';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, X } from 'lucide-react';
 
 interface ShareProjectModalProps {
     project: CloudProject;
@@ -95,7 +95,7 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
 
     return (
         <div 
-            className="fixed inset-0 z-[9999] bg-[rgba(0,0,0,0.6)] backdrop-blur-[6px]" 
+            className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-[6px]" 
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
             onClick={onClose}
         >
@@ -103,38 +103,46 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                 style={{ 
                     width: '100%', 
                     maxWidth: '440px', 
-                    backgroundColor: '#0f172a', 
+                    backgroundColor: 'rgba(9, 9, 11, 0.92)', 
                     border: '1px solid rgba(255, 255, 255, 0.08)', 
-                    borderRadius: '20px', 
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    borderRadius: '24px', 
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 50px rgba(99, 102, 241, 0.02)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
+                    backdropFilter: 'blur(20px)',
                     animation: 'modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
                 }} 
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'between', padding: '24px 24px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                    <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', margin: 0, tracking: '-0.01em' }}>Share Project</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#ffffff', margin: 0, tracking: '-0.01em' }}>Share Project</h3>
                     <button 
                         style={{ 
-                            width: '32px', 
-                            height: '32px', 
+                            width: '30px', 
+                            height: '30px', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
-                            borderRadius: '50%', 
-                            backgroundColor: 'rgba(255, 255, 255, 0.06)', 
-                            color: 'rgba(255, 255, 255, 0.6)', 
+                            borderRadius: '8px', 
+                            backgroundColor: 'transparent', 
+                            color: 'rgba(255, 255, 255, 0.5)', 
                             border: 'none', 
                             cursor: 'pointer', 
-                            fontSize: '18px',
                             transition: 'all 0.2s' 
                         }} 
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+                            e.currentTarget.style.color = '#ffffff';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                        }}
                         onClick={onClose}
                     >
-                        &times;
+                        <X size={15} strokeWidth={2.5} />
                     </button>
                 </div>
  

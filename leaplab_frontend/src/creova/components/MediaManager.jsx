@@ -503,24 +503,24 @@ export default function MediaManager({ appState }) {
 
             {/* Stats Footer - Standardized Pro Style */}
             {media.length > 0 && (
-                <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
-                    <div className="flex gap-3">
-                        <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
-                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Files</div>
-                            <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{stats.total}</div>
+                <div style={{ padding: '8px 12px 12px' }} className="border-t border-slate-100 bg-slate-50/30 shrink-0">
+                    <div className="flex gap-2">
+                        <div style={{ padding: '6px 8px' }} className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5 leading-none">Total Files</div>
+                            <div className="text-sm font-black text-slate-800 leading-tight">{stats.total}</div>
                         </div>
-                        <div className="flex-1 relative overflow-hidden p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-md hover:border-slate-300/80 transition-all duration-300 text-center">
-                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 leading-none">Total Size</div>
-                            <div className="text-lg font-black text-slate-800 bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight">{formatFileSize(stats.totalSize)}</div>
+                        <div style={{ padding: '6px 8px' }} className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5 leading-none">Total Size</div>
+                            <div className="text-sm font-black text-slate-800 leading-tight">{formatFileSize(stats.totalSize)}</div>
                         </div>
                     </div>
                     {selectedFile && (
                         <button
                             onClick={handleDeleteSelected}
-                            style={{ fontSize: '11px', fontWeight: '900' }}
-                            className="w-full mt-3 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+                            style={{ fontSize: '10px', fontWeight: '900', height: '32px', marginTop: '8px' }}
+                            className="w-full px-4 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-md shadow-red-500/10 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 style={{ width: '13px', height: '13px' }} />
                             Delete Selected
                         </button>
                     )}

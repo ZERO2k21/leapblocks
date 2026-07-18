@@ -124,6 +124,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
         setStream(null)
         setCameraOn(false)
+        setDetections([])
     }, [])
 
     const toggleCamera = useCallback(() => {

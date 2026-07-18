@@ -64,7 +64,7 @@ export default function PaletteEnhanced() {
             </div>
 
             {/* Component Categories */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body" style={{ paddingBottom: '16px' }}>
                 {Object.entries(categories).map(([category, items]) => {
                     const filteredItems = items.filter(item =>
                         item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,10 +76,10 @@ export default function PaletteEnhanced() {
                     const isCollapsed = collapsedCategories[category];
 
                     return (
-                        <div key={category} className="mx-3 mt-3 last:mb-3 rounded-2xl overflow-hidden border-2 border-slate-200 bg-white transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-sm hover:border-blue-500/30 hover:shadow-md hover:-translate-y-0.5">
+                        <div key={category} className="mx-3 mt-3 mb-3 rounded-2xl overflow-hidden border-2 border-slate-200 bg-white transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-sm hover:border-blue-500/30 hover:shadow-md hover:-translate-y-0.5">
                             {/* Category Header */}
                             <button
-                                className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:bg-gradient-to-r after:from-blue-500 after:to-cyan-500 after:transition-all after:duration-300 after:ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15 after:w-full' : 'bg-gradient-to-b from-white to-slate-50 after:w-0'}`}
+                                className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15' : 'bg-gradient-to-b from-white to-slate-50'}`}
                                 onClick={() => toggleCategory(category)}
                             >
                                 <span className="flex items-center gap-2 min-w-0">
@@ -88,7 +88,7 @@ export default function PaletteEnhanced() {
                                     </span>
                                     <span className="tracking-[0.05em] font-extrabold truncate" title={category}>{category}</span>
                                 </span>
-                                <span className="text-[10px] bg-slate-100 text-slate-900 px-2 py-1 rounded-md font-black shadow-sm border border-slate-200 shrink-0">&nbsp;{filteredItems.length}&nbsp;</span>
+                                <span className="text-[10px] bg-slate-100 text-slate-900 px-3 py-1 rounded-md font-black shadow-sm border border-slate-200 shrink-0">&nbsp;{filteredItems.length}&nbsp;</span>
                             </button>
 
                             {/* Category Items */}
