@@ -6,7 +6,6 @@ export function useToast() {
     return useContext(ToastContext);
 }
 
-// Global toast function for non-React code (e.g., Interpreter.js)
 let _globalToast = null;
 let _globalDismissAll = null;
 
@@ -24,13 +23,12 @@ export function dismissAllToasts() {
     }
 }
 
-export function ToastProvider({ children }) {
-    const [toasts, setToasts] = useState([]);
+// ── Auto-dismiss Timer Hook ────────────────────────────────────────────────
+function useAutoDismiss(setToasts) {
     const timersRef = useRef({});
 
     const removeToast = useCallback((id) => {
         console.log(`[TOAST] ⏳ removeToast(${id}) — starting exit animation`);
-        // Mark toast as exiting first (for exit animation)
         setToasts(prev => prev.map(t => {
             if (t.id === id) {
                 const visibleTime = Date.now() - t.createdAt;
@@ -51,7 +49,7 @@ export function ToastProvider({ children }) {
 
     const dismissAll = useCallback(() => {
         console.log(`[TOAST] 🧹 dismissAll() — clearing all existing toasts`);
-        
+
         setToasts(prev => {
             const activeIds = prev.filter(t => !t.exiting).map(t => t.id);
             if (activeIds.length === 0) return prev;
@@ -79,14 +77,25 @@ export function ToastProvider({ children }) {
         });
     }, []);
 
+    useEffect(() => {
+        return () => {
+            Object.values(timersRef.current).forEach(clearTimeout);
+        };
+    }, []);
+
+    return { removeToast, dismissAll, timersRef };
+}
+
+export function ToastProvider({ children }) {
+    const [toasts, setToasts] = useState([]);
+    const { removeToast, dismissAll, timersRef } = useAutoDismiss(setToasts);
+
     const addToast = useCallback((message, type = 'info', duration = 5000) => {
         const requestTime = Date.now();
         console.log(`[TOAST] 🆕 addToast("${message}", type=${type}, duration=${duration}ms) — requested at ${new Date().toLocaleTimeString()}`);
-        // Dismiss any existing toasts of the same purpose to prevent stacking
         dismissAll();
 
         const id = Date.now() + Math.random();
-        // Delay so dismiss exit animation plays fully before new toast enters
         console.log(`[TOAST] ⏳ Waiting 400ms for dismiss animation before showing new toast...`);
         setTimeout(() => {
             const delayActual = Date.now() - requestTime;
@@ -103,7 +112,6 @@ export function ToastProvider({ children }) {
         return id;
     }, [removeToast, dismissAll]);
 
-    // Set global toast functions
     useEffect(() => {
         _globalToast = addToast;
         _globalDismissAll = dismissAll;
@@ -126,7 +134,7 @@ export function ToastProvider({ children }) {
     );
 }
 
-// Inject keyframes once
+// ── Style Injection ────────────────────────────────────────────────────────
 const STYLE_ID = 'leaplab-toast-styles';
 function ensureStyles() {
     if (typeof document === 'undefined') return;
@@ -170,28 +178,101 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
+// ── Style Constants ────────────────────────────────────────────────────────
+const CONTAINER_STYLE = {
+    position: 'fixed',
+    top: '56px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 99999,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
+    pointerEvents: 'none',
+    width: '100%',
+    maxWidth: '460px',
+    padding: '0 16px',
+    boxSizing: 'border-box',
+};
+
+const TOAST_ITEM_BASE = {
+    width: '100%',
+    borderRadius: '14px',
+    padding: '0',
+    color: 'white',
+    fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+    pointerEvents: 'auto',
+    backdropFilter: 'blur(20px) saturate(1.4)',
+    WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+    position: 'relative',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    transition: 'box-shadow 0.2s ease',
+};
+
+const CONTENT_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '14px 16px',
+    position: 'relative',
+    zIndex: 1,
+};
+
+const MESSAGE_STYLE = {
+    fontSize: '13.5px',
+    fontWeight: 600,
+    lineHeight: 1.4,
+    letterSpacing: '0.01em',
+    color: '#f1f5f9',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+};
+
+const CLOSE_HINT_STYLE = {
+    width: 22, height: 22,
+    borderRadius: '6px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s ease',
+    flexShrink: 0,
+};
+
+const PROGRESS_WRAPPER_STYLE = {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '2.5px',
+    borderRadius: '0 0 14px 14px',
+    overflow: 'hidden',
+};
+
+const PROGRESS_BAR_BASE = {
+    height: '100%',
+    backgroundSize: '200% 100%',
+    transformOrigin: 'left',
+    borderRadius: '0 0 14px 14px',
+};
+
+const SHIMMER_STYLE = {
+    position: 'absolute',
+    inset: 0,
+    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'toastShimmer 3.5s ease-in-out infinite',
+    borderRadius: '14px',
+    pointerEvents: 'none',
+};
+
 function ToastContainer({ toasts, onDismiss }) {
     useEffect(() => { ensureStyles(); }, []);
 
     if (toasts.length === 0) return null;
 
     return (
-        <div style={{
-            position: 'fixed',
-            top: '56px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 99999,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '10px',
-            pointerEvents: 'none',
-            width: '100%',
-            maxWidth: '460px',
-            padding: '0 16px',
-            boxSizing: 'border-box',
-        }}>
+        <div style={CONTAINER_STYLE}>
             {toasts.map(toast => (
                 <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
             ))}
@@ -199,6 +280,7 @@ function ToastContainer({ toasts, onDismiss }) {
     );
 }
 
+// ── Toast Type Config ──────────────────────────────────────────────────────
 const TOAST_CONFIG = {
     info: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
@@ -247,7 +329,6 @@ function ToastIcon({ type }) {
                 flexShrink: 0,
                 position: 'relative',
             }}>
-                {/* Spinning loader ring */}
                 <div style={{
                     width: 18, height: 18,
                     border: '2px solid rgba(255,255,255,0.2)',
@@ -320,108 +401,60 @@ function ToastItem({ toast, onDismiss }) {
     const animName = toast.exiting ? 'toastSlideOut' : 'toastSlideIn';
     const animDuration = toast.exiting ? '0.5s' : '0.7s';
 
+    const renderShimmer = () => toast.type === 'info' && (
+        <div style={SHIMMER_STYLE} />
+    );
+
+    const renderCloseHint = () => (
+        <div style={{
+            ...CLOSE_HINT_STYLE,
+            background: hovered ? 'rgba(255,255,255,0.1)' : 'transparent',
+            opacity: hovered ? 1 : 0.3,
+        }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+        </div>
+    );
+
+    const renderContent = () => (
+        <div style={CONTENT_STYLE}>
+            <ToastIcon type={toast.type} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={MESSAGE_STYLE}>{toast.message}</div>
+            </div>
+            {renderCloseHint()}
+        </div>
+    );
+
+    const renderProgressBar = () => toast.duration > 0 && !toast.exiting && (
+        <div style={PROGRESS_WRAPPER_STYLE}>
+            <div style={{
+                ...PROGRESS_BAR_BASE,
+                background: config.progressColor,
+                animation: `toastProgress ${toast.duration}ms linear forwards`,
+            }} />
+        </div>
+    );
+
     return (
         <div
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                width: '100%',
+                ...TOAST_ITEM_BASE,
                 background: config.gradient,
                 border: `1px solid ${config.border}`,
-                borderRadius: '14px',
-                padding: '0',
-                color: 'white',
-                fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
                 boxShadow: hovered
                     ? `${config.glow}, 0 0 0 1px ${config.accent}30`
                     : config.glow,
                 animation: `${animName} ${animDuration} cubic-bezier(0.16, 1, 0.3, 1) forwards`,
-                pointerEvents: 'auto',
-                backdropFilter: 'blur(20px) saturate(1.4)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-                position: 'relative',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.2s ease',
             }}
             onClick={() => onDismiss(toast.id)}
         >
-            {/* Shimmer overlay for info type */}
-            {toast.type === 'info' && (
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'toastShimmer 3.5s ease-in-out infinite',
-                    borderRadius: '14px',
-                    pointerEvents: 'none',
-                }} />
-            )}
-
-            {/* Content */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '14px 16px',
-                position: 'relative',
-                zIndex: 1,
-            }}>
-                <ToastIcon type={toast.type} />
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        lineHeight: 1.4,
-                        letterSpacing: '0.01em',
-                        color: '#f1f5f9',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                    }}>
-                        {toast.message}
-                    </div>
-                </div>
-
-                {/* Close hint */}
-                <div style={{
-                    width: 22, height: 22,
-                    borderRadius: '6px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: hovered ? 'rgba(255,255,255,0.1)' : 'transparent',
-                    transition: 'background 0.15s ease',
-                    flexShrink: 0,
-                    opacity: hovered ? 1 : 0.3,
-                }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                </div>
-            </div>
-
-            {/* Progress bar */}
-            {toast.duration > 0 && !toast.exiting && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2.5px',
-                    borderRadius: '0 0 14px 14px',
-                    overflow: 'hidden',
-                }}>
-                    <div style={{
-                        height: '100%',
-                        background: config.progressColor,
-                        backgroundSize: '200% 100%',
-                        transformOrigin: 'left',
-                        animation: `toastProgress ${toast.duration}ms linear forwards`,
-                        borderRadius: '0 0 14px 14px',
-                    }} />
-                </div>
-            )}
+            {renderShimmer()}
+            {renderContent()}
+            {renderProgressBar()}
         </div>
     );
 }

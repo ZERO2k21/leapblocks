@@ -28,39 +28,22 @@ export function useSpriteSystem(initialScenes) {
     // We track initial state for Reset functionality
     const initialStatesRef = useRef(new Map());
 
-    // Helper: Dynamically measure the parent '.stage' container to lock the sprite exactly inside its physical bounds!
-
     const getStageBounds = () => {
-
         const stageEl = document.querySelector('.stage');
-
         return stageEl ? { w: stageEl.offsetWidth, h: stageEl.offsetHeight } : { w: STAGE_WIDTH, h: STAGE_HEIGHT };
-
     };
-
-
-
-    // Clamp limits restrict the sprite from crossing the edge, keeping it fully visible
-
-    // We use a margin of roughly ~100px so even scaled-up sprites don't get sliced on the right/bottom borders.
 
     const clampX = (x) => {
-
         const bounds = getStageBounds();
-
         return Math.max(0, Math.min(x, bounds.w - 100));
-
     };
-
-
 
     const clampY = (y) => {
-
         const bounds = getStageBounds();
-
         return Math.max(0, Math.min(y, bounds.h - 100));
-
     };
+
+    const clampSize = (size) => Math.max(10, Math.min(300, size));
 
     // Capture initial state on first load (or add) for Reset
     // In a real app, this might be more robust
@@ -94,10 +77,8 @@ export function useSpriteSystem(initialScenes) {
                     if (newState.x !== undefined) newState.x = clampX(newState.x);
                     if (newState.y !== undefined) newState.y = clampY(newState.y);
 
-                    // Logic: Size Limits
                     if (newState.size !== undefined) {
-                        if (newState.size < 10) newState.size = 10;
-                        if (newState.size > 300) newState.size = 300;
+                        newState.size = clampSize(newState.size);
                     }
 
                     return newState;

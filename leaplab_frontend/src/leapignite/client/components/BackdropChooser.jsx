@@ -40,28 +40,123 @@ const SOLID_COLORS = [
     { name: 'Pink', color: '#F48FB1' },
 ];
 
+const OVERLAY_STYLE = {
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    background: 'rgba(0,0,0,0.55)', zIndex: 3000,
+    display: 'flex', justifyContent: 'center', alignItems: 'center',
+    backdropFilter: 'blur(4px)',
+};
+
+const MODAL_STYLE = {
+    background: 'white', width: '100vw', height: '100vh',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+};
+
+const HEADER_STYLE = {
+    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
+    padding: '16px 24px',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+};
+
+const CLOSE_BTN_STYLE = {
+    background: 'rgba(255,255,255,0.2)', border: 'none',
+    borderRadius: '50%', width: '32px', height: '32px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', transition: 'all 0.15s',
+};
+
+const TAB_BAR_STYLE = { display: 'flex', borderBottom: '1px solid #eee', background: '#fafafa' };
+
+const CONTENT_STYLE = { padding: '20px', overflowY: 'auto', flex: 1 };
+
+const PAINT_CARD_STYLE = {
+    display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px',
+    marginBottom: '16px', background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
+    borderRadius: '12px', cursor: 'pointer', transition: 'all 0.15s', color: 'white',
+};
+
+const GRID_3_COL = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' };
+
+const GRID_4_COL = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' };
+
+const PREVIEW_BOX_STYLE = { width: '100%', paddingTop: '75%', position: 'relative' };
+
+const IMG_STYLE = {
+    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
+};
+
+const CARD_LABEL_STYLE = { padding: '8px 10px', fontSize: '12px', fontWeight: 700, color: '#444', textAlign: 'center', background: 'white' };
+
+const COLOR_SWATCH_STYLE = { width: '100%', paddingTop: '75%', borderRadius: '10px 10px 0 0' };
+
+const COLOR_LABEL_STYLE = { padding: '8px', fontSize: '11px', fontWeight: 700, color: '#555', textAlign: 'center', background: 'white' };
+
+const getBackdropCardStyle = (isHovered) => ({
+    cursor: 'pointer', borderRadius: '12px', overflow: 'hidden',
+    border: isHovered ? '3px solid #7B4FC4' : '2px solid #e0e0e0',
+    transition: 'all 0.2s',
+    transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+    boxShadow: isHovered ? '0 6px 20px rgba(123,79,196,0.25)' : '0 2px 6px rgba(0,0,0,0.06)',
+});
+
+const getTabButtonStyle = (isActive) => ({
+    flex: 1, padding: '12px 16px',
+    background: isActive ? 'white' : 'transparent', border: 'none',
+    borderBottom: isActive ? '3px solid #7B4FC4' : '3px solid transparent',
+    color: isActive ? '#7B4FC4' : '#999',
+    fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.15s',
+});
+
+const TABS = [
+    { id: 'backdrops', label: '🖼️ Backdrops' },
+    { id: 'colors', label: '🎨 Solid Colors' },
+];
+
+function ColorSwatch({ color, name, onSelect }) {
+    return (
+        <div
+            onClick={onSelect}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            style={{
+                cursor: 'pointer', borderRadius: '12px', overflow: 'hidden',
+                border: '2px solid #e0e0e0', transition: 'all 0.2s',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+            }}
+        >
+            <div style={{ ...COLOR_SWATCH_STYLE, background: color, border: color === '#FFFFFF' ? '1px solid #eee' : 'none' }} />
+            <div style={COLOR_LABEL_STYLE}>{name}</div>
+        </div>
+    );
+}
+
+function BackdropCard({ bg, hoveredId, onSelect, onHover }) {
+    return (
+        <div
+            onClick={() => onSelect(bg.name, bg.src)}
+            onMouseEnter={() => onHover(bg.id)}
+            onMouseLeave={() => onHover(null)}
+            style={getBackdropCardStyle(hoveredId === bg.id)}
+        >
+            <div style={{ ...PREVIEW_BOX_STYLE, background: bg.color }}>
+                <img
+                    src={bg.src} alt={bg.name} style={IMG_STYLE}
+                    onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+            </div>
+            <div style={CARD_LABEL_STYLE}>{bg.name}</div>
+        </div>
+    );
+}
+
 export default function BackdropChooser({ onSelect, onPaint, onClose }) {
-    const [tab, setTab] = useState('backdrops'); // 'backdrops' | 'colors'
+    const [tab, setTab] = useState('backdrops');
     const [hoveredId, setHoveredId] = useState(null);
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.55)', zIndex: 3000,
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            backdropFilter: 'blur(4px)',
-        }}>
-            <div style={{
-                background: 'white', width: '100vw', height: '100vh',
-                display: 'flex', flexDirection: 'column',
-                overflow: 'hidden',
-            }}>
-                {/* Header */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-                    padding: '16px 24px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
+        <div style={OVERLAY_STYLE}>
+            <div style={MODAL_STYLE}>
+                <div style={HEADER_STYLE}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Image size={22} color="white" />
                         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'white' }}>
@@ -70,12 +165,7 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                     </div>
                     <button
                         onClick={onClose}
-                        style={{
-                            background: 'rgba(255,255,255,0.2)', border: 'none',
-                            borderRadius: '50%', width: '32px', height: '32px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                        }}
+                        style={CLOSE_BTN_STYLE}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                     >
@@ -83,47 +173,24 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                     </button>
                 </div>
 
-                {/* Tab Bar */}
-                <div style={{
-                    display: 'flex', borderBottom: '1px solid #eee',
-                    background: '#fafafa',
-                }}>
-                    {[
-                        { id: 'backdrops', label: '🖼️ Backdrops' },
-                        { id: 'colors', label: '🎨 Solid Colors' },
-                    ].map(t => (
+                <div style={TAB_BAR_STYLE}>
+                    {TABS.map(t => (
                         <button
                             key={t.id}
                             onClick={() => setTab(t.id)}
-                            style={{
-                                flex: 1, padding: '12px 16px',
-                                background: tab === t.id ? 'white' : 'transparent',
-                                border: 'none',
-                                borderBottom: tab === t.id ? '3px solid #7B4FC4' : '3px solid transparent',
-                                color: tab === t.id ? '#7B4FC4' : '#999',
-                                fontWeight: 700, fontSize: '14px',
-                                cursor: 'pointer', transition: 'all 0.15s',
-                            }}
+                            style={getTabButtonStyle(tab === t.id)}
                         >
                             {t.label}
                         </button>
                     ))}
                 </div>
 
-                {/* Content */}
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                <div style={CONTENT_STYLE}>
                     {tab === 'backdrops' && (
                         <>
-                            {/* Paint custom button */}
                             <div
                                 onClick={onPaint}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '10px',
-                                    padding: '12px 16px', marginBottom: '16px',
-                                    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-                                    borderRadius: '12px', cursor: 'pointer',
-                                    transition: 'all 0.15s', color: 'white',
-                                }}
+                                style={PAINT_CARD_STYLE}
                                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
                                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                             >
@@ -134,104 +201,29 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                                 </div>
                             </div>
 
-                            {/* Backdrop Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(3, 1fr)',
-                                gap: '14px',
-                            }}>
+                            <div style={GRID_3_COL}>
                                 {BACKDROP_LIBRARY.map(bg => (
-                                    <div
+                                    <BackdropCard
                                         key={bg.id}
-                                        onClick={() => onSelect(bg.name, bg.src)}
-                                        onMouseEnter={() => setHoveredId(bg.id)}
-                                        onMouseLeave={() => setHoveredId(null)}
-                                        style={{
-                                            cursor: 'pointer',
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            border: hoveredId === bg.id ? '3px solid #7B4FC4' : '2px solid #e0e0e0',
-                                            transition: 'all 0.2s',
-                                            transform: hoveredId === bg.id ? 'scale(1.03)' : 'scale(1)',
-                                            boxShadow: hoveredId === bg.id
-                                                ? '0 6px 20px rgba(123,79,196,0.25)'
-                                                : '0 2px 6px rgba(0,0,0,0.06)',
-                                        }}
-                                    >
-                                        {/* Preview */}
-                                        <div style={{
-                                            width: '100%',
-                                            paddingTop: '75%',
-                                            position: 'relative',
-                                            background: bg.color,
-                                        }}>
-                                            <img
-                                                src={bg.src}
-                                                alt={bg.name}
-                                                style={{
-                                                    position: 'absolute', top: 0, left: 0,
-                                                    width: '100%', height: '100%',
-                                                    objectFit: 'cover',
-                                                }}
-                                                onError={e => { e.currentTarget.style.display = 'none'; }}
-                                            />
-                                        </div>
-                                        {/* Label */}
-                                        <div style={{
-                                            padding: '8px 10px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            color: '#444',
-                                            textAlign: 'center',
-                                            background: 'white',
-                                        }}>
-                                            {bg.name}
-                                        </div>
-                                    </div>
+                                        bg={bg}
+                                        hoveredId={hoveredId}
+                                        onSelect={onSelect}
+                                        onHover={setHoveredId}
+                                    />
                                 ))}
                             </div>
                         </>
                     )}
 
                     {tab === 'colors' && (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)',
-                            gap: '14px',
-                        }}>
+                        <div style={GRID_4_COL}>
                             {SOLID_COLORS.map(c => (
-                                <div
+                                <ColorSwatch
                                     key={c.name}
-                                    onClick={() => onSelect(c.name, null, c.color)}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                    style={{
-                                        cursor: 'pointer',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: '2px solid #e0e0e0',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '100%',
-                                        paddingTop: '75%',
-                                        background: c.color,
-                                        border: c.color === '#FFFFFF' ? '1px solid #eee' : 'none',
-                                        borderRadius: '10px 10px 0 0',
-                                    }} />
-                                    <div style={{
-                                        padding: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        color: '#555',
-                                        textAlign: 'center',
-                                        background: 'white',
-                                    }}>
-                                        {c.name}
-                                    </div>
-                                </div>
+                                    color={c.color}
+                                    name={c.name}
+                                    onSelect={() => onSelect(c.name, null, c.color)}
+                                />
                             ))}
                         </div>
                     )}

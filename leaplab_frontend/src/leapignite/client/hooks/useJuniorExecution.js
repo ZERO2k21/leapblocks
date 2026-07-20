@@ -43,6 +43,13 @@ export function useJuniorExecution({
         });
     }, [workspaceRef, activeSpriteIdRef]);
 
+    const getSpriteBlocks = (sprite, currentActiveId) => {
+        if (sprite.id === currentActiveId && workspaceRef.current) {
+            return Blockly.serialization.workspaces.save(workspaceRef.current);
+        }
+        return spriteWorkspacesRef?.current?.get(sprite.id) || sprite.blocks || {};
+    };
+
     useEffect(() => {
         if (!interpreterRef.current) return;
 
@@ -54,10 +61,7 @@ export function useJuniorExecution({
                 for (const sprite of scene.sprites) {
                     allEntries.push({
                         spriteId: sprite.id,
-                        blocks:
-                            sprite.id === currentActiveId && workspaceRef.current
-                                ? Blockly.serialization.workspaces.save(workspaceRef.current)
-                                : spriteWorkspacesRef?.current?.get(sprite.id) || sprite.blocks || {}
+                        blocks: getSpriteBlocks(sprite, currentActiveId)
                     });
                 }
             }

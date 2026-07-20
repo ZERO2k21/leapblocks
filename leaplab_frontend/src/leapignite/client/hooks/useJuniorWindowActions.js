@@ -311,8 +311,7 @@ export function useJuniorWindowActions({
         window.__setCameraOn = async (on) => {
             if (window.setCameraOn) window.setCameraOn(on);
         };
-        window.hpCameraToggle = window.__setCameraOn;
-        window.fdCameraToggle = window.__setCameraOn;
+        ['hpCameraToggle', 'fdCameraToggle'].forEach(key => window[key] = window.__setCameraOn);
 
         return () => {
             contextKeys.forEach(key => delete window[key]);

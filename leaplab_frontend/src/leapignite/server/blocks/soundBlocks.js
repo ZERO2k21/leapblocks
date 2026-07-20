@@ -1,12 +1,5 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-import Blockly from "@blockly-runtime";
-import { javascriptGenerator } from "@blockly-runtime";
-
-export default function defineSoundBlocks() {
+export default function defineSoundBlocks(Blockly, javascriptGenerator) {
+    if (!Blockly || !javascriptGenerator) return;
     const defaultSoundOptions = [["Pop", "pop"], ["Boing", "boing"], ["Clap", "clap"]];
 
     const normalizeDropdownOptions = (options, fallbackOptions) => {
@@ -177,15 +170,30 @@ export default function defineSoundBlocks() {
     // --- STOP ALL SOUNDS ---
     Blockly.Blocks["sound_stop"] = {
         init: function () {
-            this.appendDummyInput()
-                .appendField("🔇 Stop");
-
-            this.setPreviousStatement(true);
-            this.setNextStatement(true);
-            this.setColour("#CF63CF");
+            this.appendDummyInput().appendField("🔇 Stop");
+            this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF");
         }
     };
-    javascriptGenerator.forBlock["sound_stop"] = function (block) {
-        return `stopAllSounds();\n`;
+    javascriptGenerator.forBlock["sound_stop"] = function (block) { return `stopAllSounds();\n`; };
+
+    // Legacy sound blocks (from blocks.js)
+    Blockly.Blocks['sound_record'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("📢", "junior-icon")).appendField("Record"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    javascriptGenerator.forBlock['sound_record'] = () => `showFeedback("Recording...");\nawait window.wait(0.5);\n`;
+
+    Blockly.Blocks['sound_vol'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Volume"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    javascriptGenerator.forBlock['sound_vol'] = () => `showFeedback("Volume Changed");\nawait window.wait(0.5);\n`;
+
+    Blockly.Blocks['sound_animal'] = {
+        init: function () {
+            this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Sound of").appendField(new Blockly.FieldDropdown([["Bear", "grunt"], ["Dog", "bark"], ["Cat", "meow"], ["Robot", "robot"]]), "VAL");
+            this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF");
+        }
     };
+    javascriptGenerator.forBlock['sound_animal'] = (b) => `playSound("${b.getFieldValue('VAL')}");\nawait window.wait(0.5);\n`;
+
+    Blockly.Blocks['sound_music'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Play Note"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    javascriptGenerator.forBlock['sound_music'] = () => `playNote();\nawait window.wait(0.5);\n`;
+
+    Blockly.Blocks['sound_mute'] = { init: function () { this.appendDummyInput().appendField(new Blockly.FieldLabel("🔊", "junior-icon")).appendField("Mute"); this.setPreviousStatement(true); this.setNextStatement(true); this.setColour("#CF63CF"); } };
+    javascriptGenerator.forBlock['sound_mute'] = () => `showFeedback("Muted");\nawait window.wait(0.5);\n`;
 }

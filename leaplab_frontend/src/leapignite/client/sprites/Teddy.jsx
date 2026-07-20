@@ -4,11 +4,12 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef } from 'react';
+import useSpriteDrag, { getPenTipOffset } from './useSpriteDrag';
+import SpriteDisplay from './spriteRenderer';
 
 const normalizeSpriteKey = (value) => String(value || '').trim().toLowerCase();
 const SPRITE_BOX_SIZE = 80;
 const SPRITE_CENTER = SPRITE_BOX_SIZE / 2;
-const PEN_TIP_LOCAL = { x: 7, y: 79 };
 
 const isJuniorPenSprite = (...values) => values.some((value) => {
     const normalized = normalizeSpriteKey(value);
@@ -65,32 +66,15 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
         }
     };
 
-    const getPenTipOffset = (
-        currentAngle = 0,
-        currentSize = 100,
-        currentScaleX = scaleXRef.current,
-        currentMirrored = mirroredRef.current
-    ) => {
-        const angleRad = (Number(currentAngle) || 0) * Math.PI / 180;
-        const sizeScale = Math.max(0.1, (Number(currentSize) || 100) / 100);
-        const horizontalDirection = (currentMirrored ? -currentScaleX : currentScaleX) < 0 ? -1 : 1;
-
-        const baseX = (PEN_TIP_LOCAL.x - SPRITE_CENTER) * horizontalDirection * sizeScale;
-        const baseY = (PEN_TIP_LOCAL.y - SPRITE_CENTER) * sizeScale;
-
-        const rotatedX = (Math.cos(angleRad) * baseX) - (Math.sin(angleRad) * baseY);
-        const rotatedY = (Math.sin(angleRad) * baseX) + (Math.cos(angleRad) * baseY);
-
-        return {
-            x: SPRITE_CENTER + rotatedX,
-            y: SPRITE_CENTER + rotatedY
-        };
-    };
+    const { isDragging, handleMouseDown, handleTouchStart } = useSpriteDrag({
+        x, y, angle, size, scaleX, mirrored, onClick, onDragStateChange,
+        isPenSprite, updateStore, penColor, isPenDown,
+    });
 
     // Get Pencil Tip precisely based on sprite direction and size
     const getPencilTip = (currentX, currentY, currentAngle, currentSize) => {
         if (isPenSprite) {
-            const offset = getPenTipOffset(currentAngle, currentSize);
+            const offset = getPenTipOffset(currentAngle, currentSize, scaleXRef.current, mirroredRef.current);
             return {
                 x: currentX + offset.x,
                 y: currentY + offset.y
@@ -243,245 +227,6 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
     // Jiggle animation state
     const [jiggleKey, setJiggleKey] = useState(0);
 
-    // Icon mapping logic (now supports costumes)
-    // Fallback logic for safety
-    // Track image load errors to fallback gracefully
-    const [imgError, setImgError] = useState(false);
-
-    // Reset error state when costume changes
-    useEffect(() => {
-        setImgError(false);
-    }, [currentCostume]);
-
-    const getEmojiForType = () => {
-        if (type === 'robot') return '\u{1F916}';
-        if (type === 'dog') return '\u{1F436}';
-        if (type === 'cat') return '\u{1F431}';
-        return '\u{1F43B}';
-    };
-
-    const renderIcon = () => {
-        // 1. Resolve costume value (can be an index or a key if costumes is a map/array)
-        let costumeValue = costumes?.[currentCostume] || currentCostume;
-
-        // If costumes is an array and currentCostume is a numeric string/index
-        if (Array.isArray(costumes)) {
-            const idx = parseInt(currentCostume);
-            if (!isNaN(idx) && costumes[idx]) {
-                costumeValue = costumes[idx];
-            }
-        }
-
-        // 2. If it looks like a path/URL (image) and hasn't errored, render img tag
-        if (!imgError && typeof costumeValue === 'string' && (
-            costumeValue.includes('/') ||
-            costumeValue.startsWith('http') ||
-            costumeValue.includes('data:image') ||
-            costumeValue.endsWith('.png') ||
-            costumeValue.endsWith('.jpg') ||
-            costumeValue.endsWith('.svg')
-        )) {
-            return (
-                <img
-                    src={costumeValue}
-                    alt={id}
-                    style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))' }}
-                    draggable={false}
-                    onError={() => setImgError(true)}
-                />
-            );
-        }
-
-        // 3. If it is an emoji string (check for emoji characters)
-        if (typeof costumeValue === 'string') {
-            // Check if it's an emoji (contains emoji unicode or is a single emoji character)
-            const emojiRegex = /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
-            const isEmoji = emojiRegex.test(costumeValue) || costumeValue.length <= 4;
-
-            if (isEmoji) {
-                const isLetterOrNumber = type?.startsWith('letter_') || type?.startsWith('number_') || id?.startsWith('letter_') || id?.startsWith('number_');
-
-                if (isLetterOrNumber) {
-                    return (
-                        <div style={{
-                            color: textColor || '#FF8C1A',
-                            fontSize: '90px',
-                            fontWeight: '900',
-                            fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
-                            WebkitTextStroke: '4px black',
-                            textShadow: '8px 8px 0px rgba(0,0,0,1)',
-                            lineHeight: 1,
-                            display: 'inline-block',
-                            userSelect: 'none',
-                            transform: 'scale(1.1)',
-                        }}>
-                            {costumeValue}
-                        </div>
-                    );
-                }
-                // Render emoji with proper styling
-                return (
-                    <span style={{
-                        fontSize: '60px',
-                        lineHeight: 1,
-                        display: 'block',
-                        textAlign: 'center',
-                        filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))'
-                    }}>
-                        {costumeValue}
-                    </span>
-                );
-            }
-        }
-
-        // 4. Fallback to emoji logic for legacy string-based states
-        if (currentCostume === "wave") {
-            if (type === 'bear') return "\u{1F44B}";
-            if (type === 'dog') return "\u{1F415}";
-            if (type === 'robot') return "\u{1F916}";
-        }
-        return getEmojiForType();
-    };
-
-    // Better: Receive costumes object
-    // For now, let's just stick to the Emoji logic above as "Costume" implies.
-
-    // --- DRAG TO MOVE ---
-    const [isDragging, setIsDragging] = useState(false);
-    const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false });
-
-    const startDrag = (clientX, clientY) => {
-        const stageEl = dragRef.current.stageEl;
-        const rect = stageEl?.getBoundingClientRect();
-        const stageLeft = rect?.left || 0;
-        const stageTop = rect?.top || 0;
-        const pointerX = clientX - stageLeft;
-        const pointerY = clientY - stageTop;
-        const tipOffset = getPenTipOffset(angleRef.current, sizeRef.current, scaleX, mirrored);
-
-        dragRef.current = {
-            startX: clientX,
-            startY: clientY,
-            origX: x,
-            origY: y,
-            didDrag: false,
-            parentLeft: stageLeft,
-            parentTop: stageTop,
-            prevDrawPoint: isPenSprite ? { x: pointerX, y: pointerY } : null,
-            tipOffsetX: tipOffset.x,
-            tipOffsetY: tipOffset.y,
-            stageEl,
-        };
-
-        setIsDragging(true);
-        if (onDragStateChange) onDragStateChange(true);
-    };
-
-    const moveDrag = (clientX, clientY) => {
-        const dx = clientX - dragRef.current.startX;
-        const dy = clientY - dragRef.current.startY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-            dragRef.current.didDrag = true;
-        }
-        const pointerPoint = {
-            x: clientX - dragRef.current.parentLeft,
-            y: clientY - dragRef.current.parentTop
-        };
-        const newX = isPenSprite
-            ? (pointerPoint.x - dragRef.current.tipOffsetX)
-            : (dragRef.current.origX + dx);
-        const newY = isPenSprite
-            ? (pointerPoint.y - dragRef.current.tipOffsetY)
-            : (dragRef.current.origY + dy);
-
-        if (isPenSprite && window.drawSegment) {
-            if (dragRef.current.prevDrawPoint) {
-                const activeColor = window.penColor || penColor;
-                const activeSize = window.penSize || 4;
-                window.drawSegment(
-                    dragRef.current.prevDrawPoint.x,
-                    dragRef.current.prevDrawPoint.y,
-                    pointerPoint.x,
-                    pointerPoint.y,
-                    activeColor,
-                    activeSize
-                );
-            }
-            dragRef.current.prevDrawPoint = pointerPoint;
-        }
-
-        updateStore({ x: newX, y: newY });
-    };
-
-    const endDrag = () => {
-        setIsDragging(false);
-        if (onDragStateChange) onDragStateChange(false);
-        if (!dragRef.current.didDrag && onClick) {
-            onClick();
-        }
-    };
-
-    const handleMouseDown = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const stageEl = e.currentTarget.parentElement;
-        dragRef.current.stageEl = stageEl;
-        startDrag(e.clientX, e.clientY);
-
-        const handleMouseMove = (me) => {
-            me.preventDefault();
-            moveDrag(me.clientX, me.clientY);
-        };
-        const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            endDrag();
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    };
-
-    const handleTouchStart = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const touch = e.touches[0];
-        const stageEl = e.currentTarget.parentElement;
-        dragRef.current.stageEl = stageEl;
-        startDrag(touch.clientX, touch.clientY);
-
-        const handleTouchMove = (te) => {
-            te.preventDefault();
-            const t = te.touches[0];
-            moveDrag(t.clientX, t.clientY);
-        };
-        const handleTouchEnd = () => {
-            document.removeEventListener('touchmove', handleTouchMove);
-            document.removeEventListener('touchend', handleTouchEnd);
-            endDrag();
-        };
-
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
-    };
-
-    // Determine pen-down indicator color
-    const penIndicatorColor = window.penColor || penColor || '#FF0000';
-    const isPenType = isPenSprite;
-
-    // Calculate current tip dynamically for render positions
-    const renderTipOffset = isPenSprite
-        ? getPenTipOffset(angle, size, scaleX, mirrored)
-        : { x: SPRITE_CENTER, y: SPRITE_CENTER };
-    const renderTip = {
-        x: x + renderTipOffset.x,
-        y: y + renderTipOffset.y
-    };
-
-    // Relative tip coordinates (for CSS transform origin within bounding box)
-    const relativeTipX = renderTip.x - x;
-    const relativeTipY = renderTip.y - y;
-
     return (
         <React.Fragment>
             <style>
@@ -529,45 +274,23 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
             >
-                {/* Speech Bubble */}
-                {speech && (
-                    <div style={{
-                        position: 'absolute', bottom: '100%', left: '50%', transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
-                        background: 'white', border: '2px solid #333', borderRadius: '8px', padding: '3px 8px',
-                        marginBottom: '6px', whiteSpace: 'nowrap', zIndex: 10,
-                        fontSize: '13px', fontWeight: '600', color: '#333',
-                    }}>
-                        {speech}
-                    </div>
-                )}
-
-                {/* Avatar */}
-                <div style={{
-                    fontSize: '50px',
-                    lineHeight: 1,
-                    transform: (isPenDown && isPenType) ? 'rotate(-5deg)' : 'none',
-                    transformOrigin: `${relativeTipX}px ${relativeTipY}px` // Pivot near the tip
-                }}>
-                    {renderIcon()}
-                </div>
-
-                {/* Pen-Down Indicator: colored dot exactly at the drawing tip */}
-                {isPenDown && isPenSprite && (
-                    <div style={{
-                        position: 'absolute',
-                        left: `${relativeTipX}px`,
-                        top: `${relativeTipY}px`,
-                        transform: 'translate(-50%, -50%)',
-                        width: Math.max(6, (window.penSize || 5)),
-                        height: Math.max(6, (window.penSize || 5)),
-                        borderRadius: '50%',
-                        backgroundColor: penIndicatorColor,
-                        boxShadow: `0 0 6px ${penIndicatorColor}, 0 0 12px ${penIndicatorColor}40`,
-                        animation: 'penPulse 1s ease-in-out infinite',
-                        zIndex: 5,
-                        pointerEvents: 'none',
-                    }} />
-                )}
+                <SpriteDisplay
+                    speech={speech}
+                    type={type}
+                    id={id}
+                    costumes={costumes}
+                    currentCostume={currentCostume}
+                    textColor={textColor}
+                    isPenDown={isPenDown}
+                    isPenSprite={isPenSprite}
+                    penColor={penColor}
+                    mirrored={mirrored}
+                    scaleX={scaleX}
+                    angle={angle}
+                    size={size}
+                    x={x}
+                    y={y}
+                />
             </div>
             {/* Stage Feedback Toast */}
             {active && feedback && (

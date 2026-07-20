@@ -1,11 +1,5 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import React, { useState, useEffect, useRef } from "react";
-import Blockly from "@blockly-runtime";
-import { javascriptGenerator } from "@blockly-runtime";
+import Blockly, { javascriptGenerator } from "@blockly-runtime";
 import defineLeapBlocks from "../../server/blocks/blocks";
 import defineLooksBlocks from "../../server/blocks/looksBlocks";
 import defineSoundBlocks from "../../server/blocks/soundBlocks";
@@ -13,110 +7,10 @@ import { registerLeapRenderer } from "../../server/blocks/LeapRenderer";
 import { getLessonConfig } from "../../server/engine/LessonConfig";
 import { WorkspaceValidator } from "../../server/engine/WorkspaceValidator";
 import { showToast } from "../components/Toast";
-import { previewActions } from "../../server/engine/previewActions";
-import { looksPreview } from "../../server/engine/looksPreview";
 import { EXTENSIONS, registerExtensions, getIgniteExtension } from "../../../extensions/extensionDefinitions";
-
-// Robot Assets
-const robotIdle = "assets/sprites/robot/robot_idle.svg";
-const robotWave1 = "assets/sprites/robot/robot_wave1.svg";
-const robotWave2 = "assets/sprites/robot/robot_wave2.svg";
-const robotTalk1 = "assets/sprites/robot/robot_talk1.svg";
-
-// Categories
-const CATEGORIES = [
-    { id: "events", name: "Events", color: "#FFBF00", icon: <span role="img" aria-label="flag">🏁</span> },
-    { id: "motion", name: "Motion", color: "#4C97FF", icon: <span role="img" aria-label="motion">👣</span> },
-    { id: "looks", name: "Looks", color: "#9966FF", icon: <span role="img" aria-label="looks">👁️</span> },
-    { id: "sound", name: "Sound", color: "#CF63CF", icon: <span role="img" aria-label="sound">🔊</span> },
-    { id: "control", name: "Control", color: "#FFAB19", icon: <span role="img" aria-label="control">✋</span> },
-    { id: "pen", name: "Pen", color: "#0FBD8C", icon: <span role="img" aria-label="pen">🖊️</span> },
-];
-
-const categoryContents = {
-    motion: [
-        { kind: "block", type: "move_right" },
-        { kind: "block", type: "move_left" },
-        { kind: "block", type: "move_up" },
-        { kind: "block", type: "move_down" },
-        { kind: "block", type: "turn_right" },
-        { kind: "block", type: "turn_left" },
-        { kind: "block", type: "jump" },
-        { kind: "block", type: "go_to_location" },
-        { kind: "block", type: "go_random" },
-        { kind: "block", type: "change_speed" }
-    ],
-    looks: [
-        { kind: "block", type: "say_text" },
-        { kind: "block", type: "show_sprite" },
-        { kind: "block", type: "hide_sprite" },
-        { kind: "block", type: "junior_change_costume" },
-        { kind: "block", type: "change_size" },
-        { kind: "block", type: "set_size" },
-        { kind: "block", type: "looks_change_costume" },
-        { kind: "block", type: "looks_mirror" },
-        { kind: "block", type: "select_sprite" },
-        { kind: "block", type: "switch_scene" }
-    ],
-    control: [
-        { kind: "block", type: "control_forever" },
-        { kind: "block", type: "control_repeat" },
-        { kind: "block", type: "control_wait" },
-        { kind: "block", type: "control_stop" },
-        { kind: "block", type: "control_scene" }
-    ],
-    events: [
-        { kind: "block", type: "event_flag" },
-        { kind: "block", type: "event_up" },
-        { kind: "block", type: "event_down" },
-        { kind: "block", type: "event_press" },
-        { kind: "block", type: "broadcast_message" },
-        { kind: "block", type: "when_receive_message" }
-    ],
-    sound: [
-        { kind: "block", type: "sound_play" },
-        { kind: "button", text: "🎤", callbackKey: "RECORD_SOUND" },
-        { kind: "block", type: "sound_play_music" },
-        { kind: "block", type: "sound_instrument" },
-        { kind: "block", type: "sound_note" },
-        { kind: "block", type: "sound_stop" }
-    ],
-    pen: [
-        { kind: "block", type: "pen_down" },
-        { kind: "block", type: "pen_up" },
-        { kind: "block", type: "pen_set_color" },
-        { kind: "block", type: "pen_set_size" },
-        { kind: "block", type: "pen_stamp" },
-        { kind: "block", type: "pen_eraser" }
-    ]
-};
-
-// Block type → category mapping for CSS styling (data-category attribute)
-const BLOCK_TYPE_TO_CATEGORY = {};
-CATEGORIES.forEach(cat => {
-    const blocks = categoryContents[cat.id] || [];
-    blocks.forEach(b => { if (b.kind === 'block') BLOCK_TYPE_TO_CATEGORY[b.type] = cat.id; });
-});
-// Also map blocks from blocks.js / looksBlocks.js / soundBlocks.js that use different naming
-const EXTRA_CATEGORY_MAP = {
-    move_right: 'motion', move_left: 'motion', move_up: 'motion', move_down: 'motion',
-    turn_right: 'motion', turn_left: 'motion', jump: 'motion', run: 'motion', findout: 'motion',
-    go_to_location: 'motion', move_relative: 'motion', go_random: 'motion', change_speed: 'motion',
-    looks_say: 'looks', looks_show: 'looks', looks_hide: 'looks', looks_grow: 'looks',
-    looks_shrink: 'looks', looks_turn_back: 'looks', looks_walk: 'looks', looks_call: 'looks',
-    looks_symmetry: 'looks', looks_change_costume: 'looks', looks_mirror: 'looks',
-    say_text: 'looks', show_sprite: 'looks', hide_sprite: 'looks',
-    junior_change_costume: 'looks', change_size: 'looks', set_size: 'looks', select_sprite: 'looks', switch_scene: 'looks',
-    control_forever: 'control', control_repeat: 'control', control_wait: 'control',
-    control_stop: 'control', control_scene: 'control',
-    event_flag: 'events', event_up: 'events', event_down: 'events', event_press: 'events',
-    broadcast_message: 'events', when_receive_message: 'events',
-    sound_play: 'sound', sound_play_music: 'sound', sound_instrument: 'sound',
-    sound_note: 'sound', sound_stop: 'sound', sound_animal: 'sound',
-    pen_down: 'pen', pen_up: 'pen', pen_set_color: 'pen', pen_set_size: 'pen',
-    pen_stamp: 'pen', pen_eraser: 'pen',
-};
-Object.assign(BLOCK_TYPE_TO_CATEGORY, EXTRA_CATEGORY_MAP);
+import { CATEGORIES, categoryContents, BLOCK_TYPE_TO_CATEGORY } from "./workspaceData";
+import { getActiveSprite, captureSpriteState, handleBlockPreview } from "./workspacePreview";
+import { handleBlockClickForPickers } from "./workspacePickers";
 
 function tagBlockCategory(block) {
     try {
@@ -125,6 +19,79 @@ function tagBlockCategory(block) {
             block.svgGroup_.setAttribute('data-category', category);
         }
     } catch (_) { }
+}
+
+function registerBlocks() {
+    defineLeapBlocks(Blockly, javascriptGenerator);
+    defineLooksBlocks(Blockly, javascriptGenerator);
+    defineSoundBlocks(Blockly, javascriptGenerator);
+}
+
+function patchBlocklyDropdowns() {
+    if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
+        Blockly.FieldDropdown.prototype._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
+        Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
+            const block = this.getSourceBlock();
+            if (block) {
+                const color = block.getColour();
+                document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
+                const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
+                document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
+            }
+            this._originalShowEditor(opt_e);
+        };
+    }
+
+    if (!Blockly.FieldDropdown.prototype._arrowColourPatched) {
+        const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
+        Blockly.FieldDropdown.prototype.applyColour = function () {
+            if (origApplyColour) origApplyColour.call(this);
+            const svgArrow = this.svgArrow_ || this.svgArrow;
+            if (svgArrow) {
+                svgArrow.style.filter = 'brightness(0)';
+            }
+            const arrow = this.arrow_ || this.arrow;
+            if (arrow) {
+                try {
+                    const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
+                    if (arrowEl && arrowEl.style) arrowEl.style.fill = '#333333';
+                    if (arrowEl && arrowEl.setAttribute) arrowEl.setAttribute('fill', '#333333');
+                } catch (e) { }
+            }
+            try {
+                const fieldGroup = this.fieldGroup_ || this.fieldGroup;
+                if (fieldGroup) {
+                    const images = fieldGroup.querySelectorAll('image');
+                    images.forEach(img => { img.style.filter = 'brightness(0)'; });
+                }
+            } catch (e) { }
+        };
+        Blockly.FieldDropdown.prototype._arrowColourPatched = true;
+    }
+}
+
+function setupFlyoutTracking(flyout, setFlyoutHeight) {
+    if (!flyout) return;
+
+    const FIXED_SCALE = 1.0;
+    flyout.getFlyoutScale = () => FIXED_SCALE;
+    if (flyout.getWorkspace()) {
+        flyout.getWorkspace().setScale(FIXED_SCALE);
+    }
+
+    const syncFlyoutHeight = () => {
+        try {
+            const h = flyout.getHeight();
+            if (h > 0) setFlyoutHeight(h);
+        } catch (_) {}
+    };
+
+    if (flyout.svgGroup_) {
+        const observer = new MutationObserver(syncFlyoutHeight);
+        observer.observe(flyout.svgGroup_, { attributes: true, attributeFilter: ['height'] });
+    }
+
+    setTimeout(syncFlyoutHeight, 200);
 }
 
 export function useJuniorWorkspace({
@@ -272,53 +239,8 @@ export function useJuniorWorkspace({
     };
 
     useEffect(() => {
-        defineLeapBlocks(Blockly, javascriptGenerator);
-        defineLooksBlocks(Blockly, javascriptGenerator);
-        defineSoundBlocks(Blockly, javascriptGenerator);
-
-        // Dynamic Dropdown Colors
-        if (!Blockly.FieldDropdown.prototype._originalShowEditor) {
-            Blockly.FieldDropdown.prototype._originalShowEditor = Blockly.FieldDropdown.prototype.showEditor_;
-            Blockly.FieldDropdown.prototype.showEditor_ = function (opt_e) {
-                const block = this.getSourceBlock();
-                if (block) {
-                    const color = block.getColour();
-                    document.documentElement.style.setProperty('--blockly-menu-highlight-color', color);
-                    const tint = color.startsWith('#') ? `${color}1A` : 'rgba(0,0,0,0.05)';
-                    document.documentElement.style.setProperty('--blockly-menu-bg-color', tint);
-                }
-                this._originalShowEditor(opt_e);
-            };
-        }
-
-        // Force dropdown arrows to be black
-        if (!Blockly.FieldDropdown.prototype._arrowColourPatched) {
-            const origApplyColour = Blockly.FieldDropdown.prototype.applyColour;
-            Blockly.FieldDropdown.prototype.applyColour = function () {
-                if (origApplyColour) origApplyColour.call(this);
-                const svgArrow = this.svgArrow_ || this.svgArrow;
-                if (svgArrow) {
-                    svgArrow.style.filter = 'brightness(0)';
-                }
-                const arrow = this.arrow_ || this.arrow;
-                if (arrow) {
-                    try {
-                        const arrowEl = arrow.getSvgRoot ? arrow.getSvgRoot() : arrow;
-                        if (arrowEl && arrowEl.style) arrowEl.style.fill = '#333333';
-                        if (arrowEl && arrowEl.setAttribute) arrowEl.setAttribute('fill', '#333333');
-                    } catch (e) { }
-                }
-                try {
-                    const fieldGroup = this.fieldGroup_ || this.fieldGroup;
-                    if (fieldGroup) {
-                        const images = fieldGroup.querySelectorAll('image');
-                        images.forEach(img => { img.style.filter = 'brightness(0)'; });
-                    }
-                } catch (e) { }
-            };
-            Blockly.FieldDropdown.prototype._arrowColourPatched = true;
-        }
-
+        registerBlocks();
+        patchBlocklyDropdowns();
         registerLeapRenderer(Blockly);
 
         if (blocklyDiv.current && !workspaceRef.current) {
@@ -358,31 +280,7 @@ export function useJuniorWorkspace({
                 setIsSoundRecorderOpen(true);
             });
 
-            const initFlyout = workspaceRef.current.getFlyout();
-            if (initFlyout) {
-                const FIXED_SCALE = 1.0;
-                initFlyout.getFlyoutScale = () => FIXED_SCALE;
-                if (initFlyout.getWorkspace()) {
-                    initFlyout.getWorkspace().setScale(FIXED_SCALE);
-                }
-
-                // Track flyout height dynamically via SVG attribute observer
-                const syncFlyoutHeight = () => {
-                    try {
-                        const h = initFlyout.getHeight();
-                        if (h > 0) setFlyoutHeight(h);
-                    } catch (_) {}
-                };
-
-                // Observe the flyout SVG group's height attribute
-                if (initFlyout.svgGroup_) {
-                    const observer = new MutationObserver(syncFlyoutHeight);
-                    observer.observe(initFlyout.svgGroup_, { attributes: true, attributeFilter: ['height'] });
-                }
-
-                // Also sync after initial layout
-                setTimeout(syncFlyoutHeight, 200);
-            }
+            setupFlyoutTracking(flyout, setFlyoutHeight);
 
             // Initialize toolbox contents for flyout restoration on first load
             if (currentToolboxContentsRef && (!currentToolboxContentsRef.current || currentToolboxContentsRef.current.length === 0)) {
@@ -394,164 +292,47 @@ export function useJuniorWorkspace({
                 window.dispatchEvent(new Event('resize'));
             }, 100);
 
-            // UI Listeners (Pickers & Previews)
-            workspaceRef.current.addChangeListener((e) => {
-                if (e.type === Blockly.Events.CLICK) {
-                    const block = workspaceRef.current.getBlockById(e.blockId);
-                    if (!block) return;
+            // --- Main workspace click listener (pickers + preview) ---
+            const handleBlockClick = (e) => {
+                if (e.type !== Blockly.Events.CLICK) return;
+                const block = workspaceRef.current.getBlockById(e.blockId);
+                if (!block) return;
 
-                    if (block.type === "go_to_location") {
-                        setPickerCallback(() => (x, y) => {
-                            if (typeof block.setGridPosition === "function") {
-                                block.setGridPosition(x, y);
-                            } else {
-                                block.posX = x;
-                                block.posY = y;
-                            }
-                            if (window.goToLocation) window.goToLocation(x, y);
-                        });
-                        setShowPicker(true);
-                    }
+                handleBlockClickForPickers(block, {
+                    workspaceRef,
+                    setPickerCallback,
+                    setShowPicker,
+                    setActiveBlock,
+                    setShowDirPicker,
+                    setShowInstPicker,
+                    setShowPianoPicker,
+                    setPickerPos
+                });
 
-                    if (block.type === "move_relative") {
-                        setActiveBlock(block);
-                        setShowDirPicker(true);
-                    }
+                const activeSprite = getActiveSprite(scenesRef, activeSpriteIdRef);
+                if (!activeSprite) return;
+                const savedState = captureSpriteState(activeSprite);
+                handleBlockPreview(block, spriteActions, activeSprite, savedState, previewRevertTimerRef);
+            };
+            workspaceRef.current.addChangeListener(handleBlockClick);
 
-                    if (block.type === "sound_instrument") {
-                        setActiveBlock(block);
-                        const xy = block.getRelativeToSurfaceXY();
-                        const scale = workspaceRef.current.getScale();
-                        const injectionDiv = workspaceRef.current.getInjectionDiv();
-                        const bBox = injectionDiv.getBoundingClientRect();
-
-                        setPickerPos({
-                            x: bBox.left + (xy.x * scale) + (block.width / 2 * scale) - 90,
-                            y: bBox.top + (xy.y * scale) + (block.height * scale) + 10
-                        });
-                        setShowInstPicker(true);
-                    }
-
-                    if (block.type === "sound_note") {
-                        setActiveBlock(block);
-                        const xy = block.getRelativeToSurfaceXY();
-                        const scale = workspaceRef.current.getScale();
-                        const injectionDiv = workspaceRef.current.getInjectionDiv();
-                        const bBox = injectionDiv.getBoundingClientRect();
-
-                        setPickerPos({
-                            x: bBox.left + (xy.x * scale) + (block.width / 2 * scale) - 160,
-                            y: bBox.top + (xy.y * scale) + (block.height * scale) + 10
-                        });
-                        setShowPianoPicker(true);
-                    }
-
-                    // PROPER PREVIEW
-                    const sid = activeSpriteIdRef.current || window.activeSpriteId;
-                    const latestScenes = scenesRef.current;
-                    let activeSprite = null;
-                    if (latestScenes) {
-                        for (const scene of latestScenes) {
-                            activeSprite = scene.sprites.find(s => s.id === sid);
-                            if (activeSprite) break;
-                        }
-                    }
-                    if (!activeSprite) return;
-
-                    if (previewRevertTimerRef.current) {
-                        clearTimeout(previewRevertTimerRef.current);
-                        previewRevertTimerRef.current = null;
-                    }
-
-                    const savedState = {
-                        x: activeSprite.x,
-                        y: activeSprite.y,
-                        angle: activeSprite.angle,
-                        size: activeSprite.size,
-                        visible: activeSprite.visible,
-                        mirrored: activeSprite.mirrored,
-                        speech: activeSprite.speech,
-                        currentCostume: activeSprite.currentCostume
-                    };
-
-                    let previewed = false;
-                    if (looksPreview[block.type]) {
-                        looksPreview[block.type](block);
-                        previewed = true;
-                    } else if (previewActions[block.type]) {
-                        previewActions[block.type](block);
-                        previewed = true;
-                    }
-
-                    if (previewed) {
-                        if (window.jiggle) window.jiggle(activeSprite.id);
-
-                        previewRevertTimerRef.current = setTimeout(() => {
-                            console.log(`[JuniorApp] Reverting preview for ${activeSprite.name}`);
-                            spriteActions.update(activeSprite.id, savedState);
-                            previewRevertTimerRef.current = null;
-                        }, 2000);
-                    }
-                }
-            });
-
-            // Flyout preview listener
+            // --- Flyout click listener (preview only) ---
             if (flyout) {
                 const flyoutWs = flyout.getWorkspace();
-                flyoutWs.addChangeListener((e) => {
-                    if (e.type === Blockly.Events.CLICK) {
-                        const block = flyoutWs.getBlockById(e.blockId);
-                        if (!block) return;
+                const handleFlyoutClick = (e) => {
+                    if (e.type !== Blockly.Events.CLICK) return;
+                    const block = flyoutWs.getBlockById(e.blockId);
+                    if (!block) return;
 
-                        const sid = activeSpriteIdRef.current || window.activeSpriteId;
-                        const latestScenes = scenesRef.current;
-                        let activeSprite = null;
-                        if (latestScenes) {
-                            for (const scene of latestScenes) {
-                                activeSprite = scene.sprites.find(s => s.id === sid);
-                                if (activeSprite) break;
-                            }
-                        }
-                        if (!activeSprite) return;
-
-                        if (previewRevertTimerRef.current) {
-                            clearTimeout(previewRevertTimerRef.current);
-                            previewRevertTimerRef.current = null;
-                        }
-
-                        const savedState = {
-                            x: activeSprite.x,
-                            y: activeSprite.y,
-                            angle: activeSprite.angle,
-                            size: activeSprite.size,
-                            visible: activeSprite.visible,
-                            mirrored: activeSprite.mirrored,
-                            speech: activeSprite.speech,
-                            currentCostume: activeSprite.currentCostume
-                        };
-
-                        let previewed = false;
-                        if (looksPreview[block.type]) {
-                            looksPreview[block.type](block);
-                            previewed = true;
-                        } else if (previewActions[block.type]) {
-                            previewActions[block.type](block);
-                            previewed = true;
-                        }
-
-                        if (previewed) {
-                            if (window.jiggle) window.jiggle(activeSprite.id);
-
-                            previewRevertTimerRef.current = setTimeout(() => {
-                                console.log(`[JuniorApp] Reverting flyout preview for ${activeSprite.name}`);
-                                spriteActions.update(activeSprite.id, savedState);
-                                previewRevertTimerRef.current = null;
-                            }, 2000);
-                        }
-                    }
-                });
+                    const activeSprite = getActiveSprite(scenesRef, activeSpriteIdRef);
+                    if (!activeSprite) return;
+                    const savedState = captureSpriteState(activeSprite);
+                    handleBlockPreview(block, spriteActions, activeSprite, savedState, previewRevertTimerRef);
+                };
+                flyoutWs.addChangeListener(handleFlyoutClick);
             }
 
+            // --- Workspace change handler (validation, drag tracking, save) ---
             const handleWorkspaceChange = (e) => {
                 if (e.type === Blockly.Events.UI) return;
 

@@ -283,7 +283,7 @@ function PaintEditor({
                     const costumeId = costumes[activeCostumeIndex]?.id || 'default';
                     const key = `paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`;
                     localStorage.setItem(key, json);
-                } catch (_) {}
+                } catch (_) { }
             }, 1500);
         };
         canvas.on('object:added', handler);
@@ -465,9 +465,9 @@ function PaintEditor({
             const tolerance = 32;
             const colorMatch = (idx: number) => {
                 return Math.abs(data[idx] - startR) < tolerance &&
-                       Math.abs(data[idx + 1] - startG) < tolerance &&
-                       Math.abs(data[idx + 2] - startB) < tolerance &&
-                       Math.abs(data[idx + 3] - startA) < tolerance;
+                    Math.abs(data[idx + 1] - startG) < tolerance &&
+                    Math.abs(data[idx + 2] - startB) < tolerance &&
+                    Math.abs(data[idx + 3] - startA) < tolerance;
             };
 
             const visited = new Uint8Array(w * h);
@@ -1092,8 +1092,8 @@ function PaintEditor({
             setCameraError(err.name === 'NotAllowedError'
                 ? 'Camera permission denied. Please allow camera access.'
                 : err.name === 'NotFoundError'
-                ? 'No camera found on this device.'
-                : 'Failed to access camera.');
+                    ? 'No camera found on this device.'
+                    : 'Failed to access camera.');
         }
     };
 

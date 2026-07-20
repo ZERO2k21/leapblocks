@@ -6,6 +6,54 @@
 import React from 'react';
 import { X, Cpu } from 'lucide-react';
 
+const OVERLAY_STYLE = {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', zIndex: 2000,
+};
+
+const MODAL_STYLE = {
+    background: '#fff', borderRadius: '12px', width: '420px',
+    maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+};
+
+const HEADER_STYLE = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '14px 20px',
+    background: 'linear-gradient(180deg, #00B894 0%, #00A085 100%)', color: '#fff',
+};
+
+const CLOSE_BTN_STYLE = {
+    background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+    width: '26px', height: '26px', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', cursor: 'pointer', color: '#fff',
+};
+
+const GRID_STYLE = {
+    padding: '20px', display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px',
+};
+
+const BOARD_BTN_BASE = {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', padding: '16px 12px', borderRadius: '10px',
+    cursor: 'pointer', transition: 'all 0.15s',
+};
+
+const BOARD_NAME_STYLE = { marginTop: '10px', fontSize: '12px', fontWeight: 600, color: '#333' };
+const BOARD_DESC_STYLE = { marginTop: '2px', fontSize: '10px', color: '#888' };
+
+const FOOTER_STYLE = {
+    padding: '12px 20px', background: '#f8f8f8', borderTop: '1px solid #eee',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+};
+
+const DONE_BTN_STYLE = {
+    padding: '8px 20px', border: 'none', borderRadius: '6px',
+    background: 'linear-gradient(180deg, #00B894 0%, #00A085 100%)',
+    color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+};
+
 // Board definitions - Arduino and ESP32 focus with SVG icons
 let _BOARDS = null;
 export const getBoards = () => {
@@ -90,147 +138,59 @@ function BoardIcon({ board }) {
 export default function BoardSelectionModal({ isOpen, onClose, onSelect, currentBoard }) {
     if (!isOpen) return null;
 
+    const getBoardButtonStyle = (boardId) => ({
+        ...BOARD_BTN_BASE,
+        border: currentBoard === boardId ? '3px solid #7B4FC4' : '2px solid #e5e5e5',
+        background: currentBoard === boardId ? 'rgba(123, 79, 196, 0.08)' : '#fff',
+    });
+
+    const handleBoardEnter = (e, boardId) => {
+        if (currentBoard !== boardId) {
+            e.currentTarget.style.borderColor = '#7B4FC4';
+            e.currentTarget.style.background = 'rgba(123, 79, 196, 0.04)';
+        }
+    };
+
+    const handleBoardLeave = (e, boardId) => {
+        if (currentBoard !== boardId) {
+            e.currentTarget.style.borderColor = '#e5e5e5';
+            e.currentTarget.style.background = '#fff';
+        }
+    };
+
+    const selectedBoardName = currentBoard ? getBoards().find(b => b.id === currentBoard)?.name : null;
+
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000,
-        }} onClick={onClose}>
-            <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                width: '420px',
-                maxHeight: '80vh',
-                overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            }} onClick={e => e.stopPropagation()}>
-                {/* Header - LeapBlox Teal Style */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '14px 20px',
-                    background: 'linear-gradient(180deg, #00B894 0%, #00A085 100%)',
-                    color: '#fff',
-                }}>
-                    <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
-                        Select Board
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'rgba(255,255,255,0.2)',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '26px',
-                            height: '26px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#fff',
-                        }}
-                    >
+        <div style={OVERLAY_STYLE} onClick={onClose}>
+            <div style={MODAL_STYLE} onClick={e => e.stopPropagation()}>
+                <div style={HEADER_STYLE}>
+                    <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Select Board</h2>
+                    <button onClick={onClose} style={CLOSE_BTN_STYLE}>
                         <X size={14} />
                     </button>
                 </div>
 
-                {/* Board Grid - 2x2 for 4 boards */}
-                <div style={{
-                    padding: '20px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '14px',
-                }}>
+                <div style={GRID_STYLE}>
                     {getBoards().map(board => (
                         <button
                             key={board.id}
                             onClick={() => { onSelect(board.id, board.name); onClose(); }}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '16px 12px',
-                                border: currentBoard === board.id
-                                    ? '3px solid #7B4FC4'
-                                    : '2px solid #e5e5e5',
-                                borderRadius: '10px',
-                                background: currentBoard === board.id
-                                    ? 'rgba(123, 79, 196, 0.08)'
-                                    : '#fff',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s',
-                            }}
-                            onMouseEnter={(e) => {
-                                if (currentBoard !== board.id) {
-                                    e.currentTarget.style.borderColor = '#7B4FC4';
-                                    e.currentTarget.style.background = 'rgba(123, 79, 196, 0.04)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (currentBoard !== board.id) {
-                                    e.currentTarget.style.borderColor = '#e5e5e5';
-                                    e.currentTarget.style.background = '#fff';
-                                }
-                            }}
+                            style={getBoardButtonStyle(board.id)}
+                            onMouseEnter={(e) => handleBoardEnter(e, board.id)}
+                            onMouseLeave={(e) => handleBoardLeave(e, board.id)}
                         >
                             <BoardIcon board={board} />
-                            <span style={{
-                                marginTop: '10px',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                color: '#333',
-                            }}>
-                                {board.name}
-                            </span>
-                            <span style={{
-                                marginTop: '2px',
-                                fontSize: '10px',
-                                color: '#888',
-                            }}>
-                                {board.description}
-                            </span>
+                            <span style={BOARD_NAME_STYLE}>{board.name}</span>
+                            <span style={BOARD_DESC_STYLE}>{board.description}</span>
                         </button>
                     ))}
                 </div>
 
-                {/* Footer */}
-                <div style={{
-                    padding: '12px 20px',
-                    background: '#f8f8f8',
-                    borderTop: '1px solid #eee',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                }}>
+                <div style={FOOTER_STYLE}>
                     <span style={{ fontSize: '11px', color: '#666' }}>
-                        {currentBoard
-                            ? `Selected: ${getBoards().find(b => b.id === currentBoard)?.name}`
-                            : 'No board selected'}
+                        {currentBoard ? `Selected: ${selectedBoardName}` : 'No board selected'}
                     </span>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            padding: '8px 20px',
-                            border: 'none',
-                            borderRadius: '6px',
-                            background: 'linear-gradient(180deg, #00B894 0%, #00A085 100%)',
-                            color: '#fff',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Done
-                    </button>
+                    <button onClick={onClose} style={DONE_BTN_STYLE}>Done</button>
                 </div>
             </div>
         </div>

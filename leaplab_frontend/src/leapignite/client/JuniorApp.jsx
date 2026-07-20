@@ -32,7 +32,7 @@ import { useJuniorWindowActions } from "./hooks/useJuniorWindowActions";
 import { useJuniorUIHandlers } from "./hooks/useJuniorUIHandlers";
 import { getLessonConfig } from "../server/engine/LessonConfig";
 import { GoalManager } from "../server/engine/GoalManager";
-import { HintManager } from "../server/engine/HintManager";
+
 import { AudioEngine } from "../../Leap-audio/src/AudioEngine";
 import { initRuntime } from "../../runtime/RuntimeBridge";
 import { gettingStartedTutorial } from "./tutorials/gettingStarted";
@@ -41,6 +41,11 @@ import { makeSoundsTutorial } from "./tutorials/makeSounds";
 import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
 import { ToastProvider, useToast } from "./components/Toast";
 import { useCloudProjectStore } from "../../store/cloudProjectStore";
+import { useStageSize } from "./hooks/useStageSize";
+import { useIdleHints } from "./hooks/useIdleHints";
+import { useWindowFunctions } from "./hooks/useWindowFunctions";
+import SpriteCostumePreview from "./components/SpriteCostumePreview";
+import CategoryButton from "./components/CategoryButton";
 
 const TUTORIALS = {
     'getting_started': gettingStartedTutorial,
@@ -126,7 +131,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
     const draggedBlockRef = useRef(null);
     const [isDraggingBlock, setIsDraggingBlock] = useState(false);
     const [successSpriteId, setSuccessSpriteId] = useState(null);
-    const [stageSize, setStageSize] = useState({ width: 480, height: 360 });
+    const stageSize = useStageSize(stageContainerRef);
     const lastMousePosRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
@@ -135,37 +140,6 @@ function JuniorAppInner({ onBack, projectUrl }) {
         };
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    useEffect(() => {
-        const updateStageSize = () => {
-            const rect = stageContainerRef.current?.getBoundingClientRect();
-            if (!rect) return;
-
-            const nextWidth = Math.max(1, Math.round(rect.width));
-            const nextHeight = Math.max(1, Math.round(rect.height));
-
-            setStageSize((prev) => (
-                prev.width === nextWidth && prev.height === nextHeight
-                    ? prev
-                    : { width: nextWidth, height: nextHeight }
-            ));
-        };
-
-        updateStageSize();
-
-        const stageNode = stageContainerRef.current;
-        const resizeObserver = stageNode && typeof ResizeObserver !== "undefined"
-            ? new ResizeObserver(updateStageSize)
-            : null;
-
-        resizeObserver?.observe(stageNode);
-        window.addEventListener("resize", updateStageSize);
-
-        return () => {
-            resizeObserver?.disconnect();
-            window.removeEventListener("resize", updateStageSize);
-        };
     }, []);
 
     // Modals state
@@ -677,61 +651,8 @@ function JuniorAppInner({ onBack, projectUrl }) {
         }
     }, []); // Empty deps - only run on mount
 
-    const [, setHint] = useState(null);
-    const lastInteraction = useRef(null);
-
-    useEffect(() => {
-        if (!lastInteraction.current) lastInteraction.current = Date.now();
-        const interval = setInterval(() => {
-            const idle = Date.now() - lastInteraction.current;
-            const config = getLessonConfig();
-            const count = workspaceRef.current?.getAllBlocks(false).length || 0;
-            const msg = HintManager.getHint(idle, config.goal, count);
-            setHint(msg);
-        }, 1000);
-
-        const resetIdle = () => lastInteraction.current = Date.now();
-        window.addEventListener("pointerdown", resetIdle);
-        window.addEventListener("keydown", resetIdle);
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener("pointerdown", resetIdle);
-            window.removeEventListener("keydown", resetIdle);
-        };
-    }, []);
-
-    useEffect(() => {
-        window.drawSegment = (x1, y1, x2, y2, color, width) => {
-            const ctx = canvasRef.current?.getContext("2d");
-            if (ctx) {
-                ctx.imageSmoothingEnabled = true;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = width;
-                ctx.lineCap = "round";
-                ctx.lineJoin = "round";
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-        };
-
-        window.clearPen = () => {
-            const canvas = canvasRef.current;
-            if (canvas) {
-                const ctx = canvas.getContext("2d");
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        };
-
-        window.wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * 1000));
-
-        return () => {
-            delete window.drawSegment;
-            delete window.clearPen;
-            delete window.wait;
-        };
-    }, []);
+    useIdleHints(workspaceRef);
+    useWindowFunctions(canvasRef);
 
     useEffect(() => {
         const handleFsChange = () => {
@@ -824,61 +745,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
 
             <div style={{ flex: 1, display: "flex", overflow: 'visible' }}>
                 <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative", zIndex: 20, overflow: 'visible' }}>
-                    {(() => {
-                        const activeSprite = sprites.find(s => s.id === activeSpriteId);
-                        if (activeSprite && activeSprite.currentCostume) {
-                            let imgSrc = null;
-                            let isEmoji = false;
-
-                            if (activeSprite.type === 'robot' && activeSprite.costumes) {
-                                imgSrc = activeSprite.costumes[activeSprite.currentCostume];
-                            } else if (activeSprite.currentCostume && typeof activeSprite.currentCostume === 'object' && activeSprite.currentCostume.image) {
-                                imgSrc = activeSprite.currentCostume.image.src;
-                            } else if (activeSprite.costumes && activeSprite.costumes[activeSprite.currentCostume]) {
-                                const val = activeSprite.costumes[activeSprite.currentCostume];
-                                if (typeof val === 'string' && (val.startsWith('data:image') || val.startsWith('/') || val.startsWith('http') || val.endsWith('.png') || val.endsWith('.jpg') || val.endsWith('.svg'))) {
-                                    imgSrc = val;
-                                } else if (typeof val === 'string') {
-                                    imgSrc = val;
-                                    isEmoji = true;
-                                }
-                            }
-
-                            if (imgSrc || isEmoji) {
-                                return (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '16px',
-                                        right: '16px',
-                                        width: '60px',
-                                        height: '60px',
-                                        background: 'rgba(255,255,255,0.85)',
-                                        backdropFilter: 'blur(5px)',
-                                        borderRadius: '8px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                        border: '2px solid #0a015a',
-                                        pointerEvents: 'none',
-                                        zIndex: 10,
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        padding: '6px',
-                                    }}>
-                                        {(!isEmoji && imgSrc) ? (
-                                            <img
-                                                src={imgSrc}
-                                                alt={activeSprite.name}
-                                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                                            />
-                                        ) : (
-                                            <span style={{ fontSize: '36px' }}>{imgSrc}</span>
-                                        )}
-                                    </div>
-                                );
-                            }
-                        }
-                        return null;
-                    })()}
+                    <SpriteCostumePreview sprites={sprites} activeSpriteId={activeSpriteId} />
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
                     <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: `${wp.flyoutHeight + 105}px`, right: '14px' }} />
@@ -1126,35 +993,6 @@ function JuniorAppInner({ onBack, projectUrl }) {
         </div>
     );
 }
-function CategoryButton({ category, isActive, onClick }) {
-    if (!category) return null;
-    return (
-        <button
-            onClick={onClick}
-            title={category.name}
-            style={{
-                width: "54px",
-                height: "54px",
-                borderRadius: "50%",
-                background: isActive ? category.color : "white",
-                border: isActive ? "2px solid rgba(0,0,0,0.15)" : `2px solid ${category.color}`,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: isActive ? "white" : category.color,
-                transition: "all 0.15s ease",
-                outline: "none",
-                padding: 0,
-                flexShrink: 0,
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}
-        >
-            <div style={{ transform: isActive ? "scale(1.2)" : "scale(1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {category.icon}
-            </div>
-        </button>
-    );
-}
+
 
 

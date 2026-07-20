@@ -39,19 +39,20 @@ export default function IgniteExtensionLibrary({ onClose, onSelectExtension }) {
         setIframeExtension(null);
     }, []);
 
+    const buildDetailUrl = (ext) =>
+        `/extensions/ext-detail.html?id=${ext.id}&name=${encodeURIComponent(ext.name)}&desc=${encodeURIComponent(ext.description)}&emoji=${encodeURIComponent(ext.emoji)}&color=${encodeURIComponent(ext.color)}`;
+
     const getIframeUrl = (ext) => {
         if (ext.id === 'face_detection' || ext.id === 'face-detection') {
             return `/extensions/ext-face-detection.html`;
         }
-        if (ext.id === 'hand_pose') {
-            return `/extensions/ext-detail.html?id=${ext.id}&name=${encodeURIComponent(ext.name)}&desc=${encodeURIComponent(ext.description)}&emoji=${encodeURIComponent(ext.emoji)}&color=${encodeURIComponent(ext.color)}`;
-        }
-        return `/extensions/ext-detail.html?id=${ext.id}&name=${encodeURIComponent(ext.name)}&desc=${encodeURIComponent(ext.description)}&emoji=${encodeURIComponent(ext.emoji)}&color=${encodeURIComponent(ext.color)}`;
+        return buildDetailUrl(ext);
     };
 
-    const filteredExtensions = EXTENSIONS.filter(ext => {
-        return !search || ext.name.toLowerCase().includes(search.toLowerCase()) || ext.description.toLowerCase().includes(search.toLowerCase());
-    });
+    const matchesSearch = (ext, term) =>
+        !term || ext.name.toLowerCase().includes(term) || ext.description.toLowerCase().includes(term);
+
+    const filteredExtensions = EXTENSIONS.filter(ext => matchesSearch(ext, search.toLowerCase()));
 
     return (
         <div className="iel-modal-overlay">

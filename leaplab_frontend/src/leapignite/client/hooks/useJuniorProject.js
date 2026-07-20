@@ -32,8 +32,35 @@ export function useJuniorProject({
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingAction, setPendingAction] = useState(null); // 'new' or 'open'
 
+    const createDefaultSprite = () => ({
+        id: 'robot_default',
+        name: 'Robot',
+        type: 'robot',
+        x: 200,
+        y: 150,
+        angle: 0,
+        size: 100,
+        visible: true,
+        mirrored: false,
+        speech: null,
+        costumes: {
+            default: 'assets/sprites/robot/robot_idle.svg',
+            wave1: 'assets/sprites/robot/robot_wave1.svg',
+            wave2: 'assets/sprites/robot/robot_wave2.svg',
+            talk: 'assets/sprites/robot/robot_talk1.svg'
+        },
+        currentCostume: 'default',
+        blocks: { blocks: { languageVersion: 0, blocks: [] } }
+    });
+
+    const createDefaultScene = () => ({
+        id: 'scene1',
+        name: 'Scene 1',
+        background: 'white',
+        sprites: [createDefaultSprite()]
+    });
+
     const executeNewProject = () => {
-        // Clear all per-sprite workspaces
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.clear();
             console.log('[JuniorProject] Cleared all sprite workspaces');
@@ -46,50 +73,17 @@ export function useJuniorProject({
                 workspaceRef.current.clear();
             } finally {
                 Blockly.Events.enable();
-                setTimeout(() => {
-                    isLoadingWorkspaceRef.current = false;
-                }, 50);
+                setTimeout(() => { isLoadingWorkspaceRef.current = false; }, 50);
             }
         }
 
-        const id = `robot_default`;
-        const newSprite = {
-            id: id,
-            name: "Robot",
-            type: "robot",
-            x: 200,
-            y: 150,
-            angle: 0,
-            size: 100,
-            visible: true,
-            mirrored: false,
-            speech: null,
-            costumes: {
-                default: "assets/sprites/robot/robot_idle.svg",
-                wave1: "assets/sprites/robot/robot_wave1.svg",
-                wave2: "assets/sprites/robot/robot_wave2.svg",
-                talk: "assets/sprites/robot/robot_talk1.svg"
-            },
-            currentCostume: "default",
-            blocks: {
-                blocks: {
-                    languageVersion: 0,
-                    blocks: []
-                }
-            }
-        };
-
-        const defaultScene = {
-            id: "scene1",
-            name: "Scene 1",
-            background: "white",
-            sprites: [newSprite]
-        };
+        const newSprite = createDefaultSprite();
+        const defaultScene = createDefaultScene();
 
         setScenes([defaultScene]);
-        setCurrentSceneId("scene1");
-        setActiveSpriteId(id);
-        activeSpriteIdRef.current = id;
+        setCurrentSceneId('scene1');
+        setActiveSpriteId(newSprite.id);
+        activeSpriteIdRef.current = newSprite.id;
         setProjectName('Untitled');
         console.log('[JuniorApp] New project created');
     };
@@ -99,15 +93,16 @@ export function useJuniorProject({
         setShowUnsavedModal(true);
     };
 
+    const buildProjectPayload = () => ({
+        scenes,
+        recordedSounds: audioEngine?.soundBank?.recordedSounds || {},
+        installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
+    });
+
     const handleSaveProject = async (isSilent = false) => {
         saveCurrentWorkspace();
         setTimeout(async () => {
-            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
-            const payload = {
-                scenes: scenes,
-                recordedSounds: recordedSounds,
-                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
-            };
+            const payload = buildProjectPayload();
             try {
                 await fileService.saveProject(projectName, 'junior', payload);
                 console.log(`[JuniorApp] Project saved: ${projectName}`);
@@ -124,13 +119,7 @@ export function useJuniorProject({
     const handleDownloadProject = () => {
         saveCurrentWorkspace();
         setTimeout(() => {
-            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
-            const payload = {
-                scenes: scenes,
-                recordedSounds: recordedSounds,
-                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
-            };
-            fileService.saveProjectLocally(projectName, 'junior', payload);
+            fileService.saveProjectLocally(projectName, 'junior', buildProjectPayload());
             console.log(`[JuniorApp] Project downloaded: ${projectName}`);
         }, 50);
     };
@@ -138,13 +127,7 @@ export function useJuniorProject({
     const handleShareProject = () => {
         saveCurrentWorkspace();
         setTimeout(() => {
-            const recordedSounds = audioEngine?.soundBank?.recordedSounds || {};
-            const payload = {
-                scenes,
-                recordedSounds,
-                installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
-            };
-            fileService.shareProject(projectName, 'junior', payload);
+            fileService.shareProject(projectName, 'junior', buildProjectPayload());
             console.log(`[JuniorApp] Project shared: ${projectName}`);
         }, 50);
     };

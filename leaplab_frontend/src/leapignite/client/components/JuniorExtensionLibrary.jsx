@@ -56,6 +56,60 @@ const FILTERS = [
     { key: 'games', label: 'Games & Animation' },
 ];
 
+const BADGE_COMING_SOON_STYLE = { backgroundColor: '#9e9e9e', position: 'absolute', top: '8px', left: '8px' };
+
+function ExtensionCard({ ext, onClick }) {
+    return (
+        <div
+            className={`jel-card ${ext.comingSoon ? 'jel-card-coming-soon' : ''}`}
+            onClick={onClick}
+            style={ext.comingSoon ? { cursor: 'not-allowed' } : {}}
+        >
+            <div className="jel-card-banner" style={{ background: ext.color }}>
+                <span className="jel-card-emoji">{ext.emoji}</span>
+                {ext.comingSoon && (
+                    <span className="jel-card-badge" style={BADGE_COMING_SOON_STYLE}>Coming Soon</span>
+                )}
+                {ext.badge && !ext.comingSoon && (
+                    <span className="jel-card-badge">{ext.badge}</span>
+                )}
+                {ext.requires && (
+                    <span className="jel-card-requires">{ext.requires}</span>
+                )}
+                <div className="jel-card-icon" style={{ backgroundColor: ext.iconBg }}>
+                    {ext.icon}
+                </div>
+            </div>
+            <div className="jel-card-info">
+                <h3 className="jel-card-title">{ext.name}</h3>
+                <p className="jel-card-desc">{ext.description}</p>
+            </div>
+        </div>
+    );
+}
+
+function SectionGroup({ section, onCardClick }) {
+    return (
+        <div>
+            <div className="jel-section-label">{section.label}</div>
+            <div className="jel-grid">
+                {section.extensions.map(ext => (
+                    <ExtensionCard key={ext.id} ext={ext} onClick={() => onCardClick(ext)} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function EmptyState({ search }) {
+    return (
+        <div className="jel-empty">
+            <span className="jel-empty-icon">🔍</span>
+            <p>No extensions found matching "{search}"</p>
+        </div>
+    );
+}
+
 export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
@@ -119,14 +173,14 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
         return `/extensions/ext-detail.html?${params.toString()}`;
     };
 
-    // Filter extensions
+    const matchesSearch = (ext, term) =>
+        !term || ext.name.toLowerCase().includes(term) || ext.description.toLowerCase().includes(term);
+
     const filteredExtensions = EXTENSIONS.filter(ext => {
         const catMatch = activeFilter === 'all' || ext.cat === activeFilter;
-        const textMatch = !search || ext.name.toLowerCase().includes(search.toLowerCase()) || ext.description.toLowerCase().includes(search.toLowerCase());
-        return catMatch && textMatch;
+        return catMatch && matchesSearch(ext, search.toLowerCase());
     });
 
-    // Group by section
     const groupedSections = SECTIONS.map(section => ({
         ...section,
         extensions: filteredExtensions.filter(ext => ext.cat === section.key),
@@ -134,7 +188,6 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
 
     return (
         <div className="jel-modal-overlay">
-            {/* Header */}
             <div className="jel-header">
                 <button className="jel-back-btn" onClick={onClose}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -147,7 +200,6 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
                 <button className="jel-docs-btn">Read Documentation</button>
             </div>
 
-            {/* Filter Bar */}
             <div className="jel-controls-bar">
                 <div className="jel-search-container">
                     <svg className="jel-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,50 +227,11 @@ export default function JuniorExtensionLibrary({ onClose, onSelectExtension }) {
                 </div>
             </div>
 
-            {/* Extension Grid */}
             <div className="jel-content">
                 {groupedSections.map(section => (
-                    <div key={section.key}>
-                        <div className="jel-section-label">{section.label}</div>
-                        <div className="jel-grid">
-                            {section.extensions.map(ext => (
-                                <div
-                                    key={ext.id}
-                                    className={`jel-card ${ext.comingSoon ? 'jel-card-coming-soon' : ''}`}
-                                    onClick={() => handleCardClick(ext)}
-                                    style={ext.comingSoon ? { cursor: 'not-allowed' } : {}}
-                                >
-                                    <div className="jel-card-banner" style={{ background: ext.color }}>
-                                        <span className="jel-card-emoji">{ext.emoji}</span>
-                                        {ext.comingSoon && (
-                                            <span className="jel-card-badge" style={{ backgroundColor: '#9e9e9e', position: 'absolute', top: '8px', left: '8px' }}>Coming Soon</span>
-                                        )}
-                                        {ext.badge && !ext.comingSoon && (
-                                            <span className="jel-card-badge">{ext.badge}</span>
-                                        )}
-                                        {ext.requires && (
-                                            <span className="jel-card-requires">{ext.requires}</span>
-                                        )}
-                                        <div className="jel-card-icon" style={{ backgroundColor: ext.iconBg }}>
-                                            {ext.icon}
-                                        </div>
-                                    </div>
-                                    <div className="jel-card-info">
-                                        <h3 className="jel-card-title">{ext.name}</h3>
-                                        <p className="jel-card-desc">{ext.description}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <SectionGroup key={section.key} section={section} onCardClick={handleCardClick} />
                 ))}
-
-                {groupedSections.length === 0 && (
-                    <div className="jel-empty">
-                        <span className="jel-empty-icon">🔍</span>
-                        <p>No extensions found matching "{search}"</p>
-                    </div>
-                )}
+                {groupedSections.length === 0 && <EmptyState search={search} />}
             </div>
 
             <div className="jel-footer">

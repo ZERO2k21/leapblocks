@@ -174,6 +174,8 @@ const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
     );
 };
 
+const ROTATE_CCW_STYLE = { transform: 'scaleX(-1)' };
+
 // --- MAIN COMPONENT ---
 
 const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
@@ -284,6 +286,33 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
 
     if (!isOpen) return null;
 
+    const renderPlaceholder = () => {
+        if (!isReady) return 'Waking up mic...';
+        return isRecording ? 'Recording...' : 'Click to record!';
+    };
+
+    const renderControls = () => {
+        if (audioData) {
+            return (
+                <div className="play-control-group">
+                    <button className="junior-play-big" onClick={isPlaying ? handleStopPreview : handlePlayPreview}>
+                        <div className={`play-icon-shape ${isPlaying ? 'stop' : 'play'}`}></div>
+                    </button>
+                    <span className="play-label">{isPlaying ? 'Stop' : 'Play'}</span>
+                </div>
+            );
+        }
+        return (
+            <button
+                className={`junior-record-circle ${isRecording ? 'active' : ''}`}
+                onClick={handleToggleRecording}
+                disabled={!isReady}
+            >
+                <div className="record-inner-circle"></div>
+            </button>
+        );
+    };
+
     return (
         <div className="junior-recorder-overlay">
             <div className="junior-recorder-modal complex">
@@ -295,7 +324,6 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
                 <div className="junior-recorder-body">
                     <div className="junior-recorder-main-view">
                         <VerticalLevelMeter analyser={analyser} />
-
                         <div className="junior-recorder-visual-center">
                             {audioData ? (
                                 <WaveformWithTrim
@@ -305,36 +333,16 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
                                     onTrimChange={(s, e) => setTrim({ start: s, end: e })}
                                 />
                             ) : (
-                                <div className="junior-recorder-placeholder">
-                                    {isReady && !isRecording ? "Click to record!" : isRecording ? "Recording..." : "Waking up mic..."}
-                                </div>
+                                <div className="junior-recorder-placeholder">{renderPlaceholder()}</div>
                             )}
                         </div>
                     </div>
-
-                    <div className="junior-recorder-mid-controls">
-                        {audioData ? (
-                            <div className="play-control-group">
-                                <button className="junior-play-big" onClick={isPlaying ? handleStopPreview : handlePlayPreview}>
-                                    <div className={`play-icon-shape ${isPlaying ? 'stop' : 'play'}`}></div>
-                                </button>
-                                <span className="play-label">{isPlaying ? "Stop" : "Play"}</span>
-                            </div>
-                        ) : (
-                            <button
-                                className={`junior-record-circle ${isRecording ? 'active' : ''}`}
-                                onClick={handleToggleRecording}
-                                disabled={!isReady}
-                            >
-                                <div className="record-inner-circle"></div>
-                            </button>
-                        )}
-                    </div>
+                    <div className="junior-recorder-mid-controls">{renderControls()}</div>
                 </div>
 
                 <div className="junior-recorder-footer">
                     <button className="junior-btn-secondary" onClick={handleToggleRecording} disabled={isRecording}>
-                        <RotateCcw size={18} style={{ transform: 'scaleX(-1)' }} />
+                        <RotateCcw size={18} style={ROTATE_CCW_STYLE} />
                         Re-record
                     </button>
                     <button className="junior-btn-primary" onClick={handleSave} disabled={!audioData}>
