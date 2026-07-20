@@ -167,10 +167,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
       <div
         style={{ paddingLeft: '2px' }}
-        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 ${isElectra
-            ? 'bg-gradient-to-br from-[#09090b] to-[#18181b] border-[#27272a] shadow-[0_2px_12px_rgba(0,0,0,0.4)]'
-            : 'bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]'
-          }`}
+        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]`}
       >
         {/* Left section */}
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
@@ -199,14 +196,9 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               src="assets/leaplab_logo_transparent.png"
               className="h-12 object-contain"
             />
-            <div className="hidden min-[1440px]:flex flex-col justify-center ml-2.5 leading-none gap-0.5">
-              <span className={`text-[7px] font-black uppercase tracking-[0.18em] font-sans ${isElectra ? 'text-[#a1a1aa]' : 'text-[#93c5fd]'}`}>
-                LEAPLAB
-              </span>
-              <span className={`text-sm font-black tracking-[0.08em] font-sans ${isElectra ? 'text-[#22d3ee]' : 'text-white'}`}>
-                {brandName}
-              </span>
-            </div>
+            <span className={`text-lg font-black tracking-[0.08em] font-sans ml-2.5 ${isElectra ? 'text-[#22d3ee]' : 'text-white'}`}>
+              {brandName}
+            </span>
           </div>
 
           {/* Desktop dropdown menus */}

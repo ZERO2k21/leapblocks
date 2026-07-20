@@ -125,7 +125,7 @@ export const Topbar = ({
 
       <div
         style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
-        className="flex items-center justify-between h-12 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0b1b42] via-[#0f2f7a] to-[#0a204f] border-[rgba(96,165,250,0.28)] shadow-[0_4px_20px_rgba(8,20,58,0.45),inset_0_-1px_0_rgba(96,165,250,0.12)]"
+        className="flex items-center justify-between h-12 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
@@ -145,10 +145,7 @@ export const Topbar = ({
 
           <div className="flex items-center mr-2.5 shrink-0 filter drop-shadow-[0_0_14px_rgba(56,189,248,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
             <img alt="LeapLab" src="assets/leaplab_logo_transparent.png" className="h-12 object-contain" />
-            <div className="hidden min-[1440px]:flex flex-col justify-center ml-2.5 leading-none">
-              <span className="text-[7px] font-black uppercase tracking-[0.18em] font-sans text-[#93c5fd]">LEAPLAB</span>
-              <span className="text-sm font-black tracking-[0.08em] font-sans text-white">VISION 3D</span>
-            </div>
+            <span className="text-lg font-black tracking-[0.08em] font-sans ml-2.5 text-white">VISION 3D</span>
           </div>
  
           <div className="hidden min-[1440px]:flex items-center gap-3 h-full">

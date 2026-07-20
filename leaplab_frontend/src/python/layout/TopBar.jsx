@@ -31,13 +31,13 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
     return (
         <header style={{
             height: 54,
-            background: `linear-gradient(135deg, ${C.PURPLE} 0%, ${C.DARK_PURPLE} 100%)`,
+            background: 'linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)',
             display: "flex",
             alignItems: "center", padding: "0 12px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
             flexShrink: 0,
-            boxShadow: '0 2px 12px rgba(8,10,37,0.35)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
+            borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>
             {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -77,32 +77,17 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 {/* Logo + App Name */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8, flexShrink: 0 }}>
                     <Logo height={48} />
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
+                    <span style={{
+                        color: '#fff',
+                        fontSize: 20,
+                        fontWeight: 900,
+                        letterSpacing: '0.08em',
+                        lineHeight: 1.2,
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                        textShadow: '0 0 20px rgba(255,255,255,0.3)',
                         borderLeft: '1px solid rgba(255,255,255,0.15)',
                         paddingLeft: 8,
-                    }}>
-                        <span style={{
-                            color: '#FFD500',
-                            fontSize: 8,
-                            fontWeight: 900,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.18em',
-                            lineHeight: 1.1,
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>LEAPLAB</span>
-                        <span style={{
-                            color: '#fff',
-                            fontSize: 15,
-                            fontWeight: 900,
-                            letterSpacing: '0.08em',
-                            lineHeight: 1.2,
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                            textShadow: '0 0 20px rgba(255,255,255,0.3)',
-                        }}>Logix </span>
-                    </div>
+                    }}>Logix </span>
                 </div>
                 {/* Blocks/Python Mode Tabs */}
                 <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>

@@ -37,15 +37,15 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '6px 12px',
+                    gap: 6,
+                    padding: '8px 16px',
                     border: 'none',
                     color: '#fff',
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: 600,
                     fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
                     cursor: 'pointer',
-                    borderRadius: 20,
+                    borderRadius: 22,
                     transition: 'all 0.2s ease',
                     background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
                     backdropFilter: isOpen ? 'blur(4px)' : 'none',
@@ -54,10 +54,10 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                 onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
                 onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
             >
-                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={16} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
                 {label}
                 <ChevronDown
-                    size={12}
+                    size={14}
                     strokeWidth={2.5}
                     style={{
                         opacity: 0.5,

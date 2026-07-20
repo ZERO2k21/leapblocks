@@ -140,24 +140,17 @@ export default function MenuBar({
                 {/* Divider */}
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-                {/* Logo + "LEAPLAB / EMBED" stacked label */}
+                {/* Logo + brand label */}
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
                     filter: 'drop-shadow(0 0 12px rgba(80,180,255,0.25)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
                 }}>
                     <Logo height={48} />
-                    <div style={{ lineHeight: 1.1 }}>
-                        <div style={{
-                            color: '#FFD500', fontSize: 8, fontWeight: 900,
-                            letterSpacing: '1.5px', textTransform: 'uppercase',
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>LEAPLAB</div>
-                        <div style={{
-                            color: '#fff', fontSize: 14, fontWeight: 900,
-                            letterSpacing: '-0.3px',
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        }}>EMBED</div>
-                    </div>
+                    <div style={{
+                        color: '#fff', fontSize: 22, fontWeight: 900,
+                        letterSpacing: '-0.3px',
+                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+                    }}>EMBED</div>
                 </div>
 
                 {/* Divider */}

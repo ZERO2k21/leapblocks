@@ -50,7 +50,7 @@ const styles = {
     },
     logoText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 22,
         fontWeight: 900,
         letterSpacing: '0.08em',
         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",

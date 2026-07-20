@@ -100,10 +100,10 @@ export default function TopBar() {
 
     return (
         <header style={{
-            position: "sticky", top: 0, height: 60, background: "linear-gradient(135deg, #0a015a 0%, #080a25 100%)",
+            position: "sticky", top: 0, height: 60, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
             display: "flex", alignItems: "center", padding: "0 16px",
             justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, flexWrap: "nowrap",
-            boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
+            boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
@@ -125,19 +125,11 @@ export default function TopBar() {
                     ctx.onBack();
                 }}>
                     <Logo height={48} />
-                    <div style={{
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                    <span style={{
+                        color: '#fff', fontSize: 20, fontWeight: 900,
+                        letterSpacing: '0.08em', lineHeight: 1.2,
                         borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 8,
-                    }}>
-                        <span style={{
-                            color: '#FFD500', fontSize: 8, fontWeight: 900,
-                            textTransform: 'uppercase', letterSpacing: '0.18em', lineHeight: 1.1,
-                        }}>LEAPLAB</span>
-                        <span style={{
-                            color: '#fff', fontSize: 15, fontWeight: 900,
-                            letterSpacing: '0.08em', lineHeight: 1.2,
-                        }}>Logix</span>
-                    </div>
+                    }}>Logix</span>
                 </div>
                 <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
 

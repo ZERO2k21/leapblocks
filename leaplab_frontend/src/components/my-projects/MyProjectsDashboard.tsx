@@ -1068,29 +1068,67 @@ interface DeleteConfirmationModalProps {
 
 const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ projectName, onConfirm, onCancel }) => {
     return (
-        <div className="fixed inset-0 bg-[rgba(15,23,42,0.4)] backdrop-blur-[6px] flex items-center justify-center z-[9999] p-4 animate-[fadeInOverlay_0.2s_ease-out]" onClick={onCancel}>
-            <div className="w-full max-w-[400px] bg-white border border-[#fee2e2] rounded-2xl p-6 shadow-[0_20px_25px_-5px_rgba(15,23,42,0.12),0_8px_10px_-6px_rgba(239,68,68,0.08)] relative flex flex-col items-center text-center animate-[scaleInModal_0.2s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
-                <button className="absolute top-[14px] right-[14px] bg-transparent border-none text-[#64748b] cursor-pointer p-[6px] rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[#f1f5f9] hover:text-[#0f172a]" onClick={onCancel} title="Close">
-                    <X size={18} />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xl flex items-center justify-center z-[9999] p-4 sm:p-6 animate-[fadeIn_0.2s_ease-out]" onClick={onCancel}>
+            <div
+                className="w-full max-w-[420px] bg-white rounded-[28px] p-8 sm:p-9 shadow-[0_30px_90px_-20px_rgba(15,23,42,0.3)] border border-slate-100 relative flex flex-col items-center text-center overflow-hidden animate-[scaleInModal_0.22s_cubic-bezier(0.16,1,0.3,1)]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Top Ambient Highlight Bar */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-red-500 to-amber-500" />
+
+                {/* Ambient Soft Red Radial Glow */}
+                <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-rose-500/10 blur-3xl pointer-events-none rounded-full" />
+
+                {/* Close Button */}
+                <button
+                    className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100/70 border border-slate-200/60 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 active:scale-95 transition-all flex items-center justify-center z-10"
+                    onClick={onCancel}
+                    title="Close"
+                >
+                    <X size={16} strokeWidth={2.2} />
                 </button>
 
-                <div className="mb-4">
-                    <div className="w-14 h-14 rounded-full bg-[#fef2f2] border border-[#fca5a5] flex items-center justify-center shadow-[0_0_12px_rgba(239,68,68,0.15)]">
-                        <AlertTriangle size={28} color="#EF4444" />
+                {/* Enhanced Icon Badge */}
+                <div className="relative mb-5 mt-1">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-rose-50 to-red-100/60 border border-rose-200/80 flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(244,63,94,0.25)]">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-red-500 flex items-center justify-center text-white shadow-md shadow-rose-500/30">
+                            <AlertTriangle size={21} strokeWidth={2.2} />
+                        </div>
                     </div>
                 </div>
 
-                <h3 className="m-0 mb-2 text-lg font-bold text-[#0f172a] tracking-[-0.3px]">Delete Project</h3>
-                <p className="m-0 mb-6 text-[13px] leading-relaxed text-[#475569]">
-                    Are you sure you want to delete <strong className="text-[#0f172a] break-words">"{projectName}"</strong>? This action cannot be undone.
-                </p>
+                {/* Header */}
+                <h3 className="m-0 mb-1.5 text-xl font-bold text-slate-900 tracking-tight">Delete Project</h3>
+                <p className="m-0 text-xs font-medium text-slate-400 uppercase tracking-wider">Permanent Action</p>
 
-                <div className="flex items-center gap-3 w-full">
-                    <button className="flex-1 h-10 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] text-[#475569] text-[13px] font-semibold cursor-pointer transition-all duration-150 hover:bg-[#f1f5f9] hover:text-[#0f172a] hover:border-[#cbd5e1]" onClick={onCancel}>
+                {/* Structured Project Card Container */}
+                <div className="w-full bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 my-5 text-left flex items-start gap-3 shadow-inner">
+                    <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center text-rose-500 flex-shrink-0 shadow-sm mt-0.5">
+                        <Trash2 size={17} strokeWidth={2.2} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-bold text-slate-800 truncate mb-0.5" title={projectName}>
+                            {projectName}
+                        </div>
+                        <div className="text-[11.5px] text-slate-500 leading-snug">
+                            This project will be permanently removed. You cannot restore it later.
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3 w-full pt-1">
+                    <button
+                        className="flex-1 h-12 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 text-[13px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.98] shadow-sm"
+                        onClick={onCancel}
+                    >
                         Cancel
                     </button>
-                    <button className="flex-1 h-10 bg-[#ef4444] border-none rounded-[10px] text-white text-[13px] font-semibold cursor-pointer flex items-center justify-center shadow-[0_4px_12px_rgba(239,68,68,0.25)] transition-all duration-150 hover:bg-[#dc2626] hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(239,68,68,0.35)]" onClick={onConfirm}>
-                        <Trash2 size={16} style={{ marginRight: '6px' }} />
+                    <button
+                        className="flex-1 h-12 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:from-rose-700 active:to-red-700 text-white rounded-2xl text-[13px] font-semibold tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 hover:shadow-xl hover:shadow-rose-600/40 active:scale-[0.98] transition-all duration-150 border border-rose-500/30"
+                        onClick={onConfirm}
+                    >
+                        <Trash2 size={16} strokeWidth={2.2} />
                         Delete Project
                     </button>
                 </div>
