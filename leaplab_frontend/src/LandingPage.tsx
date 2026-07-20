@@ -244,14 +244,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   background-image: radial-gradient(rgba(99, 102, 241, 0.05) 1.5px, transparent 1.5px);
   background-size: 30px 30px;
   color: var(--text-main);
-  height: 100dvh; 
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow: hidden;
 }
-.landing-page-container::-webkit-scrollbar { display: none; }
 
 /* ─── BACKGROUND NODES ─── */
 .landing-page-container .bg-nodes {
@@ -266,7 +264,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── TOPBAR ─── */
 .landing-page-container nav {
-  position: sticky; top: 0; left: 0; right: 0; z-index: 200;
+  flex-shrink: 0;
   height: 64px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px;
@@ -310,18 +308,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 /* ─── PAGE CONTENT ─── */
 .landing-page-container .page {
-  position:relative; z-index:1; padding-top: 1vh; padding-bottom: 48px;
-  display: flex; flex-direction: column; justify-content: space-between;
-  flex: 1; min-height: 0; transition: all 0.3s ease;
-  overflow: visible; scroll-behavior: smooth;
+  position:relative; z-index:1;
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
 }
 
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
   display: grid; grid-template-columns: 1.1fr 0.9fr;
   align-items: center; max-width: 1400px; margin: 0 auto;
-  padding: 40px 40px;
-  gap: 60px; flex: 1 1 auto;
+  padding: 24px 40px;
+  gap: 60px; flex: 1 1 auto; min-height: 0;
 }
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
@@ -347,7 +344,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
 .landing-page-container .hero-title {
   font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 900;
-  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 24px; color: #0F172A;
+  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 16px; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
   color: transparent; -webkit-text-stroke: 2px #6366F1;
@@ -362,13 +359,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 .landing-page-container .hero-tagline {
   display: inline-block; font-size: 11px;
   font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 16px; padding: 8px 16px;
+  letter-spacing: 0.25em; margin-bottom: 12px; padding: 6px 14px;
   background: var(--accent); border: 2px solid #000; box-shadow: 2px 2px 0px #000;
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
   font-size: clamp(1rem, 1.8vw, 1.25rem); color: #0f172a;
-  line-height: 1.5; max-width: 600px; margin-bottom: 30px;
+  line-height: 1.5; max-width: 600px; margin-bottom: 20px;
   position: relative; z-index: 2; opacity: 0.85;
 }
 .landing-page-container .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
@@ -418,7 +415,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* RIGHT — 3D Hero Scene */
 .landing-page-container .hero-right {
   display: flex; align-items: center; justify-content: center; position: relative;
-  width: 100%; height: 100%; min-height: 400px;
+  width: 100%; height: 100%; min-height: 0;
 }
 .landing-page-container .hero-right::after {
   content: ''; position: absolute; width: 120%; height: 120%;
@@ -440,8 +437,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
   width: 100%; margin: 0 auto;
-  padding: 40px 24px;
-  flex: 0 1 auto; display: flex; align-items: center; justify-content: center;
+  padding: 16px 24px;
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
 }
 .landing-page-container .cards-row {
   display: grid;
