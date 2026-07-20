@@ -73,12 +73,12 @@ export class CustomObjectDetector {
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
     // Detection parameters
-    private readonly SCALES = [1.0]
+    private readonly SCALES = [0.5, 0.75, 1.0, 1.25]
     private readonly WINDOW_SIZES = [64, 96, 128, 176, 240, 320]
-    private readonly ASPECT_RATIOS = [1.0, 1.8, 0.55]
-    private readonly STEP_RATIO = 0.38
-    private readonly CONFIDENCE_THRESHOLD = 0.22
-    private readonly NMS_IOU_THRESHOLD = 0.32
+    private readonly ASPECT_RATIOS = [1.0, 1.5, 1.8, 0.67, 0.55]
+    private readonly STEP_RATIO = 0.3
+    private readonly CONFIDENCE_THRESHOLD = 0.15
+    private readonly NMS_IOU_THRESHOLD = 0.5
 
     private async ensureModel() {
         if (this.mobilenetModel) return this.mobilenetModel
