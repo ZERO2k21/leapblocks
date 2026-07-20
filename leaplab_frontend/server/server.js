@@ -186,6 +186,13 @@ const FORGE_LIB_LIBRARIES = (() => {
     if (fs.existsSync(linuxUser)) return linuxUser;
   }
 
+  // Docker/Render: arduino-cli data directory from ARDUINO_DIRECTORIES_USER
+  const arduinoDataUser = process.env.ARDUINO_DIRECTORIES_USER;
+  if (arduinoDataUser) {
+    const dockerLibs = path.join(arduinoDataUser, 'libraries');
+    if (fs.existsSync(dockerLibs)) return dockerLibs;
+  }
+
   return null;
 })();
 
@@ -621,9 +628,18 @@ app.post('/compile', async (req, res) => {
       const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
       for (const lib of libList) {
         if (!lib) continue;
-        const libPath = path.resolve(lib);
-        if (fs.existsSync(libPath)) {
-          cliArgs.push('--libraries', libPath);
+        if (FORGE_LIB_LIBRARIES) {
+          const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
+          if (fs.existsSync(installedPath)) {
+            cliArgs.push('--libraries', installedPath);
+          } else {
+            try { await runCLI(['lib', 'install', lib]); } catch {}
+            if (fs.existsSync(installedPath)) {
+              cliArgs.push('--libraries', installedPath);
+            }
+          }
+        } else {
+          try { await runCLI(['lib', 'install', lib]); } catch {}
         }
       }
     }
@@ -714,9 +730,18 @@ app.post('/compile/esp32', async (req, res) => {
       const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
       for (const lib of libList) {
         if (!lib) continue;
-        const libPath = path.resolve(lib);
-        if (fs.existsSync(libPath)) {
-          cliArgs.push('--libraries', libPath);
+        if (FORGE_LIB_LIBRARIES) {
+          const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
+          if (fs.existsSync(installedPath)) {
+            cliArgs.push('--libraries', installedPath);
+          } else {
+            try { await runCLI(['lib', 'install', lib]); } catch {}
+            if (fs.existsSync(installedPath)) {
+              cliArgs.push('--libraries', installedPath);
+            }
+          }
+        } else {
+          try { await runCLI(['lib', 'install', lib]); } catch {}
         }
       }
     }

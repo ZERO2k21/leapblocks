@@ -34,6 +34,7 @@ RUN arduino-cli lib install \
     "Adafruit SSD1306" \
     "Adafruit GFX Library" \
     "Adafruit BusIO" \
+    "LiquidCrystal" \
     "LiquidCrystal I2C" \
     "DHT sensor library" \
     "Servo" \
@@ -43,6 +44,9 @@ RUN arduino-cli lib install \
     "IRremote" \
     "Keypad" \
     "HX711" \
+    "RTClib" \
+    "Adafruit Unified Sensor" \
+    "Adafruit ILI9341" \
     || true
 
 RUN chmod -R 777 /app/arduino-data
