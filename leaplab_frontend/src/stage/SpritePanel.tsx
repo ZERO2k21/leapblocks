@@ -85,17 +85,17 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   // ── colour tokens ────────────────────────────────────────────────────────
   const dk = isFullscreen;
   const panelBg = dk ? "bg-[#16161a]" : "bg-white";
-  const gridBg = dk ? "bg-[#111115]" : "bg-[#F2F2F2]";
+  const gridBg = dk ? "bg-[#111115]" : "bg-[#F8F9FB]";
   const infoBg = dk ? "bg-[#1c1c21]" : "bg-white";
-  const borderCol = dk ? "border-gray-700" : "border-gray-200";
+  const borderCol = dk ? "border-gray-700" : "border-gray-100";
   const sidebarBg = dk ? "bg-[#1c1c21]" : "bg-white";
 
-  const pill = `px-2.5 py-1 border ${borderCol} rounded-full text-xs
-    focus:border-violet-500 focus:outline-none
-    ${dk ? "bg-[#26262d] text-gray-100" : "bg-white text-slate-800"}
-    disabled:opacity-40`;
+  const pill = `px-5 py-2.5 border ${borderCol} rounded-2xl text-sm font-semibold
+    focus:border-violet-500 focus:ring-4 focus:ring-violet-100 focus:outline-none
+    ${dk ? "bg-[#26262d] text-gray-100" : "bg-gray-50 text-slate-700"}
+    disabled:opacity-40 transition-all`;
 
-  const lbl = `text-xs font-medium flex-shrink-0 ${dk ? "text-gray-400" : "text-gray-600"}`;
+  const lbl = `text-[12px] font-bold flex-shrink-0 uppercase tracking-widest ${dk ? "text-gray-400" : "text-gray-400"}`;
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${panelBg}`}>
@@ -103,10 +103,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       {/* ══════════════════════════════════════════════════════════════════
           INFO BAR
           ══════════════════════════════════════════════════════════════════ */}
-      <div className={`px-3 pt-2 pb-2 border-b ${borderCol} ${infoBg} flex-shrink-0`}>
+      <div className={`px-6 pt-5 pb-6 border-b ${borderCol} ${infoBg} flex-shrink-0`}>
 
         {/* Row 1: Sprite | [Name] | ↔ x [val] | ↕ y [val] */}
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-5 min-w-0" style={{ paddingLeft: '12px' }}>
           <span className={lbl}>{isStageSelected ? "Stage" : "Sprite"}</span>
           <input
             type="text"
@@ -117,66 +117,66 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           />
           {!isStageSelected && selectedSprite && (
             <>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className={`text-sm select-none ${dk ? "text-gray-400" : "text-gray-500"}`}>↔</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-base select-none font-mono ${dk ? "text-gray-400" : "text-gray-400"}`}>↔</span>
                 <span className={lbl}>x</span>
                 <input type="number" value={Math.round(selectedSprite.x)}
                   onChange={(e) => selectedSprite.setX?.(Number(e.target.value))}
-                  className={`w-14 text-center ${pill}`} />
+                  className={`w-[72px] text-center ${pill}`} />
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className={`text-sm select-none ${dk ? "text-gray-400" : "text-gray-500"}`}>↕</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-base select-none font-mono ${dk ? "text-gray-400" : "text-gray-400"}`}>↕</span>
                 <span className={lbl}>y</span>
                 <input type="number" value={Math.round(selectedSprite.y)}
                   onChange={(e) => selectedSprite.setY?.(Number(e.target.value))}
-                  className={`w-14 text-center ${pill}`} />
+                  className={`w-[72px] text-center ${pill}`} />
               </div>
             </>
           )}
         </div>
 
         {/* Row 2: Show [👁][🚫] | Size [val] | Direction [val] */}
-        <div className="flex items-center gap-4 mt-1.5 min-w-0">
+        <div className="flex items-center gap-5 mt-5 min-w-0 overflow-x-hidden" style={{ paddingLeft: '12px' }}>
           {!isStageSelected && selectedSprite ? (
             <>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={lbl}>Show</span>
                 <button onClick={() => selectedSprite.show?.()} title="Show"
-                  className={`w-7 h-7 border-2 rounded-lg flex items-center justify-center transition-colors
+                  className={`w-10 h-10 border-2 rounded-2xl flex items-center justify-center transition-all duration-150
                     ${selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7]/10 text-[#7b44c7]"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-white text-gray-400"}`}`}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-lg shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:border-gray-300"}`}`}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
                 <button onClick={() => selectedSprite.hide?.()} title="Hide"
-                  className={`w-7 h-7 border-2 rounded-lg flex items-center justify-center transition-colors
+                  className={`w-10 h-10 border-2 rounded-2xl flex items-center justify-center transition-all duration-150
                     ${!selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7]/10 text-[#7b44c7]"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-white text-gray-400"}`}`}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-lg shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:border-gray-300"}`}`}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                     <line x1="1" y1="1" x2="23" y2="23" />
                   </svg>
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={lbl}>Size</span>
                 <input type="number" value={Math.round(selectedSprite.size)}
                   onChange={(e) => selectedSprite.setSize?.(Number(e.target.value))}
-                  className={`w-16 text-center ${pill}`} />
+                  className={`w-[72px] text-center ${pill}`} />
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={lbl}>Direction</span>
                 <input type="number" value={Math.round(selectedSprite.direction)}
                   onChange={(e) => selectedSprite.pointInDirection?.(Number(e.target.value))}
-                  className={`w-16 text-center ${pill}`} />
+                  className={`w-[72px] text-center ${pill}`} />
               </div>
             </>
           ) : (
-            <p className={`text-xs italic ${dk ? "text-gray-500" : "text-gray-400"}`}>
+            <p className={`text-xs font-medium ${dk ? "text-gray-500" : "text-gray-400"}`}>
               Stage backdrops cannot be moved or hidden.
             </p>
           )}
@@ -187,23 +187,20 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           MAIN ROW: sprite grid + stage sidebar
           ─────────────────────────────────────────────────────────────────
           Layout contract:
-            GRID_H   = 160px  (2 rows of cards, scrolls after 10 sprites)
+            GRID_H   = 190px  (2+ rows of cards, scrolls after 10 sprites)
             FOOTER_H = 60px   (FAB row, same on both sides)
-            TOTAL    = 220px  (both columns identical height → FABs aligned)
+            TOTAL    = 250px  (both columns identical height → FABs aligned)
           ══════════════════════════════════════════════════════════════════ */}
       <div className={`flex flex-1 min-h-0 ${gridBg}`} style={{ overflow: 'visible' }}>
 
         {/* ── LEFT: sprite grid + FAB footer ──────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col" style={{ overflow: 'visible' }}>
 
-          {/* Scrollable grid
-           * maxHeight caps at 2 rows (~160px). Content beyond that scrolls.
-           * flex-1 + maxHeight: the grid grows up to 160px then scrolls.
-           */}
+          {/* Scrollable grid */}
           <div
-            className={`p-2.5 grid grid-cols-5 gap-2 content-start
+            className={`p-6 grid grid-cols-5 gap-5 content-start
               overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
-            style={{ flex: '1 1 0', maxHeight: '160px' }}
+            style={{ flex: '1 1 0', maxHeight: '190px' }}
           >
             {normalSprites.map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
@@ -231,22 +228,22 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       onCopyCodeToSprite?.(sourceId, sprite.id);
                     }
                   }}
-                  className={`relative group flex flex-col rounded-xl cursor-pointer
-                    transition-all duration-150 overflow-visible border-2
+                  className={`relative group flex flex-col rounded-3xl cursor-pointer
+                    transition-all duration-200 overflow-visible border-2
                     ${isSelected
-                      ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
-                      : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-[#7b44c7]/50`
+                      ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-xl shadow-purple-200/40`
+                      : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white hover:border-[#7b44c7]/30 hover:shadow-lg hover:shadow-gray-200/50"}`
                     }`}
-                  style={{ aspectRatio: '1 / 1.2' }}
+                  style={{ aspectRatio: '1 / 1.35' }}
                 >
-                  {/* Delete — purple circle + trash, overlaps top-right corner */}
+                  {/* Delete — purple circle + trash */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteSprite(sprite.id); }}
                     title="Delete sprite"
-                    className={`absolute -top-2 -right-2 w-5 h-5 rounded-full
+                    className={`absolute -top-2 -right-2 w-5.5 h-5.5 rounded-full
                       bg-[#7b44c7] text-white flex items-center justify-center
                       shadow-md transition-all duration-150 z-20
-                      hover:bg-[#7b44c7] hover:scale-110 active:scale-95
+                      hover:bg-red-500 hover:scale-110 active:scale-95
                       ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                   >
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
@@ -261,19 +258,19 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   {/* Clone badge */}
                   {cloneCount > 0 && (
                     <div className="absolute -top-1.5 -left-1.5 bg-amber-500 text-white
-                      text-[8px] font-bold w-4 h-4 rounded-full border border-white
-                      flex items-center justify-center z-20">
+                      text-[8px] font-bold w-4 h-4 rounded-full border-2 border-white
+                      flex items-center justify-center z-20 shadow-sm">
                       {cloneCount}
                     </div>
                   )}
 
                   {/* Sprite image */}
-                  <div className="flex-1 flex items-center justify-center p-1.5 min-h-0 overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center p-8 pb-4 min-h-0 overflow-hidden">
                     {sprite.currentCostume?.image?.src ? (
                       <img
                         src={sprite.currentCostume.image.src}
                         alt={sprite.name}
-                        className="max-h-full max-w-full object-contain"
+                        className="max-h-full max-w-full object-contain drop-shadow-sm"
                         draggable={false}
                       />
                     ) : (
@@ -284,11 +281,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   </div>
 
                   {/* Name label */}
-                  <div className={`text-center text-[10px] font-semibold py-1 px-0.5
-                    truncate flex-shrink-0 transition-colors rounded-b-[10px]
+                  <div className={`text-center text-[12px] font-bold py-3 px-2.5
+                    truncate flex-shrink-0 transition-colors rounded-b-[20px]
                     ${isSelected
                       ? "bg-[#7b44c7] text-white"
-                      : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-100 text-slate-600"}`
+                      : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-50 text-slate-600"}`
                     }`}>
                     {sprite.name}
                   </div>
@@ -298,7 +295,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           </div>
 
           {/* ── FAB footer — fixed 60px, always at bottom ───────────── */}
-          <div className={`flex items-center justify-center px-3 border-t ${borderCol} ${gridBg}`}
+          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${gridBg}`}
             style={{ height: '60px', minHeight: '60px', overflow: 'visible' }}>
             <ActionMenu
               mainIcon={
@@ -376,13 +373,13 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         </div>
 
         {/* ── RIGHT: stage sidebar ──────────────────────────────────── */}
-        <div className={`w-[90px] flex-shrink-0 border-l ${borderCol}
+        <div className={`w-[96px] flex-shrink-0 border-l ${borderCol}
           ${sidebarBg} flex flex-col`} style={{ overflow: 'visible' }}>
 
-          {/* Sidebar content — clickable, highlights when stage is selected */}
+          {/* Sidebar content */}
           <div className="flex-1 min-h-0 flex flex-col">
 
-            {/* Stage card — clicking selects the stage, highlights with violet border */}
+            {/* Stage card */}
             <div
               data-sprite-id="stage"
               onClick={() => onSelectSprite('stage')}
@@ -398,17 +395,17 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   onCopyCodeToSprite?.(sourceId, 'stage');
                 }
               }}
-              className={`mx-2 mt-2 mb-1 rounded-xl cursor-pointer transition-all duration-150 overflow-hidden border-2
+              className={`mx-4 mt-5 mb-3 rounded-3xl cursor-pointer transition-all duration-200 overflow-hidden border-2
                 ${isStageSelected
-                  ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-sm`
-                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white"} hover:border-[#7b44c7]/50`
+                  ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-xl shadow-purple-200/40`
+                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white hover:border-[#7b44c7]/30 hover:shadow-lg hover:shadow-gray-200/50"}`
                 }`}
             >
-              {/* "Stage" header — violet bg when selected */}
-              <div className={`text-center text-[10px] font-bold py-1 transition-colors
+              {/* "Stage" header */}
+              <div className={`text-center text-[12px] font-bold py-2.5 transition-colors
                 ${isStageSelected
                   ? "bg-[#7b44c7] text-white"
-                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-100 text-gray-600"}`
+                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-50 text-gray-500"}`
                 }`}>
                 Stage
               </div>
@@ -416,8 +413,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               {/* Backdrop thumbnail */}
               <div
                 className={`w-full overflow-hidden ${dk ? "bg-[#26262d]" : "bg-gray-50"}`}
-                style={{ aspectRatio: '4/3' }}
-              >
+                style={{ aspectRatio: '4/3' }}>
                 {currentBackdropSrc ? (
                   <img
                     src={currentBackdropSrc}
@@ -427,7 +423,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center`}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                       stroke={dk ? "#4b5563" : "#c4c9d4"} strokeWidth="1.5">
                       <rect x="3" y="3" width="18" height="14" rx="2" />
                       <polyline points="3 15 8 10 13 14" />
@@ -439,11 +435,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             </div>
 
             {/* Backdrops count */}
-            <div className="text-center flex-shrink-0 pb-1">
-              <p className={`text-[10px] leading-tight ${dk ? "text-gray-400" : "text-gray-500"}`}>
+            <div className="text-center flex-shrink-0 pb-4 mt-2">
+              <p className={`text-[12px] leading-tight font-bold tracking-widest ${dk ? "text-gray-400" : "text-gray-400"}`}>
                 Backdrops
               </p>
-              <p className={`text-base font-bold leading-tight
+              <p className={`text-xl font-extrabold leading-tight mt-0.5
                 ${dk ? "text-[#7b44c7]/80" : "text-[#7b44c7]"}`}>
                 {backdropCount}
               </p>
@@ -453,8 +449,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             <div className="flex-1" />
           </div>
 
-          {/* FAB footer — fixed 60px, matches sprite FAB footer exactly */}
-          <div className={`flex items-center justify-center px-2 border-t ${borderCol} ${sidebarBg}`}
+          {/* FAB footer — fixed 60px */}
+          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${sidebarBg}`}
             style={{ height: '60px', minHeight: '60px', overflow: 'visible' }}>
             <ActionMenu
               mainIcon={

@@ -17,6 +17,8 @@ interface CostumesTabProps {
     onOpenLibrary?: () => void;
 }
 
+const LOG_PREFIX = '[CostumesTab]';
+
 export const CostumesTab: React.FC<CostumesTabProps> = ({
     selectedSpriteId,
     sprites,
@@ -33,6 +35,21 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     const [dropIndex, setDropIndex] = useState<number | null>(null);
     const [refreshTick, setRefreshTick] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const renderCount = useRef(0);
+    const isEmbedRef = useRef(false);
+
+    useEffect(() => {
+        isEmbedRef.current = typeof window !== 'undefined' && window !== window.parent;
+        console.log(LOG_PREFIX, 'MOUNTED | isEmbed:', isEmbedRef.current, '| selectedSpriteId:', selectedSpriteId, '| sprites count:', sprites.length, '| sprites:', sprites.map(s => ({ id: s.id, name: s.name, costumeCount: s.costumes?.length })));
+        return () => console.log(LOG_PREFIX, 'UNMOUNTED');
+    }, []);
+
+    useEffect(() => {
+        console.log(LOG_PREFIX, 'PROPS CHANGED | selectedSpriteId:', selectedSpriteId, '| sprites count:', sprites.length, '| sprites:', sprites.map(s => ({ id: s.id, name: s.name, costumeCount: s.costumes?.length })));
+    }, [selectedSpriteId, sprites]);
+
+    renderCount.current++;
+    console.log(LOG_PREFIX, 'RENDER #' + renderCount.current, '| selectedSpriteId:', selectedSpriteId, '| activeCostumeIndex:', activeCostumeIndex, '| renameIndex:', renameIndex, '| contextMenu:', contextMenu, '| draggedIndex:', draggedIndex, '| dropIndex:', dropIndex, '| refreshTick:', refreshTick);
 
     const selectedSprite = useMemo(
         () => sprites.find(s => s.id === selectedSpriteId) || null,
@@ -40,81 +57,99 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     );
 
     useEffect(() => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'NO SPRITE SELECTED - skipping activeCostumeIndex sync'); return; }
+        console.log(LOG_PREFIX, 'SYNC activeCostumeIndex | sprite:', selectedSprite.name, selectedSprite.id, '| currentCostumeIndex:', selectedSprite.currentCostumeIndex, '| costumes:', selectedSprite.costumes.map(c => ({ name: c.name, src: c.image?.src?.slice?.(0, 50) })));
         setActiveCostumeIndex(selectedSprite.currentCostumeIndex || 0);
     }, [selectedSprite, refreshTick]);
 
     useEffect(() => {
+        console.log(LOG_PREFIX, 'SETUP window.click listener for contextMenu close');
         const onWindowClick = () => setContextMenu(null);
         window.addEventListener('click', onWindowClick);
         return () => window.removeEventListener('click', onWindowClick);
     }, []);
 
-    const refresh = () => setRefreshTick((v) => v + 1);
+    const refresh = () => { console.log(LOG_PREFIX, 'refresh() called'); setRefreshTick((v) => v + 1); };
 
     const selectCostume = (index: number) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'selectCostume SKIP - no selectedSprite'); return; }
+        console.log(LOG_PREFIX, 'selectCostume | index:', index, '| sprite:', selectedSprite.name, '| costumes before:', selectedSprite.costumes.map(c => c.name));
         selectedSprite.switchCostume(index);
         setActiveCostumeIndex(index);
         setRenameIndex(null);
         setContextMenu(null);
         refresh();
+        console.log(LOG_PREFIX, 'selectCostume DONE | new activeIndex:', index, '| currentCostumeIndex after switch:', selectedSprite.currentCostumeIndex);
     };
 
     const saveRename = (index: number) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'saveRename SKIP - no selectedSprite'); return; }
         const nextName = renameValue.trim();
+        console.log(LOG_PREFIX, 'saveRename | index:', index, '| renameValue:', renameValue, '| trimmed:', nextName);
         if (!nextName) {
+            console.log(LOG_PREFIX, 'saveRename empty name - just closing');
             setRenameIndex(null);
             return;
         }
         const target = selectedSprite.costumes[index];
         if (target) {
+            console.log(LOG_PREFIX, 'saveRename applying | old name:', target.name, '| new name:', nextName);
             target.name = nextName;
             selectedSprite.switchCostume(selectedSprite.currentCostumeIndex);
             addLog(`Renamed costume to ${nextName}`);
+        } else {
+            console.log(LOG_PREFIX, 'saveRename WARNING - no target costume at index:', index, '| costumes:', selectedSprite.costumes.map(c => c.name));
         }
         setRenameIndex(null);
         refresh();
     };
 
     const duplicateCostume = (index: number) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'duplicateCostume SKIP - no selectedSprite'); return; }
+        console.log(LOG_PREFIX, 'duplicateCostume | index:', index, '| sprite:', selectedSprite.name, '| costumes count before:', selectedSprite.costumes.length, '| costumes:', selectedSprite.costumes.map(c => c.name));
         selectedSprite.duplicateCostume(index);
+        console.log(LOG_PREFIX, 'duplicateCostume done | costumes after:', selectedSprite.costumes.map(c => c.name));
         selectCostume(Math.min(index + 1, selectedSprite.costumes.length - 1));
         addLog(`Duplicated costume on ${selectedSprite.name}`);
     };
 
     const deleteCostume = (index: number) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'deleteCostume SKIP - no selectedSprite'); return; }
+        console.log(LOG_PREFIX, 'deleteCostume | index:', index, '| sprite:', selectedSprite.name, '| costumes count before:', selectedSprite.costumes.length, '| costumes:', selectedSprite.costumes.map(c => c.name));
         if (selectedSprite.costumes.length <= 1) {
+            console.log(LOG_PREFIX, 'deleteCostume BLOCKED - only 1 costume left');
             alert('At least one costume is required.');
             return;
         }
         selectedSprite.deleteCostume(index);
+        console.log(LOG_PREFIX, 'deleteCostume done | costumes after:', selectedSprite.costumes.map(c => c.name));
         const nextIndex = Math.min(index, selectedSprite.costumes.length - 1);
         selectCostume(Math.max(0, nextIndex));
         addLog(`Deleted costume from ${selectedSprite.name}`);
     };
 
     const exportCostume = (index: number) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'exportCostume SKIP - no selectedSprite'); return; }
         const costume = selectedSprite.costumes[index];
-        if (!costume?.image?.src) return;
+        console.log(LOG_PREFIX, 'exportCostume | index:', index, '| costume:', costume?.name, '| has src:', !!costume?.image?.src, '| src preview:', costume?.image?.src?.slice?.(0, 60));
+        if (!costume?.image?.src) { console.log(LOG_PREFIX, 'exportCostume SKIP - no image src'); return; }
         const link = document.createElement('a');
         link.href = costume.image.src;
         link.download = `${costume.name || `costume_${index + 1}`}.png`;
         link.click();
         addLog(`Exported costume: ${costume.name}`);
+        console.log(LOG_PREFIX, 'exportCostume DONE | download triggered:', link.download);
     };
 
     const reorderCostumes = (from: number, to: number) => {
-        if (!selectedSprite || from === to) return;
+        if (!selectedSprite || from === to) { console.log(LOG_PREFIX, 'reorderCostumes SKIP', { from, to, hasSprite: !!selectedSprite }); return; }
         const arr = selectedSprite.costumes;
         const current = selectedSprite.currentCostume;
+        console.log(LOG_PREFIX, 'reorderCostumes | from:', from, 'to:', to, '| current costume:', current?.name, '| before:', arr.map(c => c.name));
         const [moved] = arr.splice(from, 1);
         arr.splice(to, 0, moved);
         const nextCurrentIndex = current ? arr.findIndex((c) => c === current) : 0;
+        console.log(LOG_PREFIX, 'reorderCostumes | after splice:', arr.map(c => c.name), '| nextCurrentIndex:', nextCurrentIndex);
         selectedSprite.switchCostume(Math.max(0, nextCurrentIndex));
         setActiveCostumeIndex(Math.max(0, nextCurrentIndex));
         setDraggedIndex(null);
@@ -124,7 +159,8 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     };
 
     const createBlankCostume = async () => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'createBlankCostume SKIP - no selectedSprite'); return; }
+        console.log(LOG_PREFIX, 'createBlankCostume | sprite:', selectedSprite.name, '| costume count before:', selectedSprite.costumes.length, '| costumes:', selectedSprite.costumes.map(c => c.name));
         const canvas = document.createElement('canvas');
         canvas.width = 800;
         canvas.height = 600;
@@ -134,13 +170,15 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         }
         const data = canvas.toDataURL('image/png');
         const name = `costume${selectedSprite.costumes.length + 1}`;
+        console.log(LOG_PREFIX, 'createBlankCostume | calling addCostume with name:', name, '| data length:', data.length);
         await selectedSprite.addCostume(name, data);
+        console.log(LOG_PREFIX, 'createBlankCostume | addCostume DONE | costumes after:', selectedSprite.costumes.map(c => c.name));
         selectCostume(selectedSprite.costumes.length - 1);
         addLog(`Created blank costume: ${name}`);
     };
 
     const addSurpriseCostume = async () => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'addSurpriseCostume SKIP - no selectedSprite'); return; }
         const randomAssets = [
             'assets/sprites/leap/cat.svg',
             'assets/sprites/leap/butterfly.svg',
@@ -150,39 +188,47 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         ];
         const src = randomAssets[Math.floor(Math.random() * randomAssets.length)];
         const name = `surprise_${selectedSprite.costumes.length + 1}`;
+        console.log(LOG_PREFIX, 'addSurpriseCostume | sprite:', selectedSprite.name, '| selected src:', src, '| name:', name, '| costume count before:', selectedSprite.costumes.length);
         await selectedSprite.addCostume(name, src);
+        console.log(LOG_PREFIX, 'addSurpriseCostume DONE | costumes after:', selectedSprite.costumes.map(c => c.name));
         selectCostume(selectedSprite.costumes.length - 1);
         addLog(`Added surprise costume`);
     };
 
     const onUploadCostume = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'onUploadCostume SKIP - no selectedSprite'); return; }
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file) { console.log(LOG_PREFIX, 'onUploadCostume SKIP - no file'); return; }
+        console.log(LOG_PREFIX, 'onUploadCostume | file name:', file.name, '| size:', file.size, '| type:', file.type);
         const reader = new FileReader();
         reader.onload = async (event) => {
             const src = String(event.target?.result || '');
-            if (!src) return;
+            if (!src) { console.log(LOG_PREFIX, 'onUploadCostume reader.onload - empty src'); return; }
             const name = file.name.replace(/\.[^/.]+$/, '') || `costume${selectedSprite.costumes.length + 1}`;
+            console.log(LOG_PREFIX, 'onUploadCostume reader.onload | name:', name, '| src length:', src.length);
             await selectedSprite.addCostume(name, src);
+            console.log(LOG_PREFIX, 'onUploadCostume addCostume DONE | costumes after:', selectedSprite.costumes.map(c => c.name));
             selectCostume(selectedSprite.costumes.length - 1);
             addLog(`Uploaded costume: ${name}`);
         };
+        reader.onerror = (err) => console.log(LOG_PREFIX, 'onUploadCostume reader.onerror:', err);
         reader.readAsDataURL(file);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const updateCurrentCostumeFromEditor = async (imageData: string, _svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => {
-        if (!selectedSprite) return;
+        if (!selectedSprite) { console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor SKIP - no selectedSprite'); return; }
         const targetIndex = activeCostumeIndex;
         const target = selectedSprite.costumes[targetIndex];
-        if (!target) return;
+        console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor | targetIndex:', targetIndex, '| target:', target?.name, '| name param:', name, '| rotationCenter:', rotationCenter, '| imageData length:', imageData.length, '| has svgData:', !!_svgData);
+        if (!target) { console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor SKIP - no target at index', targetIndex); return; }
         await new Promise<void>((resolve) => {
             const img = new Image();
             img.onload = () => {
                 const maxDim = Math.max(img.width, img.height) || 100;
                 const logicalBase = 150;
                 const scaleFactor = logicalBase / maxDim;
+                console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor image loaded | img size:', img.width, 'x', img.height, '| scaleFactor:', scaleFactor);
                 target.image = img;
                 target.width = img.width * scaleFactor;
                 target.height = img.height * scaleFactor;
@@ -190,28 +236,39 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                 if (rotationCenter) {
                     target.rotationCenterX = rotationCenter.x;
                     target.rotationCenterY = rotationCenter.y;
+                    console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor rotationCenter set:', rotationCenter);
                 }
                 resolve();
             };
-            img.onerror = () => resolve();
+            img.onerror = (err) => { console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor image load ERROR:', err); resolve(); };
             img.src = imageData;
         });
         selectedSprite.switchCostume(targetIndex);
         refresh();
         addLog(`Updated costume for ${selectedSprite.name}: ${selectedSprite.costumes[targetIndex]?.name}`);
+        console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor DONE | new costume name:', selectedSprite.costumes[targetIndex]?.name);
     };
+
+    const isEmbed = typeof window !== 'undefined' && window !== window.parent;
+    console.log(LOG_PREFIX, 'isEmbed (render):', isEmbed, '| selectedSpriteId:', selectedSpriteId, '| selectedSprite:', selectedSprite?.name);
 
     // If Stage is selected, render Backdrop Editor
     if (selectedSpriteId === 'stage') {
         const currentBackdrop = stageManager.getCurrentBackdrop()?.src || '';
-        const allBackdrops = stageManager.getAllBackdrops().map((b, i) => ({
-            id: i.toString(),
-            name: b.name,
-            image: b.src
-        }));
+        const allBackdrops = stageManager.getAllBackdrops().map((b, i) => {
+            console.log(LOG_PREFIX, 'BACKDROP map | index:', i, '| name:', b.name, '| src:', b.src?.slice?.(0, 60));
+            return { id: i.toString(), name: b.name, image: b.src };
+        });
+
+        console.log(LOG_PREFIX, 'RENDER BACKDROP EDITOR | currentBackdrop length:', currentBackdrop.length, '| allBackdrops count:', allBackdrops.length, '| allBackdrops:', allBackdrops);
+
+        const handleBackdropClick = (e: React.MouseEvent) => {
+            const target = e.target as HTMLElement;
+            console.log(LOG_PREFIX, 'BACKDROP CLICK on:', target.tagName, target.className, '| text:', target.textContent?.slice?.(0, 30), '| pos:', e.clientX, e.clientY);
+        };
 
         return (
-            <div style={styles.container}>
+            <div style={styles.container} onClick={handleBackdropClick}>
                 <PaintEditor
                     mode="intermediate"
                     title="Backdrop Editor"
@@ -219,38 +276,48 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     initialImage={currentBackdrop}
                     costumes={allBackdrops}
                     onSwitchCostume={(index: number) => {
+                        console.log(LOG_PREFIX, 'BACKDROP onSwitchCostume | index:', index);
                         stageManager.setBackdrop(index);
                     }}
                     onSave={async (imageData: string, svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => {
                         const idx = stageManager.getCurrentBackdropIndex();
                         const backdropName = name || stageManager.getAllBackdrops()[idx]?.name || 'custom';
+                        console.log(LOG_PREFIX, 'BACKDROP onSave | idx:', idx, '| backdropName:', backdropName, '| imageData length:', imageData.length, '| has svgData:', !!svgData, '| rotationCenter:', rotationCenter);
                         if (idx >= 0) {
                             await stageManager.updateBackdrop(idx, backdropName, imageData);
                             stageManager.setBackdrop(idx);
+                            console.log(LOG_PREFIX, 'BACKDROP onSave updated existing');
                         } else {
                             await stageManager.addBackdrop(backdropName, imageData);
                             stageManager.setBackdrop(backdropName);
+                            console.log(LOG_PREFIX, 'BACKDROP onSave added new');
                         }
                         addLog(`Saved backdrop for Stage: ${backdropName}`);
                     }}
                     onDeleteSound={(index: number) => {
+                        console.log(LOG_PREFIX, 'BACKDROP onDeleteSound | index:', index);
                         stageManager.deleteBackdrop(index);
                         addLog(`Deleted backdrop from Stage`);
                     }}
                     onDuplicateSound={(index: number) => {
+                        console.log(LOG_PREFIX, 'BACKDROP onDuplicateSound | index:', index);
                         stageManager.duplicateBackdrop(index);
                         addLog(`Duplicated backdrop on Stage`);
                     }}
                     onRenameCostume={(index: number, newName: string) => {
+                        console.log(LOG_PREFIX, 'BACKDROP onRenameCostume | index:', index, '| newName:', newName);
                         if (newName.trim()) {
                             const backdrop = stageManager.getAllBackdrops()[index];
                             if (backdrop) {
+                                console.log(LOG_PREFIX, 'BACKDROP rename applying | old name:', backdrop.name, '| new:', newName.trim());
                                 stageManager.updateBackdrop(index, newName.trim(), backdrop.src);
+                            } else {
+                                console.log(LOG_PREFIX, 'BACKDROP rename - no backdrop at index:', index);
                             }
                         }
                     }}
-                    onClose={onClose}
-                    onOpenLibrary={onOpenLibrary}
+                    onClose={() => { console.log(LOG_PREFIX, 'BACKDROP onClose'); onClose(); }}
+                    onOpenLibrary={() => { console.log(LOG_PREFIX, 'BACKDROP onOpenLibrary'); onOpenLibrary?.(); }}
                 />
             </div>
         );
@@ -265,8 +332,13 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
             image: c.image.src
         }));
 
+        const handleContainerClick = (e: React.MouseEvent) => {
+            const target = e.target as HTMLElement;
+            console.log(LOG_PREFIX, 'CLICK on:', target.tagName, target.className, target.id, '| text:', target.textContent?.slice?.(0, 30), '| pos:', e.clientX, e.clientY);
+        };
+
         return (
-            <div style={styles.container} key={`${selectedSprite.id}-${refreshTick}`}>
+            <div style={styles.container} key={`${selectedSprite.id}-${refreshTick}`} onClick={handleContainerClick}>
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -285,7 +357,10 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                     <div
                                         key={c.id}
                                         draggable
+                                        onMouseEnter={() => console.log(LOG_PREFIX, 'MOUSE_ENTER costume card | index:', i, 'name:', c.name)}
+                                        onMouseLeave={() => console.log(LOG_PREFIX, 'MOUSE_LEAVE costume card | index:', i, 'name:', c.name)}
                                         onDragStart={(e) => {
+                                            console.log(LOG_PREFIX, 'DRAG_START | index:', i, 'name:', c.name);
                                             setDraggedIndex(i);
                                             e.dataTransfer.effectAllowed = 'move';
                                         }}
@@ -295,17 +370,23 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         }}
                                         onDrop={(e) => {
                                             e.preventDefault();
+                                            console.log(LOG_PREFIX, 'DRAG_DROP | from:', draggedIndex, 'to:', i, 'name:', c.name);
                                             if (draggedIndex !== null) reorderCostumes(draggedIndex, i);
                                         }}
                                         onDragEnd={() => {
+                                            console.log(LOG_PREFIX, 'DRAG_END | final draggedIndex:', draggedIndex, 'dropIndex:', dropIndex);
                                             setDraggedIndex(null);
                                             setDropIndex(null);
                                         }}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
+                                            console.log(LOG_PREFIX, 'CONTEXT_MENU | index:', i, 'name:', c.name, 'at:', e.clientX, e.clientY);
                                             setContextMenu({ x: e.clientX, y: e.clientY, index: i });
                                         }}
-                                        onClick={() => selectCostume(i)}
+                                        onClick={(e) => {
+                                            console.log(LOG_PREFIX, 'CLICK costume card | index:', i, 'name:', c.name, 'active:', isActive);
+                                            selectCostume(i);
+                                        }}
                                         style={{
                                             ...styles.costumeCard,
                                             ...(isActive ? styles.costumeCardActive : {}),
@@ -323,9 +404,18 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                                 <input
                                                     autoFocus
                                                     value={renameValue}
-                                                    onChange={(e) => setRenameValue(e.target.value)}
-                                                    onBlur={() => saveRename(i)}
+                                                    onChange={(e) => {
+                                                        console.log(LOG_PREFIX, 'RENAME_INPUT change | index:', i, 'value:', e.target.value);
+                                                        setRenameValue(e.target.value);
+                                                    }}
+                                                    onFocus={() => console.log(LOG_PREFIX, 'RENAME_INPUT focus | index:', i)}
+                                                    onBlur={() => {
+                                                        console.log(LOG_PREFIX, 'RENAME_INPUT blur | index:', i, 'value:', renameValue);
+                                                        saveRename(i);
+                                                    }}
+                                                    onClick={(e) => { console.log(LOG_PREFIX, 'RENAME_INPUT click | index:', i); e.stopPropagation(); }}
                                                     onKeyDown={(e) => {
+                                                        console.log(LOG_PREFIX, 'RENAME_INPUT keydown | index:', i, 'key:', e.key);
                                                         if (e.key === 'Enter') saveRename(i);
                                                         if (e.key === 'Escape') setRenameIndex(null);
                                                     }}
@@ -336,6 +426,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                                     style={{ ...styles.costumeName, ...(isActive ? styles.costumeNameActive : {}) }}
                                                     onDoubleClick={(e) => {
                                                         e.stopPropagation();
+                                                        console.log(LOG_PREFIX, 'DOUBLE_CLICK name | index:', i, 'name:', c.name);
                                                         setRenameIndex(i);
                                                         setRenameValue(c.name);
                                                     }}
@@ -349,16 +440,17 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             })}
                         </div>
                         <div style={styles.bottomButtons}>
-                            <button style={styles.actionButton} onClick={() => onOpenLibrary?.()}>🐱 Choose</button>
-                            <button style={styles.actionButton} onClick={createBlankCostume}>🎨 Paint</button>
-                            <button style={styles.actionButton} onClick={addSurpriseCostume}>😮 Surprise</button>
-                            <button style={styles.actionButton} onClick={() => fileInputRef.current?.click()}>⬆️ Upload</button>
+                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Choose button'); onOpenLibrary?.(); }}>🐱 Choose</button>
+                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Paint button'); createBlankCostume(); }}>🎨 Paint</button>
+                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Surprise button'); addSurpriseCostume(); }}>😮 Surprise</button>
+                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Upload button'); fileInputRef.current?.click(); }}>⬆️ Upload</button>
                             <button
                                 style={styles.actionButton}
                                 onClick={async () => {
+                                    console.log(LOG_PREFIX, 'CLICK Camera button');
                                     try {
                                         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } });
-                                        // Create a modal for camera capture
+                                        console.log(LOG_PREFIX, 'CAMERA stream obtained | tracks:', stream.getTracks().map(t => ({ kind: t.kind, label: t.label, enabled: t.enabled })));
                                         const modal = document.createElement('div');
                                         modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)';
                                         const box = document.createElement('div');
@@ -369,7 +461,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         const closeBtn = document.createElement('button');
                                         closeBtn.textContent = '×';
                                         closeBtn.style.cssText = 'color:white;font-size:20px;font-weight:700;background:none;border:none;cursor:pointer';
-                                        closeBtn.onclick = () => { stream.getTracks().forEach(t => t.stop()); document.body.removeChild(modal); };
+                                        closeBtn.onclick = () => { console.log(LOG_PREFIX, 'CAMERA modal closed by × button'); stream.getTracks().forEach(t => t.stop()); document.body.removeChild(modal); };
                                         header.appendChild(closeBtn);
                                         const videoWrap = document.createElement('div');
                                         videoWrap.style.cssText = 'padding:16px';
@@ -379,6 +471,8 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         video.playsInline = true;
                                         video.muted = true;
                                         video.style.cssText = 'width:100%;border-radius:8px;background:black;max-height:300px;object-fit:contain';
+                                        video.onloadedmetadata = () => console.log(LOG_PREFIX, 'CAMERA video metadata loaded | video size:', video.videoWidth, 'x', video.videoHeight);
+                                        video.onclick = () => console.log(LOG_PREFIX, 'CAMERA video clicked');
                                         videoWrap.appendChild(video);
                                         const btnWrap = document.createElement('div');
                                         btnWrap.style.cssText = 'display:flex;justify-content:center;padding:0 16px 16px';
@@ -386,6 +480,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         captureBtn.textContent = '📷 CAPTURE';
                                         captureBtn.style.cssText = 'padding:12px 32px;background:#22c55e;color:white;border:none;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer';
                                         captureBtn.onclick = async () => {
+                                            console.log(LOG_PREFIX, 'CAMERA capture clicked | video size:', video.videoWidth, 'x', video.videoHeight);
                                             const offscreen = document.createElement('canvas');
                                             offscreen.width = video.videoWidth;
                                             offscreen.height = video.videoHeight;
@@ -394,7 +489,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                                 ctx.drawImage(video, 0, 0);
                                                 const dataUrl = offscreen.toDataURL('image/png');
                                                 const name = `camera_${selectedSprite.costumes.length + 1}`;
+                                                console.log(LOG_PREFIX, 'CAMERA captured | dataUrl length:', dataUrl.length, '| name:', name, '| costume count before:', selectedSprite.costumes.length);
                                                 await selectedSprite.addCostume(name, dataUrl);
+                                                console.log(LOG_PREFIX, 'CAMERA addCostume DONE | costumes after:', selectedSprite.costumes.map(c => c.name));
                                                 selectCostume(selectedSprite.costumes.length - 1);
                                                 addLog(`Captured camera costume: ${name}`);
                                             }
@@ -407,7 +504,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         box.appendChild(btnWrap);
                                         modal.appendChild(box);
                                         document.body.appendChild(modal);
+                                        console.log(LOG_PREFIX, 'CAMERA modal appended to body');
                                     } catch (err) {
+                                        console.log(LOG_PREFIX, 'CAMERA error:', err);
                                         alert('Camera access denied or not available.');
                                     }
                                 }}
@@ -446,11 +545,11 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             left: `${contextMenu.x}px`,
                             top: `${contextMenu.y}px`
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => { console.log(LOG_PREFIX, 'CONTEXT MENU clicked inside - stopping propagation'); e.stopPropagation(); }}
                     >
-                        <button style={styles.menuItem} onClick={() => { duplicateCostume(contextMenu.index); setContextMenu(null); }}>Duplicate</button>
-                        <button style={styles.menuItem} onClick={() => { exportCostume(contextMenu.index); setContextMenu(null); }}>Export</button>
-                        <button style={{ ...styles.menuItem, color: '#d14343' }} onClick={() => { deleteCostume(contextMenu.index); setContextMenu(null); }}>Delete</button>
+                        <button style={styles.menuItem} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Duplicate | index:', contextMenu.index); duplicateCostume(contextMenu.index); setContextMenu(null); }}>Duplicate</button>
+                        <button style={styles.menuItem} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Export | index:', contextMenu.index); exportCostume(contextMenu.index); setContextMenu(null); }}>Export</button>
+                        <button style={{ ...styles.menuItem, color: '#d14343' }} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Delete | index:', contextMenu.index); deleteCostume(contextMenu.index); setContextMenu(null); }}>Delete</button>
                     </div>
                 )}
             </div>
@@ -458,8 +557,13 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     }
 
     // Fallback if nothing is selected
+    console.log(LOG_PREFIX, 'RENDER FALLBACK - no sprite selected | selectedSpriteId:', selectedSpriteId, '| sprites:', sprites.map(s => s.id));
+    const handleFallbackClick = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        console.log(LOG_PREFIX, 'FALLBACK CLICK on:', target.tagName, target.className, '| text:', target.textContent?.slice?.(0, 30), '| pos:', e.clientX, e.clientY);
+    };
     return (
-        <div style={styles.container}>
+        <div style={styles.container} onClick={handleFallbackClick}>
             <div style={styles.placeholder}>
                 <span style={{ fontSize: '48px' }}>🎨</span>
                 <h3>No Sprite Selected</h3>

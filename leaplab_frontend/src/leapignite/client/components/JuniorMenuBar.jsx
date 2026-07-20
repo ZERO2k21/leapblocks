@@ -15,128 +15,131 @@ import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../../components/common/TopbarShareButton';
 import DropdownMenu from './DropdownMenu';
 
-// ── Style Constants ────────────────────────────────────────────────────────
-const BAR_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 64,
-    padding: '0 18px',
-    background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-    boxShadow: '0 4px 20px rgba(8,10,37,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)',
-    zIndex: 100,
-    borderBottom: '1px solid rgba(100,180,255,0.1)',
+const styles = {
+    bar: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 68,
+        padding: '0 28px',
+        background: 'linear-gradient(135deg, #0a015a 0%, #0f0b3a 50%, #080a25 100%)',
+        boxShadow: '0 4px 24px rgba(8,10,37,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+        zIndex: 100,
+        borderBottom: '1px solid rgba(120,160,255,0.08)',
+    },
+    homeBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 40,
+        height: 40,
+        background: 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 12,
+        color: 'rgba(255,255,255,0.8)',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        flexShrink: 0,
+    },
+    separator: { height: 32, width: 1, background: 'rgba(255,255,255,0.08)', flexShrink: 0 },
+    logoWrapper: {
+        display: 'flex',
+        alignItems: 'center',
+        marginRight: 14,
+        flexShrink: 0,
+    },
+    logoText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 900,
+        letterSpacing: '0.08em',
+        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+    },
+    projectWrapper: {
+        display: 'flex',
+        alignItems: 'center',
+        height: 42,
+        background: 'rgba(0,0,0,0.3)',
+        borderRadius: 22,
+        paddingLeft: 20,
+        paddingRight: 6,
+        border: '1px solid rgba(255,255,255,0.06)',
+        gap: 10,
+        transition: 'all 0.2s',
+        backdropFilter: 'blur(4px)',
+    },
+    projectInput: {
+        background: 'transparent',
+        border: 'none',
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 700,
+        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+        width: 170,
+        textAlign: 'center',
+        outline: 'none',
+        letterSpacing: '0.01em',
+    },
+    saveBtn: {
+        background: 'linear-gradient(135deg, #10B981, #059669)',
+        border: 'none',
+        borderRadius: '50%',
+        width: 32,
+        height: 32,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: '#fff',
+        boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+        transition: 'all 0.15s',
+        flexShrink: 0,
+    },
+    utilityGroup: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        paddingRight: 20,
+        borderRight: '1px solid rgba(255,255,255,0.08)',
+        height: 32,
+        flexShrink: 0,
+    },
+    utilityBtn: {
+        background: 'transparent',
+        border: 'none',
+        color: 'rgba(255,255,255,0.45)',
+        cursor: 'pointer',
+        padding: 0,
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+    },
+    creoleapWrapper: {
+        marginLeft: 16,
+        display: 'flex',
+        alignItems: 'center',
+        flexShrink: 0,
+        height: 44,
+        overflow: 'hidden',
+    },
+    menuBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '7px 14px',
+        border: 'none',
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 13,
+        fontWeight: 600,
+        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
+        cursor: 'pointer',
+        borderRadius: 20,
+        transition: 'all 0.2s',
+        background: 'transparent',
+        letterSpacing: '0.02em',
+    },
 };
 
-const HOME_BUTTON_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 40,
-    background: 'rgba(255,255,255,0.1)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    color: '#fff',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    flexShrink: 0,
-};
-
-const SEPARATOR_STYLE = { height: 32, width: 1, background: 'rgba(255,255,255,0.1)', flexShrink: 0 };
-
-const LOGO_WRAPPER_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    marginRight: 14,
-    flexShrink: 0,
-    filter: 'drop-shadow(0 0 14px rgba(80,200,255,0.3)) drop-shadow(0 2px 6px rgba(0,0,0,0.3))',
-};
-
-const LOGO_TEXT_STYLE = {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 900,
-    letterSpacing: '0.08em',
-    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-};
-
-const PROJECT_WRAPPER_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    height: 40,
-    background: 'rgba(0,0,0,0.25)',
-    borderRadius: 20,
-    paddingLeft: 18,
-    paddingRight: 5,
-    border: '1px solid rgba(255,255,255,0.08)',
-    gap: 8,
-    transition: 'all 0.2s ease',
-};
-
-const PROJECT_INPUT_STYLE = {
-    background: 'transparent',
-    border: 'none',
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 700,
-    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-    width: 170,
-    textAlign: 'center',
-    outline: 'none',
-    letterSpacing: '0.01em',
-};
-
-const SAVE_BTN_STYLE = {
-    background: 'linear-gradient(135deg, #10B981, #059669)',
-    border: 'none',
-    borderRadius: '50%',
-    width: 30,
-    height: 30,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    color: '#fff',
-    boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
-    transition: 'all 0.15s ease',
-    flexShrink: 0,
-};
-
-const UTILITY_GROUP_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    paddingRight: 16,
-    borderRight: '1px solid rgba(255,255,255,0.1)',
-    height: 32,
-    flexShrink: 0,
-};
-
-const UTILITY_BTN_STYLE = {
-    background: 'transparent',
-    border: 'none',
-    color: 'rgba(255,255,255,0.55)',
-    cursor: 'pointer',
-    padding: 0,
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-};
-
-const CREOLEAP_WRAPPER_STYLE = {
-    marginLeft: 14,
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: 0,
-    height: '44px',
-    overflow: 'hidden',
-    filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// JUNIOR MENUBAR — Simplified for young children (no hardware)
-// ═══════════════════════════════════════════════════════════════════════════
 export default function JuniorMenuBar({
     projectName = "My Project",
     onProjectNameChange,
@@ -156,10 +159,7 @@ export default function JuniorMenuBar({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const toggleMenu = (menu) => {
-        setOpenMenu(openMenu === menu ? null : menu);
-    };
-
+    const toggleMenu = (menu) => setOpenMenu(openMenu === menu ? null : menu);
     const closeMenu = () => setOpenMenu(null);
 
     const fileMenuItems = [
@@ -172,8 +172,7 @@ export default function JuniorMenuBar({
         { label: 'Share', icon: Share, onClick: () => onFileAction?.('share to') },
         { divider: true },
         {
-            label: 'My Projects',
-            icon: FolderOpen,
+            label: 'My Projects', icon: FolderOpen,
             onClick: () => {
                 sessionStorage.setItem('landingActiveTab', 'my-projects');
                 sessionStorage.setItem('myProjectsSelectedMode', 'junior');
@@ -194,39 +193,27 @@ export default function JuniorMenuBar({
     ];
 
     const renderLeftSection = () => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
             <button
                 onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     onBack?.();
                 }}
-                style={HOME_BUTTON_STYLE}
-                onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                }}
+                style={styles.homeBtn}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; }}
                 title="Back to Home"
             >
                 <Home size={20} strokeWidth={2.2} />
             </button>
 
-            <div style={SEPARATOR_STYLE} />
+            <div style={styles.separator} />
 
-            <div style={LOGO_WRAPPER_STYLE}>
+            <div style={styles.logoWrapper}>
                 <Logo height={48} />
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    marginLeft: 10,
-                    lineHeight: 1.1,
-                }}>
-                    <span style={LOGO_TEXT_STYLE}>IGNITE</span>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: 12, lineHeight: 1.1 }}>
+                    <span style={styles.logoText}>IGNITE</span>
                 </div>
             </div>
 
@@ -258,19 +245,19 @@ export default function JuniorMenuBar({
     );
 
     const renderCenterSection = () => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            <div style={PROJECT_WRAPPER_STYLE}>
-                <span style={{ fontSize: 14, opacity: 0.45 }}>📁</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+            <div style={styles.projectWrapper}>
+                <span style={{ fontSize: 14, opacity: 0.4 }}>📁</span>
                 <input
                     type="text"
                     value={projectName}
                     onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    style={PROJECT_INPUT_STYLE}
+                    style={styles.projectInput}
                     placeholder="My Project"
                 />
                 <button
                     onClick={() => onFileAction?.('save')}
-                    style={SAVE_BTN_STYLE}
+                    style={styles.saveBtn}
                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     title="Save Project"
@@ -283,19 +270,13 @@ export default function JuniorMenuBar({
 
     const renderRightSection = () => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20, flex: 1, minWidth: 0 }}>
-            <div style={UTILITY_GROUP_STYLE}>
+            <div style={styles.utilityGroup}>
                 <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
                     {({ onClick, loading }) => (
                         <button
-                            style={UTILITY_BTN_STYLE}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.transform = 'scale(1.15)';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
+                            style={styles.utilityBtn}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.transform = 'scale(1)'; }}
                             onClick={onClick}
                             disabled={loading}
                             title="Share project"
@@ -312,15 +293,9 @@ export default function JuniorMenuBar({
                 ].map(({ Icon, title }) => (
                     <button
                         key={title}
-                        style={UTILITY_BTN_STYLE}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.color = '#fff';
-                            e.currentTarget.style.transform = 'scale(1.15)';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }}
+                        style={styles.utilityBtn}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.transform = 'scale(1)'; }}
                         title={title}
                     >
                         <Icon size={20} strokeWidth={2.2} />
@@ -328,20 +303,21 @@ export default function JuniorMenuBar({
                 ))}
             </div>
 
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '16px', boxSizing: 'border-box' }} />
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '18px', boxSizing: 'border-box' }} />
 
             {showCreoleap && (
-                <div style={CREOLEAP_WRAPPER_STYLE}>
+                <div style={styles.creoleapWrapper}>
                     <img
                         src="assets/logo-creoleap.png"
                         alt="CREOLEAP"
                         style={{
-                            width: '145px',
+                            width: '150px',
                             height: 'auto',
                             objectFit: 'contain',
                             display: 'block',
                             flexShrink: 0,
-                            filter: 'brightness(1.2) contrast(1.06)',
+                            opacity: 0.9,
+                            filter: 'brightness(1.1) contrast(1.04)',
                         }}
                     />
                 </div>
@@ -350,7 +326,7 @@ export default function JuniorMenuBar({
     );
 
     return (
-        <div style={BAR_STYLE}>
+        <div style={styles.bar}>
             {renderLeftSection()}
             {renderCenterSection()}
             {renderRightSection()}

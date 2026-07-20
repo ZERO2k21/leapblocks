@@ -11,147 +11,164 @@ import Logo from '../../../components/Logo';
 import { showToast } from './Toast';
 import ActionIcon from './ActionIcon';
 
-// ── Style Constants ────────────────────────────────────────────────────────
-const PANEL_STYLE = {
-    width: "40%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    borderLeft: "1px solid #ddd",
-    overflow: "hidden",
-    position: "relative",
-};
-
-const GRID_OVERLAY_STYLE = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    backgroundImage: "linear-gradient(to right, #d5d5d5 1px, transparent 1px), linear-gradient(to bottom, #d5d5d5 1px, transparent 1px)",
-    backgroundSize: "calc(100% / 20) calc(100% / 20)",
-    pointerEvents: "none",
-    zIndex: 2,
-};
-
-const FULLSCREEN_TOPBAR_STYLE = {
-    position: 'absolute', top: 0, left: 0, width: '100%', height: '64px',
-    background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 16px', zIndex: 100,
-};
-
-const SPRITES_PANEL_STYLE = {
-    background: "#f2f2f2",
-    borderTop: "1px solid #e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 12px",
-    gap: "10px",
-    overflowX: "auto",
-    minHeight: "100px",
-};
-
-const SCENES_PANEL_STYLE = {
-    background: "#f2f2f2",
-    borderTop: "1px solid #e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 12px",
-    gap: "10px",
-    overflowX: "auto",
-    minHeight: "100px",
-};
-
-const ACTION_BAR_STYLE = {
-    background: "#fafafa",
-    borderTop: "1px solid #e0e0e0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "10px 16px",
-    gap: "16px",
-};
-
-const ADD_SPRITE_STYLE = {
-    width: "48px",
-    height: "48px",
-    background: "white",
-    border: "2px dashed #ccc",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    flexShrink: 0,
-    position: "relative",
-    transition: "border-color 0.2s",
-};
-
-const ADD_SPRITE_BADGE_STYLE = {
-    position: "absolute", top: "-4px", right: "-4px",
-    width: "16px", height: "16px", borderRadius: "50%",
-    background: "#7B4FC4", color: "white",
-    fontSize: "12px", fontWeight: "bold",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    lineHeight: 1,
-};
-
-const ADD_SCENE_STYLE = {
-    width: "52px",
-    height: "80px",
-    background: "white",
-    border: "2px dashed #ccc",
-    borderRadius: "12px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    flexShrink: 0,
-    position: "relative",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-    gap: "4px",
-};
-
-const ADD_SCENE_BADGE_STYLE = {
-    position: "absolute", top: "-5px", right: "-5px",
-    width: "18px", height: "18px", borderRadius: "50%",
-    background: "#7B4FC4", color: "white",
-    fontSize: "13px", fontWeight: "bold",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
-};
-
-const CROSSHAIR_V_LINE_STYLE = {
-    position: "absolute",
-    width: "1px",
-    height: "100%",
-    background: "rgba(123,79,196,0.35)",
-    pointerEvents: "none",
-    zIndex: 40,
-};
-
-const CROSSHAIR_H_LINE_STYLE = {
-    ...CROSSHAIR_V_LINE_STYLE,
-    width: "100%",
-    height: "1px",
-};
-
-const COORDINATE_LABEL_STYLE = {
-    position: "absolute",
-    transform: "translate(8px, -28px)",
-    background: "#7B4FC4",
-    color: "white",
-    fontSize: "10px",
-    fontWeight: "700",
-    padding: "2px 6px",
-    borderRadius: "4px",
-    pointerEvents: "none",
-    zIndex: 45,
-    whiteSpace: "nowrap",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+const styles = {
+    panel: {
+        width: "40%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderLeft: "1px solid #e4e7ed",
+        overflow: "hidden",
+        position: "relative",
+        background: "#f8f9fc",
+    },
+    gridOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundImage: "linear-gradient(to right, #d5d5d5 1px, transparent 1px), linear-gradient(to bottom, #d5d5d5 1px, transparent 1px)",
+        backgroundSize: "calc(100% / 20) calc(100% / 20)",
+        pointerEvents: "none",
+        zIndex: 2,
+    },
+    fullscreenTopbar: {
+        position: 'absolute', top: 0, left: 0, width: '100%', height: '64px',
+        background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px', zIndex: 100,
+    },
+    spritesPanel: {
+        background: "#ffffff",
+        borderTop: "1px solid #e8ecf2",
+        display: "flex",
+        alignItems: "center",
+        padding: "12px 16px",
+        gap: "10px",
+        overflowX: "auto",
+        minHeight: "106px",
+    },
+    scenesPanel: {
+        background: "#ffffff",
+        borderTop: "1px solid #e8ecf2",
+        display: "flex",
+        alignItems: "center",
+        padding: "12px 16px",
+        gap: "10px",
+        overflowX: "auto",
+        minHeight: "106px",
+    },
+    actionBar: {
+        background: "#ffffff",
+        borderTop: "1px solid #e8ecf2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "12px 16px",
+        gap: "14px",
+        boxShadow: "0 -1px 4px rgba(0,0,0,0.02)",
+    },
+    addSprite: {
+        width: "52px",
+        height: "52px",
+        background: "#f8f9fc",
+        border: "2px dashed #d0d5dd",
+        borderRadius: "12px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+        position: "relative",
+        transition: "border-color 0.2s, background 0.2s",
+    },
+    addSpriteBadge: {
+        position: "absolute", top: "-4px", right: "-4px",
+        width: "18px", height: "18px", borderRadius: "50%",
+        background: "#7B4FC4", color: "white",
+        fontSize: "12px", fontWeight: "bold",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+    },
+    addScene: {
+        width: "56px",
+        height: "84px",
+        background: "#f8f9fc",
+        border: "2px dashed #d0d5dd",
+        borderRadius: "12px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+        position: "relative",
+        transition: "border-color 0.2s, background 0.2s, box-shadow 0.2s",
+        gap: "4px",
+    },
+    addSceneBadge: {
+        position: "absolute", top: "-5px", right: "-5px",
+        width: "20px", height: "20px", borderRadius: "50%",
+        background: "#7B4FC4", color: "white",
+        fontSize: "13px", fontWeight: "bold",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
+    },
+    crosshairV: {
+        position: "absolute",
+        width: "1px",
+        height: "100%",
+        background: "rgba(123,79,196,0.35)",
+        pointerEvents: "none",
+        zIndex: 40,
+    },
+    crosshairH: {
+        position: "absolute",
+        width: "100%",
+        height: "1px",
+        background: "rgba(123,79,196,0.35)",
+        pointerEvents: "none",
+        zIndex: 40,
+    },
+    coordLabel: {
+        position: "absolute",
+        transform: "translate(8px, -28px)",
+        background: "linear-gradient(135deg, #7B4FC4, #6B3FAF)",
+        color: "white",
+        fontSize: "10px",
+        fontWeight: "700",
+        padding: "3px 8px",
+        borderRadius: "6px",
+        pointerEvents: "none",
+        zIndex: 45,
+        whiteSpace: "nowrap",
+        boxShadow: "0 2px 8px rgba(123,79,196,0.3)",
+    },
+    yAxis: {
+        width: "24px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "6px 0",
+        fontSize: "9px",
+        color: "#999",
+        background: "#f0f2f8",
+        borderRight: "1px solid #e4e7ed",
+    },
+    xAxis: {
+        height: "20px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "0 6px",
+        fontSize: "9px",
+        color: "#999",
+        background: "#f0f2f8",
+        borderTop: "1px solid #e4e7ed",
+    },
 };
 
 export default function RightPanel({
@@ -187,7 +204,7 @@ export default function RightPanel({
 }) {
 
     const renderYAxisLabels = () => (
-        <div style={{ width: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: "9px", color: "#999" }}>
+        <div style={styles.yAxis}>
             {Array.from({ length: 23 }, (_, i) => 23 - i).map(n => {
                 const isHighlighted = isDraggingSprite && spriteGridY !== null && Math.round(spriteGridY) === n;
                 return (
@@ -197,8 +214,8 @@ export default function RightPanel({
                         fontSize: isHighlighted ? "11px" : "9px",
                         background: isHighlighted ? "#7B4FC4" : "transparent",
                         borderRadius: "4px",
-                        padding: isHighlighted ? "1px 3px" : "0",
-                        transition: "all 0.12s ease",
+                        padding: isHighlighted ? "1px 4px" : "0",
+                        transition: "all 0.12s",
                     }}>{n}</span>
                 );
             })}
@@ -206,7 +223,7 @@ export default function RightPanel({
     );
 
     const renderXAxisLabels = () => (
-        <div style={{ height: "18px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 5px", fontSize: "9px", color: "#999" }}>
+        <div style={styles.xAxis}>
             {Array.from({ length: 21 }, (_, i) => i).map(n => {
                 const isHighlighted = isDraggingSprite && spriteGridX !== null && Math.round(spriteGridX) === n;
                 return (
@@ -214,24 +231,22 @@ export default function RightPanel({
                         color: isHighlighted ? "#fff" : (n % 5 === 0 ? "#7B4FC4" : "#bbb"),
                         fontWeight: isHighlighted ? "800" : "normal",
                         fontSize: isHighlighted ? "11px" : "9px",
-                        minWidth: "12px",
+                        minWidth: "14px",
                         textAlign: "center",
                         background: isHighlighted ? "#7B4FC4" : "transparent",
                         borderRadius: "4px",
-                        padding: isHighlighted ? "1px 3px" : "0",
-                        transition: "all 0.12s ease",
+                        padding: isHighlighted ? "1px 4px" : "0",
+                        transition: "all 0.12s",
                     }}>{n}</span>
                 );
             })}
         </div>
     );
 
-    const renderGridLines = () => showGrid && (
-        <div style={GRID_OVERLAY_STYLE} />
-    );
+    const renderGridLines = () => showGrid && <div style={styles.gridOverlay} />;
 
     const renderFullscreenOverlay = () => isFullscreen && (
-        <div style={FULLSCREEN_TOPBAR_STYLE}>
+        <div style={styles.fullscreenTopbar}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <button onClick={onFullscreen} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                     <div style={{ width: '42px', height: '42px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -273,9 +288,9 @@ export default function RightPanel({
 
     const renderCrosshair = () => isDraggingSprite && spriteGridX !== null && spriteGridY !== null && showGrid && (
         <>
-            <div style={{ ...CROSSHAIR_V_LINE_STYLE, left: `${(spriteGridX / 20) * 100}%` }} />
-            <div style={{ ...CROSSHAIR_H_LINE_STYLE, top: `${((20 - spriteGridY) / 20) * 100}%` }} />
-            <div style={{ ...COORDINATE_LABEL_STYLE, left: `${(spriteGridX / 20) * 100}%`, top: `${((20 - spriteGridY) / 20) * 100}%` }}>
+            <div style={{ ...styles.crosshairV, left: `${(spriteGridX / 20) * 100}%` }} />
+            <div style={{ ...styles.crosshairH, top: `${((20 - spriteGridY) / 20) * 100}%` }} />
+            <div style={{ ...styles.coordLabel, left: `${(spriteGridX / 20) * 100}%`, top: `${((20 - spriteGridY) / 20) * 100}%` }}>
                 ({Math.round(spriteGridX)}, {Math.round(spriteGridY)})
             </div>
         </>
@@ -284,31 +299,31 @@ export default function RightPanel({
     const renderAddSpriteButton = () => (
         <div
             onClick={onAddSprite}
-            style={ADD_SPRITE_STYLE}
+            style={styles.addSprite}
             title="Add Sprite"
-            onMouseEnter={e => e.currentTarget.style.borderColor = "#7B4FC4"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "#ccc"}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.background = "#f3effa"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#d0d5dd"; e.currentTarget.style.background = "#f8f9fc"; }}
         >
             <span style={{ fontSize: "26px", filter: "grayscale(0.5)" }}>🤖</span>
-            <span style={ADD_SPRITE_BADGE_STYLE}>+</span>
+            <span style={styles.addSpriteBadge}>+</span>
         </div>
     );
 
     const renderAddSceneButton = () => (
         <div
             onClick={onAddScene}
-            style={ADD_SCENE_STYLE}
+            style={styles.addScene}
             title="Add Scene"
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(123,79,196,0.2)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ccc"; e.currentTarget.style.boxShadow = "none"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.background = "#f3effa"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(123,79,196,0.15)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#d0d5dd"; e.currentTarget.style.background = "#f8f9fc"; e.currentTarget.style.boxShadow = "none"; }}
         >
             <span style={{ fontSize: "24px" }}>🎬</span>
-            <span style={ADD_SCENE_BADGE_STYLE}>+</span>
+            <span style={styles.addSceneBadge}>+</span>
         </div>
     );
 
     const renderSpritesPanel = () => (
-        <div style={SPRITES_PANEL_STYLE} className='slim-scrollbar'>
+        <div style={styles.spritesPanel} className='slim-scrollbar'>
             {renderAddSpriteButton()}
             {sprites.map(sprite => (
                 <SpriteCard
@@ -327,7 +342,7 @@ export default function RightPanel({
     );
 
     const renderScenesPanel = () => (
-        <div style={SCENES_PANEL_STYLE} className='slim-scrollbar'>
+        <div style={styles.scenesPanel} className='slim-scrollbar'>
             {renderAddSceneButton()}
             {scenes.map(scene => (
                 <SceneCard
@@ -343,7 +358,7 @@ export default function RightPanel({
     );
 
     const renderActionBar = () => (
-        <div style={ACTION_BAR_STYLE}>
+        <div style={styles.actionBar}>
             {isRunning ? (
                 <ActionIcon
                     icon={<Square size={22} fill="#fff" stroke="#fff" />}
@@ -398,18 +413,19 @@ export default function RightPanel({
     );
 
     return (
-        <div style={PANEL_STYLE}>
-            <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f5f5f5" }}>
+        <div style={styles.panel}>
+            <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f0f2f8" }}>
                 {showGrid && renderYAxisLabels()}
 
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                     <div style={{
                         flex: 1,
                         position: "relative",
-                        background: "#fafafa",
-                        border: showGrid ? "1px solid #d0d0d0" : "none",
-                        borderRadius: "6px",
+                        background: "#ffffff",
+                        border: showGrid ? "1px solid #e4e7ed" : "none",
+                        borderRadius: "4px",
                         overflow: "hidden",
+                        margin: showGrid ? "6px 6px 0 0" : "0",
                     }}>
                         {renderGridLines()}
                         {renderFullscreenOverlay()}

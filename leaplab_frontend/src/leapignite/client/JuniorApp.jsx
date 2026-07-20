@@ -53,11 +53,6 @@ const TUTORIALS = {
     'make_sounds': makeSoundsTutorial
 };
 
-// Import styles
-import "./styles/juniorBlocks.css";
-import "./styles/positionPicker.css";
-import "./styles/directionPicker.css";
-import "./styles/juniorLooksBlocks.css";
 import "../../components/workspace/WorkspaceControls.css";
 
 // Robot Assets
@@ -665,15 +660,72 @@ function JuniorAppInner({ onBack, projectUrl }) {
 
 
     return (
-        <div className="junior-mode" style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
-            <style>
-                {`
-                    @keyframes pulse {
-                        from { opacity: 0.5; transform: scale(1); }
-                        to { opacity: 0.8; transform: scale(1.05); }
-                    }
-                `}
-            </style>
+        <div className="junior-mode" style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#f8f9fc" }}>
+            <style>{`
+                @keyframes pulse { from { opacity:0.5; transform:scale(1); } to { opacity:0.8; transform:scale(1.05); } }
+
+                .junior-mode .blocklySvg .blocklyBlockBackground { rx:12px !important; ry:12px !important; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+                .junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon):not(.junior-icon):not(.junior-icon-large) { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:13px; font-weight:700; fill:#fff !important; overflow-wrap:break-word !important; word-break:break-word !important; }
+                .junior-mode .blocklyDropdownText { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif !important; font-size:13px !important; font-weight:700 !important; }
+                .junior-mode .blocklyBlock { min-width:100px; margin-bottom:8px; }
+                .junior-mode .blocklySvg text.blocklyText { pointer-events:none; }
+                .junior-mode .blocklyFlyout .blocklyBlock { min-width:100px; }
+                .junior-mode .blocklyFlyout text.blocklyText { pointer-events:none; }
+                .junior-mode .blocklySvg image, .junior-mode .blocklySvg .junior-icon, .junior-mode .blocklySvg .junior-icon-large, .junior-mode .blocklySvg .junior-block-icon { margin-right:6px; }
+                .junior-mode .blocklyEditableText>rect { fill:#fff !important; stroke:none !important; rx:14px !important; ry:14px !important; fill-opacity:1 !important; stroke-width:0 !important; }
+                .junior-mode .blocklyEditableText:hover>rect { stroke:#ddd !important; stroke-width:2px !important; }
+                .junior-mode .blocklyEditableText>text, .junior-mode .blocklyEditableText>text.blocklyText, .junior-mode .blocklyNonEditableText>text, .junior-mode .blocklyNonEditableText>text.blocklyText, .junior-mode g[class*="blocklyEditableText"]>text, .junior-mode g[class*="blocklyNonEditableText"]>text { fill:#000 !important; font-size:13px !important; font-weight:700 !important; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif !important; transform:translateY(2px); }
+                .junior-mode .blocklyEditableText>rect, .junior-mode .blocklyNonEditableText>rect { fill:#fff !important; stroke:none !important; rx:14px !important; ry:14px !important; fill-opacity:1 !important; stroke-width:0 !important; }
+                .junior-mode .blocklyPath { stroke-width:0 !important; }
+                .junior-mode .blocklyBlockCanvas .blocklyBlock { margin-top:2px; }
+                .junior-mode .blocklyToolboxDiv { transform:scale(1) !important; background:#f5f5f5 !important; border-top:1px solid #e0e0e0 !important; padding:0 !important; }
+                .junior-mode .blocklyFlyout { transform-origin:left top !important; z-index:50 !important; }
+                .junior-mode .blocklyFlyout .blocklyFlyoutBlock { transform:scale(1) !important; }
+                .junior-mode .blocklySvg .junior-icon, .junior-mode .blocklySvg .junior-block-icon { font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI',sans-serif !important; font-size:16px !important; font-weight:700 !important; fill:white !important; }
+                .junior-mode .blocklySvg .junior-icon-large { font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI',sans-serif !important; font-size:18px !important; font-weight:700 !important; fill:white !important; }
+                .junior-mode .blocklyFlyoutBackground { fill:#f0f0f0 !important; fill-opacity:0.97 !important; stroke:#e0e0e0 !important; stroke-width:1 !important; }
+                .junior-mode .blocklyFlyout .blocklyScrollbarHandle { fill:#c0c0c0 !important; rx:4px !important; ry:4px !important; }
+                .junior-mode .blocklyFlyout .blocklyScrollbarBackground { fill:transparent !important; }
+                .junior-mode .blocklySvg { width:100% !important; height:100% !important; }
+                .junior-mode .blocklyMainWorkspaceScrollbar .blocklyScrollbarHorizontal { height:8px !important; }
+                .junior-mode .blocklyFlyout .blocklyDraggable { cursor:grab !important; }
+                .junior-mode .blocklyFlyout .blocklyDraggable:active { cursor:grabbing !important; }
+
+                .junior-mode .no-scrollbar::-webkit-scrollbar { display:none; }
+                .junior-mode .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+                .junior-mode .slim-scrollbar::-webkit-scrollbar { height:4px; }
+                .junior-mode .slim-scrollbar::-webkit-scrollbar-track { background:transparent; }
+                .junior-mode .slim-scrollbar::-webkit-scrollbar-thumb { background:#c4c4c4; border-radius:4px; }
+                .junior-mode .slim-scrollbar::-webkit-scrollbar-thumb:hover { background:#a0a0a0; }
+                .junior-mode .slim-scrollbar { scrollbar-width:thin; scrollbar-color:#c4c4c4 transparent; }
+
+                .junior-mode g[data-category="looks"] .blocklyBlockBackground { fill:#9B5DE5 !important; }
+                .junior-mode g[data-category="looks"] .blocklyPath { stroke:#7B44C7; stroke-width:1px; }
+                .junior-mode g[data-category="looks"] text.blocklyText { fill:#fff !important; font-weight:700; }
+                .junior-mode g[data-category="looks"] .blocklyEditableText > rect { fill:white !important; rx:14; ry:14; stroke:none; }
+                .junior-mode g[data-category="looks"] .blocklyEditableText > text.blocklyText { fill:#5A2D82 !important; font-weight:700; }
+                .junior-mode g[data-category="looks"] .blocklyDropdownText { fill:#5A2D82 !important; }
+
+                .junior-mode g[data-category="sound"] .blocklyBlockBackground { fill:#CF63CF !important; }
+                .junior-mode g[data-category="sound"] .blocklyPath { stroke:#A84DA0; stroke-width:1px; }
+                .junior-mode g[data-category="sound"] text.blocklyText { fill:#fff !important; font-weight:700; }
+
+                .junior-mode g[data-category="control"] .blocklyBlockBackground { fill:#FFAB19 !important; }
+                .junior-mode g[data-category="control"] .blocklyPath { stroke:#CF8B00; stroke-width:1px; }
+                .junior-mode g[data-category="control"] text.blocklyText { fill:#fff !important; font-weight:700; }
+
+                .junior-mode g[data-category="events"] .blocklyBlockBackground { fill:#FFBF00 !important; }
+                .junior-mode g[data-category="events"] .blocklyPath { stroke:#CC9900; stroke-width:1px; }
+                .junior-mode g[data-category="events"] text.blocklyText { fill:#fff !important; font-weight:700; }
+
+                .junior-mode g[data-category="pen"] .blocklyBlockBackground { fill:#0FBD8C !important; }
+                .junior-mode g[data-category="pen"] .blocklyPath { stroke:#0A8C6A; stroke-width:1px; }
+                .junior-mode g[data-category="pen"] text.blocklyText { fill:#fff !important; font-weight:700; }
+
+                .junior-mode g[data-category="motion"] .blocklyBlockBackground { fill:#4C97FF !important; }
+                .junior-mode g[data-category="motion"] .blocklyPath { stroke:#3A7BD5; stroke-width:1px; }
+                .junior-mode g[data-category="motion"] text.blocklyText { fill:#fff !important; font-weight:700; }
+            `}</style>
             <input type="file" ref={project.fileInputRef} style={{ display: "none" }} accept=".json" onChange={project.handleFileLoad} />
 
             <JuniorMenuBar
@@ -743,34 +795,33 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 />
             )}
 
-            <div style={{ flex: 1, display: "flex", overflow: 'visible' }}>
-                <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative", zIndex: 20, overflow: 'visible' }}>
+            <div style={{ flex: 1, display: "flex", overflow: 'hidden', gap: 0 }}>
+                <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative", zIndex: 20, overflow: 'hidden', background: '#f0f2f8' }}>
                     <SpriteCostumePreview sprites={sprites} activeSpriteId={activeSpriteId} />
                     <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
 
-                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: `${wp.flyoutHeight + 105}px`, right: '14px' }} />
+                    <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: `${wp.flyoutHeight + 110}px`, right: '16px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
-
 
                     <div className="junior-toolbar" style={{
                         position: "absolute",
-                        left: "14px",
-                        right: "14px",
+                        left: "16px",
+                        right: "16px",
                         bottom: `${wp.flyoutHeight}px`,
-                        height: "56px",
+                        height: "58px",
                         display: "flex",
                         flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "space-between",
                         zIndex: 90,
-                        background: "#f4f4f4",
-                        border: "1px solid #e0e0e0",
-                        padding: "0 0 0 8px",
-                        borderRadius: "30px",
-                        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                        background: "#ffffff",
+                        border: "1px solid #e8ecf2",
+                        padding: "0 0 0 6px",
+                        borderRadius: "16px",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
                         overflow: "hidden"
                     }}>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "10px" }} className="no-scrollbar">
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "8px", paddingLeft: "4px" }} className="no-scrollbar">
                             {wp.categories.map((cat, i) => (
                                 <CategoryButton key={cat.id || i} category={cat} isActive={wp.activeCategory === cat.id} onClick={() => wp.handleCategoryClick(cat.id)} />
                             ))}
@@ -781,25 +832,29 @@ function JuniorAppInner({ onBack, projectUrl }) {
                             onClick={() => wp.setIsExtensionLibraryOpen(true)}
                             title="Add More Blocks"
                             style={{
-                                width: "68px",
-                                height: "58px",
-                                background: "#0a015a",
+                                width: "56px",
+                                height: "46px",
+                                background: "linear-gradient(135deg, #0a015a, #1a0a7a)",
                                 border: "none",
+                                borderRadius: "10px",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                transition: "all 0.15s",
+                                transition: "all 0.2s",
                                 position: "relative",
-                                flexShrink: 0
+                                flexShrink: 0,
+                                marginLeft: "auto",
+                                marginRight: "6px",
+                                boxShadow: "0 2px 8px rgba(10,1,90,0.2)"
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "#0c0175"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "#0a015a"; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg, #12017a, #2a0a9a)"; e.currentTarget.style.transform = "scale(1.04)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg, #0a015a, #1a0a7a)"; e.currentTarget.style.transform = "scale(1)"; }}
                         >
-                            <svg width="26" height="26" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
                                 <path d="M19 14.5a2.5 2.5 0 1 1-5 0V14h-3v4.5a2.5 2.5 0 1 1-5 0V14H4.5a2.5 2.5 0 1 1 0-5H4V6c0-1.1.9-2 2-2h3V2.5a2.5 2.5 0 1 1 5 0V4h3c1.1 0 2 .9 2 2v3h1.5a2.5 2.5 0 1 1 0 5H19v.5z" />
                             </svg>
-                            <span style={{ position: "absolute", top: "8px", right: "12px", fontWeight: "900", fontSize: "16px", color: "white", lineHeight: 1 }}>+</span>
+                            <span style={{ position: "absolute", top: "6px", right: "10px", fontWeight: "900", fontSize: "14px", color: "white", lineHeight: 1 }}>+</span>
                         </button>
                     </div>
                 </div>
