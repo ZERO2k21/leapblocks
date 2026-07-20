@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { useIsMobile } from '../../hooks/useResponsive'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
 import CaptureButton from '../components/CaptureButton'
@@ -19,6 +20,7 @@ const DETECT_THROTTLE_MS = 33 // ~30fps for detection loop
 const PREDICT_THROTTLE_MS = 500 // ~2fps for test prediction
 
 export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPanelProps) {
+    const isMobile = useIsMobile(768)
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -698,9 +700,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
+                    <div className="w-full" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
                         {/* Left half - Camera feed */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: isMobile ? '35vh' : 0 }}>
                             {/* Camera feed */}
                             <div style={{ flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', minHeight: '350px' }}>
                                 {cameraOn ? (
@@ -758,7 +760,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '100%' }} className="neura-scrollbar">
+                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '100%' }} className="neura-scrollbar">
                             {/* Tips */}
                             <div style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', borderRadius: '12px', padding: '10px 14px', border: '1px solid rgba(14,165,233,0.1)' }}>
                                 <div className="flex items-center" style={{ gap: '6px', marginBottom: '6px' }}>

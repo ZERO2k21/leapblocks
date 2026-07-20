@@ -431,14 +431,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                         <div
                                             className="flex items-center justify-center transition-transform duration-300 hover:scale-110"
                                             style={{
-                                                width: '88px',
-                                                height: '88px',
+                                                width: 'min(88px, 20vw)',
+                                                height: 'min(88px, 20vw)',
                                                 borderRadius: '1.5rem',
                                                 backgroundColor: `${item.color}10`,
                                                 border: `2px solid ${item.color}25`,
                                                 boxShadow: `0 6px 20px ${item.color}18`,
                                                 marginBottom: '20px',
-                                                fontSize: '48px'
+                                                fontSize: 'min(48px, 10vw)'
                                             }}
                                         >
                                             {item.emoji}

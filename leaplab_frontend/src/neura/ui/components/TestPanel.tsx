@@ -340,7 +340,7 @@ export default function TestPanel({
                 </div>
 
                 {/* Right - Results */}
-                <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ width: '100%', maxWidth: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Result card */}
                     <div style={{ ...cardStyle, padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         {prediction ? (

@@ -151,10 +151,13 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
         }
     }, [redoStack, mode])
 
-    const getRelativePos = useCallback((e: React.MouseEvent) => {
+    const getRelativePos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (!canvasRef.current) return { x: 0, y: 0 }
         const rect = canvasRef.current.getBoundingClientRect()
-        return { x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 }
+        const touch = 'touches' in e ? (e.touches[0] || (e as React.TouchEvent).changedTouches[0]) : null
+        const clientX = touch ? touch.clientX : (e as React.MouseEvent).clientX
+        const clientY = touch ? touch.clientY : (e as React.MouseEvent).clientY
+        return { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 }
     }, [])
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -162,7 +165,33 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
         if (mode.activeTool === 'box') { const pos = getRelativePos(e); saveUndoState(); setIsDrawing(true); setDrawStart(pos); setDrawCurrent(pos) }
     }, [mode.activeTool, getRelativePos, saveUndoState])
 
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        if (mode.activeTool === 'delete') return
+        if (mode.activeTool === 'box') {
+            const pos = getRelativePos(e); saveUndoState(); setIsDrawing(true); setDrawStart(pos); setDrawCurrent(pos)
+        }
+    }, [mode.activeTool, getRelativePos, saveUndoState])
+
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (isDrawing && drawStart) { const pos = getRelativePos(e); setDrawCurrent(pos) }
+        if (dragBox) {
+            const pos = getRelativePos(e); const dx = pos.x - dragBox.startX; const dy = pos.y - dragBox.startY
+            mode.updateBox(dragBox.boxId, { x: Math.max(0, Math.min(100 - (mode.currentAnnotation?.boxes.find(b => b.id === dragBox.boxId)?.width || 0), dragBox.origX + dx)), y: Math.max(0, Math.min(100 - (mode.currentAnnotation?.boxes.find(b => b.id === dragBox.boxId)?.height || 0), dragBox.origY + dy)) })
+        }
+        if (resizeBox) {
+            const pos = getRelativePos(e); const dx = pos.x - resizeBox.startX; const dy = pos.y - resizeBox.startY
+            const box = mode.currentAnnotation?.boxes.find(b => b.id === resizeBox.boxId)
+            if (!box) return
+            let newX = resizeBox.origX; let newY = resizeBox.origY; let newW = resizeBox.origW; let newH = resizeBox.origH
+            if (resizeBox.handle.includes('e')) newW = Math.max(2, Math.min(100 - resizeBox.origX, resizeBox.origW + dx))
+            if (resizeBox.handle.includes('w')) { newX = Math.max(0, resizeBox.origX + dx); newW = Math.max(2, resizeBox.origW - dx) }
+            if (resizeBox.handle.includes('s')) newH = Math.max(2, Math.min(100 - resizeBox.origY, resizeBox.origH + dy))
+            if (resizeBox.handle.includes('n')) { newY = Math.max(0, resizeBox.origY + dy); newH = Math.max(2, resizeBox.origH - dy) }
+            mode.updateBox(resizeBox.boxId, { x: newX, y: newY, width: newW, height: newH })
+        }
+    }, [isDrawing, drawStart, dragBox, resizeBox, getRelativePos, mode])
+
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
         if (isDrawing && drawStart) { const pos = getRelativePos(e); setDrawCurrent(pos) }
         if (dragBox) {
             const pos = getRelativePos(e); const dx = pos.x - dragBox.startX; const dy = pos.y - dragBox.startY
@@ -382,7 +411,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                         )}
 
                         {/* Canvas area */}
-                        <div ref={canvasRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDragging ? '#f0ebff' : '#f3f4f6', cursor: 'crosshair', userSelect: 'none', transition: 'background 0.2s' }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+                        <div ref={canvasRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDragging ? '#f0ebff' : '#f3f4f6', cursor: 'crosshair', userSelect: 'none', touchAction: 'none', transition: 'background 0.2s' }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleMouseUp} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
                             {annotationImage ? (
                                 <img src={annotationImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
                             ) : (

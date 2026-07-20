@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier } from '../../ml/classifiers/PoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { useIsMobile } from '../../hooks/useResponsive'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
 import CaptureButton from '../components/CaptureButton'
@@ -14,6 +15,7 @@ interface PoseClassifierPanelProps {
 }
 
 export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) {
+    const isMobile = useIsMobile(768)
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -653,7 +655,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {/* Tips */}
                             <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '8px 12px', border: '1px solid rgba(99,14,212,0.1)' }}>
                                 <div className="flex items-center" style={{ gap: '6px' }}>

@@ -479,7 +479,7 @@ export default function App() {
 
                 {switchPrompt && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+                        <div style={{ width: 'min(360px, 90vw)', borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
                             <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Switching Coding Environment</h2>
                             <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
                                 You are switching from <strong>{switchPrompt.from}</strong> into <strong>{switchPrompt.to}</strong>.
@@ -537,7 +537,7 @@ export default function App() {
 
                 {exitPrompt && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 360, borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
+                        <div style={{ width: 'min(360px, 90vw)', borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
                             <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Exit to Home?</h2>
                             <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
                                 Are you sure you want to exit? The code in the current editor will stop running.

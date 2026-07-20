@@ -4,6 +4,7 @@ import { ObjectDetector } from '../../ml/classifiers/ObjectDetector'
 import { ObjectDetectionTrainer } from '../../ml/ObjectDetectionTrainer'
 import type { DetectionTrainingState } from '../../ml/ObjectDetectionTrainer'
 import { MAX_SAMPLES_PER_CLASS, type ClassData } from '../../types/neura.types'
+import { useIsMobile } from '../../hooks/useResponsive'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
 import CaptureButton from '../components/CaptureButton'
@@ -75,6 +76,7 @@ function mapToUserClass(cocoLabel: string, userClasses: ClassData[]): string {
 const DETECT_THROTTLE_MS = 500
 
 export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) {
+    const isMobile = useIsMobile(768)
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -657,9 +659,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             </div>
 
             {/* Horizontal Split Layout */}
-            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, padding: '10px 20px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'hidden' }}>
                 {/* Left - Camera / Canvas */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, minHeight: isMobile ? '40vh' : 0 }}>
                     {/* Camera tab content */}
                     {collectTab === 'camera' && (
                         <>
@@ -928,9 +930,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             )}
 
             {/* Horizontal Split Layout */}
-            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, padding: '10px 20px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'hidden' }}>
                 {/* Left - Camera / Uploaded Image */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, minHeight: isMobile ? '40vh' : 0 }}>
                     {/* Camera / Image feed */}
                     <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0 }}>
                         {/* Live camera feed */}
@@ -1014,7 +1016,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 </div>
 
                 {/* Right - Status, Detections, Export */}
-                <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
+                <div style={{ width: isMobile ? '100%' : '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
                     {/* Custom model status */}
                     {customModelTrained && (
                         <div style={{ background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(0,108,68,0.15)', flexShrink: 0 }}>

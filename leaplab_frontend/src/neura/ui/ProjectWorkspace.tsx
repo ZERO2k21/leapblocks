@@ -491,7 +491,8 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                         <div
                             className="relative flex flex-col animate-slide-in-left"
                             style={{
-                                width: '256px',
+                                width: 'min(256px, 80vw)',
+                                maxWidth: '80vw',
                                 background: 'rgba(255,255,255,0.98)',
                                 backdropFilter: 'blur(12px)',
                                 boxShadow: '8px 0 32px rgba(0,0,0,0.12)',
@@ -591,6 +592,32 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                     </div>
                 </div>
                 <div className="flex items-center" style={{ gap: '8px' }}>
+                    <button
+                        onClick={() => {
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen?.()
+                            } else {
+                                document.documentElement.requestFullscreen?.()
+                            }
+                        }}
+                        title="Toggle fullscreen"
+                        style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            background: '#f3f4f6',
+                            color: '#374151',
+                            border: '1px solid #e5e7eb',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                        }}
+                    >
+                        <span style={{ fontSize: '12px' }}>⛶</span>
+                        <span className="hidden sm:inline">Fullscreen</span>
+                    </button>
                     <div
                         style={{
                             width: '8px',

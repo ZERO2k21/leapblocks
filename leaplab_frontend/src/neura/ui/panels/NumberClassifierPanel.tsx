@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { NumberClassifier } from '../../ml/classifiers/NumberClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { useIsMobile } from '../../hooks/useResponsive'
 import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import WorkflowIndicator from '../components/WorkflowIndicator'
@@ -13,6 +14,7 @@ interface NumberClassifierPanelProps {
 }
 
 export default function NumberClassifierPanel({ mode }: NumberClassifierPanelProps) {
+    const isMobile = useIsMobile(768)
     const drawCanvasRef = useRef<HTMLCanvasElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
     const cameraCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -672,7 +674,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {/* Input mode toggle */}
                             <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '5px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', display: 'flex', gap: '3px' }}>
                                 <button onClick={() => { if (cameraOn) stopCamera(); setInputMode('draw') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'draw' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'draw' ? '#fff' : '#6b7280', boxShadow: inputMode === 'draw' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>
@@ -862,7 +864,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
 
                         {/* Right half - Controls, Toggle, Results */}
-                        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {/* Test input mode toggle */}
                             <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '5px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', display: 'flex', gap: '3px' }}>
                                 <button onClick={() => { if (cameraOn) stopCamera(); setTestImage(null); setPrediction(null); setInputMode('draw') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'draw' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'draw' ? '#fff' : '#6b7280', boxShadow: inputMode === 'draw' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>

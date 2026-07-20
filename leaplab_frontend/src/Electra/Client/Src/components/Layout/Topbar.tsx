@@ -434,7 +434,8 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             : 'bg-[#0b1b42] border-[#bfdbfe]/20 text-white'
           } ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
         style={{
-          width: '290px',
+          width: 'min(290px, 80vw)',
+          maxWidth: '80vw',
           padding: '24px',
           boxSizing: 'border-box'
         }}
