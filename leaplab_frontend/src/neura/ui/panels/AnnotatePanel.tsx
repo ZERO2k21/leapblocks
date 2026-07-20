@@ -260,7 +260,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                 const width = (bw / img.naturalWidth) * scaleX
                 const height = (bh / img.naturalHeight) * scaleY
                 if (width > 1 && height > 1) {
-                    mode.addBox({ label: r.class, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)), width: Math.min(width, 100 - Math.max(0, Math.min(100, x))), height: Math.min(height, 100 - Math.max(0, Math.min(100, y))), color })
+                    mode.addBox({ label: defaultLabel, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)), width: Math.min(width, 100 - Math.max(0, Math.min(100, x))), height: Math.min(height, 100 - Math.max(0, Math.min(100, y))), color })
                 }
             })
             setSavedMessage(`🎯 Auto-detected ${results.length} objects!`)

@@ -3,7 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ObjectDetector } from '../../ml/classifiers/ObjectDetector'
 import { ObjectDetectionTrainer } from '../../ml/ObjectDetectionTrainer'
 import type { DetectionTrainingState } from '../../ml/ObjectDetectionTrainer'
-import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { MAX_SAMPLES_PER_CLASS, type ClassData } from '../../types/neura.types'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
 import CaptureButton from '../components/CaptureButton'
@@ -50,6 +50,26 @@ const DEFAULT_COLOR = '#64748B'
 
 function getColorForObject(label: string): string {
     return OBJECT_COLORS[label.toLowerCase()] || DEFAULT_COLOR
+}
+
+const COCO_TO_FRIENDLY: Record<string, string> = {
+    'cell phone': 'phone',
+    'potted plant': 'plant',
+    'backpack': 'bag',
+    'handbag': 'bag',
+    'suitcase': 'bag',
+    'bicycle': 'bike',
+    'motorcycle': 'bike',
+    'laptop': 'computer',
+    'sports ball': 'ball'
+}
+
+function mapToUserClass(cocoLabel: string, userClasses: ClassData[]): string {
+    if (!userClasses.length) return cocoLabel
+    const lower = cocoLabel.toLowerCase()
+    const friendly = COCO_TO_FRIENDLY[lower] || lower
+    const match = userClasses.find(c => c.name.toLowerCase() === lower || c.name.toLowerCase() === friendly)
+    return match ? match.name : cocoLabel
 }
 
 const DETECT_THROTTLE_MS = 500
@@ -221,9 +241,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 const customResult = await trainerRef.current.detect(video)
                 result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
             } else {
-                // Fall back to COCO-SSD
+                // Fall back to COCO-SSD — map labels to user classes
                 const cocoResult = await classifierRef.current.detect(video)
-                result = cocoResult.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
+                const userClasses = mode.project?.classes || []
+                result = cocoResult.objects.map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
             }
 
             const elapsed = Math.round(performance.now() - start)
@@ -489,7 +510,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     dets = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
                 } else {
                     const result = await classifierRef.current.detect(img as any)
-                    dets = result.objects.map(o => ({ class: o.class, score: o.confidence, bbox: o.bbox }))
+                    const userClasses = mode.project?.classes || []
+                    dets = result.objects.map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
                 }
 
                 const elapsed = Math.round(performance.now() - start)
