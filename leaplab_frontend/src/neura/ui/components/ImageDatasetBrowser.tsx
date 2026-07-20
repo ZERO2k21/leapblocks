@@ -297,7 +297,7 @@ export default function ImageDatasetBrowser({ mode, onImagesAdded }: ImageDatase
 
 /**
  * Generate a placeholder image as a data URL when real images aren't available.
- * Creates varied images with different patterns for better training diversity.
+ * Creates varied images with different patterns for better visual diversity.
  */
 function generatePlaceholder(label: string, color: string, index: number): string {
     const canvas = document.createElement('canvas')
@@ -306,61 +306,73 @@ function generatePlaceholder(label: string, color: string, index: number): strin
     const ctx = canvas.getContext('2d')!
     if (!ctx) return ''
 
-    // Random seed based on index for consistency
     const seed = index * 7 + label.length * 13
     const rand = (n: number) => ((seed * 9301 + n * 49297) % 233280) / 233280
 
-    // Varied background colors
-    const bgHue = (rand(1) * 360) | 0
-    const bgSat = 20 + rand(2) * 30
-    const bgLight = 85 + rand(3) * 10
-    ctx.fillStyle = `hsl(${bgHue}, ${bgSat}%, ${bgLight}%)`
+    const palettes = [
+        ['#fef3c7', '#fde68a', '#fbbf24'],
+        ['#dbeafe', '#bfdbfe', '#60a5fa'],
+        ['#dcfce7', '#bbf7d0', '#4ade80'],
+        ['#fce7f3', '#fbcfe8', '#f472b6'],
+        ['#e0e7ff', '#c7d2fe', '#818cf8'],
+        ['#ffedd5', '#fed7aa', '#fb923c'],
+        ['#f0fdf4', '#dcfce7', '#22c55e'],
+        ['#fdf2f8', '#fce7f3', '#ec4899'],
+        ['#f5f3ff', '#ede9fe', '#a78bfa'],
+        ['#ecfdf5', '#d1fae5', '#34d399'],
+    ]
+    const palette = palettes[index % palettes.length]
+
+    ctx.fillStyle = palette[0]
     ctx.fillRect(0, 0, 200, 200)
 
-    // Random geometric shapes for visual variety
-    ctx.globalAlpha = 0.15
-    for (let i = 0; i < 5; i++) {
-        ctx.fillStyle = color
-        const x = rand(i * 4) * 160
-        const y = rand(i * 4 + 1) * 160
-        const size = 30 + rand(i * 4 + 2) * 60
-        if (rand(i * 4 + 3) > 0.5) {
+    ctx.globalAlpha = 0.25
+    for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = palette[1 + (i % 2)]
+        const x = rand(i * 3) * 160
+        const y = rand(i * 3 + 1) * 160
+        const size = 25 + rand(i * 3 + 2) * 70
+        const shape = (seed + i) % 3
+        if (shape === 0) {
             ctx.beginPath()
             ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2)
             ctx.fill()
-        } else {
+        } else if (shape === 1) {
             ctx.fillRect(x, y, size, size)
+        } else {
+            ctx.beginPath()
+            ctx.moveTo(x + size / 2, y)
+            ctx.lineTo(x + size, y + size)
+            ctx.lineTo(x, y + size)
+            ctx.closePath()
+            ctx.fill()
         }
     }
     ctx.globalAlpha = 1
 
-    // Border with slight rotation
     ctx.save()
     ctx.translate(100, 100)
-    ctx.rotate((rand(10) - 0.5) * 0.1)
+    ctx.rotate(((rand(20) - 0.5) * 0.15))
     ctx.translate(-100, -100)
-    ctx.strokeStyle = color
+    ctx.strokeStyle = palette[2]
     ctx.lineWidth = 3
-    ctx.strokeRect(15, 15, 170, 170)
+    ctx.strokeRect(12, 12, 176, 176)
     ctx.restore()
 
-    // Label text
-    ctx.fillStyle = color
-    ctx.font = 'bold 22px system-ui, sans-serif'
+    ctx.fillStyle = palette[2]
+    ctx.font = 'bold 28px system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, 100, 85)
+    ctx.fillText(label.length > 8 ? label.slice(0, 7) + '..' : label, 100, 80)
 
-    // Index number
-    ctx.font = 'bold 14px system-ui, sans-serif'
-    ctx.fillStyle = color + '90'
-    ctx.fillText(`#${index}`, 100, 115)
+    ctx.font = 'bold 16px system-ui, sans-serif'
+    ctx.fillStyle = palette[2] + 'AA'
+    ctx.fillText(`#${index}`, 100, 112)
 
-    // Small decorative element
     ctx.beginPath()
-    ctx.arc(100, 145, 8, 0, Math.PI * 2)
-    ctx.fillStyle = color + '40'
+    ctx.arc(100, 145, 10, 0, Math.PI * 2)
+    ctx.fillStyle = palette[2] + '50'
     ctx.fill()
 
-    return canvas.toDataURL('image/jpeg', 0.75)
+    return canvas.toDataURL('image/jpeg', 0.8)
 }

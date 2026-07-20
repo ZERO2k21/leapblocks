@@ -374,6 +374,7 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
 
 /**
  * Generate a placeholder image as a data URL.
+ * Creates visually diverse images using different color palettes and patterns.
  */
 function generatePlaceholder(label: string, index: number): string {
     const canvas = document.createElement('canvas')
@@ -382,29 +383,68 @@ function generatePlaceholder(label: string, index: number): string {
     const ctx = canvas.getContext('2d')!
     if (!ctx) return ''
 
-    const colors = ['#630ed4', '#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-    const color = colors[index % colors.length]
+    const palettes = [
+        { bg: '#fef3c7', shapes: '#fde68a', accent: '#d97706' },
+        { bg: '#dbeafe', shapes: '#bfdbfe', accent: '#2563eb' },
+        { bg: '#dcfce7', shapes: '#bbf7d0', accent: '#16a34a' },
+        { bg: '#fce7f3', shapes: '#fbcfe8', accent: '#db2777' },
+        { bg: '#e0e7ff', shapes: '#c7d2fe', accent: '#4f46e5' },
+        { bg: '#ffedd5', shapes: '#fed7aa', accent: '#ea580c' },
+        { bg: '#f0fdf4', shapes: '#dcfce7', accent: '#15803d' },
+        { bg: '#fdf2f8', shapes: '#fce7f3', accent: '#be185d' },
+        { bg: '#f5f3ff', shapes: '#ede9fe', accent: '#7c3aed' },
+        { bg: '#ecfdf5', shapes: '#d1fae5', accent: '#059669' },
+    ]
+    const p = palettes[index % palettes.length]
 
-    // Background
-    ctx.fillStyle = color + '20'
+    const seed = index * 13 + label.length * 7
+    const rand = (n: number) => ((seed * 9301 + n * 49297) % 233280) / 233280
+
+    ctx.fillStyle = p.bg
     ctx.fillRect(0, 0, 200, 200)
 
-    // Border
-    ctx.strokeStyle = color
-    ctx.lineWidth = 3
-    ctx.strokeRect(10, 10, 180, 180)
+    ctx.globalAlpha = 0.3
+    for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = p.shapes
+        const x = rand(i * 3) * 160
+        const y = rand(i * 3 + 1) * 160
+        const size = 30 + rand(i * 3 + 2) * 60
+        const shape = (seed + i) % 3
+        if (shape === 0) {
+            ctx.beginPath()
+            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2)
+            ctx.fill()
+        } else if (shape === 1) {
+            ctx.fillRect(x, y, size, size)
+        } else {
+            ctx.beginPath()
+            ctx.moveTo(x + size / 2, y)
+            ctx.lineTo(x + size, y + size)
+            ctx.lineTo(x, y + size)
+            ctx.closePath()
+            ctx.fill()
+        }
+    }
+    ctx.globalAlpha = 1
 
-    // Label
-    ctx.fillStyle = color
+    ctx.strokeStyle = p.accent
+    ctx.lineWidth = 3
+    ctx.strokeRect(12, 12, 176, 176)
+
+    ctx.fillStyle = p.accent
     ctx.font = 'bold 16px system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label.slice(0, 15), 100, 85)
+    ctx.fillText(label.slice(0, 15), 100, 80)
 
-    // Index
     ctx.font = 'bold 14px system-ui, sans-serif'
-    ctx.fillStyle = color + '80'
-    ctx.fillText(`#${index}`, 100, 115)
+    ctx.fillStyle = p.accent + 'AA'
+    ctx.fillText(`#${index}`, 100, 110)
 
-    return canvas.toDataURL('image/jpeg', 0.75)
+    ctx.beginPath()
+    ctx.arc(100, 142, 8, 0, Math.PI * 2)
+    ctx.fillStyle = p.accent + '40'
+    ctx.fill()
+
+    return canvas.toDataURL('image/jpeg', 0.8)
 }
