@@ -30,10 +30,10 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
 
     return (
         <header style={{
-            height: 56,
+            height: 68,
             background: 'linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)',
             display: "flex",
-            alignItems: "center", padding: "0 12px",
+            alignItems: "center", padding: "0 28px",
             justifyContent: "space-between", color: "#fff", zIndex: 100,
             flexShrink: 0,
             boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
@@ -48,11 +48,11 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         background: 'rgba(255,255,255,0.1)',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 10,
+                        borderRadius: 12,
                         color: '#fff',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
@@ -69,7 +69,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     }}
                     title="Back to Home"
                 >
-                    <Home size={18} strokeWidth={2.2} />
+                    <Home size={20} strokeWidth={2.2} />
                 </button>
 
                 <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
@@ -79,7 +79,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                     <Logo height={48} />
                     <span style={{
                         color: '#fff',
-                        fontSize: 20,
+                        fontSize: 22,
                         fontWeight: 900,
                         letterSpacing: '0.08em',
                         lineHeight: 1.2,
@@ -89,6 +89,9 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         paddingLeft: 8,
                     }}>Logix </span>
                 </div>
+
+                <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+
                 {/* Blocks/Python Mode Tabs */}
                 <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>
                     <div

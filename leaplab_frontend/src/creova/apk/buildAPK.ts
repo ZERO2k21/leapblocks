@@ -1,61 +1,40 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * APK Builder — High-level build orchestrator
- *
- * Uses htmlGenerator.js to convert AppInverter state → web app files,
- * then ApkInjector to package them into a signed APK.
- *
- * This module can be used standalone (from Node.js) or called by
- * the Electron main process via src/creova/apk/electron-bridge.js.
- */
+import ApkInjector = require('./apkInjector');
+import { generateWebApp } from './htmlGenerator';
+import path from 'path';
+import fs from 'fs-extra';
+import os from 'os';
 
-const ApkInjector = require('./apkInjector');
-const { generateWebApp } = require('./htmlGenerator');
-const path = require('path');
-const fs = require('fs-extra');
-
-const os = require('os');
-
-// Template APK path resolution — works in dev and packaged Electron.
-// In a packaged app, __dirname sits inside app.asar which external tools
-// (apktool) cannot read.  When the best candidate is an ASAR path we copy
-// the file to a real-filesystem temp location so apktool can open it.
-function resolveTemplatePath() {
-  const candidates = [
-    process.resourcesPath && path.join(process.resourcesPath, 'tools', 'base_template.apk'),
-    process.resourcesPath && path.join(process.resourcesPath, 'base_template.apk'),
-    path.join(__dirname, 'base_template.apk'),
-    path.join(__dirname, '..', '..', '..', 'tools', 'base_template.apk'),
-  ].filter(Boolean);
-
-  let found = null;
-  for (const c of candidates) {
-    if (fs.pathExistsSync(c)) { found = c; break; }
-  }
-  if (!found) found = candidates[0]; // will fail downstream with a clear error
-
-  // If the path lives inside an ASAR archive, copy it out so that
-  // external processes (java -jar apktool) can read it.
-  if (found && found.includes('.asar' + path.sep)) {
-    const tmpDir = path.join(os.tmpdir(), 'leapblocks_apk');
-    const realPath = path.join(tmpDir, 'base_template.apk');
-    if (!fs.pathExistsSync(realPath)) {
-      fs.ensureDirSync(tmpDir);
-      fs.copySync(found, realPath);
-    }
-    return realPath;
-  }
-  return found;
+interface ProgressEvent {
+  stage: string;
+  progress?: number;
+  message?: string;
 }
 
-const TEMPLATE_APK = resolveTemplatePath();
-const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
+interface AppState {
+  appName?: string;
+  packageName?: string;
+  versionCode?: number | string;
+  versionName?: string;
+  screens?: any[];
+  media?: any[];
+  renderedIconsDir?: string;
+  designViewport?: { orientation?: string };
+  [key: string]: any;
+}
 
-// Permissions required by specific component types
-const COMPONENT_PERMISSIONS = {
+interface ComponentItem {
+  type: string;
+  children?: ComponentItem[];
+}
+
+interface Screen {
+  components?: ComponentItem[];
+  nonVisibleComponents?: ComponentItem[];
+  screenOrientation?: string;
+  ScreenOrientation?: string;
+}
+
+const COMPONENT_PERMISSIONS: Record<string, string[]> = {
   BluetoothClient: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN', 'android.permission.BLUETOOTH_SCAN', 'android.permission.BLUETOOTH_CONNECT', 'android.permission.BLUETOOTH_ADVERTISE'],
   BluetoothServer: ['android.permission.BLUETOOTH', 'android.permission.BLUETOOTH_ADMIN', 'android.permission.BLUETOOTH_SCAN', 'android.permission.BLUETOOTH_CONNECT', 'android.permission.BLUETOOTH_ADVERTISE'],
   LocationSensor: ['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
@@ -69,9 +48,9 @@ const COMPONENT_PERMISSIONS = {
   FilePicker: ['android.permission.READ_EXTERNAL_STORAGE'],
 };
 
-function collectPermissions(screens = []) {
-  const perms = new Set();
-  const walk = (components = []) => {
+function collectPermissions(screens: Screen[] = []): string[] {
+  const perms = new Set<string>();
+  const walk = (components: ComponentItem[] = []) => {
     for (const comp of components) {
       const mapped = COMPONENT_PERMISSIONS[comp.type];
       if (mapped) mapped.forEach(p => perms.add(p));
@@ -85,9 +64,9 @@ function collectPermissions(screens = []) {
   return [...perms];
 }
 
-function countVisibleComponents(screens = []) {
+function countVisibleComponents(screens: Screen[] = []): number {
   let count = 0;
-  const walk = (components = []) => {
+  const walk = (components: ComponentItem[] = []) => {
     for (const component of components) {
       count += 1;
       if (component.children?.length) walk(component.children);
@@ -99,13 +78,13 @@ function countVisibleComponents(screens = []) {
   return count;
 }
 
-function normalizeVersionCode(value) {
+function normalizeVersionCode(value: unknown): number {
   const parsed = Number.parseInt(`${value ?? ''}`, 10);
   if (Number.isFinite(parsed) && parsed > 1) return parsed;
   return Math.floor(Date.now() / 1000);
 }
 
-function resolveScreenOrientation(screens = [], designViewport = null) {
+function resolveScreenOrientation(screens: Screen[] = [], designViewport: { orientation?: string } | null = null): string | null {
   const raw = String(
     screens[0]?.screenOrientation ||
     screens[0]?.ScreenOrientation ||
@@ -117,30 +96,54 @@ function resolveScreenOrientation(screens = [], designViewport = null) {
   return null;
 }
 
+function resolveTemplatePath(): string {
+  const candidates: string[] = [
+    (process as any).resourcesPath && path.join((process as any).resourcesPath, 'tools', 'base_template.apk'),
+    (process as any).resourcesPath && path.join((process as any).resourcesPath, 'base_template.apk'),
+    path.join(__dirname, 'base_template.apk'),
+    path.join(__dirname, '..', '..', '..', 'tools', 'base_template.apk'),
+  ].filter(Boolean);
+
+  let found: string | null = null;
+  for (const c of candidates) {
+    if (fs.pathExistsSync(c)) { found = c; break; }
+  }
+  if (!found) found = candidates[0];
+
+  if (found && found.includes('.asar' + path.sep)) {
+    const tmpDir = path.join(os.tmpdir(), 'leapblocks_apk');
+    const realPath = path.join(tmpDir, 'base_template.apk');
+    if (!fs.pathExistsSync(realPath)) {
+      fs.ensureDirSync(tmpDir);
+      fs.copySync(found, realPath);
+    }
+    return realPath;
+  }
+  return found!;
+}
+
+const TEMPLATE_APK = resolveTemplatePath();
+const OUTPUT_DIR = path.join(os.tmpdir(), 'leapblocks_output');
+
 class ApkBuilder {
+  injector: ApkInjector;
+  templatePath: string;
+
   constructor() {
     this.injector = new ApkInjector();
     this.templatePath = TEMPLATE_APK;
   }
 
-  /**
-   * Build an APK from AppInverter state
-   *
-   * @param {Object} appState - Full serialized state from getSerializedState()
-   * @param {Function} onProgress - Progress callback ({ stage, progress, message })
-   * @returns {string} Path to the signed APK
-   */
-  async build(appState, onProgress) {
+  async build(appState: AppState, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     const appName = (appState.appName || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
     const packageName = appState.packageName || `com.leaplab.${appName.toLowerCase()}`;
     const versionCode = normalizeVersionCode(appState.versionCode);
     const versionName = String(appState.versionName || '1.0').replace(/'/g, '');
     const normalizedAppState = { ...appState, versionCode, versionName };
-    const screens = Array.isArray(appState.screens) ? appState.screens : [];
+    const screens: Screen[] = Array.isArray(appState.screens) ? appState.screens : [];
     const visibleComponentCount = countVisibleComponents(screens);
 
     try {
-      // ── Step 1: Generate web app files ─────────────────────────────────
       onProgress?.({ stage: 'generating', progress: 5, message: 'Generating web application...' });
       onProgress?.({
         stage: 'snapshot',
@@ -157,11 +160,9 @@ class ApkBuilder {
       const webAppFiles = generateWebApp(normalizedAppState);
       onProgress?.({ stage: 'generated', progress: 10, message: `Generated ${Object.keys(webAppFiles).length} files` });
 
-      // ── Step 2: Check for template APK ────────────────────────────────
       const hasTemplate = await fs.pathExists(this.templatePath);
 
       if (hasTemplate) {
-        // Full injection pipeline with template
         onProgress?.({ stage: 'template_found', progress: 12, message: 'Using WebView template APK' });
 
         const permissions = collectPermissions(screens);
@@ -181,7 +182,6 @@ class ApkBuilder {
           onProgress
         );
 
-        // Copy to output directory
         await fs.ensureDir(OUTPUT_DIR);
         const finalPath = path.join(OUTPUT_DIR, `${appName}.apk`);
         await fs.copy(signedPath, finalPath, { overwrite: true });
@@ -191,7 +191,6 @@ class ApkBuilder {
         return finalPath;
 
       } else {
-        // No template — build from Leap using APKTool
         onProgress?.({ stage: 'no_template', progress: 12, message: 'No template APK — building from minimal structure' });
         return await this.buildWithoutTemplate(appName, packageName, appState, webAppFiles, onProgress);
       }
@@ -202,18 +201,13 @@ class ApkBuilder {
     }
   }
 
-  /**
-   * Build without a pre-existing template APK
-   * Creates the minimal APK structure, injects assets, rebuilds, and signs
-   */
-  async buildWithoutTemplate(appName, packageName, appState, webAppFiles, onProgress) {
+  async buildWithoutTemplate(appName: string, packageName: string, appState: AppState, webAppFiles: Record<string, string>, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     await this.injector.initialize(appName);
 
-    const decodedDir = path.join(this.injector.workingDir, 'decoded');
+    const decodedDir = path.join(this.injector.workingDir!, 'decoded');
     const pkgPath = packageName.replace(/\./g, '/');
     const screenOrientation = resolveScreenOrientation(Array.isArray(appState.screens) ? appState.screens : [], appState.designViewport);
 
-    // Create minimal APK structure
     onProgress?.({ stage: 'creating_structure', progress: 15, message: 'Creating APK structure...' });
 
     await fs.ensureDir(decodedDir);
@@ -221,7 +215,6 @@ class ApkBuilder {
     await fs.ensureDir(path.join(decodedDir, 'assets', 'www'));
     await fs.ensureDir(path.join(decodedDir, 'res', 'values'));
 
-    // AndroidManifest.xml
     await fs.writeFile(path.join(decodedDir, 'AndroidManifest.xml'), `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="${packageName}">
@@ -248,7 +241,6 @@ class ApkBuilder {
     </application>
 </manifest>`);
 
-    // res/values/strings.xml
     await fs.writeFile(path.join(decodedDir, 'res', 'values', 'strings.xml'), `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">${appName}</string>
@@ -258,7 +250,6 @@ class ApkBuilder {
     const versionCode = Number.isFinite(parsedVersionCode) && parsedVersionCode > 0 ? parsedVersionCode : 1;
     const versionName = String(appState.versionName || '1.0').replace(/'/g, '');
 
-    // apktool.yml
     await fs.writeFile(path.join(decodedDir, 'apktool.yml'), `!!brut.androlib.meta.MetaInfo
 apkFileName: ${appName}.apk
 compressionType: false
@@ -280,11 +271,9 @@ versionInfo:
   versionName: '${versionName}'
 `);
 
-    // Inject permissions
-    const screens = Array.isArray(appState.screens) ? appState.screens : [];
+    const screens: Screen[] = Array.isArray(appState.screens) ? appState.screens : [];
     const permissions = collectPermissions(screens);
 
-    // Write updated manifest with all required permissions
     let manifest = await fs.readFile(path.join(decodedDir, 'AndroidManifest.xml'), 'utf8');
     for (const perm of permissions) {
       if (!manifest.includes(perm)) {
@@ -293,27 +282,21 @@ versionInfo:
     }
     await fs.writeFile(path.join(decodedDir, 'AndroidManifest.xml'), manifest);
 
-    // Inject web assets
     onProgress?.({ stage: 'injecting_assets', progress: 30, message: 'Injecting web assets...' });
     await this.injector.injectAssets(decodedDir, webAppFiles, appState.media || [], onProgress);
 
-    // Inject WebView activity smali
     onProgress?.({ stage: 'injecting_smali', progress: 50, message: 'Injecting WebView activity...' });
     await this.injector.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
 
-    // Inject custom app icon if pre-rendered or fallback to default
     await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir || null, onProgress);
 
-    // Rebuild
-    const unsignedPath = path.join(this.injector.workingDir, 'unsigned.apk');
+    const unsignedPath = path.join(this.injector.workingDir!, 'unsigned.apk');
     await this.injector.rebuildApk(decodedDir, unsignedPath, onProgress);
 
-    // Sign
-    const signedOutputDir = path.join(this.injector.workingDir, 'signed');
+    const signedOutputDir = path.join(this.injector.workingDir!, 'signed');
     await fs.ensureDir(signedOutputDir);
     const signedPath = await this.injector.signApk(unsignedPath, signedOutputDir, onProgress);
 
-    // Copy to output
     await fs.ensureDir(OUTPUT_DIR);
     const finalPath = path.join(OUTPUT_DIR, `${appName}.apk`);
     await fs.copy(signedPath, finalPath, { overwrite: true });
@@ -324,4 +307,4 @@ versionInfo:
   }
 }
 
-module.exports = ApkBuilder;
+export = ApkBuilder;

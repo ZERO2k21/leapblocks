@@ -125,7 +125,7 @@ export const Topbar = ({
 
       <div
         style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
-        className="flex items-center justify-between h-14 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
+        className="flex items-center justify-between h-[68px] pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
@@ -136,18 +136,20 @@ export const Topbar = ({
               onBack();
             }}
             style={{ marginLeft: '16px' }}
-            className="flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
+            className="flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
           >
-            <Home size={16} strokeWidth={2.2} />
+            <Home size={20} strokeWidth={2.2} />
           </button>
 
-          <div className="h-5 w-px shrink-0 bg-[#bfdbfe]/28" />
+          <div className="h-8 w-px shrink-0 bg-[#bfdbfe]/28" />
 
           <div className="flex items-center mr-2.5 shrink-0 filter drop-shadow-[0_0_14px_rgba(56,189,248,0.3)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
             <img alt="LeapLab" src="assets/leaplab_logo_transparent.png" className="h-12 object-contain" />
-            <span className="text-lg font-black tracking-[0.08em] font-sans ml-2.5 text-white">VISION 3D</span>
+            <span className="text-[22px] font-black tracking-[0.08em] font-sans ml-2.5 text-white">VISION 3D</span>
           </div>
- 
+
+          <div className="h-8 w-px shrink-0 bg-[#bfdbfe]/28" />
+
           <div className="hidden min-[1440px]:flex items-center gap-5 h-full">
             {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
