@@ -880,7 +880,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     style={{
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'cover',
+                                        objectFit: 'contain',
                                         transform: 'scaleX(-1)',
                                     }}
                                 />

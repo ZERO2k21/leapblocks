@@ -680,7 +680,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                             {/* Camera feed */}
                             <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0, display: cameraOn ? 'flex' : 'none' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)' }} />
                                 <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
                                 {captureFlash && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', animation: 'flash 0.3s ease-out' }} />}
                                 <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 8px', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '6px' }}>
@@ -936,7 +936,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     {/* Camera / Image feed */}
                     <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0 }}>
                         {/* Live camera feed */}
-                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
+                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
                         <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
 
                         {/* Uploaded image with annotations */}

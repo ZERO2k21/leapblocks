@@ -41,7 +41,7 @@ export default function TestPanel({
     testsRun = 0,
     inferenceTime = 0,
     modelLoading = false,
-    videoFit = 'cover',
+    videoFit = 'contain',
     children
 }: TestPanelProps) {
     if (children) {

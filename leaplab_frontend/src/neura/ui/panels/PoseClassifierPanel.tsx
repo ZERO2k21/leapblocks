@@ -566,7 +566,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Camera feed */}
                             <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-2xl -scale-x-100" />
+                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-2xl -scale-x-100" />
                                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full rounded-2xl pointer-events-none -scale-x-100" />
                                 {captureFlash && <div className="absolute inset-0 bg-white/50 animate-flash rounded-2xl" />}
                                 <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
