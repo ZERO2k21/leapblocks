@@ -342,6 +342,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     font-size: 1rem;
   }
 }
+@media (max-width: 480px) {
+  .landing-page-container .hero-grid { padding: 20px 12px; gap: 20px; }
+  .landing-page-container .hero-title { font-size: 2rem; }
+  .landing-page-container .hero-tagline { font-size: 10px; padding: 4px 10px; margin-bottom: 8px; }
+  .landing-page-container .hero-sub { font-size: 0.9rem; line-height: 1.4; margin-bottom: 16px; }
+  .landing-page-container .btn-adventure,
+  .landing-page-container .btn-demo { padding: 12px 16px; font-size: 0.9rem; }
+}
 
 .landing-page-container .hero-title {
   font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 900;
@@ -429,10 +437,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   50%       { transform: scale(1.1); opacity: 0.8; }
 }
 @media (max-width: 1024px) {
-  .landing-page-container .hero-right { min-height: 300px; max-height: 380px; }
+  .landing-page-container .hero-right { min-height: 280px; max-height: 360px; }
 }
 @media (max-width: 768px) {
-  .landing-page-container .hero-right { min-height: 250px; max-height: 300px; }
+  .landing-page-container .hero-right { min-height: 220px; max-height: 280px; }
+}
+@media (max-width: 480px) {
+  .landing-page-container .hero-right { min-height: 180px; max-height: 220px; }
 }
 
 /* ─── CARDS ROW ─── */
@@ -464,6 +475,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   }
   .landing-page-container .cards-wrap {
     padding: 24px 16px;
+  }
+}
+@media (max-width: 480px) {
+  .landing-page-container .cards-row {
+    gap: 10px;
+  }
+  .landing-page-container .cards-wrap {
+    padding: 16px 12px;
   }
 }
 
@@ -499,6 +518,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     gap: 16px;
     padding: 16px;
   }
+}
+@media (max-width: 480px) {
+  .landing-page-container .tc {
+    padding: 12px;
+    gap: 12px;
+    border-radius: 10px;
+  }
+  .landing-page-container .tc-icon { width: 44px; height: 44px; }
+  .landing-page-container .tc-icon img { width: 28px; height: 28px; }
+  .landing-page-container .tc-name { font-size: 14px; }
+  .landing-page-container .tc-desc { font-size: 11px; }
+  .landing-page-container .tc-cat { font-size: 10px; }
 }
 .landing-page-container .tc:hover {
   transform: translateY(-8px) scale(1.02);
@@ -617,6 +648,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ─── Missing keyframes ─── */
+@keyframes lp-toast-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes hero3d-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 ` }} />
       <div className="landing-page-container">
 

@@ -229,7 +229,7 @@ export default function ComponentTree({ appState }) {
         <div className="flex flex-col h-full bg-white overflow-hidden">
             {/* Standardized Header */}
             <div
-                style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
+                style={{ paddingTop: '16px', paddingBottom: '20px', paddingLeft: '20px', paddingRight: '20px' }}
                 className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
             >
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Components</span>
@@ -247,7 +247,8 @@ export default function ComponentTree({ appState }) {
             >
                 {/* Screen Node */}
                 <div
-                    className={`relative flex items-center py-3 px-4 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id
+                    style={{ paddingLeft: '20px', paddingRight: '16px', paddingTop: '20px', paddingBottom: '12px' }}
+                    className={`relative flex items-center py-3 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id
                         ? 'border-blue-300 bg-blue-50 text-blue-700'
                         : selectedComponent?.id === currentScreen.id
                             ? 'border-purple-200 bg-purple-50/80 text-purple-700'
@@ -283,7 +284,7 @@ export default function ComponentTree({ appState }) {
                         {currentScreen.components && currentScreen.components.length > 0 ? (
                             currentScreen.components.map((comp) => renderComponent(comp, 0))
                         ) : (
-                            <div className="px-8 py-12 text-center">
+                            <div style={{ paddingLeft: '32px', paddingRight: '32px', paddingTop: '48px', paddingBottom: '48px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
                                 <div style={{
                                     width: '48px', height: '48px', borderRadius: '14px',
                                     background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',

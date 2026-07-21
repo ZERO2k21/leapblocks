@@ -79,7 +79,8 @@ export default function PaletteEnhanced() {
                         <div key={category} className="mx-3 mt-3 mb-3 rounded-2xl overflow-hidden border-2 border-slate-200 bg-white transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-sm hover:border-blue-500/30 hover:shadow-md hover:-translate-y-0.5">
                             {/* Category Header */}
                             <button
-                                className={`flex items-center justify-between w-full px-5 py-4 cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15' : 'bg-gradient-to-b from-white to-slate-50'}`}
+                                style={{ paddingLeft: '40px', paddingRight: '40px', paddingTop: '24px', paddingBottom: '24px' }}
+                                className={`flex items-center justify-between w-full cursor-pointer font-black text-sm text-slate-800 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative tracking-wide border-b border-transparent hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 hover:text-slate-900 ${!isCollapsed ? 'bg-gradient-to-br from-blue-500/5 to-blue-500/0 text-blue-600 border-b-blue-500/15' : 'bg-gradient-to-b from-white to-slate-50'}`}
                                 onClick={() => toggleCategory(category)}
                             >
                                 <span className="flex items-center gap-2 min-w-0">
@@ -93,7 +94,7 @@ export default function PaletteEnhanced() {
 
                             {/* Category Items */}
                             {!isCollapsed && (
-                                <div className="grid grid-cols-2 gap-2 p-2.5 bg-gradient-to-b from-slate-50/50 to-white">
+                                <div className="grid grid-cols-2 bg-gradient-to-b from-slate-50/50 to-white" style={{ gap: '16px', padding: '20px' }}>
                                     {filteredItems.map(item => (
                                         <div
                                             key={item.type}
@@ -101,7 +102,8 @@ export default function PaletteEnhanced() {
                                             onDragStart={(e) => handleDragStart(e, item)}
                                             onMouseEnter={() => setHoveredComponent(item)}
                                             onMouseLeave={() => setHoveredComponent(null)}
-                                            className="group/item relative flex flex-col items-center gap-2 p-2.5 text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 min-w-0 overflow-hidden"
+                                            style={{ padding: '20px 14px', gap: '10px' }}
+                                            className="group/item relative flex flex-col items-center text-center cursor-grab active:cursor-grabbing border-2 border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-500 before:to-cyan-400 before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500/5 hover:to-white hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 min-w-0 overflow-hidden"
                                             title={item.description}
                                         >
                                             <ComponentIcon type={item.type} size={36} className="transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-80 group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:opacity-100" />
