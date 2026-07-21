@@ -41,11 +41,15 @@ import {
     FolderOpen,
     File,
     Share,
+    Menu as MenuIcon,
 } from "lucide-react";
 import { fileService } from "../Electra/Client/Src/services/FileService";
 import TopbarShareButton from "../components/common/TopbarShareButton";
+import { useWindowWidth } from "../hooks/useWindowWidth";
+import MobileDrawer from "../components/common/MobileDrawer";
 import ProjectNameInput from "../components/common/ProjectNameInput";
 import ModeSwitcher from "../components/common/ModeSwitcher";
+import ActionButton from "../components/common/ActionButton";
 import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -743,6 +747,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     // ─── Project File Handlers ─────────────────────────────────────────────────────
     const fileInputRef = useRef(null);
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const mobileMenuRef = useRef(null);
+    const windowWidth = useWindowWidth();
+    const showDesktopMenus = windowWidth >= 1400;
 
     const handleNewProject = () => {
         if (!window.confirm("Create a new project? All unsaved work will be lost.")) return;
@@ -842,6 +850,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
         };
         fileService.shareProject(projectName, "python", payload);
     };
+
+    useEffect(() => {
+        if (!mobileMenuOpen) return;
+        const handleClickOutside = (e) => {
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+                setMobileMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside, true);
+        return () => document.removeEventListener('mousedown', handleClickOutside, true);
+    }, [mobileMenuOpen]);
 
     // Terminal / REPL
     const [activePanel, setActivePanel] = useState("terminal"); // "terminal" | "repl" | "debugger" | "pip"
@@ -3048,123 +3067,288 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <Logo height={50} />
                         <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>Logix</span>
                     </div>
-                    <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
+                    {showDesktopMenus && (
+                        <>
+                            <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
 
-                    <DropdownMenu
-                        label="File"
-                        isOpen={openMenuId === 'file'}
-                        onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')}
-                        onClose={() => setOpenMenuId(null)}
-                        items={[
-                            { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
-                            { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
-                            { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
-                            { divider: true },
-                            { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
-                            { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
-                            { divider: true },
-                            { label: 'Share', icon: Share, onClick: handleShareProject },
-                            { divider: true },
-                            {
-                                label: 'My Projects',
-                                icon: FolderOpen,
-                                onClick: () => {
-                                    sessionStorage.setItem('landingActiveTab', 'my-projects');
-                                    sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                    onBack();
-                                }
-                            }
-                        ]}
-                    />
+                            <DropdownMenu
+                                label="File"
+                                isOpen={openMenuId === 'file'}
+                                onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')}
+                                onClose={() => setOpenMenuId(null)}
+                                items={[
+                                    { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
+                                    { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
+                                    { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
+                                    { divider: true },
+                                    { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
+                                    { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
+                                    { divider: true },
+                                    { label: 'Share', icon: Share, onClick: handleShareProject },
+                                    { divider: true },
+                                    {
+                                        label: 'My Projects',
+                                        icon: FolderOpen,
+                                        onClick: () => {
+                                            sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                            sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                                            onBack();
+                                        }
+                                    }
+                                ]}
+                            />
 
-                    <DropdownMenu
-                        label="Edit"
-                        isOpen={openMenuId === 'edit'}
-                        onToggle={() => setOpenMenuId(openMenuId === 'edit' ? null : 'edit')}
-                        onClose={() => setOpenMenuId(null)}
-                        items={[
-                            { label: 'Undo', icon: Undo, shortcut: 'Ctrl+Z', onClick: () => editorRef.current?.trigger('keyboard', 'undo', null) },
-                            { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => editorRef.current?.trigger('keyboard', 'redo', null) },
-                        ]}
-                    />
+                            <DropdownMenu
+                                label="Edit"
+                                isOpen={openMenuId === 'edit'}
+                                onToggle={() => setOpenMenuId(openMenuId === 'edit' ? null : 'edit')}
+                                onClose={() => setOpenMenuId(null)}
+                                items={[
+                                    { label: 'Undo', icon: Undo, shortcut: 'Ctrl+Z', onClick: () => editorRef.current?.trigger('keyboard', 'undo', null) },
+                                    { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => editorRef.current?.trigger('keyboard', 'redo', null) },
+                                ]}
+                            />
 
-                    {["Tutorials", "Board", "Connect"].map((menuLabel) => (
-                        <span
-                            key={menuLabel}
-                            style={{ fontSize: 15, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
-                            onClick={() => {
-                                if (menuLabel === "Board") {
-                                    setIsBoardModalOpen(true);
-                                }
-                                if (menuLabel === "Connect" && workflowMode === "upload") {
-                                    handleConnectToBoard();
-                                }
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.opacity = 1; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.opacity = 0.9; }}
-                        >
-                            {menuLabel}
-                        </span>
-                    ))}
+                            {["Tutorials", "Board", "Connect"].map((menuLabel) => (
+                                <span
+                                    key={menuLabel}
+                                    style={{ fontSize: 15, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
+                                    onClick={() => {
+                                        if (menuLabel === "Board") {
+                                            setIsBoardModalOpen(true);
+                                        }
+                                        if (menuLabel === "Connect" && workflowMode === "upload") {
+                                            handleConnectToBoard();
+                                        }
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.opacity = 1; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.opacity = 0.9; }}
+                                >
+                                    {menuLabel}
+                                </span>
+                            ))}
+                        </>
+                    )}
                 </div>
                 <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
-                    <ProjectNameInput
-                        value={projectName}
-                        onChange={setProjectName}
-                        onSave={handleSaveProject}
-                    />
-                    <ModeSwitcher
-                        modes={[
-                            { id: 'ide', label: 'IDE' },
-                            { id: 'stage', label: 'Stage' },
-                            { id: 'upload', label: 'Upload' },
-                        ]}
-                        activeMode={workflowMode}
-                        onChange={handleWorkflowModeChange}
-                    />
-                    <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
-                    {/* Upload Firmware button */}
-                    <button
-                        onClick={() => {
-                            if (workflowMode !== "upload") {
-                                handleWorkflowModeChange("upload");
-                                return;
-                            }
-                            handleUploadFirmware();
-                        }}
-                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 500 }}
-                    >
-                        <Upload size={15} /> {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
-                    </button>
-                    <div style={{ display: "flex", gap: 4 }}>
-                        <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                            <Maximize size={15} />
-                        </div>
-                        <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                            <Settings size={15} />
-                        </div>
-                    </div>
+                    {showDesktopMenus ? (
+                        <>
+                            <ProjectNameInput
+                                value={projectName}
+                                onChange={setProjectName}
+                                onSave={handleSaveProject}
+                            />
+                            <ModeSwitcher
+                                modes={[
+                                    { id: 'ide', label: 'IDE' },
+                                    { id: 'stage', label: 'Stage' },
+                                    { id: 'upload', label: 'Upload' },
+                                ]}
+                                activeMode={workflowMode}
+                                onChange={handleWorkflowModeChange}
+                            />
+                            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
+                            <ActionButton
+                                variant="subtle"
+                                icon={<Upload size={15} />}
+                                label={workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+                                onClick={() => {
+                                    if (workflowMode !== "upload") {
+                                        handleWorkflowModeChange("upload");
+                                        return;
+                                    }
+                                    handleUploadFirmware();
+                                }}
+                            />
+                            <div style={{ display: "flex", gap: 4 }}>
+                                <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                    <Maximize size={15} />
+                                </div>
+                                <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                    <Settings size={15} />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <button
+                            onClick={() => setMobileMenuOpen(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: 40, height: 40, borderRadius: 10,
+                                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                                color: '#fff', cursor: 'pointer', flexShrink: 0,
+                            }}
+                        >
+                            <MenuIcon size={20} strokeWidth={2.2} />
+                        </button>
+                    )}
                 </div>
 
-                <TopbarShareButton
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
-                    size={18}
-                    onSave={handleSaveProject}
-                    projectName={projectName}
-                />
+                {showDesktopMenus && (
+                    <>
+                        <TopbarShareButton
+                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                            size={18}
+                            onSave={handleSaveProject}
+                            projectName={projectName}
+                        />
 
-                {/* CREOLEAP Right Logo */}
-                <div style={{
-                    marginLeft: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-                    pointerEvents: 'none',
-                }}>
-                    <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
-                </div>
+                        {/* CREOLEAP Right Logo */}
+                        <div style={{
+                            marginLeft: 12,
+                            display: 'flex',
+                            alignItems: 'center',
+                            flexShrink: 0,
+                            filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+                            pointerEvents: 'none',
+                        }}>
+                            <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
+                        </div>
+                    </>
+                )}
             </header>
+
+            <MobileDrawer
+                isOpen={mobileMenuOpen}
+                onClose={() => setMobileMenuOpen(false)}
+                theme="dark"
+            >
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+                {[
+                    { label: 'New Project', icon: File, onClick: handleNewProject },
+                    { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject },
+                    { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
+                    { label: 'Save to your computer', icon: Save, onClick: handleSaveProject },
+                    { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
+                    { label: 'Share', icon: Share, onClick: handleShareProject },
+                    {
+                        label: 'My Projects', icon: FolderOpen,
+                        onClick: () => {
+                            sessionStorage.setItem('landingActiveTab', 'my-projects');
+                            sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                            onBack();
+                        }
+                    },
+                ].map((item, i) => (
+                    <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    >
+                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                        {item.label}
+                    </button>
+                ))}
+
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+                {[
+                    { label: 'Undo', icon: Undo, onClick: () => editorRef.current?.trigger('keyboard', 'undo', null) },
+                    { label: 'Redo', icon: Redo, onClick: () => editorRef.current?.trigger('keyboard', 'redo', null) },
+                ].map((item, i) => (
+                    <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    >
+                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                        {item.label}
+                    </button>
+                ))}
+
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Controls</div>
+                {["Tutorials", "Board", "Connect"].map((label) => (
+                    <button key={label} onClick={() => {
+                        if (label === "Board") setIsBoardModalOpen(true);
+                        if (label === "Connect" && workflowMode === "upload") handleConnectToBoard();
+                        setMobileMenuOpen(false);
+                    }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    >
+                        {label}
+                    </button>
+                ))}
+
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Mode & Actions</div>
+                {[
+                    { id: 'ide', label: 'IDE' },
+                    { id: 'stage', label: 'Stage' },
+                    { id: 'upload', label: 'Upload' },
+                ].map(({ id, label }) => (
+                    <button key={id} onClick={() => { handleWorkflowModeChange(id); setMobileMenuOpen(false); }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: workflowMode === id ? 'rgba(124,58,237,0.2)' : 'transparent',
+                            color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        {label}
+                        {workflowMode === id && <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>Active</span>}
+                    </button>
+                ))}
+                <button onClick={() => { handleWorkflowModeChange('upload'); handleUploadFirmware?.(); setMobileMenuOpen(false); }}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '8px 10px', border: 'none', borderRadius: 8,
+                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                >
+                    <Upload size={15} color="#a78bfa" strokeWidth={2} />
+                    {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+                </button>
+
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+                <TopbarShareButton size={20} onSave={handleSaveProject} projectName={projectName}>
+                    {({ onClick, loading }) => (
+                        <button onClick={() => { onClick?.(); setMobileMenuOpen(false); }} disabled={loading}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                                padding: '8px 10px', border: 'none', borderRadius: 8,
+                                background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                                fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                                transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        >
+                            <Share size={15} color="#a78bfa" strokeWidth={2} />
+                            Share
+                        </button>
+                    )}
+                </TopbarShareButton>
+            </MobileDrawer>
 
             {/* ══ SECOND TOOLBAR (LeapBlox Style) ══════════════════════════════ */}
             {workflowMode === "stage" ? (

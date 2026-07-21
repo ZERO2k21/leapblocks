@@ -83,7 +83,7 @@ export default function TopbarShareButton({
                 <button
                     title="Share project"
                     className={className}
-                    style={style}
+                    style={{ paddingRight: '16px', marginRight: '8px', ...style }}
                     onClick={handleClick}
                     disabled={loading}
                 >

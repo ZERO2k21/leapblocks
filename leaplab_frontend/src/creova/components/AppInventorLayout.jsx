@@ -8,6 +8,7 @@ import BuildModal from '../components/BuildModal';
 import ComponentTree from '../components/ComponentTree';
 import MediaManager from '../components/MediaManager';
 import { Zap, Layout, Puzzle } from 'lucide-react';
+import ActionButton from '../../components/common/ActionButton';
 
 const rightContent = (activeTab, setActiveTab, handleBuildApk) => (
   <div className="flex items-center gap-2 shrink-0 creova-right-gap">
@@ -71,42 +72,12 @@ const rightContent = (activeTab, setActiveTab, handleBuildApk) => (
       })}
     </nav>
     <div className="creova-divider" style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 2px', flexShrink: 0 }} />
-    <button
-      id="btn-build-apk"
-      className="creova-build-btn"
+    <ActionButton
+      variant="primary"
+      icon={<Zap size={13} style={{ fill: '#ffffff', color: '#ffffff' }} />}
+      label="BUILD PRODUCTION"
       onClick={handleBuildApk}
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 20px',
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        color: '#ffffff',
-        borderRadius: '8px',
-        fontSize: '11px',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        flexShrink: 0,
-        border: '1px solid rgba(255, 255, 255, 0.1)'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-1px)';
-        e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.45)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.35)';
-      }}
-    >
-      <Zap size={13} style={{ fill: '#ffffff', color: '#ffffff' }} />
-      <span className="creova-build-text">BUILD PRODUCTION</span>
-    </button>
+    />
   </div>
 );
 

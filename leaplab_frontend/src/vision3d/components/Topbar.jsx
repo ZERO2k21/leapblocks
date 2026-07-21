@@ -11,11 +11,7 @@ import {
   BookOpen,
   Save,
   Download,
-  MessageSquareWarning,
   Share2,
-  Trophy,
-  Settings,
-  CircleHelp,
   FileText,
   FolderOpen,
   FilePlus,
@@ -252,20 +248,8 @@ export const Topbar = ({
  
         {/* Right section */}
         <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
-          <div className="hidden min-[1440px]:flex items-center gap-3 pr-4 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
-            <TopbarShareButton className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white" size={16} onSave={onSave} projectName={title} />
-            <button title="Feedback" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
-              <MessageSquareWarning size={16} strokeWidth={2.2} />
-            </button>
-            <button title="Achievements" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
-              <Trophy size={16} strokeWidth={2.2} />
-            </button>
-            <button title="Settings" className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
-              <Settings size={16} strokeWidth={2.2} />
-            </button>
-            <button title="Help" style={{ marginRight: '10px' }} className="bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white">
-              <CircleHelp size={20} strokeWidth={2.2} />
-            </button>
+          <div className="hidden sm:flex items-center gap-3 pr-4 mr-2 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
+            <TopbarShareButton className="bg-transparent border-none cursor-pointer transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white" size={16} onSave={onSave} projectName={title} />
           </div>
  
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
@@ -352,10 +336,6 @@ export const Topbar = ({
                 </button>
               )}
             </TopbarShareButton>
-            <MobileMenuItem icon={<MessageSquareWarning size={18} />} label="Feedback" onClick={() => setMobileMenuOpen(false)} />
-            <MobileMenuItem icon={<Trophy size={18} />} label="Achievements" onClick={() => setMobileMenuOpen(false)} />
-            <MobileMenuItem icon={<Settings size={18} />} label="Settings" onClick={() => setMobileMenuOpen(false)} />
-            <MobileMenuItem icon={<CircleHelp size={18} />} label="Help" onClick={() => setMobileMenuOpen(false)} />
           </div>
         </div>
 

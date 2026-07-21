@@ -3,15 +3,18 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     File, FolderOpen, Save, Share, Download,
-    Undo, Redo, Cpu, Home, Upload
+    Undo, Redo, Cpu, Home, Upload, Menu as MenuIcon
 } from 'lucide-react';
 import Logo from '../../../components/Logo';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../../components/common/TopbarShareButton';
 import ProjectNameInput from '../../../components/common/ProjectNameInput';
+import ActionButton from '../../../components/common/ActionButton';
+import { useWindowWidth } from '../../../hooks/useWindowWidth';
+import MobileDrawer from '../../../components/common/MobileDrawer';
 import DropdownMenu from './DropdownMenu';
 import ModeToggle from './ModeToggle';
 import PortsControl from './PortsControl';
@@ -40,12 +43,27 @@ export default function MenuBar({
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const mobileMenuRef = useRef(null);
+    const windowWidth = useWindowWidth();
+    const showDesktopMenus = windowWidth >= 1400;
 
     useEffect(() => {
         const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() => {
+        if (!mobileMenuOpen) return;
+        const handleClickOutside = (e) => {
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+                setMobileMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside, true);
+        return () => document.removeEventListener('mousedown', handleClickOutside, true);
+    }, [mobileMenuOpen]);
 
     const isConnected = connectionStatus === 'connected';
 
@@ -84,6 +102,7 @@ export default function MenuBar({
     ];
 
     return (
+        <>
         <div style={{
             display: 'grid',
             /*
@@ -158,30 +177,32 @@ export default function MenuBar({
                 <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
                 {/* Menus */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <DropdownMenu
-                        label="File"
-                        items={fileMenuItems}
-                        isOpen={openMenu === 'file'}
-                        onToggle={() => toggleMenu('file')}
-                        onClose={closeMenu}
-                    />
-                    <DropdownMenu
-                        label="Edit"
-                        items={editMenuItems}
-                        isOpen={openMenu === 'edit'}
-                        onToggle={() => toggleMenu('edit')}
-                        onClose={closeMenu}
-                    />
-                    <DropdownMenu
-                        label="Board"
-                        icon={Cpu}
-                        items={boardMenuItems}
-                        isOpen={openMenu === 'board'}
-                        onToggle={() => toggleMenu('board')}
-                        onClose={closeMenu}
-                    />
-                </div>
+                {showDesktopMenus && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <DropdownMenu
+                            label="File"
+                            items={fileMenuItems}
+                            isOpen={openMenu === 'file'}
+                            onToggle={() => toggleMenu('file')}
+                            onClose={closeMenu}
+                        />
+                        <DropdownMenu
+                            label="Edit"
+                            items={editMenuItems}
+                            isOpen={openMenu === 'edit'}
+                            onToggle={() => toggleMenu('edit')}
+                            onClose={closeMenu}
+                        />
+                        <DropdownMenu
+                            label="Board"
+                            icon={Cpu}
+                            items={boardMenuItems}
+                            isOpen={openMenu === 'board'}
+                            onToggle={() => toggleMenu('board')}
+                            onClose={closeMenu}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* ══ CENTER: Project name pill ════════════════════════════════════ */}
@@ -199,106 +220,219 @@ export default function MenuBar({
             {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG ════════════════ */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
 
-                {/* Ports pill — only in upload mode */}
-                {mode === 'upload' && (
-                    <PortsControl
-                        ports={ports}
-                        selectedPort={selectedPort}
-                        onPortSelect={onPortSelect}
-                        onRefreshPorts={onRefreshPorts}
-                        onConnect={onConnect}
-                        isConnected={isConnected}
-                    />
-                )}
+                {showDesktopMenus ? (
+                    <>
+                        {/* Ports pill — only in upload mode */}
+                        {mode === 'upload' && (
+                            <PortsControl
+                                ports={ports}
+                                selectedPort={selectedPort}
+                                onPortSelect={onPortSelect}
+                                onRefreshPorts={onRefreshPorts}
+                                onConnect={onConnect}
+                                isConnected={isConnected}
+                            />
+                        )}
 
-                {/* Stage / Upload mode toggle */}
-                <ModeToggle mode={mode} onModeChange={onModeChange} />
+                        {/* Stage / Upload mode toggle */}
+                        <ModeToggle mode={mode} onModeChange={onModeChange} />
 
-                {/* UPLOAD action button — only in upload mode */}
-                {mode === 'upload' && (
+                        {mode === 'upload' && (
+                            <ActionButton
+                                variant="warning"
+                                icon={<Upload size={13} strokeWidth={2.5} />}
+                                label={isUploading ? 'Uploading…' : 'UPLOAD'}
+                                onClick={onUpload}
+                                disabled={isUploading}
+                                loading={isUploading}
+                                title="Upload to board"
+                            />
+                        )}
+
+
+                        {/* Divider */}
+                        <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
+                        <TopbarShareButton
+                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                            size={18}
+                            onSave={onSave}
+                            projectName={projectName}
+                        />
+
+                        <LeapLabAuthButton variant="dark" size="sm" />
+
+                        {showCreoleap && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                flexShrink: 0,
+                                paddingLeft: 4,
+                                height: '60px',
+                                overflow: 'hidden',
+                            }}>
+                                <img
+                                    src="assets/logo-creoleap.png"
+                                    alt="CREOLEAP"
+                                    style={{
+                                        width: '145px',
+                                        height: 'auto',
+                                        objectFit: 'contain',
+                                        display: 'block',
+                                        flexShrink: 0,
+                                        filter: [
+                                            'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                                            'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                                            'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                                            'brightness(1.2)',
+                                            'contrast(1.06)',
+                                        ].join(' '),
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </>
+                ) : (
                     <button
-                        onClick={onUpload}
-                        disabled={isUploading}
-                        title="Upload to board"
+                        onClick={() => setMobileMenuOpen(true)}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            padding: '6px 14px',
-                            background: isUploading
-                                ? 'rgba(255,255,255,0.15)'
-                                : 'linear-gradient(135deg, #F59E0B, #D97706)',
-                            border: 'none', borderRadius: 20,
-                            color: isUploading ? 'rgba(255,255,255,0.6)' : '#1a1000',
-                            fontWeight: 800, fontSize: 12,
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                            letterSpacing: '0.06em',
-                            cursor: isUploading ? 'not-allowed' : 'pointer',
-                            boxShadow: isUploading ? 'none' : '0 2px 10px rgba(245,158,11,0.35)',
-                            transition: 'all 0.2s ease',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0,
-                        }}
-                        onMouseEnter={e => {
-                            if (!isUploading) {
-                                e.currentTarget.style.transform = 'scale(1.04)';
-                                e.currentTarget.style.boxShadow = '0 4px 14px rgba(245,158,11,0.45)';
-                            }
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = isUploading
-                                ? 'none'
-                                : '0 2px 10px rgba(245,158,11,0.35)';
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 34, height: 34, borderRadius: 10,
+                            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                            color: '#fff', cursor: 'pointer', flexShrink: 0,
                         }}
                     >
-                        <Upload size={13} strokeWidth={2.5} />
-                        {isUploading ? 'Uploading…' : 'UPLOAD'}
+                        <MenuIcon size={18} strokeWidth={2.2} />
                     </button>
-                )}
-
-
-                {/* Divider */}
-                <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-
-                <TopbarShareButton
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
-                    size={18}
-                    onSave={onSave}
-                    projectName={projectName}
-                />
-
-                <LeapLabAuthButton variant="dark" size="sm" />
-
-                {showCreoleap && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexShrink: 0,
-                        paddingLeft: 4,
-                        height: '60px',
-                        overflow: 'hidden',
-                    }}>
-                        <img
-                            src="assets/logo-creoleap.png"
-                            alt="CREOLEAP"
-                            style={{
-                                width: '145px',
-                                height: 'auto',
-                                objectFit: 'contain',
-                                display: 'block',
-                                flexShrink: 0,
-                                filter: [
-                                    'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                    'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                    'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                    'brightness(1.2)',
-                                    'contrast(1.06)',
-                                ].join(' '),
-                            }}
-                        />
-                    </div>
                 )}
 
             </div>
         </div>
+
+        <MobileDrawer
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            theme="dark"
+        >
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+            {fileMenuItems.map((item, idx) =>
+                item.divider ? (
+                    <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                ) : (
+                    <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    >
+                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                        {item.label}
+                    </button>
+                )
+            )}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+            {editMenuItems.map((item, idx) => (
+                <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '8px 10px', border: 'none', borderRadius: 8,
+                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                >
+                    {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                    {item.label}
+                </button>
+            ))}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Board</div>
+            {boardMenuItems.map((item, idx) =>
+                item.divider ? (
+                    <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                ) : (
+                    <button key={idx} onClick={() => { !item.disabled && item.onClick?.(); setMobileMenuOpen(false); }}
+                        disabled={item.disabled}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent',
+                            color: item.disabled ? '#666' : '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: item.disabled ? 'not-allowed' : 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                        {item.label}
+                    </button>
+                )
+            )}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Controls</div>
+            <button onClick={() => { onModeChange?.(mode === 'upload' ? 'stage' : 'upload'); setMobileMenuOpen(false); }}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                    padding: '8px 10px', border: 'none', borderRadius: 8,
+                    background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                    fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                    transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+            >
+                Switch to {mode === 'upload' ? 'Stage' : 'Upload'} Mode
+            </button>
+            {mode === 'upload' && (
+                <ActionButton
+                    variant="warning"
+                    icon={<Upload size={13} strokeWidth={2.5} />}
+                    label={isUploading ? 'Uploading…' : 'UPLOAD'}
+                    onClick={() => { onUpload?.(); setMobileMenuOpen(false); }}
+                    disabled={isUploading}
+                    loading={isUploading}
+                    style={{ width: '100%' }}
+                />
+            )}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+            <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
+                {({ onClick, loading }) => (
+                    <button onClick={() => { onClick?.(); setMobileMenuOpen(false); }} disabled={loading}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', border: 'none', borderRadius: 8,
+                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
+                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    >
+                        <Share size={15} color="#a78bfa" strokeWidth={2} />
+                        Share
+                    </button>
+                )}
+            </TopbarShareButton>
+
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+            </div>
+        </MobileDrawer>
+        </>
     );
 }
