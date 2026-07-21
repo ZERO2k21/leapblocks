@@ -143,6 +143,9 @@ export default function App() {
     const [projectUrlReady, setProjectUrlReady] = useState(false);
     const [resolvedProjectUrl, setResolvedProjectUrl] = useState<string | null>(projectUrl);
     const [juniorKey, setJuniorKey] = useState(0);
+    const modeRef = React.useRef(mode);
+    modeRef.current = mode;
+    const handleSetModeRef = React.useRef<any>(null);
 
     // ── Global window-level drag-and-drop file upload ──
     const [isGlobalDragOver, setIsGlobalDragOver] = useState(false);
@@ -172,12 +175,23 @@ export default function App() {
             if (isInternalDrag) return;
             if (!e.dataTransfer?.types?.includes('Files')) return;
             const activeUpload = (window as any).__activeUpload;
-            if (!activeUpload) return;
+            const currentMode = modeRef.current;
+
+            // Show overlay for .leap file drops on the landing page
+            if (!activeUpload && currentMode !== 'home') return;
+
+            // If on landing page, check if any file is a .leap file
+            if (!activeUpload && currentMode === 'home') {
+                const files = e.dataTransfer?.files;
+                const hasLeapFile = files && Array.from(files).some(f => f.name.endsWith('.leap') || f.name.endsWith('.lbp'));
+                if (!hasLeapFile) return;
+            }
+
             e.preventDefault();
             dragCounter++;
             if (dragCounter === 1) {
                 setIsGlobalDragOver(true);
-                setGlobalDragLabel(activeUpload.label || 'Files');
+                setGlobalDragLabel(activeUpload?.label || '.leap Project');
             }
         };
 
@@ -198,9 +212,46 @@ export default function App() {
             e.preventDefault();
             dragCounter = 0;
             setIsGlobalDragOver(false);
+
+            const files = e.dataTransfer?.files;
+            if (!files || files.length === 0) return;
+
             const activeUpload = (window as any).__activeUpload;
-            if (activeUpload && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-                activeUpload.handler(e.dataTransfer.files);
+            if (activeUpload) {
+                activeUpload.handler(files);
+                return;
+            }
+
+            // Handle .leap file drops on the landing page
+            const file = files[0];
+            if (file && (file.name.endsWith('.leap') || file.name.endsWith('.lbp'))) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target?.result as string);
+                        const detectedMode: AppMode =
+                            data.mode === 'junior' ? 'junior' :
+                            data.mode === 'python' ? 'python' :
+                            data.mode === 'creova' ? 'creova' :
+                            data.mode === 'electra' ? 'electra' :
+                            data.mode === 'neura' ? 'neura' :
+                            'intermediate';
+
+                        useCloudProjectStore.getState().setPendingProject({
+                            mode: detectedMode,
+                            data,
+                            projectName: data.projectName || file.name.replace(/\.(leap|lbp)$/i, ''),
+                        });
+
+                        if (handleSetModeRef.current) {
+                            handleSetModeRef.current(detectedMode);
+                        }
+                    } catch (err) {
+                        console.error('Failed to parse .leap file:', err);
+                        alert('Invalid .leap project file.');
+                    }
+                };
+                reader.readAsText(file);
             }
         };
 
@@ -346,7 +397,8 @@ export default function App() {
         setMode(newMode);
     }, [cleanBlocklyStyles]);
 
-
+    // Keep ref in sync for drag-drop handler
+    handleSetModeRef.current = handleSetMode;
 
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
     const [switchPrompt, setSwitchPrompt] = useState<null | { from: AppMode; to: AppMode; tab?: 'blocks' | 'python' | 'costumes' | 'sounds' }>(null);
@@ -505,9 +557,14 @@ export default function App() {
                             boxShadow: '0 24px 48px rgba(99, 14, 212, 0.18)',
                         }}>
                             <span style={{ fontSize: '56px' }}>📥</span>
-                            <h3 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 800 }}>Drop to Upload</h3>
+                            <h3 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 800 }}>
+                                {globalDragLabel === '.leap Project' ? 'Drop to Open Project' : 'Drop to Upload'}
+                            </h3>
                             <p style={{ margin: 0, color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>
-                                Release to upload to <span style={{ color: '#630ed4', fontWeight: 800 }}>{globalDragLabel}</span>
+                                {globalDragLabel === '.leap Project'
+                                    ? 'Release to open in the matching module'
+                                    : <>Release to upload to <span style={{ color: '#630ed4', fontWeight: 800 }}>{globalDragLabel}</span></>
+                                }
                             </p>
                         </div>
                     </div>

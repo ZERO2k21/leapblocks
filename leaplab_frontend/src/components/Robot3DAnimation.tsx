@@ -28,8 +28,7 @@ const Robot3DAnimation: React.FC<Robot3DAnimationProps> = ({ onSelect }) => {
         .robot-3d-container {
           width: 100%;
           height: 100%;
-          min-height: 400px;
-          max-height: 500px;
+          min-height: 0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -40,8 +39,7 @@ const Robot3DAnimation: React.FC<Robot3DAnimationProps> = ({ onSelect }) => {
         .robot-3d-wrapper {
           width: 100%;
           height: 100%;
-          min-height: 400px;
-          max-height: 500px;
+          min-height: 0;
           position: relative;
           display: flex;
           align-items: center;
@@ -53,10 +51,16 @@ const Robot3DAnimation: React.FC<Robot3DAnimationProps> = ({ onSelect }) => {
         .robot-video-canvas {
           width: 100%;
           height: 100%;
-          min-height: 400px;
-          max-height: 450px;
+          min-height: 0;
+          max-height: 100%;
           object-fit: contain;
           border-radius: 20px;
+        }
+
+        @media (min-width: 1025px) {
+          .robot-3d-container { min-height: 400px; max-height: 500px; }
+          .robot-3d-wrapper { min-height: 400px; max-height: 500px; }
+          .robot-video-canvas { min-height: 400px; max-height: 450px; }
         }
 
       `}</style>
