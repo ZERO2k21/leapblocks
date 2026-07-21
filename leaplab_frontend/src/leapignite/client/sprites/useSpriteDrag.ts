@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const SPRITE_BOX_SIZE = 80;
 const SPRITE_CENTER = SPRITE_BOX_SIZE / 2;
@@ -9,7 +9,7 @@ export function getPenTipOffset(
     currentSize = 100,
     currentScaleX = 1,
     currentMirrored = false
-) {
+): { x: number; y: number } {
     const angleRad = (Number(currentAngle) || 0) * Math.PI / 180;
     const sizeScale = Math.max(0.1, (Number(currentSize) || 100) / 100);
     const horizontalDirection = (currentMirrored ? -currentScaleX : currentScaleX) < 0 ? -1 : 1;
@@ -26,14 +26,55 @@ export function getPenTipOffset(
     };
 }
 
+interface UseSpriteDragProps {
+    x: number;
+    y: number;
+    angle: number;
+    size: number;
+    scaleX: number;
+    mirrored: boolean;
+    onClick?: () => void;
+    onDragStateChange?: (dragging: boolean) => void;
+    isPenSprite?: boolean;
+    updateStore: (partial: Partial<{ x: number; y: number }>) => void;
+    penColor?: string;
+    isPenDown?: boolean;
+}
+
+interface DragRef {
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    didDrag: boolean;
+    parentLeft: number;
+    parentTop: number;
+    prevDrawPoint: { x: number; y: number } | null;
+    tipOffsetX: number;
+    tipOffsetY: number;
+    stageEl: HTMLElement | null;
+}
+
+declare global {
+    interface Window {
+        drawSegment?: (x1: number, y1: number, x2: number, y2: number, color: string, size: number) => void;
+        penColor?: string;
+        penSize?: number;
+    }
+}
+
 export default function useSpriteDrag({
     x, y, angle, size, scaleX, mirrored, onClick, onDragStateChange,
     isPenSprite, updateStore, penColor, isPenDown,
-}) {
+}: UseSpriteDragProps): {
+    isDragging: boolean;
+    handleMouseDown: (e: React.MouseEvent) => void;
+    handleTouchStart: (e: React.TouchEvent) => void;
+} {
     const [isDragging, setIsDragging] = useState(false);
-    const dragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false });
+    const dragRef = useRef<DragRef>({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false, parentLeft: 0, parentTop: 0, prevDrawPoint: null, tipOffsetX: 0, tipOffsetY: 0, stageEl: null });
 
-    const startDrag = (clientX, clientY) => {
+    const startDrag = useCallback((clientX: number, clientY: number) => {
         const stageEl = dragRef.current.stageEl;
         const rect = stageEl?.getBoundingClientRect();
         const stageLeft = rect?.left || 0;
@@ -58,9 +99,9 @@ export default function useSpriteDrag({
 
         setIsDragging(true);
         if (onDragStateChange) onDragStateChange(true);
-    };
+    }, [x, y, angle, size, scaleX, mirrored, isPenSprite, onDragStateChange]);
 
-    const moveDrag = (clientX, clientY) => {
+    const moveDrag = useCallback((clientX: number, clientY: number) => {
         const dx = clientX - dragRef.current.startX;
         const dy = clientY - dragRef.current.startY;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
@@ -94,24 +135,24 @@ export default function useSpriteDrag({
         }
 
         updateStore({ x: newX, y: newY });
-    };
+    }, [isPenSprite, penColor, updateStore]);
 
-    const endDrag = () => {
+    const endDrag = useCallback(() => {
         setIsDragging(false);
         if (onDragStateChange) onDragStateChange(false);
         if (!dragRef.current.didDrag && onClick) {
             onClick();
         }
-    };
+    }, [onClick, onDragStateChange]);
 
-    const handleMouseDown = (e) => {
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         const stageEl = e.currentTarget.parentElement;
         dragRef.current.stageEl = stageEl;
         startDrag(e.clientX, e.clientY);
 
-        const handleMouseMove = (me) => {
+        const handleMouseMove = (me: MouseEvent) => {
             me.preventDefault();
             moveDrag(me.clientX, me.clientY);
         };
@@ -123,9 +164,9 @@ export default function useSpriteDrag({
 
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
-    };
+    }, [startDrag, moveDrag, endDrag]);
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
         e.preventDefault();
         e.stopPropagation();
         const touch = e.touches[0];
@@ -133,7 +174,7 @@ export default function useSpriteDrag({
         dragRef.current.stageEl = stageEl;
         startDrag(touch.clientX, touch.clientY);
 
-        const handleTouchMove = (te) => {
+        const handleTouchMove = (te: TouchEvent) => {
             te.preventDefault();
             const t = te.touches[0];
             moveDrag(t.clientX, t.clientY);
@@ -146,7 +187,7 @@ export default function useSpriteDrag({
 
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd);
-    };
+    }, [startDrag, moveDrag, endDrag]);
 
     return {
         isDragging,

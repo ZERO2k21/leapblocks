@@ -1,14 +1,67 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import { useState, useRef } from "react";
 import Blockly from "@blockly-runtime";
 import { fileService } from "../../../Electra/Client/Src/services/FileService";
 import { showToast } from "../components/Toast";
 
-const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+interface SpriteData {
+    id: string;
+    name: string;
+    type: string;
+    x: number;
+    y: number;
+    angle: number;
+    size: number;
+    visible: boolean;
+    mirrored: boolean;
+    speech: string | null;
+    costumes: Record<string, string>;
+    currentCostume: string;
+    blocks?: any;
+    [key: string]: any;
+}
+
+interface SceneData {
+    id: string;
+    name: string;
+    background: string;
+    sprites: SpriteData[];
+    [key: string]: any;
+}
+
+interface ProjectPayload {
+    scenes: SceneData[];
+    recordedSounds: Record<string, { samples: number[]; sampleRate: number }>;
+    installedExtensions: string[];
+}
+
+interface AudioEngine {
+    soundBank?: {
+        assets: Record<string, string>;
+        recordedSounds?: Record<string, { samples: number[]; sampleRate: number }>;
+        restoreRecordedSound?: (name: string, samples: number[], sampleRate: number) => void;
+    };
+}
+
+interface UseJuniorProjectProps {
+    workspaceRef: React.RefObject<any>;
+    scenes: SceneData[];
+    setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>;
+    currentSceneId: string;
+    setCurrentSceneId: (id: string) => void;
+    activeSpriteIdRef: React.MutableRefObject<string>;
+    setActiveSpriteId: (id: string | null) => void;
+    stopBlocks?: () => void;
+    projectName: string;
+    setProjectName: (name: string) => void;
+    saveCurrentWorkspace: () => void;
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>;
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>;
+    audioEngine?: AudioEngine;
+    installedExtensionsRef?: React.MutableRefObject<Set<string>>;
+    restoreExtensions?: (extensions: string[]) => void;
+}
+
+const cloneWorkspaceData = (workspaceJson: any): any => JSON.parse(JSON.stringify(workspaceJson || {}));
 
 export function useJuniorProject({
     workspaceRef,
@@ -27,12 +80,12 @@ export function useJuniorProject({
     audioEngine,
     installedExtensionsRef,
     restoreExtensions
-}) {
-    const fileInputRef = useRef(null);
+}: UseJuniorProjectProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-    const [pendingAction, setPendingAction] = useState(null); // 'new' or 'open'
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-    const createDefaultSprite = () => ({
+    const createDefaultSprite = (): SpriteData => ({
         id: 'robot_default',
         name: 'Robot',
         type: 'robot',
@@ -53,14 +106,14 @@ export function useJuniorProject({
         blocks: { blocks: { languageVersion: 0, blocks: [] } }
     });
 
-    const createDefaultScene = () => ({
+    const createDefaultScene = (): SceneData => ({
         id: 'scene1',
         name: 'Scene 1',
         background: 'white',
         sprites: [createDefaultSprite()]
     });
 
-    const executeNewProject = () => {
+    const executeNewProject = (): void => {
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.clear();
             console.log('[JuniorProject] Cleared all sprite workspaces');
@@ -88,18 +141,18 @@ export function useJuniorProject({
         console.log('[JuniorApp] New project created');
     };
 
-    const handleNewProject = () => {
+    const handleNewProject = (): void => {
         setPendingAction('new');
         setShowUnsavedModal(true);
     };
 
-    const buildProjectPayload = () => ({
+    const buildProjectPayload = (): ProjectPayload => ({
         scenes,
-        recordedSounds: audioEngine?.soundBank?.recordedSounds || {},
+        recordedSounds: (audioEngine?.soundBank?.recordedSounds as any) || {},
         installedExtensions: installedExtensionsRef ? Array.from(installedExtensionsRef.current) : []
     });
 
-    const handleSaveProject = async (isSilent = false) => {
+    const handleSaveProject = async (isSilent = false): Promise<void> => {
         saveCurrentWorkspace();
         setTimeout(async () => {
             const payload = buildProjectPayload();
@@ -109,14 +162,14 @@ export function useJuniorProject({
                 if (!isSilent) {
                     showToast("Project saved successfully!", "success");
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error('[JuniorApp] Failed to save project:', err);
                 alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
             }
         }, 50);
     };
 
-    const handleDownloadProject = () => {
+    const handleDownloadProject = (): void => {
         saveCurrentWorkspace();
         setTimeout(() => {
             fileService.saveProjectLocally(projectName, 'junior', buildProjectPayload());
@@ -124,7 +177,7 @@ export function useJuniorProject({
         }, 50);
     };
 
-    const handleShareProject = () => {
+    const handleShareProject = (): void => {
         saveCurrentWorkspace();
         setTimeout(() => {
             fileService.shareProject(projectName, 'junior', buildProjectPayload());
@@ -132,19 +185,19 @@ export function useJuniorProject({
         }, 50);
     };
 
-    const executeOpenProject = () => {
+    const executeOpenProject = (): void => {
         if (fileInputRef.current) {
             fileInputRef.current.accept = '.leap,.lbproject,application/json';
             fileInputRef.current.click();
         }
     };
 
-    const handleOpenProject = () => {
+    const handleOpenProject = (): void => {
         setPendingAction('open');
         setShowUnsavedModal(true);
     };
 
-    const confirmUnsavedAction = (saveFirst) => {
+    const confirmUnsavedAction = (saveFirst: boolean): void => {
         setShowUnsavedModal(false);
         if (saveFirst) {
             handleSaveProject(true);
@@ -160,7 +213,7 @@ export function useJuniorProject({
         }
     };
 
-    const loadProjectData = async (data) => {
+    const loadProjectData = async (data: any): Promise<boolean> => {
         const validation = fileService.validateProject(data, 'junior');
 
         if (!validation.isValid) {
@@ -174,11 +227,10 @@ export function useJuniorProject({
 
         if (stopBlocks) stopBlocks();
 
-        // Clear per-sprite workspaces and initialize from loaded project
         if (spriteWorkspacesRef && spriteWorkspacesRef.current) {
             spriteWorkspacesRef.current.clear();
-            data.scenes.forEach(scene => {
-                scene.sprites.forEach(sprite => {
+            data.scenes.forEach((scene: any) => {
+                scene.sprites.forEach((sprite: any) => {
                     if (sprite.blocks && Object.keys(sprite.blocks).length > 0) {
                         spriteWorkspacesRef.current.set(sprite.id, cloneWorkspaceData(sprite.blocks));
                         console.log(`[JuniorProject] Pre-loaded workspace for sprite: ${sprite.id}`);
@@ -203,15 +255,13 @@ export function useJuniorProject({
         setProjectName(data.projectName || 'My Project');
         setScenes(data.scenes);
 
-        // Restore recorded sounds
         if (data.recordedSounds && audioEngine?.soundBank) {
             for (const [name, { samples, sampleRate }] of Object.entries(data.recordedSounds)) {
-                audioEngine.soundBank.restoreRecordedSound(name, samples, sampleRate);
+                (audioEngine.soundBank as any).restoreRecordedSound(name, samples, sampleRate);
             }
             console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
         }
 
-        // Restore installed extensions (must happen before workspace load so block definitions exist)
         if (Array.isArray(data.installedExtensions) && data.installedExtensions.length > 0 && restoreExtensions) {
             restoreExtensions(data.installedExtensions);
             console.log(`[JuniorProject] Restored ${data.installedExtensions.length} extension(s): ${data.installedExtensions.join(', ')}`);
@@ -257,14 +307,14 @@ export function useJuniorProject({
         return true;
     };
 
-    const handleFileLoad = async (e) => {
-        const file = e.target.files[0];
+    const handleFileLoad = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+        const file = e.target.files?.[0];
         if (!file) return;
 
         try {
             const data = await fileService.loadProject(file);
             await loadProjectData(data);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to load project:', err);
             showToast('Failed to load project file: ' + err.message, 'error');
         } finally {

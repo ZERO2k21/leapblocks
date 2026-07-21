@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 
-export function useStageSize(stageContainerRef) {
-    const [stageSize, setStageSize] = useState({ width: 480, height: 360 });
+interface StageSize {
+    width: number;
+    height: number;
+}
+
+export function useStageSize(stageContainerRef: React.RefObject<HTMLElement | null>): StageSize {
+    const [stageSize, setStageSize] = useState<StageSize>({ width: 480, height: 360 });
 
     useEffect(() => {
         const updateStageSize = () => {

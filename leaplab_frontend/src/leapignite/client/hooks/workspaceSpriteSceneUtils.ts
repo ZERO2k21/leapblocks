@@ -1,12 +1,35 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import Blockly from "@blockly-runtime";
 import { showToast } from "../components/Toast";
+import type { SpriteEntry } from "../../../components/SpriteLibrary";
 
-const normalizeJuniorSpriteType = (rawType) => {
+interface CostumeMap {
+    [key: string]: string;
+}
+
+interface SpriteData {
+    id: string;
+    name: string;
+    type?: string;
+    x?: number;
+    y?: number;
+    angle?: number;
+    size?: number;
+    visible?: boolean;
+    mirrored?: boolean;
+    costumes?: CostumeMap | string[];
+    currentCostume?: string;
+    textColor?: string;
+    blocks?: any;
+}
+
+interface SceneData {
+    id: string;
+    name: string;
+    background: string;
+    sprites: SpriteData[];
+}
+
+const normalizeJuniorSpriteType = (rawType: string): string => {
     const normalized = String(rawType || "").trim().toLowerCase();
 
     if (!normalized) return "custom";
@@ -17,9 +40,22 @@ const normalizeJuniorSpriteType = (rawType) => {
     return normalized;
 };
 
-const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspaceJson || {}));
+const cloneWorkspaceData = (workspaceJson: any): any => JSON.parse(JSON.stringify(workspaceJson || {}));
 
-export function addSprite(workspaceRef, activeSpriteIdRef, spriteWorkspacesRef, saveCurrentWorkspace, scenes, currentSceneId, setScenes, scenesRef, isLoadingWorkspaceRef, setActiveSpriteId, setIsSpriteModalOpen, spriteData = null) {
+export function addSprite(
+    workspaceRef: React.RefObject<any>,
+    activeSpriteIdRef: React.MutableRefObject<string>,
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>,
+    saveCurrentWorkspace: () => void,
+    scenes: SceneData[],
+    currentSceneId: string,
+    setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
+    scenesRef: React.MutableRefObject<SceneData[]>,
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>,
+    setActiveSpriteId: (id: string) => void,
+    setIsSpriteModalOpen: (open: boolean) => void,
+    spriteData: SpriteEntry | string | null = null
+): void {
     if (workspaceRef && workspaceRef.current && spriteWorkspacesRef && spriteWorkspacesRef.current && activeSpriteIdRef && activeSpriteIdRef.current) {
         const activeId = activeSpriteIdRef.current;
         const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
@@ -30,27 +66,27 @@ export function addSprite(workspaceRef, activeSpriteIdRef, spriteWorkspacesRef, 
     saveCurrentWorkspace();
     const newId = `sprite_${Date.now()}`;
 
-    let costumes = { default: "🐻" };
+    let costumes: CostumeMap = { default: "🐻" };
     let spriteName = "Bear";
     let spriteType = "bear";
 
     if (spriteData && typeof spriteData === 'object') {
-        spriteName = spriteData.name || 'Sprite';
-        spriteType = normalizeJuniorSpriteType(spriteData.id || spriteData.name || 'custom');
+        spriteName = (spriteData as SpriteEntry).name || 'Sprite';
+        spriteType = normalizeJuniorSpriteType((spriteData as SpriteEntry).id || (spriteData as SpriteEntry).name || 'custom');
 
-        if (spriteData.costumes && spriteData.costumes.length > 0) {
+        if ((spriteData as SpriteEntry).costumes && (spriteData as SpriteEntry).costumes!.length > 0) {
             costumes = {};
-            spriteData.costumes.forEach((c, index) => {
+            (spriteData as SpriteEntry).costumes!.forEach((c: string, index: number) => {
                 const key = index === 0 ? 'default' : `costume${index}`;
                 costumes[key] = c;
             });
-        } else if (spriteData.image) {
-            costumes = { default: spriteData.image };
-        } else if (spriteData.emoji) {
-            costumes = { default: spriteData.emoji };
+        } else if ((spriteData as SpriteEntry).image) {
+            costumes = { default: (spriteData as SpriteEntry).image! };
+        } else if ((spriteData as SpriteEntry).emoji) {
+            costumes = { default: (spriteData as SpriteEntry).emoji };
         }
     } else {
-        const type = spriteData || 'robot';
+        const type = (spriteData as string) || 'robot';
         spriteType = normalizeJuniorSpriteType(type);
         spriteName = type.charAt(0).toUpperCase() + type.slice(1);
 
@@ -109,7 +145,7 @@ export function addSprite(workspaceRef, activeSpriteIdRef, spriteWorkspacesRef, 
         newY = Math.floor(Math.random() * 9 + 3) * CELL_SIZE;
     }
 
-    const newSprite = {
+    const newSprite: SpriteData = {
         id: newId,
         name: spriteName,
         type: spriteType,
@@ -166,9 +202,13 @@ export function addSprite(workspaceRef, activeSpriteIdRef, spriteWorkspacesRef, 
     setIsSpriteModalOpen(false);
 }
 
-export function addScene(scenes, setScenes, setCurrentSceneId) {
+export function addScene(
+    scenes: SceneData[],
+    setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
+    setCurrentSceneId: (id: string) => void
+): void {
     const newId = `scene${scenes.length + 1}`;
-    const newScene = {
+    const newScene: SceneData = {
         id: newId,
         name: `Scene ${scenes.length + 1}`,
         background: "white",
@@ -178,7 +218,17 @@ export function addScene(scenes, setScenes, setCurrentSceneId) {
     setCurrentSceneId(newId);
 }
 
-export function deleteSprite(sprites, workspaceRef, activeSpriteIdRef, isLoadingWorkspaceRef, spriteWorkspacesRef, currentSceneId, setScenes, setActiveSpriteId, spriteId) {
+export function deleteSprite(
+    sprites: SpriteData[],
+    workspaceRef: React.RefObject<any>,
+    activeSpriteIdRef: React.MutableRefObject<string>,
+    isLoadingWorkspaceRef: React.MutableRefObject<boolean>,
+    spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>,
+    currentSceneId: string,
+    setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
+    setActiveSpriteId: (id: string) => void,
+    spriteId: string
+): void {
     if (sprites.length <= 1) {
         showToast("Cannot delete the last sprite!", 'warning');
         return;
@@ -233,7 +283,13 @@ export function deleteSprite(sprites, workspaceRef, activeSpriteIdRef, isLoading
     }
 }
 
-export function deleteScene(scenes, setScenes, setCurrentSceneId, setActiveSpriteId, sceneId) {
+export function deleteScene(
+    scenes: SceneData[],
+    setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
+    setCurrentSceneId: (id: string) => void,
+    setActiveSpriteId: (id: string | null) => void,
+    sceneId: string
+): void {
     if (scenes.length <= 1) {
         showToast("Cannot delete the last scene!", 'warning');
         return;

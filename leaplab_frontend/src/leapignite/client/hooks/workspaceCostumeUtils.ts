@@ -1,15 +1,44 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import { showToast } from "../components/Toast";
 
-export function handleEditSprite(sprites, setPaintEditor, spriteId) {
+interface CostumeEntry {
+    id: string;
+    name: string;
+    image: string;
+}
+
+interface PaintEditor {
+    isOpen: boolean;
+    type: 'sprite' | 'backdrop';
+    targetId: string | null;
+    initialImage: string | null;
+    costumes: CostumeEntry[];
+    spriteName?: string;
+    mode?: string;
+}
+
+interface SpriteData {
+    id: string;
+    name: string;
+    costumes: Record<string, string>;
+    currentCostume: string;
+    [key: string]: any;
+}
+
+interface SceneData {
+    id: string;
+    name: string;
+    background: string;
+    backgroundImage?: string | null;
+    backdropName?: string;
+    sprites: SpriteData[];
+    [key: string]: any;
+}
+
+export function handleEditSprite(sprites: SpriteData[], setPaintEditor: (editor: PaintEditor) => void, spriteId: string): void {
     const sprite = sprites.find(s => s.id === spriteId);
     if (!sprite) return;
 
-    const costumeNameMap = {
+    const costumeNameMap: Record<string, string> = {
         default: 'Idle',
         wave1: 'Wave 1',
         wave2: 'Wave 2',
@@ -30,21 +59,21 @@ export function handleEditSprite(sprites, setPaintEditor, spriteId) {
         costumes: Object.entries(sprite.costumes || {}).map(([id, src]) => ({
             id,
             name: costumeNameMap[id] || id,
-            image: src
+            image: src as string
         })),
         spriteName: sprite.name,
         mode: 'junior'
     });
 }
 
-export function handleEditScene(scenes, setBackdropEditSceneId, setIsBackdropChooserOpen, sceneId) {
+export function handleEditScene(scenes: SceneData[], setBackdropEditSceneId: (id: string | null) => void, setIsBackdropChooserOpen: (open: boolean) => void, sceneId: string): void {
     const scene = scenes.find(s => s.id === sceneId);
     if (!scene) return;
     setBackdropEditSceneId(sceneId);
     setIsBackdropChooserOpen(true);
 }
 
-export function handleBackdropSelect(backdropEditSceneId, currentSceneId, setScenes, setIsBackdropChooserOpen, setBackdropEditSceneId, name, src, solidColor) {
+export function handleBackdropSelect(backdropEditSceneId: string | null, currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setIsBackdropChooserOpen: (open: boolean) => void, setBackdropEditSceneId: (id: string | null) => void, name: string, src: string | null, solidColor: string | null): void {
     const targetId = backdropEditSceneId || currentSceneId;
     if (src) {
         setScenes(prev => prev.map(scene => {
@@ -71,7 +100,7 @@ export function handleBackdropSelect(backdropEditSceneId, currentSceneId, setSce
     setBackdropEditSceneId(null);
 }
 
-export function handleBackdropPaint(backdropEditSceneId, currentSceneId, scenes, setIsBackdropChooserOpen, setPaintEditor) {
+export function handleBackdropPaint(backdropEditSceneId: string | null, currentSceneId: string, scenes: SceneData[], setIsBackdropChooserOpen: (open: boolean) => void, setPaintEditor: (editor: PaintEditor) => void): void {
     setIsBackdropChooserOpen(false);
     const targetId = backdropEditSceneId || currentSceneId;
     const scene = scenes.find(s => s.id === targetId);
@@ -89,7 +118,7 @@ export function handleBackdropPaint(backdropEditSceneId, currentSceneId, scenes,
     });
 }
 
-export function handlePaintSave(paintEditor, setPaintEditor, currentSceneId, setScenes, imageData, svgData, name, rotationCenter) {
+export function handlePaintSave(paintEditor: PaintEditor, setPaintEditor: (editor: PaintEditor) => void, currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, imageData: string, svgData: string, name: string, rotationCenter: { x: number; y: number }): void {
     const savedData = imageData;
     const costumeKey = name ? name.toLowerCase().replace(/\s+/g, '_') : 'custom';
 
@@ -120,7 +149,7 @@ export function handlePaintSave(paintEditor, setPaintEditor, currentSceneId, set
     setPaintEditor({ ...paintEditor, isOpen: false });
 }
 
-export function handleDeleteCostume(paintEditor, sprites, currentSceneId, setScenes, setPaintEditor, index) {
+export function handleDeleteCostume(paintEditor: PaintEditor, sprites: SpriteData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setPaintEditor: (editor: PaintEditor) => void, index: number): void {
     if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
 
     const sprite = sprites.find(s => s.id === paintEditor.targetId);
@@ -160,7 +189,7 @@ export function handleDeleteCostume(paintEditor, sprites, currentSceneId, setSce
     }));
 }
 
-export function handleDuplicateCostume(paintEditor, sprites, currentSceneId, setScenes, setPaintEditor, index) {
+export function handleDuplicateCostume(paintEditor: PaintEditor, sprites: SpriteData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setPaintEditor: (editor: PaintEditor) => void, index: number): void {
     if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
 
     const sprite = sprites.find(s => s.id === paintEditor.targetId);
@@ -196,7 +225,7 @@ export function handleDuplicateCostume(paintEditor, sprites, currentSceneId, set
     }));
 }
 
-export function handleSwitchCostume(paintEditor, sprites, scenes, currentSceneId, setScenes, setCurrentSceneId, setPaintEditor, index) {
+export function handleSwitchCostume(paintEditor: PaintEditor, sprites: SpriteData[], scenes: SceneData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setCurrentSceneId: (id: string) => void, setPaintEditor: (editor: PaintEditor) => void, index: number): void {
     if (!paintEditor.targetId) return;
 
     if (paintEditor.type === 'sprite') {
@@ -231,7 +260,7 @@ export function handleSwitchCostume(paintEditor, sprites, scenes, currentSceneId
     }
 }
 
-export function handleRenameCostume(paintEditor, sprites, scenes, currentSceneId, setScenes, setPaintEditor, index, newName) {
+export function handleRenameCostume(paintEditor: PaintEditor, sprites: SpriteData[], scenes: SceneData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setPaintEditor: (editor: PaintEditor) => void, index: number, newName: string): void {
     if (!paintEditor.targetId) return;
 
     if (paintEditor.type === 'sprite') {
@@ -246,7 +275,7 @@ export function handleRenameCostume(paintEditor, sprites, scenes, currentSceneId
                 ...scene,
                 sprites: scene.sprites.map(s => {
                     if (s.id !== paintEditor.targetId) return s;
-                    const newCostumes = {};
+                    const newCostumes: Record<string, string> = {};
                     Object.entries(s.costumes).forEach(([k, v]) => {
                         if (k === oldKey) newCostumes[newKey] = v;
                         else newCostumes[k] = v;

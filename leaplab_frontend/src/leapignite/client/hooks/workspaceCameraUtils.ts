@@ -1,12 +1,12 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import { showToast } from "../components/Toast";
 import { setFaceVideoElement } from "../../../runtime/RuntimeBridge";
 
-export async function toggleCamera(isCameraOn, setIsCameraOn, cameraStreamRef, cameraVideoRef) {
+export async function toggleCamera(
+    isCameraOn: boolean,
+    setIsCameraOn: (on: boolean) => void,
+    cameraStreamRef: React.MutableRefObject<MediaStream | null>,
+    cameraVideoRef: React.RefObject<HTMLVideoElement | null>
+): Promise<void> {
     if (isCameraOn) {
         if (cameraStreamRef.current) {
             cameraStreamRef.current.getTracks().forEach(track => track.stop());

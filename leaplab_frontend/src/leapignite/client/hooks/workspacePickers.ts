@@ -1,4 +1,15 @@
-export function handleBlockClickForPickers(block, {
+interface PickerHandlers {
+    workspaceRef: React.RefObject<any>;
+    setPickerCallback: (cb: () => (x: number, y: number) => void) => void;
+    setShowPicker: (show: boolean) => void;
+    setActiveBlock: (block: any) => void;
+    setShowDirPicker: (show: boolean) => void;
+    setShowInstPicker: (show: boolean) => void;
+    setShowPianoPicker: (show: boolean) => void;
+    setPickerPos: (pos: { x: number; y: number }) => void;
+}
+
+export function handleBlockClickForPickers(block: any, {
     workspaceRef,
     setPickerCallback,
     setShowPicker,
@@ -7,16 +18,16 @@ export function handleBlockClickForPickers(block, {
     setShowInstPicker,
     setShowPianoPicker,
     setPickerPos
-}) {
+}: PickerHandlers): void {
     if (block.type === "go_to_location") {
-        setPickerCallback(() => (x, y) => {
+        setPickerCallback(() => (x: number, y: number) => {
             if (typeof block.setGridPosition === "function") {
                 block.setGridPosition(x, y);
             } else {
                 block.posX = x;
                 block.posY = y;
             }
-            if (window.goToLocation) window.goToLocation(x, y);
+            if ((window as any).goToLocation) (window as any).goToLocation(x, y);
         });
         setShowPicker(true);
     }

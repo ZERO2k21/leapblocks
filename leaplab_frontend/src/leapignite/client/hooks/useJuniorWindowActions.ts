@@ -1,10 +1,99 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import { useEffect } from "react";
 import { ExecutionStop } from "../../server/engine/Interpreter";
+
+declare global {
+    interface Window {
+        broadcastMessage?: (message: string) => void;
+        stopAll?: () => void;
+        stopExecution?: () => void;
+        resetBear?: () => void;
+        animationSpeed?: number;
+        setSpeed?: (speed: string) => void;
+        getAnimationDelay?: () => number;
+        penColor?: string;
+        penSize?: number;
+        setPenColor?: (color: string) => void;
+        setPenSize?: (size: string) => void;
+        stopAllSounds?: () => void;
+        stopMusic?: () => void;
+        speechSynthesis: SpeechSynthesis;
+        getLeapProjectData?: () => any;
+        updateSprite?: (id: string, updates: any) => void;
+        moveRelative?: (targetOrDirection: string, directionOrSteps: any, maybeSteps?: any) => void;
+        goToLocation?: (targetOrX: any, xOrY: any, maybeY?: any) => void;
+        changeSize?: (id: string, delta: number) => void;
+        setSize?: (id: string, size: number) => void;
+        getCurrentSceneId?: () => string;
+        getActiveSpriteId?: () => string;
+        switchScene?: (sceneId: string) => void;
+        changeScene?: () => void;
+        selectSprite?: (spriteIdOrName: string) => void;
+        setVisible?: (id: string, val: boolean) => void;
+        showSprite?: (id: string) => void;
+        hideSprite?: (id: string) => void;
+        say?: (id: string, text: string) => void;
+        showFeedback?: (text: string, spriteId?: string) => void;
+        goToRandom?: (id: string) => void;
+        moveRandom?: (spriteId: string, xMin: number, xMax: number, yMin: number, yMax: number) => void;
+        setSpriteColor?: (id: string, color: string) => void;
+        resetSize?: (id: string) => void;
+        nextCostume?: (id: string) => void;
+        changeCostume?: (id: string, costume: string) => void;
+        mirrorSprite?: (id: string) => void;
+        stampSprite?: (id: string) => void;
+        stampSpriteOnCanvas?: (spriteId: string, sx: number, sy: number, costumeVal: string, spriteSize: number) => void;
+        playSound?: (name: string) => void;
+        playNote?: (note: string, octave: number) => void;
+        setInstrument?: (inst: string) => void;
+        playMusic?: (name: string) => void;
+        __setCameraOn?: (on: boolean) => Promise<void>;
+        setCameraOn?: (on: boolean) => void;
+        hpCameraToggle?: (on: boolean) => Promise<void>;
+        fdCameraToggle?: (on: boolean) => Promise<void>;
+        _spriteActions?: Record<string, { stamp: () => void }>;
+        activeSpriteId?: string;
+    }
+}
+
+interface SpriteActions {
+    resetAll: () => void;
+    update: (id: string, updates: any) => void;
+    moveRelative: (id: string, direction: string, steps: number) => void;
+    goToGrid: (id: string, x: number, y: number) => void;
+}
+
+interface TimeoutRefs {
+    current: Record<string, any>;
+}
+
+interface AudioEngine {
+    stopAllSounds?: () => void;
+    playSound?: (name: string, tid: string) => void;
+    instrumentPlayer?: {
+        playNoteForDuration: (note: string, octave: number, duration: number) => void;
+        setInstrument: (inst: string) => void;
+    };
+    soundBank?: {
+        stopMusic: () => void;
+        playMusic: (name: string) => void;
+    };
+}
+
+interface UseJuniorWindowActionsProps {
+    scenes: any[];
+    currentSceneId: string;
+    activeSpriteIdRef: React.MutableRefObject<string>;
+    activeSpriteId: string;
+    sprites: any[];
+    spriteActions: SpriteActions;
+    handleSceneSelect: (sceneId: string) => void;
+    handleNextScene: () => void;
+    handleSpriteSelect: (spriteId: string) => void;
+    timeoutRefs: TimeoutRefs;
+    canvasRef: React.RefObject<HTMLCanvasElement | null>;
+    audioEngine: AudioEngine;
+    setWinMessage: (msg: any) => void;
+}
 
 export function useJuniorWindowActions({
     scenes,
@@ -20,8 +109,7 @@ export function useJuniorWindowActions({
     canvasRef,
     audioEngine,
     setWinMessage
-}) {
-    // --- EFFECT 1: STATIC ACTIONS (Run Once/Rarely) ---
+}: UseJuniorWindowActionsProps): void {
     useEffect(() => {
         const staticKeys = [
             "broadcastMessage",
@@ -46,8 +134,7 @@ export function useJuniorWindowActions({
             window.showFeedback?.(`📨 ${message}`);
         };
 
-        window.stopAll = () => {
-        };
+        window.stopAll = () => {};
 
         window.stopExecution = () => {
             throw new ExecutionStop("Execution stopped by Stop block");
@@ -61,7 +148,7 @@ export function useJuniorWindowActions({
 
         window.animationSpeed = 0.5;
         window.setSpeed = (speed) => {
-            const speedMap = { slow: 0.8, normal: 0.5, fast: 0.2 };
+            const speedMap: Record<string, number> = { slow: 0.8, normal: 0.5, fast: 0.2 };
             window.animationSpeed = speedMap[speed] ?? speedMap.normal;
         };
         window.getAnimationDelay = () => window.animationSpeed || 0.5;
@@ -74,7 +161,7 @@ export function useJuniorWindowActions({
         window.stopAllSounds = () => {
             window.speechSynthesis.cancel();
             if (audioEngine) {
-                audioEngine.stopAllSounds();
+                audioEngine.stopAllSounds?.();
             }
         };
 
@@ -85,11 +172,10 @@ export function useJuniorWindowActions({
         };
 
         return () => {
-            staticKeys.forEach(key => delete window[key]);
+            staticKeys.forEach(key => delete (window as any)[key]);
         };
     }, [spriteActions, audioEngine, setWinMessage]);
 
-    // --- EFFECT 2: CONTEXT-DEPENDENT ACTIONS (Depends on Ref or specific callbacks) ---
     useEffect(() => {
         const contextKeys = [
             "getLeapProjectData",
@@ -123,8 +209,7 @@ export function useJuniorWindowActions({
             "playMusic"
         ];
 
-        // Use a helper to always get the current ID from ref or window override
-        const getCurrentID = () => window.activeSpriteId || activeSpriteIdRef.current || activeSpriteId;
+        const getCurrentID = (): string => window.activeSpriteId || activeSpriteIdRef.current || activeSpriteId;
 
         window.getLeapProjectData = () => ({
             scenes,
@@ -168,12 +253,12 @@ export function useJuniorWindowActions({
 
         window.changeSize = (id, delta) => {
             spriteActions.update(id || getCurrentID(), {
-                size: (prev) => prev + delta
+                size: (prev: number) => prev + delta
             });
         };
 
         window.setSize = (id, size) => {
-            spriteActions.update(id || getCurrentID(), { size: size });
+            spriteActions.update(id || getCurrentID(), { size });
         };
 
         window.getCurrentSceneId = () => currentSceneId;
@@ -182,13 +267,13 @@ export function useJuniorWindowActions({
         window.changeScene = () => handleNextScene();
 
         window.selectSprite = (spriteIdOrName) => {
-            const sprite = sprites.find(s => s.id === spriteIdOrName || s.id.includes(spriteIdOrName.toLowerCase()) || s.type === spriteIdOrName.toLowerCase());
+            const sprite = sprites.find((s: any) => s.id === spriteIdOrName || s.id.includes(spriteIdOrName.toLowerCase()) || s.type === spriteIdOrName.toLowerCase());
             if (sprite) handleSpriteSelect(sprite.id);
         };
 
         window.setVisible = (id, val) => spriteActions.update(id || getCurrentID(), { visible: val });
-        window.showSprite = (id) => window.setVisible(id || getCurrentID() || "robot_default", true);
-        window.hideSprite = (id) => window.setVisible(id || getCurrentID() || "robot_default", false);
+        window.showSprite = (id) => window.setVisible!(id || getCurrentID() || "robot_default", true);
+        window.hideSprite = (id) => window.setVisible!(id || getCurrentID() || "robot_default", false);
 
         window.say = (id, text) => {
             const tid = id || getCurrentID() || "robot_default";
@@ -201,7 +286,7 @@ export function useJuniorWindowActions({
         };
 
         window.showFeedback = (text, spriteId) => {
-            window.say(spriteId || getCurrentID(), text);
+            window.say!(spriteId || getCurrentID(), text);
         };
 
         window.goToRandom = (id) => {
@@ -228,7 +313,7 @@ export function useJuniorWindowActions({
 
         window.nextCostume = (id) => {
             const tid = id || getCurrentID() || "robot_default";
-            spriteActions.update(tid, (current) => {
+            spriteActions.update(tid, (current: any) => {
                 if (current.costumes) {
                     const keys = Object.keys(current.costumes);
                     if (keys.length > 1) {
@@ -247,7 +332,7 @@ export function useJuniorWindowActions({
         };
 
         window.mirrorSprite = (id) => {
-            spriteActions.update(id || getCurrentID() || "robot_default", (prev) => ({ mirrored: !prev.mirrored }));
+            spriteActions.update(id || getCurrentID() || "robot_default", (prev: any) => ({ mirrored: !prev.mirrored }));
         };
 
         window.stampSprite = (id) => {
@@ -285,7 +370,7 @@ export function useJuniorWindowActions({
         window.playSound = (name) => {
             const tid = getCurrentID();
             if (audioEngine) {
-                audioEngine.playSound(name, tid);
+                audioEngine.playSound?.(name, tid);
             }
         };
 
@@ -307,14 +392,13 @@ export function useJuniorWindowActions({
             }
         };
 
-        // --- Camera functions for extensions (hand_pose, face_detection, etc.) ---
         window.__setCameraOn = async (on) => {
             if (window.setCameraOn) window.setCameraOn(on);
         };
-        ['hpCameraToggle', 'fdCameraToggle'].forEach(key => window[key] = window.__setCameraOn);
+        ['hpCameraToggle', 'fdCameraToggle'].forEach(key => (window as any)[key] = window.__setCameraOn);
 
         return () => {
-            contextKeys.forEach(key => delete window[key]);
+            contextKeys.forEach(key => delete (window as any)[key]);
         };
     }, [scenes, currentSceneId, sprites, spriteActions, handleSceneSelect, handleNextScene, handleSpriteSelect, timeoutRefs, canvasRef, audioEngine]);
 }
