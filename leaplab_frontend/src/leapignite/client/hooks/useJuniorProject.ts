@@ -48,7 +48,7 @@ interface UseJuniorProjectProps {
     setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>;
     currentSceneId: string;
     setCurrentSceneId: (id: string) => void;
-    activeSpriteIdRef: React.MutableRefObject<string>;
+    activeSpriteIdRef: React.MutableRefObject<string | null>;
     setActiveSpriteId: (id: string | null) => void;
     stopBlocks?: () => void;
     projectName: string;
@@ -256,7 +256,8 @@ export function useJuniorProject({
         setScenes(data.scenes);
 
         if (data.recordedSounds && audioEngine?.soundBank) {
-            for (const [name, { samples, sampleRate }] of Object.entries(data.recordedSounds)) {
+            for (const [name, record] of Object.entries(data.recordedSounds)) {
+                const { samples, sampleRate } = record as { samples: number[]; sampleRate: number };
                 (audioEngine.soundBank as any).restoreRecordedSound(name, samples, sampleRate);
             }
             console.log(`[JuniorProject] Restored ${Object.keys(data.recordedSounds).length} recorded sound(s)`);
