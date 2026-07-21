@@ -100,7 +100,7 @@ export default function TopBar() {
 
     return (
         <header style={{
-            position: "sticky", top: 0, height: 60, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
+            position: "sticky", top: 0, height: 56, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
             display: "flex", alignItems: "center", padding: "0 16px",
             justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, flexWrap: "nowrap",
             boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
@@ -189,7 +189,7 @@ export default function TopBar() {
 
             <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flex: 1, justifyContent: "center" }}>
                 <div style={{
                     background: "rgba(255, 255, 255, 0.08)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",

@@ -30,7 +30,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
 
     return (
         <header style={{
-            height: 54,
+            height: 56,
             background: 'linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)',
             display: "flex",
             alignItems: "center", padding: "0 12px",
@@ -159,7 +159,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             </div>
 
             {/* Middle: Toolbar Icons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1, justifyContent: "center" }}>
                 <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
