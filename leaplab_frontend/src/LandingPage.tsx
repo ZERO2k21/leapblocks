@@ -248,7 +248,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ─── BACKGROUND NODES ─── */

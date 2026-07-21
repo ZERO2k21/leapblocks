@@ -7,7 +7,73 @@ import { useCallback, useMemo, useState } from 'react';
 import { defaultPropsFor } from '../data/defaultProperties';
 import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 
-const COMPONENT_META = new Map(PALETTE_ENHANCED.map(item => [item.type, item]));
+export interface DesignViewport {
+  width: number;
+  height: number;
+  deviceType: string;
+  orientation: string;
+}
+
+export interface ComponentNode {
+  id: string;
+  type: string;
+  icon?: string;
+  visible: boolean;
+  children?: ComponentNode[];
+  props: Record<string, any>;
+}
+
+export interface Screen {
+  id: string;
+  title: string;
+  backgroundColor: string;
+  backgroundImage: string;
+  alignHorizontal: string;
+  alignVertical: string;
+  components: ComponentNode[];
+  nonVisibleComponents: ComponentNode[];
+  aboutScreen?: string;
+  showStatusBar?: boolean;
+  titleVisible?: boolean;
+  screenOrientation?: string;
+  theme?: string;
+}
+
+export interface MediaItem {
+  filename: string;
+  [key: string]: any;
+}
+
+export interface AddComponentOptions {
+  visible?: boolean;
+  parentId?: string | null;
+}
+
+export interface ProjectData {
+  schemaVersion?: number;
+  appName?: string;
+  packageName?: string;
+  versionCode?: number;
+  versionName?: string;
+  screens?: Screen[];
+  activeScreen?: string;
+  blockLogic?: string;
+  media?: MediaItem[];
+  designViewport?: DesignViewport;
+}
+
+export type MovePosition = 'inside' | 'before' | 'after';
+
+export interface ComponentMeta {
+  type: string;
+  label?: string;
+  icon?: string;
+  category?: string;
+  visible?: boolean;
+  description?: string;
+}
+
+const COMPONENT_META = new Map<string, ComponentMeta>(PALETTE_ENHANCED.map(item => [item.type, item]));
 const ARRANGEMENT_TYPES = new Set([
   'HorizontalArrangement',
   'HorizontalScrollArrangement',
@@ -20,28 +86,28 @@ const ARRANGEMENT_TYPES = new Set([
 ]);
 const CANVAS_CHILD_TYPES = new Set(['Ball', 'ImageSprite']);
 const MAP_CHILD_TYPES = new Set(['Marker', 'LineString', 'Polygon', 'Rectangle', 'Circle', 'FeatureCollection']);
-const DEFAULT_DESIGN_VIEWPORT = { width: 412, height: 915, deviceType: 'phone', orientation: 'portrait' };
+const DEFAULT_DESIGN_VIEWPORT: DesignViewport = { width: 412, height: 915, deviceType: 'phone', orientation: 'portrait' };
 
-const makeScreen = (id) => ({ id, title: id, backgroundColor: '#ffffff', backgroundImage: '', alignHorizontal: 'Left', alignVertical: 'Top', components: [], nonVisibleComponents: [] });
+const makeScreen = (id: string): Screen => ({
+  id,
+  title: id,
+  backgroundColor: '#ffffff',
+  backgroundImage: '',
+  alignHorizontal: 'Left',
+  alignVertical: 'Top',
+  components: [],
+  nonVisibleComponents: []
+});
 
-const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-const getKeyVariants = (key) => {
+const getKeyVariants = (key: string): string[] => {
   const lower = key.toLowerCase();
   const cap = key.charAt(0).toUpperCase() + key.slice(1);
   return [key, lower, cap];
 };
 
-const getProp = (props, key, fallback = undefined) => {
-  for (const candidate of getKeyVariants(key)) {
-    if (Object.prototype.hasOwnProperty.call(props, candidate)) {
-      return props[candidate];
-    }
-  }
-  return fallback;
-};
-
-const setPropNormalized = (props, key, value) => {
+const setPropNormalized = (props: Record<string, any>, key: string, value: any): Record<string, any> => {
   const next = { ...props };
   let targetKey = key;
   for (const candidate of getKeyVariants(key)) {
@@ -54,7 +120,8 @@ const setPropNormalized = (props, key, value) => {
   return next;
 };
 
-const findNodeById = (list, id) => {
+const findNodeById = (list: ComponentNode[], id: string | null): ComponentNode | null => {
+  if (!id) return null;
   for (const node of list) {
     if (node.id === id) return node;
     if (node.children?.length) {
@@ -65,7 +132,14 @@ const findNodeById = (list, id) => {
   return null;
 };
 
-const findNodeAndParent = (list, id, parent = null) => {
+interface NodeAndParentResult {
+  node: ComponentNode;
+  parent: ComponentNode | null;
+  list: ComponentNode[];
+  index: number;
+}
+
+const findNodeAndParent = (list: ComponentNode[], id: string, parent: ComponentNode | null = null): NodeAndParentResult | null => {
   for (let i = 0; i < list.length; i++) {
     const item = list[i];
     if (item.id === id) {
@@ -79,14 +153,14 @@ const findNodeAndParent = (list, id, parent = null) => {
   return null;
 };
 
-const walkTree = (list, visitor) => {
+const walkTree = (list: ComponentNode[], visitor: (item: ComponentNode) => void): void => {
   for (const item of list) {
     visitor(item);
     if (item.children?.length) walkTree(item.children, visitor);
   }
 };
 
-const updateNodeById = (list, id, updater) =>
+const updateNodeById = (list: ComponentNode[], id: string, updater: (comp: ComponentNode) => ComponentNode): ComponentNode[] =>
   list.map(item => {
     if (item.id === id) return updater(item);
     if (item.children?.length) {
@@ -95,12 +169,12 @@ const updateNodeById = (list, id, updater) =>
     return item;
   });
 
-const removeNodeById = (list, id) =>
+const removeNodeById = (list: ComponentNode[], id: string): ComponentNode[] =>
   list
     .filter(item => item.id !== id)
     .map(item => item.children?.length ? { ...item, children: removeNodeById(item.children, id) } : item);
 
-const insertIntoContainer = (list, containerId, node) =>
+const insertIntoContainer = (list: ComponentNode[], containerId: string, node: ComponentNode): ComponentNode[] =>
   list.map(item => {
     if (item.id === containerId) {
       return { ...item, children: [...(item.children || []), node] };
@@ -111,30 +185,30 @@ const insertIntoContainer = (list, containerId, node) =>
     return item;
   });
 
-const isInTree = (list, id) => !!findNodeById(list, id);
+const isInTree = (list: ComponentNode[], id: string | null): boolean => !!findNodeById(list, id);
 
-const replaceIdInBlockXml = (xml, oldId, newId) => {
+const replaceIdInBlockXml = (xml: string, oldId: string, newId: string): string => {
   if (!xml || !oldId || !newId || oldId === newId) return xml;
   const escapedOld = oldId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return xml.replace(new RegExp(`\\b${escapedOld}\\b`, 'g'), newId);
 };
 
 export function useAppState() {
-  const [screens, setScreens] = useState([makeScreen('Screen1')]);
-  const [activeScreen, setActiveScreen] = useState('Screen1');
-  const [selectedId, setSelectedId] = useState(null);
-  const [appName, setAppName] = useState('MyApp');
-  const [packageName, setPackageName] = useState('com.leapblocks.myapp');
-  const [blockLogic, setBlockLogic] = useState(''); // XML canonical source
-  const [media, setMedia] = useState([]);
-  const [designViewport, setDesignViewport] = useState(DEFAULT_DESIGN_VIEWPORT);
+  const [screens, setScreens] = useState<Screen[]>([makeScreen('Screen1')]);
+  const [activeScreen, setActiveScreen] = useState<string>('Screen1');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [appName, setAppName] = useState<string>('MyApp');
+  const [packageName, setPackageName] = useState<string>('com.leapblocks.myapp');
+  const [blockLogic, setBlockLogic] = useState<string>(''); // XML canonical source
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [designViewport, setDesignViewport] = useState<DesignViewport>(DEFAULT_DESIGN_VIEWPORT);
 
-  const getCurrentScreen = (stateScreens) =>
-    stateScreens.find(s => s.id === activeScreen) || stateScreens[0];
+  const getCurrentScreen = (stateScreens: Screen[]): Screen =>
+    stateScreens.find(s => s.id === activeScreen) || stateScreens[0] || makeScreen('Screen1');
 
-  const getNextComponentName = useCallback((stateScreens, type) => {
+  const getNextComponentName = useCallback((stateScreens: Screen[], type: string): string => {
     const screen = getCurrentScreen(stateScreens);
-    const allIds = [];
+    const allIds: string[] = [];
     walkTree(screen.components, comp => allIds.push(comp.id));
     screen.nonVisibleComponents.forEach(comp => allIds.push(comp.id));
 
@@ -143,11 +217,11 @@ export function useAppState() {
     return `${type}${idx}`;
   }, [activeScreen]);
 
-  const addComponent = useCallback((type, options = {}) => new Promise((resolve) => {
-    const meta = COMPONENT_META.get(type) || {};
+  const addComponent = useCallback((type: string, options: AddComponentOptions = {}): Promise<void> => new Promise((resolve) => {
+    const meta: ComponentMeta = COMPONENT_META.get(type) || { type };
     const visible = options.visible ?? meta.visible ?? true;
     const parentIdOverride = options.parentId || null;
-    let addedId = null;
+    let addedId: string | null = null;
 
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
@@ -155,7 +229,7 @@ export function useAppState() {
       const newId = getNextComponentName(prevScreens, type);
       addedId = newId;
       const defaultProps = defaultPropsFor(type);
-      const newComponent = {
+      const newComponent: ComponentNode = {
         id: newId,
         type,
         icon: meta.icon,
@@ -176,11 +250,11 @@ export function useAppState() {
 
       if (!visible) {
         nextScreen.nonVisibleComponents.push(newComponent);
-      } else if (canNestInArrangement) {
+      } else if (canNestInArrangement && selectedParent) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
-      } else if (canNestInCanvas) {
+      } else if (canNestInCanvas && selectedParent) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
-      } else if (canNestInMap) {
+      } else if (canNestInMap && selectedParent) {
         nextScreen.components = insertIntoContainer(nextScreen.components, selectedParent.id, newComponent);
       } else {
         nextScreen.components.push(newComponent);
@@ -192,7 +266,7 @@ export function useAppState() {
     resolve();
   }), [activeScreen, selectedId, getNextComponentName]);
 
-  const updateProp = useCallback((id, key, value) => new Promise((resolve) => {
+  const updateProp = useCallback((id: string, key: string, value: any): Promise<void> => new Promise((resolve) => {
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
       const next = deepClone(screen);
@@ -233,7 +307,7 @@ export function useAppState() {
     resolve();
   }), [activeScreen]);
 
-  const removeComponent = useCallback((id) => new Promise((resolve) => {
+  const removeComponent = useCallback((id: string): Promise<void> => new Promise((resolve) => {
     setScreens(prevScreens => prevScreens.map(screen => {
       if (screen.id !== activeScreen) return screen;
       const next = deepClone(screen);
@@ -246,7 +320,7 @@ export function useAppState() {
     resolve();
   }), [activeScreen, selectedId]);
 
-  const moveComponent = useCallback((draggedId, targetId, position = 'after') => new Promise((resolve) => {
+  const moveComponent = useCallback((draggedId: string, targetId: string, position: MovePosition = 'after'): Promise<void> => new Promise((resolve) => {
     if (draggedId === targetId) { resolve(); return; }
 
     setScreens(prevScreens => prevScreens.map(screen => {
@@ -299,7 +373,7 @@ export function useAppState() {
     resolve();
   }), [activeScreen]);
 
-  const addScreen = useCallback((name) => new Promise((resolve) => {
+  const addScreen = useCallback((name: string): Promise<void> => new Promise((resolve) => {
     const trimmed = name?.trim();
     if (!trimmed) { resolve(); return; }
     setScreens(prev => {
@@ -311,7 +385,7 @@ export function useAppState() {
     resolve();
   }), []);
 
-  const deleteScreen = useCallback((name) => new Promise((resolve) => {
+  const deleteScreen = useCallback((name: string): Promise<void> => new Promise((resolve) => {
     const trimmed = name?.trim();
     if (!trimmed || trimmed === 'Screen1') { resolve(); return; }
     setScreens(prev => {
@@ -325,7 +399,7 @@ export function useAppState() {
     resolve();
   }), [activeScreen]);
 
-  const renameComponent = useCallback((oldId, newId) => new Promise((resolve) => {
+  const renameComponent = useCallback((oldId: string, newId: string): Promise<void> => new Promise((resolve) => {
     if (!oldId || !newId || oldId === newId) { resolve(); return; }
 
     setScreens(prevScreens => prevScreens.map(screen => {
@@ -348,17 +422,17 @@ export function useAppState() {
     resolve();
   }), [activeScreen, selectedId]);
 
-  const addMedia = useCallback((mediaItem) => new Promise((resolve) => {
+  const addMedia = useCallback((mediaItem: MediaItem): Promise<void> => new Promise((resolve) => {
     setMedia(prev => [...prev, mediaItem]);
     resolve();
   }), []);
 
-  const deleteMedia = useCallback((filename) => new Promise((resolve) => {
+  const deleteMedia = useCallback((filename: string): Promise<void> => new Promise((resolve) => {
     setMedia(prev => prev.filter(item => item.filename !== filename));
     resolve();
   }), []);
 
-  const loadProject = useCallback((projectData) => new Promise((resolve) => {
+  const loadProject = useCallback((projectData: ProjectData): Promise<void> => new Promise((resolve) => {
     if (!projectData) { resolve(); return; }
     if (projectData.screens) setScreens(projectData.screens);
     if (projectData.screens?.[0]?.id) {
@@ -375,7 +449,7 @@ export function useAppState() {
     resolve();
   }), []);
 
-  const newProject = useCallback(() => new Promise((resolve) => {
+  const newProject = useCallback((): Promise<void> => new Promise((resolve) => {
     setScreens([makeScreen('Screen1')]);
     setActiveScreen('Screen1');
     setSelectedId(null);
@@ -414,7 +488,7 @@ export function useAppState() {
     return currentScreen.nonVisibleComponents?.find(c => c.id === selectedId) || null;
   }, [currentScreen, selectedId, appName]);
 
-  const getSerializedState = useCallback(() => ({
+  const getSerializedState = useCallback((): ProjectData => ({
     schemaVersion: 2,
     appName,
     packageName,
@@ -426,8 +500,8 @@ export function useAppState() {
     designViewport
   }), [appName, packageName, screens, blockLogic, media, designViewport]);
 
-  const selectComponent = useCallback((id) => setSelectedId(id), []);
-  const deleteComponent = useCallback((id) => removeComponent(id), [removeComponent]);
+  const selectComponent = useCallback((id: string | null) => setSelectedId(id), []);
+  const deleteComponent = useCallback((id: string) => removeComponent(id), [removeComponent]);
 
   return useMemo(() => ({
     screens,
@@ -461,8 +535,8 @@ export function useAppState() {
     loadProject,
     newProject,
     moveComponent,
-    isArrangementType: (type) => ARRANGEMENT_TYPES.has(type),
-    getComponentVisibility: (type) => (COMPONENT_META.get(type)?.visible ?? true)
+    isArrangementType: (type: string) => ARRANGEMENT_TYPES.has(type),
+    getComponentVisibility: (type: string) => (COMPONENT_META.get(type)?.visible ?? true)
   }), [
     screens,
     activeScreen,

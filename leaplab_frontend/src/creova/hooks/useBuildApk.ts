@@ -1,19 +1,33 @@
 import { useCallback } from 'react';
 import { countVisibleComponents, buildBlocklyContextFromPayload } from '../utils/projectHelpers';
 
-export function useBuildApk(appState, {
-  isBuildModalOpen,
-  setIsBuildModalOpen,
-  buildState,
-  setBuildState,
-  buildLogs,
-  setBuildLogs,
-  apkPath,
-  setApkPath,
-  onTranspileFailMessage,
-}) {
+export type BuildState = 'idle' | 'building' | 'success' | 'error';
+
+export interface UseBuildApkOptions {
+  isBuildModalOpen?: boolean;
+  setIsBuildModalOpen: (open: boolean) => void;
+  buildState?: BuildState;
+  setBuildState: (state: BuildState) => void;
+  buildLogs?: string[];
+  setBuildLogs: React.Dispatch<React.SetStateAction<string[]>>;
+  apkPath?: string | null;
+  setApkPath: (path: string | null) => void;
+  onTranspileFailMessage?: boolean;
+}
+
+export function useBuildApk(
+  appState: any,
+  {
+    setIsBuildModalOpen,
+    setBuildState,
+    setBuildLogs,
+    apkPath,
+    setApkPath,
+    onTranspileFailMessage,
+  }: UseBuildApkOptions
+) {
   const handleBuildApk = useCallback(async () => {
-    const isElectron = window.electronAPI && window.electronAPI.buildApk;
+    const isElectron = typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.buildApk === 'function';
 
     setIsBuildModalOpen(true);
     setBuildState('building');
@@ -22,7 +36,7 @@ export function useBuildApk(appState, {
 
     try {
       const payload = appState.getSerializedState();
-      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+      const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
       if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
         payload.blockLogic = liveBlockXml;
       }
@@ -42,16 +56,17 @@ export function useBuildApk(appState, {
           initializeAllBlocks();
 
           const { currentScreen, components } = buildBlocklyContextFromPayload(payload);
-          window.LeapLab_Components = components;
-          window.LeapLab_ActiveScreen = currentScreen;
+          (window as any).LeapLab_Components = components;
+          (window as any).LeapLab_ActiveScreen = currentScreen;
 
-          const tempWorkspace = new Blockly.Workspace();
+          const tempWorkspace = new (Blockly as any).Workspace();
           try {
-            const xml = Blockly.utils.xml.textToDom(payload.blockLogic);
-            Blockly.Xml.domToWorkspace(xml, tempWorkspace);
+            const xml = (Blockly as any).utils.xml.textToDom(payload.blockLogic);
+            (Blockly as any).Xml.domToWorkspace(xml, tempWorkspace);
 
             if (currentScreen) {
-              const flattenVisible = (list = []) => list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
+              const flattenVisible = (list: any[] = []): any[] =>
+                list.flatMap(item => [item, ...(item.children ? flattenVisible(item.children) : [])]);
               const allComps = [
                 ...flattenVisible(currentScreen.components || []),
                 ...(currentScreen.nonVisibleComponents || [])
@@ -61,7 +76,7 @@ export function useBuildApk(appState, {
                 ...allComps.map(c => c.id)
               ]);
               const allBlocks = tempWorkspace.getAllBlocks(false);
-              allBlocks.forEach(block => {
+              allBlocks.forEach((block: any) => {
                 if (block.getField('INSTANCE')) {
                   const instanceName = block.getFieldValue('INSTANCE');
                   if (!instanceName || !validNames.has(instanceName)) {
@@ -82,22 +97,22 @@ export function useBuildApk(appState, {
           } finally {
             tempWorkspace.dispose();
           }
-        } catch (transpileErr) {
+        } catch (transpileErr: any) {
           console.warn('Block transpilation failed, building without block logic:', transpileErr);
-          setBuildLogs((prev) => [...prev, `Block transpilation skipped: ${transpileErr.message}`]);
+          setBuildLogs((prev) => [...prev, `Block transpilation skipped: ${transpileErr?.message || transpileErr}`]);
           payload.blockLogic = onTranspileFailMessage
-            ? `console.warn('[LeapApp] Block transpilation failed:', ${JSON.stringify(transpileErr.message)});`
+            ? `console.warn('[LeapApp] Block transpilation failed:', ${JSON.stringify(transpileErr?.message || transpileErr)});`
             : '';
         }
       }
 
-      if (isElectron) {
+      if (isElectron && window.electronAPI?.buildApk) {
         setBuildLogs((prev) => [...prev, 'Sending build request to main process...']);
         const result = await window.electronAPI.buildApk(payload);
 
         if (result.success) {
           setBuildState('success');
-          setApkPath(result.outputPath);
+          setApkPath(result.outputPath || null);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready.']);
         } else {
           setBuildState('error');
@@ -128,21 +143,24 @@ export function useBuildApk(appState, {
           setBuildLogs((prev) => [...prev, `⚠ ${result.error}`]);
         } else if (result.success) {
           setBuildState('success');
-          setApkPath(result.downloadUrl.startsWith('http') ? result.downloadUrl : `${CLOUD_COMPILER_URL}${result.downloadUrl}`);
+          const fullDownloadUrl = result.downloadUrl?.startsWith('http')
+            ? result.downloadUrl
+            : `${CLOUD_COMPILER_URL}${result.downloadUrl}`;
+          setApkPath(fullDownloadUrl);
           setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
         } else {
           setBuildState('error');
           setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       setBuildState('error');
-      setBuildLogs((prev) => [...prev, `Build failed: ${error.message}`]);
+      setBuildLogs((prev) => [...prev, `Build failed: ${error?.message || error}`]);
     }
   }, [appState, setIsBuildModalOpen, setBuildState, setBuildLogs, setApkPath, onTranspileFailMessage]);
 
   const handleOpenFile = useCallback(async () => {
-    if (window.electronAPI && window.electronAPI.showInFolder && apkPath && !apkPath.startsWith('http')) {
+    if (typeof window !== 'undefined' && window.electronAPI?.showInFolder && apkPath && !apkPath.startsWith('http')) {
       await window.electronAPI.showInFolder(apkPath);
     } else if (apkPath) {
       window.open(apkPath, '_blank');

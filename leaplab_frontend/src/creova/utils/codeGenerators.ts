@@ -3,10 +3,56 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
 
-export function generateAppTsx(appState) {
+export interface ComponentProps {
+  textColor?: string;
+  bold?: boolean;
+  fontSize?: number;
+  text?: string;
+  hint?: string;
+  multiLine?: boolean;
+  picture?: string;
+  scalePicture?: boolean;
+  checked?: boolean;
+  minValue?: number;
+  maxValue?: number;
+  thumbPosition?: number;
+  on?: boolean;
+  thumbColor?: string;
+  backgroundColor?: string;
+  width?: number | string;
+  height?: number | string;
+  [key: string]: any;
+}
+
+export interface ComponentData {
+  id: string;
+  type: string;
+  props: ComponentProps;
+  blockLogic?: string;
+  children?: ComponentData[];
+  [key: string]: any;
+}
+
+export interface ScreenData {
+  id: string;
+  components: ComponentData[];
+  nonVisibleComponents?: ComponentData[];
+  [key: string]: any;
+}
+
+export interface AppStateData {
+  appName?: string;
+  packageName?: string;
+  versionCode?: number;
+  versionName?: string;
+  screens: ScreenData[];
+  [key: string]: any;
+}
+
+export function generateAppTsx(appState: AppStateData): string {
   const { screens } = appState;
 
   const imports = `import React, { useState } from 'react';
@@ -18,9 +64,9 @@ import { handlers } from './src/handlers';\n\n`;
 
   let componentString = '';
 
-  screens.forEach(screen => {
-    let elementsStr = screen.components.map(comp => {
-      const { id, type, props } = comp;
+  (screens || []).forEach(screen => {
+    const elementsStr = (screen.components || []).map(comp => {
+      const { id, type, props = {} } = comp;
       const styleMatch = `style={styles.${id}}`;
 
       switch (type) {
@@ -69,7 +115,7 @@ ${elementsStr}
   return imports + componentString + defaultExport;
 }
 
-export function generateStyles(appState) {
+export function generateStyles(appState: AppStateData): string {
   const { screens } = appState;
 
   let stylesStr = `import { StyleSheet } from 'react-native';
@@ -81,13 +127,13 @@ export const styles = StyleSheet.create({
     backgroundColor: '#ffffff'
   },\n`;
 
-  screens.forEach(screen => {
-    screen.components.forEach(comp => {
-      const { id, props, type } = comp;
-      
+  (screens || []).forEach(screen => {
+    (screen.components || []).forEach(comp => {
+      const { id, props = {}, type } = comp;
+
       const width = props.width === 'fill_parent' ? "'100%'" : (typeof props.width === 'number' ? props.width : "'auto'");
       const height = props.height === 'automatic' ? "undefined" : (typeof props.height === 'number' ? props.height : "undefined");
-      
+
       let cssProps = `    backgroundColor: '${props.backgroundColor || 'transparent'}',\n`;
       if (props.textColor && type !== 'Button') cssProps += `    color: '${props.textColor}',\n`;
       if (props.fontSize && type !== 'Button') cssProps += `    fontSize: ${props.fontSize},\n`;
@@ -103,23 +149,23 @@ export const styles = StyleSheet.create({
   return stylesStr;
 }
 
-export function generateHandlers(appState) {
+export function generateHandlers(appState: AppStateData): string {
   const { screens } = appState;
-  
+
   let handlersStr = `// Auto-generated Event Handlers for UI Components
 export const handlers = {\n`;
 
-  screens.forEach(screen => {
-    screen.components.forEach(comp => {
+  (screens || []).forEach(screen => {
+    (screen.components || []).forEach(comp => {
       const { id, type, blockLogic } = comp;
-      
+
       let handlerName = '';
       if (type === 'Button') handlerName = `${id}_Click`;
       else if (type === 'Slider' || type === 'Switch' || type === 'TextBox' || type === 'CheckBox') handlerName = `${id}_Changed`;
-      
+
       if (handlerName) {
-        let logicBody = blockLogic ? blockLogic : `console.log('${id} interacted');`;
-        handlersStr += `  ${handlerName}: (...args) => {\n    ${logicBody}\n  },\n`;
+        const logicBody = blockLogic ? blockLogic : `console.log('${id} interacted');`;
+        handlersStr += `  ${handlerName}: (...args: any[]) => {\n    ${logicBody}\n  },\n`;
       }
     });
   });
@@ -134,57 +180,65 @@ export const handlers = {\n`;
  * Called from Electron's buildApk.js to inject generated React Native code
  * into the copied android template structure.
  * 
- * @param {Object} appState - The full state output from getSerializedState()
- * @param {string} templateDir - Source directory of the RN template
- * @param {string} destDir - Destination directory (temp build folder)
+ * @param appState - The full state output from getSerializedState()
+ * @param templateDir - Source directory of the RN template
+ * @param destDir - Destination directory (temp build folder)
  */
-export async function generateAndInjectZip(appState, templateDir, destDir) {
+export async function generateAndInjectZip(
+  appState: AppStateData,
+  templateDir: string,
+  destDir: string
+): Promise<void> {
   // 1. Copy the template to the destination folder
   await fs.copy(templateDir, destDir);
-  
+
   // 2. Generate RN application code
   const appTsx = generateAppTsx(appState);
   const stylesTs = generateStyles(appState);
   const handlersTs = generateHandlers(appState);
-  
+
   // Ensure src directory exists
   await fs.ensureDir(path.join(destDir, 'src'));
-  
+
   // 3. Write generated source files
   await fs.writeFile(path.join(destDir, 'App.tsx'), appTsx);
   await fs.writeFile(path.join(destDir, 'src', 'styles.ts'), stylesTs);
   await fs.writeFile(path.join(destDir, 'src', 'handlers.ts'), handlersTs);
-  
+
   // 4. Update app.json
   const appJsonPath = path.join(destDir, 'app.json');
   if (await fs.pathExists(appJsonPath)) {
     const appJson = await fs.readJson(appJsonPath);
-    appJson.name = appState.appName.replace(/[^a-zA-Z0-9]/g, '');
-    appJson.displayName = appState.appName;
-    await fs.writeJson(appJsonPath, appJson, { spaces: 2 });
+    if (appState.appName) {
+      appJson.name = appState.appName.replace(/[^a-zA-Z0-9]/g, '');
+      appJson.displayName = appState.appName;
+      await fs.writeJson(appJsonPath, appJson, { spaces: 2 });
+    }
   }
 
   // 5. Patch android/app/build.gradle
   const buildGradlePath = path.join(destDir, 'android', 'app', 'build.gradle');
   if (await fs.pathExists(buildGradlePath)) {
     let gradleContent = await fs.readFile(buildGradlePath, 'utf8');
-    
+
     // Replace applicationId
-    gradleContent = gradleContent.replace(
-      /applicationId\s+".*"/, 
-      `applicationId "${appState.packageName}"`
-    );
-    
+    if (appState.packageName) {
+      gradleContent = gradleContent.replace(
+        /applicationId\s+".*"/,
+        `applicationId "${appState.packageName}"`
+      );
+    }
+
     // Replace versionCode
     gradleContent = gradleContent.replace(
-       /versionCode\s+\d+/,
-       `versionCode ${Math.max(1, appState.versionCode || 1)}`
+      /versionCode\s+\d+/,
+      `versionCode ${Math.max(1, appState.versionCode || 1)}`
     );
 
     // Replace versionName
     gradleContent = gradleContent.replace(
-      /versionName\s+".*"/, 
-      `versionName "${appState.versionName || "1.0"}"`
+      /versionName\s+".*"/,
+      `versionName "${appState.versionName || '1.0'}"`
     );
 
     await fs.writeFile(buildGradlePath, gradleContent);

@@ -1,28 +1,39 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { fileService } from '../../Electra/Client/Src/services/FileService';
 import { showToast } from '../../leapignite/client/components/Toast';
 
-export function useProjectActions(appState, { projectPath, setProjectPath, fileInputRef, onRedirectToElectra }) {
-  const handleNewProject = useCallback(async () => {
+export interface UseProjectActionsOptions {
+  projectPath?: string | null;
+  setProjectPath: (path: string | null) => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onRedirectToElectra?: (projectData: any, nameWithoutExt: string | null, projectPath: string | null) => void;
+}
+
+export function useProjectActions(
+  appState: any,
+  { setProjectPath, fileInputRef, onRedirectToElectra }: UseProjectActionsOptions
+) {
+  const handleNewProject = useCallback(async (): Promise<void> => {
     return new Promise((resolve) => {
-      if (confirm("Create a new project? Unsaved changes will be lost.")) {
+      if (confirm('Create a new project? Unsaved changes will be lost.')) {
         appState.newProject();
         setProjectPath(null);
         if (typeof window !== 'undefined') {
-          window.__LEAP_BLOCK_XML__ = '';
+          (window as any).__LEAP_BLOCK_XML__ = '';
         }
       }
       resolve();
     });
   }, [appState, setProjectPath]);
 
-  const handleOpenProject = useCallback(async () => {
-    if (!window.electronAPI || !window.electronAPI.openProject) {
+  const handleOpenProject = useCallback(async (): Promise<void> => {
+    const win = window as any;
+    if (!win.electronAPI || !win.electronAPI.openProject) {
       fileInputRef.current?.click();
       return;
     }
     try {
-      const result = await window.electronAPI.openProject();
+      const result = await win.electronAPI.openProject();
       if (result && result.data) {
         if (onRedirectToElectra && (result.data.nodes || result.data.edges || result.data.circuit)) {
           onRedirectToElectra(result.data, null, result.projectPath);
@@ -38,13 +49,13 @@ export function useProjectActions(appState, { projectPath, setProjectPath, fileI
       } else if (result && result.error) {
         alert(`Failed to open project: ${result.error}`);
       }
-    } catch (err) {
-      console.error("Failed to open project:", err);
-      alert(`Failed to open project: ${err.message}`);
+    } catch (err: any) {
+      console.error('Failed to open project:', err);
+      alert(`Failed to open project: ${err?.message || err}`);
     }
   }, [appState, setProjectPath, fileInputRef, onRedirectToElectra]);
 
-  const handleWebImport = useCallback(async (e) => {
+  const handleWebImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -52,7 +63,7 @@ export function useProjectActions(appState, { projectPath, setProjectPath, fileI
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          const content = event.target.result;
+          const content = event.target?.result as string;
           const projectData = JSON.parse(content);
           const nameWithoutExt = file.name.replace(/\.(leap|lbp|json)$/i, '');
           if (onRedirectToElectra && (projectData.nodes || projectData.edges || projectData.circuit)) {
@@ -65,9 +76,9 @@ export function useProjectActions(appState, { projectPath, setProjectPath, fileI
           setProjectPath(null);
           alert('Project imported successfully!');
           resolve();
-        } catch (err) {
+        } catch (err: any) {
           console.error('Failed to parse project file:', err);
-          alert('Failed to parse project file: ' + err.message);
+          alert('Failed to parse project file: ' + (err?.message || err));
           reject(err);
         }
       };
@@ -80,44 +91,46 @@ export function useProjectActions(appState, { projectPath, setProjectPath, fileI
     });
   }, [appState, setProjectPath, onRedirectToElectra]);
 
-  const handleSaveProject = useCallback(async () => {
+  const handleSaveProject = useCallback(async (): Promise<void> => {
     try {
       const payload = appState.getSerializedState();
-      const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+      const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
       if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
         payload.blockLogic = liveBlockXml;
       }
       await fileService.saveProject(appState.appName || 'project', 'creova', payload);
-      showToast("Project saved successfully!", "success");
-    } catch (err) {
-      console.error("Failed to save project:", err);
-      alert(`Failed to save project: ${err.message}`);
+      showToast('Project saved successfully!', 'success');
+    } catch (err: any) {
+      console.error('Failed to save project:', err);
+      alert(`Failed to save project: ${err?.message || err}`);
     }
   }, [appState]);
 
-  const handleDownloadProject = useCallback(async () => {
+  const handleDownloadProject = useCallback(async (): Promise<void> => {
     const payload = appState.getSerializedState();
-    const liveBlockXml = typeof window !== 'undefined' ? window.__LEAP_BLOCK_XML__ : null;
+    const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
     if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
       payload.blockLogic = liveBlockXml;
     }
     await fileService.saveProjectLocally(appState.appName || 'project', 'creova', payload);
   }, [appState]);
 
-  const handleSaveAsProject = useCallback(async () => {
+  const handleSaveAsProject = useCallback(async (): Promise<void> => {
     await handleSaveProject();
   }, [handleSaveProject]);
 
-  const handleUndo = useCallback(async () => {
-    if (typeof window !== 'undefined' && window.Blockly) {
-      const workspace = window.Blockly.getMainWorkspace();
+  const handleUndo = useCallback(async (): Promise<void> => {
+    const win = window as any;
+    if (typeof window !== 'undefined' && win.Blockly) {
+      const workspace = win.Blockly.getMainWorkspace();
       if (workspace) workspace.undo(false);
     }
   }, []);
 
-  const handleRedo = useCallback(async () => {
-    if (typeof window !== 'undefined' && window.Blockly) {
-      const workspace = window.Blockly.getMainWorkspace();
+  const handleRedo = useCallback(async (): Promise<void> => {
+    const win = window as any;
+    if (typeof window !== 'undefined' && win.Blockly) {
+      const workspace = win.Blockly.getMainWorkspace();
       if (workspace) workspace.undo(true);
     }
   }, []);
