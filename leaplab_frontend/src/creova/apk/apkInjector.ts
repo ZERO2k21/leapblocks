@@ -1,45 +1,73 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * APK Injector — Low-level APKTool operations
- *
- * Provides decode, inject, rebuild, and sign primitives.
- * Used by both src/creova/apk/electron-bridge.js (main build path) and
- * src/creova/apk/buildAPK.js (standalone).
- */
+import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs-extra';
+import path from 'path';
 
-const { spawn } = require('child_process');
-const fs = require('fs-extra');
-const path = require('path');
+interface ProgressEvent {
+  stage: string;
+  progress?: number;
+  message?: string;
+}
 
-// Resolve tool paths — works in both dev and packaged Electron
-function resolveToolPath(toolName) {
-  // In packaged app, tools are under process.resourcesPath
-  const candidates = [
-    // Packaged Electron
-    process.resourcesPath && path.join(process.resourcesPath, 'tools', toolName),
-    // Development — local module tools
+interface WebAppFiles {
+  [filePath: string]: string;
+}
+
+interface MediaAsset {
+  filename: string;
+  data?: string;
+}
+
+interface AppConfig {
+  appName?: string;
+  packageName?: string;
+  mediaAssets?: MediaAsset[];
+  permissions?: string[];
+  screenOrientation?: string | null;
+  renderedIconsDir?: string | null;
+}
+
+interface ManifestOptions {
+  appName?: string;
+  packageName?: string;
+  permissions?: string[];
+  screenOrientation?: string | null;
+  hasCustomIcon?: boolean;
+}
+
+interface ViewBox {
+  minX: number;
+  minY: number;
+  width: number;
+  height: number;
+}
+
+interface ToolPaths {
+  apktool: string;
+  signer: string;
+  smali: string;
+}
+
+function resolveToolPath(toolName: string): string {
+  const candidates: string[] = [
+    (process as any).resourcesPath && path.join((process as any).resourcesPath, 'tools', toolName),
     path.join(__dirname, 'tools', toolName),
   ].filter(Boolean);
 
   for (const candidate of candidates) {
     if (fs.pathExistsSync(candidate)) return candidate;
   }
-  return candidates[1] || candidates[0]; // fallback to local module or packaged path
+  return candidates[1] || candidates[0];
 }
 
-const TOOLS = {
+const TOOLS: ToolPaths = {
   get apktool() { return path.join(resolveToolPath('apktool'), 'apktool.jar'); },
   get signer() { return path.join(resolveToolPath('signer'), 'uber-apk-signer.jar'); },
   get smali() { return path.join(resolveToolPath('smali'), 'smali.jar'); },
 };
 
-function resolveJavaBinary() {
+function resolveJavaBinary(): string {
   const javaBinName = process.platform === 'win32' ? 'java.exe' : 'java';
-
-  const candidateBins = [];
+  const candidateBins: string[] = [];
   const javaHome = process.env.JAVA_HOME;
   if (javaHome) {
     candidateBins.push(path.join(javaHome, 'bin', javaBinName));
@@ -63,7 +91,7 @@ function resolveJavaBinary() {
           candidateBins.push(path.join(root, dir, 'bin', javaBinName));
         }
       } catch (_) {
-        // Ignore unreadable directories and continue fallback sequence.
+        //
       }
     }
   }
@@ -74,7 +102,7 @@ function resolveJavaBinary() {
   return 'java';
 }
 
-function isJavaMissingMessage(text = '') {
+function isJavaMissingMessage(text = ''): boolean {
   const t = text.toLowerCase();
   return t.includes('is not recognized as an internal or external command')
     || t.includes('command not found')
@@ -83,12 +111,10 @@ function isJavaMissingMessage(text = '') {
 }
 
 class ApkInjector {
-  constructor() {
-    this.workingDir = null;
-    this.projectName = 'LeapApp';
-  }
+  workingDir: string | null = null;
+  projectName = 'LeapApp';
 
-  async initialize(projectName = 'LeapApp') {
+  async initialize(projectName = 'LeapApp'): Promise<void> {
     this.projectName = projectName.replace(/[^a-zA-Z0-9]/g, '');
     this.workingDir = path.join(
       require('os').tmpdir(),
@@ -98,16 +124,13 @@ class ApkInjector {
     await fs.ensureDir(this.workingDir);
   }
 
-  /**
-   * Run a java -jar command and stream output
-   */
-  async runJava(args, description, onProgress) {
+  async runJava(args: string[], description: string, onProgress?: (event: ProgressEvent) => void): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
       const javaBin = resolveJavaBinary();
       console.log(`[ApkInjector runJava] Executing: ${javaBin} -jar ${args.join(' ')}`);
       console.log(`[ApkInjector runJava] Working Dir: ${this.workingDir}`);
-      const child = spawn(javaBin, ['-jar', ...args], {
-        cwd: this.workingDir,
+      const child: ChildProcess = spawn(javaBin, ['-jar', ...args], {
+        cwd: this.workingDir ?? undefined,
         shell: false,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -115,19 +138,19 @@ class ApkInjector {
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (data) => {
+      child.stdout?.on('data', (data: Buffer) => {
         const line = data.toString().trim();
         stdout += line + '\n';
         onProgress?.({ stage: 'tool_output', message: line });
       });
 
-      child.stderr.on('data', (data) => {
+      child.stderr?.on('data', (data: Buffer) => {
         const line = data.toString().trim();
         stderr += line + '\n';
         onProgress?.({ stage: 'tool_output', message: line });
       });
 
-      child.on('error', (err) => {
+      child.on('error', (err: Error) => {
         if (err.message.includes('ENOENT')) {
           reject(new Error('Java not found. Install JDK 8+ and add to PATH.'));
         } else {
@@ -135,7 +158,7 @@ class ApkInjector {
         }
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code: number | null) => {
         if (code === 0) {
           resolve({ stdout, stderr });
         } else {
@@ -149,13 +172,10 @@ class ApkInjector {
     });
   }
 
-  /**
-   * Decode an APK using APKTool
-   */
-  async decodeApk(templatePath, onProgress) {
+  async decodeApk(templatePath: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     onProgress?.({ stage: 'decoding', progress: 10, message: 'Decoding template APK...' });
 
-    const decodedDir = path.join(this.workingDir, 'decoded');
+    const decodedDir = path.join(this.workingDir!, 'decoded');
     await fs.ensureDir(decodedDir);
 
     await this.runJava(
@@ -168,23 +188,18 @@ class ApkInjector {
     return decodedDir;
   }
 
-  /**
-   * Inject web assets and app config into the decoded APK
-   */
-  async injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress) {
+  async injectAssets(decodedDir: string, webAppFiles: WebAppFiles, mediaAssets?: MediaAsset[], onProgress?: (event: ProgressEvent) => void): Promise<string> {
     onProgress?.({ stage: 'injecting', progress: 35, message: 'Injecting web assets...' });
 
     const assetsDir = path.join(decodedDir, 'assets');
     await fs.ensureDir(assetsDir);
 
-    // Write generated web app files (www/index.html, www/styles.css, etc.)
     for (const [filePath, content] of Object.entries(webAppFiles)) {
       const fullPath = path.join(assetsDir, filePath);
       await fs.ensureDir(path.dirname(fullPath));
       await fs.writeFile(fullPath, content);
     }
 
-    // Write media assets
     if (mediaAssets?.length) {
       const mediaDir = path.join(assetsDir, 'www', 'media');
       await fs.ensureDir(mediaDir);
@@ -224,10 +239,8 @@ class ApkInjector {
     return assetsDir;
   }
 
-  /**
-   * Modify AndroidManifest.xml with app-specific values
-   */
-  async modifyManifest(decodedDir, { appName, packageName, permissions = [], screenOrientation = null, hasCustomIcon = false }, onProgress) {
+  async modifyManifest(decodedDir: string, options: ManifestOptions, onProgress?: (event: ProgressEvent) => void): Promise<void> {
+    const { appName, packageName, permissions = [], screenOrientation = null, hasCustomIcon = false } = options;
     onProgress?.({ stage: 'manifest', progress: 55, message: 'Patching manifest...' });
 
     const manifestPath = path.join(decodedDir, 'AndroidManifest.xml');
@@ -238,17 +251,14 @@ class ApkInjector {
 
     let manifest = await fs.readFile(manifestPath, 'utf8');
 
-    // Package name
     if (packageName) {
       manifest = manifest.replace(/package="[^"]*"/, `package="${packageName}"`);
     }
 
-    // App label
     if (appName) {
       manifest = manifest.replace(/android:label="[^"]*"/, `android:label="${appName}"`);
     }
 
-    // Ensure required permissions
     const requiredPerms = [
       'android.permission.INTERNET',
       'android.permission.VIBRATE',
@@ -264,7 +274,6 @@ class ApkInjector {
       }
     }
 
-    // WebView requirements
     if (!manifest.includes('usesCleartextTraffic')) {
       manifest = manifest.replace('<application', '<application android:usesCleartextTraffic="true"');
     }
@@ -272,7 +281,6 @@ class ApkInjector {
       manifest = manifest.replace('<application', '<application android:hardwareAccelerated="true"');
     }
 
-    // Ensure icon and roundIcon attributes are in the <application> tag only if we injected custom ones
     if (hasCustomIcon) {
       if (!manifest.includes('android:icon=')) {
         manifest = manifest.replace('<application', '<application android:icon="@mipmap/ic_launcher"');
@@ -289,7 +297,6 @@ class ApkInjector {
       );
     }
 
-    // Set keyboard mode to adjustPan to avoid squeezing the UI layout/size when keyboard is opened
     if (!manifest.includes('android:windowSoftInputMode=')) {
       manifest = manifest.replace(
         /(<activity\b[^>]*android:name="\.MainActivity"[^>]*)(>)/,
@@ -301,11 +308,7 @@ class ApkInjector {
     onProgress?.({ stage: 'manifest_done', progress: 60, message: 'Manifest patched' });
   }
 
-  /**
-   * Generate BluetoothBridge.smali — native Android Bluetooth API exposed
-   * as a JavaScriptInterface object (window.Android) in the WebView.
-   */
-  generateBluetoothBridgeSmali(pkgPath) {
+  generateBluetoothBridgeSmali(pkgPath: string): string {
     return `.class public L${pkgPath}/BluetoothBridge;
 .super Ljava/lang/Object;
 .source "BluetoothBridge.java"
@@ -879,20 +882,17 @@ class ApkInjector {
 `;
   }
 
-  generateLeapChromeClientSmali(pkgPath) {
+  generateLeapChromeClientSmali(pkgPath: string): string {
     const template = fs.readFileSync(path.join(__dirname, 'templates', 'LeapChromeClient.smali.template'), 'utf8');
     return template.replace(/\{\{packageName\}\}/g, pkgPath);
   }
 
-  generateLeapWebViewClientSmali(pkgPath) {
+  generateLeapWebViewClientSmali(pkgPath: string): string {
     const template = fs.readFileSync(path.join(__dirname, 'templates', 'LeapWebViewClient.smali.template'), 'utf8');
     return template.replace(/\{\{packageName\}\}/g, pkgPath);
   }
 
-  /**
-   * Inject app icon into the decoded APK mipmap folders at all densities
-   */
-  async injectAppIcon(decodedDir, renderedIconsDir, onProgress) {
+  async injectAppIcon(decodedDir: string, renderedIconsDir?: string, onProgress?: (event: ProgressEvent) => void): Promise<void> {
     let sourceDir = renderedIconsDir;
     if (!sourceDir) {
       const bundledDir = path.join(__dirname, 'default_icons');
@@ -901,16 +901,14 @@ class ApkInjector {
       }
     }
     if (!sourceDir) return;
-    onProgress?.({ stage: 'icon_inject', progress: 72, message: `Injecting pre-rendered custom app icons...` });
+    onProgress?.({ stage: 'icon_inject', progress: 72, message: 'Injecting pre-rendered custom app icons...' });
 
     try {
-      // 1. Delete anydpi XMLs if they exist to prevent them overriding PNGs on Android 8.0+
       const anyDpiDir = path.join(decodedDir, 'res', 'mipmap-anydpi-v26');
       if (await fs.pathExists(anyDpiDir)) {
         await fs.remove(anyDpiDir);
       }
 
-      // 2. Define standard densities
       const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 
       for (const d of densities) {
@@ -926,16 +924,13 @@ class ApkInjector {
 
       onProgress?.({ stage: 'icon_inject_done', progress: 74, message: 'Custom app icons injected successfully' });
     } catch (err) {
-      onProgress?.({ stage: 'icon_inject_failed', message: `Icon injection failed: ${err.message}. Using default template icon.` });
+      onProgress?.({ stage: 'icon_inject_failed', message: `Icon injection failed: ${(err as Error).message}. Using default template icon.` });
     }
   }
 
-  /**
-   * Inject WebView-based MainActivity.smali and native Bluetooth bridge
-   */
-  async injectWebViewActivity(decodedDir, packageName, permissions = [], onProgress) {
+  async injectWebViewActivity(decodedDir: string, packageName: string, permissions: string[] = [], onProgress?: (event: ProgressEvent) => void): Promise<void> {
     if (typeof permissions === 'function') {
-      onProgress = permissions;
+      onProgress = permissions as any;
       permissions = [];
     }
 
@@ -947,25 +942,21 @@ class ApkInjector {
 
     const smaliPkg = 'L' + pkgPath + '/';
 
-    // ── Write BluetoothBridge.smali ──────────────────────────────────────
     await fs.writeFile(
       path.join(smaliDir, 'BluetoothBridge.smali'),
       this.generateBluetoothBridgeSmali(pkgPath)
     );
 
-    // ── Write LeapChromeClient.smali ──────────────────────────────────────
     await fs.writeFile(
       path.join(smaliDir, 'LeapChromeClient.smali'),
       this.generateLeapChromeClientSmali(pkgPath)
     );
 
-    // ── Write LeapWebViewClient.smali ──────────────────────────────────────
     await fs.writeFile(
       path.join(smaliDir, 'LeapWebViewClient.smali'),
       this.generateLeapWebViewClientSmali(pkgPath)
     );
 
-    // Filter dynamic runtime permissions
     const runtimePerms23 = [
       'android.permission.ACCESS_FINE_LOCATION',
       'android.permission.ACCESS_COARSE_LOCATION',
@@ -1039,7 +1030,6 @@ class ApkInjector {
 `;
     }
 
-    // ── Write MainActivity.smali with JavaScriptInterface for Bluetooth ───
     const smali = fs.readFileSync(path.join(__dirname, 'templates', 'MainActivity.smali.template'), 'utf8')
       .replace(/\{\{smaliPkg\}\}/g, smaliPkg)
       .replace(/\{\{permissionCode\}\}/g, permissionCode)
@@ -1049,10 +1039,7 @@ class ApkInjector {
     onProgress?.({ stage: 'smali_done', progress: 70, message: 'WebView activity and Bluetooth bridge injected' });
   }
 
-  /**
-   * Rebuild decoded APK using APKTool
-   */
-  async rebuildApk(decodedDir, outputApkPath, onProgress) {
+  async rebuildApk(decodedDir: string, outputApkPath: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     onProgress?.({ stage: 'rebuilding', progress: 75, message: 'Rebuilding APK...' });
 
     await this.runJava(
@@ -1065,10 +1052,7 @@ class ApkInjector {
     return outputApkPath;
   }
 
-  /**
-   * Sign APK using uber-apk-signer (debug keystore — no custom keystore needed)
-   */
-  async signApk(unsignedApkPath, outputDir, onProgress) {
+  async signApk(unsignedApkPath: string, outputDir: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     onProgress?.({ stage: 'signing', progress: 90, message: 'Signing APK...' });
 
     await this.runJava(
@@ -1077,9 +1061,8 @@ class ApkInjector {
       onProgress
     );
 
-    // uber-apk-signer outputs as *-aligned-debugSigned.apk
     const files = await fs.readdir(outputDir);
-    const signedFile = files.find((f) =>
+    const signedFile = files.find((f: string) =>
       f.toLowerCase().endsWith('.apk') &&
       (f.includes('debugSigned') || f.includes('aligned'))
     );
@@ -1088,10 +1071,7 @@ class ApkInjector {
     return signedFile ? path.join(outputDir, signedFile) : unsignedApkPath;
   }
 
-  /**
-   * Full build pipeline
-   */
-  async fullBuild(templateApkPath, webAppFiles, appConfig, onProgress) {
+  async fullBuild(templateApkPath: string, webAppFiles: WebAppFiles, appConfig: AppConfig, onProgress?: (event: ProgressEvent) => void): Promise<string> {
     const {
       appName = 'LeapApp',
       packageName = 'com.leaplab.myapp',
@@ -1108,12 +1088,12 @@ class ApkInjector {
     const hasCustomIcon = !!renderedIconsDir || fs.pathExistsSync(path.join(__dirname, 'default_icons'));
     await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation, hasCustomIcon }, onProgress);
     await this.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
-    await this.injectAppIcon(decodedDir, renderedIconsDir, onProgress);
+    await this.injectAppIcon(decodedDir, renderedIconsDir ?? undefined, onProgress);
 
-    const unsignedPath = path.join(this.workingDir, 'unsigned.apk');
+    const unsignedPath = path.join(this.workingDir!, 'unsigned.apk');
     await this.rebuildApk(decodedDir, unsignedPath, onProgress);
 
-    const signedOutputDir = path.join(this.workingDir, 'signed');
+    const signedOutputDir = path.join(this.workingDir!, 'signed');
     await fs.ensureDir(signedOutputDir);
     const signedPath = await this.signApk(unsignedPath, signedOutputDir, onProgress);
 
@@ -1121,11 +1101,11 @@ class ApkInjector {
     return signedPath;
   }
 
-  async cleanup() {
+  async cleanup(): Promise<void> {
     if (this.workingDir && await fs.pathExists(this.workingDir)) {
       await fs.remove(this.workingDir);
     }
   }
 }
 
-module.exports = ApkInjector;
+export = ApkInjector;
