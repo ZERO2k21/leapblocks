@@ -1,7 +1,7 @@
-export function patchFileConstructor(sk, vfs) {
+export function patchFileConstructor(sk: any, vfs: any): void {
     const OriginalFile = sk.builtin.file;
 
-    sk.builtin.file = function (name, mode, buffering) {
+    sk.builtin.file = function (this: any, name: any, mode: any, buffering: any) {
         if (!(this instanceof sk.builtin.file)) {
             return new sk.builtin.file(name, mode, buffering);
         }
@@ -29,7 +29,7 @@ export function patchFileConstructor(sk, vfs) {
                     vfs.writeFile(this.name, "", false);
                 }
             } else {
-                try { this.data$ = vfs.readFile(this.name); } catch (e) { throw new sk.builtin.IOError(e.message); }
+                try { this.data$ = vfs.readFile(this.name); } catch (e: any) { throw new sk.builtin.IOError(e.message); }
             }
 
             this.lineList = this.data$.split("\n").slice(0, -1);
@@ -45,7 +45,7 @@ export function patchFileConstructor(sk, vfs) {
         return this;
     };
 
-    Object.getOwnPropertyNames(OriginalFile).forEach((propName) => {
+    Object.getOwnPropertyNames(OriginalFile).forEach((propName: string) => {
         if (propName !== 'prototype') {
             Object.defineProperty(sk.builtin.file, propName, Object.getOwnPropertyDescriptor(OriginalFile, propName));
         }
@@ -55,31 +55,31 @@ export function patchFileConstructor(sk, vfs) {
     sk.builtin.file.prototype.constructor = sk.builtin.file;
 }
 
-export function buildOsModule(sk, vfs) {
+export function buildOsModule(sk: any, vfs: any): void {
     const pathModule = new sk.builtin.module();
     pathModule.$d = {
-        exists: new sk.builtin.func((path) => new sk.builtin.bool(vfs.exists(sk.ffi.remapToJs(path)))),
-        isfile: new sk.builtin.func((path) => new sk.builtin.bool(vfs.isFile(sk.ffi.remapToJs(path)))),
+        exists: new sk.builtin.func((path: any) => new sk.builtin.bool(vfs.exists(sk.ffi.remapToJs(path)))),
+        isfile: new sk.builtin.func((path: any) => new sk.builtin.bool(vfs.isFile(sk.ffi.remapToJs(path)))),
         isdir: new sk.builtin.func(() => new sk.builtin.bool(false)),
-        basename: new sk.builtin.func((path) => { const p = sk.ffi.remapToJs(path); const parts = p.split('/'); return new sk.builtin.str(parts[parts.length - 1] || p); }),
-        dirname: new sk.builtin.func((path) => { const p = sk.ffi.remapToJs(path); const parts = p.split('/'); parts.pop(); return new sk.builtin.str(parts.join('/') || '.'); }),
-        join: new sk.builtin.func((...args) => new sk.builtin.str(args.map(a => sk.ffi.remapToJs(a)).join('/'))),
-        splitext: new sk.builtin.func((path) => {
+        basename: new sk.builtin.func((path: any) => { const p = sk.ffi.remapToJs(path); const parts = p.split('/'); return new sk.builtin.str(parts[parts.length - 1] || p); }),
+        dirname: new sk.builtin.func((path: any) => { const p = sk.ffi.remapToJs(path); const parts = p.split('/'); parts.pop(); return new sk.builtin.str(parts.join('/') || '.'); }),
+        join: new sk.builtin.func((...args: any[]) => new sk.builtin.str(args.map((a: any) => sk.ffi.remapToJs(a)).join('/'))),
+        splitext: new sk.builtin.func((path: any) => {
             const p = sk.ffi.remapToJs(path);
             const dotIndex = p.lastIndexOf('.');
             if (dotIndex === -1) return new sk.builtin.tuple([new sk.builtin.str(p), new sk.builtin.str('')]);
             return new sk.builtin.tuple([new sk.builtin.str(p.substring(0, dotIndex)), new sk.builtin.str(p.substring(dotIndex))]);
         }),
-        getsize: new sk.builtin.func((path) => {
-            try { return new sk.builtin.int_(vfs.getFileSize(sk.ffi.remapToJs(path))); } catch (e) { throw new sk.builtin.OSError(e.message); }
+        getsize: new sk.builtin.func((path: any) => {
+            try { return new sk.builtin.int_(vfs.getFileSize(sk.ffi.remapToJs(path))); } catch (e: any) { throw new sk.builtin.OSError(e.message); }
         }),
     };
 
     const osModule = new sk.builtin.module();
     osModule.$d = {
         path: pathModule,
-        listdir: new sk.builtin.func(() => { const files = vfs.listFiles(); return new sk.builtin.list(files.map(f => new sk.builtin.str(f))); }),
-        remove: new sk.builtin.func((path) => {
+        listdir: new sk.builtin.func(() => { const files = vfs.listFiles(); return new sk.builtin.list(files.map((f: string) => new sk.builtin.str(f))); }),
+        remove: new sk.builtin.func((path: any) => {
             const p = sk.ffi.remapToJs(path);
             if (!vfs.exists(p)) throw new sk.builtin.FileNotFoundError(`[Errno 2] No such file or directory: '${p}'`);
             vfs.deleteFile(p);
@@ -92,8 +92,8 @@ export function buildOsModule(sk, vfs) {
     sk.sysmodules.mp$ass_subscript(new sk.builtin.str('os.path'), pathModule);
 }
 
-export function buildLeapModule(sk, bridge) {
-    const toJS = (a) => {
+export function buildLeapModule(sk: any, bridge: any): void {
+    const toJS = (a: any): any => {
         if (a == null) return a;
         if (a instanceof sk.builtin.int_) return a.v;
         if (a instanceof sk.builtin.float_) return parseFloat(sk.ffi.remapToJs(a));
@@ -101,7 +101,7 @@ export function buildLeapModule(sk, bridge) {
         try { return sk.ffi.remapToJs(a); } catch (_) { return a?.v; }
     };
 
-    const dispatch = (skName, skAction, skArgs) => {
+    const dispatch = (skName: any, skAction: any, skArgs: any): any => {
         const n = toJS(skName);
         const act = toJS(skAction);
         const args = (skArgs?.v ?? []).map(toJS);
@@ -116,14 +116,14 @@ export function buildLeapModule(sk, bridge) {
             case 'GOTO': bridge.update(n, { x: args[0] ?? 0, y: args[1] ?? 0, position: { x: args[0] ?? 0, y: args[1] ?? 0 } }); break;
             case 'SETX': bridge.update(n, { x: args[0] ?? 0, position: { x: args[0] ?? 0 } }); break;
             case 'SETY': bridge.update(n, { y: args[0] ?? 0, position: { y: args[0] ?? 0 } }); break;
-            case 'TURN_RIGHT': bridge.update(n, { angle: (old) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
-            case 'TURN_LEFT': bridge.update(n, { angle: (old) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
+            case 'TURN_RIGHT': bridge.update(n, { angle: (old: any) => (old ?? 0) + (15 * (args[0] ?? 1)) }); break;
+            case 'TURN_LEFT': bridge.update(n, { angle: (old: any) => (old ?? 0) - (15 * (args[0] ?? 1)) }); break;
             case 'SAY': bridge.update(n, { speech: args[0] ?? '' }); break;
             case 'THINK': bridge.update(n, { speech: '💭 ' + (args[0] ?? '') }); break;
             case 'HIDE': bridge.update(n, { visible: false }); break;
             case 'SHOW': bridge.update(n, { visible: true }); break;
             case 'SIZE': bridge.update(n, { size: args[0] ?? 100 }); break;
-            case 'CHANGE_SIZE': bridge.update(n, { size: (old) => (old || 100) + (args[0] ?? 10) }); break;
+            case 'CHANGE_SIZE': bridge.update(n, { size: (old: any) => (old || 100) + (args[0] ?? 10) }); break;
             case 'ANGLE': bridge.update(n, { angle: args[0] ?? 0 }); break;
             case 'COSTUME': bridge.update(n, { currentCostume: args[0] }); break;
             case 'NEXT_COSTUME': bridge.update(n, { nextCostume: true }); break;
