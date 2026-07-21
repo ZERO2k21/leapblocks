@@ -217,6 +217,8 @@ export default function JuniorMenuBar({
                 </div>
             </div>
 
+            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <DropdownMenu
                     label="File"

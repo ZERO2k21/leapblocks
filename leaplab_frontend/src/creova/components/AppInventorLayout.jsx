@@ -10,7 +10,7 @@ import MediaManager from '../components/MediaManager';
 import { Zap, Layout, Puzzle } from 'lucide-react';
 
 const rightContent = (activeTab, setActiveTab, handleBuildApk) => (
-  <div className="flex items-center gap-6 shrink-0 creova-right-gap">
+  <div className="flex items-center gap-2 shrink-0 creova-right-gap">
     <style>{`@media (max-width: 1499px){.creova-tab-label{display:none!important}.creova-build-text{display:none!important}.creova-tab-btn{padding:6px 8px!important}.creova-build-btn{padding:8px 10px!important}}@media (max-width: 480px){.creova-right-gap{gap:8px!important}.creova-divider{display:none!important}}`}</style>
     <nav style={{
       display: 'flex',
@@ -70,7 +70,7 @@ const rightContent = (activeTab, setActiveTab, handleBuildApk) => (
         );
       })}
     </nav>
-    <div className="creova-divider" style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 8px', flexShrink: 0 }} />
+    <div className="creova-divider" style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.15)', margin: '0 2px', flexShrink: 0 }} />
     <button
       id="btn-build-apk"
       className="creova-build-btn"

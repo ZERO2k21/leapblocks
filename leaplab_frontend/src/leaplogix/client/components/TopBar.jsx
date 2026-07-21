@@ -100,8 +100,8 @@ export default function TopBar() {
 
     return (
         <header style={{
-            position: "sticky", top: 0, height: 56, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
-            display: "flex", alignItems: "center", padding: "0 16px",
+            position: "sticky", top: 0, height: 68, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
+            display: "flex", alignItems: "center", padding: "0 28px",
             justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, flexWrap: "nowrap",
             boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(100,180,255,0.08)',
@@ -117,7 +117,7 @@ export default function TopBar() {
                     border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
                     color: '#fff', cursor: 'pointer', transition: 'all 0.2s ease', flexShrink: 0,
                 }} title="Back to Home">
-                    <Home size={19} strokeWidth={2.2} />
+                    <Home size={20} strokeWidth={2.2} />
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, cursor: 'pointer' }} onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
@@ -126,12 +126,12 @@ export default function TopBar() {
                 }}>
                     <Logo height={48} />
                     <span style={{
-                        color: '#fff', fontSize: 20, fontWeight: 900,
+                        color: '#fff', fontSize: 22, fontWeight: 900,
                         letterSpacing: '0.08em', lineHeight: 1.2,
                         borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 8,
                     }}>Logix</span>
                 </div>
-                <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+                <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
 
                 <DropdownMenu label="File" isOpen={openMenuId === 'file'} onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')} onClose={() => setOpenMenuId(null)}
                     items={[
@@ -189,7 +189,7 @@ export default function TopBar() {
 
             <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 9, flex: 1, justifyContent: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, flex: 1, justifyContent: "flex-end" }}>
                 <div style={{
                     background: "rgba(255, 255, 255, 0.08)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -299,37 +299,35 @@ export default function TopBar() {
                 />
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
-
-                {showCreoleap && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexShrink: 0,
-                        paddingLeft: 4,
-                        height: '44px',
-                        overflow: 'hidden',
-                    }}>
-                        <img
-                            src="assets/logo-creoleap.png"
-                            alt="CREOLEAP"
-                            style={{
-                                width: '145px',
-                                height: 'auto',
-                                objectFit: 'contain',
-                                display: 'block',
-                                flexShrink: 0,
-                                filter: [
-                                    'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                    'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                    'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                    'brightness(1.14)',
-                                    'contrast(1.05)',
-                                ].join(' '),
-                            }}
-                        />
-                    </div>
-                )}
             </div>
+
+            {showCreoleap && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    height: '100%',
+                }}>
+                    <img
+                        src="assets/logo-creoleap.png"
+                        alt="CREOLEAP"
+                        style={{
+                            width: '145px',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            display: 'block',
+                            flexShrink: 0,
+                            filter: [
+                                'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                                'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
+                                'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
+                                'brightness(1.14)',
+                                'contrast(1.05)',
+                            ].join(' '),
+                        }}
+                    />
+                </div>
+            )}
         </header>
     );
 }

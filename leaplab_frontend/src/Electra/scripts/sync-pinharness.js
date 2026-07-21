@@ -1,21 +1,20 @@
 /**
- * Script to sync PinHarness.json to PinHarness.ts
- * Run this after editing PinHarness.json to update the TypeScript file
+ * Script to reformat PinHarness.ts
+ * Run this after editing PinHarness.ts to format the TypeScript file
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const jsonPath = path.join(__dirname, '../Client/Src/engine/Arduino/PinHarness.json');
 const tsPath = path.join(__dirname, '../Client/Src/engine/Arduino/PinHarness.ts');
 
 try {
-    // Read the JSON file
-    const jsonContent = fs.readFileSync(jsonPath, 'utf8');
-    const pinData = JSON.parse(jsonContent);
+    const tsContent = fs.readFileSync(tsPath, 'utf8');
+    const match = tsContent.match(/export const LEAP_PINS.*?= ({[\s\S]*?});/);
+    if (!match) throw new Error('Could not parse PinHarness.ts');
 
-    // Generate TypeScript file content
-    const tsContent = `/**
+    const pinData = JSON.parse(match[1]);
+    const newTsContent = `/**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -23,13 +22,10 @@ try {
 export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, width: number, height: number }, pins: { name: string, x: number, y: number }[] }> = ${JSON.stringify(pinData, null, 2)};
 `;
 
-    // Write the TypeScript file
-    fs.writeFileSync(tsPath, tsContent, 'utf8');
-
-    console.log('✅ Successfully synced PinHarness.json → PinHarness.ts');
-    console.log(`   JSON: ${jsonPath}`);
-    console.log(`   TS:   ${tsPath}`);
+    fs.writeFileSync(tsPath, newTsContent, 'utf8');
+    console.log('✅ Successfully formatted PinHarness.ts');
+    console.log(`   TS: ${tsPath}`);
 } catch (error) {
-    console.error('❌ Error syncing PinHarness files:', error.message);
+    console.error('❌ Error formatting PinHarness.ts:', error.message);
     process.exit(1);
 }
