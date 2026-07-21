@@ -1,27 +1,20 @@
-/**
- * Text Blocks for App Inventor
- * Includes: text values, join, length, substring
- */
 import * as Blockly from 'blockly';
-
 import { BLOCK_COLORS } from '../utils/blockColors';
 
-// Text Value
 Blockly.Blocks['text'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
-            .appendField('\"')
+            .appendField('"')
             .appendField(new Blockly.FieldTextInput(""), "TEXT")
-            .appendField('\"');
+            .appendField('"');
         this.setOutput(true, "String");
         this.setColour(BLOCK_COLORS.text);
         this.setTooltip("A text string");
     }
 };
 
-// Join Text
 Blockly.Blocks['text_join'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("ADD0")
             .appendField("join");
@@ -29,60 +22,61 @@ Blockly.Blocks['text_join'] = {
         this.setOutput(true, "String");
         this.setTooltip("Join two pieces of text");
         this.setMutator(new Blockly.icons.MutatorIcon(['text_create_join_item'], this));
-        this.itemCount_ = 2;
+        (this as any).itemCount_ = 2;
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('items', this.itemCount_);
+        container.setAttribute('items', String((this as any).itemCount_));
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10) || 2;
-        this.updateShape_();
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        (this as any).itemCount_ = parseInt(xmlElement.getAttribute('items') || '10', 10) || 2;
+        (this as any).updateShape_();
     },
-    decompose: function (workspace) {
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
+        const self = this as any;
         const containerBlock = workspace.newBlock('text_create_join_container');
         containerBlock.initSvg();
         let connection = containerBlock.nextConnection;
-        for (let i = 0; i < this.itemCount_; i++) {
+        for (let i = 0; i < self.itemCount_; i++) {
             const itemBlock = workspace.newBlock('text_create_join_item');
             itemBlock.initSvg();
-            connection.connect(itemBlock.previousConnection);
+            if (connection) connection.connect(itemBlock.previousConnection);
             connection = itemBlock.nextConnection;
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
-        const connections = [];
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
+        const connections: Array<Blockly.Connection | null> = [];
         while (itemBlock && !itemBlock.isInsertionMarker()) {
-            connections.push(itemBlock.valueConnection_);
+            connections.push((itemBlock as any).valueConnection_);
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
-        this.itemCount_ = connections.length;
-        this.updateShape_();
-        for (let i = 0; i < this.itemCount_; i++) {
+        self.itemCount_ = connections.length;
+        self.updateShape_();
+        for (let i = 0; i < self.itemCount_; i++) {
             if (connections[i]) connections[i].reconnect(this, 'ADD' + i);
         }
     },
-    saveConnections: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
+    saveConnections: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
         let i = 0;
         while (itemBlock) {
             const input = this.getInput('ADD' + i);
-            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            (itemBlock as any).valueConnection_ = input && input.connection?.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
     },
-    updateShape_: function () {
-        if (this.itemCount_ < 0) this.itemCount_ = 0;
-        // Remove all inputs
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
+        if (self.itemCount_ < 0) self.itemCount_ = 0;
         for (let i = 0; this.getInput('ADD' + i); i++) {
             this.removeInput('ADD' + i);
         }
-        // Add new inputs
-        for (let i = 0; i < this.itemCount_; i++) {
+        for (let i = 0; i < self.itemCount_; i++) {
             const input = this.appendValueInput('ADD' + i).setCheck(null);
             if (i === 0) {
                 input.appendField('join');
@@ -92,7 +86,7 @@ Blockly.Blocks['text_join'] = {
 };
 
 Blockly.Blocks['text_create_join_container'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendDummyInput().appendField("join");
         this.setNextStatement(true);
@@ -101,7 +95,7 @@ Blockly.Blocks['text_create_join_container'] = {
 };
 
 Blockly.Blocks['text_create_join_item'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendDummyInput().appendField("item");
         this.setPreviousStatement(true);
@@ -110,9 +104,8 @@ Blockly.Blocks['text_create_join_item'] = {
     }
 };
 
-// Text Length
 Blockly.Blocks['text_length'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("VALUE")
             .setCheck("String")
@@ -122,9 +115,8 @@ Blockly.Blocks['text_length'] = {
     }
 };
 
-// Is Empty
 Blockly.Blocks['text_isEmpty'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("VALUE")
             .setCheck("String")
@@ -134,9 +126,8 @@ Blockly.Blocks['text_isEmpty'] = {
     }
 };
 
-// Compare Texts
 Blockly.Blocks['text_compare'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('A')
             .setCheck('String')
@@ -154,9 +145,8 @@ Blockly.Blocks['text_compare'] = {
     }
 };
 
-// Trim
 Blockly.Blocks['text_trim'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("TEXT")
             .setCheck("String")
@@ -166,9 +156,8 @@ Blockly.Blocks['text_trim'] = {
     }
 };
 
-// Change Case
 Blockly.Blocks['text_changeCase'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("TEXT")
             .setCheck("String")
@@ -181,9 +170,8 @@ Blockly.Blocks['text_changeCase'] = {
     }
 };
 
-// Contains / Contains Any / Contains All
 Blockly.Blocks['text_contains'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("TEXT")
             .setCheck("String")
@@ -202,9 +190,8 @@ Blockly.Blocks['text_contains'] = {
     }
 };
 
-// Split (with all Leap variants)
 Blockly.Blocks['text_split'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput("TEXT")
             .setCheck("String")
@@ -224,9 +211,8 @@ Blockly.Blocks['text_split'] = {
     }
 };
 
-// Index Of
 Blockly.Blocks['text_indexOf'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('VALUE').setCheck('String').appendField('in text');
         this.appendValueInput('FIND').setCheck('String').appendField('find');
@@ -236,9 +222,8 @@ Blockly.Blocks['text_indexOf'] = {
     }
 };
 
-// Char At
 Blockly.Blocks['text_charAt'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('VALUE').setCheck('String').appendField('in text');
         this.appendValueInput('AT').setCheck('Number').appendField('get letter #');
@@ -248,9 +233,8 @@ Blockly.Blocks['text_charAt'] = {
     }
 };
 
-// Get Substring
 Blockly.Blocks['text_getSubstring'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('STRING').setCheck('String').appendField('in text');
         this.appendValueInput('AT1').setCheck('Number').appendField('get substring from');
@@ -261,9 +245,8 @@ Blockly.Blocks['text_getSubstring'] = {
     }
 };
 
-// Segment (Leap specific: start + length)
 Blockly.Blocks['text_segment'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('TEXT').setCheck('String').appendField('segment');
         this.appendValueInput('START').setCheck('Number').appendField('text').appendField('start');
@@ -274,9 +257,8 @@ Blockly.Blocks['text_segment'] = {
     }
 };
 
-// Replace All
 Blockly.Blocks['text_replace_all'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('TEXT').setCheck('String').appendField('replace all');
         this.appendValueInput('SEGMENT').setCheck('String').appendField('text').appendField('segment');
@@ -287,9 +269,8 @@ Blockly.Blocks['text_replace_all'] = {
     }
 };
 
-// Obfuscated Text
 Blockly.Blocks['text_obfuscated'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendDummyInput()
             .appendField('obfuscated text')
@@ -299,9 +280,8 @@ Blockly.Blocks['text_obfuscated'] = {
     }
 };
 
-// Is a string?
 Blockly.Blocks['text_is_string'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('THING')
             .appendField('is a string?');
@@ -310,9 +290,8 @@ Blockly.Blocks['text_is_string'] = {
     }
 };
 
-// Reverse
 Blockly.Blocks['text_reverse'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('TEXT')
             .setCheck('String')
@@ -322,9 +301,8 @@ Blockly.Blocks['text_reverse'] = {
     }
 };
 
-// Replace All Mappings
 Blockly.Blocks['text_replace_all_mappings'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('TEXT')
             .setCheck('String')
@@ -344,9 +322,8 @@ Blockly.Blocks['text_replace_all_mappings'] = {
     }
 };
 
-// Starts At (Leap uses a separate block, but we keep it in the contains dropdown too)
 Blockly.Blocks['text_starts_at'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.text);
         this.appendValueInput('TEXT').setCheck('String').appendField('starts at');
         this.appendValueInput('PIECE').setCheck('String').appendField('text').appendField('piece');
@@ -377,4 +354,3 @@ export default {
     'text_replace_all_mappings': Blockly.Blocks['text_replace_all_mappings'],
     'text_starts_at': Blockly.Blocks['text_starts_at']
 };
-

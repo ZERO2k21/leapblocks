@@ -1,12 +1,7 @@
-/**
- * Procedure Blocks for App Inventor
- * Leap App Inventor compatible procedure/function operations
- */
 import * as Blockly from 'blockly';
 
-// Procedure Definition (no return)
 Blockly.Blocks['procedures_defnoreturn'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("to")
             .appendField(new Blockly.FieldTextInput("procedure"), "NAME");
@@ -16,65 +11,66 @@ Blockly.Blocks['procedures_defnoreturn'] = {
         this.setColour(290);
         this.setTooltip("Define a procedure");
         this.setHelpUrl("");
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
+        const self = this as any;
         const container = Blockly.utils.xml.createElement('mutation');
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const parameter = Blockly.utils.xml.createElement('arg');
-            parameter.setAttribute('name', this.arguments_[i]);
+            parameter.setAttribute('name', self.arguments_[i]);
             container.appendChild(parameter);
         }
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.arguments_ = [];
-        for (let i = 0, childNode; (childNode = xmlElement.childNodes[i]); i++) {
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        const self = this as any;
+        self.arguments_ = [];
+        for (let i = 0, childNode: ChildNode | null; (childNode = xmlElement.childNodes[i]); i++) {
             if (childNode.nodeName.toLowerCase() === 'arg') {
-                this.arguments_.push(childNode.getAttribute('name'));
+                self.arguments_.push((childNode as Element).getAttribute('name'));
             }
         }
-        this.updateParams_();
+        self.updateParams_();
     },
-    decompose: function (workspace) {
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
+        const self = this as any;
         const containerBlock = workspace.newBlock('procedures_mutatorcontainer');
         containerBlock.initSvg();
         let connection = containerBlock.nextConnection;
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const itemBlock = workspace.newBlock('procedures_mutatorarg');
-            itemBlock.setFieldValue(this.arguments_[i], 'NAME');
+            itemBlock.setFieldValue(self.arguments_[i], 'NAME');
             itemBlock.initSvg();
-            connection.connect(itemBlock.previousConnection);
+            if (connection) connection.connect(itemBlock.previousConnection);
             connection = itemBlock.nextConnection;
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        this.arguments_ = [];
-        let itemBlock = containerBlock.nextConnection.targetBlock();
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        self.arguments_ = [];
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
         while (itemBlock && !itemBlock.isInsertionMarker()) {
-            this.arguments_.push(itemBlock.getFieldValue('NAME'));
+            self.arguments_.push(itemBlock.getFieldValue('NAME'));
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
-        this.updateParams_();
+        self.updateParams_();
     },
-    updateParams_: function () {
-        // Remove all parameter inputs
+    updateParams_: function (this: Blockly.Block) {
+        const self = this as any;
         for (let i = 0; this.getInput('ARG' + i); i++) {
             this.removeInput('ARG' + i);
         }
-        // Remove STACK input
         if (this.getInput('STACK')) {
             this.removeInput('STACK');
         }
-        // Add parameter inputs
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const input = this.appendDummyInput('ARG' + i);
-            input.appendField(new Blockly.FieldTextInput(this.arguments_[i]), 'ARGNAME' + i);
+            input.appendField(new Blockly.FieldTextInput(self.arguments_[i]), 'ARGNAME' + i);
         }
-        // Re-add STACK input
         this.appendStatementInput('STACK')
             .setCheck(null)
             .appendField('do');
@@ -82,7 +78,7 @@ Blockly.Blocks['procedures_defnoreturn'] = {
 };
 
 Blockly.Blocks['procedures_mutatorcontainer'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(290);
         this.appendDummyInput().appendField("inputs");
         this.setNextStatement(true);
@@ -90,9 +86,8 @@ Blockly.Blocks['procedures_mutatorcontainer'] = {
     }
 };
 
-// Procedure Definition (with return)
 Blockly.Blocks['procedures_defreturn'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("to")
             .appendField(new Blockly.FieldTextInput("procedure"), "NAME");
@@ -102,74 +97,74 @@ Blockly.Blocks['procedures_defreturn'] = {
         this.setColour(290);
         this.setTooltip("Define a procedure that returns a value");
         this.setHelpUrl("");
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
+        const self = this as any;
         const container = Blockly.utils.xml.createElement('mutation');
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const parameter = Blockly.utils.xml.createElement('arg');
-            parameter.setAttribute('name', this.arguments_[i]);
+            parameter.setAttribute('name', self.arguments_[i]);
             container.appendChild(parameter);
         }
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.arguments_ = [];
-        for (let i = 0, childNode; (childNode = xmlElement.childNodes[i]); i++) {
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        const self = this as any;
+        self.arguments_ = [];
+        for (let i = 0, childNode: ChildNode | null; (childNode = xmlElement.childNodes[i]); i++) {
             if (childNode.nodeName.toLowerCase() === 'arg') {
-                this.arguments_.push(childNode.getAttribute('name'));
+                self.arguments_.push((childNode as Element).getAttribute('name'));
             }
         }
-        this.updateParams_();
+        self.updateParams_();
     },
-    decompose: function (workspace) {
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
+        const self = this as any;
         const containerBlock = workspace.newBlock('procedures_mutatorcontainer');
         containerBlock.initSvg();
         let connection = containerBlock.nextConnection;
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const itemBlock = workspace.newBlock('procedures_mutatorarg');
-            itemBlock.setFieldValue(this.arguments_[i], 'NAME');
+            itemBlock.setFieldValue(self.arguments_[i], 'NAME');
             itemBlock.initSvg();
-            connection.connect(itemBlock.previousConnection);
+            if (connection) connection.connect(itemBlock.previousConnection);
             connection = itemBlock.nextConnection;
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        this.arguments_ = [];
-        let itemBlock = containerBlock.nextConnection.targetBlock();
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        self.arguments_ = [];
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
         while (itemBlock && !itemBlock.isInsertionMarker()) {
-            this.arguments_.push(itemBlock.getFieldValue('NAME'));
+            self.arguments_.push(itemBlock.getFieldValue('NAME'));
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
-        this.updateParams_();
+        self.updateParams_();
     },
-    updateParams_: function () {
-        // Remove all parameter inputs
+    updateParams_: function (this: Blockly.Block) {
+        const self = this as any;
         for (let i = 0; this.getInput('ARG' + i); i++) {
             this.removeInput('ARG' + i);
         }
-        // Remove RETURN input
         if (this.getInput('RETURN')) {
             this.removeInput('RETURN');
         }
-        // Add parameter inputs
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const input = this.appendDummyInput('ARG' + i);
-            input.appendField(new Blockly.FieldTextInput(this.arguments_[i]), 'ARGNAME' + i);
+            input.appendField(new Blockly.FieldTextInput(self.arguments_[i]), 'ARGNAME' + i);
         }
-        // Re-add RETURN input
         this.appendValueInput('RETURN')
             .setCheck(null)
             .appendField('result');
     }
 };
 
-// Procedure Call (no return)
 Blockly.Blocks['procedures_callnoreturn'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("call")
             .appendField(new Blockly.FieldTextInput("procedure"), "NAME");
@@ -177,94 +172,94 @@ Blockly.Blocks['procedures_callnoreturn'] = {
         this.setNextStatement(true, null);
         this.setColour(290);
         this.setTooltip("Call a procedure");
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
+        const self = this as any;
         const container = Blockly.utils.xml.createElement('mutation');
         container.setAttribute('name', this.getFieldValue('NAME'));
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const parameter = Blockly.utils.xml.createElement('arg');
-            parameter.setAttribute('name', this.arguments_[i]);
+            parameter.setAttribute('name', self.arguments_[i]);
             container.appendChild(parameter);
         }
         return container;
     },
-    domToMutation: function (xmlElement) {
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        const self = this as any;
         const name = xmlElement.getAttribute('name');
         this.setFieldValue(name, 'NAME');
-        this.arguments_ = [];
-        for (let i = 0, childNode; (childNode = xmlElement.childNodes[i]); i++) {
+        self.arguments_ = [];
+        for (let i = 0, childNode: ChildNode | null; (childNode = xmlElement.childNodes[i]); i++) {
             if (childNode.nodeName.toLowerCase() === 'arg') {
-                this.arguments_.push(childNode.getAttribute('name'));
+                self.arguments_.push((childNode as Element).getAttribute('name'));
             }
         }
-        this.updateShape_();
+        self.updateShape_();
     },
-    updateShape_: function () {
-        // Remove all argument inputs
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
         for (let i = 0; this.getInput('ARG' + i); i++) {
             this.removeInput('ARG' + i);
         }
-        // Add argument inputs
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const input = this.appendValueInput('ARG' + i)
                 .setCheck(null);
-            input.appendField(this.arguments_[i]);
+            input.appendField(self.arguments_[i]);
         }
     }
 };
 
-// Procedure Call (with return)
 Blockly.Blocks['procedures_callreturn'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("call")
             .appendField(new Blockly.FieldTextInput("procedure"), "NAME");
         this.setOutput(true, null);
         this.setColour(290);
         this.setTooltip("Call a procedure that returns a value");
-        this.arguments_ = [];
+        (this as any).arguments_ = [];
         this.setMutator(new Blockly.icons.MutatorIcon(['procedures_mutatorarg'], this));
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
+        const self = this as any;
         const container = Blockly.utils.xml.createElement('mutation');
         container.setAttribute('name', this.getFieldValue('NAME'));
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const parameter = Blockly.utils.xml.createElement('arg');
-            parameter.setAttribute('name', this.arguments_[i]);
+            parameter.setAttribute('name', self.arguments_[i]);
             container.appendChild(parameter);
         }
         return container;
     },
-    domToMutation: function (xmlElement) {
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        const self = this as any;
         const name = xmlElement.getAttribute('name');
         this.setFieldValue(name, 'NAME');
-        this.arguments_ = [];
-        for (let i = 0, childNode; (childNode = xmlElement.childNodes[i]); i++) {
+        self.arguments_ = [];
+        for (let i = 0, childNode: ChildNode | null; (childNode = xmlElement.childNodes[i]); i++) {
             if (childNode.nodeName.toLowerCase() === 'arg') {
-                this.arguments_.push(childNode.getAttribute('name'));
+                self.arguments_.push((childNode as Element).getAttribute('name'));
             }
         }
-        this.updateShape_();
+        self.updateShape_();
     },
-    updateShape_: function () {
-        // Remove all argument inputs
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
         for (let i = 0; this.getInput('ARG' + i); i++) {
             this.removeInput('ARG' + i);
         }
-        // Add argument inputs
-        for (let i = 0; i < this.arguments_.length; i++) {
+        for (let i = 0; i < self.arguments_.length; i++) {
             const input = this.appendValueInput('ARG' + i)
                 .setCheck(null);
-            input.appendField(this.arguments_[i]);
+            input.appendField(self.arguments_[i]);
         }
     }
 };
 
-// Mutator block for procedure arguments
 Blockly.Blocks['procedures_mutatorarg'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("input:")
             .appendField(new Blockly.FieldTextInput("x"), "NAME");
@@ -276,9 +271,8 @@ Blockly.Blocks['procedures_mutatorarg'] = {
     }
 };
 
-// Get Procedure Argument
 Blockly.Blocks['procedures_getarg'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("get")
             .appendField(new Blockly.FieldTextInput("x"), "VAR");
@@ -296,4 +290,3 @@ export default {
     'procedures_mutatorarg': Blockly.Blocks['procedures_mutatorarg'],
     'procedures_getarg': Blockly.Blocks['procedures_getarg']
 };
-

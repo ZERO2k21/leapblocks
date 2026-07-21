@@ -1,13 +1,8 @@
-/**
- * List Blocks for App Inventor
- * Leap App Inventor compatible list operations
- */
 import * as Blockly from 'blockly';
 import { BLOCK_COLORS } from '../utils/blockColors';
 
-// Create Empty List
 Blockly.Blocks['lists_create_empty'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendDummyInput()
             .appendField("create empty list");
         this.setOutput(true, "List");
@@ -16,9 +11,8 @@ Blockly.Blocks['lists_create_empty'] = {
     }
 };
 
-// Create List with Items
 Blockly.Blocks['lists_create_with'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("ADD0")
             .setCheck(null)
             .appendField("make a list");
@@ -27,61 +21,61 @@ Blockly.Blocks['lists_create_with'] = {
         this.setOutput(true, "List");
         this.setColour(BLOCK_COLORS.lists);
         this.setTooltip("Create a list with items");
-        this.setMutator(new Blockly.icons.MutatorIcon(['lists_create_with_item'], this));
-        this.itemCount_ = 2;
+        this.setMutator(new (Blockly.icons as any).MutatorIcon(['lists_create_with_item'], this));
+        (this as any).itemCount_ = 2;
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block): Element {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('items', this.itemCount_);
+        container.setAttribute('items', String((this as any).itemCount_));
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10) || 2;
-        this.updateShape_();
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        (this as any).itemCount_ = parseInt(xmlElement.getAttribute('items') || '10', 10) || 2;
+        (this as any).updateShape_();
     },
-    decompose: function (workspace) {
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
         const containerBlock = workspace.newBlock('lists_create_with_container');
-        containerBlock.initSvg();
-        let connection = containerBlock.nextConnection;
-        for (let i = 0; i < this.itemCount_; i++) {
+        (containerBlock as any).initSvg();
+        let connection: Blockly.Connection | null = containerBlock.nextConnection;
+        for (let i = 0; i < (this as any).itemCount_; i++) {
             const itemBlock = workspace.newBlock('lists_create_with_item');
-            itemBlock.initSvg();
-            connection.connect(itemBlock.previousConnection);
+            (itemBlock as any).initSvg();
+            if (connection && itemBlock.previousConnection) connection.connect(itemBlock.previousConnection);
             connection = itemBlock.nextConnection;
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
-        const connections = [];
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
+        const connections: Array<Blockly.Connection | null> = [];
         while (itemBlock && !itemBlock.isInsertionMarker()) {
-            connections.push(itemBlock.valueConnection_);
+            connections.push((itemBlock as any).valueConnection_);
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
-        this.itemCount_ = connections.length;
-        this.updateShape_();
-        for (let i = 0; i < this.itemCount_; i++) {
-            if (connections[i]) connections[i].reconnect(this, 'ADD' + i);
+        self.itemCount_ = connections.length;
+        self.updateShape_();
+        for (let i = 0; i < self.itemCount_; i++) {
+            if (connections[i]) (connections[i] as any).reconnect(this, 'ADD' + i);
         }
     },
-    saveConnections: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
+    saveConnections: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        let itemBlock = containerBlock.nextConnection?.targetBlock() || null;
         let i = 0;
         while (itemBlock) {
             const input = this.getInput('ADD' + i);
-            itemBlock.valueConnection_ = input && input.connection.targetConnection;
+            (itemBlock as any).valueConnection_ = input && input.connection?.targetConnection;
             i++;
             itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
         }
     },
-    updateShape_: function () {
-        if (this.itemCount_ < 0) this.itemCount_ = 0;
-        // Remove all inputs
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
+        if (self.itemCount_ < 0) self.itemCount_ = 0;
         for (let i = 0; this.getInput('ADD' + i); i++) {
             this.removeInput('ADD' + i);
         }
-        // Add new inputs
-        for (let i = 0; i < this.itemCount_; i++) {
+        for (let i = 0; i < self.itemCount_; i++) {
             const input = this.appendValueInput('ADD' + i).setCheck(null);
             if (i === 0) {
                 input.appendField('make a list');
@@ -91,7 +85,7 @@ Blockly.Blocks['lists_create_with'] = {
 };
 
 Blockly.Blocks['lists_create_with_container'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendDummyInput().appendField("list");
         this.setNextStatement(true);
@@ -100,7 +94,7 @@ Blockly.Blocks['lists_create_with_container'] = {
 };
 
 Blockly.Blocks['lists_create_with_item'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendDummyInput().appendField("item");
         this.setPreviousStatement(true);
@@ -109,9 +103,8 @@ Blockly.Blocks['lists_create_with_item'] = {
     }
 };
 
-// Add Items to List
 Blockly.Blocks['lists_add_items'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("add items to list");
@@ -125,9 +118,8 @@ Blockly.Blocks['lists_add_items'] = {
     }
 };
 
-// Is in List?
 Blockly.Blocks['lists_is_in'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("ITEM")
             .setCheck(null)
             .appendField("is in list?");
@@ -142,9 +134,8 @@ Blockly.Blocks['lists_is_in'] = {
     }
 };
 
-// Length of List
 Blockly.Blocks['lists_length'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("length of list");
@@ -154,9 +145,8 @@ Blockly.Blocks['lists_length'] = {
     }
 };
 
-// Is List Empty?
 Blockly.Blocks['lists_isEmpty'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("is list empty?");
@@ -166,9 +156,8 @@ Blockly.Blocks['lists_isEmpty'] = {
     }
 };
 
-// Pick Random Item
 Blockly.Blocks['lists_pick_random'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("pick a random item from list");
@@ -178,9 +167,8 @@ Blockly.Blocks['lists_pick_random'] = {
     }
 };
 
-// Index in List
 Blockly.Blocks['lists_indexOf'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("ITEM")
             .setCheck(null)
             .appendField("index in list");
@@ -195,9 +183,8 @@ Blockly.Blocks['lists_indexOf'] = {
     }
 };
 
-// Select List Item
 Blockly.Blocks['lists_getIndex'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("select list item");
@@ -211,9 +198,8 @@ Blockly.Blocks['lists_getIndex'] = {
     }
 };
 
-// Replace List Item
 Blockly.Blocks['lists_setIndex'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("replace list item");
@@ -231,9 +217,8 @@ Blockly.Blocks['lists_setIndex'] = {
     }
 };
 
-// Remove List Item
 Blockly.Blocks['lists_remove_item'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("remove list item");
@@ -248,9 +233,8 @@ Blockly.Blocks['lists_remove_item'] = {
     }
 };
 
-// Insert List Item
 Blockly.Blocks['lists_insert_item'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("insert list item");
@@ -268,9 +252,8 @@ Blockly.Blocks['lists_insert_item'] = {
     }
 };
 
-// Append to List
 Blockly.Blocks['lists_append'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST1")
             .setCheck("List")
             .appendField("append to list");
@@ -285,9 +268,8 @@ Blockly.Blocks['lists_append'] = {
     }
 };
 
-// Copy List
 Blockly.Blocks['lists_copy'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("copy list");
@@ -297,9 +279,8 @@ Blockly.Blocks['lists_copy'] = {
     }
 };
 
-// Is a List?
 Blockly.Blocks['lists_is_list'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("ITEM")
             .setCheck(null)
             .appendField("is a list?");
@@ -311,9 +292,8 @@ Blockly.Blocks['lists_is_list'] = {
     }
 };
 
-// Reverse List
 Blockly.Blocks['lists_reverse'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("reverse list");
@@ -324,9 +304,8 @@ Blockly.Blocks['lists_reverse'] = {
     }
 };
 
-// List to CSV Row
 Blockly.Blocks['lists_to_csv_row'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("list to csv row");
@@ -336,9 +315,8 @@ Blockly.Blocks['lists_to_csv_row'] = {
     }
 };
 
-// List from CSV Row
 Blockly.Blocks['lists_from_csv_row'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("TEXT")
             .setCheck("String")
             .appendField("list from csv row");
@@ -348,9 +326,8 @@ Blockly.Blocks['lists_from_csv_row'] = {
     }
 };
 
-// List to CSV Table
 Blockly.Blocks['lists_to_csv_table'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("list to csv table");
@@ -360,9 +337,8 @@ Blockly.Blocks['lists_to_csv_table'] = {
     }
 };
 
-// List from CSV Table
 Blockly.Blocks['lists_from_csv_table'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("TEXT")
             .setCheck("String")
             .appendField("list from csv table");
@@ -372,9 +348,8 @@ Blockly.Blocks['lists_from_csv_table'] = {
     }
 };
 
-// Join with Separator
 Blockly.Blocks['lists_join_with_separator'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("SEPARATOR")
             .setCheck("String")
             .appendField("join with separator");
@@ -387,9 +362,8 @@ Blockly.Blocks['lists_join_with_separator'] = {
     }
 };
 
-// Sort List
 Blockly.Blocks['lists_sort'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("LIST")
             .setCheck("List")
             .appendField("sort list");
@@ -408,9 +382,8 @@ Blockly.Blocks['lists_sort'] = {
     }
 };
 
-// Repeat List
 Blockly.Blocks['lists_repeat'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput("ITEM")
             .setCheck(null)
             .appendField("make a list by repeating item");
@@ -423,9 +396,8 @@ Blockly.Blocks['lists_repeat'] = {
     }
 };
 
-// Lookup in Pairs
 Blockly.Blocks['lists_lookup_in_pairs'] = {
-    init: function() {
+    init: function(this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('KEY').appendField('lookup in pairs');
         this.appendValueInput('LIST').setCheck('List').appendField('key');
@@ -436,11 +408,8 @@ Blockly.Blocks['lists_lookup_in_pairs'] = {
     }
 };
 
-// ==================== LEAP FUNCTIONAL LIST BLOCKS ====================
-
-// Map — make new mapped list (Leap: mapnondest)
 Blockly.Blocks['lists_map'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('map over list');
@@ -455,9 +424,8 @@ Blockly.Blocks['lists_map'] = {
     }
 };
 
-// Filter — make new filtered list (Leap: filternondest)
 Blockly.Blocks['lists_filter'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('filter list');
@@ -473,9 +441,8 @@ Blockly.Blocks['lists_filter'] = {
     }
 };
 
-// Reduce — reduce list to a single value
 Blockly.Blocks['lists_reduce'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('reduce list');
@@ -493,9 +460,8 @@ Blockly.Blocks['lists_reduce'] = {
     }
 };
 
-// Sort List in Ascending Order (Leap: generic sort)
 Blockly.Blocks['lists_sort_ascending'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('sort list');
@@ -505,9 +471,8 @@ Blockly.Blocks['lists_sort_ascending'] = {
     }
 };
 
-// Sort List with Comparator (Leap: sortwithcomparator)
 Blockly.Blocks['lists_sort_comparator'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('sort list with comparator');
@@ -524,9 +489,8 @@ Blockly.Blocks['lists_sort_comparator'] = {
     }
 };
 
-// Sort List with Key (Leap: sortwithkey)
 Blockly.Blocks['lists_sort_key'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('sort list with key');
@@ -541,9 +505,8 @@ Blockly.Blocks['lists_sort_key'] = {
     }
 };
 
-// Minimum Value in List
 Blockly.Blocks['lists_minimum_value'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('minimum value in list');
@@ -553,9 +516,8 @@ Blockly.Blocks['lists_minimum_value'] = {
     }
 };
 
-// Maximum Value in List
 Blockly.Blocks['lists_maximum_value'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('maximum value in list');
@@ -565,9 +527,8 @@ Blockly.Blocks['lists_maximum_value'] = {
     }
 };
 
-// All But First
 Blockly.Blocks['lists_but_first'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('all but first');
@@ -577,9 +538,8 @@ Blockly.Blocks['lists_but_first'] = {
     }
 };
 
-// All But Last
 Blockly.Blocks['lists_but_last'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('all but last');
@@ -589,9 +549,8 @@ Blockly.Blocks['lists_but_last'] = {
     }
 };
 
-// List Slices
 Blockly.Blocks['lists_slice'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.appendValueInput('LIST')
             .setCheck('List')
             .appendField('list slices');
@@ -645,4 +604,3 @@ export default {
     'lists_but_last': Blockly.Blocks['lists_but_last'],
     'lists_slice': Blockly.Blocks['lists_slice']
 };
-

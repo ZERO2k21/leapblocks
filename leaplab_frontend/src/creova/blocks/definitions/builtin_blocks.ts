@@ -1,11 +1,4 @@
-/**
- * Leap App Inventor Built-in Blocks
- * All standard blocks that are always available
- */
 import * as Blockly from 'blockly';
-
-// Leap App Inventor Block Colors
-// Leap App Inventor Block Colors from Utility
 import { BLOCK_COLORS } from '../utils/blockColors';
 export const LEAP_COLORS = BLOCK_COLORS;
 
@@ -13,9 +6,8 @@ export const LEAP_COLORS = BLOCK_COLORS;
 // CONTROL BLOCKS
 // ============================================================================
 
-// if block
 Blockly.Blocks['controls_if'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('IF0')
             .setCheck('Boolean')
@@ -26,117 +18,119 @@ Blockly.Blocks['controls_if'] = {
         this.setNextStatement(true);
         this.setTooltip('If a condition is true, then do some blocks.');
         this.setMutator(new Blockly.icons.MutatorIcon(['controls_if_elseif', 'controls_if_else'], this));
-        this.elseifCount_ = 0;
-        this.elseCount_ = 0;
+        (this as any).elseifCount_ = 0;
+        (this as any).elseCount_ = 0;
     },
-    mutationToDom: function () {
-        if (!this.elseifCount_ && !this.elseCount_) return null;
+    mutationToDom: function (this: Blockly.Block) {
+        const self = this as any;
+        if (!self.elseifCount_ && !self.elseCount_) return null;
         const container = Blockly.utils.xml.createElement('mutation');
-        if (this.elseifCount_) container.setAttribute('elseif', this.elseifCount_);
-        if (this.elseCount_) container.setAttribute('else', 1);
+        if (self.elseifCount_) container.setAttribute('elseif', self.elseifCount_);
+        if (self.elseCount_) container.setAttribute('else', 1);
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.elseifCount_ = parseInt(xmlElement.getAttribute('elseif'), 10) || 0;
-        this.elseCount_ = parseInt(xmlElement.getAttribute('else'), 10) || 0;
-        this.updateShape_();
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        const self = this as any;
+        self.elseifCount_ = parseInt(xmlElement.getAttribute('elseif') as string, 10) || 0;
+        self.elseCount_ = parseInt(xmlElement.getAttribute('else') as string, 10) || 0;
+        self.updateShape_();
     },
-    decompose: function (workspace) {
-        const containerBlock = workspace.newBlock('controls_if_if');
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
+        const self = this as any;
+        const containerBlock = workspace.newBlock('controls_if_if') as any;
         containerBlock.initSvg();
         let connection = containerBlock.nextConnection;
-        for (let i = 1; i <= this.elseifCount_; i++) {
-            const elseifBlock = workspace.newBlock('controls_if_elseif');
+        for (let i = 1; i <= self.elseifCount_; i++) {
+            const elseifBlock = workspace.newBlock('controls_if_elseif') as any;
             elseifBlock.initSvg();
             connection.connect(elseifBlock.previousConnection);
             connection = elseifBlock.nextConnection;
         }
-        if (this.elseCount_) {
-            const elseBlock = workspace.newBlock('controls_if_else');
+        if (self.elseCount_) {
+            const elseBlock = workspace.newBlock('controls_if_else') as any;
             elseBlock.initSvg();
             connection.connect(elseBlock.previousConnection);
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        let clauseBlock = containerBlock.nextConnection.targetBlock();
-        this.elseifCount_ = 0;
-        this.elseCount_ = 0;
-        const valueConnections = [null];
-        const statementConnections = [null];
-        let elseStatementConnection = null;
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let clauseBlock = containerBlock.nextConnection && containerBlock.nextConnection.targetBlock() as any;
+        self.elseifCount_ = 0;
+        self.elseCount_ = 0;
+        const valueConnections: any[] = [null];
+        const statementConnections: any[] = [null];
+        let elseStatementConnection: any = null;
         while (clauseBlock && !clauseBlock.isInsertionMarker()) {
             switch (clauseBlock.type) {
                 case 'controls_if_elseif':
-                    this.elseifCount_++;
+                    self.elseifCount_++;
                     valueConnections.push(clauseBlock.valueConnection_);
                     statementConnections.push(clauseBlock.statementConnection_);
                     break;
                 case 'controls_if_else':
-                    this.elseCount_++;
+                    self.elseCount_++;
                     elseStatementConnection = clauseBlock.statementConnection_;
                     break;
                 default:
                     throw TypeError('Unknown block type: ' + clauseBlock.type);
             }
-            clauseBlock = clauseBlock.nextConnection && clauseBlock.nextConnection.targetBlock();
+            clauseBlock = clauseBlock.nextConnection && clauseBlock.nextConnection.targetBlock() as any;
         }
-        this.updateShape_();
-        // Reconnect any child blocks.
-        this.reconnectChildBlocks_(valueConnections, statementConnections, elseStatementConnection);
+        self.updateShape_();
+        self.reconnectChildBlocks_(valueConnections, statementConnections, elseStatementConnection);
     },
-    saveConnections: function (containerBlock) {
-        let clauseBlock = containerBlock.nextConnection.targetBlock();
+    saveConnections: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let clauseBlock = containerBlock.nextConnection.targetBlock() as any;
         let i = 1;
         while (clauseBlock) {
             switch (clauseBlock.type) {
                 case 'controls_if_elseif':
-                    const inputIf = this.getInput('IF' + i);
-                    const inputDo = this.getInput('DO' + i);
+                    const inputIf = self.getInput('IF' + i);
+                    const inputDo = self.getInput('DO' + i);
                     clauseBlock.valueConnection_ = inputIf && inputIf.connection.targetConnection;
                     clauseBlock.statementConnection_ = inputDo && inputDo.connection.targetConnection;
                     i++;
                     break;
                 case 'controls_if_else':
-                    const inputElse = this.getInput('ELSE');
+                    const inputElse = self.getInput('ELSE');
                     clauseBlock.statementConnection_ = inputElse && inputElse.connection.targetConnection;
                     break;
                 default:
                     throw TypeError('Unknown block type: ' + clauseBlock.type);
             }
-            clauseBlock = clauseBlock.nextConnection && clauseBlock.nextConnection.targetBlock();
+            clauseBlock = clauseBlock.nextConnection && clauseBlock.nextConnection.targetBlock() as any;
         }
     },
-    reconnectChildBlocks_: function (valueConnections, statementConnections, elseStatementConnection) {
-        for (let i = 1; i <= this.elseifCount_; i++) {
+    reconnectChildBlocks_: function (this: Blockly.Block, valueConnections: any[], statementConnections: any[], elseStatementConnection: any) {
+        for (let i = 1; i <= (this as any).elseifCount_; i++) {
             if (valueConnections[i]) valueConnections[i].reconnect(this, 'IF' + i);
             if (statementConnections[i]) statementConnections[i].reconnect(this, 'DO' + i);
         }
         if (elseStatementConnection) elseStatementConnection.reconnect(this, 'ELSE');
     },
-    updateShape_: function () {
-        // Delete everything.
-        if (this.getInput('ELSE')) this.removeInput('ELSE');
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
+        if (self.getInput('ELSE')) self.removeInput('ELSE');
         let i = 1;
-        while (this.getInput('IF' + i)) {
-            this.removeInput('IF' + i);
-            this.removeInput('DO' + i);
+        while (self.getInput('IF' + i)) {
+            self.removeInput('IF' + i);
+            self.removeInput('DO' + i);
             i++;
         }
-        // Rebuild block.
-        for (let i = 1; i <= this.elseifCount_; i++) {
-            this.appendValueInput('IF' + i).setCheck('Boolean').appendField('else if');
-            this.appendStatementInput('DO' + i).appendField('then');
+        for (let i = 1; i <= self.elseifCount_; i++) {
+            self.appendValueInput('IF' + i).setCheck('Boolean').appendField('else if');
+            self.appendStatementInput('DO' + i).appendField('then');
         }
-        if (this.elseCount_) {
-            this.appendStatementInput('ELSE').appendField('else');
+        if (self.elseCount_) {
+            self.appendStatementInput('ELSE').appendField('else');
         }
     }
 };
 
-// Internal block for if mutator
 Blockly.Blocks['controls_if_if'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput().appendField('if');
         this.setNextStatement(true);
@@ -144,9 +138,8 @@ Blockly.Blocks['controls_if_if'] = {
     }
 };
 
-// for each number from/to/by block
 Blockly.Blocks['controls_forRange'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('for each')
@@ -171,9 +164,8 @@ Blockly.Blocks['controls_forRange'] = {
     }
 };
 
-// for each item in list block
 Blockly.Blocks['controls_forEach'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('LIST')
             .setCheck('List')
@@ -188,15 +180,13 @@ Blockly.Blocks['controls_forEach'] = {
     }
 };
 
-// for each key with value in dictionary block
 Blockly.Blocks['controls_forEachDict'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
             .appendField('for each')
             .appendField(new Blockly.FieldVariable('key'), 'KEY')
-            .appendField('with')
             .appendField(new Blockly.FieldVariable('value'), 'VALUE')
             .appendField('in dictionary');
         this.appendStatementInput('DO')
@@ -207,9 +197,8 @@ Blockly.Blocks['controls_forEachDict'] = {
     }
 };
 
-// while block
 Blockly.Blocks['controls_while'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('TEST')
             .setCheck('Boolean')
@@ -222,9 +211,8 @@ Blockly.Blocks['controls_while'] = {
     }
 };
 
-// choose (ternary) block
 Blockly.Blocks['controls_choose'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('TEST')
             .setCheck('Boolean')
@@ -238,9 +226,8 @@ Blockly.Blocks['controls_choose'] = {
     }
 };
 
-// do/result block
 Blockly.Blocks['controls_do_then_return'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendStatementInput('STM')
             .appendField('do');
@@ -251,9 +238,8 @@ Blockly.Blocks['controls_do_then_return'] = {
     }
 };
 
-// evaluate but ignore block
 Blockly.Blocks['controls_eval_but_ignore'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('VALUE')
             .appendField('evaluate but ignore result');
@@ -263,9 +249,8 @@ Blockly.Blocks['controls_eval_but_ignore'] = {
     }
 };
 
-// open another screen block
 Blockly.Blocks['controls_openAnotherScreen'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('SCREEN')
             .setCheck('String')
@@ -276,9 +261,8 @@ Blockly.Blocks['controls_openAnotherScreen'] = {
     }
 };
 
-// close screen block
 Blockly.Blocks['controls_closeScreen'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('close screen');
@@ -287,9 +271,8 @@ Blockly.Blocks['controls_closeScreen'] = {
     }
 };
 
-// break block
 Blockly.Blocks['controls_break'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('break');
@@ -298,9 +281,8 @@ Blockly.Blocks['controls_break'] = {
     }
 };
 
-// open another screen with start value (Leap-style: no next statement — terminates flow)
 Blockly.Blocks['controls_openAnotherScreenWithStartValue'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('SCREENNAME')
             .setCheck('String')
@@ -315,9 +297,8 @@ Blockly.Blocks['controls_openAnotherScreenWithStartValue'] = {
     }
 };
 
-// get start value
 Blockly.Blocks['controls_getStartValue'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('get start value');
@@ -326,9 +307,8 @@ Blockly.Blocks['controls_getStartValue'] = {
     }
 };
 
-// get plain start text
 Blockly.Blocks['controls_getPlainStartText'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('get plain start text');
@@ -337,9 +317,8 @@ Blockly.Blocks['controls_getPlainStartText'] = {
     }
 };
 
-// close screen with value (Leap-style: terminates flow)
 Blockly.Blocks['controls_closeScreenWithValue'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('SCREEN')
             .appendField('close screen with value')
@@ -350,9 +329,8 @@ Blockly.Blocks['controls_closeScreenWithValue'] = {
     }
 };
 
-// close screen with plain text (Leap-style: terminates flow)
 Blockly.Blocks['controls_closeScreenWithPlainText'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendValueInput('TEXT')
             .setCheck('String')
@@ -364,9 +342,8 @@ Blockly.Blocks['controls_closeScreenWithPlainText'] = {
     }
 };
 
-// close application
 Blockly.Blocks['controls_closeApplication'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('close application');
@@ -375,12 +352,10 @@ Blockly.Blocks['controls_closeApplication'] = {
     }
 };
 
-// Alias for camelCase reference
 Blockly.Blocks['controls_for_each_dict'] = Blockly.Blocks['controls_forEachDict'];
 
-// true/false block
 Blockly.Blocks['logic_boolean'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.logic);
         this.appendDummyInput()
             .appendField(new Blockly.FieldDropdown([['true', 'TRUE'], ['false', 'FALSE']]), 'BOOL');
@@ -389,9 +364,8 @@ Blockly.Blocks['logic_boolean'] = {
     }
 };
 
-// not block
 Blockly.Blocks['logic_negate'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.logic);
         this.appendValueInput('BOOL')
             .setCheck('Boolean')
@@ -401,9 +375,8 @@ Blockly.Blocks['logic_negate'] = {
     }
 };
 
-// comparison block (Logic category — only = and ≠)
 Blockly.Blocks['logic_compare'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.logic);
         this.appendValueInput('A');
         this.appendValueInput('B')
@@ -417,9 +390,8 @@ Blockly.Blocks['logic_compare'] = {
     }
 };
 
-// and/or block
 Blockly.Blocks['logic_operation'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.logic);
         this.appendValueInput('A')
             .setCheck('Boolean');
@@ -437,9 +409,8 @@ Blockly.Blocks['logic_operation'] = {
 // MATH BLOCKS
 // ============================================================================
 
-// number block
 Blockly.Blocks['math_number'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(LEAP_COLORS.math);
         this.appendDummyInput()
             .appendField(new Blockly.FieldNumber(0), 'NUM');
@@ -448,9 +419,8 @@ Blockly.Blocks['math_number'] = {
     }
 };
 
-// math_add block
 Blockly.Blocks['math_add'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM0').setCheck('Number');
         this.appendValueInput('NUM1')
@@ -460,61 +430,65 @@ Blockly.Blocks['math_add'] = {
         this.setOutput(true, 'Number');
         this.setTooltip('Return the sum of two or more numbers.');
         this.setMutator(new Blockly.icons.MutatorIcon(['math_mutator_item'], this));
-        this.itemCount_ = 2;
+        (this as any).itemCount_ = 2;
     },
-    mutationToDom: function () {
+    mutationToDom: function (this: Blockly.Block) {
         const container = Blockly.utils.xml.createElement('mutation');
-        container.setAttribute('items', this.itemCount_);
+        container.setAttribute('items', (this as any).itemCount_);
         return container;
     },
-    domToMutation: function (xmlElement) {
-        this.itemCount_ = parseInt(xmlElement.getAttribute('items'), 10) || 2;
-        this.updateShape_();
+    domToMutation: function (this: Blockly.Block, xmlElement: Element) {
+        (this as any).itemCount_ = parseInt(xmlElement.getAttribute('items') as string, 10) || 2;
+        (this as any).updateShape_();
     },
-    decompose: function (workspace) {
-        const containerBlock = workspace.newBlock('math_mutator_container');
+    decompose: function (this: Blockly.Block, workspace: Blockly.Workspace) {
+        const self = this as any;
+        const containerBlock = workspace.newBlock('math_mutator_container') as any;
         containerBlock.initSvg();
         let connection = containerBlock.nextConnection;
-        for (let i = 0; i < this.itemCount_; i++) {
-            const itemBlock = workspace.newBlock('math_mutator_item');
+        for (let i = 0; i < self.itemCount_; i++) {
+            const itemBlock = workspace.newBlock('math_mutator_item') as any;
             itemBlock.initSvg();
             connection.connect(itemBlock.previousConnection);
             connection = itemBlock.nextConnection;
         }
         return containerBlock;
     },
-    compose: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
-        const connections = [];
+    compose: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let itemBlock = containerBlock.nextConnection.targetBlock() as any;
+        const connections: any[] = [];
         while (itemBlock && !itemBlock.isInsertionMarker()) {
             connections.push(itemBlock.valueConnection_);
-            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock() as any;
         }
-        this.itemCount_ = connections.length;
-        this.updateShape_();
-        for (let i = 0; i < this.itemCount_; i++) {
+        self.itemCount_ = connections.length;
+        self.updateShape_();
+        for (let i = 0; i < self.itemCount_; i++) {
             if (connections[i]) connections[i].reconnect(this, 'NUM' + i);
         }
     },
-    saveConnections: function (containerBlock) {
-        let itemBlock = containerBlock.nextConnection.targetBlock();
+    saveConnections: function (this: Blockly.Block, containerBlock: Blockly.Block) {
+        const self = this as any;
+        let itemBlock = containerBlock.nextConnection.targetBlock() as any;
         let i = 0;
         while (itemBlock) {
-            const input = this.getInput('NUM' + i);
+            const input = self.getInput('NUM' + i);
             itemBlock.valueConnection_ = input && input.connection.targetConnection;
             i++;
-            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock();
+            itemBlock = itemBlock.nextConnection && itemBlock.nextConnection.targetBlock() as any;
         }
     },
-    updateShape_: function () {
-        if (this.itemCount_ < 2) this.itemCount_ = 2;
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
+        if (self.itemCount_ < 2) self.itemCount_ = 2;
         let i = 0;
-        while (this.getInput('NUM' + i)) {
-            this.removeInput('NUM' + i);
+        while (self.getInput('NUM' + i)) {
+            self.removeInput('NUM' + i);
             i++;
         }
-        for (let i = 0; i < this.itemCount_; i++) {
-            const input = this.appendValueInput('NUM' + i).setCheck('Number');
+        for (let i = 0; i < self.itemCount_; i++) {
+            const input = self.appendValueInput('NUM' + i).setCheck('Number');
             if (i > 0) {
                 input.appendField('+');
             }
@@ -522,9 +496,8 @@ Blockly.Blocks['math_add'] = {
     }
 };
 
-// math_subtract block
 Blockly.Blocks['math_subtract'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A').setCheck('Number');
         this.appendValueInput('B').setCheck('Number').appendField('-');
@@ -534,9 +507,8 @@ Blockly.Blocks['math_subtract'] = {
     }
 };
 
-// math_multiply block
 Blockly.Blocks['math_multiply'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM0').setCheck('Number');
         this.appendValueInput('NUM1')
@@ -546,22 +518,23 @@ Blockly.Blocks['math_multiply'] = {
         this.setOutput(true, 'Number');
         this.setTooltip('Return the product of two or more numbers.');
         this.setMutator(new Blockly.icons.MutatorIcon(['math_mutator_item'], this));
-        this.itemCount_ = 2;
+        (this as any).itemCount_ = 2;
     },
     mutationToDom: Blockly.Blocks['math_add'].mutationToDom,
     domToMutation: Blockly.Blocks['math_add'].domToMutation,
     decompose: Blockly.Blocks['math_add'].decompose,
     compose: Blockly.Blocks['math_add'].compose,
     saveConnections: Blockly.Blocks['math_add'].saveConnections,
-    updateShape_: function () {
-        if (this.itemCount_ < 2) this.itemCount_ = 2;
+    updateShape_: function (this: Blockly.Block) {
+        const self = this as any;
+        if (self.itemCount_ < 2) self.itemCount_ = 2;
         let i = 0;
-        while (this.getInput('NUM' + i)) {
-            this.removeInput('NUM' + i);
+        while (self.getInput('NUM' + i)) {
+            self.removeInput('NUM' + i);
             i++;
         }
-        for (let i = 0; i < this.itemCount_; i++) {
-            const input = this.appendValueInput('NUM' + i).setCheck('Number');
+        for (let i = 0; i < self.itemCount_; i++) {
+            const input = self.appendValueInput('NUM' + i).setCheck('Number');
             if (i > 0) {
                 input.appendField('×');
             }
@@ -569,11 +542,8 @@ Blockly.Blocks['math_multiply'] = {
     }
 };
 
-// math_divide_appinv block (name it math_divide_appinv because math_divide is used for quotient/modulo/remainder)
-// Actually, wait, let me check builtin_blocks.js for math_divide!
-
 Blockly.Blocks['math_divide_regular'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A').setCheck('Number');
         this.appendValueInput('B').setCheck('Number').appendField('/');
@@ -584,7 +554,7 @@ Blockly.Blocks['math_divide_regular'] = {
 };
 
 Blockly.Blocks['math_power'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A').setCheck('Number');
         this.appendValueInput('B').setCheck('Number').appendField('^');
@@ -595,7 +565,7 @@ Blockly.Blocks['math_power'] = {
 };
 
 Blockly.Blocks['math_mutator_container'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput().appendField('arithmetic');
         this.setNextStatement(true);
@@ -603,9 +573,8 @@ Blockly.Blocks['math_mutator_container'] = {
     }
 };
 
-// bitwise block
 Blockly.Blocks['math_bitwise'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A')
             .setCheck('Number')
@@ -622,9 +591,8 @@ Blockly.Blocks['math_bitwise'] = {
     }
 };
 
-// random set seed block
 Blockly.Blocks['math_random_set_seed'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('SEED')
             .setCheck('Number')
@@ -635,9 +603,8 @@ Blockly.Blocks['math_random_set_seed'] = {
     }
 };
 
-// single operation block (sqrt, abs, neg, ln, exp, round, ceiling, floor — matches Leap)
 Blockly.Blocks['math_single'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .setCheck('Number')
@@ -656,9 +623,8 @@ Blockly.Blocks['math_single'] = {
     }
 };
 
-// trig block
 Blockly.Blocks['math_trig'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .setCheck('Number')
@@ -675,9 +641,8 @@ Blockly.Blocks['math_trig'] = {
     }
 };
 
-// constant block
 Blockly.Blocks['math_constant'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField(new Blockly.FieldDropdown([
@@ -693,9 +658,8 @@ Blockly.Blocks['math_constant'] = {
     }
 };
 
-// number property block
 Blockly.Blocks['math_number_property'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUMBER_TO_CHECK')
             .setCheck('Number');
@@ -715,9 +679,8 @@ Blockly.Blocks['math_number_property'] = {
     }
 };
 
-// round block
 Blockly.Blocks['math_round'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .setCheck('Number')
@@ -731,9 +694,8 @@ Blockly.Blocks['math_round'] = {
     }
 };
 
-// modulo/remainder/quotient (unified block matching Leap's math_divide)
 Blockly.Blocks['math_divide'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('DIVIDEND')
             .setCheck('Number')
@@ -751,12 +713,10 @@ Blockly.Blocks['math_divide'] = {
     }
 };
 
-// Keep math_modulo as an alias for backwards compatibility
 Blockly.Blocks['math_modulo'] = Blockly.Blocks['math_divide'];
 
-// random integer block
 Blockly.Blocks['math_random_int'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('FROM')
             .setCheck('Number')
@@ -770,9 +730,8 @@ Blockly.Blocks['math_random_int'] = {
     }
 };
 
-// random fraction block
 Blockly.Blocks['math_random_float'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField('random fraction');
@@ -781,9 +740,8 @@ Blockly.Blocks['math_random_float'] = {
     }
 };
 
-// min/max block (mutator for multiple values)
 Blockly.Blocks['math_on_list'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A')
             .setCheck('Number')
@@ -799,9 +757,8 @@ Blockly.Blocks['math_on_list'] = {
     }
 };
 
-// atan2 block (Leap-style: header label + separate y / x value inputs)
 Blockly.Blocks['math_atan2'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField('atan2');
@@ -819,9 +776,8 @@ Blockly.Blocks['math_atan2'] = {
     }
 };
 
-// convert radians to degrees / degrees to radians (Leap-style: "convert" label + dropdown)
 Blockly.Blocks['math_convert_angles'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .setCheck('Number')
@@ -835,9 +791,8 @@ Blockly.Blocks['math_convert_angles'] = {
     }
 };
 
-// format as decimal (Leap-style: "format as decimal" header + number/places inputs)
 Blockly.Blocks['math_format_as_decimal'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField('format as decimal');
@@ -855,9 +810,8 @@ Blockly.Blocks['math_format_as_decimal'] = {
     }
 };
 
-// is a number? (Leap-style: dropdown with 4 options)
 Blockly.Blocks['math_is_a_number'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .appendField(new Blockly.FieldDropdown([
@@ -871,9 +825,8 @@ Blockly.Blocks['math_is_a_number'] = {
     }
 };
 
-// convert number (Leap-style: single directional dropdown)
 Blockly.Blocks['math_convert_number'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('NUM')
             .appendField('convert number')
@@ -888,9 +841,8 @@ Blockly.Blocks['math_convert_number'] = {
     }
 };
 
-// radix number
 Blockly.Blocks['math_number_radix'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField(new Blockly.FieldDropdown([
@@ -905,9 +857,8 @@ Blockly.Blocks['math_number_radix'] = {
     }
 };
 
-// list math operations — Leap's math_on_list2 (takes a LIST as input)
 Blockly.Blocks['math_on_list2'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('LIST')
             .setCheck('Array')
@@ -923,12 +874,11 @@ Blockly.Blocks['math_on_list2'] = {
         this.setTooltip('Performs a mathematical operation on all items in a list.');
     }
 };
-// Keep old name as alias for backwards compatibility
+
 Blockly.Blocks['math_on_list_op'] = Blockly.Blocks['math_on_list2'];
 
-// Mode of list (Leap has this as a separate standalone block)
 Blockly.Blocks['math_mode_of_list'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('LIST')
             .setCheck('Array')
@@ -938,9 +888,8 @@ Blockly.Blocks['math_mode_of_list'] = {
     }
 };
 
-// math_compare — Leap's Math comparison block (6 operators: =, ≠, <, ≤, >, ≥)
 Blockly.Blocks['math_compare'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendValueInput('A')
             .setCheck('Number');
@@ -961,11 +910,11 @@ Blockly.Blocks['math_compare'] = {
 };
 
 // ============================================================================
-// MUTATOR HELPER BLOCKS (for IF and MATH)
+// MUTATOR HELPER BLOCKS
 // ============================================================================
 
 Blockly.Blocks['controls_if_elseif'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('else if');
@@ -977,7 +926,7 @@ Blockly.Blocks['controls_if_elseif'] = {
 };
 
 Blockly.Blocks['controls_if_else'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.control);
         this.appendDummyInput()
             .appendField('else');
@@ -988,7 +937,7 @@ Blockly.Blocks['controls_if_else'] = {
 };
 
 Blockly.Blocks['math_mutator_item'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.math);
         this.appendDummyInput()
             .appendField('number');
@@ -998,4 +947,3 @@ Blockly.Blocks['math_mutator_item'] = {
         this.contextMenu = false;
     }
 };
-

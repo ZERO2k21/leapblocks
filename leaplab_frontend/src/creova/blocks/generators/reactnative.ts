@@ -1,35 +1,27 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * React Native Code Generators for Blockly Blocks
- * Generates React Native/JavaScript code from blocks
- */
 import { javascriptGenerator } from 'blockly/javascript';
 import { COMPONENT_METADATA } from '../../data/componentMetadata';
 
-function registerGenerator(type, fn) {
-    javascriptGenerator[type] = fn;
-    if (javascriptGenerator.forBlock) {
-        javascriptGenerator.forBlock[type] = fn;
+function registerGenerator(type: string, fn: (block: any) => string | [string, number]) {
+    (javascriptGenerator as any)[type] = fn;
+    if ((javascriptGenerator as any).forBlock) {
+        (javascriptGenerator as any).forBlock[type] = fn;
     }
 }
 
-// Component Event Handler (Fixed)
 registerGenerator('component_event', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const event = block.eventName || block.getFieldValue('EVENT');
     const typeName = block.typeName;
     const statements = javascriptGenerator.statementToCode(block, 'DO');
 
-    // Resolve event parameters from COMPONENT_METADATA
-    const componentDef = COMPONENT_METADATA[typeName];
-    const eventDef = componentDef?.events.find(e => e.name === event);
-    const params = eventDef && eventDef.parameters ? eventDef.parameters.map(p => p.name) : [];
+    const componentDef = (COMPONENT_METADATA as any)[typeName];
+    const eventDef = componentDef?.events.find((e: any) => e.name === event);
+    const params = eventDef && eventDef.parameters ? eventDef.parameters.map((p: any) => p.name) : [];
     const paramsStr = params.join(', ');
 
     return `window.${component}_${event} = function(${paramsStr}) {\n${statements}};\n`;
 });
 
-// Component Get Property (Fixed)
 registerGenerator('component_get_property', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
@@ -37,7 +29,6 @@ registerGenerator('component_get_property', function (block) {
     return [`${component}.${property}`, javascriptGenerator.ORDER_MEMBER];
 });
 
-// Component Set Property (Fixed)
 registerGenerator('component_set_property', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
@@ -46,76 +37,64 @@ registerGenerator('component_set_property', function (block) {
     return `${component}.${property} = ${value};\n`;
 });
 
-// Component Method Call (Fixed)
 registerGenerator('component_method', function (block) {
     const component = block.getFieldValue('INSTANCE') || block.instanceName || block.getFieldValue('COMPONENT');
     const method = block.getFieldValue('METHOD') || block.methodName;
     const typeName = block.typeName;
 
-    // Retrieve method metadata from COMPONENT_METADATA
-    const componentDef = COMPONENT_METADATA[typeName];
-    const methodDef = componentDef?.methods.find(m => m.name === method);
-    const args = [];
+    const componentDef = (COMPONENT_METADATA as any)[typeName];
+    const methodDef = componentDef?.methods.find((m: any) => m.name === method);
+    const args: string[] = [];
     if (methodDef && methodDef.parameters) {
-        methodDef.parameters.forEach(param => {
+        methodDef.parameters.forEach((param: any) => {
             const argVal = javascriptGenerator.valueToCode(block, 'ARG_' + param.name, javascriptGenerator.ORDER_COMMA) || 'null';
             args.push(argVal);
         });
     }
 
-    const code = `${component}.${method}(${args.join(', ')});\n`;
-
     if (block.outputConnection) {
         return [`${component}.${method}(${args.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
     } else {
-        return code;
+        return `${component}.${method}(${args.join(', ')});\n`;
     }
 });
 
-// Generic Component Event Handler (Any Component)
 registerGenerator('any_component_event', function (block) {
     const event = block.eventName || block.getFieldValue('EVENT');
     const typeName = block.typeName;
     const statements = javascriptGenerator.statementToCode(block, 'DO');
 
-    // Resolve event parameters from COMPONENT_METADATA
-    const componentDef = COMPONENT_METADATA[typeName];
-    const eventDef = componentDef?.events.find(e => e.name === event);
-    const params = eventDef && eventDef.parameters ? eventDef.parameters.map(p => p.name) : [];
-    // Generic events receive the component instance as the first parameter
+    const componentDef = (COMPONENT_METADATA as any)[typeName];
+    const eventDef = componentDef?.events.find((e: any) => e.name === event);
+    const params = eventDef && eventDef.parameters ? eventDef.parameters.map((p: any) => p.name) : [];
     const allParams = ['component', ...params];
     const paramsStr = allParams.join(', ');
 
     return `window.any_${typeName}_${event} = function(${paramsStr}) {\n${statements}};\n`;
 });
 
-// Generic Component Method Call (Any Component)
 registerGenerator('any_component_method', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const method = block.getFieldValue('METHOD') || block.methodName;
     const typeName = block.typeName;
 
-    // Retrieve method metadata
-    const componentDef = COMPONENT_METADATA[typeName];
-    const methodDef = componentDef?.methods.find(m => m.name === method);
-    const args = [];
+    const componentDef = (COMPONENT_METADATA as any)[typeName];
+    const methodDef = componentDef?.methods.find((m: any) => m.name === method);
+    const args: string[] = [];
     if (methodDef && methodDef.parameters) {
-        methodDef.parameters.forEach(param => {
+        methodDef.parameters.forEach((param: any) => {
             const argVal = javascriptGenerator.valueToCode(block, 'ARG_' + param.name, javascriptGenerator.ORDER_COMMA) || 'null';
             args.push(argVal);
         });
     }
 
-    const code = `if (${component}) { ${component}.${method}(${args.join(', ')}); }\n`;
-
     if (block.outputConnection) {
         return [`(${component} ? ${component}.${method}(${args.join(', ')}) : null)`, javascriptGenerator.ORDER_FUNCTION_CALL];
     } else {
-        return code;
+        return `if (${component}) { ${component}.${method}(${args.join(', ')}); }\n`;
     }
 });
 
-// Generic Component Get Property (Any Component)
 registerGenerator('any_component_get_property', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
@@ -123,7 +102,6 @@ registerGenerator('any_component_get_property', function (block) {
     return [`(${component} ? ${component}.${property} : null)`, javascriptGenerator.ORDER_MEMBER];
 });
 
-// Generic Component Set Property (Any Component)
 registerGenerator('any_component_set_property', function (block) {
     const component = javascriptGenerator.valueToCode(block, 'COMPONENT', javascriptGenerator.ORDER_MEMBER) || 'null';
     const property = block.getFieldValue('PROPERTY') || block.propertyName;
@@ -132,46 +110,39 @@ registerGenerator('any_component_set_property', function (block) {
     return `if (${component}) { ${component}.${property} = ${value}; }\n`;
 });
 
-// Component Choice Block (Dropdown Options)
 registerGenerator('component_choice', function (block) {
     const choiceValue = block.getFieldValue('CHOICE') || block.choiceValue;
     return [JSON.stringify(choiceValue), javascriptGenerator.ORDER_ATOMIC];
 });
 
-// Navigate Screen
 registerGenerator('navigate_screen', function (block) {
     const screen = block.getFieldValue('SCREEN');
     return `navigation.navigate('${screen}');\n`;
 });
 
-// Close Screen
-registerGenerator('close_screen', function (block) {
+registerGenerator('close_screen', function () {
     return `navigation.goBack();\n`;
 });
 
-// Show Notifier
 registerGenerator('notifier_show', function (block) {
     const message = javascriptGenerator.valueToCode(block, 'MESSAGE', javascriptGenerator.ORDER_NONE) || '""';
     return `Alert.alert(${message});\n`;
 });
 
-// Play Sound
 registerGenerator('sound_play', function (block) {
     const sound = block.getFieldValue('SOUND');
     return `${sound}.play();\n`;
 });
 
-// Device Vibrate
 registerGenerator('device_vibrate', function (block) {
     const duration = javascriptGenerator.valueToCode(block, 'DURATION', javascriptGenerator.ORDER_NONE) || '100';
     return `Vibration.vibrate(${duration});\n`;
 });
 
-// Control Blocks
 registerGenerator('controls_if', function (block) {
     let n = 0;
     let code = '';
-    let branchCode, conditionCode;
+    let branchCode: string, conditionCode: string;
     do {
         conditionCode = javascriptGenerator.valueToCode(block, 'IF' + n, javascriptGenerator.ORDER_NONE) || 'false';
         branchCode = javascriptGenerator.statementToCode(block, 'DO' + n);
@@ -187,14 +158,14 @@ registerGenerator('controls_if', function (block) {
 });
 
 registerGenerator('controls_forEach', function (block) {
-    const variable = javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
+    const variable = (javascriptGenerator as any).nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
     const list = javascriptGenerator.valueToCode(block, 'LIST', javascriptGenerator.ORDER_NONE) || '[]';
     const statements = javascriptGenerator.statementToCode(block, 'DO');
     return `for (const ${variable} of ${list}) {\n${statements}}\n`;
 });
 
 registerGenerator('controls_forRange', function (block) {
-    const variable = javascriptGenerator.nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
+    const variable = (javascriptGenerator as any).nameDB_.getName(block.getFieldValue('VAR'), 'VARIABLE');
     const start = javascriptGenerator.valueToCode(block, 'START', javascriptGenerator.ORDER_NONE) || '1';
     const end = javascriptGenerator.valueToCode(block, 'END', javascriptGenerator.ORDER_NONE) || '10';
     const step = javascriptGenerator.valueToCode(block, 'STEP', javascriptGenerator.ORDER_NONE) || '1';
@@ -231,83 +202,81 @@ registerGenerator('controls_openAnotherScreen', function (block) {
     return `navigation.navigate(${screen});\n`;
 });
 
-registerGenerator('controls_closeScreen', function (block) {
+registerGenerator('controls_closeScreen', function () {
     return `navigation.goBack();\n`;
 });
 
-registerGenerator('controls_break', function (block) {
+registerGenerator('controls_break', function () {
     return `break;\n`;
 });
 
-// Math Arithmetic Blocks
-javascriptGenerator['math_add'] = function (block) {
-    let code = [];
+(javascriptGenerator as any)['math_add'] = function (block: any) {
+    const code: string[] = [];
     for (let i = 0; i < block.itemCount_; i++) {
-        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || '0';
+        const val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || '0';
         code.push(`Number(${val})`);
     }
     return [code.join(' + '), javascriptGenerator.ORDER_ADDITION];
 };
 
-javascriptGenerator['math_subtract'] = function (block) {
+(javascriptGenerator as any)['math_subtract'] = function (block: any) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_SUBTRACTION) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_SUBTRACTION) || '0';
     return [`${a} - ${b}`, javascriptGenerator.ORDER_SUBTRACTION];
 };
 
-javascriptGenerator['math_multiply'] = function (block) {
-    let code = [];
+(javascriptGenerator as any)['math_multiply'] = function (block: any) {
+    const code: string[] = [];
     for (let i = 0; i < block.itemCount_; i++) {
-        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_MULTIPLICATION) || '1';
+        const val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_MULTIPLICATION) || '1';
         code.push(val);
     }
     return [code.join(' * '), javascriptGenerator.ORDER_MULTIPLICATION];
 };
 
-javascriptGenerator['math_divide_regular'] = function (block) {
+(javascriptGenerator as any)['math_divide_regular'] = function (block: any) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_DIVISION) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_DIVISION) || '1';
     return [`${a} / ${b}`, javascriptGenerator.ORDER_DIVISION];
 };
 
-javascriptGenerator['math_power'] = function (block) {
+(javascriptGenerator as any)['math_power'] = function (block: any) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || '0';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || '1';
     return [`Math.pow(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-// Matrices Arithmetic Blocks
-javascriptGenerator['matrices_add'] = function (block) {
-    let code = [];
+(javascriptGenerator as any)['matrices_add'] = function (block: any) {
+    const code: string[] = [];
     for (let i = 0; i < block.itemCount_; i++) {
-        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || 'null';
+        const val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_ADDITION) || 'null';
         code.push(val);
     }
     return [`matrixAdd(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_subtract'] = function (block) {
+(javascriptGenerator as any)['matrices_subtract'] = function (block: any) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`matrixSubtract(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_multiply'] = function (block) {
-    let code = [];
+(javascriptGenerator as any)['matrices_multiply'] = function (block: any) {
+    const code: string[] = [];
     for (let i = 0; i < block.itemCount_; i++) {
-        let val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_COMMA) || 'null';
+        const val = javascriptGenerator.valueToCode(block, 'NUM' + i, javascriptGenerator.ORDER_COMMA) || 'null';
         code.push(val);
     }
     return [`matrixMultiply(${code.join(', ')})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_power'] = function (block) {
+(javascriptGenerator as any)['matrices_power'] = function (block: any) {
     const a = javascriptGenerator.valueToCode(block, 'A', javascriptGenerator.ORDER_COMMA) || 'null';
     const b = javascriptGenerator.valueToCode(block, 'B', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`matrixPower(${a}, ${b})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_operation'] = function (block) {
+(javascriptGenerator as any)['matrices_operation'] = function (block: any) {
     const op = block.getFieldValue('OP');
     const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
     let functionName = 'matrixInverse';
@@ -317,42 +286,38 @@ javascriptGenerator['matrices_operation'] = function (block) {
     return [`${functionName}(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['matrices_is_matrix'] = function (block) {
+(javascriptGenerator as any)['matrices_is_matrix'] = function (block: any) {
     const matrix = javascriptGenerator.valueToCode(block, 'MATRIX', javascriptGenerator.ORDER_COMMA) || 'null';
     return [`isMatrix(${matrix})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-// Color Blocks Generators
-javascriptGenerator['colour_picker'] = function (block) {
+(javascriptGenerator as any)['colour_picker'] = function (block: any) {
     const colour = block.getFieldValue('COLOUR');
     return [JSON.stringify(colour), javascriptGenerator.ORDER_ATOMIC];
 };
 
-javascriptGenerator['colour_random'] = function (block) {
-    // Avoid String.padStart for better compatibility with older Android WebView runtimes.
+(javascriptGenerator as any)['colour_random'] = function () {
     return ['"#" + ("000000" + Math.floor(Math.random()*16777215).toString(16)).slice(-6)', javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['colour_rgb'] = function (block) {
+(javascriptGenerator as any)['colour_rgb'] = function (block: any) {
     const r = javascriptGenerator.valueToCode(block, 'RED', javascriptGenerator.ORDER_COMMA) || '0';
     const g = javascriptGenerator.valueToCode(block, 'GREEN', javascriptGenerator.ORDER_COMMA) || '0';
     const b = javascriptGenerator.valueToCode(block, 'BLUE', javascriptGenerator.ORDER_COMMA) || '0';
     return [`"rgb(" + ${r} + "," + ${g} + "," + ${b} + ")"`, javascriptGenerator.ORDER_ADDITION];
 };
 
-javascriptGenerator['colour_split'] = function (block) {
+(javascriptGenerator as any)['colour_split'] = function (block: any) {
     const colour = javascriptGenerator.valueToCode(block, 'COLOUR', javascriptGenerator.ORDER_COMMA) || '"#000000"';
     return [`parseColor(${colour})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
 
-javascriptGenerator['colour_blend'] = function (block) {
+(javascriptGenerator as any)['colour_blend'] = function (block: any) {
     const colour1 = javascriptGenerator.valueToCode(block, 'COLOUR1', javascriptGenerator.ORDER_COMMA) || '"#000000"';
     const colour2 = javascriptGenerator.valueToCode(block, 'COLOUR2', javascriptGenerator.ORDER_COMMA) || '"#000000"';
     const ratio = javascriptGenerator.valueToCode(block, 'RATIO', javascriptGenerator.ORDER_COMMA) || '0.5';
     return [`blendColors(${colour1}, ${colour2}, ${ratio})`, javascriptGenerator.ORDER_FUNCTION_CALL];
 };
-
-// ── Logic Blocks ──────────────────────────────────────────────────────────────
 
 registerGenerator('logic_compare', function (block) {
     const op = block.getFieldValue('OP');
@@ -380,8 +345,6 @@ registerGenerator('logic_operation', function (block) {
     return [`${a} ${op === 'AND' ? '&&' : '||'} ${b}`, order];
 });
 
-// ── Text Block ────────────────────────────────────────────────────────────────
-
 registerGenerator('text', function (block) {
     const text = block.getFieldValue('TEXT') || '';
     return [JSON.stringify(text), javascriptGenerator.ORDER_ATOMIC];
@@ -390,7 +353,7 @@ registerGenerator('text', function (block) {
 registerGenerator('text_join', function (block) {
     const count = block.itemCount_ || 0;
     if (count === 0) return ['""', javascriptGenerator.ORDER_ATOMIC];
-    const parts = [];
+    const parts: string[] = [];
     for (let i = 0; i < count; i++) {
         const val = javascriptGenerator.valueToCode(block, 'ADD' + i, javascriptGenerator.ORDER_NONE) || '""';
         parts.push(`String(${val})`);
@@ -407,8 +370,6 @@ registerGenerator('text_isEmpty', function (block) {
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_MEMBER) || '""';
     return [`!${value}.length`, javascriptGenerator.ORDER_LOGICAL_NOT];
 });
-
-// ── Math Blocks (missing) ─────────────────────────────────────────────────────
 
 registerGenerator('math_number', function (block) {
     const num = Number(block.getFieldValue('NUM'));
@@ -427,7 +388,7 @@ registerGenerator('math_compare', function (block) {
 registerGenerator('math_single', function (block) {
     const op = block.getFieldValue('OP');
     const arg = javascriptGenerator.valueToCode(block, 'NUM', javascriptGenerator.ORDER_FUNCTION_CALL) || '0';
-    const opMap = { ROOT: `Math.sqrt(${arg})`, ABS: `Math.abs(${arg})`, NEG: `(-${arg})`, LN: `Math.log(${arg})`, LOG10: `Math.log10(${arg})`, EXP: `Math.exp(${arg})`, ROUND: `Math.round(${arg})`, CEILING: `Math.ceil(${arg})`, FLOOR: `Math.floor(${arg})` };
+    const opMap: Record<string, string> = { ROOT: `Math.sqrt(${arg})`, ABS: `Math.abs(${arg})`, NEG: `(-${arg})`, LN: `Math.log(${arg})`, LOG10: `Math.log10(${arg})`, EXP: `Math.exp(${arg})`, ROUND: `Math.round(${arg})`, CEILING: `Math.ceil(${arg})`, FLOOR: `Math.floor(${arg})` };
     return [opMap[op] || arg, javascriptGenerator.ORDER_FUNCTION_CALL];
 });
 
@@ -440,8 +401,6 @@ registerGenerator('math_random_int', function (block) {
 registerGenerator('math_random_float', function () {
     return ['Math.random()', javascriptGenerator.ORDER_FUNCTION_CALL];
 });
-
-// ── List Blocks ───────────────────────────────────────────────────────────────
 
 registerGenerator('lists_create_empty', function () {
     return ['[]', javascriptGenerator.ORDER_ATOMIC];
@@ -482,10 +441,7 @@ registerGenerator('lists_length', function (block) {
     return [`${list}.length`, javascriptGenerator.ORDER_MEMBER];
 });
 
-// ── Variable Blocks ───────────────────────────────────────────────────────────
-
 registerGenerator('lexical_variable_get', function (block) {
-    // FieldVariable returns ID from getFieldValue; use getText() for the actual name
     const field = block.getField('VAR');
     const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
     return [variable, javascriptGenerator.ORDER_ATOMIC];
@@ -519,7 +475,7 @@ registerGenerator('local_declaration_statement', function (block) {
 });
 
 registerGenerator('local_declaration_expression', function (block) {
-    let decls = [];
+    const decls: string[] = [];
     for (let i = 0; i < block.localCount_; i++) {
         const name = block.getFieldValue('VAR' + i) || 'name';
         const inputName = i === 0 ? 'DECL' : 'DECL' + i;
@@ -534,7 +490,7 @@ registerGenerator('local_declaration_expression', function (block) {
 registerGenerator('dictionaries_create_with', function (block) {
     const count = block.itemCount_ || 0;
     if (count === 0) return ['{}', javascriptGenerator.ORDER_ATOMIC];
-    const pairs = [];
+    const pairs: string[] = [];
     for (let i = 0; i < count; i++) {
         const pair = javascriptGenerator.valueToCode(block, 'ADD' + i, javascriptGenerator.ORDER_NONE);
         if (pair) pairs.push(pair);
@@ -601,7 +557,6 @@ registerGenerator('dictionaries_is_a_dictionary', function (block) {
     return [`(typeof ${thing} === 'object' && ${thing} !== null && !Array.isArray(${thing}))`, javascriptGenerator.ORDER_EQUALITY];
 });
 
-// Also register Blockly's built-in variable blocks as fallbacks
 registerGenerator('variables_get', function (block) {
     const field = block.getField('VAR');
     const variable = field && field.getText ? field.getText() : block.getFieldValue('VAR');
@@ -614,8 +569,6 @@ registerGenerator('variables_set', function (block) {
     const value = javascriptGenerator.valueToCode(block, 'VALUE', javascriptGenerator.ORDER_ASSIGNMENT) || 'null';
     return `${variable} = ${value};\n`;
 });
-
-// ── Procedure Blocks ──────────────────────────────────────────────────────────
 
 registerGenerator('procedures_defnoreturn', function (block) {
     const name = block.getFieldValue('NAME') || 'unnamed_procedure';
@@ -637,7 +590,7 @@ registerGenerator('procedures_defreturn', function (block) {
 registerGenerator('procedures_callnoreturn', function (block) {
     const name = block.getFieldValue('NAME') || 'unnamed_procedure';
     const args = block.arguments_ || [];
-    const argsCode = [];
+    const argsCode: string[] = [];
     for (let i = 0; i < args.length; i++) {
         argsCode.push(javascriptGenerator.valueToCode(block, 'ARG' + i, javascriptGenerator.ORDER_COMMA) || 'null');
     }
@@ -647,7 +600,7 @@ registerGenerator('procedures_callnoreturn', function (block) {
 registerGenerator('procedures_callreturn', function (block) {
     const name = block.getFieldValue('NAME') || 'unnamed_procedure';
     const args = block.arguments_ || [];
-    const argsCode = [];
+    const argsCode: string[] = [];
     for (let i = 0; i < args.length; i++) {
         argsCode.push(javascriptGenerator.valueToCode(block, 'ARG' + i, javascriptGenerator.ORDER_COMMA) || 'null');
     }
@@ -656,16 +609,13 @@ registerGenerator('procedures_callreturn', function (block) {
 
 export default javascriptGenerator;
 
-// Blockly 10+ / 12 uses `forBlock` lookups. Some generators above may have
-// been assigned with legacy `javascriptGenerator['type']` syntax; mirror ALL
-// custom generators so workspaceToCode can resolve every block type reliably.
-if (javascriptGenerator.forBlock) {
+if ((javascriptGenerator as any).forBlock) {
     const customBlockTypes = Object.keys(javascriptGenerator).filter(
-        t => typeof javascriptGenerator[t] === 'function'
+        (t: string) => typeof (javascriptGenerator as any)[t] === 'function'
     );
-    customBlockTypes.forEach((type) => {
+    customBlockTypes.forEach((type: string) => {
         if ('forBlock' in javascriptGenerator && type !== 'forBlock') {
-            javascriptGenerator.forBlock[type] = javascriptGenerator[type];
+            (javascriptGenerator as any).forBlock[type] = (javascriptGenerator as any)[type];
         }
     });
 }

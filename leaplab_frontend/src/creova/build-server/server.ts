@@ -1,20 +1,32 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs-extra');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import cors from 'cors';
+import * as path from 'path';
+import * as fs from 'fs-extra';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const PORT = process.env.BUILD_PORT || 3002;
-const jobs = {};
+
+interface Job {
+  jobId: string;
+  status: string;
+  progress: number;
+  logs: Array<{ time: string; message: string; type: string }>;
+  apkPath: string | null;
+  error: string | null;
+  createdAt: number;
+}
+
+const jobs: Record<string, Job> = {};
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-function createJob(id) {
+function createJob(id: string) {
   jobs[id] = { jobId: id, status: 'queued', progress: 0, logs: [], apkPath: null, error: null, createdAt: Date.now() };
 }
-function log(id, msg, type = 'info') {
+
+function log(id: string, msg: string, type: string = 'info') {
   if (!jobs[id]) return;
   jobs[id].logs.push({ time: new Date().toLocaleTimeString(), message: msg, type });
   console.log(`[${id.slice(0, 8)}] ${msg}`);
@@ -26,12 +38,12 @@ app.post('/build', async (req, res) => {
     if (!project) return res.status(400).json({ error: 'No project data' });
     const jobId = uuidv4();
     createJob(jobId);
-    runBuild(jobId, project).catch(err => {
+    runBuild(jobId, project).catch((err: Error) => {
       jobs[jobId].status = 'error';
       jobs[jobId].error = err.message;
     });
     res.json({ jobId, message: 'Build started' });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -61,7 +73,7 @@ app.delete('/job/:jobId', async (req, res) => {
   res.json({ deleted: true });
 });
 
-async function runBuild(jobId, project) {
+async function runBuild(jobId: string, project: any) {
   const workDir = path.join(__dirname, 'workspace', jobId);
   const outDir  = path.join(__dirname, 'output', jobId);
   await fs.ensureDir(workDir);
@@ -97,6 +109,6 @@ async function runBuild(jobId, project) {
   await fs.remove(workDir).catch(() => {});
 }
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), () => {
   console.log(`AppForge Build Server running on http://localhost:${PORT}`);
 });

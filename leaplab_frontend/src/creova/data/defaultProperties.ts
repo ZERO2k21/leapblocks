@@ -1,24 +1,14 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- *
- * Leap-compatible default property values for all palette components.
- * Every property shown in the Leap designer Properties panel should have
- * a default value here so the LeapLab PropertiesPanel can display them.
- */
-
 const LENGTH_AUTOMATIC = -1;
 const LENGTH_FILL_PARENT = -2;
 
-const baseVisible = {
+const baseVisible: Record<string, unknown> = {
   Width: LENGTH_AUTOMATIC,
   Height: LENGTH_AUTOMATIC,
   Visible: true,
   Enabled: true
 };
 
-const baseButton = {
+const baseButton: Record<string, unknown> = {
   ...baseVisible,
   BackgroundColor: '#3B82F6',
   Enabled: true,
@@ -34,21 +24,15 @@ const baseButton = {
   TextColor: '#ffffff'
 };
 
-const withLegacyAliases = (props) => ({
+const withLegacyAliases = <T extends Record<string, unknown>>(props: T): T & { width: unknown; height: unknown; visible: unknown } => ({
   ...props,
   width: props.Width,
   height: props.Height,
   visible: props.Visible
 });
 
-/**
- * Returns a complete set of default properties for the given component type.
- * These mirror the Leap designer defaults.
- */
-export function defaultPropsFor(type) {
+export function defaultPropsFor(type: string): Record<string, unknown> {
   switch (type) {
-    // ─── User Interface ───────────────────────────────────────────────
-
     case 'Button':
       return withLegacyAliases({ ...baseButton, Text: 'Button' });
 
@@ -235,8 +219,6 @@ export function defaultPropsFor(type) {
         TextColor: '#ffffff'
       };
 
-    // ─── Layout ───────────────────────────────────────────────────────
-
     case 'AbsoluteArrangement':
       return withLegacyAliases({
         ...baseVisible,
@@ -274,8 +256,6 @@ export function defaultPropsFor(type) {
         Rows: 2,
         Width: LENGTH_FILL_PARENT
       });
-
-    // ─── Media ────────────────────────────────────────────────────────
 
     case 'Camera':
       return { UseFront: false };
@@ -332,8 +312,6 @@ export function defaultPropsFor(type) {
     case 'Translator':
       return {};
 
-    // ─── Drawing & Animation ──────────────────────────────────────────
-
     case 'Canvas':
       return withLegacyAliases({
         ...baseVisible,
@@ -377,8 +355,6 @@ export function defaultPropsFor(type) {
         Y: 0,
         Z: 1
       };
-
-    // ─── Maps ─────────────────────────────────────────────────────────
 
     case 'Map':
       return withLegacyAliases({
@@ -496,8 +472,6 @@ export function defaultPropsFor(type) {
         Visible: true
       };
 
-    // ─── Sensors ──────────────────────────────────────────────────────
-
     case 'AccelerometerSensor':
       return {
         Enabled: true,
@@ -545,8 +519,6 @@ export function defaultPropsFor(type) {
     case 'Thermometer':
       return { Enabled: true, RefreshTime: 1000 };
 
-    // ─── Social ───────────────────────────────────────────────────────
-
     case 'ContactPicker':
       return withLegacyAliases({
         ...baseButton,
@@ -578,8 +550,6 @@ export function defaultPropsFor(type) {
         PhoneNumber: '',
         ReceivingEnabled: 1
       };
-
-    // ─── Storage ──────────────────────────────────────────────────────
 
     case 'TinyDB':
       return { Namespace: 'TinyDB1' };
@@ -625,8 +595,6 @@ export function defaultPropsFor(type) {
         Text: 'FilePicker',
         Selection: ''
       });
-
-    // ─── Connectivity ─────────────────────────────────────────────────
 
     case 'ActivityStarter':
       return {
@@ -677,8 +645,6 @@ export function defaultPropsFor(type) {
         Url: ''
       };
 
-    // ─── Charts ───────────────────────────────────────────────────────
-
     case 'Chart':
       return withLegacyAliases({
         ...baseVisible,
@@ -709,8 +675,6 @@ export function defaultPropsFor(type) {
         Source: '',
         SpreadsheetUseHeaders: false
       };
-
-    // ─── LEGO MINDSTORMS ──────────────────────────────────────────────
 
     case 'Ev3Motors':
       return { BluetoothClient: '', EnableSpeedRegulation: true, MotorPorts: 'ABC', ReverseDirection: false, StopBeforeDisconnect: true, TachoCountChangedEventEnabled: false, WheelDiameter: 4.32 };
@@ -743,8 +707,6 @@ export function defaultPropsFor(type) {
     case 'NxtDirectCommands':
       return { BluetoothClient: '' };
 
-    // ─── Experimental ─────────────────────────────────────────────────
-
     case 'ChromeWebView':
       return withLegacyAliases({
         ...baseVisible,
@@ -753,14 +715,12 @@ export function defaultPropsFor(type) {
         Width: LENGTH_FILL_PARENT
       });
 
-    // ─── Data Science ─────────────────────────────────────────────────
     case 'DataCollection':
     case 'Regression':
     case 'Trendline':
     case 'AnomalyDetection':
       return {};
 
-    // ─── Progress ─────────────────────────────────────────────────────
     case 'CircularProgress':
       return withLegacyAliases({
         ...baseVisible,
@@ -782,7 +742,6 @@ export function defaultPropsFor(type) {
         Width: LENGTH_FILL_PARENT
       });
 
-    // ─── Navigation ───────────────────────────────────────────────────
     case 'Navigation':
       return {
         ApiKey: '',

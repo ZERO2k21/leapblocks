@@ -1,7 +1,17 @@
-const jobs = {};
+interface Job {
+  jobId: string;
+  status: string;
+  progress: number;
+  logs: Array<{ time: string; message: string; type: string }>;
+  apkPath: string | null;
+  error: string | null;
+  createdAt: number;
+}
 
-module.exports = {
-  create(jobId) {
+const jobs: Record<string, Job> = {};
+
+const jobManager = {
+  create(jobId: string) {
     jobs[jobId] = {
       jobId,
       status: 'queued',
@@ -13,15 +23,15 @@ module.exports = {
     };
   },
 
-  get(jobId) {
+  get(jobId: string): Job | null {
     return jobs[jobId] || null;
   },
 
-  count() {
+  count(): number {
     return Object.keys(jobs).length;
   },
 
-  log(jobId, message, type = 'info') {
+  log(jobId: string, message: string, type: string = 'info') {
     if (!jobs[jobId]) return;
     const entry = {
       time: new Date().toLocaleTimeString(),
@@ -32,15 +42,15 @@ module.exports = {
     console.log(`[${jobId.slice(0, 8)}] ${message}`);
   },
 
-  setProgress(jobId, progress) {
+  setProgress(jobId: string, progress: number) {
     if (jobs[jobId]) jobs[jobId].progress = progress;
   },
 
-  setStatus(jobId, status) {
+  setStatus(jobId: string, status: string) {
     if (jobs[jobId]) jobs[jobId].status = status;
   },
 
-  setDone(jobId, apkPath) {
+  setDone(jobId: string, apkPath: string) {
     if (jobs[jobId]) {
       jobs[jobId].status = 'done';
       jobs[jobId].progress = 100;
@@ -48,14 +58,16 @@ module.exports = {
     }
   },
 
-  setError(jobId, error) {
+  setError(jobId: string, error: string) {
     if (jobs[jobId]) {
       jobs[jobId].status = 'error';
       jobs[jobId].error = error;
     }
   },
 
-  remove(jobId) {
+  remove(jobId: string) {
     delete jobs[jobId];
   }
 };
+
+export = jobManager;

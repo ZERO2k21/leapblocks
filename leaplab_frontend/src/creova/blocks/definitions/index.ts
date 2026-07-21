@@ -1,9 +1,3 @@
-/**
- * Leap App Inventor Blocks - Main Entry Point
- * Imports all block definitions
- */
-
-// Import all block definitions
 import './builtin_blocks';
 import './text';
 import './lists';
@@ -15,29 +9,24 @@ import './procedures';
 
 import * as Blockly from 'blockly';
 
-// Export colors and utilities
 export { LEAP_COLORS } from './builtin_blocks';
 export { createComponentBlocks } from './color_component_blocks';
 
-/**
- * Initialize all blocks
- * This function should be called before creating the Blockly workspace
- */
 export function initializeAllBlocks() {
     if (typeof Blockly !== 'undefined') {
         if (Blockly.ConnectionChecker && Blockly.ConnectionChecker.prototype) {
-            Blockly.ConnectionChecker.prototype.doTypeChecks = function() {
+            Blockly.ConnectionChecker.prototype.doTypeChecks = function () {
                 return true;
             };
         }
         if (Blockly.Connection && Blockly.Connection.prototype) {
-            Blockly.Connection.prototype.checkType_ = function() {
+            Blockly.Connection.prototype.checkType_ = function () {
                 return true;
             };
         }
         if (Blockly.utils && Blockly.utils.xml) {
             const originalTextToDom = Blockly.utils.xml.textToDom;
-            Blockly.utils.xml.textToDom = function (text) {
+            Blockly.utils.xml.textToDom = function (text: string) {
                 if (typeof text === 'string') {
                     text = text
                         .replace(/id="([^"]*?)_field([^"]*?)"/g, 'id="$1_fld$2"')
@@ -47,7 +36,5 @@ export function initializeAllBlocks() {
             };
         }
     }
-    console.log('✅ Leap App Inventor blocks initialized');
+    console.log('Leap App Inventor blocks initialized');
 }
-
-

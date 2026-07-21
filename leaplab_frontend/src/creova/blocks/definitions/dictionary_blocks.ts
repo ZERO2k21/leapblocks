@@ -1,13 +1,9 @@
-/**
- * Leap App Inventor Dictionary Blocks
- */
 import * as Blockly from 'blockly';
 import { BLOCK_COLORS } from '../utils/blockColors';
 
-// make a dictionary block
 Blockly.Blocks['dictionaries_create_with'] = {
-    init: function () {
-        this.setColour(BLOCK_COLORS.lists); // Leap uses same color for lists and dictionaries mostly or similar shades
+    init: function (this: Blockly.Block) {
+        this.setColour(BLOCK_COLORS.lists);
         this.appendDummyInput()
             .appendField('make a dictionary');
         this.setOutput(true, 'Dictionary');
@@ -15,9 +11,8 @@ Blockly.Blocks['dictionaries_create_with'] = {
     }
 };
 
-// make a pair block
 Blockly.Blocks['dictionaries_pair'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('KEY')
             .appendField('make a pair');
@@ -29,9 +24,8 @@ Blockly.Blocks['dictionaries_pair'] = {
     }
 };
 
-// set value for key block
 Blockly.Blocks['dictionaries_set_pair'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -47,9 +41,8 @@ Blockly.Blocks['dictionaries_set_pair'] = {
     }
 };
 
-// delete entry for key block
 Blockly.Blocks['dictionaries_delete_pair'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -63,9 +56,8 @@ Blockly.Blocks['dictionaries_delete_pair'] = {
     }
 };
 
-// get value for key block
 Blockly.Blocks['dictionaries_get_value'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -80,9 +72,8 @@ Blockly.Blocks['dictionaries_get_value'] = {
     }
 };
 
-// list of pairs to dictionary
 Blockly.Blocks['dictionaries_alist_to_dict'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('LIST')
             .setCheck('List')
@@ -92,9 +83,8 @@ Blockly.Blocks['dictionaries_alist_to_dict'] = {
     }
 };
 
-// dictionary to list of pairs
 Blockly.Blocks['dictionaries_dict_to_alist'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -104,9 +94,8 @@ Blockly.Blocks['dictionaries_dict_to_alist'] = {
     }
 };
 
-// is key in dictionary?
 Blockly.Blocks['dictionaries_is_key_in'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('KEY')
             .appendField('is key in dictionary?');
@@ -119,9 +108,8 @@ Blockly.Blocks['dictionaries_is_key_in'] = {
     }
 };
 
-// size of dictionary
 Blockly.Blocks['dictionaries_length'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -131,9 +119,8 @@ Blockly.Blocks['dictionaries_length'] = {
     }
 };
 
-// list of keys
 Blockly.Blocks['dictionaries_get_keys'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -143,9 +130,8 @@ Blockly.Blocks['dictionaries_get_keys'] = {
     }
 };
 
-// list of values
 Blockly.Blocks['dictionaries_get_values'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -155,9 +141,8 @@ Blockly.Blocks['dictionaries_get_values'] = {
     }
 };
 
-// combine dictionaries
 Blockly.Blocks['dictionaries_combine'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT1')
             .setCheck('Dictionary')
@@ -171,9 +156,8 @@ Blockly.Blocks['dictionaries_combine'] = {
     }
 };
 
-// is a dictionary?
 Blockly.Blocks['dictionaries_is_a_dictionary'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('THING')
             .appendField('is a dictionary?');
@@ -182,9 +166,8 @@ Blockly.Blocks['dictionaries_is_a_dictionary'] = {
     }
 };
 
-// get value at key path
 Blockly.Blocks['dictionaries_walk_tree'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .setCheck('Dictionary')
@@ -198,9 +181,8 @@ Blockly.Blocks['dictionaries_walk_tree'] = {
     }
 };
 
-// walk all at level
 Blockly.Blocks['dictionaries_walk_all'] = {
-    init: function () {
+    init: function (this: Blockly.Block) {
         this.setColour(BLOCK_COLORS.lists);
         this.appendValueInput('DICT')
             .appendField('walk all at level');
@@ -230,4 +212,3 @@ export default {
     'dictionaries_walk_tree': Blockly.Blocks['dictionaries_walk_tree'],
     'dictionaries_walk_all': Blockly.Blocks['dictionaries_walk_all']
 };
-
