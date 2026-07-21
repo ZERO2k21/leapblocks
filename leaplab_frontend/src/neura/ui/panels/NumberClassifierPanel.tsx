@@ -554,7 +554,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const canAddSamples = selectedClass && !atSampleLimit
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {/* Toast */}
             {savedMessage && (
                 <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
@@ -590,7 +590,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
+                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
                         {/* Left half - Canvas/Camera */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Drawing canvas */}

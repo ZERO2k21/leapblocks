@@ -91,9 +91,9 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto neura-scrollbar">
             {mode.mode === 'collect' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                     {/* Header */}
                     <div style={{ textAlign: 'center', padding: '16px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -181,7 +181,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             )}
 
             {mode.mode === 'test' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                     {/* Header */}
                     <div style={{ textAlign: 'center', padding: '16px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>

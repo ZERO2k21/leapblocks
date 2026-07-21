@@ -647,7 +647,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     // Collect mode
     const renderCollectMode = () => (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
             {/* Header */}
             <div style={{ textAlign: 'center', padding: '12px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#630ed4', marginBottom: '2px' }}>🔍 Object Finder!</h2>
@@ -659,7 +659,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             </div>
 
             {/* Horizontal Split Layout */}
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'auto' }}>
                 {/* Left - Camera / Canvas */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, minHeight: isMobile ? '40vh' : 0 }}>
                     {/* Camera tab content */}
@@ -1106,7 +1106,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     )
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {/* Onboarding */}
             {showOnboarding && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ animation: 'onbFadeIn 0.3s ease-out' }}>

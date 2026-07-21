@@ -522,7 +522,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     }
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {/* Toast messages */}
             {captureFlash && <div className="fixed inset-0 bg-white/40 z-50 pointer-events-none animate-fade-in" />}
             {savedMessage && (
@@ -561,7 +561,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
+                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
                         {/* Left half - Camera feed */}
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             {/* Camera feed */}

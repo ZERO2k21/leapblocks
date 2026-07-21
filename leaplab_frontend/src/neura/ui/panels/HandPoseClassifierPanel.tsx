@@ -616,7 +616,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     }
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
                 <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}

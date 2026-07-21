@@ -336,7 +336,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const previewBox = isDrawing && drawStart && drawCurrent ? { x: Math.min(drawStart.x, drawCurrent.x), y: Math.min(drawStart.y, drawCurrent.y), width: Math.abs(drawCurrent.x - drawStart.x), height: Math.abs(drawCurrent.y - drawStart.y) } : null
 
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar">
             {savedMessage && (
                 <div style={{ position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, padding: '10px 20px', background: '#006c44', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 700, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
                     {savedMessage}
@@ -382,7 +382,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             </div>
 
             {/* Main content - horizontal split */}
-            <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0, padding: '0 20px 12px', overflow: 'hidden' }}>
+            <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0 px-5 pb-3 overflow-auto">
                 {/* Left - Canvas */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <div style={{ position: 'relative', flex: 1, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden', minHeight: 0 }}>

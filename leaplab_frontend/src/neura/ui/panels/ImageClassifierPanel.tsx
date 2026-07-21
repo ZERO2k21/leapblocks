@@ -682,7 +682,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
                     {/* Header */}
                     <div className="text-center animate-fade-in" style={{ marginBottom: '12px' }}>
                         <div
@@ -774,13 +774,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
                     {/* Main content - Two column layout */}
                     <div 
-                        style={{ 
-                            display: 'flex', 
-                            gap: '16px', 
-                            width: '100%', 
-                            flex: 1,
-                            minHeight: 0,
-                        }}
+                        className="flex flex-col lg:flex-row gap-4 w-full flex-1 min-h-0"
                     >
                         {/* Left half - Camera */}
                         <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>

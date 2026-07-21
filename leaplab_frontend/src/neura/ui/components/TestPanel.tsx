@@ -76,6 +76,32 @@ export default function TestPanel({
         return prediction.label.charAt(0).toUpperCase() + prediction.label.slice(1)
     }
 
+    const [isDragging, setIsDragging] = useState(false)
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!isDragging) setIsDragging(true)
+    }
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
+        setIsDragging(false)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(false)
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            if (onFileChange) {
+                onFileChange({ target: { files: e.dataTransfer.files } } as any)
+            }
+        }
+    }
+
     const cardStyle: React.CSSProperties = {
         background: 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(12px)',
@@ -85,7 +111,7 @@ export default function TestPanel({
     }
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="animate-fade-in overflow-y-auto neura-scrollbar w-full" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Tips */}
             <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 10px' }}>
                 <div
@@ -112,7 +138,7 @@ export default function TestPanel({
                         >💡</div>
                         <div>
                             <div className="flex flex-wrap" style={{ gap: '2px 12px' }}>
-                                {['Take clear photos', 'Good lighting helps', 'Try different angles', 'Match training conditions'].map((tip) => (
+                                {['Take clear photos', 'Good lighting helps', 'Try different angles', 'Drag & drop images to test'].map((tip) => (
                                     <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '10px', color: '#4b5563' }}>
                                         <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
                                         {tip}
@@ -125,8 +151,23 @@ export default function TestPanel({
             </div>
 
             <div className="flex flex-col lg:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
-                {/* Left - Camera */}
-                <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', padding: '14px', minWidth: 0 }}>
+                {/* Left - Camera / Image Dropzone */}
+                <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    style={{
+                        ...cardStyle,
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '14px',
+                        minWidth: 0,
+                        position: 'relative',
+                        border: isDragging ? '2px dashed #630ed4' : '1px solid #e5e7eb',
+                        transition: 'all 0.2s ease',
+                    }}
+                >
                     {/* Camera header */}
                     <div className="flex justify-between items-center" style={{ marginBottom: '10px' }}>
                         <div className="flex items-center" style={{ gap: '6px' }}>
@@ -169,6 +210,53 @@ export default function TestPanel({
                             justifyContent: 'center',
                         }}
                     >
+                        {/* Drag and Drop Active Overlay */}
+                        {isDragging && (
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    zIndex: 35,
+                                    background: 'rgba(99, 14, 212, 0.88)',
+                                    backdropFilter: 'blur(10px)',
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#ffffff',
+                                    border: '3px dashed #c084fc',
+                                    boxShadow: '0 8px 32px rgba(99, 14, 212, 0.4)',
+                                    animation: 'onbFadeIn 0.2s ease-out',
+                                    padding: '20px',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: '64px',
+                                        height: '64px',
+                                        borderRadius: '20px',
+                                        background: 'rgba(255, 255, 255, 0.2)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '2.2rem',
+                                        marginBottom: '12px',
+                                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+                                    }}
+                                >
+                                    📥
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                                    Drop Image Here to Test!
+                                </h3>
+                                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', margin: 0 }}>
+                                    PNG, JPG, WEBP formats supported
+                                </p>
+                            </div>
+                        )}
+
                         {cameraOn && (
                             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full rounded-2xl -scale-x-100 ${videoFit === 'contain' ? 'object-contain bg-black' : 'object-cover'}`} />
                         )}
@@ -180,8 +268,10 @@ export default function TestPanel({
                                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
                                     <span style={{ fontSize: '1.5rem' }}>📸</span>
                                 </div>
-                                <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Camera is off</p>
-                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', maxWidth: '180px', marginBottom: '16px' }}>Turn on camera or upload a picture</p>
+                                <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Camera is off</p>
+                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', maxWidth: '220px', marginBottom: '16px', lineHeight: 1.4 }}>
+                                    Turn on camera, <strong>drag & drop an image here</strong>, or upload a picture
+                                </p>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button
                                         onClick={onToggleCamera}

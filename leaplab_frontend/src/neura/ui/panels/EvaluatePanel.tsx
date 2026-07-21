@@ -87,7 +87,7 @@ export default function EvaluatePanel({ mode, metrics }: EvaluatePanelProps) {
     }
 
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', flexShrink: 0 }}>
                 <div>
                     <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e' }}>📊 Model Evaluation</h1>
@@ -99,7 +99,7 @@ export default function EvaluatePanel({ mode, metrics }: EvaluatePanelProps) {
             {/* Scrollable content */}
             <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
             {/* Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
                     <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎯</div>
                     <p style={{ fontSize: '18px', fontWeight: 800, color: '#630ed4' }}>{Math.round(meanPrecision * 100)}%</p>

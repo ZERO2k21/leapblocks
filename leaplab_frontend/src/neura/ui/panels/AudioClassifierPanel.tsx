@@ -263,9 +263,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="w-full" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
+                <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
                     {/* Left half - Waveform visualizer */}
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: isMobile ? '30vh' : 0 }}>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
                         <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative' }}>
                             <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
 

@@ -187,7 +187,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const finalMap = mapChartData[mapChartData.length - 1] || 0
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 20px', alignItems: 'center' }}>
+        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar w-full" style={{ padding: '12px 20px', alignItems: 'center' }}>
             {/* Celebration Modal */}
             {showCelebration && (
                 <div style={{
@@ -316,7 +316,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             </div>
 
             {/* Two-column layout */}
-            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, width: '100%' }}>
+            <div className="flex flex-col lg:flex-row gap-4 w-full flex-1 min-h-0">
                 {/* Left column - Main training area */}
                 <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Main card */}
