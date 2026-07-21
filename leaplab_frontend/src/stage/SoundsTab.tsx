@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import SoundEditor, { Sound } from '../components/SoundEditor';
+import SoundEditor from '../components/SoundEditor';
 import { Sprite } from './Sprite';
 import type { StageManager } from '../engine/StageManager';
 

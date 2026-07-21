@@ -3,12 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import { useLeapLabAuthStore } from '../auth/leaplabAuthStore';
-
-export const LMS_API_BASE =
-    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) ||
-    'https://lms-api.creoleap.workers.dev';
-
-export const LMS_PROJECTS_URL = `${LMS_API_BASE}/api/leaplab/projects`;
+import { LMS_PROJECTS_URL } from '../config/api';
 
 export interface CloudProject {
     id: string;

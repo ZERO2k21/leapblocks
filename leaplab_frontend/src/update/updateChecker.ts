@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { createHash } from 'crypto';
 
-const LMS_API_URL = 'https://lms-api.creoleap.workers.dev/api';
+import { LMS_API_URL } from '../config/api';
 
 export interface UpdateInfo {
   hasUpdate: boolean;

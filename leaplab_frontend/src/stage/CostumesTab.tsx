@@ -36,11 +36,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
     const [refreshTick, setRefreshTick] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const renderCount = useRef(0);
-    const isEmbedRef = useRef(false);
 
     useEffect(() => {
-        isEmbedRef.current = typeof window !== 'undefined' && window !== window.parent;
-        console.log(LOG_PREFIX, 'MOUNTED | isEmbed:', isEmbedRef.current, '| selectedSpriteId:', selectedSpriteId, '| sprites count:', sprites.length, '| sprites:', sprites.map(s => ({ id: s.id, name: s.name, costumeCount: s.costumes?.length })));
+        console.log(LOG_PREFIX, 'MOUNTED | selectedSpriteId:', selectedSpriteId, '| sprites count:', sprites.length, '| sprites:', sprites.map(s => ({ id: s.id, name: s.name, costumeCount: s.costumes?.length })));
         return () => console.log(LOG_PREFIX, 'UNMOUNTED');
     }, []);
 
@@ -248,9 +246,6 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         addLog(`Updated costume for ${selectedSprite.name}: ${selectedSprite.costumes[targetIndex]?.name}`);
         console.log(LOG_PREFIX, 'updateCurrentCostumeFromEditor DONE | new costume name:', selectedSprite.costumes[targetIndex]?.name);
     };
-
-    const isEmbed = typeof window !== 'undefined' && window !== window.parent;
-    console.log(LOG_PREFIX, 'isEmbed (render):', isEmbed, '| selectedSpriteId:', selectedSpriteId, '| selectedSprite:', selectedSprite?.name);
 
     // If Stage is selected, render Backdrop Editor
     if (selectedSpriteId === 'stage') {

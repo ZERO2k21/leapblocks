@@ -22,6 +22,7 @@ import {
     X,
     Compass
 } from 'lucide-react';
+import { LMS_API_BASE } from '../../config/api';
 import {
     listMyProjects,
     getCloudProject,
@@ -622,7 +623,7 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
 
                 const fullUrl = url.startsWith('http')
                     ? url
-                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${url}`;
+                    : `${LMS_API_BASE}${url}`;
 
                 const response = await fetch(fullUrl);
                 if (!response.ok) throw new Error('Failed to load project content');
@@ -1024,7 +1025,7 @@ const ProjectBoardBadge: React.FC<ProjectBoardBadgeProps> = ({ project }) => {
                 if (!project.fileUrl) return;
                 const fullUrl = project.fileUrl.startsWith('http')
                     ? project.fileUrl
-                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.fileUrl}`;
+                    : `${LMS_API_BASE}${project.fileUrl}`;
                 const res = await fetch(fullUrl);
                 if (!res.ok) return;
                 const text = await res.text();
@@ -1181,7 +1182,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
 
             const fileUrl = fullProject.fileUrl.startsWith('http')
                 ? fullProject.fileUrl
-                : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${fullProject.fileUrl}`;
+                : `${LMS_API_BASE}${fullProject.fileUrl}`;
 
             const content = await fetchCloudProjectContent(fileUrl);
 
@@ -1912,7 +1913,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                     <img
                                         src={project.thumbnailUrl.startsWith('http')
                                             ? project.thumbnailUrl
-                                            : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.thumbnailUrl}`}
+                                            : `${LMS_API_BASE}${project.thumbnailUrl}`}
                                         alt={project.name}
                                         className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.04]"
                                     />

@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useIsEmbedded } from './hooks/useIsEmbedded';
 import { STAGE_CONFIG } from './engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
@@ -49,8 +50,6 @@ import BoardSelectionModal from './leapignite/client/components/BoardSelectionMo
 
 import { PythonEditorTab } from './components/PythonEditorTab';
 
-// import StagePanel from './stage/StagePanel'; // Temporarily disabled - component needs to be created
-
 // Lazy load large components for better performance
 const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
 const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
@@ -59,8 +58,6 @@ const JuniorExtensionLibrary = React.lazy(() => import('./leapignite/client/comp
 // Lazy load heavy tabs that import fabric.js and wav-encoder - prevents 60s startup delay
 const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
 const SoundsTab = React.lazy(() => import('./stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
-
-// import BackdropEditor from './components/BackdropEditor'; // Temporarily disabled
 
 // Local ErrorBoundary for tab panels — prevents PaintEditor/fabric.js crashes from killing the whole app
 class TabErrorBoundary extends React.Component<
@@ -587,7 +584,7 @@ function fixCostumeDropdownValues(workspaceJson: { blocks?: { blocks?: any[] } }
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds'; projectUrl?: string | null }> = ({ onBack, onOpenPython, openTab = 'blocks', projectUrl }) => {
 
     // Detect embed mode (iframe)
-    const isEmbedMode = typeof window !== 'undefined' && window !== window.parent;
+    const isEmbedMode = useIsEmbedded();
 
     // Initialize Blockly patches on first render (deferred from module scope to avoid TDZ)
     initBlocklyOnce();

@@ -10,6 +10,7 @@ import Loader from './components/Loader';
 import { UpdateBanner } from './components/UpdateBanner';
 import { getSharedProject, fetchCloudProjectContent } from './services/cloudProjectApi';
 import { useCloudProjectStore } from './store/cloudProjectStore';
+import { isEmbedded } from './hooks/useIsEmbedded';
 
 const LandingPage = lazy(() => import('./LandingPage'));
 
@@ -66,15 +67,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
         console.error("ErrorBoundary caught:", error, errorInfo);
         // Notify parent frame if embedded
         try {
-            if (window !== window.parent) {
+            if (isEmbedded()) {
                 window.parent.postMessage({ type: 'leaplab-error', error: error?.message || String(error) }, '*');
             }
         } catch {}
     }
     render() {
         if (this.state.hasError) {
-            const isEmbedded = window !== window.parent;
-            if (isEmbedded) {
+            if (isEmbedded()) {
                 // Compact inline error bar for embed context — does not cover the whole page
                 return (
                     <div style={{
@@ -282,9 +282,10 @@ export default function App() {
                 const project = await getSharedProject(shareId);
                 if (!project.fileUrl) throw new Error('Shared project file URL is missing');
 
+                const { LMS_API_BASE } = await import('./config/api');
                 const fileUrl = project.fileUrl.startsWith('http')
                     ? project.fileUrl
-                    : `${(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LMS_API_URL) || 'https://lms-api.creoleap.workers.dev'}${project.fileUrl}`;
+                    : `${LMS_API_BASE}${project.fileUrl}`;
 
                 const content = await fetchCloudProjectContent(fileUrl);
 
@@ -345,30 +346,7 @@ export default function App() {
         setMode(newMode);
     }, [cleanBlocklyStyles]);
 
-    // Defer Blockly custom field registration to idle time — doesn't block first paint
-    // REMOVED: Only load when user actually navigates to Blockly mode
-    // React.useEffect(() => {
-    //     const register = () => import('./blockly/registerCustomFields');
-    //     if (typeof requestIdleCallback !== 'undefined') {
-    //         requestIdleCallback(register, { timeout: 3000 });
-    //     } else {
-    //         setTimeout(register, 500);
-    //     }
-    // }, []);
 
-    // REMOVED: Prefetch disabled - modules load only when user navigates to them
-    // This prevents loading heavy modules (Electra, Blockly) that user may never use
-    // React.useEffect(() => {
-    //     const prefetch = () => {
-    //         import('./modules/electra/ForgeStudio');
-    //         import('./IntermediateApp');
-    //     };
-    //     if (typeof requestIdleCallback !== 'undefined') {
-    //         requestIdleCallback(prefetch, { timeout: 5000 });
-    //     } else {
-    //         setTimeout(prefetch, 1000);
-    //     }
-    // }, []);
 
     const [intermediateOpenTab, setIntermediateOpenTab] = useState<'blocks' | 'python' | 'costumes' | 'sounds'>('blocks');
     const [switchPrompt, setSwitchPrompt] = useState<null | { from: AppMode; to: AppMode; tab?: 'blocks' | 'python' | 'costumes' | 'sounds' }>(null);

@@ -47,6 +47,8 @@ interface AttemptResult {
   completedAt: string;
 }
 
+const QUIZZES_PATH = '/api/leaplab/quiz/quizzes';
+
 // ─── API helpers ───────────────────────────────────────────────
 
 async function apiGet(path: string, token: string) {
@@ -108,7 +110,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiGet('/api/leaplab/quiz/quizzes', token);
+      const res = await apiGet(QUIZZES_PATH, token);
       setQuizzes(res.data || []);
     } catch (err: any) {
       setError(err.message);
@@ -145,11 +147,11 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     setError(null);
     try {
       // Fetch quiz details
-      const quizRes = await apiGet(`/api/leaplab/quiz/quizzes/${quizId}`, token);
+      const quizRes = await apiGet(`${QUIZZES_PATH}/${quizId}`, token);
       setActiveQuiz(quizRes.data);
 
       // Start attempt
-      const attemptRes = await apiPost(`/api/leaplab/quiz/quizzes/${quizId}/start`, token, {});
+      const attemptRes = await apiPost(`${QUIZZES_PATH}/${quizId}/start`, token, {});
       setAttemptId(attemptRes.data.attemptId);
       setAnswers({});
       setView('taking');
@@ -178,7 +180,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         selectedAnswer,
       }));
 
-      const res = await apiPost(`/api/leaplab/quiz/quizzes/attempts/${attemptId}/submit`, token, {
+      const res = await apiPost(`${QUIZZES_PATH}/attempts/${attemptId}/submit`, token, {
         answers: answerArray,
       });
 
