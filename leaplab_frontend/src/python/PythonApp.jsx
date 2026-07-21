@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { fileService } from "../Electra/Client/Src/services/FileService";
 import TopbarShareButton from "../components/common/TopbarShareButton";
+import ProjectNameInput from "../components/common/ProjectNameInput";
 import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -3106,15 +3107,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     ))}
                 </div>
                 <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
-                    {/* Project name */}
-                    <div style={{ background: "rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                        <input
-                            value={projectName}
-                            onChange={(e) => setProjectName(e.target.value)}
-                            style={{ background: "transparent", border: "none", color: "#fff", width: 90, outline: "none", fontSize: 14, fontWeight: 500 }}
-                        />
-                        <Save size={15} style={{ opacity: 0.8, cursor: "pointer" }} onClick={handleSaveProject} title="Save Project" />
-                    </div>
+                    <ProjectNameInput
+                        value={projectName}
+                        onChange={setProjectName}
+                        onSave={handleSaveProject}
+                    />
                     {/* Mode/IDE/Stage/Upload buttons */}
                     <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
                         <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Mode</div>

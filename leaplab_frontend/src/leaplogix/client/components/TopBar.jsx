@@ -9,6 +9,7 @@ import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 import TopbarShareButton from "../../../components/common/TopbarShareButton";
+import ProjectNameInput from "../../../components/common/ProjectNameInput";
 
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -190,35 +191,11 @@ export default function TopBar() {
             <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 9, flex: 1, justifyContent: "flex-end" }}>
-                <div style={{
-                    background: "rgba(255, 255, 255, 0.08)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    height: 34,
-                    boxSizing: "border-box"
-                }}>
-                    <span style={{ fontSize: 14, opacity: 0.5 }}>📁</span>
-                    <input value={ctx.projectName} onChange={(e) => ctx.setProjectName(e.target.value)}
-                        style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "#fff",
-                            width: 100,
-                            outline: "none",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            fontFamily: "inherit"
-                        }} />
-                    <Save size={14} style={{ opacity: 0.8, cursor: "pointer", transition: "transform 0.15s ease" }}
-                        onClick={ctx.handleSaveProject}
-                        title="Save Project"
-                        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
-                        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
-                </div>
+                <ProjectNameInput
+                    value={ctx.projectName}
+                    onChange={ctx.setProjectName}
+                    onSave={ctx.handleSaveProject}
+                />
 
                 <div style={{
                     display: "flex",

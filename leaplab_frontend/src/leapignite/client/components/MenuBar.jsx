@@ -11,6 +11,7 @@ import {
 import Logo from '../../../components/Logo';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../../components/common/TopbarShareButton';
+import ProjectNameInput from '../../../components/common/ProjectNameInput';
 import DropdownMenu from './DropdownMenu';
 import ModeToggle from './ModeToggle';
 import PortsControl from './PortsControl';
@@ -183,62 +184,16 @@ export default function MenuBar({
                 </div>
             </div>
 
-            {/* ══ CENTER: Project name pill (mirrors IGNITE exactly) ════════════ */}
+            {/* ══ CENTER: Project name pill ════════════════════════════════════ */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: '0 12px', overflow: 'hidden',
             }}>
-                <div
-                    style={{
-                        display: 'flex', alignItems: 'center',
-                        height: 38,
-                        background: 'rgba(0,0,0,0.28)',
-                        borderRadius: 999,
-                        paddingLeft: 16, paddingRight: 4,
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        gap: 8,
-                        maxWidth: 280,
-                        width: '100%',
-                        minWidth: 0,
-                        transition: 'border-color 0.2s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'}
-                >
-                    <span style={{ fontSize: 14, opacity: 0.5, flexShrink: 0 }}>📁</span>
-                    <input
-                        type="text"
-                        value={projectName}
-                        onChange={(e) => onProjectNameChange?.(e.target.value)}
-                        placeholder="My Project"
-                        style={{
-                            background: 'transparent', border: 'none',
-                            color: '#fff', fontSize: 13, fontWeight: 700,
-                            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                            flex: 1, minWidth: 0, outline: 'none',
-                            textAlign: 'center', letterSpacing: '0.01em',
-                        }}
-                    />
-                    {/* Green circular save button — identical to IGNITE */}
-                    <button
-                        onClick={() => onFileAction?.('save')}
-                        title="Save Project"
-                        style={{
-                            width: 30, height: 30, flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: 'linear-gradient(135deg, #10B981, #059669)',
-                            border: 'none', borderRadius: '50%',
-                            color: '#fff', cursor: 'pointer',
-                            boxShadow: '0 2px 6px rgba(16,185,129,0.35)',
-                            transition: 'transform 0.15s ease',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.12)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                        <Save size={14} strokeWidth={2.8} />
-                    </button>
-
-                </div>
+                <ProjectNameInput
+                    value={projectName}
+                    onChange={(val) => onProjectNameChange?.(val)}
+                    onSave={() => onFileAction?.('save')}
+                />
             </div>
 
             {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG ════════════════ */}

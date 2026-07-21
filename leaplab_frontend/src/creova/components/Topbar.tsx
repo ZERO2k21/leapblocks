@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import LeapLabAuthButton from '../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../components/common/TopbarShareButton';
+import ProjectNameInput from '../../components/common/ProjectNameInput';
 import { useWindowWidth } from '../hooks/useWindowWidth';
 
 // Extracted local submenus
@@ -287,37 +288,12 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         <div className="flex items-center justify-center gap-2 md:gap-4 px-2 md:px-4 flex-1 min-w-0">
           <div className="hidden md:flex items-center gap-4">{centerContent}</div>
  
-          <div
-            style={{ paddingLeft: windowWidth >= 1600 ? '24px' : '12px' }}
-            className={`flex items-center h-8 rounded-full pr-[3px] border gap-2 md:gap-3 transition-all duration-200 ${isElectra ? 'bg-[#27272a]/50 border-[#27272a]' : 'bg-[#08143a]/55 border-[#93c5fd]/20'
-              }`}>
-            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden min-[1900px]:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
-              Folder
-            </span>
-            <input
-              placeholder="My Project"
-              type="text"
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              className={`bg-transparent border-0 text-xs font-bold font-sans w-16 sm:w-20 md:w-[100px] lg:w-[120px] text-center outline-none tracking-wide min-w-0 ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
-                }`}
-            />
-            <button
-              title="Save Project"
-              onClick={onSave}
-              disabled={isSaving}
-              className={`border-0 rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-all duration-200 shrink-0 scale-100 hover:scale-[1.08] hover:brightness-[1.08] ${isElectra
-                ? 'bg-gradient-to-br from-[#22d3ee] to-[#06b6d4] text-black shadow-[0_4px_10px_-1px_rgba(34,211,238,0.4)]'
-                : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] text-white shadow-[0_4px_10px_-1px_rgba(8,47,123,0.45)]'
-                } ${isSaving ? 'opacity-80 cursor-wait' : ''}`}
-            >
-              {isSaving ? (
-                <Loader2 size={12} strokeWidth={2.5} className="animate-spin" />
-              ) : (
-                <Save size={12} strokeWidth={2.5} />
-              )}
-            </button>
-          </div>
+          <ProjectNameInput
+            value={title}
+            onChange={onTitleChange}
+            onSave={onSave}
+            isSaving={isSaving}
+          />
         </div>
  
         {/* Right section */}

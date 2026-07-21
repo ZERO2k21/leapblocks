@@ -8,6 +8,7 @@ import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboa
 import Logo, { CreoleapLogo } from "../../components/Logo";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 import TopbarShareButton from "../../../components/common/TopbarShareButton";
+import ProjectNameInput from "../../../components/common/ProjectNameInput";
 
 // ─── Theme (LeapBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -19,7 +20,7 @@ const C = {
     MUTED: "#6B7280",
 };
 
-export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide, mode, setMode }) {
+export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowGuide, mode, setMode, projectName = 'My Project', onProjectNameChange, onSave }) {
     const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
 
     useEffect(() => {
@@ -161,55 +162,15 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 </div>
             </div>
 
-            {/* Middle: Toolbar Icons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1, justifyContent: "center" }}>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Scissors size={16} />
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Copy size={16} />
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Clipboard size={16} />
-                </div>
-                <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Undo size={16} />
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Redo size={16} />
-                </div>
-                <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Hash size={16} />
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Wand2 size={16} />
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <span style={{ fontSize: 14, fontWeight: "bold" }}>A+</span>
-                </div>
-                <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <Search size={16} />
-                </div>
+            {/* Center: Project Name */}
+            <div style={{ display: "flex", alignItems: "center", flex: 1, justifyContent: "center" }}>
+                {onProjectNameChange && onSave ? (
+                    <ProjectNameInput
+                        value={projectName}
+                        onChange={onProjectNameChange}
+                        onSave={onSave}
+                    />
+                ) : null}
             </div>
 
             {/* Right Side: Run/Stop + Upload Firmware + CREOLEAP Logo */}

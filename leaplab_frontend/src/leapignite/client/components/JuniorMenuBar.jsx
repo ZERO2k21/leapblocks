@@ -13,6 +13,7 @@ import {
 import Logo, { CreoleapLogo } from '../../../components/Logo';
 import LeapLabAuthButton from '../../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../../components/common/TopbarShareButton';
+import ProjectNameInput from '../../../components/common/ProjectNameInput';
 import DropdownMenu from './DropdownMenu';
 
 const styles = {
@@ -55,46 +56,7 @@ const styles = {
         letterSpacing: '0.08em',
         fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
     },
-    projectWrapper: {
-        display: 'flex',
-        alignItems: 'center',
-        height: 42,
-        background: 'rgba(0,0,0,0.3)',
-        borderRadius: 22,
-        paddingLeft: 20,
-        paddingRight: 6,
-        border: '1px solid rgba(255,255,255,0.06)',
-        gap: 10,
-        transition: 'all 0.2s',
-        backdropFilter: 'blur(4px)',
-    },
-    projectInput: {
-        background: 'transparent',
-        border: 'none',
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 700,
-        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-        width: 170,
-        textAlign: 'center',
-        outline: 'none',
-        letterSpacing: '0.01em',
-    },
-    saveBtn: {
-        background: 'linear-gradient(135deg, #10B981, #059669)',
-        border: 'none',
-        borderRadius: '50%',
-        width: 32,
-        height: 32,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        color: '#fff',
-        boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
-        transition: 'all 0.15s',
-        flexShrink: 0,
-    },
+
     utilityGroup: {
         display: 'flex',
         alignItems: 'center',
@@ -248,25 +210,11 @@ export default function JuniorMenuBar({
 
     const renderCenterSection = () => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
-            <div style={styles.projectWrapper}>
-                <span style={{ fontSize: 14, opacity: 0.4 }}>📁</span>
-                <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => onProjectNameChange?.(e.target.value)}
-                    style={styles.projectInput}
-                    placeholder="My Project"
-                />
-                <button
-                    onClick={() => onFileAction?.('save')}
-                    style={styles.saveBtn}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    title="Save Project"
-                >
-                    <Save size={15} strokeWidth={2.8} />
-                </button>
-            </div>
+            <ProjectNameInput
+                value={projectName}
+                onChange={(val) => onProjectNameChange?.(val)}
+                onSave={() => onFileAction?.('save')}
+            />
         </div>
     );
 
