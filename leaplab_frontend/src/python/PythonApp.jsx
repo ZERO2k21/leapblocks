@@ -45,6 +45,7 @@ import {
 import { fileService } from "../Electra/Client/Src/services/FileService";
 import TopbarShareButton from "../components/common/TopbarShareButton";
 import ProjectNameInput from "../components/common/ProjectNameInput";
+import ModeSwitcher from "../components/common/ModeSwitcher";
 import { showToast } from "../leapignite/client/components/Toast";
 import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import { FULL_CATALOG } from "../components/SpriteLibrary";
@@ -3112,52 +3113,15 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onChange={setProjectName}
                         onSave={handleSaveProject}
                     />
-                    {/* Mode/IDE/Stage/Upload buttons */}
-                    <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 4, overflow: "hidden" }}>
-                        <div style={{ padding: "5px 10px", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Mode</div>
-                        <button
-                            onClick={() => handleWorkflowModeChange("ide")}
-                            style={{
-                                padding: "5px 10px",
-                                background: workflowMode === "ide" ? "#7C3AED" : "transparent",
-                                color: workflowMode === "ide" ? "#fff" : "rgba(255,255,255,0.8)",
-                                fontSize: 15,
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                border: "none",
-                            }}
-                        >
-                            IDE
-                        </button>
-                        <button
-                            onClick={() => handleWorkflowModeChange("stage")}
-                            style={{
-                                padding: "5px 10px",
-                                background: workflowMode === "stage" ? "#4CAF50" : "transparent",
-                                color: workflowMode === "stage" ? "#fff" : "rgba(255,255,255,0.8)",
-                                fontSize: 15,
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                border: "none",
-                            }}
-                        >
-                            Stage
-                        </button>
-                        <button
-                            onClick={() => handleWorkflowModeChange("upload")}
-                            style={{
-                                padding: "5px 10px",
-                                background: workflowMode === "upload" ? "#4CAF50" : "transparent",
-                                color: workflowMode === "upload" ? "#fff" : "rgba(255,255,255,0.8)",
-                                fontSize: 15,
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                border: "none",
-                            }}
-                        >
-                            Upload
-                        </button>
-                    </div>
+                    <ModeSwitcher
+                        modes={[
+                            { id: 'ide', label: 'IDE' },
+                            { id: 'stage', label: 'Stage' },
+                            { id: 'upload', label: 'Upload' },
+                        ]}
+                        activeMode={workflowMode}
+                        onChange={handleWorkflowModeChange}
+                    />
                     <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
                     {/* Upload Firmware button */}
                     <button

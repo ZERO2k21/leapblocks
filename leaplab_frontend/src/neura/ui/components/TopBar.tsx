@@ -1,6 +1,7 @@
 import React from 'react'
 import type { ClassifierMode } from '../../hooks/useNeuraProject'
 import ProjectNameInput from '../../../components/common/ProjectNameInput'
+import ModeSwitcher from '../../../components/common/ModeSwitcher'
 
 interface TopBarProps {
     title: string
@@ -53,6 +54,15 @@ export default function TopBar({ title, mode, onModeChange, onBack, totalSamples
                     <p className="text-[11px] font-semibold text-[#630ed4]">{totalSamples} samples collected! 🎯</p>
                 </div>
             </div>
+            <ModeSwitcher
+                modes={[
+                    { id: 'collect', label: 'Collect', icon: <span>📸</span> },
+                    { id: 'train', label: 'Train', icon: <span>🏋️</span> },
+                    { id: 'test', label: 'Test', icon: <span>🧪</span> },
+                ]}
+                activeMode={mode}
+                onChange={(id) => onModeChange(id as ClassifierMode)}
+            />
         </div>
     )
 }

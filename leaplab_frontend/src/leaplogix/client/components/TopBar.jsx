@@ -10,6 +10,7 @@ import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 import TopbarShareButton from "../../../components/common/TopbarShareButton";
 import ProjectNameInput from "../../../components/common/ProjectNameInput";
+import ModeSwitcher from "../../../components/common/ModeSwitcher";
 
 function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
@@ -197,35 +198,15 @@ export default function TopBar() {
                     onSave={ctx.handleSaveProject}
                 />
 
-                <div style={{
-                    display: "flex",
-                    background: "rgba(0, 0, 0, 0.28)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: 20,
-                    padding: 3,
-                    alignItems: "center",
-                    height: 34,
-                    boxSizing: "border-box"
-                }}>
-                    <div style={{ padding: "0 8px 0 10px", color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mode</div>
-                    {["ide", "stage", "upload"].map(mode => (
-                        <button key={mode} onClick={() => ctx.setWorkflowMode(mode)} style={{
-                            padding: "6px 12px",
-                            border: "none",
-                            borderRadius: 16,
-                            background: ctx.workflowMode === mode ? "linear-gradient(135deg, #7C3AED, #4F46E5)" : "transparent",
-                            color: ctx.workflowMode === mode ? "#fff" : "rgba(255,255,255,0.7)",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            textTransform: "capitalize",
-                        }}
-                            onMouseEnter={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "#fff"; }}
-                            onMouseLeave={e => { if (ctx.workflowMode !== mode) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                        >{mode === "ide" ? "IDE" : mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
-                    ))}
-                </div>
+                <ModeSwitcher
+                    modes={[
+                        { id: 'ide', label: 'IDE' },
+                        { id: 'stage', label: 'Stage' },
+                        { id: 'upload', label: 'Upload' },
+                    ]}
+                    activeMode={ctx.workflowMode}
+                    onChange={ctx.setWorkflowMode}
+                />
 
                 {ctx.isRunning ? (
                     <button onClick={ctx.handleStop} title="Stop (Escape)" style={{

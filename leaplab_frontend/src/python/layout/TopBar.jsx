@@ -9,6 +9,7 @@ import Logo, { CreoleapLogo } from "../../components/Logo";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 import TopbarShareButton from "../../../components/common/TopbarShareButton";
 import ProjectNameInput from "../../../components/common/ProjectNameInput";
+import ModeSwitcher from "../../../components/common/ModeSwitcher";
 
 // ─── Theme (LeapBlox Colors) ─────────────────────────────────────────────────
 const C = {
@@ -93,73 +94,14 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
 
                 <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
 
-                {/* Blocks/Python Mode Tabs */}
-                <div style={{ display: "flex", background: "rgba(0,0,0,0.2)", borderRadius: 6, overflow: "hidden", marginRight: 12 }}>
-                    <div
-                        onClick={() => setMode && setMode("blocks")}
-                        style={{
-                            padding: "6px 14px",
-                            background: mode === "blocks" ? "rgba(255,255,255,0.2)" : "transparent",
-                            color: "#fff",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6
-                        }}>
-                        <span style={{ fontSize: 14 }}>🧩</span> Blocks
-                    </div>
-                    <div
-                        onClick={() => setMode && setMode("python")}
-                        style={{
-                            padding: "6px 14px",
-                            background: mode === "python" ? "rgba(255,255,255,0.2)" : "transparent",
-                            color: "#fff",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6
-                        }}>
-                        <span style={{ fontSize: 14 }}>🐍</span> Python
-                    </div>
-                </div>
-
-                {/* Costumes/Sounds Tabs */}
-                <div style={{ display: "flex", gap: 4 }}>
-                    <div style={{
-                        padding: "6px 12px",
-                        background: "transparent",
-                        color: "rgba(255,255,255,0.8)",
-                        fontSize: 12,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        borderRadius: 4
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <span style={{ fontSize: 14 }}>🎨</span> Costumes
-                    </div>
-                    <div style={{
-                        padding: "6px 12px",
-                        background: "transparent",
-                        color: "rgba(255,255,255,0.8)",
-                        fontSize: 12,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        borderRadius: 4
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <span style={{ fontSize: 14 }}>🔊</span> Sounds
-                    </div>
-                </div>
+                <ModeSwitcher
+                    modes={[
+                        { id: 'blocks', label: 'Blocks', icon: <span style={{ fontSize: 14 }}>🧩</span> },
+                        { id: 'python', label: 'Python', icon: <span style={{ fontSize: 14 }}>🐍</span> },
+                    ]}
+                    activeMode={mode}
+                    onChange={(id) => setMode && setMode(id)}
+                />
             </div>
 
             {/* Center: Project Name */}
