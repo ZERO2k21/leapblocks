@@ -11,24 +11,19 @@ import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
 import leaplabBlocksCss from './styles/Leaplab-blocks.css?inline'; // Import leap-style blocks CSS (inlined for dynamic injection)
 import './components/workspace/WorkspaceControls.css';
-import { registerCustomFields } from './blockly/registerCustomFields'; // Register field_colour, field_angle, etc.
+import { arduinoToolbox } from './blocks/arduino-blocks';
 
+import { esp32Toolbox } from './blocks/esp32-blocks';
 
-import { arduinoBlocks, arduinoToolbox } from './blocks/arduino-blocks';
-
-import { esp32Blocks, esp32Toolbox } from './blocks/esp32-blocks';
-
-import { animationBlocks, animationToolbox } from './blocks/animation-blocks';
+import { animationToolbox } from './blocks/animation-blocks';
 import { COLORS } from './blocks/blockDefinitions';
-import { registerleapBlocks } from './blocks/leapBlocks';
 
-import { hardwareBlocks } from './blocks/hardware-blocks';
 
 import { arduinoGenerator } from './generators/arduino-generator';
 
 import { AnimationCompiler } from './generators/animation-generator';
 
-import { initPythonGenerator } from './generators/python-generator'; // Deferred registration
+
 
 import { migrateWorkspaceBlocks, migrateSingleBlock } from './utils/blocklyMigration';
 
@@ -59,81 +54,22 @@ const JuniorExtensionLibrary = React.lazy(() => import('./leapignite/client/comp
 const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
 const SoundsTab = React.lazy(() => import('./stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
 
-// Local ErrorBoundary for tab panels — prevents PaintEditor/fabric.js crashes from killing the whole app
-class TabErrorBoundary extends React.Component<
-    { children: React.ReactNode; onBackToBlocks?: () => void; tabName?: string },
-    { hasError: boolean; error: any }
-> {
-    constructor(props: any) {
-        super(props);
-        this.state = { hasError: false, error: null };
-    }
-    static getDerivedStateFromError(error: any) {
-        return { hasError: true, error };
-    }
-    componentDidCatch(error: any, errorInfo: any) {
-        console.error(`[TabErrorBoundary] ${this.props.tabName || 'Tab'} crashed:`, error, errorInfo);
-    }
-    render() {
-        if (this.state.hasError) {
-            const tabLabel = this.props.tabName || 'tab';
-            return (
-                <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    height: '100%', padding: 24, background: '#1a1a2e', color: '#e0e0e0', fontFamily: 'monospace',
-                }}>
-                    <div style={{ fontSize: 14, color: '#ff6b6b', marginBottom: 8 }}>
-                        Failed to load {tabLabel}
-                    </div>
-                    <pre style={{
-                        fontSize: 11, color: '#999', maxWidth: '100%', overflow: 'auto',
-                        maxHeight: 80, marginBottom: 16, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                    }}>
-                        {this.state.error?.message || String(this.state.error)}
-                    </pre>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <button
-                            onClick={() => this.setState({ hasError: false, error: null })}
-                            style={{
-                                padding: '6px 14px', borderRadius: 6, border: '1px solid #555',
-                                background: '#2a2a3e', color: '#ccc', cursor: 'pointer', fontSize: 12,
-                            }}
-                        >
-                            Retry
-                        </button>
-                        {this.props.onBackToBlocks && (
-                            <button
-                                onClick={this.props.onBackToBlocks}
-                                style={{
-                                    padding: '6px 14px', borderRadius: 6, border: 'none',
-                                    background: '#5A2D82', color: '#fff', cursor: 'pointer', fontSize: 12,
-                                }}
-                            >
-                                Back to Blocks
-                            </button>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
-
-// Suspense wrapper that handles both loading and chunk-load errors
-function SuspenseTab({ children, onBackToBlocks, tabName }: { children: React.ReactNode; onBackToBlocks?: () => void; tabName?: string }) {
-    return (
-        <TabErrorBoundary onBackToBlocks={onBackToBlocks} tabName={tabName}>
-            <React.Suspense fallback={
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a2e' }}>
-                    <Loader />
-                </div>
-            }>
-                {children}
-            </React.Suspense>
-        </TabErrorBoundary>
-    );
-}
+import { TabErrorBoundary, SuspenseTab } from './embed/components/TabErrorBoundary';
+import { log } from './embed/utils/log';
+import { normalizeAssetPath, resolveAssetPath } from './embed/utils/assetPaths';
+import {
+    MORE_BLOCKS_CATEGORY_NAME,
+    MORE_BLOCKS_CATEGORY_COLOUR,
+    isToolboxCategory,
+    normalizeCategoryClassName,
+    createFlyoutCategoryLabel,
+    createFlyoutSectionLabel,
+    createMonitorReporterPlaceholder,
+    createMoreBlocksCategory,
+    withCategoryHeaders,
+} from './embed/utils/toolboxHelpers';
+import { useMonitors } from './embed/hooks/useMonitors';
+import { initBlocklyOnce, extractBroadcastValues, fixCostumeDropdownValues, resetBlocklyInitialized, BLOCKLY_MEDIA_PATH } from './embed/utils/blocklyInit';
 
 import { stageManager } from './engine/StageManager';
 import { spriteManager } from './engine/SpriteManager';
@@ -160,11 +96,11 @@ import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinition
 import { fileService } from './Electra/Client/Src/services/FileService';
 import { useCloudProjectStore } from './store/cloudProjectStore';
 import { showToast } from './leapignite/client/components/Toast';
-import { registerLeapRenderer } from './leapignite/server/blocks/LeapRenderer';
+
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
-import { registerLeapBloxCategory } from './custom-toolbox';
+
 import { styles } from './styles/intermediateStyles';
 import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from './types/intermediateTypes';
 import { normalizeVariableMonitor } from './types/intermediateTypes';
@@ -202,238 +138,12 @@ if (typeof window !== 'undefined') {
 
 
 
-// LOGGING UTILITY
-
-// ═══════════════════════════════════════════════════════════════════════════
-
-const log = {
-
-    app: (msg: string, data?: any) => console.log(`[APP] ${msg}`, data ?? ''),
-
-    blockly: (msg: string, data?: any) => console.log(`[BLOCKLY] ${msg}`, data ?? ''),
-
-    generator: (msg: string, data?: any) => console.log(`[GENERATOR] ${msg}`, data ?? ''),
-
-};
-
-/**
- * Normalize an asset path for saving.
- * Strips the current origin and converts legacy /scratch/ paths to /leap/.
- * Preserves data URLs (base64) for custom uploaded assets.
- */
-function normalizeAssetPath(src: string): string {
-    if (!src) return src;
-    // Preserve data URLs (custom uploaded images/backdrops) as-is
-    if (src.startsWith('data:')) {
-        return src;
-    }
-    let normalized = src;
-    // Convert legacy scratch sprite paths to current leap paths
-    normalized = normalized.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
-    normalized = normalized.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
-    return normalized;
-}
-
-/**
- * Resolve an asset path for loading.
- * Ensures legacy /scratch/ paths are rewritten to /leap/.
- * Preserves data URLs (base64) for custom uploaded assets.
- */
-function resolveAssetPath(src: string): string {
-    if (!src) return src;
-    // Preserve data URLs as-is
-    if (src.startsWith('data:')) {
-        return src;
-    }
-    let resolved = src;
-    // Convert legacy scratch sprite paths to current leap paths
-    resolved = resolved.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
-    resolved = resolved.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
-    // Fix sprites that changed naming convention from hyphen to underscore in leap folder
-    const NAMING_FIXES: Record<string, string> = {
-        'cat_cat-a.svg': 'cat_cat_a.svg',
-        'cat_cat-b.svg': 'cat_cat_b.svg',
-        'retro_robot_retro_robot-a.svg': 'retro_robot_retro_robot_a.svg',
-        'retro_robot_retro_robot-b.svg': 'retro_robot_retro_robot_b.svg',
-    };
-    for (const [oldName, newName] of Object.entries(NAMING_FIXES)) {
-        resolved = resolved.replace(oldName, newName);
-    }
-    return resolved;
-}
 
 
 
-// Register all blocks
+// Blockly init extracted to src/embed/utils/blocklyInit.ts
 
-const registerBlocks = () => {
-    // 1. Register leap 3.0 compatible blocks (100+ blocks)
-    try {
-        registerleapBlocks();
-        log.app('Registered leap 3.0 blocks (100+ blocks)');
-    } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        log.app(`Error registering leap blocks: ${errorMessage}`);
-    }
 
-    // 2. Register other platform-specific blocks (Arduino, ESP32, Hardware, Animation)
-    const blocksToRegister = [
-        ...(Array.isArray(arduinoBlocks) ? arduinoBlocks : []),
-        ...(Array.isArray(esp32Blocks) ? esp32Blocks : []),
-        ...(Array.isArray(animationBlocks) ? animationBlocks : []),
-        ...(Array.isArray(hardwareBlocks) ? hardwareBlocks : [])
-    ];
-
-    // Force-register all blocks to overwrite any clobbered definitions from other modes
-    if (blocksToRegister.length > 0) {
-        try {
-            Blockly.common.defineBlocks(Blockly.common.createBlockDefinitionsFromJsonArray(blocksToRegister));
-            log.app(`Registered ${blocksToRegister.length} additional blocks (Arduino/ESP32/Hardware).`);
-        } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-        }
-    }
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DEFERRED BLOCKLY INITIALIZATION
-// All Blockly monkey-patches and registrations are deferred to first render
-// to avoid TDZ errors when webpack chunk splitting reorders module evaluation.
-// ═══════════════════════════════════════════════════════════════════════════
-
-let _blocklyInitialized = false;
-const BLOCKLY_MEDIA_PATH = './blockly-media/';
-
-function initBlocklyOnce() {
-    if (_blocklyInitialized) return;
-    _blocklyInitialized = true;
-
-    // Register Leap Renderer
-    registerLeapRenderer(Blockly);
-
-    registerBlocks();
-
-    // Initialize Python generator (deferred from module scope)
-    initPythonGenerator();
-
-    // Register custom toolbox category (deferred from module scope)
-    registerLeapBloxCategory();
-
-    // Register custom fields (field_angle, field_colour) before any Blockly.inject call
-    registerCustomFields();
-
-    // Configure Blockly dialogs for Electron (native prompt/alert not supported)
-    Blockly.dialog.setPrompt((message, defaultValue, callback) => {
-        const result = window.prompt(message, defaultValue);
-        callback(result);
-    });
-
-    Blockly.dialog.setAlert((message, callback) => {
-        window.alert(message);
-        if (callback) callback();
-    });
-
-    Blockly.dialog.setConfirm((message, callback) => {
-        const result = window.confirm(message);
-        callback(result);
-    });
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // GLOBAL BLOCKLY OVERRIDES
-    // ═══════════════════════════════════════════════════════════════════════
-
-    // Extension for broadcast dropdowns to handle "New message..."
-    if (!Blockly.Extensions.isRegistered('broadcast_dropdown_ext')) {
-        Blockly.Extensions.register('broadcast_dropdown_ext', function (this: any) {
-            this.setOnChange(function (this: any, event: any) {
-                if (event.type === Blockly.Events.BLOCK_CHANGE && event.blockId === this.id) {
-                    const fieldName = event.name;
-                    if (fieldName === 'BROADCAST_INPUT' || fieldName === 'BROADCAST_OPTION') {
-                        const newValue = event.newValue;
-                        if (newValue === 'new') {
-                            (window as any).createNewBroadcast((name: string | null) => {
-                                if (name) {
-                                    this.setFieldValue(name, fieldName);
-                                } else {
-                                    // Revert to default or previous if cancelled
-                                    this.setFieldValue('message1', fieldName);
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-}
-
-const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
-const MORE_BLOCKS_CATEGORY_COLOUR = '#94A3B8';
-
-const isToolboxCategory = (category: any) =>
-    category?.kind === 'leapbloxCategory' ||
-    category?.kind === 'leapBloxCategory' ||
-    category?.kind === 'category';
-
-const normalizeCategoryClassName = (value: string) =>
-    value
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-
-const createFlyoutCategoryLabel = (text: string) => ({
-    kind: 'label',
-    text,
-    'web-class': `category-header category-header-${normalizeCategoryClassName(text)}`
-});
-
-const createFlyoutSectionLabel = (text: string, className: string) => ({
-    kind: 'label',
-    text,
-    'web-class': `category-subheader ${className}`
-});
-
-const createMonitorReporterPlaceholder = (
-    blockType: string,
-    fieldName: string,
-    fieldValue: string,
-    checked: boolean,
-    gap?: number
-) => ({
-    kind: 'block',
-    type: blockType,
-    ...(typeof gap === 'number' ? { gap } : {}),
-    fields: {
-        CHECK: checked ? 'TRUE' : 'FALSE',
-        [fieldName]: fieldValue
-    }
-});
-
-const createMoreBlocksCategory = () => ({
-    kind: 'leapbloxCategory',
-    name: MORE_BLOCKS_CATEGORY_NAME,
-    colour: MORE_BLOCKS_CATEGORY_COLOUR,
-    custom: 'LEAP_MOREBLOCKS'
-});
-
-const withCategoryHeaders = (contents: any[]) => {
-    const categoriesWithMoreBlocks = contents.some((category: any) => category?.name === MORE_BLOCKS_CATEGORY_NAME)
-        ? contents
-        : [...contents, createMoreBlocksCategory()];
-
-    return categoriesWithMoreBlocks.map((category: any) => {
-        if (!isToolboxCategory(category) || !Array.isArray(category.contents)) {
-            return category;
-        }
-
-        return {
-            ...category,
-            contents: [createFlyoutCategoryLabel(category.name), ...category.contents]
-        };
-    });
-};
 
 
 
@@ -447,70 +157,7 @@ const withCategoryHeaders = (contents: any[]) => {
 
 
 
-/**
- * Recursively scan workspace JSON blocks for broadcast-related field values
- * and register them with the AnimationVM. This ensures Blockly dropdown
- * validation passes when loading workspaces that reference custom broadcast
- * messages (e.g. "Game Over") that aren't yet in the broadcast registry.
- */
-function extractBroadcastValues(workspaceJson: { blocks?: { blocks?: any[] } }, vm: typeof animationVM): void {
-    const blocks = workspaceJson?.blocks?.blocks || [];
-    const scanBlock = (block: any): void => {
-        if (!block) return;
-        if (block.fields) {
-            const value = block.fields.BROADCAST_INPUT || block.fields.BROADCAST_OPTION || block.fields.MESSAGE;
-            if (value && value !== 'new') {
-                vm.registerBroadcast(String(value));
-            }
-        }
-        if (block.inputs) {
-            for (const key of Object.keys(block.inputs)) {
-                const input = block.inputs[key];
-                if (input?.block) scanBlock(input.block);
-                if (input?.shadow) scanBlock(input.shadow);
-            }
-        }
-        if (block.next?.block) scanBlock(block.next.block);
-    };
-    blocks.forEach(scanBlock);
-}
-
-/**
- * Validate and fix costume dropdown values in workspace JSON before loading.
- * When a looks_switch_costume block references a costume name that doesn't exist
- * in the sprite's costume list, Blockly logs a warning. This function replaces
- * invalid costume names with the first costume in the sprite's list.
- */
-function fixCostumeDropdownValues(workspaceJson: { blocks?: { blocks?: any[] } }, spriteId: string): void {
-    const blocks = workspaceJson?.blocks?.blocks || [];
-    const sprite = (spriteManager as any).getSprite?.(spriteId) || (spriteManager as any).sprites?.find?.((s: any) => s.id === spriteId);
-    if (!sprite || !sprite.costumes || sprite.costumes.length === 0) return;
-
-    const validCostumeNames = sprite.costumes.map((c: any) => c.name);
-    const firstCostume = validCostumeNames[0];
-
-    const scanBlock = (block: any): void => {
-        if (!block) return;
-        if (block.type === 'looks_switch_costume' && block.fields?.COSTUME) {
-            const currentVal = typeof block.fields.COSTUME === 'string' ? block.fields.COSTUME : block.fields.COSTUME[0];
-            const normalized = String(currentVal);
-            const isValid = validCostumeNames.some((n: string) => n.toLowerCase() === normalized.toLowerCase());
-            if (!isValid) {
-                console.warn(`[fixCostumeDropdownValues] Block ${block.id}: costume "${normalized}" not found in sprite "${sprite.name}", using "${firstCostume}"`);
-                block.fields.COSTUME = [firstCostume];
-            }
-        }
-        if (block.inputs) {
-            for (const key of Object.keys(block.inputs)) {
-                const input = block.inputs[key];
-                if (input?.block) scanBlock(input.block);
-                if (input?.shadow) scanBlock(input.shadow);
-            }
-        }
-        if (block.next?.block) scanBlock(block.next.block);
-    };
-    blocks.forEach(scanBlock);
-}
+// Workspace utils extracted to src/embed/utils/blocklyInit.ts
 
 const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void; openTab?: 'blocks' | 'python' | 'costumes' | 'sounds'; projectUrl?: string | null }> = ({ onBack, onOpenPython, openTab = 'blocks', projectUrl }) => {
 
@@ -854,298 +501,22 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setAskState({ isAsking: false, question: '', resolve: null });
     }, [askState.resolve]);
 
-    // Monitor states
-    const [variableMonitors, setVariableMonitors] = useState<VariableMonitorState[]>([]);
-    const [listMonitors, setListMonitors] = useState<ListMonitorState[]>([]);
-    const [tableMonitors, setTableMonitors] = useState<TableMonitorState[]>([]);
-    const [sensingMonitors, setSensingMonitors] = useState<VariableMonitorState[]>([
-        { id: 'answer', name: 'answer', type: 'String', scope: 'all_sprites', visible: false, value: '', x: 10, y: 350 },
-        { id: 'timer', name: 'timer', type: 'Number', scope: 'all_sprites', visible: false, value: 0, x: 10, y: 380 },
-        { id: 'loudness', name: 'loudness', type: 'Number', scope: 'all_sprites', visible: false, value: 0, x: 10, y: 410 }
-    ]);
-
-    const variableMonitorsRef = useRef(variableMonitors);
-    const listMonitorsRef = useRef(listMonitors);
-    const tableMonitorsRef = useRef(tableMonitors);
-    const sensingMonitorsRef = useRef(sensingMonitors);
-    const syncedVariableMonitorNamesRef = useRef<Set<string>>(new Set());
-
-    useEffect(() => {
-        variableMonitorsRef.current = variableMonitors;
-    }, [variableMonitors]);
-
-    useEffect(() => {
-        listMonitorsRef.current = listMonitors;
-    }, [listMonitors]);
-
-    useEffect(() => {
-        tableMonitorsRef.current = tableMonitors;
-    }, [tableMonitors]);
-
-    useEffect(() => {
-        sensingMonitorsRef.current = sensingMonitors;
-    }, [sensingMonitors]);
-
-    // Keep window monitors in sync for Blockly toolbox checkboxes
-    useEffect(() => {
-        (window as any)._monitors_for_sync = {
-            variable: variableMonitors,
-            list: listMonitors,
-            table: tableMonitors,
-            sensing: sensingMonitors
-        };
-    }, [variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
-
-    useEffect(() => {
-        const activeVariableNames = new Set<string>();
-        const previouslySyncedVariableNames = syncedVariableMonitorNamesRef.current;
-
-        variableMonitors.forEach((monitor) => {
-            activeVariableNames.add(monitor.name);
-
-            if (!animationVM.hasVariable(monitor.name) || animationVM.getVariable(monitor.name) !== monitor.value) {
-                animationVM.setVariable(monitor.name, monitor.value);
-            }
-        });
-
-        previouslySyncedVariableNames.forEach((name) => {
-            if (!activeVariableNames.has(name)) {
-                animationVM.deleteVariable(name);
-            }
-        });
-
-        syncedVariableMonitorNamesRef.current = activeVariableNames;
-    }, [variableMonitors]);
-
-    // Sync list monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
-    // This ensures lists created via React state (e.g., project load) are reflected in Blockly's variable map
-    useEffect(() => {
-        const ws = workspaceRef.current;
-        if (!ws || isLoadingWorkspaceRef.current) return;
-
-        const currentVarMap = ws.getVariableMap();
-        if (!currentVarMap) return;
-
-        const existingVars = currentVarMap.getAllVariables() || [];
-        const existingListNames = new Set(
-            existingVars.filter((v: any) => v.type === 'list').map((v: any) => v.name)
-        );
-
-        let changed = false;
-        // Add lists from monitors that are missing in Blockly's variable map
-        listMonitors.forEach(m => {
-            if (!existingListNames.has(m.name)) {
-                try {
-                    currentVarMap.createVariable(m.name, 'list');
-                    changed = true;
-                } catch (err) {
-                    console.warn('[SyncLists] Failed to create variable in Blockly:', m.name, err);
-                }
-            }
-        });
-
-        // Only refresh toolbox if new lists were added
-        if (changed && ws.getToolbox()) {
-            setToolboxUpdateKey(k => k + 1);
-        }
-    }, [listMonitors]);
-
-    // Sync variable monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
-    useEffect(() => {
-        const ws = workspaceRef.current;
-        if (!ws || isLoadingWorkspaceRef.current) return;
-
-        const currentVarMap = ws.getVariableMap();
-        if (!currentVarMap) return;
-
-        const existingVars = currentVarMap.getAllVariables() || [];
-        const existingVarNames = new Set(
-            existingVars.filter((v: any) => v.type === '' || v.type === 'Number' || v.type === 'String').map((v: any) => v.name)
-        );
-
-        variableMonitors.forEach(m => {
-            if (!existingVarNames.has(m.name)) {
-                try {
-                    currentVarMap.createVariable(m.name, m.type || '');
-                } catch (err) {
-                    console.warn('[SyncVars] Failed to create variable in Blockly:', m.name, err);
-                }
-            }
-        });
-    }, [variableMonitors]);
-
-    // Sync table monitors to Blockly workspace variable map so they appear in the blocks panel toolbox
-    useEffect(() => {
-        const ws = workspaceRef.current;
-        if (!ws || isLoadingWorkspaceRef.current) return;
-
-        const currentVarMap = ws.getVariableMap();
-        if (!currentVarMap) return;
-
-        const existingVars = currentVarMap.getAllVariables() || [];
-        const existingTableNames = new Set(
-            existingVars.filter((v: any) => v.type === 'table').map((v: any) => v.name)
-        );
-
-        tableMonitors.forEach(m => {
-            if (!existingTableNames.has(m.name)) {
-                try {
-                    currentVarMap.createVariable(m.name, 'table');
-                } catch (err) {
-                    console.warn('[SyncTables] Failed to create variable in Blockly:', m.name, err);
-                }
-            }
-        });
-    }, [tableMonitors]);
-
-    const handleMonitorPositionChange = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string, x: number, y: number) => {
-        if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
-        if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
-        if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
-        if (type === 'sensing') setSensingMonitors(prev => prev.map(m => m.id === id ? { ...m, x, y } : m));
-    }, []);
-
-    const handleMonitorResize = useCallback((type: 'list' | 'table', id: string, width: number, height: number) => {
-        if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, width, height } : m));
-        if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, width, height } : m));
-    }, []);
-
-    const handleMonitorBringToFront = useCallback((type: 'variable' | 'list' | 'table' | 'sensing', id: string) => {
-        const vMax = Math.max(100, ...variableMonitors.map(m => m.zIndex || 100));
-        const lMax = Math.max(100, ...listMonitors.map(m => m.zIndex || 100));
-        const tMax = Math.max(100, ...tableMonitors.map(m => m.zIndex || 100));
-        const sMax = Math.max(100, ...sensingMonitors.map(m => m.zIndex || 100));
-        const maxZ = Math.max(vMax, lMax, tMax, sMax);
-        const newZ = maxZ + 1;
-
-        if (type === 'variable') setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
-        if (type === 'list') setListMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
-        if (type === 'table') setTableMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
-        if (type === 'sensing') setSensingMonitors(prev => prev.map(m => m.id === id ? { ...m, zIndex: newZ } : m));
-    }, [variableMonitors, listMonitors, tableMonitors, sensingMonitors]);
-
-    const handleVariableModeChange = useCallback((id: string, mode: 'normal' | 'large' | 'slider') => {
-        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, mode } : m));
-    }, []);
-
-    const handleVariableValueChange = useCallback((id: string, value: string | number) => {
-        setVariableMonitors(prev => {
-            const monitor = prev.find(m => m.id === id);
-            if (monitor) {
-                animationVM.setVariable(monitor.name, value);
-                return prev.map(m => m.id === id ? { ...m, value } : m);
-            }
-            return prev;
-        });
-    }, []);
-
-    const handleVariableSliderRangeChange = useCallback((id: string, min: number, max: number) => {
-        if (!Number.isFinite(min) || !Number.isFinite(max)) {
-            return;
-        }
-
-        const nextMin = Math.min(min, max);
-        const nextMax = Math.max(min, max);
-        setVariableMonitors(prev => prev.map(m => m.id === id ? { ...m, sliderMin: nextMin, sliderMax: nextMax } : m));
-    }, []);
-
-    const handleListAddItem = useCallback((listName: string, item: string) => {
-        setListMonitors(prev => prev.map(m => m.name === listName ? { ...m, items: [...m.items, item] } : m));
-        animationVM.addToList(listName, item);
-    }, []);
-
-    const handleListEditItem = useCallback((listName: string, index: number, value: string) => {
-        setListMonitors(prev => prev.map(m => m.name === listName ? {
-            ...m,
-            items: m.items.map((item, idx) => idx === index ? value : item)
-        } : m));
-        animationVM.replaceItemOfList(listName, index + 1, value);
-    }, []);
-
-    const handleListDeleteItem = useCallback((listName: string, index: number) => {
-        setListMonitors(prev => prev.map(m => m.name === listName ? {
-            ...m,
-            items: m.items.filter((_, idx) => idx !== index)
-        } : m));
-        animationVM.deleteOfList(listName, index + 1);
-    }, []);
-
-    // Bind AnimationVM execution callbacks to update React state
-    useEffect(() => {
-        animationVM.onShowVariable = (name) => {
-            setVariableMonitors(prev => {
-                const existing = prev.find(m => m.name === name);
-                if (existing) return prev.map(m => m.name === name ? { ...m, visible: true } : m);
-                // If the monitor doesn't exist, we can't create it here without the ID
-                return prev;
-            });
-        };
-        animationVM.onHideVariable = (name) => setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
-
-        animationVM.onShowList = (name) => {
-            setListMonitors(prev => {
-                const existing = prev.find(m => m.name === name);
-                if (existing) return prev.map(m => m.name === name ? { ...m, visible: true } : m);
-                return prev;
-            });
-        };
-        animationVM.onHideList = (name) => setListMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
-
-        animationVM.onShowTable = (name) => {
-            setTableMonitors(prev => {
-                const existing = prev.find(m => m.name === name);
-                if (existing) return prev.map(m => m.name === name ? { ...m, visible: true } : m);
-                return prev;
-            });
-        };
-        animationVM.onHideTable = (name) => setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, visible: false } : m));
-
-        // Ask-and-wait: VM calls this, returns a Promise that blocks execution
-        animationVM.onAskQuestion = (question: string) => {
-            return new Promise<string>((resolve) => {
-                setAskState({ isAsking: true, question, resolve });
-            });
-        };
-
-        // StopAll: when stopAll() is called from a block, clear the ask prompt UI
-        animationVM.onStopAll = () => {
-            setAskState(prev => {
-                if (prev.resolve) prev.resolve('');
-                return { isAsking: false, question: '', resolve: null };
-            });
-        };
-
-        animationVM.onVariableChange = (name, value) => {
-            setVariableMonitors(prev => prev.map(m => m.name === name ? { ...m, value } : m));
-        };
-
-        animationVM.onListChange = (name, value) => {
-            setListMonitors(prev => prev.map(m => m.name === name ? { ...m, items: value } : m));
-        };
-
-        animationVM.onTableChange = (name, data) => {
-            setTableMonitors(prev => prev.map(m => m.name === name ? { ...m, data } : m));
-        };
-
-        animationVM.onAnswerChange = (answer: string) => {
-            setSensingMonitors(prev => prev.map(m => m.name === 'answer' ? { ...m, value: answer } : m));
-        };
-
-        return () => {
-            animationVM.onShowVariable = undefined;
-            animationVM.onHideVariable = undefined;
-            animationVM.onShowList = undefined;
-            animationVM.onHideList = undefined;
-            animationVM.onShowTable = undefined;
-            animationVM.onHideTable = undefined;
-            animationVM.onAskQuestion = undefined;
-            animationVM.onStopAll = undefined;
-            animationVM.onVariableChange = undefined;
-            animationVM.onListChange = undefined;
-            animationVM.onTableChange = undefined;
-            animationVM.onAnswerChange = undefined;
-        };
-    }, []);
+    const {
+        variableMonitors, setVariableMonitors,
+        listMonitors, setListMonitors,
+        tableMonitors, setTableMonitors,
+        sensingMonitors, setSensingMonitors,
+        variableMonitorsRef, listMonitorsRef, tableMonitorsRef, sensingMonitorsRef,
+        handleMonitorPositionChange,
+        handleMonitorResize,
+        handleMonitorBringToFront,
+        handleVariableModeChange,
+        handleVariableValueChange,
+        handleVariableSliderRangeChange,
+        handleListAddItem,
+        handleListEditItem,
+        handleListDeleteItem,
+    } = useMonitors(workspaceRef, isLoadingWorkspaceRef, setToolboxUpdateKey, setAskState);
 
 
 
@@ -4642,7 +4013,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             // Reset block initialization guard so blocks are re-registered on next mount.
             // Without this, Junior mode's block definitions (e.g. looks_say with dropdown)
             // persist and clobber Intermediate's definitions (looks_say with MESSAGE input).
-            _blocklyInitialized = false;
+            resetBlocklyInitialized();
 
             clearInterval(sensingSyncInterval);
             animationVM.resetState();
