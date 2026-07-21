@@ -18,7 +18,7 @@ const IntermediateApp = lazy(() => {
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
-    return import('./IntermediateApp');
+    return import('./embed/IntermediateApp');
 });
 
 // @ts-ignore

@@ -4,126 +4,123 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useIsEmbedded } from './hooks/useIsEmbedded';
-import { STAGE_CONFIG } from './engine/StageConfig';
+import { useIsEmbedded } from '../hooks/useIsEmbedded';
+import { STAGE_CONFIG } from '../engine/StageConfig';
 
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
-import leaplabBlocksCss from './styles/Leaplab-blocks.css?inline'; // Import leap-style blocks CSS (inlined for dynamic injection)
-import './components/workspace/WorkspaceControls.css';
-import { arduinoToolbox } from './blocks/arduino-blocks';
+import leaplabBlocksCss from '../styles/Leaplab-blocks.css?inline'; // Import leap-style blocks CSS (inlined for dynamic injection)
+import '../components/workspace/WorkspaceControls.css';
 
-import { esp32Toolbox } from './blocks/esp32-blocks';
-
-import { animationToolbox } from './blocks/animation-blocks';
-import { COLORS } from './blocks/blockDefinitions';
-
-
-import { arduinoGenerator } from './generators/arduino-generator';
-
-import { AnimationCompiler } from './generators/animation-generator';
+import { COLORS } from '../blocks/blockDefinitions';
 
 
 
-import { migrateWorkspaceBlocks, migrateSingleBlock } from './utils/blocklyMigration';
+import { AnimationCompiler } from '../generators/animation-generator';
 
-import { animationVM } from './vm/AnimationVM';
-import type { CompiledScript } from './vm/AnimationVM';
-import { soundManager } from './engine/SoundManager';
 
-import { Sprite } from './stage/Sprite';
-import type { SpriteType } from './stage/Sprite';
 
-import Stage from './stage/Stage';
-import AskBar from './components/AskBar';
+import { migrateWorkspaceBlocks, migrateSingleBlock } from '../utils/blocklyMigration';
 
-import SpritePanel from './stage/SpritePanel';
+import { animationVM } from '../vm/AnimationVM';
+import type { CompiledScript } from '../vm/AnimationVM';
+import { soundManager } from '../engine/SoundManager';
 
-import MenuBar from './leapignite/client/components/MenuBar';
+import { Sprite } from '../stage/Sprite';
+import type { SpriteType } from '../stage/Sprite';
 
-import BoardSelectionModal from './leapignite/client/components/BoardSelectionModal';
+import Stage from '../stage/Stage';
+import AskBar from '../components/AskBar';
 
-import { PythonEditorTab } from './components/PythonEditorTab';
+import SpritePanel from '../stage/SpritePanel';
+
+import MenuBar from '../leapignite/client/components/MenuBar';
+
+import BoardSelectionModal from '../leapignite/client/components/BoardSelectionModal';
+
+import { PythonEditorTab } from '../components/PythonEditorTab';
 
 // Lazy load large components for better performance
-const BackdropLibrary = React.lazy(() => import('./components/BackdropLibrary'));
-const SpriteLibrary = React.lazy(() => import('./components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
-const JuniorExtensionLibrary = React.lazy(() => import('./leapignite/client/components/JuniorExtensionLibrary'));
+const BackdropLibrary = React.lazy(() => import('../components/BackdropLibrary'));
+const SpriteLibrary = React.lazy(() => import('../components/SpriteLibrary').then(m => ({ default: m.SpriteLibrary })));
+const JuniorExtensionLibrary = React.lazy(() => import('../leapignite/client/components/JuniorExtensionLibrary'));
 
 // Lazy load heavy tabs that import fabric.js and wav-encoder - prevents 60s startup delay
-const CostumesTab = React.lazy(() => import('./stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
-const SoundsTab = React.lazy(() => import('./stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
+const CostumesTab = React.lazy(() => import('../stage/CostumesTab').then(m => ({ default: m.CostumesTab })));
+const SoundsTab = React.lazy(() => import('../stage/SoundsTab').then(m => ({ default: m.SoundsTab })));
 
-import { TabErrorBoundary, SuspenseTab } from './embed/components/TabErrorBoundary';
-import { log } from './embed/utils/log';
-import { normalizeAssetPath, resolveAssetPath } from './embed/utils/assetPaths';
+import { TabErrorBoundary, SuspenseTab } from './components/TabErrorBoundary';
+import { log } from './utils/log';
+import { normalizeAssetPath, resolveAssetPath } from './utils/assetPaths';
 import {
     MORE_BLOCKS_CATEGORY_NAME,
     MORE_BLOCKS_CATEGORY_COLOUR,
-    isToolboxCategory,
-    normalizeCategoryClassName,
     createFlyoutCategoryLabel,
     createFlyoutSectionLabel,
     createMonitorReporterPlaceholder,
     createMoreBlocksCategory,
-    withCategoryHeaders,
-} from './embed/utils/toolboxHelpers';
-import { useMonitors } from './embed/hooks/useMonitors';
-import { useDialogHandlers } from './embed/hooks/useDialogHandlers';
-import { useWorkspaceManagement } from './embed/hooks/useWorkspaceManagement';
-import { useSpriteManagement } from './embed/hooks/useSpriteManagement';
-import { useSpriteOperations } from './embed/hooks/useSpriteOperations';
-import { useProjectOperations } from './embed/hooks/useProjectOperations';
-import { useAnimationControl } from './embed/hooks/useAnimationControl';
-import { initBlocklyOnce, extractBroadcastValues, fixCostumeDropdownValues, resetBlocklyInitialized, BLOCKLY_MEDIA_PATH } from './embed/utils/blocklyInit';
+} from './utils/toolboxHelpers';
+import { useMonitors } from './hooks/useMonitors';
+import { useDialogHandlers } from './hooks/useDialogHandlers';
+import { useEditorUI } from './hooks/useEditorUI';
+import { usePromptUtils } from './hooks/usePromptUtils';
+import { useToolbox } from './hooks/useToolbox';
+import { useWorkspaceChange } from './hooks/useWorkspaceChange';
+import { useWorkspaceManagement } from './hooks/useWorkspaceManagement';
+import { useSpriteManagement } from './hooks/useSpriteManagement';
+import { useSpriteOperations } from './hooks/useSpriteOperations';
+import { useProjectOperations } from './hooks/useProjectOperations';
+import { useAnimationControl } from './hooks/useAnimationControl';
+import { useHardwareControls } from './hooks/useHardwareControls';
+import { initBlocklyOnce, extractBroadcastValues, fixCostumeDropdownValues, resetBlocklyInitialized, BLOCKLY_MEDIA_PATH } from './utils/blocklyInit';
 
-import { stageManager } from './engine/StageManager';
-import { spriteManager } from './engine/SpriteManager';
-import { leapRuntime } from './runtime/leapRuntime';
-import { initRuntime, setActiveSpriteId, setFaceVideoElement } from './runtime/RuntimeBridge';
-import { hardwareAdapter } from './serial/HardwareAdapter';
+import { stageManager } from '../engine/StageManager';
+import { spriteManager } from '../engine/SpriteManager';
+import { leapRuntime } from '../runtime/leapRuntime';
+import { initRuntime, setActiveSpriteId, setFaceVideoElement } from '../runtime/RuntimeBridge';
+import { hardwareAdapter } from '../serial/HardwareAdapter';
 
-import SerialMonitor from './components/SerialMonitor';
+import SerialMonitor from '../components/SerialMonitor';
 
-import UploadModal from './components/UploadModal';
+import UploadModal from '../components/UploadModal';
 
-import type { SpriteEntry } from './components/SpriteLibrary';
+import type { SpriteEntry } from '../components/SpriteLibrary';
 
-import WorkspaceControls from './components/WorkspaceControls';
+import WorkspaceControls from '../components/WorkspaceControls';
 
-import WorkspaceTrash from './components/WorkspaceTrash';
+import WorkspaceTrash from '../components/WorkspaceTrash';
 
-import UnsavedWarningModal from './leapignite/client/components/UnsavedWarningModal';
-import GoalPopup from './leapignite/client/components/GoalPopup';
-import { getLessonConfig } from './leapignite/server/engine/LessonConfig';
-import { EXTENSIONS, registerExtensions } from './extensions/extensionDefinitions';
+import UnsavedWarningModal from '../leapignite/client/components/UnsavedWarningModal';
+import GoalPopup from '../leapignite/client/components/GoalPopup';
+import { getLessonConfig } from '../leapignite/server/engine/LessonConfig';
 
 
-import { fileService } from './Electra/Client/Src/services/FileService';
-import { useCloudProjectStore } from './store/cloudProjectStore';
-import { showToast } from './leapignite/client/components/Toast';
+
+import { fileService } from '../Electra/Client/Src/services/FileService';
+import { useCloudProjectStore } from '../store/cloudProjectStore';
+import { showToast } from '../leapignite/client/components/Toast';
 
 
 import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
 
 
-import { styles } from './styles/intermediateStyles';
-import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from './types/intermediateTypes';
-import { normalizeVariableMonitor } from './types/intermediateTypes';
+import { styles } from '../styles/intermediateStyles';
+import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from '../types/intermediateTypes';
+import { normalizeVariableMonitor } from '../types/intermediateTypes';
 
-import Loader from './components/Loader';
+import Loader from '../components/Loader';
 
 // Import dialog components
-import MakeVariableDialog from './components/MakeVariableDialog';
-import MakeListDialog from './components/MakeListDialog';
-import MakeTableDialog from './components/MakeTableDialog';
-import MakeBlockDialog from './components/MakeBlockDialog';
-import type { BlockArgument } from './components/MakeBlockDialog';
+import MakeVariableDialog from '../components/MakeVariableDialog';
+import MakeListDialog from '../components/MakeListDialog';
+import MakeTableDialog from '../components/MakeTableDialog';
+import MakeBlockDialog from '../components/MakeBlockDialog';
+import type { BlockArgument } from '../components/MakeBlockDialog';
 
 // Import monitor components
-import VariableMonitor from './components/VariableMonitor';
-import ListMonitor from './components/ListMonitor';
-import TableMonitor from './components/TableMonitor';
+import VariableMonitor from '../components/VariableMonitor';
+import ListMonitor from '../components/ListMonitor';
+import TableMonitor from '../components/TableMonitor';
 
 
 
@@ -306,48 +303,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const [installedExtensions, setInstalledExtensions] = useState<Set<string>>(new Set());
     const installedExtensionsRef = useRef<Set<string>>(new Set());
 
-    // ─── EXTENSIONS ──────────────────────────────────────────────────────────
-    const handleAddExtension = useCallback((extId: string) => {
-        if (!workspaceRef.current) return;
-
-        console.log(`[Extension] Adding extension: ${extId}`);
-
-        // Normalize ID (face-detection -> face_detection)
-        const id = extId.replace(/-/g, '_');
-        const ext = EXTENSIONS[id];
-
-        if (ext) {
-            // 1. Register blocks and generators
-            registerExtensions(Blockly, [id]);
-
-            // 2. Mark installed
-            if (!installedExtensionsRef.current.has(id)) {
-                installedExtensionsRef.current = new Set([...installedExtensionsRef.current, id]);
-                setInstalledExtensions(new Set(installedExtensionsRef.current));
-                console.log(`[Extension] ${ext.name} marked as installed.`);
-            }
-        } else {
-            console.warn(`[Extension] Unknown extension ID: ${extId}`);
-        }
-    }, [workspaceRef]);
-
-    // Listen for extension iframe messages
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'ADD_EXTENSION') {
-                const extId = event.data.extension || event.data.extensionId || event.data.ext;
-                if (extId) {
-                    handleAddExtension(extId);
-                    setShowExtensionLibrary(false);
-                }
-            }
-        };
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, [handleAddExtension]);
-
-
-
     const [isDraggingSprite, setIsDraggingSprite] = useState(false);
 
     const [stageLayout, setStageLayout] = useState<'normal' | 'small' | 'large'>('normal');
@@ -360,40 +315,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    const handleFullscreen = () => {
-        if (!isFullscreen) {
-            setIsFullscreen(true);
-            const scaleX = window.innerWidth / 480;
-            const scaleY = (window.innerHeight - 48) / 310;
-            setFullscreenScale(Math.min(scaleX, scaleY));
-        } else {
-            setIsFullscreen(false);
-            setFullscreenScale(1);
-        }
-    };
 
-
-
-    useEffect(() => {
-
-        const updateScale = () => {
-            if (isFullscreen) {
-                const scaleX = window.innerWidth / 480;
-                const scaleY = (window.innerHeight - 48) / 310;
-                setFullscreenScale(Math.min(scaleX, scaleY));
-            } else {
-                setFullscreenScale(1);
-            }
-        };
-
-        updateScale();
-        window.addEventListener('resize', updateScale);
-
-        return () => {
-            window.removeEventListener('resize', updateScale);
-        };
-
-    }, [isFullscreen]);
 
 
 
@@ -436,19 +358,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     // ═══════════════════════════════════════════════════════════════════════
 
-    const handleBackdropSelect = async (name: string, src: string) => {
 
-        await stageManager.addBackdrop(name, src);
-
-        stageManager.setBackdrop(name); // Force the stage to switch to this backdrop
-
-        setShowBackdropLibrary(false);
-
-        setBackdropRefresh(prev => prev + 1);
-
-        window.dispatchEvent(new Event('leap-stage-update')); // Ensure canvas repaints
-
-    };
 
 
 
@@ -502,10 +412,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         resolve: ((answer: string) => void) | null;
     }>({ isAsking: false, question: '', resolve: null });
 
-    const handleAskSubmit = useCallback((answer: string) => {
-        if (askState.resolve) askState.resolve(answer);
-        setAskState({ isAsking: false, question: '', resolve: null });
-    }, [askState.resolve]);
+
 
     const {
         variableMonitors, setVariableMonitors,
@@ -524,7 +431,49 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         handleListDeleteItem,
     } = useMonitors(workspaceRef, isLoadingWorkspaceRef, setToolboxUpdateKey, setAskState);
 
+    const {
+        handleAddExtension,
+        handleFullscreen,
+        handleBackdropSelect,
+    } = useEditorUI(
+        workspaceRef, installedExtensionsRef, setInstalledExtensions,
+        isFullscreen, setIsFullscreen, setFullscreenScale,
+        setShowBackdropLibrary, setBackdropRefresh,
+    );
 
+    const { handleWorkspaceChange } = useWorkspaceChange(
+        editorMode, appMode,
+        workspaceRef, isLoadingWorkspaceRef,
+        setVariableMonitors, setListMonitors, setTableMonitors,
+        setGeneratedCode, setCompiledScripts, setToolboxUpdateKey,
+        activeSpriteIdRef, spriteWorkspacesRef,
+    );
+
+    const { getCurrentToolbox } = useToolbox(
+        editorMode, selectedBoard, selectedSpriteId,
+        installedExtensions, installedExtensionsRef,
+    );
+
+    const { handleAskSubmit, handlePromptSubmit, handlePromptCancel } = usePromptUtils(
+        askState, setAskState,
+        promptState, setPromptState,
+        workspaceRef, variableType, variableScope, promptInput,
+    );
+
+    // Listen for extension iframe messages
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'ADD_EXTENSION') {
+                const extId = event.data.extension || event.data.extensionId || event.data.ext;
+                if (extId) {
+                    handleAddExtension(extId);
+                    setShowExtensionLibrary(false);
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [handleAddExtension]);
 
     // Unsaved Changes Modal State
 
@@ -609,83 +558,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    const handlePromptSubmit = () => {
 
-        if (promptState.callback) {
-
-            // For variable creation, we might handle it differently but keeping simple string callback for now
-
-            // Code utilizing 'CREATE_VARIABLE' callback needs to handle the actual creation
-
-            // if we are in 'variable' mode, we need to create the variable directly here
-
-
-
-            if (promptState.type === 'variable' && workspaceRef.current) {
-
-                // Manually create variable since we bypassed the standard flow
-
-                // Standard prompt callback expects a string name
-
-                const ws = workspaceRef.current;
-
-                const newVar = ws.getVariableMap().createVariable(promptInput, variableType); // Type is loosely used here
-
-                if (newVar) {
-
-                    // If scoped 'local', we'd need custom handling, but effectively global for now
-
-                    if (variableScope === 'local') {
-
-                        console.warn('Local variables not fully supported, created as global');
-
-                    }
-
-                }
-
-            } else if (promptState.type === 'list' && workspaceRef.current) {
-
-                // Manually create list
-
-                const ws = workspaceRef.current;
-
-                ws.getVariableMap().createVariable(promptInput, 'list'); // 'list' type is crucial
-
-            } else if (promptState.type === 'table' && workspaceRef.current) {
-
-                // Manually create table
-
-                const ws = workspaceRef.current;
-
-                ws.getVariableMap().createVariable(promptInput, 'table'); // 'table' type
-
-            }
-
-
-
-            // If it was a standard prompt (or simple variable prompt)
-
-            promptState.callback(promptInput);
-
-        }
-
-        setPromptState(prev => ({ ...prev, isOpen: false }));
-
-    };
-
-
-
-    const handlePromptCancel = () => {
-
-        if (promptState.callback) {
-
-            promptState.callback(null);
-
-        }
-
-        setPromptState(prev => ({ ...prev, isOpen: false }));
-
-    };
 
 
 
@@ -714,340 +587,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-
-    const getCurrentToolbox = useCallback(() => {
-
-        // Build the extension categories to inject after "My Blocks"
-        const extensionCategories: any[] = [];
-        const ext = installedExtensionsRef.current;
-
-        console.log('[Toolbox] Building toolbox. Installed extensions:', Array.from(ext));
-
-        ext.forEach(id => {
-            const definition = EXTENSIONS[id];
-            if (definition) {
-                extensionCategories.push({
-                    kind: 'leapbloxCategory',
-                    name: definition.name,
-                    colour: definition.color,
-                    contents: definition.getToolbox(),
-                });
-            }
-        });
-
-        // Helper: inject extension categories immediately after "My Blocks"
-        const injectExtensions = (contents: any[]) => {
-            if (extensionCategories.length === 0) return contents;
-            const myBlocksIdx = contents.findIndex((c: any) => c.name === 'My Blocks');
-            if (myBlocksIdx === -1) return [...contents, ...extensionCategories];
-            return [
-                ...contents.slice(0, myBlocksIdx + 1),
-                ...extensionCategories,
-                ...contents.slice(myBlocksIdx + 1),
-            ];
-        };
-
-        if (editorMode === 'stage') {
-
-            // Always strip the built-in Pen category — extensions inject their own
-            const filteredContents = animationToolbox.contents.filter((cat: any) => cat.name !== 'Pen');
-
-
-
-            if (selectedSpriteId === 'stage') {
-
-                return {
-
-                    ...animationToolbox,
-
-                    contents: withCategoryHeaders(
-                        injectExtensions(filteredContents
-
-                            .filter((cat: any) => cat.name !== 'Motion')
-
-                            .map((cat: any) => {
-
-                                let contents = cat.contents;
-                                if (!contents) return cat;
-
-                                if (cat.name === 'Looks') {
-
-                                    contents = contents.filter((item: any) => {
-
-                                        if (item.kind !== 'block') return true;
-
-                                        const t = item.type;
-
-                                        // Stage does not have costumes, size, or layers in the same way sprites do
-
-                                        return !t.startsWith('looks_say') && !t.startsWith('looks_think') &&
-
-                                            t !== 'looks_show' && t !== 'looks_hide' &&
-
-                                            t !== 'looks_switch_costume' && t !== 'looks_next_costume' &&
-
-                                            t !== 'looks_set_size' && t !== 'looks_change_size' &&
-
-                                            t !== 'looks_go_to_layer' && t !== 'looks_go_forward_layers' &&
-
-                                            t !== 'looks_size' && !t.startsWith('looks_costume_');
-
-                                    });
-
-                                } else if (cat.name === 'Events') {
-
-                                    contents = contents.map((item: any) =>
-
-                                        (item.kind === 'block' && item.type === 'event_sprite_clicked')
-
-                                            ? { ...item, type: 'event_stage_clicked' } : item
-
-                                    );
-
-                                } else if (cat.name === 'Control') {
-
-                                    contents = contents.filter((item: any) =>
-
-                                        item.kind !== 'block' || item.type !== 'control_delete_clone'
-
-                                    );
-
-                                } else if (cat.name === 'Sensing') {
-
-                                    contents = contents.filter((item: any) => {
-
-                                        if (item.kind !== 'block') return true;
-
-                                        const t = item.type;
-
-                                        // Stage cannot touch other things or have distance to them
-
-                                        return t !== 'sensing_touching' && t !== 'sensing_touching_color' &&
-
-                                            t !== 'sensing_color_touching_color' && t !== 'sensing_distance_to';
-
-                                    });
-
-                                }
-
-                                return { ...cat, contents };
-
-                            })
-                        ))
-
-                };
-
-            }
-
-            // Return animation toolbox without Pen category for all intermediate sessions
-
-            return {
-
-                ...animationToolbox,
-
-                contents: withCategoryHeaders(injectExtensions(filteredContents))
-
-            };
-
-        }
-
-        const hardwareToolbox = selectedBoard === 'esp32' ? esp32Toolbox : arduinoToolbox;
-
-        return {
-            ...hardwareToolbox,
-            contents: withCategoryHeaders(hardwareToolbox.contents)
-        };
-
-    }, [editorMode, selectedBoard, selectedSpriteId, installedExtensions]);
-
-    // ═══════════════════════════════════════════════════════════════════════
-
-    // WORKSPACE CHANGE HANDLER
-
-    // ═══════════════════════════════════════════════════════════════════════
-
-    const handleWorkspaceChange = useCallback((event: Blockly.Events.Abstract) => {
-
-        if (event.isUiEvent) return;
-
-        if (!workspaceRef.current) return;
-
-        if (isLoadingWorkspaceRef.current) {
-
-            console.log('[APP] Ignoring workspace change during load phase');
-
-            return;
-
-        }
-
-
-        // Handle Variable Creation, Renaming, and Deletion
-        if (event.type === Blockly.Events.VAR_CREATE) {
-            const createEvent = event as any;
-            const varName = createEvent.varName || createEvent.json?.name;
-            const varType = createEvent.json?.type || '';
-
-            if (varName) {
-                if (varType === '' || varType === 'Number' || varType === 'String') {
-                    setVariableMonitors(prev => {
-                        if (prev.find(m => m.name === varName)) return prev;
-                        return [...prev, {
-                            id: `var_${Date.now()}`,
-                            name: varName,
-                            type: 'Number',
-                            scope: 'all_sprites' as const,
-                            visible: false,
-                            value: 0,
-                            x: 10, y: 10 + (prev.length * 30)
-                        }];
-                    });
-                } else if (varType === 'list') {
-                    setListMonitors(prev => {
-                        if (prev.find(m => m.name === varName)) return prev;
-                        return [...prev, {
-                            id: `list_${Date.now()}`,
-                            name: varName,
-                            scope: 'all_sprites' as const,
-                            visible: true,
-                            x: 10, y: 10 + (prev.length * 30),
-                            items: [],
-                            width: 100, height: 200
-                        } as ListMonitorState];
-                    });
-                } else if (varType === 'table') {
-                    setTableMonitors(prev => {
-                        if (prev.find(m => m.name === varName)) return prev;
-                        return [...prev, {
-                            id: `table_${Date.now()}`,
-                            name: varName,
-                            scope: 'all_sprites' as const,
-                            visible: true,
-                            x: 10, y: 10 + (prev.length * 30),
-                            data: [],
-                            rows: 0, cols: 0,
-                            width: 250, height: 200
-                        } as TableMonitorState];
-                    });
-                }
-                setToolboxUpdateKey(k => k + 1);
-            }
-        } else if (event.type === Blockly.Events.VAR_RENAME) {
-            const renameEvent = event as any;
-            const oldName = renameEvent.oldName;
-            const newName = renameEvent.newName;
-
-            setVariableMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
-            setListMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
-            setTableMonitors(prev => prev.map(m => m.name === oldName ? { ...m, name: newName } : m));
-        } else if (event.type === Blockly.Events.VAR_DELETE) {
-            const deleteEvent = event as any;
-            const deletedName = deleteEvent.varName;
-
-            setVariableMonitors(prev => prev.filter(m => m.name !== deletedName));
-            setListMonitors(prev => prev.filter(m => m.name !== deletedName));
-            setTableMonitors(prev => prev.filter(m => m.name !== deletedName));
-            setToolboxUpdateKey(k => k + 1);
-        }
-
-        try {
-
-            if (editorMode === 'upload') {
-
-                // Generate Arduino C++ code
-
-                const code = arduinoGenerator.workspaceToCode(workspaceRef.current);
-
-                const formattedCode = `// LeapBlocks - Arduino Code\n\n${code || 'void setup() {\n  // Setup code here\n}\n\nvoid loop() {\n  // Loop code here\n}'}`;
-
-                setGeneratedCode(formattedCode);
-
-            } else {
-
-                // Compile animation scripts
-
-                console.log('[APP] Workspace changed, recompiling scripts...');
-
-                // IMPORTANT: use activeSpriteIdRef to avoid stale closures during sprite switches
-                const compileTargetId = activeSpriteIdRef.current;
-
-                console.log('[APP] AppMode:', appMode, 'editorMode:', editorMode, 'compileTargetId:', compileTargetId);
-
-                const liveSprites = spriteManager.getAllSprites();
-                console.log('[APP] Sprites available:', liveSprites.map(s => ({ id: s.id, name: s.name })));
-
-
-
-                const sprite = liveSprites.find(s => s.id === compileTargetId);
-
-                if (sprite) {
-
-                    console.log('[APP] Compiling for sprite:', sprite.id, sprite.name);
-
-                    const compiler = new AnimationCompiler(sprite.id);
-
-                    const scripts = compiler.compile(workspaceRef.current);
-
-                    console.log('[APP] Compiled', scripts.length, 'scripts');
-
-                    scripts.forEach((s, i) => {
-
-                        console.log(`[APP]   Script ${i}: trigger=${s.trigger}, steps=${s.steps.length}`);
-
-                        s.steps.forEach((step, j) => {
-
-                            console.log(`[APP]     Step ${j}:`, step.type);
-
-                        });
-
-                    });
-
-                    // Update global compiled scripts for this sprite only
-                    setCompiledScripts(prev => {
-                        const otherSpritesScripts = prev.filter(s => s.spriteId !== sprite.id);
-                        return [...otherSpritesScripts, ...scripts];
-                    });
-
-                    // SYNC: Update the Sprite object's internal script registry
-                    // This allows the AnimationVM to find scripts even when the sprite is not currently selected.
-                    sprite.setScripts(scripts);
-
-                    const modeLabel = 'Stage Mode';
-
-                    setGeneratedCode(`// ${modeLabel} - ${scripts.length} script(s) compiled\n// Click 🏳️ to run animation`);
-
-                } else {
-
-                    console.log('[APP] ✗ No sprite selected, cannot compile');
-
-                    setGeneratedCode('// Add a sprite to start programming!');
-
-                }
-
-            }
-
-            // Auto-save workspace for current sprite on every meaningful change
-
-            // IMPORTANT: use activeSpriteIdRef to avoid closure staleness during switches
-
-            const activeId = activeSpriteIdRef.current;
-
-            if (activeId && workspaceRef.current) {
-
-                const json = Blockly.serialization.workspaces.save(workspaceRef.current);
-
-                spriteWorkspacesRef.current.set(activeId, json);
-
-            }
-
-        } catch (e) {
-
-            console.error('[APP] Code generation error:', e);
-
-            log.generator('Code generation error', e);
-
-        }
-
-    }, [editorMode, appMode, setToolboxUpdateKey]);
 
 
 
@@ -1713,255 +1252,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // HARDWARE CONTROLS
-    // ═══════════════════════════════════════════════════════════════════════
-    const refreshPorts = useCallback(async () => {
-        try {
-            let portList: any[] = [];
-            const electronAPI = (window as any).electronAPI;
-            if (electronAPI?.getPorts) {
-                portList = await electronAPI.getPorts();
-                setPorts(portList);
-            } else {
-                // Mock port for web demo
-                portList = [{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }];
-                setPorts(portList);
-            }
-        } catch (e) {
-            addLog('Failed to scan ports');
-        }
-    }, [addLog]);
-
-    // Auto-refresh ports every 5 seconds when in upload mode and no port is selected
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (editorMode === 'upload' && !selectedPort && !isConnected) {
-            timer = setInterval(() => {
-                const electronAPI = (window as any).electronAPI;
-                if (electronAPI?.getPorts) {
-                    electronAPI.getPorts().then((portList: any[]) => {
-                        setPorts(portList);
-                    }).catch(() => { });
-                }
-            }, 5000);
-        }
-        return () => {
-            if (timer) clearInterval(timer);
-        };
-    }, [editorMode, selectedPort, isConnected]);
-
-    // Auto-reconnect when baud rate changes while connected
-    useEffect(() => {
-        if (isConnected && selectedPort) {
-            log.app(`Baud rate changed to ${baudRate}, reconnecting...`);
-            const timer = setTimeout(() => {
-                handleConnect(); // Toggle off
-                setTimeout(() => {
-                    handleConnect(); // Toggle back on with new baud
-                }, 500);
-            }, 100);
-            return () => clearTimeout(timer);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [baudRate]);
-
-    const handleConnect = useCallback(async () => {
-        if (!selectedPort) {
-            addLog('Select a port first');
-            return;
-        }
-
-        if (selectedPort === 'BRIDGE_DETECTED') {
-            addLog('⚠ Device detected but no COM port assigned. Please install drivers or try a different USB cable.');
-            return;
-        }
-
-        if (isConnected) {
-            const electronAPI = (window as any).electronAPI;
-            if (electronAPI?.disconnectPort) {
-                const result = await electronAPI.disconnectPort();
-                if (result.success) {
-                    setIsConnected(false);
-                    addLog(`Disconnected from ${selectedPort}`);
-                }
-            } else {
-                setIsConnected(false);
-                addLog(`Disconnected from ${selectedPort}`);
-            }
-        }
-
-        try {
-            const electronAPI = (window as any).electronAPI;
-            if (electronAPI?.connectPort) {
-                const result = await electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
-                if (result.success) {
-                    setIsConnected(true);
-                    addLog(`Connected to ${selectedPort} at ${baudRate} baud`);
-                } else {
-                    addLog(`Connection failed: ${result.error}`);
-                }
-            } else if (selectedPort === 'WEB_DEMO') {
-                setIsConnected(true);
-                addLog('Connected to LeapBlocks Web (Simulation Mode)');
-            } else {
-                addLog('Serial connection requires LeapBlocks Desktop');
-            }
-        } catch (err) {
-            addLog('Connection error occurred');
-            console.error(err);
-        }
-    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog]);
-
-    const handleSendSerial = useCallback(async (data: string) => {
-        if (!isConnected) return;
-        try {
-            const electronAPI = (window as any).electronAPI;
-            if (electronAPI?.sendSerial) {
-                await electronAPI.sendSerial(data);
-                setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
-            } else if (selectedPort === 'WEB_DEMO') {
-                setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
-            }
-        } catch (e) {
-            addLog('Failed to send');
-        }
-    }, [isConnected, selectedPort, addLog]);
-
-    const handleUpload = useCallback(async () => {
-        if (!generatedCode || isUploading) return;
-
-        if (!selectedPort) {
-            addLog('No port selected!');
-            alert('⚠️ No port selected!\n\nPlease connect your board and select a COM port.');
-            return;
-        }
-
-        // Auto-disconnect if serial is connected
-        const electronAPI = (window as any).electronAPI;
-        if (isConnected) {
-            addLog('Disconnecting serial for upload...');
-            await window.electronAPI.disconnectPort();
-
-            setIsConnected(false);
-
-
-
-            // Critical delay: Windows needs time to physically release the COM port 
-
-            // before avrdude sweeps it for compiling/uploading to prevent getsync() errors.
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-        }
-
-
-
-        setIsUploading(true);
-
-        setUploadProgress('Uploading...');
-
-        addLog('Starting upload...');
-
-
-
-        // Map board ID to FQBN
-
-        const fqbnMap: Record<string, string> = {
-
-            'arduino_uno': 'arduino:avr:uno',
-
-            'arduino_mega': 'arduino:avr:mega',
-
-            'arduino_nano': 'arduino:avr:nano',
-
-            'esp32': 'esp32:esp32:esp32c3', // ESP32 boards now use ESP32-C3 RISC-V simulation
-
-        };
-
-        const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
-
-
-
-        try {
-
-            const result = await window.electronAPI.uploadCode(generatedCode, selectedPort, fqbn);
-
-            if (result.success) {
-
-                addLog('Upload complete!');
-
-                setUploadProgress('Upload complete!');
-
-
-
-                // Always auto-connect serial after successful upload to show sensor data
-
-                if (selectedPort) {
-
-                    addLog('Connecting serial monitor...');
-
-                    setActiveTab('serial'); // Auto-switch to serial monitor tab
-
-                    setTimeout(async () => {
-
-                        try {
-
-                            const reconnectResult = await window.electronAPI.connectPort(selectedPort, baudRate, selectedBoard);
-
-                            if (reconnectResult.success) {
-
-                                setIsConnected(true);
-
-                                addLog('Serial monitor connected — showing live data');
-
-                            }
-
-                        } catch (reconnectErr) {
-
-                            console.error('Auto-reconnect failed:', reconnectErr);
-
-                        }
-
-                        setIsUploading(false); // Close modal AFTER reconnect attempt
-
-                    }, 2000); // 2s delay to allow board to initialize after upload
-
-                } else {
-
-                    setIsUploading(false);
-
-                }
-
-            } else {
-
-                let errorMsg = result.error || 'Unknown error occurred';
-
-                if (errorMsg.includes('busy') || errorMsg.includes('Access is denied')) {
-
-                    errorMsg += "\nTIP: Close any other serial monitors or wait 2 seconds and try again.";
-
-                }
-
-                addLog(`Upload failed: ${errorMsg}`);
-
-                setUploadProgress(`Failed: ${errorMsg}`);
-
-                setIsUploading(false);
-
-            }
-
-        } catch (e) {
-
-            addLog('Upload error');
-
-            setUploadProgress('Upload error');
-
-            setIsUploading(false);
-
-        }
-
-    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate]);
+    const {
+        refreshPorts,
+        handleConnect,
+        handleSendSerial,
+        handleUpload,
+    } = useHardwareControls(
+        editorMode, selectedPort, isConnected, baudRate, selectedBoard,
+        generatedCode, isUploading,
+        setPorts, setIsConnected, setSerialMessages, setIsUploading,
+        setUploadProgress, setActiveTab, addLog
+    );
 
 
 
