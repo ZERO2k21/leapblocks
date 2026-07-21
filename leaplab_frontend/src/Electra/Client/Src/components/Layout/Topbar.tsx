@@ -167,7 +167,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
       <div
         style={{ paddingLeft: '2px' }}
-        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]`}
+        className={`flex items-center justify-between h-14 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]`}
       >
         {/* Left section */}
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
@@ -322,7 +322,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
 
         {/* Center section */}
-        <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
+        <div className="flex items-center justify-center gap-4 px-4 flex-1 min-w-0">
           <div className="hidden md:flex items-center gap-4">{centerContent}</div>
 
           <div

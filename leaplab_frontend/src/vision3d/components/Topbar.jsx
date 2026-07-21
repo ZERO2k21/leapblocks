@@ -125,7 +125,7 @@ export const Topbar = ({
 
       <div
         style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
-        className="flex items-center justify-between h-12 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
+        className="flex items-center justify-between h-14 pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
@@ -148,7 +148,7 @@ export const Topbar = ({
             <span className="text-lg font-black tracking-[0.08em] font-sans ml-2.5 text-white">VISION 3D</span>
           </div>
  
-          <div className="hidden min-[1440px]:flex items-center gap-3 h-full">
+          <div className="hidden min-[1440px]:flex items-center gap-5 h-full">
             {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
               <button
@@ -238,7 +238,7 @@ export const Topbar = ({
         </div>
  
         {/* Center section */}
-        <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
+        <div className="flex items-center justify-center gap-4 px-4 flex-1 min-w-0">
           <div
             style={{ paddingLeft: '24px' }}
             className="flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 bg-[#08143a]/55 border-[#93c5fd]/20"
