@@ -1,13 +1,13 @@
 import { getTarget, wait } from './common';
 
-export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
+export default function defineExtensionBlocks(Blockly: any, javascriptGenerator: any): void {
     if (!Blockly || !javascriptGenerator) return;
 
     // Face Detection Blocks (Color: Redish #D43D41)
 
     // 1. Camera Switch
     Blockly.Blocks['fd_camera'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("📷", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([["On", "on"], ["Off", "off"], ["Flip", "flip"]]), "ACTION");
@@ -16,14 +16,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['fd_camera'] = (block) => {
+    javascriptGenerator.forBlock['fd_camera'] = (block: any) => {
         const action = block.getFieldValue("ACTION");
         return `if(window.fdCameraToggle) window.fdCameraToggle("${action}");\n${wait()}`;
     };
 
     // 2. Analyze Image
     Blockly.Blocks['fd_analyze'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("👤", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([["Analyze", "analyze"], ["Show Detection", "show"], ["Hide Detection", "hide"]]), "ACTION");
@@ -32,14 +32,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['fd_analyze'] = (block) => {
+    javascriptGenerator.forBlock['fd_analyze'] = (block: any) => {
         const action = block.getFieldValue("ACTION");
         return `if(window.fdAnalyze) window.fdAnalyze("${action}");\n${wait()}`;
     };
 
     // 3. Count Faces
     Blockly.Blocks['fd_count'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("👥", "junior-block-icon"))
                 .appendField();
@@ -54,7 +54,7 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
 
     // 4. Guess Emotion
     Blockly.Blocks['fd_guess_emotion'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("🙂", "junior-block-icon"))
                 .appendField();
@@ -69,7 +69,7 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
 
     // 5. Feature detect (Eye L dropdown)
     Blockly.Blocks['fd_feature'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("👁️", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([
@@ -84,14 +84,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['fd_feature'] = (block) => {
+    javascriptGenerator.forBlock['fd_feature'] = (block: any) => {
         const feature = block.getFieldValue("FEATURE");
         return `window.say(${getTarget()}, "Found " + "${feature}");\n${wait()}`;
     };
 
     // 6. When Emotion (Smile dropdown) Hat Block
     Blockly.Blocks['fd_when_emotion'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("🎭", "junior-icon-large"))
                 .appendField(new Blockly.FieldDropdown([
@@ -116,7 +116,7 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
 
     // 1. Camera Switch (Hand Pose)
     Blockly.Blocks['hp_camera'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("📷", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([["On", "on"], ["Off", "off"], ["Flip", "flip"]]), "ACTION");
@@ -125,14 +125,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['hp_camera'] = (block) => {
+    javascriptGenerator.forBlock['hp_camera'] = (block: any) => {
         const action = block.getFieldValue("ACTION");
         return `if(window.hpCameraToggle) window.hpCameraToggle("${action}");\n${wait()}`;
     };
 
     // 2. Analyze Hand
     Blockly.Blocks['hp_analyze'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("✋", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([["Show Detection", "show"], ["Hide Detection", "hide"]]), "ACTION");
@@ -141,14 +141,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['hp_analyze'] = (block) => {
+    javascriptGenerator.forBlock['hp_analyze'] = (block: any) => {
         const action = block.getFieldValue("ACTION");
         return `if(window.hpAnalyze) window.hpAnalyze("${action}");\n${wait()}`;
     };
 
     // 3. Move with Hand (Finger Landmark)
     Blockly.Blocks['hp_move_with'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("👆", "junior-block-icon"))
                 .appendField(new Blockly.FieldDropdown([
@@ -164,15 +164,14 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
             this.setColour("#D43D41");
         }
     };
-    javascriptGenerator.forBlock['hp_move_with'] = (block) => {
+    javascriptGenerator.forBlock['hp_move_with'] = (block: any) => {
         const finger = block.getFieldValue("FINGER");
-        // Move active sprite to the finger's position on screen
         return `if(window.hpMoveSpriteToFinger) window.hpMoveSpriteToFinger(${getTarget()}, "${finger}");\n${wait()}`;
     };
 
     // 4. Guess Finger Sign
     Blockly.Blocks['hp_guess_sign'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("✌️", "junior-block-icon"))
                 .appendField();
@@ -187,7 +186,7 @@ export default function defineExtensionBlocks(Blockly, javascriptGenerator) {
 
     // 5. When Hand Sign (Event Hat Block)
     Blockly.Blocks['hp_when_sign'] = {
-        init: function () {
+        init: function (this: any) {
             this.appendDummyInput()
                 .appendField(new Blockly.FieldLabel("🖐️", "junior-icon-large"))
                 .appendField(new Blockly.FieldDropdown([
