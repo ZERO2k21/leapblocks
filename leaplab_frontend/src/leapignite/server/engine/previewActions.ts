@@ -1,9 +1,21 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const previewActions = {
+declare global {
+    interface Window {
+        moveRelative?: (spriteId: string, dir: string, steps: number) => void;
+        turnRight?: (spriteId: string, times: number) => void;
+        turnLeft?: (spriteId: string, times: number) => void;
+        jump?: (spriteId: string, times: number) => void;
+        penDown?: (spriteId: string) => void;
+        penUp?: (spriteId: string) => void;
+        setPenColor?: (color: string) => void;
+        setPenSize?: (size: number) => void;
+        stampSprite?: (spriteId: string) => void;
+        clearPen?: () => void;
+        showFeedback?: (msg: string) => void;
+        activeSpriteId?: string;
+    }
+}
+
+export const previewActions: Record<string, (block: any) => void> = {
     move_right: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "RIGHT", Number(b?.getFieldValue("STEPS") || 1)),
     move_left: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "LEFT", Number(b?.getFieldValue("STEPS") || 1)),
     move_up: (b) => window.moveRelative(window.activeSpriteId || "robot_default", "UP", Number(b?.getFieldValue("STEPS") || 1)),
@@ -14,7 +26,6 @@ export const previewActions = {
 
     jump: (b) => window.jump(window.activeSpriteId || "robot_default", Number(b?.getFieldValue("TIMES") || 1)),
 
-    // --- Pen Previews ---
     pen_down: () => {
         const tid = window.activeSpriteId || "robot_default";
         if (window.penDown) window.penDown(tid);

@@ -1,15 +1,6 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import { WorkspaceValidator } from "./WorkspaceValidator";
 import { showToast } from "../../client/components/Toast";
 
-/**
- * Custom error class to signal execution stop
- * This is thrown by the stop block to immediately halt execution
- */
 class ExecutionStop extends Error {
     constructor(message = "Execution stopped by Stop block") {
         super(message);
@@ -17,9 +8,6 @@ class ExecutionStop extends Error {
     }
 }
 
-/**
- * Custom error class to signal execution abort (full reset)
- */
 class ExecutionAbort extends Error {
     constructor(message = "Execution aborted") {
         super(message);
@@ -27,28 +15,56 @@ class ExecutionAbort extends Error {
     }
 }
 
-/**
- * Junior Interpreter Controller
- * managing threads and safe execution.
- */
+interface InterpreterCallbacks {
+    onRun?: () => void;
+    onStop?: () => void;
+    onHighlight?: (blockId: string | null, spriteId?: string) => void;
+}
+
+interface SpriteEntry {
+    spriteId: string;
+    blocks: any;
+}
+
+type ValidTypes = string | string[];
+
+declare global {
+    interface Window {
+        checkPause?: () => Promise<void>;
+        isActive?: () => boolean;
+        pauseExecution?: () => void;
+        highlightBlock?: (blockId: string | null, spriteId?: string) => void;
+        activeSpriteId?: string;
+    }
+}
+
 export class Interpreter {
-    constructor(workspaceRef, generator, callbacks) {
+    workspaceRef: React.RefObject<any>;
+    generator: any;
+    callbacks: InterpreterCallbacks;
+    runningThreads: Set<any>;
+    isActive: boolean;
+    wasPaused: boolean;
+    isPaused: boolean;
+    pausePromise: Promise<void> | null;
+    resolvePause: (() => void) | null;
+    activeThreadsCount: number;
+    _broadcastHandler?: ((e: CustomEvent) => void) | null;
+    _broadcastBlockly?: any;
+    _getSpriteEntries?: () => SpriteEntry[];
+
+    constructor(workspaceRef: React.RefObject<any>, generator: any, callbacks: InterpreterCallbacks) {
         this.workspaceRef = workspaceRef;
         this.generator = generator;
-        this.callbacks = callbacks; // { onRun:(), onStop:(), onHighlight:(id), ... }
+        this.callbacks = callbacks;
         this.runningThreads = new Set();
         this.isActive = false;
-        this.wasPaused = false; // Track if execution was paused by stop block
-
-        // Pause/Resume state
+        this.wasPaused = false;
         this.isPaused = false;
         this.pausePromise = null;
         this.resolvePause = null;
-
-        // Active thread tracking
         this.activeThreadsCount = 0;
 
-        // Expose pause check globally so blocks can await it
         if (typeof window !== 'undefined') {
             window.checkPause = async () => {
                 if (this.isPaused && this.pausePromise) {
@@ -57,7 +73,6 @@ export class Interpreter {
             };
             window.isActive = () => this.isActive;
             window.pauseExecution = () => this.pauseExecution();
-            // Global highlight helper for Junior blocks
             window.highlightBlock = (blockId, spriteId) => {
                 if (this.callbacks.onHighlight) {
                     this.callbacks.onHighlight(blockId, spriteId);
@@ -66,23 +81,21 @@ export class Interpreter {
         }
     }
 
-    start() {
+    start(): void {
         if (this.isActive) this.stopAll();
         this.isActive = true;
-        this.wasPaused = false; // Reset pause flag on new start
+        this.wasPaused = false;
         this.isPaused = false;
         this.pausePromise = null;
         this.resolvePause = null;
         this.activeThreadsCount = 0;
 
-        // Notify State Manager (Visuals)
         if (this.callbacks.onRun) this.callbacks.onRun();
     }
 
-    stopAll() {
+    stopAll(): void {
         this.isActive = false;
         this.isPaused = false;
-        // If we are paused, resolving it allows threads to finish/abort gracefully
         if (this.resolvePause) {
             this.resolvePause();
             this.resolvePause = null;
@@ -90,103 +103,79 @@ export class Interpreter {
         this.runningThreads.clear();
         this.activeThreadsCount = 0;
 
-        // Clear highlights
         if (this.callbacks.onHighlight) this.callbacks.onHighlight(null);
 
         if (this.callbacks.onStop) this.callbacks.onStop();
     }
 
-    // Called when execution is paused by stop block (preserves state)
-    pauseExecution() {
-        if (this.isPaused) return; // already paused
+    pauseExecution(): void {
+        if (this.isPaused) return;
         this.isPaused = true;
         this.wasPaused = true;
-        this.pausePromise = new Promise(resolve => {
+        this.pausePromise = new Promise<void>(resolve => {
             this.resolvePause = resolve;
         });
 
-        // Notify UI that we stopped running visually, but we are paused
         if (this.callbacks.onStop) this.callbacks.onStop();
     }
 
-    // Called to resume execution after being paused
-    resumeExecution() {
+    resumeExecution(): void {
         if (!this.isPaused) return;
         this.isPaused = false;
         if (this.resolvePause) {
             this.resolvePause();
             this.resolvePause = null;
         }
-        // Notify UI we are running again
         if (this.callbacks.onRun) this.callbacks.onRun();
     }
 
-    // Check if execution was paused and clear the flag
-    isPausedAndClear() {
+    isPausedAndClear(): boolean {
         const wasPaused = this.wasPaused;
-        this.wasPaused = false; // Clear flag after checking
+        this.wasPaused = false;
         return wasPaused;
     }
 
-    // Explicitly clear pause flag (for manual stop)
-    clearPauseFlag() {
+    clearPauseFlag(): void {
         this.wasPaused = false;
         this.isPaused = false;
     }
 
-    /**
-     * Executes all stacks matching the criteria (e.g., Flag clicked)
-     * @param {string|Array<string>} triggerTypes - 'event_flag' | 'event_press' or array
-     * @param {string} spriteId - optional filter
-     */
-    async runStacks(triggerTypes, spriteId = null) {
+    async runStacks(triggerTypes: ValidTypes, spriteId: string | null = null): Promise<void> {
         if (!this.workspaceRef.current) return;
 
-        // Ensure we are active
         if (!this.isActive) this.start();
 
         const topBlocks = this.workspaceRef.current.getTopBlocks(true);
         const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
-        const validStacks = topBlocks.filter(b => types.includes(b.type));
+        const validStacks = topBlocks.filter((b: any) => types.includes(b.type));
 
         if (validStacks.length === 0) {
-            // Only stop if this is a primary trigger
             if (types.some(t => t.includes('flag'))) {
                 this.stopAll();
             }
             return;
         }
 
-        // Configure statement prefix for highlighting
-        // We map block execution into an array of Promises so we can wait until ALL finish
-        const stackPromises = validStacks.map(block => {
+        const stackPromises = validStacks.map((block: any) => {
             const currentSpriteId = spriteId || window.activeSpriteId;
-            // Configure statement prefix for highlighting AND sprite context
             this.generator.STATEMENT_PREFIX = `window.activeSpriteId = "${currentSpriteId}";\nwindow.highlightBlock(%1, "${currentSpriteId}");\n`;
 
-            // VALIDATE
             const check = WorkspaceValidator.validateStack(block);
             if (!check.isValid) {
                 console.warn(`Validation Error on stack starting with ${block.type}: ${check.error}`);
                 showToast(`Oops! ${check.error}`, 'error');
-                return Promise.resolve(); // Resolves safely for invalid stacked code
+                return Promise.resolve();
             }
 
-            // INITIALIZE GENERATOR (required before blockToCode in Blockly v12+)
             this.generator.init(this.workspaceRef.current);
 
-            // GENERATE
             const code = this.generator.blockToCode(block);
 
-            // EXECUTE
             return this.executeThread(code, spriteId || window.activeSpriteId);
-
-            // NOTE: Goal Checking is handled Reactively in App.jsx based on State Changes
         });
 
         this.activeThreadsCount += stackPromises.length;
 
-        // Wait for all execution threads to finish.
         try {
             await Promise.all(stackPromises);
         } finally {
@@ -197,31 +186,20 @@ export class Interpreter {
         }
     }
 
-    /**
-     * Executes stacks for ALL sprites concurrently.
-     * @param {string|Array<string>} triggerTypes - 'event_flag' | 'event_press' | 'event_broadcast' or array
-     * @param {Array<{spriteId: string, blocks: object}>} spriteEntries - sprites with their saved workspace JSON
-     * @param {object} Blockly - the Blockly instance
-     * @param {string} broadcastMessage - optional, for broadcast triggers only
-     */
-    async runAllSpritesStacks(triggerTypes, spriteEntries, Blockly, broadcastMessage = null) {
+    async runAllSpritesStacks(triggerTypes: ValidTypes, spriteEntries: SpriteEntry[], Blockly: any, broadcastMessage: string | null = null): Promise<void> {
         if (!this.workspaceRef.current) return;
 
-        // Ensure we are active
         if (!this.isActive) this.start();
 
-        const allThreadPromises = [];
+        const allThreadPromises: Promise<void>[] = [];
 
         for (const { spriteId, blocks } of spriteEntries) {
-            // Configure statement prefix: Set activeSpriteId BEFORE EVERY BLOCK to prevent race conditions
             this.generator.STATEMENT_PREFIX = `window.activeSpriteId = "${spriteId}";\nwindow.highlightBlock(%1, "${spriteId}");\n`;
 
             if (!blocks || Object.keys(blocks).length === 0) continue;
 
-            let tempWs = null;
+            let tempWs: any = null;
             try {
-                // Disable Blockly events during temp workspace operations
-                // This prevents FocusManager from trying to focus the unregistered workspace
                 Blockly.Events.disable();
 
                 tempWs = new Blockly.Workspace();
@@ -230,17 +208,17 @@ export class Interpreter {
                 Blockly.Events.enable();
 
                 const topBlocks = tempWs.getTopBlocks(true);
-                let validStacks;
+                let validStacks: any[];
 
                 if (triggerTypes === 'event_broadcast') {
-                    validStacks = topBlocks.filter(b => {
+                    validStacks = topBlocks.filter((b: any) => {
                         if (b.type !== 'when_receive_message') return false;
                         const msg = b.getFieldValue && b.getFieldValue('MESSAGE');
                         return msg === broadcastMessage;
                     });
                 } else {
                     const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
-                    validStacks = topBlocks.filter(b => types.includes(b.type));
+                    validStacks = topBlocks.filter((b: any) => types.includes(b.type));
                 }
 
                 for (const block of validStacks) {
@@ -250,10 +228,8 @@ export class Interpreter {
                         continue;
                     }
 
-                    // Initialize generator for this workspace (required before blockToCode)
                     this.generator.init(tempWs);
 
-                    // Log block execution for debugging
                     console.log(`[Interpreter] [${spriteId}] Executing block: ${block.type}`);
 
                     const code = this.generator.blockToCode(block);
@@ -271,7 +247,6 @@ export class Interpreter {
                 tempWs.dispose();
                 tempWs = null;
             } catch (e) {
-                // Re-enable events if they were disabled
                 Blockly.Events.enable();
                 console.error(`Error generating code for sprite ${spriteId}:`, e);
                 if (tempWs) { try { tempWs.dispose(); } catch (_) { } }
@@ -279,7 +254,6 @@ export class Interpreter {
         }
 
         if (allThreadPromises.length === 0) {
-            // Only stop if this was the primary trigger (flag), not a broadcast
             const types = Array.isArray(triggerTypes) ? triggerTypes : [triggerTypes];
             if (types.some(t => t.includes('flag'))) this.stopAll();
             return;
@@ -288,7 +262,6 @@ export class Interpreter {
         this.activeThreadsCount += allThreadPromises.length;
         console.log(`[Interpreter] Running ${allThreadPromises.length} threads across ${spriteEntries.length} sprites`);
 
-        // Wait for all execution threads across all sprites to finish
         try {
             await Promise.all(allThreadPromises);
         } finally {
@@ -299,97 +272,77 @@ export class Interpreter {
         }
     }
 
-    /**
-     * Wraps generated code so that window.activeSpriteId is restored before
-     * every async operation (await), preventing race conditions during
-     * concurrent multi-sprite execution.
-     */
-    _wrapCodeWithSpriteContext(code, spriteId) {
+    _wrapCodeWithSpriteContext(code: string, spriteId: string): string {
         const setter = `window.activeSpriteId = "${spriteId}";\n`;
-        // Insert sprite context restoration AFTER every line that could yield
-        // so that returning from an async operation reinstates the sprite context.
         const regex = /(await\s+[^;]+;)/g;
         let wrappedCode = code.replace(regex, `$1\n${setter}`);
         return setter + wrappedCode;
     }
 
-    /**
-     * Handle broadcast messages for inter-sprite communication.
-     * When a sprite sends a broadcast, this finds all sprites with
-     * matching 'when_receive_message' hat blocks and runs them.
-     */
-    setupBroadcastListener(spriteEntriesGetter, Blockly) {
-        // Remove old listener if exists
+    setupBroadcastListener(spriteEntriesGetter: () => SpriteEntry[], Blockly: any): void {
         if (this._broadcastHandler) {
-            window.removeEventListener('leap-broadcast', this._broadcastHandler);
+            window.removeEventListener('leap-broadcast', this._broadcastHandler as any);
         }
 
         this._broadcastBlockly = Blockly;
         this._getSpriteEntries = spriteEntriesGetter;
 
-        this._broadcastHandler = (e) => {
-            const message = e.detail?.message;
+        this._broadcastHandler = (e: CustomEvent) => {
+            const message = (e.detail as any)?.message;
             if (!message) return;
             console.log(`[Interpreter] Broadcast received: "${message}"`);
 
-            const entries = this._getSpriteEntries();
+            const entries = this._getSpriteEntries!();
             if (entries && entries.length > 0) {
                 console.log(`[Interpreter] Triggering stacks for ${entries.length} sprites for broadcast: "${message}"`);
-                this.runAllSpritesStacks('event_broadcast', entries, this._broadcastBlockly, message);
+                this.runAllSpritesStacks('event_broadcast', entries, this._broadcastBlockly!, message);
             } else {
                 console.warn(`[Interpreter] No sprite entries found for broadcast: "${message}"`);
             }
         };
 
-        window.addEventListener('leap-broadcast', this._broadcastHandler);
+        window.addEventListener('leap-broadcast', this._broadcastHandler as any);
     }
 
-    async executeThread(code, spriteId) {
+    async executeThread(code: string, spriteId: string): Promise<void> {
         if (!code) return;
 
-        // JUNIOR SAFETY: Timeout after 2 minutes to prevent truly infinite freezes
         const TIMEOUT_MS = 120000;
 
-        // Wrapper to allow timeout
         const runUserCode = async () => {
-            // Safe async execution wrapper
             const asyncCode = `(async () => { 
                 try {
                     ${code} 
                 } catch(e) { 
                     throw e;
                 } finally {
-                    // Clear highlighting for this sprite if it finishes quietly
                     window.highlightBlock(null, "${spriteId}");
                 }
             })()`;
             await eval(asyncCode);
         };
 
-        const timeoutPromise = new Promise((_, reject) =>
+        const timeoutPromise = new Promise<void>((_, reject) =>
             setTimeout(() => reject(new Error("Execution Timeout: Stack took too long!")), TIMEOUT_MS)
         );
 
         try {
             await Promise.race([runUserCode(), timeoutPromise]);
-        } catch (e) {
-            // If it's an ExecutionStop error (from stop block), handle gracefully without alert
+        } catch (e: any) {
             if (e instanceof ExecutionStop) {
                 console.log("Execution stopped by Stop block - preserving sprite state");
-                this.pauseExecution(); // Pause instead of full stop to preserve state
-                return; // Don't alert, just stop
+                this.pauseExecution();
+                return;
             }
             if (e instanceof ExecutionAbort) {
-                return; // Just abort gracefully
+                return;
             }
 
             console.warn("Interpreter Safety:", e.message);
-            // If timeout or error, force stop
             this.stopAll();
             showToast(`Script stopped: ${e.message}`, 'error');
         }
     }
 }
 
-// Export ExecutionStop and ExecutionAbort for use in blocks and window scope
 export { ExecutionStop, ExecutionAbort };

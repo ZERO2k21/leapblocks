@@ -1,9 +1,17 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const moveRoboTutorial = {
+interface TutorialStep {
+    title: string;
+    content: string;
+    targetId: string | null;
+    highlight: boolean;
+}
+
+interface Tutorial {
+    id: string;
+    title: string;
+    steps: TutorialStep[];
+}
+
+export const moveRoboTutorial: Tutorial = {
     id: 'move_robo',
     title: 'Move the Robo',
     steps: [

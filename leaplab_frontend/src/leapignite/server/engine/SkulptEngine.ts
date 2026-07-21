@@ -3,16 +3,29 @@ import { VirtualFileSystem } from './VirtualFileSystem';
 import { SPRITE_PREAMBLE } from './spritePreamble';
 import { buildLeapModule, buildOsModule, patchFileConstructor } from './filePatching';
 
-let Sk = _SkModule?.default || _SkModule || null;
+let Sk: any = (_SkModule as any)?.default || _SkModule || null;
 if (!Sk || typeof Sk.configure !== 'function') {
-    Sk = (typeof window !== 'undefined') ? window.Sk : null;
+    Sk = (typeof window !== 'undefined') ? (window as any).Sk : null;
 }
 if (!Sk && typeof window !== 'undefined') {
     console.warn('[SkulptEngine] Skulpt not resolved via import, waiting for window.Sk...');
 }
 
+interface SkulptEngineCallbacks {
+    actions: any;
+    onOut: (text: string) => void;
+    onErr: (msg: string) => void;
+    onInputRequested?: (promptText: string, resolve: (value: string) => void) => void;
+}
+
 export class SkulptEngine {
-    constructor(callbacks) {
+    callbacks: SkulptEngineCallbacks;
+    _replReady: boolean;
+    _stopRequested: boolean;
+    vfs: VirtualFileSystem;
+    _dispatchFunc: any;
+
+    constructor(callbacks: SkulptEngineCallbacks) {
         this.callbacks = callbacks;
         this._replReady = false;
         this._stopRequested = false;
@@ -20,13 +33,13 @@ export class SkulptEngine {
         this._dispatchFunc = null;
     }
 
-    loadProjectFiles(projectFiles) { this.vfs.loadFromProjectFiles(projectFiles); }
-    getModifiedFiles() { return this.vfs.getModifiedFiles(); }
+    loadProjectFiles(projectFiles: Record<string, string>): void { this.vfs.loadFromProjectFiles(projectFiles); }
+    getModifiedFiles(): Record<string, string> { return this.vfs.getModifiedFiles(); }
 
-    _getSk() {
+    _getSk(): any {
         let sk = Sk;
         if (!sk || typeof sk.configure !== 'function') {
-            sk = (typeof window !== 'undefined') ? window.Sk : null;
+            sk = (typeof window !== 'undefined') ? (window as any).Sk : null;
             if (sk && typeof sk.configure === 'function') Sk = sk;
         }
         if (!sk || typeof sk.configure !== 'function') {
@@ -35,15 +48,15 @@ export class SkulptEngine {
         return sk;
     }
 
-    _configureSkulpt(sk) {
+    _configureSkulpt(sk: any): void {
         const bridge = this.callbacks.actions;
         buildLeapModule(sk, bridge);
         buildOsModule(sk, this.vfs);
         this._stopRequested = false;
 
         sk.configure({
-            output: (text) => this.callbacks.onOut(text),
-            read: (x) => {
+            output: (text: string) => this.callbacks.onOut(text),
+            read: (x: string) => {
                 if (sk.builtinFiles?.files?.[x]) return sk.builtinFiles.files[x];
                 throw new Error("Module not found: '" + x + "'");
             },
@@ -53,14 +66,14 @@ export class SkulptEngine {
             killableWhile: true,
             killableFor: true,
             nonreadopen: true,
-            filewrite: (fileObj, str) => {
+            filewrite: (fileObj: any, str: string) => {
                 if (fileObj.fileno < 10) return;
                 this.vfs.writeFile(fileObj.name, sk.ffi.remapToJs(str), true);
             },
-            inputfun: (promptText) => {
+            inputfun: (promptText: string) => {
                 if (this._stopRequested) throw new Error('Execution stopped');
                 if (promptText) this.callbacks.onOut(promptText);
-                return new Promise((resolve) => {
+                return new Promise((resolve: (value: string) => void) => {
                     if (this.callbacks.onInputRequested) {
                         this.callbacks.onInputRequested(promptText, resolve);
                     } else {
@@ -72,13 +85,13 @@ export class SkulptEngine {
 
         patchFileConstructor(sk, this.vfs);
         if (sk.builtins) {
-            sk.builtins.open = new sk.builtin.func(function (name, mode, buffering) {
+            sk.builtins.open = new sk.builtin.func(function (this: any, name: any, mode: any, buffering: any) {
                 return new sk.builtin.file(name, mode, buffering);
             });
         }
     }
 
-    _errStr(e) {
+    _errStr(e: any): string {
         if (!e) return 'Unknown error';
         if (typeof e === 'string') return e;
         try { if (e.tp$str) return e.tp$str().v; } catch (_) {}
@@ -87,10 +100,10 @@ export class SkulptEngine {
         try { return JSON.stringify(e); } catch { return 'Unknown error'; }
     }
 
-    async runPython(code) {
-        let sk;
+    async runPython(code: string): Promise<void> {
+        let sk: any;
         try { sk = this._getSk(); }
-        catch (err) { this.callbacks.onErr(this._errStr(err)); throw err; }
+        catch (err: any) { this.callbacks.onErr(this._errStr(err)); throw err; }
 
         this._configureSkulpt(sk);
         this._replReady = false;
@@ -99,17 +112,17 @@ export class SkulptEngine {
             await sk.misceval.asyncToPromise(
                 () => sk.importMainWithBody('<stdin>', false, SPRITE_PREAMBLE + '\n' + code, true)
             );
-        } catch (e) {
+        } catch (e: any) {
             const msg = this._errStr(e);
             this.callbacks.onErr(msg);
             throw new Error(msg);
         }
     }
 
-    async runRepl(line) {
-        let sk;
+    async runRepl(line: string): Promise<any> {
+        let sk: any;
         try { sk = this._getSk(); }
-        catch (err) { this.callbacks.onErr(this._errStr(err)); throw err; }
+        catch (err: any) { this.callbacks.onErr(this._errStr(err)); throw err; }
 
         this._configureSkulpt(sk);
 
@@ -126,16 +139,16 @@ export class SkulptEngine {
             return await sk.misceval.asyncToPromise(
                 () => sk.importMainWithBody('<repl>', false, line, true)
             );
-        } catch (e) {
+        } catch (e: any) {
             const msg = this._errStr(e);
             this.callbacks.onErr(msg);
             throw new Error(msg);
         }
     }
 
-    stop() {
+    stop(): void {
         this._stopRequested = true;
-        const sk = Sk || ((typeof window !== 'undefined') ? window.Sk : null);
+        const sk = Sk || ((typeof window !== 'undefined') ? (window as any).Sk : null);
         if (sk) { sk.execLimit = 1; sk.yieldLimit = 1; }
     }
 }

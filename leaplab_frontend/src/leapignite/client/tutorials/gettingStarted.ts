@@ -1,9 +1,17 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const gettingStartedTutorial = {
+interface TutorialStep {
+    title: string;
+    content: string;
+    targetId: string | null;
+    highlight: boolean;
+}
+
+interface Tutorial {
+    id: string;
+    title: string;
+    steps: TutorialStep[];
+}
+
+export const gettingStartedTutorial: Tutorial = {
     id: 'getting_started',
     title: 'Getting Started',
     steps: [

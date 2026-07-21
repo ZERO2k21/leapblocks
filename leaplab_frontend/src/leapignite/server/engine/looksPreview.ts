@@ -1,9 +1,19 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
-export const looksPreview = {
+declare global {
+    interface Window {
+        say?: (spriteId: string, text: string) => void;
+        showSprite?: () => void;
+        hideSprite?: () => void;
+        setVisible?: (spriteId: string, visible: boolean) => void;
+        resetSize?: (spriteId: string) => void;
+        changeSize?: (spriteId: string, amount: number) => void;
+        setSize?: (spriteId: string, size: number) => void;
+        nextCostume?: () => void;
+        selectSprite?: (name: string) => void;
+        activeSpriteId?: string;
+    }
+}
+
+export const looksPreview: Record<string, (block: any) => void> = {
     say_text: (block) => {
         const text = block.getFieldValue("TEXT") || block.getFieldValue("MESSAGE") || "";
         if (window.say) window.say(window.activeSpriteId || "robot_default", text);

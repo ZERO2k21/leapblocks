@@ -1,4 +1,4 @@
-export const SPRITE_PREAMBLE = `
+export const SPRITE_PREAMBLE: string = `
 class Sprite:
     def __init__(self, name):
         self._name = str(name)
