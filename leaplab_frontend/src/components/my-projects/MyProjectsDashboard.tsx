@@ -1135,20 +1135,7 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Dynamic CSS override to resolve parent flexbox squishing layout bug on page-projects-view
-        const parentPage = containerRef.current?.parentElement;
-        if (parentPage && parentPage.classList.contains('page')) {
-            const originalDisplay = parentPage.style.display;
-            const originalHeight = parentPage.style.height;
-            
-            parentPage.style.display = 'block';
-            parentPage.style.height = 'auto';
-            
-            return () => {
-                parentPage.style.display = originalDisplay;
-                parentPage.style.height = originalHeight;
-            };
-        }
+        // No longer needed - scroll is handled by .page { overflow-y: auto } in CSS
     }, [selectedMode]);
 
     useEffect(() => {

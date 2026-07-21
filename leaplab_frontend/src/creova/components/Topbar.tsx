@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import LeapLabAuthButton from '../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../components/common/TopbarShareButton';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 
 // Extracted local submenus
 import { FileDropdownMenu } from './FileDropdownMenu';
@@ -84,6 +85,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const windowWidth = useWindowWidth();
+  const showRightContent = windowWidth >= 1900;
+  const showBrandName = windowWidth >= 1300;
+  const showAuthButton = windowWidth >= 1100;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -152,10 +157,10 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
 
       <div
         style={{ paddingLeft: '2px' }}
-        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]`}
+        className={`flex items-center justify-between h-12 pr-[18px] z-[100] select-none min-w-0 border-b gap-2 md:gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]`}
       >
         {/* Left section */}
-        <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
+        <div className="flex items-center gap-2 md:gap-3.5 flex-auto min-w-0 h-full">
           <button
             title="Back to Home"
             onClick={() => {
@@ -179,15 +184,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             <img
               alt="LeapLab"
               src="assets/leaplab_logo_transparent.png"
-              className="h-12 object-contain"
+              className="h-8 md:h-10 lg:h-12 object-contain"
             />
-            <span className={`text-lg font-black tracking-[0.08em] font-sans ml-2.5 ${isElectra ? 'text-[#22d3ee]' : 'text-white'}`}>
-              {brandName}
-            </span>
+            {showBrandName && (
+              <span className={`text-base lg:text-lg font-black tracking-[0.08em] font-sans ml-2 ${isElectra ? 'text-[#22d3ee]' : 'text-white'}`}>
+                {brandName}
+              </span>
+            )}
           </div>
  
           {/* Desktop dropdown menus */}
-          <div className="hidden min-[1600px]:flex items-center gap-3 h-full">
+          <div className="hidden min-[1900px]:flex items-center gap-3 h-full">
             {/* File Menu */}
             <div ref={fileMenuRef} className="relative">
               <button
@@ -275,14 +282,14 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
  
         {/* Center section */}
-        <div className="flex items-center justify-center gap-4 px-4 flex-none min-w-0">
+        <div className="flex items-center justify-center gap-2 md:gap-4 px-2 md:px-4 flex-none min-w-0">
           <div className="hidden md:flex items-center gap-4">{centerContent}</div>
  
           <div
-            style={{ paddingLeft: '24px' }}
-            className={`flex items-center h-8 rounded-full pr-[3px] border gap-3 transition-all duration-200 ${isElectra ? 'bg-[#27272a]/50 border-[#27272a]' : 'bg-[#08143a]/55 border-[#93c5fd]/20'
+            style={{ paddingLeft: windowWidth >= 1600 ? '24px' : '12px' }}
+            className={`flex items-center h-8 rounded-full pr-[3px] border gap-2 md:gap-3 transition-all duration-200 ${isElectra ? 'bg-[#27272a]/50 border-[#27272a]' : 'bg-[#08143a]/55 border-[#93c5fd]/20'
               }`}>
-            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden min-[1600px]:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
+            <span className={`text-[12px] opacity-45 font-bold tracking-[0.01em] hidden min-[1900px]:inline ${isElectra ? 'text-[#a1a1aa]' : 'text-white'}`}>
               Folder
             </span>
             <input
@@ -290,7 +297,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
               type="text"
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              className={`bg-transparent border-0 text-xs font-bold font-sans w-20 md:w-[120px] text-center outline-none tracking-wide min-w-0 ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
+              className={`bg-transparent border-0 text-xs font-bold font-sans w-16 sm:w-20 md:w-[100px] lg:w-[120px] text-center outline-none tracking-wide min-w-0 ${isElectra ? 'text-[#f4f4f5]' : 'text-white'
                 }`}
             />
             <button
@@ -312,9 +319,9 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
         </div>
  
         {/* Right section */}
-        <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
+        <div className="flex items-center justify-end gap-2 md:gap-3 flex-auto min-w-0">
           {/* Quick actions - Desktop only */}
-          <div className={`hidden min-[1600px]:flex items-center gap-3 pr-4 border-r h-8 shrink-0 ${isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
+          <div className={`hidden min-[1900px]:flex items-center gap-3 pr-4 border-r h-8 shrink-0 ${isElectra ? 'border-[rgba(39,39,42,0.8)]' : 'border-[rgba(191,219,254,0.22)]'
             }`}>
             <TopbarShareButton className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`} size={16} onSave={onSave} projectName={title} />
             <button title="Feedback" className={`bg-transparent border-none cursor-pointer p-0 transition-colors duration-200 flex items-center ${isElectra ? 'text-[#a1a1aa] hover:text-[#22d3ee]' : 'text-[rgba(191,219,254,0.85)] hover:text-white'}`}><MessageSquareWarning size={16} strokeWidth={2.2} /></button>
@@ -329,14 +336,16 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             </button>
           </div>
  
-          {rightContent && (
+          {rightContent && showRightContent && (
             <div className="flex items-center shrink-0">
               {rightContent}
             </div>
           )}
-          <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
-          </div>
+          {showAuthButton && (
+            <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
+              <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
+            </div>
+          )}
  
           {/* Creoleap brand logo (large desktop only) */}
           <div className={`hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden ${isElectra ? '' : 'filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]'
@@ -353,7 +362,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
-            className={`min-[1600px]:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${isElectra
+            className={`min-[1900px]:hidden flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer transition-colors duration-200 shrink-0 border ${isElectra
               ? 'bg-[#27272a]/50 border-[#27272a] text-[#f4f4f5] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] hover:text-[#22d3ee]'
               : 'bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24'
               }`}
