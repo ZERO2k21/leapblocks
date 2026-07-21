@@ -1069,46 +1069,46 @@ interface DeleteConfirmationModalProps {
 
 const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ projectName, onConfirm, onCancel }) => {
     return (
-        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={onCancel}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }} onClick={onCancel}>
             <div
-                className="box-border w-full max-w-[360px] bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 relative flex flex-col items-center text-center animate-[scaleInModal_0.15s_ease-out]"
+                style={{ width: '100%', maxWidth: '400px', background: '#fff', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', border: '1px solid rgba(226,232,240,0.6)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button */}
                 <button
-                    className="absolute top-3.5 right-3.5 w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center border-none bg-transparent cursor-pointer"
+                    style={{ position: 'absolute', top: '16px', right: '16px', width: '32px', height: '32px', borderRadius: '12px', color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     onClick={onCancel}
                     title="Close"
                 >
-                    <X size={15} />
+                    <X size={16} />
                 </button>
 
-                {/* Minimal Icon Badge */}
-                <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-3.5 mt-1">
-                    <AlertTriangle size={18} strokeWidth={2.2} />
+                {/* Icon */}
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #fef2f2, #fee2e2)', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid rgba(252,165,165,0.5)' }}>
+                    <AlertTriangle size={24} strokeWidth={2} />
                 </div>
 
                 {/* Title */}
-                <h3 className="m-0 mb-1.5 text-base font-semibold text-slate-900 tracking-tight">Delete Project</h3>
+                <h3 style={{ margin: 0, marginBottom: '8px', fontSize: '18px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.02em' }}>Delete Project</h3>
 
                 {/* Description */}
-                <p className="m-0 mb-6 text-xs text-slate-500 leading-relaxed max-w-[290px]">
-                    Are you sure you want to delete <strong className="font-semibold text-slate-900">"{projectName}"</strong>? This action cannot be undone.
+                <p style={{ margin: 0, marginBottom: '32px', fontSize: '14px', color: '#64748b', lineHeight: '1.6', maxWidth: '320px' }}>
+                    Are you sure you want to delete <strong style={{ fontWeight: 600, color: '#0f172a' }}>"{projectName}"</strong>? This action cannot be undone.
                 </p>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2.5 w-full">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                     <button
-                        className="flex-1 h-9 bg-slate-100 hover:bg-slate-200/70 active:bg-slate-200 border-none rounded-lg text-slate-700 text-xs font-medium cursor-pointer transition-colors"
+                        style={{ flex: 1, height: '44px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#475569', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
                         onClick={onCancel}
                     >
                         Cancel
                     </button>
                     <button
-                        className="flex-1 h-9 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border-none rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                        style={{ flex: 1, height: '44px', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(220,38,38,0.25)' }}
                         onClick={onConfirm}
                     >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                         Delete
                     </button>
                 </div>
