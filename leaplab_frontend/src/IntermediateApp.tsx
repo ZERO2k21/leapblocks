@@ -166,6 +166,8 @@ import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, L
 
 import { registerLeapBloxCategory } from './custom-toolbox';
 import { styles } from './styles/intermediateStyles';
+import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from './types/intermediateTypes';
+import { normalizeVariableMonitor } from './types/intermediateTypes';
 
 import Loader from './components/Loader';
 
@@ -441,79 +443,7 @@ const withCategoryHeaders = (contents: any[]) => {
 
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Main app mode: home (welcome screen) or one of the coding modes
-
-type AppMode = 'home' | 'blocks' | 'python' | 'notebook' | 'ml' | 'xr';
-
-// Editor sub-mode for blocks: stage (animation) or upload (hardware)
-
-type EditorMode = 'stage' | 'upload';
-
-// Monitor interfaces
-interface VariableMonitorState {
-    id: string;
-    name: string;
-    type: 'Number' | 'String';
-    scope: 'all_sprites' | 'this_sprite';
-    spriteId?: string;
-    visible: boolean;
-    value: number | string;
-    x: number;
-    y: number;
-    zIndex?: number;
-    mode?: 'normal' | 'large' | 'slider';
-    sliderMin?: number;
-    sliderMax?: number;
-}
-
-const DEFAULT_VARIABLE_MONITOR_MODE: 'normal' = 'normal';
-const DEFAULT_VARIABLE_SLIDER_MIN = 0;
-const DEFAULT_VARIABLE_SLIDER_MAX = 100;
-
-const hasFiniteNumber = (value: unknown): value is number =>
-    typeof value === 'number' && Number.isFinite(value);
-
-const normalizeVariableMonitor = (monitor: VariableMonitorState, index = 0): VariableMonitorState => ({
-    ...monitor,
-    visible: monitor.visible ?? true,
-    value: monitor.value ?? (monitor.type === 'String' ? '' : 0),
-    x: hasFiniteNumber(monitor.x) ? monitor.x : 10,
-    y: hasFiniteNumber(monitor.y) ? monitor.y : 10 + (index * 30),
-    zIndex: hasFiniteNumber(monitor.zIndex) ? monitor.zIndex : 100 + index,
-    mode: monitor.mode || DEFAULT_VARIABLE_MONITOR_MODE,
-    sliderMin: hasFiniteNumber(monitor.sliderMin) ? monitor.sliderMin : DEFAULT_VARIABLE_SLIDER_MIN,
-    sliderMax: hasFiniteNumber(monitor.sliderMax) ? monitor.sliderMax : DEFAULT_VARIABLE_SLIDER_MAX
-});
-
-interface ListMonitorState {
-    id: string;
-    name: string;
-    scope: 'all_sprites' | 'this_sprite';
-    spriteId?: string;
-    visible: boolean;
-    items: (string | number)[];
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    zIndex?: number;
-}
-
-interface TableMonitorState {
-    id: string;
-    name: string;
-    rows: number;
-    cols: number;
-    scope: 'all_sprites' | 'this_sprite';
-    spriteId?: string;
-    visible: boolean;
-    data: (string | number)[][];
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    zIndex?: number;
-}
+// Types extracted to src/types/intermediateTypes.ts
 
 
 
