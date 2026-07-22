@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -7,6 +7,8 @@ import { spawn } from 'child_process';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import http from 'http';
+import https from 'https';
 import { v4 as uuidv4 } from 'uuid';
 import { transpileArduinoToJS } from './transpiler.js';
 
@@ -15,9 +17,8 @@ const _require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 const app = express();
-const PORT = parseInt(process.env.PORT, 10) || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -33,7 +34,7 @@ fs.mkdirSync(LOGS_DIR, { recursive: true });
 // Firmware cache eviction: keep under 500 MB or 1000 files
 const CACHE_MAX_SIZE = 500 * 1024 * 1024;
 const CACHE_MAX_FILES = 1000;
-function evictCache() {
+function evictCache(): void {
   try {
     const files = fs.readdirSync(CACHE_DIR)
       .filter(f => f.endsWith('.bin') || f.endsWith('.json'))
@@ -42,11 +43,12 @@ function evictCache() {
         try { return { name: f, path: p, size: fs.statSync(p).size, mtime: fs.statSync(p).mtimeMs }; }
         catch { return null; }
       })
-      .filter(Boolean)
+      .filter((item): item is { name: string; path: string; size: number; mtime: number } => item !== null)
       .sort((a, b) => a.mtime - b.mtime);
     let totalSize = files.reduce((s, f) => s + f.size, 0);
     while ((totalSize > CACHE_MAX_SIZE || files.length > CACHE_MAX_FILES) && files.length > 2) {
       const oldest = files.shift();
+      if (!oldest) break;
       try {
         const jsonPath = oldest.name.replace(/\.bin$/, '.json');
         const binPath = oldest.name;
@@ -63,7 +65,7 @@ setInterval(evictCache, 30 * 60 * 1000).unref();
 const logFilePath = path.join(LOGS_DIR, 'access.log');
 
 // Realtime logging middleware
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const timestamp = new Date().toISOString();
   
@@ -71,10 +73,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     const logLine = `[${timestamp}] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Duration: ${duration}ms\n`;
     
-    // Output to server console for realtime streaming
     console.log(logLine.trim());
     
-    // Write to logs folder in server
     try {
       if (fs.existsSync(logFilePath)) {
         const stats = fs.statSync(logFilePath);
@@ -98,18 +98,14 @@ app.use('/apks', express.static(APK_PUBLIC_DIR));
 // Serve frontend build output (Vite) with correct MIME types and SPA fallback
 const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'build');
 if (fs.existsSync(FRONTEND_BUILD_DIR)) {
-    // Serve hashed assets (JS, CSS, WASM, images) with immutable cache
     app.use('/assets', express.static(path.join(FRONTEND_BUILD_DIR, 'assets'), {
         immutable: true,
         maxAge: '1y',
     }));
-    // Serve other static files from build (favicon, manifest, etc.)
     app.use(express.static(FRONTEND_BUILD_DIR, {
-        index: false, // Don't serve index.html for directory requests
+        index: false,
     }));
-    // SPA fallback: return index.html for non-API, non-file routes
-    app.get('*', (req, res, next) => {
-        // Skip API routes and requests that look like they want a specific file
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
         if (req.path.startsWith('/compile') || req.path.startsWith('/build') ||
             req.path.startsWith('/transpile') || req.path.startsWith('/firmware') ||
             req.path.startsWith('/libraries') || req.path.startsWith('/apks') ||
@@ -128,15 +124,15 @@ if (fs.existsSync(FRONTEND_BUILD_DIR)) {
     console.log(`[SERVER] Frontend static serving enabled from ${FRONTEND_BUILD_DIR}`);
 }
 
-function sanitizeApkName(name) {
+function sanitizeApkName(name: string): string {
   return (name || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
 }
 
-let isInitialized = true; // Initialize to true by default to avoid blocking compile requests on start
+let isInitialized = true;
 let esp32CoreReady = false;
-let cachedCliVersion = null;
+let cachedCliVersion: string | null = null;
 
-async function getCliVersion() {
+async function getCliVersion(): Promise<string> {
   if (cachedCliVersion) return cachedCliVersion;
   try {
     const { stdout } = await runCLI(['version', '--format', 'json']);
@@ -145,11 +141,10 @@ async function getCliVersion() {
   } catch (err) {
     cachedCliVersion = 'unknown';
   }
-  return cachedCliVersion;
+  return cachedCliVersion!;
 }
 
-
-function getCliPath() {
+function getCliPath(): string {
   if (process.env.ARDUINO_CLI_PATH) return process.env.ARDUINO_CLI_PATH;
 
   const bundledLocal = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
@@ -186,7 +181,6 @@ const FORGE_LIB_LIBRARIES = (() => {
     if (fs.existsSync(linuxUser)) return linuxUser;
   }
 
-  // Docker/Render: arduino-cli data directory from ARDUINO_DIRECTORIES_USER
   const arduinoDataUser = process.env.ARDUINO_DIRECTORIES_USER;
   if (arduinoDataUser) {
     const dockerLibs = path.join(arduinoDataUser, 'libraries');
@@ -196,20 +190,24 @@ const FORGE_LIB_LIBRARIES = (() => {
   return null;
 })();
 
-const FORGE_USER_DIR = FORGE_LIB_LIBRARIES ? path.dirname(FORGE_LIB_LIBRARIES) : null;
-
 console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
 console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
 console.log(`[SERVER] libraries:   ${FORGE_LIB_LIBRARIES || '(none)'}`);
 
-function runCLI(args, timeoutMs = 120_000) {
+export interface CLIResult {
+  stdout: string;
+  stderr: string;
+  code: number;
+}
+
+function runCLI(args: string[], timeoutMs = 120_000): Promise<CLIResult> {
   return new Promise((resolve) => {
     const cliArgs = CLI_CONFIG ? ['--config-file', CLI_CONFIG, ...args] : args;
     const proc = spawn(CLI_PATH, cliArgs, { env: { ...process.env } });
     proc.unref();
     let stdout = '', stderr = '';
     let settled = false;
-    const done = (result) => { if (!settled) { settled = true; resolve(result); } };
+    const done = (result: CLIResult) => { if (!settled) { settled = true; resolve(result); } };
     const timer = setTimeout(() => {
       proc.kill('SIGTERM');
       done({ stdout, stderr: `[TIMEOUT] Process killed after ${timeoutMs}ms\n${stderr}`, code: -1 });
@@ -217,12 +215,12 @@ function runCLI(args, timeoutMs = 120_000) {
     timer.unref();
     proc.stdout.on('data', d => { stdout += d.toString(); });
     proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.on('close', code => { clearTimeout(timer); done({ stdout, stderr, code }); });
+    proc.on('close', code => { clearTimeout(timer); done({ stdout, stderr, code: code ?? -1 }); });
     proc.on('error', err => { clearTimeout(timer); done({ stdout: '', stderr: err.message, code: -1 }); });
   });
 }
 
-function runCommand(cmd, timeoutMs = 60_000) {
+function runCommand(cmd: string, timeoutMs = 60_000): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     console.log(`[EXEC] ${cmd}`);
     const proc = spawn('cmd.exe', ['/c', cmd], {
@@ -232,7 +230,12 @@ function runCommand(cmd, timeoutMs = 60_000) {
     proc.unref();
     let stdout = '', stderr = '';
     let settled = false;
-    const done = (err, result) => { if (!settled) { settled = true; err ? reject(err) : resolve(result); } };
+    const done = (err: Error | null, result?: { stdout: string; stderr: string }) => {
+      if (!settled) {
+        settled = true;
+        err ? reject(err) : resolve(result!);
+      }
+    };
     const timer = setTimeout(() => {
       proc.kill('SIGTERM');
       done(new Error(`[TIMEOUT] Command killed after ${timeoutMs}ms\n${stderr || stdout}`));
@@ -249,18 +252,17 @@ function runCommand(cmd, timeoutMs = 60_000) {
   });
 }
 
-async function initCores() {
+async function initCores(): Promise<void> {
   console.log('[SERVER] Initializing arduino cores...');
   try {
-    // Cache CLI version at startup to avoid spawning on /health requests
     await getCliVersion();
 
     const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
-    let data;
+    let data: any;
     try { data = JSON.parse(stdout || '[]'); } catch { data = []; }
     const cores = Array.isArray(data) ? data : [];
 
-    const hasAvr = cores.some(c =>
+    const hasAvr = cores.some((c: any) =>
       (c.id && c.id.startsWith('arduino:avr')) ||
       (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
     );
@@ -277,7 +279,7 @@ async function initCores() {
       }
     }
 
-    const hasEsp32 = cores.some(c =>
+    const hasEsp32 = cores.some((c: any) =>
       (c.id && c.id.startsWith('esp32:')) ||
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
@@ -297,18 +299,18 @@ async function initCores() {
     }
 
     console.log('[SERVER] Core initialization complete');
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[SERVER] Core init warning:', e.message);
   }
 }
 
-async function ensureESP32Core() {
+async function ensureESP32Core(): Promise<boolean> {
   if (esp32CoreReady) return true;
   try {
     const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
     if (code !== 0) throw new Error('core list failed');
     const cores = JSON.parse(stdout || '[]');
-    const installed = Array.isArray(cores) && cores.some(c =>
+    const installed = Array.isArray(cores) && cores.some((c: any) =>
       (c.id && c.id.startsWith('esp32:')) ||
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
@@ -327,14 +329,14 @@ async function ensureESP32Core() {
     ]);
     esp32CoreReady = ic === 0;
     return esp32CoreReady;
-  } catch (e) {
+  } catch (e: any) {
     console.error('[SERVER] ensureESP32Core error:', e.message);
     return false;
   }
 }
 
-function migrateESP32LedcAPI(code) {
-  const chMap = new Map();
+function migrateESP32LedcAPI(code: string): string {
+  const chMap = new Map<string, { freq: string; res: string; pin: string }>();
   for (const m of code.matchAll(/ledcSetup\s*\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g)) {
     const [, ch, freq, res] = m;
     const e = chMap.get(ch) ?? { freq: freq.trim(), res: res.trim(), pin: '' };
@@ -361,7 +363,7 @@ function migrateESP32LedcAPI(code) {
   return result;
 }
 
-function binToIntelHex(buf) {
+function binToIntelHex(buf: Buffer): string {
   const RECORD_SIZE = 16;
   let hex = '';
   for (let offset = 0; offset < buf.length; offset += RECORD_SIZE) {
@@ -385,7 +387,7 @@ function binToIntelHex(buf) {
 }
 
 // ─── POST /build-apk ──────────────────────────────────────────
-app.post('/build-apk', async (req, res) => {
+app.post('/build-apk', async (req: Request, res: Response) => {
   const project = req.body;
   if (!project || typeof project !== 'object') {
     return res.status(400).json({ success: false, error: 'No project data provided' });
@@ -394,25 +396,14 @@ app.post('/build-apk', async (req, res) => {
   try {
     const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
     console.log(`[APK] buildPath: ${buildPath}`);
-    console.log(`[APK] buildPath exists: ${fs.existsSync(buildPath)}`);
-    console.log(`[APK] __dirname: ${__dirname}`);
 
-    let builder;
+    let builder: any;
     if (fs.existsSync(buildPath)) {
       const ApkBuilder = _require(buildPath);
       builder = new ApkBuilder();
-      console.log(`[APK] builder loaded: ${typeof builder.build === 'function'}`);
-    } else {
-      console.log(`[APK] buildAPK.js NOT FOUND at ${buildPath}`);
-      console.log(`[APK] Checking alternatives...`);
-      const alt1 = path.join(__dirname, '..', '..', 'src', 'creova', 'apk', 'buildAPK.js');
-      const alt2 = path.join(__dirname, 'apk', 'buildAPK.js');
-      console.log(`[APK] alt1: ${alt1} exists: ${fs.existsSync(alt1)}`);
-      console.log(`[APK] alt2: ${alt2} exists: ${fs.existsSync(alt2)}`);
     }
 
     if (!builder || typeof builder.build !== 'function') {
-      // Cloud server: simulate build so the frontend doesn't get a 501 error
       const logs = [
         '[10%] Cloud APK builder not available on this server.',
         '[30%] APK builds require the local LeapBlocks server or Electron app.',
@@ -427,8 +418,8 @@ app.post('/build-apk', async (req, res) => {
       });
     }
 
-    const logs = [];
-    const outputPath = await builder.build(project, ({ progress, message }) => {
+    const logs: string[] = [];
+    const outputPath = await builder.build(project, ({ progress, message }: { progress?: number; message?: string }) => {
       if (message) {
         const prefix = progress !== undefined ? `[${progress}%] ` : '';
         logs.push(`${prefix}${message}`);
@@ -450,7 +441,7 @@ app.post('/build-apk', async (req, res) => {
       outputPath: publicPath,
       logs,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[APK] build failed:', err);
     return res.status(500).json({
       success: false,
@@ -460,11 +451,21 @@ app.post('/build-apk', async (req, res) => {
 });
 
 // ─── POST /build (APK build job) ──────────────────────────────
-const jobs = new Map();
+export interface BuildJob {
+  id: string;
+  status: 'queued' | 'building' | 'done' | 'error';
+  progress: number;
+  logs: Array<{ message: string; type: string }>;
+  apkPath: string | null;
+  error: string | null;
+  createdAt: string;
+  projectName?: string;
+}
 
-// Auto-cleanup: purge stale jobs every 5 minutes
-const JOB_TTL_MS = 60 * 60 * 1000;       // 1 hour max age regardless of status
-const JOB_DONE_TTL_MS = 5 * 60 * 1000;   // 5 minutes after completion/error
+const jobs = new Map<string, BuildJob>();
+
+const JOB_TTL_MS = 60 * 60 * 1000;
+const JOB_DONE_TTL_MS = 5 * 60 * 1000;
 setInterval(() => {
   const now = Date.now();
   for (const [id, job] of jobs) {
@@ -484,8 +485,8 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-let builderModule = null;
-async function getBuilder() {
+let builderModule: any = null;
+async function getBuilder(): Promise<any> {
   if (!builderModule) {
     const bPath = path.join(__dirname, '..', 'src', 'studio', 'engine', 'localBuilder.js');
     if (fs.existsSync(bPath)) {
@@ -495,13 +496,13 @@ async function getBuilder() {
   return builderModule;
 }
 
-app.post('/build', async (req, res) => {
+app.post('/build', async (req: Request, res: Response) => {
   try {
     const { project } = req.body;
     if (!project) return res.status(400).json({ error: 'No project data' });
 
     const jobId = uuidv4();
-    const job = {
+    const job: BuildJob = {
       id: jobId,
       status: 'queued',
       progress: 0,
@@ -514,7 +515,7 @@ app.post('/build', async (req, res) => {
 
     const builder = await getBuilder();
     if (builder && typeof builder.build === 'function') {
-      builder.build(jobId, project).catch(err => {
+      builder.build(jobId, project).catch((err: any) => {
         const j = jobs.get(jobId);
         if (j) { j.status = 'error'; j.error = err.message; }
       });
@@ -524,18 +525,18 @@ app.post('/build', async (req, res) => {
     }
 
     res.json({ jobId, message: 'Build started' });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/status/:jobId', (req, res) => {
+app.get('/status/:jobId', (req: Request, res: Response) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json(job);
 });
 
-app.get('/download/:jobId', (req, res) => {
+app.get('/download/:jobId', (req: Request, res: Response) => {
   const job = jobs.get(req.params.jobId);
   if (!job || !job.apkPath) {
     return res.status(404).json({ error: 'APK not found' });
@@ -546,7 +547,7 @@ app.get('/download/:jobId', (req, res) => {
   res.download(job.apkPath, `${sanitizeApkName(job.projectName || 'App')}.apk`);
 });
 
-app.delete('/job/:jobId', async (req, res) => {
+app.delete('/job/:jobId', async (req: Request, res: Response) => {
   const job = jobs.get(req.params.jobId);
   if (job && job.apkPath) {
     try { fs.rmSync(job.apkPath, { force: true }); } catch {}
@@ -555,7 +556,7 @@ app.delete('/job/:jobId', async (req, res) => {
   res.json({ deleted: true });
 });
 
-function simulateBuild(job, project) {
+function simulateBuild(job: BuildJob, project: any): void {
   if (project.appName) job.projectName = project.appName;
   const steps = [
     { progress: 10, msg: 'Decoding base APK...', delay: 1000 },
@@ -590,7 +591,7 @@ function simulateBuild(job, project) {
 }
 
 // ─── POST /compile ────────────────────────────────────────────
-app.post('/compile', async (req, res) => {
+app.post('/compile', async (req: Request, res: Response) => {
   const { code, board = 'arduino:avr:uno', libraries = '' } = req.body;
   if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
 
@@ -625,7 +626,7 @@ app.post('/compile', async (req, res) => {
       cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
     }
     if (libraries) {
-      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
       for (const lib of libList) {
         if (!lib) continue;
         if (FORGE_LIB_LIBRARIES) {
@@ -671,7 +672,7 @@ app.post('/compile', async (req, res) => {
       const hexContent = fs.readFileSync(path.join(tempDir, hexFile), 'utf-8');
       return res.json({ success: true, hex: hexContent });
     }
-  } catch (err) {
+  } catch (err: any) {
     return res.json({ success: false, errors: err.message });
   } finally {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
@@ -679,7 +680,7 @@ app.post('/compile', async (req, res) => {
 });
 
 // ─── POST /compile/esp32 (with SHA-256 caching) ───────────────
-app.post('/compile/esp32', async (req, res) => {
+app.post('/compile/esp32', async (req: Request, res: Response) => {
   const { code, board = 'esp32:esp32:esp32c3', libraries = '' } = req.body;
   if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
 
@@ -727,7 +728,7 @@ app.post('/compile/esp32', async (req, res) => {
     const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
 
     if (libraries) {
-      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map(l => l.trim());
+      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
       for (const lib of libList) {
         if (!lib) continue;
         if (FORGE_LIB_LIBRARIES) {
@@ -773,7 +774,7 @@ app.post('/compile/esp32', async (req, res) => {
       success: true, id: hash, binBase64: binBuffer.toString('base64'),
       size: binBuffer.length, hash, cached: false, metadata
     });
-  } catch (err) {
+  } catch (err: any) {
     return res.json({ success: false, errors: err.message });
   } finally {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
@@ -781,7 +782,7 @@ app.post('/compile/esp32', async (req, res) => {
 });
 
 // ─── GET /firmware/:id ────────────────────────────────────────
-app.get('/firmware/:id', (req, res) => {
+app.get('/firmware/:id', (req: Request, res: Response) => {
   const id = req.params.id;
   if (!/^[a-f0-9]{64}$/.test(id)) {
     return res.status(400).json({ error: 'Invalid firmware ID format' });
@@ -795,11 +796,10 @@ app.get('/firmware/:id', (req, res) => {
 });
 
 // ─── POST /transpile ──────────────────────────────────────────
-app.post('/transpile', async (req, res) => {
+app.post('/transpile', async (req: Request, res: Response) => {
   const { code, board = 'esp32:esp32:esp32c3' } = req.body;
   if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
 
-  // Optional: validate by compiling first (from Electra server)
   if (isInitialized && process.env.VALIDATE_TRANSPILE !== 'false') {
     const sketchId = `transpile_${Date.now()}`;
     const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
@@ -812,7 +812,7 @@ app.post('/transpile', async (req, res) => {
       if (exitCode !== 0) {
         return res.json({ success: false, errors: stderr || 'Compilation validation failed' });
       }
-    } catch (err) {
+    } catch (err: any) {
       return res.json({ success: false, errors: err.message });
     } finally {
       try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch {}
@@ -822,23 +822,23 @@ app.post('/transpile', async (req, res) => {
   try {
     const jsCode = transpileArduinoToJS(code);
     return res.json({ success: true, jsCode });
-  } catch (err) {
+  } catch (err: any) {
     return res.json({ success: false, errors: err.message });
   }
 });
 
 // ─── Library Management ───────────────────────────────────────
 
-// GET /libraries/search — Search for libraries (from Electra server)
-app.get('/libraries/search', async (req, res) => {
-  const query = req.query.q;
+// GET /libraries/search
+app.get('/libraries/search', async (req: Request, res: Response) => {
+  const query = req.query.q as string;
   if (!query) return res.json([]);
   try {
     const args = ['lib', 'search', query, '--format', 'json'];
     if (CLI_CONFIG) args.splice(1, 0, '--config-file', CLI_CONFIG);
     const { stdout } = await runCLI(args);
     const data = JSON.parse(stdout || '{}');
-    const libs = (data.libraries || []).slice(0, 20).map(l => ({
+    const libs = (data.libraries || []).slice(0, 20).map((l: any) => ({
       name: l.name,
       author: l.latest?.author?.name || '',
       description: l.latest?.sentence || '',
@@ -850,20 +850,20 @@ app.get('/libraries/search', async (req, res) => {
   }
 });
 
-// GET /libraries/installed — List installed libraries
-app.get('/libraries/installed', async (req, res) => {
+// GET /libraries/installed
+app.get('/libraries/installed', async (_req: Request, res: Response) => {
   if (!FORGE_LIB_LIBRARIES || !fs.existsSync(FORGE_LIB_LIBRARIES)) {
     return res.json([]);
   }
   try {
     const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
-    const libs = [];
+    const libs: any[] = [];
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
       const propFile = path.join(libDir, 'library.properties');
       if (fs.existsSync(propFile)) {
-        const props = {};
+        const props: Record<string, string> = {};
         fs.readFileSync(propFile, 'utf-8').split('\n').forEach(line => {
           const [k, ...v] = line.split('=');
           if (k && v.length) props[k.trim()] = v.join('=').trim();
@@ -874,13 +874,13 @@ app.get('/libraries/installed', async (req, res) => {
       }
     }
     res.json(libs);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// POST /libraries/install — Install a library
-app.post('/libraries/install', async (req, res) => {
+// POST /libraries/install
+app.post('/libraries/install', async (req: Request, res: Response) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
 
@@ -895,8 +895,8 @@ app.post('/libraries/install', async (req, res) => {
   }
 });
 
-// DELETE /libraries/remove — Remove a library
-app.delete('/libraries/remove', async (req, res) => {
+// DELETE /libraries/remove
+app.delete('/libraries/remove', async (req: Request, res: Response) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ success: false, error: 'Library name required' });
 
@@ -915,7 +915,7 @@ app.delete('/libraries/remove', async (req, res) => {
         if (!match) {
           const propFile = path.join(libDir, 'library.properties');
           if (fs.existsSync(propFile)) {
-            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc: Record<string, string>, line) => {
               const [k, ...v] = line.split('=');
               if (k && v.length) acc[k.trim()] = v.join('=').trim();
               return acc;
@@ -939,7 +939,7 @@ app.delete('/libraries/remove', async (req, res) => {
 });
 
 // ─── GET /logs ────────────────────────────────────────────────
-app.get('/logs', (req, res) => {
+app.get('/logs', (req: Request, res: Response) => {
   const logFilePath = path.join(__dirname, 'logs', 'access.log');
   
   if (req.query.download === 'true') {
@@ -956,28 +956,24 @@ app.get('/logs', (req, res) => {
   try {
     const logsContent = fs.readFileSync(logFilePath, 'utf8');
     const lines = logsContent.trim().split('\n');
-    const limit = parseInt(req.query.limit, 10) || 200;
+    const limit = parseInt(req.query.limit as string, 10) || 200;
     const lastLines = lines.slice(-limit).join('\n');
     
     res.setHeader('Content-Type', 'text/plain');
     res.send(lastLines);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).send(`Error reading logs: ${err.message}`);
   }
 });
 
 // ─── POST /relay — HTTP relay for CORS-restricted local requests ──
-// Forwards HTTP requests server-side to bypass browser CORS / Mixed Content
-// restrictions. Used by the Electra ESP32 simulator and Creova Web component
-// to reach local network devices (e.g. ESP32 at 192.168.x.x).
-app.post('/relay', async (req, res) => {
+app.post('/relay', async (req: Request, res: Response) => {
   const { url: targetUrl, method = 'GET', headers: reqHeaders = {}, body: reqBody } = req.body;
   if (!targetUrl) {
     return res.status(400).json({ success: false, error: 'No target URL provided' });
   }
 
-  // Security: only allow HTTP/HTTPS URLs to private/local IPs
-  let parsed;
+  let parsed: URL;
   try {
     parsed = new URL(targetUrl);
   } catch {
@@ -1001,8 +997,7 @@ app.post('/relay', async (req, res) => {
   console.log(`[RELAY] ${method} ${targetUrl}`);
 
   try {
-    const httpModule = parsed.protocol === 'https:' ? await import('https') : await import('http');
-    const options = {
+    const options: any = {
       hostname: parsed.hostname,
       port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
       path: parsed.pathname + parsed.search,
@@ -1011,14 +1006,13 @@ app.post('/relay', async (req, res) => {
       timeout: 10000,
     };
 
-    // Remove host header if present (Node sets it automatically)
     delete options.headers['Host'];
     delete options.headers['host'];
 
-    const proxyRes = await new Promise((resolve, reject) => {
-      const r = httpModule.default.request(options, (response) => {
+    const proxyRes = await new Promise<any>((resolve, reject) => {
+      const callback = (response: any) => {
         let data = '';
-        response.on('data', chunk => { data += chunk; });
+        response.on('data', (chunk: any) => { data += chunk; });
         response.on('end', () => {
           resolve({
             status: response.statusCode,
@@ -1027,7 +1021,10 @@ app.post('/relay', async (req, res) => {
             body: data,
           });
         });
-      });
+      };
+      const r = parsed.protocol === 'https:'
+        ? https.request(options, callback)
+        : http.request(options, callback);
       r.on('error', reject);
       r.on('timeout', () => { r.destroy(); reject(new Error('Request timed out')); });
 
@@ -1037,7 +1034,6 @@ app.post('/relay', async (req, res) => {
       r.end();
     });
 
-    // Return the proxied response
     res.json({
       success: true,
       status: proxyRes.status,
@@ -1045,7 +1041,7 @@ app.post('/relay', async (req, res) => {
       headers: proxyRes.headers,
       body: proxyRes.body,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[RELAY] Error: ${err.message}`);
     res.json({
       success: false,
@@ -1054,8 +1050,9 @@ app.post('/relay', async (req, res) => {
     });
   }
 });
+
 // ─── GET /health ──────────────────────────────────────────────
-app.get('/health', async (req, res) => {
+app.get('/health', async (_req: Request, res: Response) => {
   const cliVersion = await getCliVersion();
 
   const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');

@@ -12,7 +12,7 @@ const server = http.createServer((_req, res) => {
 
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws, req) => {
+wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
     const params = new url.URL(req.url ?? '/', `http://localhost`).searchParams;
     const host = params.get('host');
     const port = Number(params.get('port'));
@@ -31,20 +31,20 @@ wss.on('connection', (ws, req) => {
         console.log(`[proxy] TCP connected to ${host}:${port}`);
     });
 
-    tcp.on('data', (chunk) => {
+    tcp.on('data', (chunk: Buffer) => {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(chunk);
         }
     });
 
     tcp.on('close', () => ws.close());
-    tcp.on('error', (err) => {
+    tcp.on('error', (err: Error) => {
         console.error(`[proxy] TCP error: ${err.message}`);
         ws.close(1011, err.message);
     });
 
-    ws.on('message', (data) => {
-        const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
+    ws.on('message', (data: Buffer | ArrayBuffer | Buffer[]) => {
+        const buf = Buffer.isBuffer(data) ? data : Buffer.from(data as any);
         tcp.write(buf);
     });
 

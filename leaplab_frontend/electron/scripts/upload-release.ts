@@ -5,29 +5,28 @@
  * and the differential update .blockmap to the Creoleap LMS API.
  * 
  * Usage:
- *   node scripts/upload-release.js
+ *   npx ts-node scripts/upload-release.ts
  * 
  * Or pass options:
- *   node scripts/upload-release.js --token <your-admin-token> --url <api-base-url> --notes "Release notes here"
+ *   npx ts-node scripts/upload-release.ts --token <your-admin-token> --url <api-base-url> --notes "Release notes here"
  */
 
-const fs = require('fs');
-const path = require('path');
-const readline = require('readline');
+import fs from 'fs';
+import path from 'path';
+import readline from 'readline';
 
 // Read command line arguments
 const args = process.argv.slice(2);
-const getArgValue = (flag) => {
+const getArgValue = (flag: string): string | null => {
   const index = args.indexOf(flag);
   return index !== -1 && index + 1 < args.length ? args[index + 1] : null;
 };
 
-let token = getArgValue('--token') || process.env.LEAPLAB_ADMIN_TOKEN;
-let apiBaseUrl = getArgValue('--url') || 'https://lms-api.creoleap.workers.dev';
-let releaseNotes = getArgValue('--notes');
+let token: string | null = getArgValue('--token') || process.env.LEAPLAB_ADMIN_TOKEN || null;
+let apiBaseUrl: string = getArgValue('--url') || 'https://lms-api.creoleap.workers.dev';
+let releaseNotes: string | null = getArgValue('--notes');
 
 const OUT_DIR = path.join(__dirname, '../out');
-const PACKAGE_JSON_PATH = path.join(__dirname, '../package.json');
 
 // Setup readline interface for interactive prompts
 const rl = readline.createInterface({
@@ -35,9 +34,9 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-const askQuestion = (query) => new Promise((resolve) => rl.question(query, resolve));
+const askQuestion = (query: string): Promise<string> => new Promise((resolve) => rl.question(query, resolve));
 
-async function main() {
+async function main(): Promise<void> {
   console.log('\n==================================================');
   console.log('🚀  Creoleap LeapBlocks - Release Uploader  🚀');
   console.log('==================================================\n');
@@ -142,7 +141,7 @@ async function main() {
       body: formData
     });
 
-    const result = await response.json();
+    const result = (await response.json()) as any;
 
     if (!response.ok || !result.success) {
       console.error('\n❌ Upload Failed!');
@@ -158,14 +157,14 @@ async function main() {
     if (result.data?.blockmapUrl) {
       console.log(`🔗 Blockmap URL: ${result.data.blockmapUrl}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('\n❌ Network or Server Error:');
     console.error(error.message);
     process.exit(1);
   }
 }
 
-main().catch((err) => {
+main().catch((err: any) => {
   console.error('\n❌ An unexpected error occurred:', err);
   rl.close();
   process.exit(1);

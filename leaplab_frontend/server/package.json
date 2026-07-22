@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "Unified LeapBlocks server: Arduino compile, transpile, APK build, and TCP proxy",
   "type": "module",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "proxy": "node tcp-proxy.js",
+    "start": "npx tsx server.ts",
+    "dev": "npx tsx watch server.ts",
+    "proxy": "npx tsx tcp-proxy.ts",
     "start:all": "concurrently \"npm run start\" \"npm run proxy\""
   },
   "engines": {
