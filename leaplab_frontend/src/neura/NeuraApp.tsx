@@ -32,8 +32,16 @@ function getClassifierPanel(type: ProjectType) {
         case 'audio-classifier':
             return AudioClassifierPanel
         case 'pose-classifier':
+        case 'yoga-checker':
+        case 'rep-counter':
+        case 'dance-pose':
+        case 'posture-monitor':
             return PoseClassifierPanel
         case 'hand-pose-classifier':
+        case 'finger-counter':
+        case 'virtual-piano':
+        case 'volume-controller':
+        case 'drawing-canvas':
             return HandPoseClassifierPanel
         case 'text-classifier':
             return TextClassifierPanel

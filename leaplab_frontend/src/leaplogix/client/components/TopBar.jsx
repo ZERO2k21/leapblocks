@@ -90,17 +90,17 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 export default function TopBar() {
     const ctx = useLogix();
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1710);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef(null);
 
     const [showMenuItems, setShowMenuItems] = useState(window.innerWidth >= 1100);
     const windowWidth = useWindowWidth();
-    const showDesktopMenus = windowWidth >= 1400;
+    const showDesktopMenus = windowWidth >= 1710;
 
     useEffect(() => {
         const handleResize = () => {
-            setShowCreoleap(window.innerWidth >= 1400);
+            setShowCreoleap(window.innerWidth >= 1710);
             setShowMenuItems(window.innerWidth >= 1100);
         };
         window.addEventListener('resize', handleResize);
@@ -222,6 +222,7 @@ export default function TopBar() {
                     onSave={ctx.handleSaveProject}
                 />
 
+                {windowWidth >= 1710 && (<>
                 <ModeSwitcher
                     modes={[
                         { id: 'ide', label: 'IDE' },
@@ -268,6 +269,7 @@ export default function TopBar() {
                 />
 
                 <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+                </>)}
             </div>
 
             {showCreoleap && (
@@ -395,6 +397,57 @@ export default function TopBar() {
                     {label}
                 </button>
             ))}
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Actions</div>
+            <ModeSwitcher
+                modes={[
+                    { id: 'ide', label: 'IDE' },
+                    { id: 'stage', label: 'Stage' },
+                    { id: 'upload', label: 'Upload' },
+                ]}
+                activeMode={ctx.workflowMode}
+                onChange={ctx.setWorkflowMode}
+            />
+            {ctx.isRunning ? (
+                <button onClick={() => { ctx.handleStop(); setMobileMenuOpen(false); }}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '8px 10px', border: 'none', borderRadius: 8,
+                        background: 'rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 13,
+                        fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                    }}>
+                    <Square size={12} fill="#ef4444" stroke="none" /> Stop
+                </button>
+            ) : (
+                <button onClick={() => { ctx.handleRun(); setMobileMenuOpen(false); }}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '8px 10px', border: 'none', borderRadius: 8,
+                        background: 'rgba(34,197,94,0.2)', color: '#22c55e', fontSize: 13,
+                        fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                    }}>
+                    <Play size={12} fill="#22c55e" stroke="none" /> Run
+                </button>
+            )}
+            <button onClick={() => {
+                if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
+                else ctx.handleUploadFirmware();
+                setMobileMenuOpen(false);
+            }}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                    padding: '8px 10px', border: 'none', borderRadius: 8,
+                    background: 'rgba(124,58,237,0.2)', color: '#a78bfa', fontSize: 13,
+                    fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                    transition: 'all 0.15s ease',
+                }}>
+                <Upload size={13} strokeWidth={2.5} color="#a78bfa" />
+                {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+            </button>
 
             <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
 

@@ -384,7 +384,15 @@ function getDefaultName(type: ProjectType): string {
         'text-classifier': 'My Text Classifier',
         'numbers-cr': 'My Number Classifier',
         'object-detection': 'My Object Detector',
-        'hand-pose-classifier': 'My Hand Pose Classifier'
+        'hand-pose-classifier': 'My Hand Pose Classifier',
+        'finger-counter': 'AI Finger Counter',
+        'virtual-piano': 'Virtual Piano',
+        'volume-controller': 'Gesture Volume Controller',
+        'drawing-canvas': 'Virtual Drawing Canvas',
+        'yoga-checker': 'Yoga Pose Checker',
+        'rep-counter': 'Exercise Rep Counter',
+        'dance-pose': 'Dance Pose Recognition',
+        'posture-monitor': 'Sitting Posture Monitor'
     }
     return names[type] || 'My Classifier'
 }

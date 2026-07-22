@@ -20,7 +20,7 @@
  * - getBlocklyBlockDefinitions(): Converts to Blockly JSON format
  */
 
-export const COLORS = {
+export const COLORS: Record<string, string> = {
     motion: '#4C97FF',
     looks: '#9966FF',
     sound: '#CF63CF',
@@ -32,11 +32,65 @@ export const COLORS = {
     list: '#FF8C1A',
     myblocks: '#FF6680',
     extensions: '#0FBD8C'
-};
+}
 
-// Helper to convert our simple format to Blockly JSON
-const convertToBlocklyFormat = (def, opcode) => {
-    const blocklyDef = {
+type BlockShape = 'hat' | 'stack' | 'reporter' | 'boolean' | 'cap' | 'c-block'
+
+type InputType = 'number' | 'string' | 'dropdown' | 'boolean' | 'variable' | 'list' | 'color' | 'angle' | 'image' | 'custom'
+
+interface BlockInput {
+    type: InputType
+    name: string
+    default?: string | number
+    options?: Array<[string, string]>
+    min?: number
+    max?: number
+    src?: string
+    width?: number
+    height?: number
+    alt?: string
+}
+
+interface BlockDefinition {
+    opcode: string
+    category: string
+    color: string
+    shape: BlockShape
+    message: string
+    message2?: string
+    inputs: BlockInput[]
+    tooltip?: string
+    helpUrl?: string
+    output?: string | string[]
+}
+
+interface BlocklyArg {
+    type: string
+    name: string
+    value?: string | number
+    options?: Array<[string, string]>
+    min?: number
+    max?: number
+}
+
+interface BlocklyDefinition {
+    type: string
+    message0: string
+    message1?: string
+    message2?: string
+    args0?: BlocklyArg[]
+    args1?: BlocklyArg[]
+    args2?: BlocklyArg[]
+    previousStatement: string | null
+    nextStatement: string | null
+    colour: string
+    tooltip: string
+    helpUrl: string
+    output?: string
+}
+
+const convertToBlocklyFormat = (def: BlockDefinition, opcode: string): BlocklyDefinition => {
+    const blocklyDef: BlocklyDefinition = {
         type: opcode,
         message0: def.message,
         previousStatement: def.shape === 'hat' ? null : (def.shape === 'cap' ? null : 'any'),
@@ -44,120 +98,115 @@ const convertToBlocklyFormat = (def, opcode) => {
         colour: def.color,
         tooltip: def.tooltip || '',
         helpUrl: def.helpUrl || ''
-    };
-
-    // Add output for reporter/boolean blocks
-    if (def.shape === 'reporter') {
-        blocklyDef.output = 'Number';
-    } else if (def.shape === 'boolean') {
-        blocklyDef.output = 'Boolean';
     }
 
-    // Build args/inputs based on shape and inputs
-    if (def.inputs && def.inputs.length > 0) {
-        const args0 = [];
-        const hasCBlockMouth = def.shape === 'c-block' && def.message2;
+    if (def.shape === 'reporter') {
+        blocklyDef.output = 'Number'
+    } else if (def.shape === 'boolean') {
+        blocklyDef.output = 'Boolean'
+    }
 
-        def.inputs.forEach((input, index) => {
-            let argType;
+    if (def.inputs && def.inputs.length > 0) {
+        const args0: BlocklyArg[] = []
+        const hasCBlockMouth = def.shape === 'c-block' && def.message2
+
+        def.inputs.forEach((input) => {
+            let argType: string
             switch (input.type) {
                 case 'number':
-                    argType = 'field_number';
-                    break;
+                    argType = 'field_number'
+                    break
                 case 'string':
-                    argType = 'field_input';
-                    break;
+                    argType = 'field_input'
+                    break
                 case 'dropdown':
-                    argType = 'field_dropdown';
-                    break;
+                    argType = 'field_dropdown'
+                    break
                 case 'boolean':
-                    argType = 'input_value'; // Boolean input slot
-                    break;
+                    argType = 'input_value'
+                    break
                 case 'variable':
-                    argType = 'field_variable';
-                    break;
+                    argType = 'field_variable'
+                    break
                 case 'list':
-                    argType = 'field_variable';
-                    break;
+                    argType = 'field_variable'
+                    break
                 case 'color':
-                    argType = 'field_colour';
-                    break;
+                    argType = 'field_colour'
+                    break
                 case 'angle':
-                    argType = 'field_angle';
-                    break;
+                    argType = 'field_angle'
+                    break
                 default:
-                    argType = 'field_input';
+                    argType = 'field_input'
             }
 
-            const arg = {
+            const arg: BlocklyArg = {
                 type: argType,
                 name: input.name
-            };
-
-            // Add value for field types
-            if (argType.startsWith('field_')) {
-                if (input.default !== undefined) {
-                    arg.value = input.default;
-                }
-                if (input.options) {
-                    arg.options = input.options;
-                }
-                if (input.min !== undefined) arg.min = input.min;
-                if (input.max !== undefined) arg.max = input.max;
             }
 
-            args0.push(arg);
-        });
+            if (argType.startsWith('field_')) {
+                if (input.default !== undefined) {
+                    arg.value = input.default
+                }
+                if (input.options) {
+                    arg.options = input.options
+                }
+                if (input.min !== undefined) arg.min = input.min
+                if (input.max !== undefined) arg.max = input.max
+            }
 
-        blocklyDef.args0 = args0;
+            args0.push(arg)
+        })
 
-        // Add substack input for c-blocks
+        blocklyDef.args0 = args0
+
         if (def.shape === 'c-block') {
-            // Add the DO input after condition
-            blocklyDef.message1 = '%1';
-            blocklyDef.args1 = [{ type: 'input_statement', name: 'DO' }];
+            blocklyDef.message1 = '%1'
+            blocklyDef.args1 = [{ type: 'input_statement', name: 'DO' }]
         }
 
-        // Add else message and ELSE input for c-blocks with else
         if (hasCBlockMouth) {
-            blocklyDef.message2 = 'else %1';
-            blocklyDef.args2 = [{ type: 'input_statement', name: 'ELSE' }];
+            blocklyDef.message2 = 'else %1'
+            blocklyDef.args2 = [{ type: 'input_statement', name: 'ELSE' }]
         }
     }
 
-    return blocklyDef;
-};
+    return blocklyDef
+}
 
-// Export function to get Blockly-compatible definitions
-export const getBlocklyBlockDefinitions = () => {
-    const blocks = [];
+export const getBlocklyBlockDefinitions = (): BlocklyDefinition[] => {
+    const blocks: BlocklyDefinition[] = []
     for (const [opcode, def] of Object.entries(blockDefinitions)) {
-        blocks.push(convertToBlocklyFormat(def, opcode));
+        blocks.push(convertToBlocklyFormat(def, opcode))
     }
-    return blocks;
-};
+    return blocks
+}
 
-// Export variable/list block factories (dynamic)
-export const createVariableBlock = (variableName, variableType = 'Number') => ({
+export const createVariableBlock = (variableName: string, variableType: string = 'Number'): BlocklyDefinition => ({
     type: 'data_variable',
     message0: variableName,
     output: 'Number',
     colour: COLORS.variables,
-    tooltip: `Variable: ${variableName}`
-});
+    tooltip: `Variable: ${variableName}`,
+    previousStatement: null,
+    nextStatement: null,
+    helpUrl: ''
+})
 
-export const createListBlock = (listName) => ({
+export const createListBlock = (listName: string): BlocklyDefinition => ({
     type: 'data_list',
     message0: listName,
     output: 'String',
     colour: COLORS.list,
-    tooltip: `List: ${listName}`
-});
+    tooltip: `List: ${listName}`,
+    previousStatement: null,
+    nextStatement: null,
+    helpUrl: ''
+})
 
-const blockDefinitions = {
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MOTION
-    // ═══════════════════════════════════════════════════════════════════════════
+const blockDefinitions: Record<string, BlockDefinition> = {
     'motion_movesteps': {
         opcode: 'motion_movesteps',
         category: 'motion',
@@ -313,9 +362,6 @@ const blockDefinitions = {
         inputs: []
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // LOOKS
-    // ═══════════════════════════════════════════════════════════════════════════
     'looks_sayforsecs': {
         opcode: 'looks_sayforsecs',
         category: 'looks',
@@ -492,9 +538,6 @@ const blockDefinitions = {
         inputs: []
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SOUND
-    // ═══════════════════════════════════════════════════════════════════════════
     'sound_playuntildone': {
         opcode: 'sound_playuntildone',
         category: 'sound',
@@ -574,16 +617,13 @@ const blockDefinitions = {
         inputs: []
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // EVENTS
-    // ═══════════════════════════════════════════════════════════════════════════
     'event_whenflagclicked': {
         opcode: 'event_whenflagclicked',
         category: 'events',
         color: COLORS.events,
         shape: 'hat',
         message: 'when %1 clicked',
-        inputs: [{ type: 'image', src: 'https://leap.mit.edu/static/assets/40a08e64c22e43f55050f22495914a27.svg', width: 24, height: 24, alt: 'flag' }]
+        inputs: [{ type: 'image', name: 'FLAG', src: 'https://leap.mit.edu/static/assets/40a08e64c22e43f55050f22495914a27.svg', width: 24, height: 24, alt: 'flag' }]
     },
     'event_whenkeypressed': {
         opcode: 'event_whenkeypressed',
@@ -645,9 +685,6 @@ const blockDefinitions = {
         inputs: [{ type: 'dropdown', name: 'BROADCAST_INPUT', options: [['message1', 'message1']], default: 'message1' }]
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // CONTROL
-    // ═══════════════════════════════════════════════════════════════════════════
     'control_wait': {
         opcode: 'control_wait',
         category: 'control',
@@ -668,7 +705,7 @@ const blockDefinitions = {
         opcode: 'control_forever',
         category: 'control',
         color: COLORS.control,
-        shape: 'c-block', // cap-block at the bottom
+        shape: 'c-block',
         message: 'forever',
         inputs: []
     },
@@ -738,9 +775,6 @@ const blockDefinitions = {
         inputs: []
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SENSING
-    // ═══════════════════════════════════════════════════════════════════════════
     'sensing_touchingobject': {
         opcode: 'sensing_touchingobject',
         category: 'sensing',
@@ -890,9 +924,6 @@ const blockDefinitions = {
         inputs: []
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // OPERATORS
-    // ═══════════════════════════════════════════════════════════════════════════
     'operator_add': {
         opcode: 'operator_add',
         category: 'operators',
@@ -1041,9 +1072,6 @@ const blockDefinitions = {
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // VARIABLES
-    // ═══════════════════════════════════════════════════════════════════════════
     'data_variable': {
         opcode: 'data_variable',
         category: 'variables',
@@ -1085,9 +1113,6 @@ const blockDefinitions = {
         inputs: [{ type: 'variable', name: 'VARIABLE', default: 'my variable' }]
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // LISTS
-    // ═══════════════════════════════════════════════════════════════════════════
     'data_addtolist': {
         opcode: 'data_addtolist',
         category: 'list',
@@ -1177,9 +1202,6 @@ const blockDefinitions = {
         inputs: [{ type: 'list', name: 'LIST', default: 'my list' }]
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MY BLOCKS
-    // ═══════════════════════════════════════════════════════════════════════════
     'procedures_definition': {
         opcode: 'procedures_definition',
         category: 'myblocks',
@@ -1197,9 +1219,6 @@ const blockDefinitions = {
         inputs: [{ type: 'custom', name: 'custom_call' }]
     },
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TABLES (Added for parity and deduplication)
-    // ═══════════════════════════════════════════════════════════════════════════
     'data_showtable': {
         opcode: 'data_showtable',
         category: 'list',
@@ -1320,6 +1339,6 @@ const blockDefinitions = {
         message: 'export %1 as csv file',
         inputs: [{ type: 'variable', name: 'TABLE', default: 'my table' }]
     }
-};
+}
 
-export default blockDefinitions;
+export default blockDefinitions

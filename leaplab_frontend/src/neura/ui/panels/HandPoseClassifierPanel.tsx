@@ -58,6 +58,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -303,7 +304,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
                         const result = await classifierRef.current.predictFromImage(canvasRef.current, 3)
                         const elapsed = Math.round(performance.now() - start)
-                        if (result) {
+                        if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
                             setHandDetected(true)
                             setInferenceTime(elapsed)
@@ -330,7 +331,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             animFrameRef.current = requestAnimationFrame(tick)
             return () => cancelAnimationFrame(animFrameRef.current)
         }
-    }, [mode.mode, stream, modelLoading, startCamera])
+    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold])
 
     // Collect mode: throttled hand detection loop for overlay drawing
     useEffect(() => {
@@ -908,6 +909,17 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 ⚠️ Some classes have fewer than 2 samples — predictions may be unreliable. Go back to Collect and add more samples.
                             </div>
                         )}
+                        {/* Confidence Threshold */}
+                        <div className="w-full max-w-[720px] mt-2 bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence Threshold</span>
+                                <span className="text-xs font-extrabold text-[#0ea5e9] bg-[#f0f9ff] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
+                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                style={{ background: `linear-gradient(to right, #0ea5e9 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                        </div>
                     </div>
                     <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />

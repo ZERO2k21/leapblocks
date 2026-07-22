@@ -42,17 +42,23 @@ export default function MenuBar({
     onSave,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
-    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1400);
+    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1760);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef(null);
     const windowWidth = useWindowWidth();
-    const showDesktopMenus = windowWidth >= 1400;
+    const rightSideRef = useRef(null);
+
+    // Upload mode has more right-side items, so use a higher breakpoint
+    const desktopBreakpoint = mode === 'upload' ? 1760 : 1400;
+    const showDesktopMenus = windowWidth >= desktopBreakpoint;
 
     useEffect(() => {
-        const handleResize = () => setShowCreoleap(window.innerWidth >= 1400);
+        const handleResize = () => setShowCreoleap(window.innerWidth >= 1760);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+
 
     useEffect(() => {
         if (!mobileMenuOpen) return;
@@ -218,7 +224,10 @@ export default function MenuBar({
             </div>
 
             {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG ════════════════ */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div ref={rightSideRef} style={{
+                display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+                overflow: 'hidden', maxWidth: '100%',
+            }}>
 
                 {showDesktopMenus ? (
                     <>
