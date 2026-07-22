@@ -9,16 +9,45 @@
  * without changing the Python IDE structure.
  */
 
+import React from 'react';
 import { useStage } from '../context/StageContext';
+
+export interface SpriteData {
+    id: string;
+    name: string;
+    x?: number;
+    y?: number;
+    position?: { x: number; y: number };
+    direction?: number;
+    angle?: number;
+    speech?: string;
+    visible?: boolean;
+    size?: number;
+    costumes?: Record<string, string>;
+    currentCostume?: string;
+    type?: string;
+    [key: string]: any;
+}
+
+export type AddLogFn = (message: string, type?: 'info' | 'error' | 'warn') => void;
+export type SetSpritesFn = React.Dispatch<React.SetStateAction<SpriteData[]>>;
+
+export interface SpritePreset {
+    name: string;
+    type: string;
+    costumes: Record<string, string>;
+}
 
 // ─── Sprite Action Logger ───────────────────────────────────────────────────
 // Logs sprite actions to terminal for visibility
 export class SpriteActionLogger {
-    constructor(addLog) {
+    private addLog: AddLogFn;
+
+    constructor(addLog: AddLogFn) {
         this.addLog = addLog;
     }
 
-    logSpriteAction(spriteName, action, params = {}) {
+    logSpriteAction(spriteName: string, action: string, params: Record<string, any> = {}): void {
         const paramStr = Object.entries(params)
             .map(([k, v]) => `${k}: ${v}`)
             .join(', ');
@@ -26,7 +55,7 @@ export class SpriteActionLogger {
         this.addLog(message, 'info');
     }
 
-    logSpriteError(spriteName, action, error) {
+    logSpriteError(spriteName: string, action: string, error: any): void {
         this.addLog(`❌ ${spriteName} ${action} failed: ${error}`, 'error');
     }
 }
@@ -35,7 +64,12 @@ export class SpriteActionLogger {
 // These functions can be called from intermediate blocks and update the Python IDE sprites
 
 export class SpritePanelFunctions {
-    constructor(sprites, setSprites, selectedSpriteId, logger) {
+    public sprites: SpriteData[];
+    public setSprites: SetSpritesFn;
+    public selectedSpriteId: string | null;
+    public logger: SpriteActionLogger;
+
+    constructor(sprites: SpriteData[], setSprites: SetSpritesFn, selectedSpriteId: string | null, logger: SpriteActionLogger) {
         this.sprites = sprites;
         this.setSprites = setSprites;
         this.selectedSpriteId = selectedSpriteId;
@@ -43,7 +77,7 @@ export class SpritePanelFunctions {
     }
 
     // Get sprite by name or ID
-    getSprite(nameOrId) {
+    getSprite(nameOrId: string): SpriteData | undefined {
         return this.sprites.find(s => 
             s.id === nameOrId || 
             s.name.toLowerCase() === String(nameOrId).toLowerCase()
@@ -51,13 +85,13 @@ export class SpritePanelFunctions {
     }
 
     // Get selected sprite
-    getSelectedSprite() {
+    getSelectedSprite(): SpriteData | undefined {
         return this.sprites.find(s => s.id === this.selectedSpriteId);
     }
 
     // ─── Movement Functions ─────────────────────────────────────────────────
     
-    moveSprite(spriteName, steps) {
+    moveSprite(spriteName: string, steps: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'move', 'Sprite not found');
@@ -83,7 +117,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'move', { steps, direction: angle });
     }
 
-    moveSpriteRelative(spriteName, direction, steps) {
+    moveSpriteRelative(spriteName: string, direction: string, steps: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'moveRelative', 'Sprite not found');
@@ -113,7 +147,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'moveRelative', { direction, steps });
     }
 
-    turnSprite(spriteName, degrees) {
+    turnSprite(spriteName: string, degrees: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'turn', 'Sprite not found');
@@ -135,7 +169,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'turn', { degrees, newDirection: newAngle });
     }
 
-    goToSprite(spriteName, x, y) {
+    goToSprite(spriteName: string, x: number, y: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'goTo', 'Sprite not found');
@@ -157,7 +191,7 @@ export class SpritePanelFunctions {
 
     // ─── Appearance Functions ───────────────────────────────────────────────
     
-    spriteSay(spriteName, message, duration = 2) {
+    spriteSay(spriteName: string, message: string, duration: number = 2): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'say', 'Sprite not found');
@@ -188,7 +222,7 @@ export class SpritePanelFunctions {
         }
     }
 
-    spriteThink(spriteName, message, duration = 2) {
+    spriteThink(spriteName: string, message: string, duration: number = 2): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'think', 'Sprite not found');
@@ -219,7 +253,7 @@ export class SpritePanelFunctions {
         }
     }
 
-    showSprite(spriteName) {
+    showSprite(spriteName: string): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'show', 'Sprite not found');
@@ -237,7 +271,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'show');
     }
 
-    hideSprite(spriteName) {
+    hideSprite(spriteName: string): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'hide', 'Sprite not found');
@@ -255,7 +289,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'hide');
     }
 
-    setSpriteSize(spriteName, size) {
+    setSpriteSize(spriteName: string, size: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'setSize', 'Sprite not found');
@@ -273,7 +307,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'setSize', { size });
     }
 
-    changeSpriteSize(spriteName, delta) {
+    changeSpriteSize(spriteName: string, delta: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'changeSize', 'Sprite not found');
@@ -293,7 +327,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'changeSize', { delta, newSize });
     }
 
-    nextCostume(spriteName) {
+    nextCostume(spriteName: string): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'nextCostume', 'Sprite not found');
@@ -306,7 +340,7 @@ export class SpritePanelFunctions {
             return;
         }
 
-        const currentIdx = costumeKeys.indexOf(sprite.currentCostume);
+        const currentIdx = costumeKeys.indexOf(sprite.currentCostume || '');
         const nextIdx = (currentIdx + 1) % costumeKeys.length;
         const nextCostume = costumeKeys[nextIdx] || 'default';
 
@@ -321,7 +355,7 @@ export class SpritePanelFunctions {
         this.logger.logSpriteAction(sprite.name, 'nextCostume', { newCostume: nextCostume });
     }
 
-    switchCostume(spriteName, costumeName) {
+    switchCostume(spriteName: string, costumeName: string): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'switchCostume', 'Sprite not found');
@@ -346,7 +380,7 @@ export class SpritePanelFunctions {
 
     // ─── Direction Functions ────────────────────────────────────────────────
     
-    pointSpriteInDirection(spriteName, angle) {
+    pointSpriteInDirection(spriteName: string, angle: number): void {
         const sprite = this.getSprite(spriteName);
         if (!sprite) {
             this.logger.logSpriteError(spriteName, 'pointInDirection', 'Sprite not found');
@@ -370,25 +404,25 @@ export class SpritePanelFunctions {
 
     // ─── Utility Functions ──────────────────────────────────────────────────
     
-    getSpritePosition(spriteName) {
+    getSpritePosition(spriteName: string): { x: number; y: number } | null {
         const sprite = this.getSprite(spriteName);
         if (!sprite) return null;
         return sprite.position || { x: sprite.x || 0, y: sprite.y || 0 };
     }
 
-    getSpriteDirection(spriteName) {
+    getSpriteDirection(spriteName: string): number | null {
         const sprite = this.getSprite(spriteName);
         if (!sprite) return null;
         return sprite.direction ?? sprite.angle ?? 0;
     }
 
-    getSpriteSize(spriteName) {
+    getSpriteSize(spriteName: string): number | null {
         const sprite = this.getSprite(spriteName);
         if (!sprite) return null;
         return sprite.size || 100;
     }
 
-    isSpriteVisible(spriteName) {
+    isSpriteVisible(spriteName: string): boolean {
         const sprite = this.getSprite(spriteName);
         if (!sprite) return false;
         return sprite.visible !== false;
@@ -398,35 +432,40 @@ export class SpritePanelFunctions {
 // ─── Intermediate Blocks Integration ────────────────────────────────────────
 // This function creates a bridge between intermediate blocks and Python IDE
 
-export function createIntermediateBlocksBridge(sprites, setSprites, selectedSpriteId, addLog) {
+export function createIntermediateBlocksBridge(
+    sprites: SpriteData[],
+    setSprites: SetSpritesFn,
+    selectedSpriteId: string | null,
+    addLog: AddLogFn
+) {
     const logger = new SpriteActionLogger(addLog);
     const panelFunctions = new SpritePanelFunctions(sprites, setSprites, selectedSpriteId, logger);
 
     return {
         // Movement functions
-        move: (spriteName, steps) => panelFunctions.moveSprite(spriteName, steps),
-        moveRelative: (spriteName, direction, steps) => panelFunctions.moveSpriteRelative(spriteName, direction, steps),
-        turn: (spriteName, degrees) => panelFunctions.turnSprite(spriteName, degrees),
-        goTo: (spriteName, x, y) => panelFunctions.goToSprite(spriteName, x, y),
+        move: (spriteName: string, steps: number) => panelFunctions.moveSprite(spriteName, steps),
+        moveRelative: (spriteName: string, direction: string, steps: number) => panelFunctions.moveSpriteRelative(spriteName, direction, steps),
+        turn: (spriteName: string, degrees: number) => panelFunctions.turnSprite(spriteName, degrees),
+        goTo: (spriteName: string, x: number, y: number) => panelFunctions.goToSprite(spriteName, x, y),
         
         // Appearance functions
-        say: (spriteName, message, duration) => panelFunctions.spriteSay(spriteName, message, duration),
-        think: (spriteName, message, duration) => panelFunctions.spriteThink(spriteName, message, duration),
-        show: (spriteName) => panelFunctions.showSprite(spriteName),
-        hide: (spriteName) => panelFunctions.hideSprite(spriteName),
-        setSize: (spriteName, size) => panelFunctions.setSpriteSize(spriteName, size),
-        changeSize: (spriteName, delta) => panelFunctions.changeSpriteSize(spriteName, delta),
-        nextCostume: (spriteName) => panelFunctions.nextCostume(spriteName),
-        switchCostume: (spriteName, costumeName) => panelFunctions.switchCostume(spriteName, costumeName),
+        say: (spriteName: string, message: string, duration?: number) => panelFunctions.spriteSay(spriteName, message, duration),
+        think: (spriteName: string, message: string, duration?: number) => panelFunctions.spriteThink(spriteName, message, duration),
+        show: (spriteName: string) => panelFunctions.showSprite(spriteName),
+        hide: (spriteName: string) => panelFunctions.hideSprite(spriteName),
+        setSize: (spriteName: string, size: number) => panelFunctions.setSpriteSize(spriteName, size),
+        changeSize: (spriteName: string, delta: number) => panelFunctions.changeSpriteSize(spriteName, delta),
+        nextCostume: (spriteName: string) => panelFunctions.nextCostume(spriteName),
+        switchCostume: (spriteName: string, costumeName: string) => panelFunctions.switchCostume(spriteName, costumeName),
         
         // Direction functions
-        pointInDirection: (spriteName, angle) => panelFunctions.pointSpriteInDirection(spriteName, angle),
+        pointInDirection: (spriteName: string, angle: number) => panelFunctions.pointSpriteInDirection(spriteName, angle),
         
         // Utility functions
-        getPosition: (spriteName) => panelFunctions.getSpritePosition(spriteName),
-        getDirection: (spriteName) => panelFunctions.getSpriteDirection(spriteName),
-        getSize: (spriteName) => panelFunctions.getSpriteSize(spriteName),
-        isVisible: (spriteName) => panelFunctions.isSpriteVisible(spriteName),
+        getPosition: (spriteName: string) => panelFunctions.getSpritePosition(spriteName),
+        getDirection: (spriteName: string) => panelFunctions.getSpriteDirection(spriteName),
+        getSize: (spriteName: string) => panelFunctions.getSpriteSize(spriteName),
+        isVisible: (spriteName: string) => panelFunctions.isSpriteVisible(spriteName),
         
         // Logger for external access
         logger: logger
@@ -451,7 +490,7 @@ export function useSpriteBridge() {
     } = useStage();
 
     // Create a simple addLog function for the bridge
-    const addLog = (message, type = 'info') => {
+    const addLog: AddLogFn = (message, _type = 'info') => {
         console.log(`[SpriteBridge] ${message}`);
         // You can extend this to also update terminal output if needed
     };
@@ -474,8 +513,8 @@ export function useSpriteBridge() {
 
 // ─── Default Sprite Presets ─────────────────────────────────────────────────
 // These presets can be used by intermediate blocks to quickly add default sprites
-let _DEFAULT_SPRITE_PRESETS = null;
-export const getDefaultSpritePresets = () => {
+let _DEFAULT_SPRITE_PRESETS: Record<string, SpritePreset> | null = null;
+export const getDefaultSpritePresets = (): Record<string, SpritePreset> => {
     if (!_DEFAULT_SPRITE_PRESETS) {
         _DEFAULT_SPRITE_PRESETS = {
             robot: {
@@ -510,7 +549,7 @@ export const getDefaultSpritePresets = () => {
 };
 
 // ─── Helper function to add default sprite ──────────────────────────────────
-export function addDefaultSprite(spriteType, addSprite) {
+export function addDefaultSprite(spriteType: string, addSprite: (sprite: any) => any) {
     const preset = getDefaultSpritePresets()[spriteType];
     if (!preset) {
         console.error(`Unknown sprite type: ${spriteType}`);

@@ -204,6 +204,7 @@ export class ObjectDetectionTrainer {
         if (!result.success) {
             this.state.isTraining = false
             this.state.isComplete = true
+            this.state.progress = 100
             this.notifyListeners()
             return false
         }

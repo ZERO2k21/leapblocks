@@ -13,7 +13,49 @@ import { costumeEngine } from '../engine/CostumeEngine';
 import { soundManager } from '../engine/SoundManager';
 import variableStore from '../store/variableStore';
 
-class LeapRuntime {
+declare global {
+    interface Window {
+        mouseX?: number;
+        mouseY?: number;
+        leapTimerStart?: number;
+    }
+}
+
+export interface BlockField {
+    value?: any;
+    id?: string;
+    name?: string;
+}
+
+export interface FlattenedBlock {
+    opcode: string;
+    id?: string;
+    type?: string;
+    fields: Record<string, BlockField>;
+    inputs: Record<string, any>;
+    next: FlattenedBlock | null;
+    proccode?: string;
+    block?: {
+        fields?: Record<string, BlockField>;
+    };
+    value?: any;
+}
+
+export class LeapRuntime {
+    public isRunning: boolean;
+    public activeScripts: Set<any>;
+    public spritesBlocks: Map<string, FlattenedBlock[]>;
+
+    // Monitor callbacks
+    public onShowVariable: ((varName: string) => void) | null;
+    public onHideVariable: ((varName: string) => void) | null;
+    public onShowList: ((listName: string) => void) | null;
+    public onHideList: ((listName: string) => void) | null;
+    public onLog: ((msg: string) => void) | null;
+
+    public _onBroadcast?: ((msg: string) => void) | null;
+    public _onBroadcastAndWait?: ((msg: string) => Promise<void> | void) | null;
+
     constructor() {
         this.isRunning = false;
         this.activeScripts = new Set();
@@ -27,23 +69,23 @@ class LeapRuntime {
         this.onLog = null;
     }
 
-    triggerFlag() {
+    triggerFlag(): void {
         this.isRunning = true;
         this.triggerEvent('event_whenflagclicked');
         this.triggerEvent('arduino_setup'); // Compatibility
     }
 
-    triggerClick(spriteId) {
+    triggerClick(spriteId: string): void {
         this.triggerEvent('event_whenthisspriteclicked', {}, false, spriteId);
         this.triggerEvent('event_sprite_clicked', {}, false, spriteId);
     }
 
     /**
      * Executes a block AST starting from a specific opcode
-     * @param {Object} block - The block JSON from Blockly or AST
-     * @param {string} spriteId - ID of the sprite executing the script
+     * @param block - The block JSON from Blockly or AST
+     * @param spriteId - ID of the sprite executing the script
      */
-    async executeBlock(block, spriteId) {
+    async executeBlock(block: any, spriteId: string): Promise<void> {
         if (!block || !this.isRunning) return;
         const sprite = spriteManager.getSprite(spriteId);
         if (!sprite) return;
@@ -367,7 +409,7 @@ class LeapRuntime {
                 // ═══════════════════════════════════════════════════════════════════════
                 case 'procedures_call':
                     const proccode = block.proccode;
-                    const def = this.getProcedureDefinition(proccode);
+                    const def = (this as any).getProcedureDefinition ? (this as any).getProcedureDefinition(proccode) : null;
                     if (def) {
                         // Map arguments
                         // TODO: Implement parameter passing
@@ -404,7 +446,7 @@ class LeapRuntime {
     /**
      * Resolves an input value
      */
-    async getInputValue(input, spriteId) {
+    async getInputValue(input: any, spriteId: string): Promise<any> {
         if (!input) return 0;
         if (typeof input !== 'object') return input;
 
@@ -426,7 +468,7 @@ class LeapRuntime {
         return input.value !== undefined ? input.value : 0;
     }
 
-    async executeReporter(block, spriteId) {
+    async executeReporter(block: any, spriteId: string): Promise<any> {
         const opcode = block.opcode || block.type;
         const inputs = block.inputs || {};
         const fields = block.fields || {};
@@ -502,7 +544,7 @@ class LeapRuntime {
             case 'looks_size':
                 return sprite?.size || 100;
             case 'looks_costumenumbername':
-                return fields.NUMBER_NAME === 'number' ? (sprite?.costumeIndex + 1) : sprite?.costumeName;
+                return fields.NUMBER_NAME === 'number' ? ((sprite?.currentCostumeIndex ?? 0) + 1) : (sprite?.currentCostume?.name ?? '');
 
             // SENSING REPORTERS
             case 'sensing_timer':
@@ -527,17 +569,18 @@ class LeapRuntime {
                 return 0;
         }
     }
-    async syncSprite(spriteId, json) {
+
+    async syncSprite(spriteId: string, json: any): Promise<void> {
         if (!json || !json.blocks) {
             this.spritesBlocks.delete(spriteId);
             return;
         }
         const blocks = json.blocks.blocks || [];
-        this.spritesBlocks.set(spriteId, blocks.map(b => this.flattenBlock(b)));
+        this.spritesBlocks.set(spriteId, blocks.map((b: any) => this.flattenBlock(b)).filter(Boolean) as FlattenedBlock[]);
         console.log(`[LeapRuntime] Synced workspace for sprite: ${spriteId}`);
     }
 
-    loadProject(workspaces) {
+    loadProject(workspaces: Map<string, any>): void {
         this.spritesBlocks = new Map();
         for (const [spriteId, json] of workspaces.entries()) {
             this.syncSprite(spriteId, json);
@@ -545,7 +588,7 @@ class LeapRuntime {
         console.log(`[LeapRuntime] Loaded project with ${this.spritesBlocks.size} sprites`);
     }
 
-    async triggerEvent(opcode, condition = {}, wait = false, spriteIdOnly = null) {
+    async triggerEvent(opcode: string, condition: Record<string, any> = {}, wait: boolean = false, spriteIdOnly: string | null = null): Promise<void> {
         if (!this.isRunning) {
             if (opcode === 'event_whenthisspriteclicked' || opcode === 'event_sprite_clicked') {
                 this.isRunning = true; // Sprite click starts block execution even if stopped
@@ -554,7 +597,7 @@ class LeapRuntime {
             }
         }
 
-        const promises = [];
+        const promises: Promise<void>[] = [];
         for (const [spriteId, blocks] of this.spritesBlocks.entries()) {
             if (spriteIdOnly && spriteId !== spriteIdOnly) continue;
 
@@ -589,9 +632,9 @@ class LeapRuntime {
         if (wait) await Promise.all(promises);
     }
 
-    flattenBlock(block) {
+    flattenBlock(block: any): FlattenedBlock | null {
         if (!block) return null;
-        const flattened = {
+        const flattened: FlattenedBlock = {
             opcode: block.type,
             id: block.id,
             fields: {},
@@ -605,8 +648,8 @@ class LeapRuntime {
         }
         if (block.inputs) {
             for (const [key, val] of Object.entries(block.inputs)) {
-                if (val.block) flattened.inputs[key] = this.flattenBlock(val.block);
-                else if (val.shadow) flattened.inputs[key] = this.flattenBlock(val.shadow);
+                if ((val as any).block) flattened.inputs[key] = this.flattenBlock((val as any).block);
+                else if ((val as any).shadow) flattened.inputs[key] = this.flattenBlock((val as any).shadow);
             }
         }
         if (block.next && block.next.block) {
@@ -615,24 +658,27 @@ class LeapRuntime {
         return flattened;
     }
 
-    stopAll() {
+    stopAll(): void {
         this.isRunning = false;
         this.activeScripts.clear();
         console.log('[LeapRuntime] Stopped all scripts');
     }
 }
 
-let _leapRuntime = null;
-export function getLeapRuntime() {
+let _leapRuntime: LeapRuntime | null = null;
+export function getLeapRuntime(): LeapRuntime {
     if (!_leapRuntime) _leapRuntime = new LeapRuntime();
     return _leapRuntime;
 }
-export const leapRuntime = new Proxy({}, {
-    get(_target, prop) {
+export const leapRuntime = new Proxy({} as LeapRuntime, {
+    get(_target, prop: keyof LeapRuntime) {
         const instance = getLeapRuntime();
         const value = instance[prop];
-        return typeof value === 'function' ? value.bind(instance) : value;
+        return typeof value === 'function' ? (value as Function).bind(instance) : value;
     },
-    set(_target, prop, value) { getLeapRuntime()[prop] = value; return true; }
+    set(_target, prop: keyof LeapRuntime, value: any) {
+        (getLeapRuntime() as any)[prop] = value;
+        return true;
+    }
 });
 export default leapRuntime;

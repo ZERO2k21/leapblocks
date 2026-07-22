@@ -1,6 +1,12 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+
+export interface CLIResult {
+  stdout: string;
+  stderr: string;
+  code: number;
+}
 
 const APP_ROOT = __dirname;
 const FORGE_LIB_DIR = path.join(APP_ROOT, '..', '..', '..', 'forge-lib');
@@ -14,7 +20,7 @@ console.log('CLI_PATH:', CLI_PATH);
 console.log('CLI_PATH exists?', fs.existsSync(CLI_PATH));
 console.log('FORGE_CLI_YAML exists?', fs.existsSync(FORGE_CLI_YAML));
 
-async function runCLI(args) {
+async function runCLI(args: string[]): Promise<CLIResult> {
   return new Promise((resolve) => {
     console.log('Running:', CLI_PATH, ['--config-file', FORGE_CLI_YAML, ...args].join(' '));
     const proc = spawn(CLI_PATH, ['--config-file', FORGE_CLI_YAML, ...args], {
@@ -26,14 +32,14 @@ async function runCLI(args) {
       }
     });
     let stdout = '', stderr = '';
-    proc.stdout.on('data', d => { stdout += d.toString(); });
-    proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.on('close', code => resolve({ stdout, stderr, code }));
-    proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
+    proc.stdout.on('data', (d: Buffer | string) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d: Buffer | string) => { stderr += d.toString(); });
+    proc.on('close', (code: number | null) => resolve({ stdout, stderr, code: code ?? -1 }));
+    proc.on('error', (err: Error) => resolve({ stdout: '', stderr: err.message, code: -1 }));
   });
 }
 
-async function test() {
+async function test(): Promise<void> {
   const { stdout, stderr, code } = await runCLI(['core', 'list', '--format', 'json']);
   console.log('listCode:', code);
   console.log('stdout:', stdout.slice(0, 100));
@@ -45,9 +51,9 @@ async function test() {
   }
   
   try {
-    let parsed = JSON.parse(stdout || '[]');
-    let cores = Array.isArray(parsed) ? parsed : (parsed.platforms || []);
-    const installed = cores.some(c => (c.id || c.platform?.id || '').includes('esp32'));
+    const parsed = JSON.parse(stdout || '[]');
+    const cores = Array.isArray(parsed) ? parsed : (parsed.platforms || []);
+    const installed = cores.some((c: any) => (c.id || c.platform?.id || '').includes('esp32'));
     console.log('Installed?', installed);
     
     if (!installed) {

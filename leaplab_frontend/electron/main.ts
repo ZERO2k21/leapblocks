@@ -1,18 +1,42 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const { spawn } = require('child_process');
-const buildApk = require(path.join(__dirname, '..', 'src', 'creova', 'apk', 'electron-bridge.js'));
-const { makeESP32Compiler, cleanupESP32Build } = require('./esp32Compiler');
-// qemuManager removed — ESP32-C3 uses custom RISC-V emulator in renderer
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import path from 'path';
+import fs from 'fs';
+import { spawn, ChildProcess } from 'child_process';
+
+// Dynamic requires for local helpers
+let buildApk: any;
+try {
+  buildApk = require(path.join(__dirname, '..', 'src', 'creova', 'apk', 'electron-bridge.js'));
+} catch (err) {
+  buildApk = async () => { throw new Error('APK build bridge not found'); };
+}
+
+let makeESP32Compiler: any;
+let cleanupESP32Build: any = (_dir: string) => {};
+try {
+  const compiler = require('./esp32Compiler');
+  makeESP32Compiler = compiler.makeESP32Compiler;
+  cleanupESP32Build = compiler.cleanupESP32Build || cleanupESP32Build;
+} catch (err) {
+  makeESP32Compiler = () => ({
+    compileESP32: async () => ({ success: false, error: 'ESP32 compiler module not found' })
+  });
+}
+
+let makeESP32Uploader: any;
+try {
+  makeESP32Uploader = require('./esp32Uploader').makeESP32Uploader;
+} catch (err) {
+  makeESP32Uploader = () => {};
+}
+
 const qemuManager = {
   stopQemu: () => { },
-  startQemu: async () => { },
-  connectQMP: async () => { throw new Error('QMP not available'); },
-  sendQMPCommand: async () => { },
+  startQemu: async (_binPath?: string, _win?: any) => { },
+  connectQMP: async (): Promise<any> => { throw new Error('QMP not available'); },
+  sendQMPCommand: async (_socket?: any, _cmd?: any) => { },
   ensureQemuSilent: async () => { },
 };
-const { makeESP32Uploader } = require('./esp32Uploader');
 
 const isDev = !app.isPackaged;
 const APP_ROOT = app.getAppPath();
@@ -29,8 +53,14 @@ const CLI_PATH = isDev
   ? path.join(APP_ROOT, 'src', 'drivers', 'arduino-cli', 'arduino-cli.exe')
   : path.join(process.resourcesPath, 'arduino-cli', 'arduino-cli.exe');
 
+export interface CLIResult {
+  stdout: string;
+  stderr: string;
+  code: number;
+}
+
 /** Run arduino-cli with the forge-lib config and return { stdout, stderr, code } */
-async function runCLI(args) {
+async function runCLI(args: string[]): Promise<CLIResult> {
   return new Promise((resolve) => {
     const proc = spawn(CLI_PATH, ['--config-file', FORGE_CLI_YAML, ...args], {
       env: { ...process.env }
@@ -38,15 +68,15 @@ async function runCLI(args) {
     let stdout = '', stderr = '';
     proc.stdout.on('data', d => { stdout += d.toString(); });
     proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.on('close', code => resolve({ stdout, stderr, code }));
+    proc.on('close', code => resolve({ stdout, stderr, code: code ?? -1 }));
     proc.on('error', err => resolve({ stdout: '', stderr: err.message, code: -1 }));
   });
 }
 
 // ── Local Build Server Management ─────────
-let buildServerProcess = null;
+let buildServerProcess: ChildProcess | null = null;
 
-function startBuildServer() {
+function startBuildServer(): void {
   const serverPath = isDev
     ? path.join(__dirname, '..', 'src', 'studio', 'build-server', 'server.js')
     : path.join(process.resourcesPath, 'src', 'studio', 'build-server', 'server.js');
@@ -62,15 +92,15 @@ function startBuildServer() {
     detached: false,
   });
 
-  buildServerProcess.stdout.on('data', (data) => {
+  buildServerProcess.stdout?.on('data', (data: Buffer | string) => {
     console.log(`[BUILD-SERVER] ${data.toString().trim()}`);
   });
 
-  buildServerProcess.stderr.on('data', (data) => {
+  buildServerProcess.stderr?.on('data', (data: Buffer | string) => {
     console.error(`[BUILD-SERVER ERROR] ${data.toString().trim()}`);
   });
 
-  buildServerProcess.on('close', (code) => {
+  buildServerProcess.on('close', (code: number | null) => {
     console.log(`[BUILD-SERVER] Exited with code ${code}`);
     buildServerProcess = null;
   });
@@ -78,7 +108,7 @@ function startBuildServer() {
   console.log('[BUILD-SERVER] Started on http://localhost:3001');
 }
 
-function stopBuildServer() {
+function stopBuildServer(): void {
   if (buildServerProcess) {
     buildServerProcess.kill();
     buildServerProcess = null;
@@ -87,11 +117,13 @@ function stopBuildServer() {
 }
 
 // ── Electra Compile Server (Arduino compile + transpile) ─────────────────
-let compileServerProcess = null;
+let compileServerProcess: ChildProcess | null = null;
 
-function startCompileServer() {
+function startCompileServer(): void {
   const serverPath = isDev
-    ? path.join(__dirname, '..', 'server', 'server.js')
+    ? (fs.existsSync(path.join(__dirname, '..', 'server', 'server.ts'))
+        ? path.join(__dirname, '..', 'server', 'server.ts')
+        : path.join(__dirname, '..', 'server', 'server.js'))
     : path.join(process.resourcesPath, 'server', 'server.js');
 
   if (!fs.existsSync(serverPath)) {
@@ -123,13 +155,13 @@ function startCompileServer() {
     detached: false,
   });
 
-  compileServerProcess.stdout.on('data', (data) => {
+  compileServerProcess.stdout?.on('data', (data: Buffer | string) => {
     console.log(`[COMPILE-SERVER] ${data.toString().trim()}`);
   });
-  compileServerProcess.stderr.on('data', (data) => {
+  compileServerProcess.stderr?.on('data', (data: Buffer | string) => {
     console.error(`[COMPILE-SERVER ERROR] ${data.toString().trim()}`);
   });
-  compileServerProcess.on('close', (code) => {
+  compileServerProcess.on('close', (code: number | null) => {
     console.log(`[COMPILE-SERVER] Exited with code ${code}`);
     compileServerProcess = null;
   });
@@ -137,7 +169,7 @@ function startCompileServer() {
   console.log('[COMPILE-SERVER] Started on http://localhost:3001');
 }
 
-function stopCompileServer() {
+function stopCompileServer(): void {
   if (compileServerProcess) {
     compileServerProcess.kill();
     compileServerProcess = null;
@@ -145,9 +177,9 @@ function stopCompileServer() {
   }
 }
 
-let mainWindow;
+let mainWindow: BrowserWindow | null = null;
 
-function createWindow() {
+function createWindow(): void {
   const iconPath = isDev
     ? path.join(APP_ROOT, 'public', 'assets', 'leaplabicon.ico')
     : path.join(process.resourcesPath, 'public', 'assets', 'leaplabicon.ico');
@@ -176,12 +208,11 @@ function createWindow() {
 
   // Show the window only when the renderer has finished its first paint
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    mainWindow?.show();
   });
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
-    // mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
   }
@@ -191,15 +222,10 @@ app.whenReady().then(async () => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.creoleap.leapblocks');
   }
-  // ── Parallel startup: show window immediately, run background tasks concurrently ──
-  // createWindow() is called first so the UI appears as fast as possible.
-  // All heavy background work (build server, ESP32 core check, QEMU check) runs
-  // in parallel without blocking the window from loading.
   createWindow();
   startBuildServer();
   startCompileServer();
 
-  // Fire-and-forget background warmup tasks — run concurrently, never block the UI
   await Promise.allSettled([
     warmupESP32Core(),
   ]);
@@ -224,7 +250,7 @@ app.on('before-quit', () => {
 // IPC Handlers
 
 ipcMain.handle('build-apk', async (event, appState) => {
-  const logCallback = (msg) => {
+  const logCallback = (msg: string) => {
     try {
       if (!event.sender.isDestroyed()) {
         event.sender.send('build-log', msg);
@@ -237,12 +263,12 @@ ipcMain.handle('build-apk', async (event, appState) => {
   try {
     const outputPath = await buildApk(appState, APP_ROOT, logCallback);
     return { success: true, outputPath };
-  } catch (error) {
+  } catch (error: any) {
     return { success: false, error: error.message || error.toString() };
   }
 });
 
-ipcMain.handle('compile-arduino', async (_, code) => {
+ipcMain.handle('compile-arduino', async (_, code: string) => {
   const tempDir = path.join(app.getPath('temp'), `sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
 
@@ -267,22 +293,22 @@ ipcMain.handle('compile-arduino', async (_, code) => {
     } else {
       return { success: false, error: stderr || `Compiler exited with code ${exitCode}` };
     }
-  } catch (err) {
+  } catch (err: any) {
     return { success: false, error: err.message };
   } finally {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
   }
 });
 
-// Original IPC Handlers conclude below...
-ipcMain.handle('show-in-folder', (_, filePath) => {
+ipcMain.handle('show-in-folder', (_, filePath: string) => {
   shell.showItemInFolder(filePath);
 });
 
-ipcMain.handle('save-project', async (_, data, existingPath) => {
+ipcMain.handle('save-project', async (_, data: any, existingPath?: string) => {
   let targetPath = existingPath;
 
   if (!targetPath) {
+    if (!mainWindow) return { success: false, error: 'No main window' };
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Save LeapBlocks Project File',
       defaultPath: 'project.lbp',
@@ -298,13 +324,14 @@ ipcMain.handle('save-project', async (_, data, existingPath) => {
   try {
     fs.writeFileSync(targetPath, JSON.stringify(data, null, 2));
     return { success: true, projectPath: targetPath };
-  } catch (err) {
+  } catch (err: any) {
     console.error("Failed to save project:", err);
     return { success: false, error: err.message };
   }
 });
 
 ipcMain.handle('open-project', async () => {
+  if (!mainWindow) return null;
   const { filePaths } = await dialog.showOpenDialog(mainWindow, {
     title: 'Open LeapBlocks Project File',
     properties: ['openFile'],
@@ -328,7 +355,7 @@ ipcMain.handle('open-project', async () => {
 });
 
 // ── forge-lib: install a library via arduino-cli ──────────────────────────
-ipcMain.handle('forge-lib-install', async (_, libraryName) => {
+ipcMain.handle('forge-lib-install', async (_, libraryName: string) => {
   console.log(`[FORGE-LIB] Installing: ${libraryName}`);
   fs.mkdirSync(FORGE_LIB_LIBRARIES, { recursive: true });
 
@@ -350,14 +377,14 @@ ipcMain.handle('forge-lib-list', async () => {
   if (!fs.existsSync(FORGE_LIB_LIBRARIES)) return [];
 
   const entries = fs.readdirSync(FORGE_LIB_LIBRARIES, { withFileTypes: true });
-  const libs = [];
+  const libs: any[] = [];
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const libDir = path.join(FORGE_LIB_LIBRARIES, entry.name);
     const propFile = path.join(libDir, 'library.properties');
     if (fs.existsSync(propFile)) {
-      const props = {};
+      const props: Record<string, string> = {};
       fs.readFileSync(propFile, 'utf-8').split('\n').forEach(line => {
         const [k, ...v] = line.split('=');
         if (k && v.length) props[k.trim()] = v.join('=').trim();
@@ -377,13 +404,11 @@ ipcMain.handle('forge-lib-list', async () => {
 });
 
 // ── forge-lib: remove a library ──────────────────────────────────────────
-ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
+ipcMain.handle('forge-lib-remove', async (_, libraryName: string) => {
   console.log(`[FORGE-LIB] Removing: ${libraryName}`);
 
-  // 1. Try arduino-cli first
   const { code, stderr } = await runCLI(['lib', 'uninstall', libraryName]);
 
-  // 2. Manual cleanup fallback
   let manualRemoved = false;
   if (fs.existsSync(FORGE_LIB_LIBRARIES)) {
     try {
@@ -396,7 +421,7 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
         if (!match) {
           const propFile = path.join(libDir, 'library.properties');
           if (fs.existsSync(propFile)) {
-            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc, line) => {
+            const props = fs.readFileSync(propFile, 'utf-8').split('\n').reduce((acc: Record<string, string>, line) => {
               const [k, ...v] = line.split('=');
               if (k && v.length) acc[k.trim()] = v.join('=').trim();
               return acc;
@@ -411,7 +436,7 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
           manualRemoved = true;
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[FORGE-LIB] Manual cleanup error:', e.message);
     }
   }
@@ -419,17 +444,12 @@ ipcMain.handle('forge-lib-remove', async (_, libraryName) => {
   return (code === 0 || manualRemoved) ? { success: true, manualRemoved } : { success: false, error: stderr };
 });
 
-// ── compile-code: unified handler called by CompilerService (Electron path) ──
-// Routes to AVR (.hex) or ESP32 (.bin) compilation based on FQBN.
-// For esp32:esp32:* FQBNs, returns { success, binPath } and keeps the
-// temp dir alive so QEMU can load the .bin.  Cleanup happens on esp32-stop.
-ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _libraryPath) => {
+ipcMain.handle('compile-code', async (_, code: string, fqbn: string = 'arduino:avr:uno', _libraryPath?: string) => {
   console.log(`[compile-code] ========== COMPILE START ==========`);
   console.log(`[compile-code] FQBN: ${fqbn}`);
 
-  // All esp32:* FQBNs use the QEMU path — return binPath, keep tempDir alive.
   const isESP32 = typeof fqbn === 'string' && fqbn.startsWith('esp32:');
-  const isESP32QEMU = isESP32; // all ESP32 boards use QEMU simulation
+  const isESP32QEMU = isESP32;
 
   console.log(`[compile-code] isESP32: ${isESP32}, isESP32QEMU: ${isESP32QEMU}`);
 
@@ -440,7 +460,6 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
   if (isESP32) {
     console.log('[compile-code] *** ESP32 DETECTED - CALLING ensureESP32Core() ***');
 
-    // Send immediate feedback to user
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('serial-data', '[SYSTEM] Checking ESP32 platform installation...\n');
     }
@@ -462,14 +481,10 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
   try {
     fs.mkdirSync(sketchDir, { recursive: true });
 
-    // ── ESP32 sketch preprocessing ──────────────────────────────────────────
-    // Replace AVR-only Servo.h with ESP32Servo.h (incompatible with ESP32 core v3+)
-    // Also migrate LEDC API from v2 (ledcSetup/ledcAttachPin) to v3 (ledcAttach)
     let processedCode = code;
     if (isESP32) {
       processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
       await ensureESP32Library('ESP32Servo');
-      // Migrate LEDC API v2 → v3
       processedCode = migrateESP32LedcAPI(processedCode);
     }
 
@@ -477,7 +492,6 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
 
     const cliArgs = ['compile', '--fqbn', fqbn, '--output-dir', tempDir];
 
-    // For ESP32: skip forge-lib/libraries to avoid AVR-only library conflicts
     if (!isESP32 && fs.existsSync(FORGE_LIB_LIBRARIES)) {
       cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
     }
@@ -486,34 +500,24 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
     const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
 
     console.log(`[compile-code] exit=${exitCode} fqbn=${fqbn}`);
-    // Log full output for debugging
     if (stdout) console.log(`[compile-code] stdout: ${stdout.slice(0, 500)}`);
     if (stderr) console.log(`[compile-code] stderr: ${stderr.slice(0, 500)}`);
 
     if (exitCode !== 0) {
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
-      // Return the actual compiler error so the user sees it in serial monitor
       const errMsg = stderr || stdout || `Compiler exited with code ${exitCode}`;
       return { success: false, error: errMsg };
     }
 
-    // Scan output dir for the compiled artifact
     const files = fs.readdirSync(tempDir);
     console.log(`[compile-code] output files: ${files.join(', ')}`);
 
     if (isESP32) {
-      // arduino-cli outputs: sketch.ino.bin (app binary)
-      // Also may output: sketch.ino.bootloader.bin, sketch.ino.partitions.bin
-      // We want the main app binary — prefer sketch.ino.bin
       const binFile = files.find(f => f === 'sketch.ino.bin')
         ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
       if (binFile) {
         const binPath = path.join(tempDir, binFile);
         if (isESP32QEMU) {
-          // QEMU requires a merged flash image (bootloader + partitions + app)
-          // padded to a supported size (2/4/8/16 MB).
-          // arduino-cli also emits sketch.ino.bootloader.bin and sketch.ino.partitions.bin
-          // alongside the app binary — merge them at their correct flash offsets.
           try {
             const mergedPath = path.join(tempDir, 'flash_image.bin');
             buildMergedFlashImage(tempDir, files, binPath, mergedPath);
@@ -522,13 +526,12 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
             }
             lastESP32BinTempDir = tempDir;
             return { success: true, binPath: mergedPath };
-          } catch (mergeErr) {
+          } catch (mergeErr: any) {
             console.error('[compile-code] Flash merge failed:', mergeErr.message);
             try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
             return { success: false, error: `Flash image merge failed: ${mergeErr.message}` };
           }
         }
-        // Legacy esp32: path — convert to Intel HEX for the old simulation path
         const binContent = fs.readFileSync(binPath);
         const hexContent = binToIntelHex(binContent);
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
@@ -546,40 +549,20 @@ ipcMain.handle('compile-code', async (_, code, fqbn = 'arduino:avr:uno', _librar
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       return { success: false, error: `Compiled (exit 0) but no .hex found. Files: ${files.join(', ')}` };
     }
-  } catch (err) {
+  } catch (err: any) {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
     return { success: false, error: err.message };
   }
 });
 
-/**
- * buildMergedFlashImage(tempDir, files, appBinPath, outPath)
- *
- * Merges the three ESP32 flash regions into a single raw image that QEMU
- * accepts via  -drive file=<image>,if=mtd,format=raw
- *
- * Flash layout (default ESP32 single_factory partition scheme):
- *   0x001000  bootloader.bin   (max ~28 KB)
- *   0x008000  partitions.bin   (max ~3 KB)
- *   0x010000  app.bin          (rest of flash)
- *
- * The image is zero-padded to exactly 4 MB (0x400000 bytes) — the smallest
- * QEMU-supported size that fits the default ESP32 DevKit V1 flash.
- *
- * If the bootloader or partition table files are missing (older arduino-cli
- * versions that don't emit them), the corresponding region is left as 0xFF
- * (erased flash) so QEMU can still boot from the ROM bootloader.
- */
-function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
-  const FLASH_SIZE = 4 * 1024 * 1024; // 4 MB — supported by QEMU esp32 machine
+function buildMergedFlashImage(tempDir: string, files: string[], appBinPath: string, outPath: string): void {
+  const FLASH_SIZE = 4 * 1024 * 1024;
   const BOOTLOADER_OFFSET = 0x1000;
   const PARTITIONS_OFFSET = 0x8000;
   const APP_OFFSET = 0x10000;
 
-  // Allocate a 4 MB buffer filled with 0xFF (erased flash state)
   const image = Buffer.alloc(FLASH_SIZE, 0xff);
 
-  // ── Bootloader ────────────────────────────────────────────────────────────
   const bootFile = files.find(f => f.includes('bootloader') && f.endsWith('.bin'));
   if (bootFile) {
     const bootBin = fs.readFileSync(path.join(tempDir, bootFile));
@@ -592,7 +575,6 @@ function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
     console.warn('[Flash Merge] No bootloader.bin found — region left as 0xFF (erased)');
   }
 
-  // ── Partition table ───────────────────────────────────────────────────────
   const partFile = files.find(f => (f.includes('partition') || f.includes('partitions')) && f.endsWith('.bin'));
   if (partFile) {
     const partBin = fs.readFileSync(path.join(tempDir, partFile));
@@ -605,7 +587,6 @@ function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
     console.warn('[Flash Merge] No partitions.bin found — region left as 0xFF (erased)');
   }
 
-  // ── Application binary ────────────────────────────────────────────────────
   const appBin = fs.readFileSync(appBinPath);
   if (APP_OFFSET + appBin.length > FLASH_SIZE) {
     throw new Error(`App binary too large: ${appBin.length} bytes exceeds 4 MB flash`);
@@ -617,12 +598,7 @@ function buildMergedFlashImage(tempDir, files, appBinPath, outPath) {
   console.log(`[Flash Merge] ✓ Merged flash image written: ${outPath} (${(FLASH_SIZE / 1024 / 1024).toFixed(0)} MB)`);
 }
 
-/**
- * Convert a raw binary Buffer to a minimal Intel HEX string.
- * The ESP32Engine's parseHex() will decode this back to bytes.
- * Uses 16-byte data records (type 00) with correct checksums.
- */
-function binToIntelHex(buf) {
+function binToIntelHex(buf: Buffer): string {
   const RECORD_SIZE = 16;
   let hex = '';
 
@@ -631,7 +607,6 @@ function binToIntelHex(buf) {
     const len = chunk.length;
     const addr = offset & 0xFFFF;
 
-    // Extended Linear Address record every 64KB
     if (offset > 0 && (offset & 0xFFFF) === 0) {
       const seg = (offset >> 16) & 0xFFFF;
       const segHi = (seg >> 8) & 0xFF;
@@ -651,12 +626,11 @@ function binToIntelHex(buf) {
     hex += `:${len.toString(16).padStart(2, '0').toUpperCase()}${addr.toString(16).padStart(4, '0').toUpperCase()}00${data}${checksum.toString(16).padStart(2, '0').toUpperCase()}\n`;
   }
 
-  hex += ':00000001FF\n'; // EOF record
+  hex += ':00000001FF\n';
   return hex;
 }
 
-// ── forge-compile: kept for backward compat, delegates to compile-code logic ─
-ipcMain.handle('forge-compile', async (_, { code, board }) => {
+ipcMain.handle('forge-compile', async (_, { code, board }: { code: string; board?: string }) => {
   const isESP32 = board && board.startsWith('esp32:');
   const tempDir = path.join(app.getPath('temp'), `forge_sketch_${Date.now()}`);
   const sketchPath = path.join(tempDir, 'sketch.ino');
@@ -701,26 +675,21 @@ ipcMain.handle('forge-compile', async (_, { code, board }) => {
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       return { success: false, error: 'HEX file not generated' };
     }
-  } catch (err) {
+  } catch (err: any) {
     return { success: false, error: err.message };
   }
 });
 
-// ── migrateESP32LedcAPI: rewrite old LEDC v2 API to v3 ───────────────────
-// ESP32 core v3 removed ledcSetup() and ledcAttachPin().
-// Old: ledcSetup(ch, freq, res) + ledcAttachPin(pin, ch) + ledcWrite(ch, duty)
-// New: ledcAttach(pin, freq, res) + ledcWrite(pin, duty)
-function migrateESP32LedcAPI(code) {
-  const chMap = new Map();
+function migrateESP32LedcAPI(code: string): string {
+  const chMap = new Map<string, { freq: string; res: string; pin: string }>();
 
-  // Collect ledcSetup(ch, freq, res)
   for (const m of code.matchAll(/ledcSetup\s*\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/g)) {
     const [, ch, freq, res] = m;
     const entry = chMap.get(ch) ?? { freq: freq.trim(), res: res.trim(), pin: '' };
     entry.freq = freq.trim(); entry.res = res.trim();
     chMap.set(ch, entry);
   }
-  // Collect ledcAttachPin(pin, ch)
+
   for (const m of code.matchAll(/ledcAttachPin\s*\(\s*([^,]+?)\s*,\s*(\w+)\s*\)/g)) {
     const [, pin, ch] = m;
     const entry = chMap.get(ch) ?? { freq: '5000', res: '8', pin: '' };
@@ -728,16 +697,14 @@ function migrateESP32LedcAPI(code) {
     chMap.set(ch, entry);
   }
 
-  if (chMap.size === 0) return code; // nothing to migrate
+  if (chMap.size === 0) return code;
 
   console.log('[FORGE] Migrating LEDC API v2 → v3:', [...chMap.entries()].map(([ch, v]) => `ch${ch}→pin${v.pin}`).join(', '));
 
   let result = code;
-  // Remove old calls
   result = result.replace(/[ \t]*ledcSetup\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
   result = result.replace(/[ \t]*ledcAttachPin\s*\([^)]*\)\s*;[ \t]*\n?/g, '');
 
-  // Insert ledcAttach() calls at start of setup()
   const attachCalls = [...chMap.entries()]
     .filter(([, v]) => v.pin)
     .map(([, v]) => `  ledcAttach(${v.pin}, ${v.freq}, ${v.res});`)
@@ -746,7 +713,6 @@ function migrateESP32LedcAPI(code) {
     result = result.replace(/(void\s+setup\s*\(\s*\)\s*\{)/, `$1\n${attachCalls}`);
   }
 
-  // Replace ledcWrite(ch, duty) → ledcWrite(pin, duty)
   result = result.replace(/ledcWrite\s*\(\s*(\w+)\s*,\s*([^)]+)\s*\)/g, (match, ch, duty) => {
     const entry = chMap.get(ch);
     return entry?.pin ? `ledcWrite(${entry.pin}, ${duty.trim()})` : match;
@@ -755,41 +721,29 @@ function migrateESP32LedcAPI(code) {
   return result;
 }
 
-// ── ESP32 QEMU simulation pipeline ───────────────────────────────────────
-const ESP32_FQBNS = ['esp32:esp32:esp32c3'];
 const { compileESP32 } = makeESP32Compiler({ runCLI, forgeLibDir: FORGE_LIB_DIR });
+let lastESP32BinTempDir: string | null = null;
 
-// Track the last binPath so we can clean it up after QEMU stops
-let lastESP32BinTempDir = null;
-
-/**
- * compile-esp32-sim: compile an ESP32 sketch and return the .bin path on disk.
- * The temp dir is NOT deleted — QEMU needs the file.
- * Call esp32-stop to stop QEMU, then the temp dir is cleaned up automatically.
- */
-ipcMain.handle('compile-esp32-sim', async (_, code, fqbn) => {
-  // Clean up previous build if still around
+ipcMain.handle('compile-esp32-sim', async (_, code: string, fqbn?: string) => {
   if (lastESP32BinTempDir) {
     cleanupESP32Build(lastESP32BinTempDir);
     lastESP32BinTempDir = null;
   }
 
   const result = await compileESP32(code, fqbn || 'esp32:esp32:esp32c3');
-  if (result.success) {
-    // Remember the temp dir so we can clean it up on stop
-    lastESP32BinTempDir = require('path').dirname(result.binPath);
+  if (result.success && result.binPath) {
+    lastESP32BinTempDir = path.dirname(result.binPath);
   }
-  return result; // { success, binPath } or { success: false, error }
+  return result;
 });
 
-ipcMain.handle('esp32-start', async (_, binPath) => {
+ipcMain.handle('esp32-start', async (_, binPath: string) => {
   await qemuManager.startQemu(binPath, mainWindow);
   return { ok: true };
 });
 
 ipcMain.handle('esp32-stop', async () => {
   qemuManager.stopQemu();
-  // Clean up the .bin temp dir now that QEMU has stopped
   if (lastESP32BinTempDir) {
     cleanupESP32Build(lastESP32BinTempDir);
     lastESP32BinTempDir = null;
@@ -797,7 +751,7 @@ ipcMain.handle('esp32-stop', async () => {
   return { ok: true };
 });
 
-ipcMain.handle('esp32-gpio-set', async (_, pin, high) => {
+ipcMain.handle('esp32-gpio-set', async (_, pin: number, high: boolean) => {
   const socket = await qemuManager.connectQMP();
   await qemuManager.sendQMPCommand(socket, {
     execute: 'gpio-set',
@@ -806,7 +760,7 @@ ipcMain.handle('esp32-gpio-set', async (_, pin, high) => {
   socket.destroy();
 });
 
-ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
+ipcMain.handle('esp32-adc-set', async (_, channel: number, voltage: number) => {
   const socket = await qemuManager.connectQMP();
   await qemuManager.sendQMPCommand(socket, {
     execute: 'qom-set',
@@ -819,47 +773,37 @@ ipcMain.handle('esp32-adc-set', async (_, channel, voltage) => {
   socket.destroy();
 });
 
-// ── read-bin-file: Read compiled ESP32 binary for RISC-V simulation ──────
-ipcMain.handle('read-bin-file', async (_, filePath) => {
+ipcMain.handle('read-bin-file', async (_, filePath: string) => {
   console.log(`[MAIN:IPC] read-bin-file request: ${filePath}`);
 
   try {
-    // Check if file exists
     if (!fs.existsSync(filePath)) {
       console.error(`[MAIN:IPC] File not found: ${filePath}`);
       throw new Error(`Binary file not found: ${filePath}`);
     }
 
-    // Read the file as a Buffer
     const buffer = fs.readFileSync(filePath);
     console.log(`[MAIN:IPC] Read ${buffer.length} bytes from ${filePath}`);
 
-    // Log first 16 bytes for debugging
     const preview = Array.from(buffer.slice(0, Math.min(16, buffer.length)))
       .map(b => '0x' + b.toString(16).padStart(2, '0'))
       .join(' ');
     console.log(`[MAIN:IPC] First bytes: ${preview}`);
 
-    // Return as ArrayBuffer (convert Node Buffer to ArrayBuffer)
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[MAIN:IPC] read-bin-file error:`, err);
     throw err;
   }
 });
 
-// ── ensureESP32Core: install ESP32 arduino core on first use ─────────────
 let esp32CoreReady = false;
 
-// ── warmupESP32Core: silent background pre-check at app startup ──────────
-// Runs once after the window opens. If the core is already installed this
-// takes ~200 ms (one arduino-cli core list call) and sets esp32CoreReady=true
-// so the first compile skips the check entirely.
-async function warmupESP32Core() {
+async function warmupESP32Core(): Promise<void> {
   try {
     const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
     if (code !== 0) return;
-    let cores = [];
+    let cores: any[] = [];
     try { cores = JSON.parse(stdout); } catch (_) { return; }
     const installed = Array.isArray(cores) && cores.some(c =>
       (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
@@ -871,41 +815,35 @@ async function warmupESP32Core() {
     } else {
       console.log('[STARTUP] ESP32 core pre-check: not installed (will install on first compile)');
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('[STARTUP] ESP32 core pre-check failed (non-fatal):', err.message);
   }
 }
 
-// ── warmupQemu: verify QEMU binary exists at startup ─────────────────────
-// Ensures the binary is present so the first ESP32 simulation doesn't stall
-// on a download. If missing, triggers the download in the background.
-async function warmupQemu() {
+async function warmupQemu(): Promise<void> {
   try {
     await qemuManager.ensureQemuSilent();
     console.log('[STARTUP] QEMU pre-check: ✓ binary ready');
-  } catch (err) {
+  } catch (err: any) {
     console.warn('[STARTUP] QEMU pre-check failed (non-fatal):', err.message);
   }
 }
 
-async function ensureESP32Core() {
+async function ensureESP32Core(): Promise<boolean> {
   if (esp32CoreReady) return true;
 
-  // Send progress to renderer
-  const sendProgress = (msg) => {
+  const sendProgress = (msg: string) => {
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('serial-data', `[ESP32 SETUP] ${msg}\n`);
     }
     console.log(`[FORGE] ${msg}`);
   };
 
-  // Both URLs — Espressif CDN (primary) + GitHub fallback
   const ESP32_URLS = [
     'https://dl.espressif.com/dl/package_esp32_index.json',
     'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
   ];
 
-  // Ensure the config file has the board manager URLs
   try {
     const configContent = fs.readFileSync(FORGE_CLI_YAML, 'utf-8');
     if (!configContent.includes('dl.espressif.com') && !configContent.includes('espressif/arduino-esp32')) {
@@ -913,7 +851,7 @@ async function ensureESP32Core() {
       fs.writeFileSync(FORGE_CLI_YAML, updatedConfig, 'utf-8');
       sendProgress('Added ESP32 board manager URLs to config');
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('[FORGE] Could not update arduino-cli.yaml:', err.message);
   }
 
@@ -927,8 +865,8 @@ async function ensureESP32Core() {
       return false;
     }
 
-    let cores = [];
-    try { cores = JSON.parse(stdout); } catch (e) {
+    let cores: any[] = [];
+    try { cores = JSON.parse(stdout); } catch (e: any) {
       console.warn('[FORGE] Failed to parse core list:', e.message);
     }
 
@@ -941,7 +879,6 @@ async function ensureESP32Core() {
       sendProgress('ESP32 core not found — installing (this may take 2-5 minutes)...');
       sendProgress('Please wait, downloading ESP32 platform...');
 
-      // Update index with both URLs
       const { code: updateCode, stderr: updateErr } = await runCLI([
         'core', 'update-index',
         '--additional-urls', ESP32_URLS.join(',')
@@ -955,7 +892,6 @@ async function ensureESP32Core() {
 
       sendProgress('Package index updated, installing ESP32 core...');
 
-      // Try primary URL first, fall back to secondary
       let installOk = false;
       for (const url of ESP32_URLS) {
         const urlShort = url.includes('dl.espressif.com') ? 'Espressif CDN' : 'GitHub';
@@ -991,20 +927,19 @@ async function ensureESP32Core() {
 
     esp32CoreReady = true;
     return true;
-  } catch (err) {
+  } catch (err: any) {
     console.error('[FORGE] ESP32 core check/install error:', err.message);
     sendProgress(`ERROR: ${err.message}`);
     return false;
   }
 }
 
-// ── ensureESP32Library: install an ESP32-compatible library ───────────────
-const esp32LibsInstalled = new Set();
-async function ensureESP32Library(libName) {
+const esp32LibsInstalled = new Set<string>();
+async function ensureESP32Library(libName: string): Promise<void> {
   if (esp32LibsInstalled.has(libName)) return;
   try {
     const { stdout } = await runCLI(['lib', 'list', '--format', 'json']);
-    let libs = [];
+    let libs: any[] = [];
     try { libs = JSON.parse(stdout || '[]'); } catch (_) { }
     const found = libs.some(l =>
       (l.library?.name ?? l.name ?? '').toLowerCase() === libName.toLowerCase()
@@ -1015,8 +950,8 @@ async function ensureESP32Library(libName) {
       console.log(`[FORGE] Installed: ${libName}`);
     }
     esp32LibsInstalled.add(libName);
-  } catch (err) {
+  } catch (err: any) {
     console.warn(`[FORGE] Library install warning (${libName}):`, err.message);
-    esp32LibsInstalled.add(libName); // don't retry
+    esp32LibsInstalled.add(libName);
   }
 }

@@ -1,11 +1,11 @@
-export function transpileArduinoToJS(arduinoCode) {
+export function transpileArduinoToJS(arduinoCode: string): string {
   let code = arduinoCode;
 
   code = removeComments(code);
 
-  const userFunctions = [];
+  const userFunctions: string[] = [];
   const funcRegex = /\b(?:void|int|long|short|unsigned\s+\w+|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t|byte|char|float|double|boolean|bool)\s+(\w+)\s*\([^)]*\)\s*\{/g;
-  let funcMatch;
+  let funcMatch: RegExpExecArray | null;
   while ((funcMatch = funcRegex.exec(code)) !== null) {
     const name = funcMatch[1];
     if (name !== 'setup' && name !== 'loop') {
@@ -26,8 +26,8 @@ export function transpileArduinoToJS(arduinoCode) {
     (_m, className, varName, args) => {
       const cleanArgs = args
         .split(',')
-        .map(a => a.trim().replace(/^&/, '').replace(/^\(.*?\)/, '').trim())
-        .filter(a => a.length > 0)
+        .map((a: string) => a.trim().replace(/^&/, '').replace(/^\(.*?\)/, '').trim())
+        .filter((a: string) => a.length > 0)
         .join(', ');
       return `var ${varName} = new ${className}(${cleanArgs});`;
     }
@@ -42,8 +42,8 @@ export function transpileArduinoToJS(arduinoCode) {
     new RegExp(`\\b${TYPES}\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{`, 'g'),
     (_m, name, params) => {
       const jsParams = params.split(',')
-        .map(p => p.trim().split(/\s+/).pop().replace(/[*&]/g, ''))
-        .filter(p => p && p !== 'void').join(', ');
+        .map((p: string) => p.trim().split(/\s+/).pop()?.replace(/[*&]/g, ''))
+        .filter((p: string | undefined): p is string => Boolean(p) && p !== 'void').join(', ');
       const isLifecycle = name === 'setup' || name === 'loop';
       const prefix = isLifecycle ? 'async ' : '';
       const jsName = name === 'setup' ? '__setup' : name === 'loop' ? '__loop' : name;
@@ -182,7 +182,7 @@ if (typeof __loop  === 'function') { __exports.loop  = __loop;  }
   return wrapped;
 }
 
-function removeComments(code) {
+function removeComments(code: string): string {
   let result = '';
   let inString = false;
   let stringChar = '';

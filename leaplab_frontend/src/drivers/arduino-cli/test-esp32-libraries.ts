@@ -5,6 +5,14 @@
  * Usage: Open browser console and paste this code
  */
 
+declare const Servo: any;
+declare const Stepper: any;
+declare const DHT: any;
+declare const Adafruit_NeoPixel: any;
+declare const LiquidCrystal_I2C: any;
+declare const Ultrasonic: any;
+declare const NewPing: any;
+
 console.log('═══════════════════════════════════════════════════════════');
 console.log('ESP32 LIBRARY TEST SUITE');
 console.log('═══════════════════════════════════════════════════════════\n');
@@ -48,7 +56,7 @@ console.log('\n═════════════════════�
 console.log('TEST SUMMARY');
 console.log('═══════════════════════════════════════════════════════════');
 
-const tests = [
+const tests: boolean[] = [
     typeof Servo !== 'undefined',
     typeof Stepper !== 'undefined',
     typeof DHT !== 'undefined',
@@ -58,8 +66,8 @@ const tests = [
     typeof NewPing !== 'undefined'
 ];
 
-const passed = tests.filter(t => t).length;
-const total = tests.length;
+const passed: number = tests.filter(Boolean).length;
+const total: number = tests.length;
 
 console.log(`\nPassed: ${passed}/${total}`);
 console.log(`Status: ${passed === total ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}`);
