@@ -57,8 +57,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [isDragging, setIsDragging] = useState(false)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const testFileInputRef = useRef<HTMLInputElement>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
+    const [testImage, setTestImage] = useState<string | null>(null)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -153,6 +155,49 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
+    const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !file.type.startsWith('image/')) return
+        if (modelLoading) {
+            showSaved('⚠️ Model is still loading. Please wait.')
+            return
+        }
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.readAsDataURL(file)
+        })
+        setTestImage(dataUrl)
+        setCameraOn(false)
+        stopCamera()
+        setIsProcessing(true)
+        try {
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(() => resolve(), 5000)
+            })
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                const start = performance.now()
+                const result = await classifierRef.current.predictFromImage(img, 3)
+                const elapsed = Math.round(performance.now() - start)
+                if (result) {
+                    setPrediction(result)
+                    setInferenceTime(elapsed)
+                } else {
+                    showSaved('⚠️ No hand detected in the image.')
+                }
+            }
+        } catch (err) {
+            console.warn('[HandPoseClassifier] Test upload failed:', err)
+            showSaved('⚠️ Failed to analyze image.')
+        }
+        setIsProcessing(false)
+        if (testFileInputRef.current) testFileInputRef.current.value = ''
+    }
+
     // Register global window drag-and-drop upload handler (collect mode only — test mode uses live camera)
     useEffect(() => {
         if (mode.mode === 'collect') {
@@ -165,6 +210,16 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     handleUpload(files)
                 },
                 label: selectedClass ? `Class: ${selectedClass.name}` : 'Hand Pose Samples'
+            }
+        } else if (mode.mode === 'test') {
+            (window as any).__activeUpload = {
+                handler: (files: FileList) => {
+                    if (files.length > 0) {
+                        const syntheticEvent = { target: { files } } as any
+                        handleTestUpload(syntheticEvent)
+                    }
+                },
+                label: 'Test Image'
             }
         } else {
             (window as any).__activeUpload = null
@@ -922,8 +977,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
                     </div>
                     <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onReset={() => setPrediction(null)} onTryAnother={() => setPrediction(null)} onExport={handleExportTestReport} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onUpload={() => testFileInputRef.current?.click()} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
+                    <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                 </div>
             )}
         </div>
