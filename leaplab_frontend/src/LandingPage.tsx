@@ -30,6 +30,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     return 'modules';
   });
   const showProjects = activeTab === 'my-projects';
+  const [menuOpen, setMenuOpen] = useState(false);
 
   /* ── Card scan ── */
   const startCardScan = () => {
@@ -210,12 +211,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         </div>
 
         {/* TOPBAR */}
-        <nav className="shrink-0 h-[64px] flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[56px]">
-          <div className="flex items-center gap-[32px]">
+        <nav className="shrink-0 h-[64px] flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[56px] relative z-[200]">
+          <div className="flex items-center gap-[32px] sm:gap-[16px]">
             <a href="#" className="flex items-center gap-[10px] no-underline filter drop-shadow-[0_2px_8px_rgba(99,102,241,0.15)]" onClick={() => {
               setActiveTab('modules');
               sessionStorage.setItem('landingActiveTab', 'modules');
               sessionStorage.removeItem('myProjectsSelectedMode');
+              setMenuOpen(false);
             }}>
               <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[42px] w-auto object-contain sm:h-[32px]" />
             </a>
@@ -238,12 +240,62 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-6 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center gap-3 sm:gap-4 md:gap-6 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
             <LeapLabAuthButton variant="light" size="md" />
-            <div className="w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
-            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="h-[clamp(40px,5vw,50px)]" />
+            <div className="hidden sm:block w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
+            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="hidden sm:block h-[clamp(40px,5vw,50px)]" />
+            
+            {/* Hamburger button for Mobile */}
+            <button
+              className="md:hidden flex items-center justify-center p-2 rounded-xl text-[#0F172A] hover:bg-slate-100 focus:outline-none transition-colors"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </nav>
+
+        {/* Mobile Dropdown Menu */}
+        {menuOpen && (
+          <div className="absolute top-[64px] sm:top-[56px] left-0 w-full bg-[#F8FAFC]/95 backdrop-blur-[16px] border-b border-[rgba(0,0,0,0.06)] z-[190] flex flex-col p-4 gap-2.5 shadow-lg md:hidden animate-slide-down">
+            <button
+              className="w-full text-left py-3 px-4 font-semibold text-slate-800 rounded-xl hover:bg-[#4f46e5]/[0.06] hover:text-[#4f46e5] transition-colors"
+              onClick={() => {
+                (window as any).showComingSoon('Tutorials');
+                setMenuOpen(false);
+              }}
+            >
+              Tutorials
+            </button>
+            <button
+              className="w-full text-left py-3 px-4 font-semibold text-slate-800 rounded-xl hover:bg-[#4f46e5]/[0.06] hover:text-[#4f46e5] transition-colors"
+              onClick={() => {
+                (window as any).showComingSoon('Explore');
+                setMenuOpen(false);
+              }}
+            >
+              Explore
+            </button>
+            <button
+              className={`w-full text-left py-3 px-4 font-semibold rounded-xl transition-colors ${showProjects ? 'bg-[#4f46e5] text-white' : 'text-slate-800 hover:bg-[#4f46e5]/[0.06] hover:text-[#4f46e5]'}`}
+              onClick={() => {
+                const target = showProjects ? 'modules' : 'my-projects';
+                setActiveTab(target);
+                sessionStorage.setItem('landingActiveTab', target);
+                setMenuOpen(false);
+              }}
+            >
+              My Projects
+            </button>
+          </div>
+        )}
 
         {/* Gradient Divider Line */}
         <div className="w-full relative z-[150]">
@@ -251,7 +303,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="h-[2px] w-full bg-[linear-gradient(90deg,rgba(249,115,22,0.5),rgba(20,184,166,0.5),rgba(59,130,246,0.5),rgba(168,85,247,0.5),rgba(34,197,94,0.5),rgba(236,72,153,0.5))] opacity-60"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-y-auto neura-scrollbar">
 
           {activeTab === 'my-projects' && (
             <MyProjectsDashboard onOpenProject={(mode) => onSelect(mode)} />
@@ -264,7 +316,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 <div className="max-[1024px]:flex max-[1024px]:flex-col max-[1024px]:items-center">
                   <div className="inline-block text-[10px] font-extrabold text-black uppercase tracking-[0.25em] mb-2 px-3 py-1 bg-[#BEF264] border-2 border-black shadow-[2px_2px_0px_#000] -rotate-1 max-[480px]:text-[10px] max-[480px]:px-2.5 max-[480px]:py-1 max-[480px]:mb-2 animate-hero-reveal">Curiosity - Creativity - Critical Thinking</div>
                   <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[1.1] tracking-[-0.04em] mb-2.5 text-[#0F172A] max-[640px]:text-[2.5rem] max-[480px]:text-[2rem] animate-hero-reveal [animation-delay:0.1s]">
-                    Learn to <span className="text-transparent [-webkit-text-stroke:2px_#6366F1] [-webkit-text-fill-color:transparent] tracking-[-0.02em]">code</span><br />
+                    Learn to <span className="text-transparent [-webkit-text-stroke:2px_#6366F1] [-webkit-text-fill-color:transparent] tracking-[-0.02em]">code</span> <br />
                     the <span className="italic text-transparent bg-[linear-gradient(135deg,#6366F1_0%,#7C3AED_50%,#8B5CF6_100%)] [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] bg-clip-text tracking-[0.02em] px-1">bold</span> way
                   </h1>
                   <p className="text-[clamp(0.9rem,1.5vw,1.1rem)] text-[#0f172a] leading-[1.4] max-w-[600px] mb-3.5 relative z-10 opacity-85 max-[1024px]:mx-auto max-[1024px]:max-w-[90%] max-[640px]:text-md max-[640px]:max-w-full max-[640px]:p-0 max-[480px]:text-[0.9rem] max-[480px]:leading-[1.4] max-[480px]:mb-4 animate-hero-reveal [animation-delay:0.2s]">
@@ -303,7 +355,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 8 TRACK CARDS */}
-              <div className="w-full mx-auto py-[clamp(6px,0.8vw,12px)] px-[clamp(16px,2vw,28px)] pb-[clamp(4px,0.5vw,8px)] shrink-0 flex items-center justify-center max-[560px]:p-3 max-[560px]:px-4 max-[480px]:p-4 max-[480px]:px-3">
+              <div className="cards-wrap w-full mx-auto py-[clamp(6px,0.8vw,12px)] px-[clamp(16px,2vw,28px)] pb-[clamp(4px,0.5vw,8px)] shrink-0 flex items-center justify-center max-[560px]:p-3 max-[560px]:px-4 max-[480px]:p-4 max-[480px]:px-3">
                 <div className={`grid grid-cols-8 gap-[clamp(8px,1vw,16px)] w-full max-w-[1400px] max-[1400px]:grid-cols-4 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1 max-[480px]:gap-2.5 ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
 
                   {/* 1 IGNITE */}
