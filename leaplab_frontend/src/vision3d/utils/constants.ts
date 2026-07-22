@@ -3,8 +3,75 @@
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  */
 
-export const SHAPE_DEFINITIONS = [
-  // Basic Shapes
+export interface ShapeDefaults {
+  width?: number
+  height?: number
+  depth?: number
+  color?: string
+  cornerRadius?: number
+  radiusTop?: number
+  radiusBottom?: number
+  cylinderHeight?: number
+  radialSegments?: number
+  taper?: number
+  radius?: number
+  widthSegments?: number
+  heightSegments?: number
+  coneRadius?: number
+  coneHeight?: number
+  torusRadius?: number
+  tubeRadius?: number
+  torusRadialSegments?: number
+  torusTubularSegments?: number
+  roofWidth?: number
+  roofDepth?: number
+  roofHeight?: number
+  roundRoofWidth?: number
+  roundRoofDepth?: number
+  roundRoofHeight?: number
+  wedgeWidth?: number
+  wedgeDepth?: number
+  wedgeHeight?: number
+  pyramidRadius?: number
+  pyramidHeight?: number
+  pyramidSides?: number
+  halfSphereRadius?: number
+  halfSphereSegments?: number
+  paraboloidRadius?: number
+  paraboloidHeight?: number
+  paraboloidSegments?: number
+  tubeOuterRadius?: number
+  tubeInnerRadius?: number
+  tubeHeight?: number
+  tubeRadialSegments?: number
+  starOuterRadius?: number
+  starInnerRadius?: number
+  starPoints?: number
+  starHeight?: number
+  heartSize?: number
+  heartDepth?: number
+  polygonRadius?: number
+  polygonSides?: number
+  polygonHeight?: number
+  innerRadius?: number
+  outerRadius?: number
+  text?: string
+  fontSize?: number
+  textDepth?: number
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  scale?: [number, number, number]
+}
+
+export interface ShapeDefinition {
+  type: string
+  name: string
+  icon: string
+  category: string
+  defaults: ShapeDefaults
+}
+
+export const SHAPE_DEFINITIONS: ShapeDefinition[] = [
   {
     type: 'box',
     name: 'Box',
@@ -110,7 +177,6 @@ export const SHAPE_DEFINITIONS = [
     category: 'basic',
     defaults: { polygonRadius: 1, polygonSides: 6, polygonHeight: 2, color: '#A855F7' },
   },
-  // Extended Shapes
   {
     type: 'dodecahedron',
     name: 'Dodecahedron',
@@ -146,7 +212,6 @@ export const SHAPE_DEFINITIONS = [
     category: 'extended',
     defaults: { innerRadius: 0.5, outerRadius: 1, color: '#A855F7' },
   },
-  // Text
   {
     type: 'text3d',
     name: '3D Text',
@@ -169,42 +234,48 @@ export const SHAPE_DEFINITIONS = [
     icon: 'folder',
     defaults: {},
   },
-];
+]
 
-export const DEFAULT_COLORS = [
-  '#4F46E5', // Indigo
-  '#14B8A6', // Teal
-  '#F97316', // Orange
-  '#EC4899', // Pink
-  '#8B5CF6', // Violet
-  '#22C55E', // Green
-  '#EAB308', // Yellow
-  '#EF4444', // Red
-  '#06B6D4', // Cyan
-  '#A855F7', // Purple
-  '#3B82F6', // Blue
-  '#10B981', // Emerald
-  '#F59E0B', // Amber
-  '#6366F1', // Indigo dark
-  '#F472B6', // Light pink
-  '#84CC16', // Lime
-];
+export const DEFAULT_COLORS: string[] = [
+  '#4F46E5',
+  '#14B8A6',
+  '#F97316',
+  '#EC4899',
+  '#8B5CF6',
+  '#22C55E',
+  '#EAB308',
+  '#EF4444',
+  '#06B6D4',
+  '#A855F7',
+  '#3B82F6',
+  '#10B981',
+  '#F59E0B',
+  '#6366F1',
+  '#F472B6',
+  '#84CC16',
+]
 
-export const GRID_PRESETS = [0.1, 0.25, 0.5, 1.0, 2.5, 5.0];
+export const GRID_PRESETS: number[] = [0.1, 0.25, 0.5, 1.0, 2.5, 5.0]
 
-export const WORKPLANE_SIZE = 20;
+export const WORKPLANE_SIZE = 20
 
-export const CAMERA_DEFAULTS = {
+export const CAMERA_DEFAULTS: {
+  position: [number, number, number]
+  fov: number
+  near: number
+  far: number
+  target: [number, number, number]
+} = {
   position: [8, 6, 8],
   fov: 50,
   near: 0.1,
   far: 1000,
   target: [0, 0, 0],
-};
+}
 
-export const SNAP_THRESHOLD = 0.05;
+export const SNAP_THRESHOLD = 0.05
 
-export const KEYBOARD_SHORTCUTS = {
+export const KEYBOARD_SHORTCUTS: Record<string, string[]> = {
   DELETE: ['Delete', 'Backspace'],
   GROUP: ['Control', 'g'],
   UNGROUP: ['Control', 'Shift', 'g'],
@@ -217,4 +288,4 @@ export const KEYBOARD_SHORTCUTS = {
   ROTATE_TOOL: ['r'],
   SCALE_TOOL: ['s'],
   SELECT_TOOL: ['v'],
-};
+}
