@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+import fs from 'fs';
+import path from 'path';
+import https from 'https';
 
 const ASSETS_DIR = path.join(__dirname, '../public/assets/sprites/leap');
 if (!fs.existsSync(ASSETS_DIR)) {
@@ -9,7 +9,7 @@ if (!fs.existsSync(ASSETS_DIR)) {
 
 const TS_FILE = path.join(__dirname, '../src/components/generated_leap_sprites.ts');
 
-const downloadFile = (url, dest) => {
+const downloadFile = (url: string, dest: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         if (fs.existsSync(dest)) return resolve(true);
         const file = fs.createWriteStream(dest);
@@ -26,21 +26,49 @@ const downloadFile = (url, dest) => {
     });
 };
 
-async function main() {
-    const data = require('d:/tmp_sprites.json');
-    const entries = [];
+export interface CostumeData {
+    name: string;
+    md5ext?: string;
+    dataFormat?: string;
+}
+
+export interface SpriteData {
+    name: string;
+    isStage?: boolean;
+    costumes?: CostumeData[];
+    tags?: string[];
+}
+
+export interface LeapSpriteEntry {
+    id: string;
+    name: string;
+    emoji: string;
+    image: string;
+    costumes: string[];
+    tags: string[];
+    category: string;
+}
+
+async function main(): Promise<void> {
+    const tmpSpritesPath = 'd:/tmp_sprites.json';
+    if (!fs.existsSync(tmpSpritesPath)) {
+        console.warn(`File ${tmpSpritesPath} not found. Skipping sprite fetch.`);
+        return;
+    }
+
+    const data: SpriteData[] = JSON.parse(fs.readFileSync(tmpSpritesPath, 'utf-8'));
+    const entries: LeapSpriteEntry[] = [];
 
     console.log(`Found ${data.length} sprites. Downloading with concurrency 20...`);
 
-    // Prepare all download tasks
-    const tasks = [];
+    const tasks: Array<() => Promise<void>> = [];
 
     for (let i = 0; i < data.length; i++) {
         const s = data[i];
         if (s.isStage) continue;
         if (!s.costumes || s.costumes.length === 0) continue;
 
-        const localCostumes = [];
+        const localCostumes: string[] = [];
 
         for (const c of s.costumes) {
             if (!c.md5ext) continue;
@@ -48,7 +76,7 @@ async function main() {
             const url = `https://cdn.assets.leap.mit.edu/internalapi/asset/${c.md5ext}/get/`;
             const safeSpriteName = s.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
             const safeCostumeName = c.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-            const ext = path.extname(c.md5ext) || '.' + c.dataFormat || '.svg';
+            const ext = path.extname(c.md5ext) || '.' + (c.dataFormat || 'svg');
             const filename = `${safeSpriteName}_${safeCostumeName}${ext}`;
             const dest = path.join(ASSETS_DIR, filename);
 
@@ -66,7 +94,7 @@ async function main() {
             entries.push({
                 id: `leap_${s.name.replace(/\s+/g, '_').toLowerCase()}`,
                 name: s.name,
-                emoji: '🤖', // default fallback emoji
+                emoji: '🤖',
                 image: localCostumes[0],
                 costumes: localCostumes,
                 tags: s.tags || [],
@@ -75,16 +103,14 @@ async function main() {
         }
     }
 
-    // Pre-write the TS file so it's not missing
     fs.writeFileSync(TS_FILE, `export const leapSprites: any[] = ${JSON.stringify(entries, null, 2)};`);
 
-    // Run tasks concurrently
     const CONCURRENCY = 20;
     let active = 0;
     let index = 0;
     let completed = 0;
 
-    await new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
         function next() {
             if (completed === tasks.length) return resolve();
             while (active < CONCURRENCY && index < tasks.length) {
