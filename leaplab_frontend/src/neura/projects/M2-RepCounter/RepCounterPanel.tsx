@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { classifyRepState } from '../../ml/utils/ruleBasedClassifiers'
 
 interface RepCounterPanelProps {
     mode: UseNeuraProjectReturn
@@ -310,7 +311,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                         setCurrentKeypoints(keypoints)
                         drawSkeletonOverlay(keypoints)
 
-                        const features = new Float32Array(51)
+                        // Use PoseClassifier's new 61-d features with angle-based features
+                        const features = new Float32Array(61)
                         if (keypoints.length > 0) {
                             const validKps = keypoints.filter(kp => kp.score > 0.3)
                             if (validKps.length > 0) {
@@ -325,10 +327,36 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                     features[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
                                     features[i * 3 + 2] = keypoints[i].score
                                 }
+                                // Add angle features (indices 51-60)
+                                const kp = (i: number) => ({ x: keypoints[i].x, y: keypoints[i].y })
+                                const midpoint = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+                                const calcAngle = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => {
+                                    const ab = { x: a.x - b.x, y: a.y - b.y }
+                                    const bc = { x: c.x - b.x, y: c.y - b.y }
+                                    const dot = ab.x * bc.x + ab.y * bc.y
+                                    const cross = ab.x * bc.y - ab.y * bc.x
+                                    return Math.round(Math.atan2(Math.abs(cross), dot) * (180 / Math.PI))
+                                }
+                                const normalizeAngle = (deg: number) => Math.max(0, Math.min(1, deg / 180))
+                                
+                                const shoulderMid = midpoint(kp(5), kp(6))
+                                const hipMid = midpoint(kp(11), kp(12))
+                                
+                                features[51] = normalizeAngle(calcAngle(kp(11), kp(13), kp(15)))
+                                features[52] = normalizeAngle(calcAngle(kp(12), kp(14), kp(16)))
+                                features[53] = normalizeAngle(calcAngle(kp(5), kp(7), kp(9)))
+                                features[54] = normalizeAngle(calcAngle(kp(6), kp(8), kp(10)))
+                                features[55] = normalizeAngle(Math.abs(Math.atan2(kp(6).y - kp(5).y, kp(6).x - kp(5).x) * (180 / Math.PI)))
+                                features[56] = normalizeAngle(Math.abs(Math.atan2(kp(12).y - kp(11).y, kp(12).x - kp(11).x) * (180 / Math.PI)))
+                                features[57] = normalizeAngle(Math.abs(Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) * (180 / Math.PI)))
+                                features[58] = normalizeAngle(calcAngle(kp(0), shoulderMid, hipMid))
+                                features[59] = normalizeAngle(calcAngle(kp(7), kp(5), kp(11)))
+                                features[60] = normalizeAngle(calcAngle(kp(8), kp(6), kp(12)))
                             }
                         }
 
-                        const result = await classifierRef.current.predict(features, 5)
+                        // Rule-based classification for squat detection
+                        const result = classifyRepState(features, 'squat')
                         const elapsed = Math.round(performance.now() - start)
 
                         if (keypoints.length > 0 && keypoints.some(kp => kp.score > 0.3)) {
@@ -338,14 +366,16 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                             setPoseDetected(false)
                         }
 
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
-                            setPrediction(result)
-                            setInferenceTime(elapsed)
-                            if (exerciseActiveRef.current) {
-                                processPrediction(result)
-                            }
-                        } else {
-                            setPrediction(null)
+                        // Build prediction result with confidences
+                        const confidences: Record<string, number> = {
+                            'Standing': result.label === 'up' ? 0.9 : 0.1,
+                            'Squat Down': result.label === 'down' ? 0.9 : 0.1,
+                            'Squat Up': result.label === 'transition' ? 0.9 : 0.1,
+                        }
+                        setPrediction({ label: result.label === 'up' ? 'Standing' : result.label === 'down' ? 'Squat Down' : 'Squat Up', confidences })
+                        setInferenceTime(elapsed)
+                        if (exerciseActiveRef.current) {
+                            processPrediction({ label: result.label === 'up' ? 'Standing' : result.label === 'down' ? 'Squat Down' : 'Squat Up', confidences })
                         }
                     }
                 } catch { /* ignore */ }
@@ -364,7 +394,7 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold, drawSkeletonOverlay, exerciseActive, processPrediction])
+    }, [mode.mode, stream, modelLoading, startCamera, drawSkeletonOverlay, exerciseActive, processPrediction])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return

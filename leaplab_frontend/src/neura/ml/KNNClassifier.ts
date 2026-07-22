@@ -67,10 +67,11 @@ export class KNNClassifier {
 
         for (const label of labels) {
             const examples = this.examples[label]
+            // For L2-normalized embeddings: cos(a,b) = dot(a,b) = 1 - ||a-b||²/2
+            // This maps squared distance [0,4] to cosine similarity [-1,1] where 1=identical
             const sim = tf.tidy(() => {
-                const diff = tf.sub(emb, examples)
-                const sqDist = tf.sum(tf.square(diff), 1)
-                return sqDist.neg().squeeze()
+                const dot = tf.sum(tf.mul(emb, examples), 1)
+                return dot.squeeze()
             })
             const vals = await sim.data() as Float32Array
             sim.dispose()
@@ -80,24 +81,29 @@ export class KNNClassifier {
             const topK = sorted.slice(0, effectiveK)
             rawSimilarities[label] = topK
 
-            // Distance-weighted voting: weight each vote by its similarity score
+            // Distance-weighted voting: weight each vote by its cosine similarity
             // Use softmax-like weighting to amplify confident matches
-            const weightedSum = topK.reduce((s, v, i) => {
-                const weight = Math.exp(v * 0.8) // exponential weighting favors high similarity
+            const weightedSum = topK.reduce((s, v) => {
+                const weight = Math.exp(v * 2) // exponential weighting favors high similarity
                 return s + v * weight
             }, 0)
-            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 0.8), 0) || 1
+            const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 2), 0) || 1
             weightedScores[label] = weightedSum / weightTotal
         }
 
         emb.dispose()
 
         // Softmax-style confidence normalization for crisp predictions
-        const temperature = 1.2
-        const maxScore = Math.max(...Object.values(weightedScores).map(v => Math.max(0, v)), 0.001)
+        const temperature = 0.8
+        const scores = Object.values(weightedScores)
+        const minScore = Math.min(...scores)
+        const maxScore = Math.max(...scores)
+        const range = maxScore - minScore || 1
+
         const expScores: Record<string, number> = {}
         for (const l of labels) {
-            const normalized = Math.max(0, weightedScores[l]) / maxScore
+            // Map to [0,1] range then apply temperature-scaled softmax
+            const normalized = (weightedScores[l] - minScore) / range
             expScores[l] = Math.exp(normalized / temperature)
         }
         const expTotal = Object.values(expScores).reduce((s, v) => s + v, 0) || 1

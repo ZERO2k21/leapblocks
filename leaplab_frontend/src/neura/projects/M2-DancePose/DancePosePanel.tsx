@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { MajorityVoteBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
 interface DancePosePanelProps {
     mode: UseNeuraProjectReturn
@@ -45,6 +46,7 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
     const testCameraStartedRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const majorityVoteRef = useRef(new MajorityVoteBuffer(3))
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -238,16 +240,20 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                         }
 
                         if (result && result.confidences[result.label] >= confidenceThreshold) {
-                            setPrediction(result)
+                            // Apply majority vote smoothing
+                            const smoothedLabel = majorityVoteRef.current.add(result.label)
+                            const smoothedResult = { ...result, label: smoothedLabel }
+                            setPrediction(smoothedResult)
                             setInferenceTime(elapsed)
                             setPoseHistory(prev => {
-                                const next = [...prev, result.label]
+                                const next = [...prev, smoothedLabel]
                                 return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next
                             })
                             setTotalDetections(prev => prev + 1)
                             setCorrectDetections(prev => prev + 1)
                         } else {
                             setPrediction(null)
+                            majorityVoteRef.current.clear()
                             if (keypoints.length > 0) {
                                 setTotalDetections(prev => prev + 1)
                             }
