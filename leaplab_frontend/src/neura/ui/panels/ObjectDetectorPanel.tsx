@@ -120,6 +120,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [collectTab, setCollectTab] = useState<'camera' | 'upload' | 'download'>('camera')
     const [downloadSource, setDownloadSource] = useState<'local' | 'kaggle'>('local')
     const [kaggleCredentials, setKaggleCredentials] = useState<KaggleCredentials | null>(() => getStoredCredentials())
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -305,7 +306,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 isPredictingRef.current = true
                 detectFrame().then(dets => {
                     setDetections(dets)
-                    if (canvasRef.current && videoRef.current) drawDetections(dets, canvasRef.current, videoRef.current)
+                    const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
+                    if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
                     isPredictingRef.current = false
                 })
             }
@@ -313,7 +315,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections])
+    }, [cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
 
     // Test mode: auto-start camera
     useEffect(() => {
@@ -329,7 +331,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         setIsDetecting(true)
         const dets = await detectFrame()
         setDetections(dets)
-        if (canvasRef.current && videoRef.current) drawDetections(dets, canvasRef.current, videoRef.current)
+        const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
+        if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
         setIsDetecting(false)
     }
 
@@ -519,12 +522,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 const elapsed = Math.round(performance.now() - start)
                 setInferenceTime(elapsed)
                 setUploadedDetections(dets)
+                const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
                 const canvas = document.createElement('canvas')
                 canvas.width = img.naturalWidth
                 canvas.height = img.naturalHeight
                 const ctx = canvas.getContext('2d')!
                 ctx.drawImage(img, 0, 0)
-                dets.forEach((det) => {
+                filteredDets.forEach((det) => {
                     const [x, y, w, h] = det.bbox
                     const color = getColorForObject(det.class)
                     ctx.strokeStyle = color
@@ -612,7 +616,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     const selectedClass = mode.getSelectedClass()
     const hasUploadedImage = !!uploadedImage
-    const currentDetections = hasUploadedImage ? uploadedDetections : detections
+    const allDetections = hasUploadedImage ? uploadedDetections : detections
+    const currentDetections = allDetections.filter(det => det.score >= confidenceThreshold)
     const totalSamples = mode.getTotalSamples()
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
@@ -1032,6 +1037,114 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     {useCustomModel ? '🧠 Custom' : '📦 COCO'}
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Confidence Threshold Control */}
+                    <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>🎚️ Confidence Threshold</h3>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#630ed4', background: '#f5f3ff', padding: '2px 8px', borderRadius: '6px' }}>
+                                {Math.round(confidenceThreshold * 100)}%
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={Math.round(confidenceThreshold * 100)}
+                            onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
+                            style={{
+                                width: '100%',
+                                height: '6px',
+                                borderRadius: '3px',
+                                background: `linear-gradient(to right, #630ed4 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)`,
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                            <span style={{ fontSize: '8px', color: '#6b7280' }}>More detections</span>
+                            <span style={{ fontSize: '8px', color: '#6b7280' }}>Higher accuracy</span>
+                        </div>
+                        {allDetections.length !== currentDetections.length && (
+                            <div style={{ marginTop: '6px', padding: '4px 8px', background: '#fef3c7', borderRadius: '6px', fontSize: '9px', color: '#92400e', fontWeight: 600 }}>
+                                ⚠️ {allDetections.length - currentDetections.length} low-confidence detection(s) hidden
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Detection Quality Metrics */}
+                    {allDetections.length > 0 && (
+                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
+                            <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e', marginBottom: '8px' }}>📊 Detection Quality</h3>
+                            
+                            {/* Coverage bar */}
+                            <div style={{ marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Detection Coverage</span>
+                                    <span style={{ fontSize: '9px', fontWeight: 700, color: allDetections.length > 0 ? '#059669' : '#6b7280' }}>
+                                        {allDetections.length > 0 ? Math.round((currentDetections.length / allDetections.length) * 100) : 0}%
+                                    </span>
+                                </div>
+                                <div style={{ height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <div style={{
+                                        height: '100%',
+                                        borderRadius: '2px',
+                                        background: 'linear-gradient(90deg, #10b981, #059669)',
+                                        width: `${allDetections.length > 0 ? (currentDetections.length / allDetections.length) * 100 : 0}%`,
+                                        transition: 'width 0.3s ease'
+                                    }} />
+                                </div>
+                            </div>
+
+                            {/* Average confidence */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Avg Confidence</span>
+                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#131b2e' }}>
+                                    {currentDetections.length > 0 
+                                        ? Math.round((currentDetections.reduce((sum, d) => sum + d.score, 0) / currentDetections.length) * 100)
+                                        : 0}%
+                                </span>
+                            </div>
+
+                            {/* Confidence breakdown */}
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {[
+                                    { label: 'High (>70%)', count: currentDetections.filter(d => d.score > 0.7).length, color: '#10b981' },
+                                    { label: 'Med (50-70%)', count: currentDetections.filter(d => d.score >= 0.5 && d.score <= 0.7).length, color: '#f59e0b' },
+                                    { label: 'Low (<50%)', count: currentDetections.filter(d => d.score < 0.5).length, color: '#ef4444' }
+                                ].map(item => (
+                                    <div key={item.label} style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '4px', 
+                                        padding: '3px 6px', 
+                                        background: `${item.color}10`, 
+                                        borderRadius: '4px',
+                                        border: `1px solid ${item.color}30`
+                                    }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color }} />
+                                        <span style={{ fontSize: '8px', color: '#4b5563', fontWeight: 600 }}>{item.label}: {item.count}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Class breakdown */}
+                            {currentDetections.length > 0 && (
+                                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                                    <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '4px' }}>By Class</span>
+                                    {Object.entries(currentDetections.reduce((acc, d) => {
+                                        acc[d.class] = (acc[d.class] || 0) + 1
+                                        return acc
+                                    }, {} as Record<string, number>)).map(([cls, count]) => (
+                                        <div key={cls} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                            <span style={{ fontSize: '9px', color: '#374151', textTransform: 'capitalize' }}>{cls}</span>
+                                            <span style={{ fontSize: '9px', fontWeight: 700, color: '#630ed4' }}>{count as number}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
