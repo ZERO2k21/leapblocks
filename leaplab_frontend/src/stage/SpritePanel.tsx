@@ -236,44 +236,46 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       onCopyCodeToSprite?.(sourceId, sprite.id);
                     }
                   }}
-                  className={`relative group flex flex-col rounded-2xl cursor-pointer
-                    transition-all duration-200 overflow-hidden border-2
+                  className={`relative group flex flex-col rounded-[20px] cursor-pointer
+                    transition-all duration-200 border-2 select-none
                     ${isSelected
-                      ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-xl shadow-purple-200/40`
-                      : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white hover:border-[#7b44c7]/30 hover:shadow-lg hover:shadow-gray-200/50"}`
+                      ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
+                      : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                     }`}
-                  style={{ aspectRatio: '1 / 1.15' }}
+                  style={{ aspectRatio: '1 / 1.08' }}
                 >
-                  {/* Delete — purple circle + trash */}
+                  {/* Delete button — playful purple circle with cross */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteSprite(sprite.id); }}
                     title="Delete sprite"
-                    className={`absolute top-1 right-1 w-5 h-5 rounded-full
+                    className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full
                       bg-[#7b44c7] text-white flex items-center justify-center
-                      shadow-md transition-all duration-150 z-20
-                      hover:bg-red-500 hover:scale-110 active:scale-95
-                      ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      shadow-md transition-all duration-150 z-30
+                      hover:bg-rose-500 hover:scale-110 active:scale-95
+                      ${isSelected ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"}`}
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v6M14 11v6" />
-                      <path d="M9 6V4h6v2" />
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </button>
 
                   {/* Clone badge */}
                   {cloneCount > 0 && (
-                    <div className="absolute top-1 left-1 bg-amber-500 text-white
-                      text-[9px] font-bold w-4 h-4 rounded-full border border-white
-                      flex items-center justify-center z-20 shadow-sm">
+                    <div className="absolute -top-1.5 -left-1.5 bg-amber-400 text-amber-950
+                      text-[10px] font-black w-5 h-5 rounded-full border-2 border-white
+                      flex items-center justify-center z-30 shadow-sm">
                       {cloneCount}
                     </div>
                   )}
 
-                  {/* Sprite image */}
-                  <div className="flex-1 flex items-center justify-center p-2 min-h-0 overflow-hidden w-full">
+                  {/* Sprite image container */}
+                  <div className={`flex-1 flex items-center justify-center p-1 min-h-0 overflow-hidden w-full rounded-t-[18px]
+                    ${isSelected
+                      ? (dk ? "bg-[#251f38]" : "bg-gradient-to-b from-purple-50/70 to-white")
+                      : (dk ? "bg-[#18181c]" : "bg-gradient-to-b from-slate-50/90 to-white group-hover:from-purple-50/40")
+                    }`}>
                     {(() => {
                       const getCostumeSrc = (c: any): string => {
                         if (!c) return '';
@@ -295,23 +297,23 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                         <img
                           src={costumeImgSrc}
                           alt={sprite.name}
-                          className="w-full h-full object-contain drop-shadow-sm transition-transform duration-150 group-hover:scale-105"
+                          className="w-full h-full object-contain scale-115 filter drop-shadow-md transition-transform duration-200 group-hover:scale-125"
                           draggable={false}
                         />
                       ) : (
-                        <span className="text-3xl select-none">
+                        <span className="text-4xl select-none filter drop-shadow-sm">
                           {sprite.name.toLowerCase().includes("robot") ? "🤖" : "🍎"}
                         </span>
                       );
                     })()}
                   </div>
 
-                  {/* Name label */}
-                  <div className={`text-center text-[11px] font-bold py-1.5 px-1.5
-                    truncate flex-shrink-0 transition-colors rounded-b-xl
+                  {/* Name badge */}
+                  <div className={`text-center text-[12px] font-extrabold py-1.5 px-2
+                    truncate flex-shrink-0 transition-colors rounded-b-[18px] tracking-wide
                     ${isSelected
-                      ? "bg-[#7b44c7] text-white"
-                      : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-50 text-slate-600"}`
+                      ? "bg-[#7b44c7] text-white shadow-inner"
+                      : `${dk ? "bg-[#26262d] text-gray-300 group-hover:bg-[#322c42] group-hover:text-purple-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
                     }`}>
                     {sprite.name}
                   </div>
@@ -421,24 +423,24 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   onCopyCodeToSprite?.(sourceId, 'stage');
                 }
               }}
-              className={`mx-4 mt-5 mb-3 rounded-3xl cursor-pointer transition-all duration-200 overflow-hidden border-2
+              className={`mx-3.5 mt-4 mb-2 rounded-[20px] cursor-pointer transition-all duration-200 border-2 select-none overflow-hidden
                 ${isStageSelected
-                  ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-xl shadow-purple-200/40`
-                  : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white hover:border-[#7b44c7]/30 hover:shadow-lg hover:shadow-gray-200/50"}`
+                  ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
+                  : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                 }`}
             >
               {/* "Stage" header */}
-              <div className={`text-center text-[12px] font-bold py-2.5 transition-colors
+              <div className={`text-center text-[12px] font-extrabold py-1.5 transition-colors tracking-wide
                 ${isStageSelected
                   ? "bg-[#7b44c7] text-white"
-                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-50 text-gray-500"}`
+                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
                 }`}>
                 Stage
               </div>
 
               {/* Backdrop thumbnail */}
               <div
-                className={`w-full overflow-hidden ${dk ? "bg-[#26262d]" : "bg-gray-50"}`}
+                className={`w-full overflow-hidden ${dk ? "bg-[#26262d]" : "bg-slate-50"}`}
                 style={{ aspectRatio: '4/3' }}>
                 {currentBackdropSrc ? (
                   <img
