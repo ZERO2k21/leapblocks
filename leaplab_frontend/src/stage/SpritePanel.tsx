@@ -16,11 +16,12 @@
  *   • Cards auto-align left-to-right, top-to-bottom
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './SpritePanel.css';
 import { Sprite, SpriteType } from "./Sprite";
 import { ActionMenu } from "./ActionMenu";
 import type { StageManager } from '../engine/StageManager';
+import { resolveAssetPath } from '../embed/utils/assetPaths';
 
 const SPRITE_TYPES: { type: SpriteType; name: string; emoji: string; color: string }[] = [
   { type: "cat", name: "Cat", emoji: "🐱", color: "#FF8C1A" },
@@ -60,6 +61,13 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   onCopyCodeToSprite,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const handleStageUpdate = () => setTick((t) => t + 1);
+    window.addEventListener('leap-stage-update', handleStageUpdate);
+    return () => window.removeEventListener('leap-stage-update', handleStageUpdate);
+  }, []);
 
   const selectedSprite = sprites.find((s) => s.id === selectedSpriteId);
   const isStageSelected = selectedSpriteId === "stage";
@@ -198,9 +206,9 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
           {/* Scrollable grid */}
           <div
-            className={`p-6 grid grid-cols-5 gap-5 content-start
+            className={`p-4 grid grid-cols-5 gap-3.5 content-start
               overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
-            style={{ flex: '1 1 0', maxHeight: '190px' }}
+            style={{ flex: '1 1 0', maxHeight: '200px' }}
           >
             {normalSprites.map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
@@ -228,25 +236,25 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       onCopyCodeToSprite?.(sourceId, sprite.id);
                     }
                   }}
-                  className={`relative group flex flex-col rounded-3xl cursor-pointer
-                    transition-all duration-200 overflow-visible border-2
+                  className={`relative group flex flex-col rounded-2xl cursor-pointer
+                    transition-all duration-200 overflow-hidden border-2
                     ${isSelected
                       ? `border-[#7b44c7] ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-xl shadow-purple-200/40`
                       : `${borderCol} ${dk ? "bg-[#1c1c21]" : "bg-white hover:border-[#7b44c7]/30 hover:shadow-lg hover:shadow-gray-200/50"}`
                     }`}
-                  style={{ aspectRatio: '1 / 1.35' }}
+                  style={{ aspectRatio: '1 / 1.15' }}
                 >
                   {/* Delete — purple circle + trash */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteSprite(sprite.id); }}
                     title="Delete sprite"
-                    className={`absolute -top-2 -right-2 w-5.5 h-5.5 rounded-full
+                    className={`absolute top-1 right-1 w-5 h-5 rounded-full
                       bg-[#7b44c7] text-white flex items-center justify-center
                       shadow-md transition-all duration-150 z-20
                       hover:bg-red-500 hover:scale-110 active:scale-95
                       ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                   >
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
                       stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6" />
                       <path d="M19 6l-1 14H6L5 6" />
@@ -257,26 +265,41 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
                   {/* Clone badge */}
                   {cloneCount > 0 && (
-                    <div className="absolute -top-1.5 -left-1.5 bg-amber-500 text-white
-                      text-[8px] font-bold w-4 h-4 rounded-full border-2 border-white
+                    <div className="absolute top-1 left-1 bg-amber-500 text-white
+                      text-[9px] font-bold w-4 h-4 rounded-full border border-white
                       flex items-center justify-center z-20 shadow-sm">
                       {cloneCount}
                     </div>
                   )}
 
                   {/* Sprite image */}
-                  <div className="flex-1 flex items-center justify-center p-8 pb-4 min-h-0 overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center p-2 min-h-0 overflow-hidden w-full">
                     {(() => {
-                      const costumeImgSrc = sprite.currentCostume?.image?.src || (typeof sprite.currentCostume?.image === 'string' ? sprite.currentCostume.image : '');
+                      const getCostumeSrc = (c: any): string => {
+                        if (!c) return '';
+                        if (typeof c === 'string') return c;
+                        if (typeof c === 'object' && c.src && typeof c.src === 'string') return c.src;
+                        if (c.image) {
+                          if (typeof c.image === 'string') return c.image;
+                          if (typeof c.image === 'object' && c.image.src && typeof c.image.src === 'string') return c.image.src;
+                        }
+                        return '';
+                      };
+                      const rawSrc = getCostumeSrc(sprite.currentCostume);
+                      let costumeImgSrc = resolveAssetPath(rawSrc);
+                      if (costumeImgSrc && !costumeImgSrc.startsWith('http') && !costumeImgSrc.startsWith('data:') && !costumeImgSrc.startsWith('blob:') && !costumeImgSrc.startsWith('/')) {
+                        costumeImgSrc = '/' + costumeImgSrc;
+                      }
+
                       return costumeImgSrc ? (
                         <img
                           src={costumeImgSrc}
                           alt={sprite.name}
-                          className="max-h-full max-w-full object-contain drop-shadow-sm"
+                          className="w-full h-full object-contain drop-shadow-sm transition-transform duration-150 group-hover:scale-105"
                           draggable={false}
                         />
                       ) : (
-                        <span className="text-2xl select-none">
+                        <span className="text-3xl select-none">
                           {sprite.name.toLowerCase().includes("robot") ? "🤖" : "🍎"}
                         </span>
                       );
@@ -284,8 +307,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   </div>
 
                   {/* Name label */}
-                  <div className={`text-center text-[12px] font-bold py-3 px-2.5
-                    truncate flex-shrink-0 transition-colors rounded-b-[20px]
+                  <div className={`text-center text-[11px] font-bold py-1.5 px-1.5
+                    truncate flex-shrink-0 transition-colors rounded-b-xl
                     ${isSelected
                       ? "bg-[#7b44c7] text-white"
                       : `${dk ? "bg-[#26262d] text-gray-300" : "bg-gray-50 text-slate-600"}`

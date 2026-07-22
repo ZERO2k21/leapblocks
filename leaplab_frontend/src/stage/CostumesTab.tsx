@@ -682,9 +682,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'center'
     },
     thumbImg: {
-        maxWidth: '52px',
-        maxHeight: '52px',
-        objectFit: 'contain'
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        padding: '2px'
     },
     nameWrap: {
         flex: 1,
