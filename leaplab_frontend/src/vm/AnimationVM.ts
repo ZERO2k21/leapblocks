@@ -2885,7 +2885,7 @@ export class AnimationVM {
                     this.greaterThanFired.delete(hatId);
                 }
             }
-        }, 100); // Poll every 100ms (matches Scratch behavior)
+        }, 100); // Poll every 100ms (matches Leap behavior)
     }
 
     private stopGreaterThanPolling(): void {

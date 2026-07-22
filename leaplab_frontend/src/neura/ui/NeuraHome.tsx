@@ -580,7 +580,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                 Quick Start Projects
                             </h2>
                             <p className="text-gray-500 text-base leading-relaxed" style={{ maxWidth: '400px', margin: '0 auto' }}>
-                                Pick a ready-made project or start a fresh one from scratch!
+                                Pick a ready-made project or start a fresh one from leap!
                             </p>
                         </div>
 

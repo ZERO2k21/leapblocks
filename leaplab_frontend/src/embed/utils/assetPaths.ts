@@ -1,6 +1,6 @@
 /**
  * Normalize an asset path for saving.
- * Strips the current origin and converts legacy /scratch/ paths to /leap/.
+ * Strips the current origin and converts legacy /leap/ paths to /leap/.
  * Preserves data URLs (base64) for custom uploaded assets.
  */
 export function normalizeAssetPath(src: string): string {
@@ -16,7 +16,7 @@ export function normalizeAssetPath(src: string): string {
 
 /**
  * Resolve an asset path for loading.
- * Ensures legacy /scratch/ paths are rewritten to /leap/.
+ * Ensures legacy /leap/ paths are rewritten to /leap/.
  * Preserves data URLs (base64) for custom uploaded assets.
  */
 export function resolveAssetPath(src: string): string {
