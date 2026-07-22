@@ -1,5 +1,6 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
 import { ensurePoseDetection } from '../loadScript'
+import { calcAngle, normalizeAngle, midpoint, lineAngle } from '../utils/geometry'
 
 export interface PosePrediction {
     label: string
@@ -12,6 +13,19 @@ export interface Keypoint {
     score: number
     name: string
 }
+
+// Feature vector size: 51 raw landmarks (17×3) + 10 derived angles = 61
+const FEATURE_SIZE = 61
+const LEGACY_FEATURE_SIZE = 51
+
+// COCO 17-keypoint indices
+const NOSE = 0
+const L_SHOULDER = 5, R_SHOULDER = 6
+const L_ELBOW = 7, R_ELBOW = 8
+const L_WRIST = 9, R_WRIST = 10
+const L_HIP = 11, R_HIP = 12
+const L_KNEE = 13, R_KNEE = 14
+const L_ANKLE = 15, R_ANKLE = 16
 
 export class PoseClassifier {
     private knn = new KNNClassifier()
@@ -39,7 +53,7 @@ export class PoseClassifier {
 
     private normalizeKeypoints(keypoints: Keypoint[]): Float32Array {
         const validKeypoints = keypoints.filter(kp => kp.score > 0.3)
-        if (validKeypoints.length === 0) return new Float32Array(51)
+        if (validKeypoints.length === 0) return new Float32Array(FEATURE_SIZE)
 
         const minX = Math.min(...validKeypoints.map(kp => kp.x))
         const maxX = Math.max(...validKeypoints.map(kp => kp.x))
@@ -48,13 +62,53 @@ export class PoseClassifier {
         const rangeX = maxX - minX || 1
         const rangeY = maxY - minY || 1
 
-        const normalized = new Float32Array(51)
+        const features = new Float32Array(FEATURE_SIZE)
+
+        // First 51 values: normalized landmark coordinates
         for (let i = 0; i < keypoints.length && i < 17; i++) {
-            normalized[i * 3] = (keypoints[i].x - minX) / rangeX
-            normalized[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
-            normalized[i * 3 + 2] = keypoints[i].score
+            features[i * 3] = (keypoints[i].x - minX) / rangeX
+            features[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
+            features[i * 3 + 2] = keypoints[i].score
         }
-        return normalized
+
+        // Additional 10 angle features (indices 51-60)
+        const kp = (i: number) => ({ x: keypoints[i].x, y: keypoints[i].y })
+        const shoulderMid = midpoint(kp(L_SHOULDER), kp(R_SHOULDER))
+        const hipMid = midpoint(kp(L_HIP), kp(R_HIP))
+
+        // Lower body angles (normalized 0-1)
+        features[51] = normalizeAngle(calcAngle(kp(L_HIP), kp(L_KNEE), kp(L_ANKLE)))
+        features[52] = normalizeAngle(calcAngle(kp(R_HIP), kp(R_KNEE), kp(R_ANKLE)))
+
+        // Upper body angles
+        features[53] = normalizeAngle(calcAngle(kp(L_SHOULDER), kp(L_ELBOW), kp(L_WRIST)))
+        features[54] = normalizeAngle(calcAngle(kp(R_SHOULDER), kp(R_ELBOW), kp(R_WRIST)))
+
+        // Tilt angles (horizontal reference)
+        features[55] = normalizeAngle(lineAngle(kp(L_SHOULDER), kp(R_SHOULDER)))
+        features[56] = normalizeAngle(lineAngle(kp(L_HIP), kp(R_HIP)))
+
+        // Torso and neck angles
+        features[57] = normalizeAngle(lineAngle(shoulderMid, hipMid))
+        features[58] = normalizeAngle(calcAngle(kp(NOSE), shoulderMid, hipMid))
+
+        // Elbow-to-hip connections
+        features[59] = normalizeAngle(calcAngle(kp(L_ELBOW), kp(L_SHOULDER), kp(L_HIP)))
+        features[60] = normalizeAngle(calcAngle(kp(R_ELBOW), kp(R_SHOULDER), kp(R_HIP)))
+
+        return features
+    }
+
+    /**
+     * Pad legacy 51-d feature vectors to 61-d with zero-padded angles.
+     * Use when loading samples saved before angle feature upgrade.
+     */
+    static padLegacyFeatures(features: Float32Array): Float32Array {
+        if (features.length >= FEATURE_SIZE) return features
+        const padded = new Float32Array(FEATURE_SIZE)
+        padded.set(features)
+        // New angle features remain 0, which is a valid neutral value (0° = 90°/horizontal)
+        return padded
     }
 
     async addSample(features: Float32Array, label: string) {

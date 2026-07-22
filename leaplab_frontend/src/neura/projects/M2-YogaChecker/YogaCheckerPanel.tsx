@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { HoldTimeBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
 interface YogaCheckerPanelProps {
     mode: UseNeuraProjectReturn
@@ -26,6 +27,7 @@ const ACCENT = '#06b6d4'
 
 const MAX_HISTORY = 5
 const PREDICT_INTERVAL_MS = 800
+const HOLD_TIME_MS = 2000
 
 export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -39,6 +41,7 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
     const testCameraStartedRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const holdTimeRef = useRef(new HoldTimeBuffer(HOLD_TIME_MS))
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -217,7 +220,8 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                         setCurrentKeypoints(keypoints)
                         drawSkeletonOverlay(keypoints)
 
-                        const features = new Float32Array(51)
+                        // Use PoseClassifier's new 61-d features with angle-based features
+                        const features = new Float32Array(61)
                         if (keypoints.length > 0) {
                             const validKps = keypoints.filter(kp => kp.score > 0.3)
                             if (validKps.length > 0) {
@@ -232,6 +236,31 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                                     features[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
                                     features[i * 3 + 2] = keypoints[i].score
                                 }
+                                // Add angle features (indices 51-60)
+                                const kp = (i: number) => ({ x: keypoints[i].x, y: keypoints[i].y })
+                                const midpoint = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+                                const calcAngle = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => {
+                                    const ab = { x: a.x - b.x, y: a.y - b.y }
+                                    const bc = { x: c.x - b.x, y: c.y - b.y }
+                                    const dot = ab.x * bc.x + ab.y * bc.y
+                                    const cross = ab.x * bc.y - ab.y * bc.x
+                                    return Math.round(Math.atan2(Math.abs(cross), dot) * (180 / Math.PI))
+                                }
+                                const normalizeAngle = (deg: number) => Math.max(0, Math.min(1, deg / 180))
+                                
+                                const shoulderMid = midpoint(kp(5), kp(6))
+                                const hipMid = midpoint(kp(11), kp(12))
+                                
+                                features[51] = normalizeAngle(calcAngle(kp(11), kp(13), kp(15)))
+                                features[52] = normalizeAngle(calcAngle(kp(12), kp(14), kp(16)))
+                                features[53] = normalizeAngle(calcAngle(kp(5), kp(7), kp(9)))
+                                features[54] = normalizeAngle(calcAngle(kp(6), kp(8), kp(10)))
+                                features[55] = normalizeAngle(Math.abs(Math.atan2(kp(6).y - kp(5).y, kp(6).x - kp(5).x) * (180 / Math.PI)))
+                                features[56] = normalizeAngle(Math.abs(Math.atan2(kp(12).y - kp(11).y, kp(12).x - kp(11).x) * (180 / Math.PI)))
+                                features[57] = normalizeAngle(Math.abs(Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) * (180 / Math.PI)))
+                                features[58] = normalizeAngle(calcAngle(kp(0), shoulderMid, hipMid))
+                                features[59] = normalizeAngle(calcAngle(kp(7), kp(5), kp(11)))
+                                features[60] = normalizeAngle(calcAngle(kp(8), kp(6), kp(12)))
                             }
                         }
 
@@ -246,14 +275,19 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                         }
 
                         if (result && result.confidences[result.label] >= confidenceThreshold) {
-                            setPrediction(result)
-                            setInferenceTime(elapsed)
-                            setPoseHistory(prev => {
-                                const next = [...prev, result.label]
-                                return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next
-                            })
+                            // Apply hold-time buffer: only register pose if held for 2 seconds
+                            const heldPose = holdTimeRef.current.update(result.label)
+                            if (heldPose) {
+                                setPrediction(result)
+                                setInferenceTime(elapsed)
+                                setPoseHistory(prev => {
+                                    const next = [...prev, result.label]
+                                    return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next
+                                })
+                            }
                         } else {
                             setPrediction(null)
+                            holdTimeRef.current.clear()
                         }
                     }
                 } catch { /* ignore */ }

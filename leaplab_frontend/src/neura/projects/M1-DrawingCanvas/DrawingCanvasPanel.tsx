@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
+import { classifyDrawErase, StateMachineBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
 interface DrawingCanvasPanelProps {
     mode: UseNeuraProjectReturn
@@ -39,6 +40,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     const rebuildAbortRef = useRef(0)
     const testCameraStartedRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
+    const stateMachineRef = useRef(new StateMachineBuffer(3))
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -315,7 +317,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                         hiddenCanvasRef.current.height = CANVAS_HEIGHT
                         ctx.drawImage(videoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
                         const keypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
-                        const result = await classifierRef.current.predictFromImage(hiddenCanvasRef.current, 3)
                         const elapsed = Math.round(performance.now() - start)
 
                         if (keypoints.length > 0) {
@@ -328,16 +329,16 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                 classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
                             }
 
-                            if (result && result.confidences[result.label] >= confidenceThreshold) {
-                                setPrediction(result)
-                                setActiveTool(result.label)
-                                handleToolAction(result.label, keypoints)
-                            } else {
-                                setPrediction(null)
-                                setActiveTool(null)
-                                setIsDragging(false)
-                                lastDragPosRef.current = null
-                            }
+                            // Rule-based classification: check finger flags for draw/erase
+                            const features = classifierRef.current.extractFeatures(keypoints)
+                            const result = classifyDrawErase(features)
+                            const smoothedTool = stateMachineRef.current.update(result.label)
+                            
+                            // Map to tool name
+                            const toolName = smoothedTool === 'draw' ? 'Draw' : 'Erase'
+                            setPrediction({ label: toolName, confidences: result.details })
+                            setActiveTool(toolName)
+                            handleToolAction(toolName, keypoints)
                         } else {
                             setHandDetected(false)
                             setPrediction(null)
@@ -346,6 +347,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                             setIsDragging(false)
                             lastDragPosRef.current = null
                             isPanningRef.current = false
+                            stateMachineRef.current.clear()
                             if (overlayCanvasRef.current) {
                                 const octx = overlayCanvasRef.current.getContext('2d')
                                 if (octx) octx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)

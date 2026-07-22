@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
+import { classifyFingerCount, MajorityVoteBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
 interface FingerCounterPanelProps {
     mode: UseNeuraProjectReturn
@@ -34,6 +35,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const lastDetectTimeRef = useRef(0)
     const lastPredictTimeRef = useRef(0)
     const audioContextRef = useRef<AudioContext | null>(null)
+    const majorityVoteRef = useRef(new MajorityVoteBuffer(5))
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -196,13 +198,26 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
-                        const result = await classifierRef.current.predictFromImage(canvasRef.current, 3)
-                        const elapsed = Math.round(performance.now() - start)
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
-                            setPrediction(result)
-                            setHandDetected(true)
+                        
+                        // Rule-based classification: detect hand, extract features, count fingers
+                        const keypoints = await classifierRef.current.detectHand(canvasRef.current)
+                        if (keypoints && keypoints.length > 0) {
+                            const features = classifierRef.current.extractFeatures(keypoints)
+                            const result = classifyFingerCount(features)
+                            const smoothed = majorityVoteRef.current.add(result.label)
+                            
+                            const elapsed = Math.round(performance.now() - start)
                             setInferenceTime(elapsed)
-                            const count = FINGER_LABELS[result.label] || 0
+                            setHandDetected(true)
+                            
+                            // Build prediction result with all class confidences
+                            const confidences: Record<string, number> = {}
+                            for (const [label, conf] of Object.entries(result.details)) {
+                                confidences[label] = conf
+                            }
+                            setPrediction({ label: smoothed, confidences })
+                            
+                            const count = FINGER_LABELS[smoothed] || 0
                             setCurrentCount(count)
                             setCountHistory(prev => [...prev.slice(-19), count])
                             playCountSound(count)
@@ -210,6 +225,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             setPrediction(null)
                             setHandDetected(false)
                             setCurrentCount(0)
+                            majorityVoteRef.current.clear()
                         }
                     }
                 } catch { /* ignore */ }
@@ -228,7 +244,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold, playCountSound])
+    }, [mode.mode, stream, modelLoading, startCamera, playCountSound])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return

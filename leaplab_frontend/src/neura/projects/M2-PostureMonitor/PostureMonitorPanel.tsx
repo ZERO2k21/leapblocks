@@ -3,6 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { classifyPosture } from '../../ml/utils/ruleBasedClassifiers'
 
 interface PostureMonitorPanelProps {
     mode: UseNeuraProjectReturn
@@ -270,9 +271,8 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                         canvasRef.current.height = 480
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
 
-                        const result = await classifierRef.current.predictFromImage(canvasRef.current, 5)
-                        const elapsed = Math.round(performance.now() - start)
                         const keypoints = await classifierRef.current.detectPose(canvasRef.current)
+                        const elapsed = Math.round(performance.now() - start)
 
                         setCurrentKeypoints(keypoints)
                         drawSkeletonOverlay(keypoints)
@@ -280,11 +280,63 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                         if (keypoints.length > 0 && keypoints.some(kp => kp.score > 0.3)) {
                             setPoseDetected(true)
                             setDetectionCount(prev => prev + 1)
-                        } else {
-                            setPoseDetected(false)
-                        }
-
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                            
+                            // Use PoseClassifier's new 61-d features with angle-based features
+                            const features = new Float32Array(61)
+                            const validKps = keypoints.filter(kp => kp.score > 0.3)
+                            if (validKps.length > 0) {
+                                const minX = Math.min(...validKps.map(kp => kp.x))
+                                const maxX = Math.max(...validKps.map(kp => kp.x))
+                                const minY = Math.min(...validKps.map(kp => kp.y))
+                                const maxY = Math.max(...validKps.map(kp => kp.y))
+                                const rangeX = maxX - minX || 1
+                                const rangeY = maxY - minY || 1
+                                for (let i = 0; i < keypoints.length && i < 17; i++) {
+                                    features[i * 3] = (keypoints[i].x - minX) / rangeX
+                                    features[i * 3 + 1] = (keypoints[i].y - minY) / rangeY
+                                    features[i * 3 + 2] = keypoints[i].score
+                                }
+                                // Add angle features (indices 51-60)
+                                const kp = (i: number) => ({ x: keypoints[i].x, y: keypoints[i].y })
+                                const midpoint = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+                                const calcAngle = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => {
+                                    const ab = { x: a.x - b.x, y: a.y - b.y }
+                                    const bc = { x: c.x - b.x, y: c.y - b.y }
+                                    const dot = ab.x * bc.x + ab.y * bc.y
+                                    const cross = ab.x * bc.y - ab.y * bc.x
+                                    return Math.round(Math.atan2(Math.abs(cross), dot) * (180 / Math.PI))
+                                }
+                                const normalizeAngle = (deg: number) => Math.max(0, Math.min(1, deg / 180))
+                                
+                                const shoulderMid = midpoint(kp(5), kp(6))
+                                const hipMid = midpoint(kp(11), kp(12))
+                                
+                                features[51] = normalizeAngle(calcAngle(kp(11), kp(13), kp(15)))
+                                features[52] = normalizeAngle(calcAngle(kp(12), kp(14), kp(16)))
+                                features[53] = normalizeAngle(calcAngle(kp(5), kp(7), kp(9)))
+                                features[54] = normalizeAngle(calcAngle(kp(6), kp(8), kp(10)))
+                                features[55] = normalizeAngle(Math.abs(Math.atan2(kp(6).y - kp(5).y, kp(6).x - kp(5).x) * (180 / Math.PI)))
+                                features[56] = normalizeAngle(Math.abs(Math.atan2(kp(12).y - kp(11).y, kp(12).x - kp(11).x) * (180 / Math.PI)))
+                                features[57] = normalizeAngle(Math.abs(Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) * (180 / Math.PI)))
+                                features[58] = normalizeAngle(calcAngle(kp(0), shoulderMid, hipMid))
+                                features[59] = normalizeAngle(calcAngle(kp(7), kp(5), kp(11)))
+                                features[60] = normalizeAngle(calcAngle(kp(8), kp(6), kp(12)))
+                            }
+                            
+                            // Rule-based classification for posture
+                            const postureResult = classifyPosture(features)
+                            const postureLabel = postureResult.label === 'good' ? 'Good Posture' : 
+                                                 postureResult.label === 'slouching' ? 'Bad Posture' :
+                                                 postureResult.label === 'leaning_left' ? 'Leaning Left' : 'Leaning Right'
+                            
+                            const confidences: Record<string, number> = {
+                                'Good Posture': postureResult.label === 'good' ? 0.9 : 0.1,
+                                'Bad Posture': postureResult.label === 'slouching' ? 0.9 : 0.1,
+                                'Leaning Left': postureResult.label === 'leaning_left' ? 0.9 : 0.1,
+                                'Leaning Right': postureResult.label === 'leaning_right' ? 0.9 : 0.1,
+                            }
+                            const result = { label: postureLabel, confidences }
+                            
                             setPrediction(result)
                             setInferenceTime(elapsed)
                             const newPosture = result.label as PostureState
@@ -311,6 +363,8 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                 consecutiveBadRef.current = 0
                                 setConsecutiveBadCount(0)
                             }
+                        } else {
+                            setPoseDetected(false)
                         }
                     }
                 } catch { /* ignore */ }
@@ -329,7 +383,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold, drawSkeletonOverlay])
+    }, [mode.mode, stream, modelLoading, startCamera, drawSkeletonOverlay])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
