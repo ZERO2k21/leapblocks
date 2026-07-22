@@ -266,18 +266,21 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
                   {/* Sprite image */}
                   <div className="flex-1 flex items-center justify-center p-8 pb-4 min-h-0 overflow-hidden">
-                    {sprite.currentCostume?.image?.src ? (
-                      <img
-                        src={sprite.currentCostume.image.src}
-                        alt={sprite.name}
-                        className="max-h-full max-w-full object-contain drop-shadow-sm"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="text-2xl select-none">
-                        {sprite.name.toLowerCase().includes("robot") ? "🤖" : "🍎"}
-                      </span>
-                    )}
+                    {(() => {
+                      const costumeImgSrc = sprite.currentCostume?.image?.src || (typeof sprite.currentCostume?.image === 'string' ? sprite.currentCostume.image : '');
+                      return costumeImgSrc ? (
+                        <img
+                          src={costumeImgSrc}
+                          alt={sprite.name}
+                          className="max-h-full max-w-full object-contain drop-shadow-sm"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="text-2xl select-none">
+                          {sprite.name.toLowerCase().includes("robot") ? "🤖" : "🍎"}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   {/* Name label */}

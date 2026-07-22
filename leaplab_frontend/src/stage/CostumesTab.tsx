@@ -320,11 +320,21 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
 
     // If Sprite is selected, render Costume Editor
     if (selectedSprite) {
-        const currentCostume = selectedSprite.costumes[activeCostumeIndex]?.image?.src || '';
+        const getCostumeSrc = (c: any): string => {
+            if (!c) return '';
+            if (typeof c === 'string') return c;
+            if (typeof c === 'object' && c.src && typeof c.src === 'string') return c.src;
+            if (c.image) {
+                if (typeof c.image === 'string') return c.image;
+                if (typeof c.image === 'object' && c.image.src && typeof c.image.src === 'string') return c.image.src;
+            }
+            return '';
+        };
+        const currentCostume = getCostumeSrc(selectedSprite.costumes[activeCostumeIndex]);
         const allCostumes = selectedSprite.costumes.map((c: any, i: number) => ({
             id: i.toString(),
             name: c.name,
-            image: c.image.src
+            image: getCostumeSrc(c)
         }));
 
         const handleContainerClick = (e: React.MouseEvent) => {
@@ -515,7 +525,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             title="Costume Editor"
                             spriteName={selectedSprite.costumes[activeCostumeIndex]?.name || selectedSprite.name}
                             initialImage={currentCostume}
-                            costumes={[allCostumes[activeCostumeIndex]].filter(Boolean)}
+                            costumes={allCostumes}
                             onSave={updateCurrentCostumeFromEditor}
                             onDeleteSound={() => deleteCostume(activeCostumeIndex)}
                             onDuplicateSound={() => duplicateCostume(activeCostumeIndex)}
