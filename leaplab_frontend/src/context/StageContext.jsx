@@ -127,7 +127,8 @@ export function StageProvider({ children }) {
         { name: 'Blue Sky', img: 'assets/backdrops/blue_sky.svg' },
         { name: 'City', img: 'assets/backdrops/city.svg' },
         { name: 'Forest', img: 'assets/backdrops/forest.svg' },
-        { name: 'Space', img: 'assets/backdrops/space.svg' }
+        { name: 'Space', img: 'assets/backdrops/space.svg' },
+        { name: 'School', img: 'assets/backdrops/school.png' }
     ]);
 
     // ─── Sprite Actions ─────────────────────────────────────────────────────

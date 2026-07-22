@@ -16,6 +16,7 @@ import {
 import { ActionMenu } from '../stage/ActionMenu';
 import { CostumeLibrary } from './CostumeLibrary';
 import HSBColorPicker from './HSBColorPicker';
+import { resolveAssetPath } from '../embed/utils/assetPaths';
 
 // Built-in costumes for "Surprise" feature
 const BUILTIN_COSTUMES = [
@@ -96,7 +97,23 @@ function PaintEditor({
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [activeColorPicker, setActiveColorPicker] = useState<'fill' | 'outline' | null>(null);
     const [isRemovingBg, setIsRemovingBg] = useState(false);
-    const [activeCostumeIndex, setActiveCostumeIndex] = useState(0);
+    const [activeCostumeIndex, setActiveCostumeIndex] = useState(() => {
+        if (costumes && costumes.length > 0 && initialImage) {
+            const getSrc = (item: any): string => {
+                if (!item) return '';
+                if (typeof item === 'string') return item;
+                if (typeof item === 'object' && item.src && typeof item.src === 'string') return item.src;
+                if (item.image) {
+                    if (typeof item.image === 'string') return item.image;
+                    if (typeof item.image === 'object' && item.image.src && typeof item.image.src === 'string') return item.image.src;
+                }
+                return '';
+            };
+            const idx = costumes.findIndex(c => getSrc(c) === initialImage);
+            return idx >= 0 ? idx : 0;
+        }
+        return 0;
+    });
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -328,32 +345,90 @@ function PaintEditor({
         canvas.backgroundColor = 'transparent';
 
         const costumeId = costumes[activeCostumeIndex]?.id || 'default';
-        const draftKey = `paintEditor_draft_${title || 'unknown'}_${spriteName}_${costumeId}`;
-        const savedDraft = localStorage.getItem(draftKey);
 
-        if (savedDraft) {
-            try {
-                canvas.loadFromJSON(JSON.parse(savedDraft), () => {
-                    if (!isActive) return;
-                    canvas.renderAll();
-                    saveState();
-                });
-                return () => {
-                    isActive = false;
-                };
-            } catch (err) {
-                console.error('Failed to load draft:', err);
+        const getCostumeSrc = (item: any): string => {
+            if (!item) return '';
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object' && item.src && typeof item.src === 'string') return item.src;
+            if (item.image) {
+                if (typeof item.image === 'string') return item.image;
+                if (typeof item.image === 'object' && item.image.src && typeof item.image.src === 'string') return item.image.src;
             }
-        }
+            return '';
+        };
 
-        const currentImage = costumes[activeCostumeIndex]?.image || '';
+        const rawImage = getCostumeSrc(costumes[activeCostumeIndex]) || getCostumeSrc(initialImage) || '';
+        console.log('[PaintEditor] Initialize canvas | spriteName:', spriteName, '| costumeId:', costumeId, '| activeCostumeIndex:', activeCostumeIndex, '| rawImage:', rawImage?.slice(0, 80));
 
-        if (currentImage) {
-            const isSVG = currentImage.includes('<svg') || currentImage.endsWith('.svg');
-            if (isSVG) {
-                const handleLoadedSVG = ({ objects, options }: any) => {
+        if (rawImage) {
+            let imageUri = resolveAssetPath(rawImage);
+            if (!imageUri.startsWith('http') && !imageUri.startsWith('data:') && !imageUri.startsWith('blob:') && !imageUri.startsWith('/') && !imageUri.startsWith('<svg')) {
+                imageUri = '/' + imageUri;
+            }
+
+            const loadImageOntoCanvas = (url: string) => {
+                console.log('[PaintEditor] loadImageOntoCanvas starting | url:', url);
+                const imgOpts = (url.startsWith('http') && !url.startsWith(window.location.origin)) ? { crossOrigin: 'anonymous' as const } : {};
+                fabric.Image.fromURL(url, imgOpts).then(async (img: fabric.FabricImage) => {
+                    if (!isActive) return;
+                    const elem = img.getElement() as HTMLImageElement;
+                    if (elem && typeof elem.decode === 'function') {
+                        try {
+                            await elem.decode();
+                        } catch (e) {
+                            // Decode warning ignored
+                        }
+                    }
+                    const imgW = img.width || elem?.naturalWidth || elem?.width || 200;
+                    const imgH = img.height || elem?.naturalHeight || elem?.height || 200;
+                    console.log('[PaintEditor] fabric.Image.fromURL success | elem size:', imgW, 'x', imgH, '| canvas size:', canvas.width, 'x', canvas.height);
+
+                    canvas.clear();
+                    canvas.backgroundColor = 'transparent';
+                    img.set({
+                        left: canvas.width! / 2,
+                        top: canvas.height! / 2,
+                        originX: 'center',
+                        originY: 'center',
+                    });
+                    const pad = isBackdropMode ? 0 : 60;
+                    const targetScale = Math.min(
+                        (canvas.width! - pad) / imgW,
+                        (canvas.height! - pad) / imgH
+                    );
+                    img.scale(targetScale);
+                    console.log('[PaintEditor] img scaled to:', targetScale, '| final size on canvas:', imgW * targetScale, 'x', imgH * targetScale);
+
+                    canvas.add(img);
+                    canvas.renderAll();
+                    canvas.requestRenderAll();
+                    saveState();
+                    logCanvasState('after image load');
+
+                    // Extra render pass to handle Chromium async SVG rasterization
+                    setTimeout(() => {
+                        if (isActive && canvasRef.current) {
+                            canvasRef.current.renderAll();
+                            logCanvasState('after image load delayed render');
+                        }
+                    }, 100);
+                }).catch((err) => {
+                    console.error('[PaintEditor] Failed to load image onto canvas:', url, err);
+                });
+            };
+
+            if (imageUri.startsWith('<svg')) {
+                console.log('[PaintEditor] SVG string detected, parsing string...');
+                fabric.loadSVGFromString(imageUri).then(({ objects, options }: any) => {
                     if (!isActive) return;
                     const validObjects = objects.filter((o: any) => o !== null);
+                    console.log('[PaintEditor] loadSVGFromString parsed objects count:', validObjects.length);
+                    if (validObjects.length === 0) {
+                        loadImageOntoCanvas(imageUri);
+                        return;
+                    }
+                    canvas.clear();
+                    canvas.backgroundColor = 'transparent';
                     const group = fabric.util.groupSVGElements(validObjects, options);
                     group.set({
                         left: canvas.width! / 2,
@@ -362,11 +437,13 @@ function PaintEditor({
                         originY: 'center',
                     });
                     const pad = isBackdropMode ? 0 : 60;
+                    const groupW = group.width || 200;
+                    const groupH = group.height || 200;
                     const scale = Math.min(
-                        (canvas.width! - pad) / (group.width! || 1),
-                        (canvas.height! - pad) / (group.height! || 1)
+                        (canvas.width! - pad) / groupW,
+                        (canvas.height! - pad) / groupH
                     );
-                    if (scale < 1) group.scale(scale);
+                    group.scale(scale);
 
                     if (group.type === 'group') {
                         const items = (group as fabric.Group).removeAll();
@@ -376,33 +453,16 @@ function PaintEditor({
                     }
                     canvas.renderAll();
                     saveState();
-                };
-                if (currentImage.includes('<svg')) fabric.loadSVGFromString(currentImage).then(handleLoadedSVG);
-                else fabric.loadSVGFromURL(currentImage).then(handleLoadedSVG);
-            } else {
-                const imgOpts = currentImage.startsWith('http') ? { crossOrigin: 'anonymous' as const } : {};
-                fabric.Image.fromURL(currentImage, imgOpts).then((img: fabric.FabricImage) => {
-                    if (!isActive) return;
-                    img.set({
-                        left: canvas.width! / 2,
-                        top: canvas.height! / 2,
-                        originX: 'center',
-                        originY: 'center',
-                    });
-                    const pad = isBackdropMode ? 0 : 60;
-                    const scale = Math.min(
-                        (canvas.width! - pad) / (img.width! || 1),
-                        (canvas.height! - pad) / (img.height! || 1)
-                    );
-                    if (scale < 1) img.scale(scale);
-                    canvas.add(img);
-                    canvas.renderAll();
-                    saveState();
+                    logCanvasState('after SVG load');
                 }).catch((err) => {
-                    console.error('Failed to load costume image:', err);
+                    console.warn('[PaintEditor] SVG string parse failed, falling back to image loader:', err);
+                    loadImageOntoCanvas(imageUri);
                 });
+            } else {
+                loadImageOntoCanvas(imageUri);
             }
         } else {
+            console.warn('[PaintEditor] No rawImage provided for costume!');
             saveState();
         }
 
@@ -416,11 +476,23 @@ function PaintEditor({
         if (initialImage !== activeImage) {
             setActiveImage(initialImage || '');
         }
-        if (costumes.length > 0) {
-            const index = costumes.findIndex(c => c.image === initialImage);
-            setActiveCostumeIndex(index >= 0 ? index : 0);
+        if (costumes.length > 0 && initialImage) {
+            const getSrc = (item: any): string => {
+                if (!item) return '';
+                if (typeof item === 'string') return item;
+                if (typeof item === 'object' && item.src && typeof item.src === 'string') return item.src;
+                if (item.image) {
+                    if (typeof item.image === 'string') return item.image;
+                    if (typeof item.image === 'object' && item.image.src && typeof item.image.src === 'string') return item.image.src;
+                }
+                return '';
+            };
+            const index = costumes.findIndex(c => getSrc(c) === initialImage);
+            if (index >= 0 && index !== activeCostumeIndex) {
+                setActiveCostumeIndex(index);
+            }
         }
-    }, [initialImage, activeImage, costumes]);
+    }, [initialImage, activeImage, costumes, activeCostumeIndex]);
 
     // Update costume name when spriteName changes (e.g., switching between sprite and stage)
     useEffect(() => {
@@ -555,10 +627,40 @@ function PaintEditor({
         };
     }, [editMode, activeTool, outlineColor, strokeWidth]);
 
+    const logCanvasState = useCallback((reason: string) => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+            console.log(`[PaintEditor Canvas State] (${reason}) canvasRef is null`);
+            return;
+        }
+        const objects = canvas.getObjects();
+        console.log(`[PaintEditor Canvas State] (${reason})`, {
+            objectsCount: objects.length,
+            canvasSize: `${canvas.width}x${canvas.height}`,
+            backgroundColor: canvas.backgroundColor,
+            isDrawingMode: canvas.isDrawingMode,
+            objects: objects.map((obj, i) => ({
+                index: i,
+                type: obj.type,
+                left: Math.round(obj.left || 0),
+                top: Math.round(obj.top || 0),
+                width: Math.round((obj.width || 0) * (obj.scaleX || 1)),
+                height: Math.round((obj.height || 0) * (obj.scaleY || 1)),
+                opacity: obj.opacity,
+                visible: obj.visible,
+            }))
+        });
+    }, []);
+
+    useEffect(() => {
+        (window as any).__logPaintEditorCanvasState = (reason = 'manual') => logCanvasState(reason);
+    }, [logCanvasState]);
+
     const saveState = () => {
         if (isRestoring.current || eraserDrawingRef.current) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
+        logCanvasState('saveState');
         const json = JSON.stringify(canvas.toJSON());
         setHistory(prev => {
             const currentIdx = historyIndexRef.current;

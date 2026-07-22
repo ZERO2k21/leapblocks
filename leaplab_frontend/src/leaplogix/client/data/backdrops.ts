@@ -21,6 +21,7 @@ export const BACKDROP_LIBRARY: Backdrop[] = [
   { name: 'Beach', img: 'assets/backdrops/Beach.png', id: 'beach' },
   { name: 'Castle', img: 'assets/backdrops/Castle.png', id: 'castle' },
   { name: 'Galaxy', img: 'assets/backdrops/Space.png', id: 'galaxy' },
+  { name: 'School', img: 'assets/backdrops/school.png', id: 'school' },
 ]
 
 export default BACKDROP_LIBRARY
