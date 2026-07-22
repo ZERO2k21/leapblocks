@@ -1097,9 +1097,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
         const isDropTarget = dropTargetComponent && dropTargetComponent.id === comp.id;
         const dropIndicatorStyle = isDropTarget
             ? (dropTargetComponent.position === 'before'
-                ? { borderTop: '3px solid #3b82f6', borderTopLeftRadius: '0px', borderTopRightRadius: '0px' }
+                ? { boxShadow: '0 -3px 0 0 #3b82f6 inset' }
                 : dropTargetComponent.position === 'after'
-                    ? { borderBottom: '3px solid #3b82f6', borderBottomLeftRadius: '0px', borderBottomRightRadius: '0px' }
+                    ? { boxShadow: '0 3px 0 0 #3b82f6 inset' }
                     : { outline: '2px solid #3b82f6', outlineOffset: '-2px' })
             : {};
 

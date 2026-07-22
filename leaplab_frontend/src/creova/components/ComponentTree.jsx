@@ -34,13 +34,27 @@ const findParentIdOfNode = (components, nodeId, currentParentId = null) => {
     return null;
 };
 
+const findComponentById = (id, list) => {
+    if (!list) return null;
+    for (const comp of list) {
+        if (comp.id === id) return comp;
+        if (comp.children?.length) {
+            const found = findComponentById(id, comp.children);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
 export default function ComponentTree({ appState }) {
-    const { currentScreen, selectedComponent, selectComponent, deleteComponent, renameComponent } = appState;
+    const { currentScreen, selectedComponent, selectComponent, deleteComponent, renameComponent, moveComponent } = appState;
     const [expandedNodes, setExpandedNodes] = useState(new Set(['Screen1']));
     const [renamingId, setRenamingId] = useState(null);
     const [renameValue, setRenameValue] = useState('');
     const [contextMenu, setContextMenu] = useState(null);
     const [dragOverId, setDragOverId] = useState(null);
+    const [draggedComponentId, setDraggedComponentId] = useState(null);
+    const [dropPosition, setDropPosition] = useState(null);
 
     if (!currentScreen) {
         return (
@@ -50,10 +64,55 @@ export default function ComponentTree({ appState }) {
         );
     }
 
+    const handleDragStart = (e, compId) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('draggedComponentId', compId);
+        e.dataTransfer.effectAllowed = 'move';
+        setDraggedComponentId(compId);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedComponentId(null);
+        setDropPosition(null);
+        setDragOverId(null);
+    };
+
+    const getDropPosition = (e, component) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        const isContainer = ARRANGEMENT_TYPES.has(component.type);
+
+        if (isContainer) {
+            if (relativeY < rect.height * 0.25) return 'before';
+            if (relativeY > rect.height * 0.75) return 'after';
+            return 'inside';
+        }
+        return relativeY < rect.height / 2 ? 'before' : 'after';
+    };
+
     const handleDrop = (e, targetId) => {
         e.preventDefault();
         e.stopPropagation();
         setDragOverId(null);
+        setDropPosition(null);
+
+        const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+
+        if (draggedId) {
+            if (draggedId === targetId) return;
+            let position;
+            if (targetId === currentScreen.id) {
+                position = 'inside';
+            } else {
+                const targetNode = findComponentById(targetId, currentScreen.components);
+                position = targetNode ? getDropPosition(e, targetNode) : 'after';
+            }
+            if (moveComponent) {
+                moveComponent(draggedId, targetId, position);
+            }
+            setDraggedComponentId(null);
+            return;
+        }
 
         const type = e.dataTransfer.getData('componentType');
         const componentData = e.dataTransfer.getData('componentData');
@@ -71,7 +130,8 @@ export default function ComponentTree({ appState }) {
 
         let parentId = null;
         if (visible && targetId && targetId !== currentScreen.id) {
-            const isTargetLayout = ARRANGEMENT_TYPES.has(targetId) || targetId.includes('Layout') || targetId.includes('Arrangement');
+            const targetNode = findComponentById(targetId, currentScreen.components);
+            const isTargetLayout = targetNode && (ARRANGEMENT_TYPES.has(targetNode.type) || targetId.includes('Layout') || targetId.includes('Arrangement'));
             if (isTargetLayout) {
                 parentId = targetId;
                 selectComponent(targetId);
@@ -145,23 +205,49 @@ export default function ComponentTree({ appState }) {
         const isSelected = selectedComponent?.id === component.id;
         const hasChildren = component.children && component.children.length > 0;
         const isRenaming = renamingId === component.id;
+        const isSelfDragged = draggedComponentId === component.id;
 
-        const isDragOver = dragOverId === component.id;
+        const isDragOver = dragOverId === component.id && !isSelfDragged;
+        const showTopIndicator = isDragOver && dropPosition === 'before';
+        const showBottomIndicator = isDragOver && dropPosition === 'after';
+        const showInsideIndicator = isDragOver && dropPosition === 'inside';
 
         return (
             <div key={component.id}>
                 <div
-                    className={`relative flex items-center py-2 px-3 rounded-xl cursor-pointer mx-2 mb-0.5 transition-all ${isDragOver
-                        ? 'bg-purple-100 text-purple-700 shadow-sm'
-                        : isSelected
-                            ? 'bg-purple-50 text-purple-700 shadow-sm'
-                            : 'text-slate-700 hover:bg-slate-50'
+                    className={`relative flex items-center py-2 px-3 rounded-xl cursor-pointer mx-2 mb-0.5 transition-all ${isSelfDragged
+                        ? 'opacity-40'
+                        : isDragOver && dropPosition === 'inside'
+                            ? 'bg-purple-100 text-purple-700 shadow-sm ring-2 ring-purple-300'
+                            : isSelected
+                                ? 'bg-purple-50 text-purple-700 shadow-sm'
+                                : 'text-slate-700 hover:bg-slate-50'
                         }`}
-                    style={{ marginLeft: `${depth * 14}px` }}
+                    style={{
+                        marginLeft: `${depth * 14}px`,
+                        ...(showTopIndicator ? { borderTop: '2px solid #7c3aed' } : {}),
+                        ...(showBottomIndicator ? { borderBottom: '2px solid #7c3aed' } : {}),
+                    }}
                     onClick={() => selectComponent(component.id)}
-                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverId(component.id); }}
-                    onDragLeave={(e) => { e.stopPropagation(); if (dragOverId === component.id) setDragOverId(null); }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, component.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (component.id !== draggedComponentId) {
+                            setDragOverId(component.id);
+                            setDropPosition(getDropPosition(e, component));
+                        }
+                    }}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => {
+                        e.stopPropagation();
+                        if (dragOverId === component.id) {
+                            setDragOverId(null);
+                            setDropPosition(null);
+                        }
+                    }}
                     onDrop={(e) => handleDrop(e, component.id)}
                 >
                     {/* Expand/Collapse Arrow */}
@@ -247,17 +333,28 @@ export default function ComponentTree({ appState }) {
             >
                 {/* Screen Node */}
                 <div
-                    style={{ paddingLeft: '20px', paddingRight: '16px', paddingTop: '20px', paddingBottom: '12px' }}
-                    className={`relative flex items-center py-3 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id
+                    style={{
+                        paddingLeft: '20px', paddingRight: '16px', paddingTop: '20px', paddingBottom: '12px',
+                        ...(dragOverId === currentScreen.id && dropPosition === 'inside' ? { borderBottom: '2px solid #7c3aed' } : {})
+                    }}
+                    className={`relative flex items-center py-3 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id && dropPosition === 'inside'
                         ? 'border-blue-300 bg-blue-50 text-blue-700'
                         : selectedComponent?.id === currentScreen.id
                             ? 'border-purple-200 bg-purple-50/80 text-purple-700'
                             : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'
                         }`}
                     onClick={() => selectComponent(currentScreen.id)}
-                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverId(currentScreen.id); }}
-                    onDragLeave={(e) => { e.stopPropagation(); if (dragOverId === currentScreen.id) setDragOverId(null); }}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDragOverId(currentScreen.id);
+                        setDropPosition('inside');
+                    }}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => {
+                        e.stopPropagation();
+                        if (dragOverId === currentScreen.id) { setDragOverId(null); setDropPosition(null); }
+                    }}
                     onDrop={(e) => handleDrop(e, currentScreen.id)}
                 >
                     <button
