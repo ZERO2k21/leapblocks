@@ -3,9 +3,34 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
+
+declare global {
+    interface Window {
+        webkitAudioContext?: typeof AudioContext;
+    }
+}
+
+export interface AudioRecordResult {
+    blob: Blob;
+    buffer: AudioBuffer;
+    blobUrl: string;
+}
+
+export type OnCompleteCallback = (result: AudioRecordResult) => void;
+
 export default class AudioRecorder {
+    public audioContext: AudioContext;
+    public analyserNode: AnalyserNode;
+    public mediaStream: MediaStream | null;
+    public mediaStreamSource: MediaStreamAudioSourceNode | null;
+    public mediaRecorder: MediaRecorder | null;
+    public audioChunks: Blob[];
+    public isRecording: boolean;
+    public onComplete: OnCompleteCallback | null;
+
     constructor() {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext!;
+        this.audioContext = new AudioContextClass();
         this.analyserNode = this.audioContext.createAnalyser();
 
         // Settings analogous to leap
@@ -24,7 +49,7 @@ export default class AudioRecorder {
     /**
      * Request microphone permissions and initialize the stream.
      */
-    async requestDevice() {
+    async requestDevice(): Promise<boolean> {
         try {
             this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -42,14 +67,14 @@ export default class AudioRecorder {
     /**
      * Returns the analyser node for the level meter.
      */
-    getAnalyser() {
+    getAnalyser(): AnalyserNode {
         return this.analyserNode;
     }
 
     /**
      * Starts recording audio chunks.
      */
-    start() {
+    start(): void {
         if (!this.mediaStream) {
             throw new Error('MediaStream not initialized. Call requestDevice() first.');
         }
@@ -57,7 +82,7 @@ export default class AudioRecorder {
         this.audioChunks = [];
         this.mediaRecorder = new MediaRecorder(this.mediaStream);
 
-        this.mediaRecorder.ondataavailable = (e) => {
+        this.mediaRecorder.ondataavailable = (e: BlobEvent) => {
             if (e.data.size > 0) {
                 this.audioChunks.push(e.data);
             }
@@ -72,7 +97,7 @@ export default class AudioRecorder {
     /**
      * Stops the recording process.
      */
-    stop() {
+    stop(): void {
         if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
             this.isRecording = false;
@@ -82,7 +107,7 @@ export default class AudioRecorder {
     /**
      * Internal handler when the MediaRecorder fully stops.
      */
-    async _onStop() {
+    async _onStop(): Promise<void> {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' }); // Browsers often record webm or ogg
 
         // Convert Blob into an AudioBuffer using AudioContext
@@ -105,7 +130,7 @@ export default class AudioRecorder {
     /**
      * Cleanly dispose of the microphone track and nodes.
      */
-    dispose() {
+    dispose(): void {
         this.stop();
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());

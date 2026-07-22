@@ -1,6 +1,6 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const FORGE_LIB = path.join(ROOT, 'forge-lib');
@@ -8,7 +8,7 @@ const DATA_DIR = path.join(FORGE_LIB, 'data');
 const CONFIG_FILE = path.join(FORGE_LIB, 'arduino-cli.yaml');
 const CLI_PATH = path.join(__dirname, 'arduino-cli.exe');
 
-async function runCLI(args) {
+async function runCLI(args: string[]): Promise<number> {
   return new Promise((resolve) => {
     console.log(`[PREP] Running: arduino-cli ${args.join(' ')}`);
     const proc = spawn(CLI_PATH, ['--config-file', CONFIG_FILE, ...args], {
@@ -19,13 +19,13 @@ async function runCLI(args) {
         ARDUINO_USER_DIR: FORGE_LIB
       }
     });
-    proc.stdout.on('data', d => process.stdout.write(d));
-    proc.stderr.on('data', d => process.stderr.write(d));
-    proc.on('close', code => resolve(code));
+    proc.stdout.on('data', (d: Buffer | string) => process.stdout.write(d));
+    proc.stderr.on('data', (d: Buffer | string) => process.stderr.write(d));
+    proc.on('close', (code: number | null) => resolve(code ?? -1));
   });
 }
 
-async function prepare() {
+async function prepare(): Promise<void> {
   console.log('=== Preparing Offline Cores for LeapBlocks ===');
   
   // 1. Ensure directories exist

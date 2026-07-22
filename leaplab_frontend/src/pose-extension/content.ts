@@ -1,8 +1,16 @@
-function injectPoseOverlay() {
+declare const chrome: {
+  runtime: {
+    getURL(path: string): string;
+  };
+};
+
+function injectPoseOverlay(): void {
   if (document.getElementById('poseblocks-iframe')) return;
   const iframe = document.createElement('iframe');
   iframe.id = 'poseblocks-iframe';
-  iframe.src = chrome.runtime.getURL('pose-extension.html');
+  iframe.src = typeof chrome !== 'undefined' && chrome.runtime?.getURL 
+    ? chrome.runtime.getURL('pose-extension.html') 
+    : 'pose-extension.html';
   iframe.style.cssText = `
     position: fixed; bottom: 20px; right: 20px;
     width: 380px; height: 500px;

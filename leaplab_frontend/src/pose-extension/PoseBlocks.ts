@@ -1,19 +1,34 @@
-const SKELETON_CONNECTIONS = [
+const SKELETON_CONNECTIONS: Array<[number, number]> = [
   [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
   [5, 11], [6, 12], [11, 12], [11, 13], [13, 15],
   [12, 14], [14, 16], [0, 1], [0, 2], [1, 3], [2, 4], [9, 10]
 ];
 
-const KEYPOINT_NAMES = [
+const KEYPOINT_NAMES: string[] = [
   'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
   'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
   'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
   'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
 ];
 
-function lerp(a, b, t) { return a + (b - a) * t; }
-function dist(x1, y1, x2, y2) { return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); }
-function angleBetween(p1, p2, p3) {
+export interface Keypoint {
+  x: number;
+  y: number;
+  z?: number;
+  score?: number;
+  name?: string;
+}
+
+export interface CanvasPoint {
+  x: number;
+  y: number;
+  score: number;
+}
+
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+function dist(x1: number, y1: number, x2: number, y2: number): number { return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); }
+
+function angleBetween(p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }): number {
   const a = dist(p3.x, p3.y, p2.x, p2.y);
   const b = dist(p1.x, p1.y, p2.x, p2.y);
   const c = dist(p1.x, p1.y, p3.x, p3.y);
@@ -22,18 +37,31 @@ function angleBetween(p1, p2, p3) {
   return Math.acos(Math.max(-1, Math.min(1, cos))) * (180 / Math.PI);
 }
 
-function toCanvas(kp, vw, vh) {
-  return { x: kp.x * vw, y: kp.y * vh, score: kp.score || 0 };
+function toCanvas(kp: Keypoint, vw: number, vh: number): CanvasPoint {
+  return { x: kp.x * vw, y: kp.y * vh, score: kp.score ?? 0 };
+}
+
+export interface KeypointBlockOptions {
+  showLabels?: boolean;
+  dotRadius?: number;
+  color?: string;
+  minScore?: number;
 }
 
 class KeypointBlock {
-  constructor(options = {}) {
+  public showLabels: boolean;
+  public dotRadius: number;
+  public color: string;
+  public minScore: number;
+
+  constructor(options: KeypointBlockOptions = {}) {
     this.showLabels = options.showLabels ?? false;
     this.dotRadius = options.dotRadius ?? 3;
     this.color = options.color ?? '#00FF00';
     this.minScore = options.minScore ?? 0.3;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): void {
     ctx.fillStyle = this.color;
     for (const kp of keypoints) {
       if ((kp.score ?? 1) < this.minScore) continue;
@@ -57,13 +85,24 @@ class KeypointBlock {
   }
 }
 
+export interface SkeletonBlockOptions {
+  lineColor?: string;
+  lineWidth?: number;
+  minScore?: number;
+}
+
 class SkeletonBlock {
-  constructor(options = {}) {
+  public lineColor: string;
+  public lineWidth: number;
+  public minScore: number;
+
+  constructor(options: SkeletonBlockOptions = {}) {
     this.lineColor = options.lineColor ?? '#00FF00';
     this.lineWidth = options.lineWidth ?? 2;
     this.minScore = options.minScore ?? 0.3;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): void {
     ctx.strokeStyle = this.lineColor;
     ctx.lineWidth = this.lineWidth;
     for (const [i, j] of SKELETON_CONNECTIONS) {
@@ -80,14 +119,27 @@ class SkeletonBlock {
   }
 }
 
+export interface BoundingBoxBlockOptions {
+  padding?: number;
+  showLabel?: boolean;
+  color?: string;
+  lineWidth?: number;
+}
+
 class BoundingBoxBlock {
-  constructor(options = {}) {
+  public padding: number;
+  public showLabel: boolean;
+  public color: string;
+  public lineWidth: number;
+
+  constructor(options: BoundingBoxBlockOptions = {}) {
     this.padding = options.padding ?? 10;
     this.showLabel = options.showLabel ?? false;
     this.color = options.color ?? '#FFD700';
     this.lineWidth = options.lineWidth ?? 2;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): { x1: number; y1: number; x2: number; y2: number } {
     const valid = keypoints.filter(k => (k.score ?? 1) >= 0.3);
     if (valid.length === 0) return { x1: 0, y1: 0, x2: 0, y2: 0 };
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -111,14 +163,27 @@ class BoundingBoxBlock {
   }
 }
 
+export interface ConfidenceBlockOptions {
+  showScore?: boolean;
+  color?: string;
+  fontSize?: number;
+  minScore?: number;
+}
+
 class ConfidenceBlock {
-  constructor(options = {}) {
+  public showScore: boolean;
+  public color: string;
+  public fontSize: number;
+  public minScore: number;
+
+  constructor(options: ConfidenceBlockOptions = {}) {
     this.showScore = options.showScore ?? true;
     this.color = options.color ?? '#FFFFFF';
     this.fontSize = options.fontSize ?? 10;
     this.minScore = options.minScore ?? 0.3;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): void {
     if (!this.showScore) return;
     ctx.fillStyle = this.color;
     ctx.font = `${this.fontSize}px monospace`;
@@ -131,8 +196,18 @@ class ConfidenceBlock {
   }
 }
 
+export interface JointAngleBlockOptions {
+  joints?: Array<[string, number, number, number]>;
+  drawArc?: boolean;
+  color?: string;
+}
+
 class JointAngleBlock {
-  constructor(options = {}) {
+  public joints: Array<[string, number, number, number]>;
+  public drawArc: boolean;
+  public color: string;
+
+  constructor(options: JointAngleBlockOptions = {}) {
     this.joints = options.joints ?? [
       ['L shoulder', 5, 7, 9], ['R shoulder', 6, 8, 10],
       ['L elbow', 7, 9, 11], ['R elbow', 8, 10, 12],
@@ -142,8 +217,9 @@ class JointAngleBlock {
     this.drawArc = options.drawArc ?? false;
     this.color = options.color ?? '#00FFFF';
   }
-  render(ctx, keypoints, vw, vh) {
-    const results = {};
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): Record<string, number> {
+    const results: Record<string, number> = {};
     for (const [name, i, j, k] of this.joints) {
       const a = keypoints[i], b = keypoints[j], c = keypoints[k];
       if (!a || !b || !c) continue;
@@ -171,27 +247,29 @@ class JointAngleBlock {
   }
 }
 
+export interface PoseClassifierBlockOptions {
+  minScore?: number;
+}
+
 class PoseClassifierBlock {
-  constructor(options = {}) {
+  public minScore: number;
+
+  constructor(options: PoseClassifierBlockOptions = {}) {
     this.minScore = options.minScore ?? 0.3;
   }
-  render(ctx, keypoints, vw, vh) {
-    const kps = {};
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): string {
+    const kps: Record<string, Keypoint> = {};
     for (let i = 0; i < keypoints.length; i++) {
       kps[KEYPOINT_NAMES[i] || `kp${i}`] = keypoints[i];
     }
-    const get = (name) => kps[name] ? toCanvas(kps[name], vw, vh) : null;
-    const getAngle = (a, b, c) => {
-      const p1 = get(a), p2 = get(b), p3 = get(c);
-      if (!p1 || !p2 || !p3) return null;
-      return angleBetween(p1, p2, p3);
-    };
+    const get = (name: string) => kps[name] ? toCanvas(kps[name], vw, vh) : null;
     const ls = get('left_shoulder'), rs = get('right_shoulder');
     const lh = get('left_hip'), rh = get('right_hip');
     const lk = get('left_knee'), rk = get('right_knee');
     const la = get('left_ankle'), ra = get('right_ankle');
     const le = get('left_elbow'), re = get('right_elbow');
-    const lw = get('left_wrist'), rw = get('right_wrist');
+    const lw = get('left_wrist');
     const no = get('nose');
 
     const hipMid = lh && rh ? { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 } : null;
@@ -213,7 +291,6 @@ class PoseClassifierBlock {
     }
 
     if (lh && rh && la && ra && no && shoulderMid) {
-      const hipY = (lh.y + rh.y) / 2;
       const footY = Math.min(la.y, ra.y);
       const bodyHeight = footY - (no.y);
       const totalHeight = footY - no.y;
@@ -242,16 +319,29 @@ class PoseClassifierBlock {
   }
 }
 
+export interface MovementTrackerBlockOptions {
+  trailLength?: number;
+  trackedIndices?: number[];
+  color?: string;
+}
+
 class MovementTrackerBlock {
-  constructor(options = {}) {
+  public trailLength: number;
+  public trackedIndices: number[];
+  public color: string;
+  public history: Array<Record<number, CanvasPoint>>;
+  public prevPositions: Record<number, CanvasPoint> | null;
+
+  constructor(options: MovementTrackerBlockOptions = {}) {
     this.trailLength = options.trailLength ?? 20;
     this.trackedIndices = options.trackedIndices ?? [0, 9, 10];
     this.color = options.color ?? '#FF69B4';
     this.history = [];
     this.prevPositions = null;
   }
-  render(ctx, keypoints, vw, vh) {
-    const positions = {};
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): { velocities: Record<number, number> } {
+    const positions: Record<number, CanvasPoint> = {};
     for (const idx of this.trackedIndices) {
       const kp = keypoints[idx];
       if (kp && (kp.score ?? 1) >= 0.3) {
@@ -264,7 +354,7 @@ class MovementTrackerBlock {
     ctx.strokeStyle = this.color;
     ctx.lineWidth = 1.5;
     for (const idx of this.trackedIndices) {
-      const trail = [];
+      const trail: CanvasPoint[] = [];
       for (const frame of this.history) {
         if (frame[idx]) trail.push(frame[idx]);
       }
@@ -277,7 +367,7 @@ class MovementTrackerBlock {
       ctx.stroke();
     }
 
-    const velocities = {};
+    const velocities: Record<number, number> = {};
     if (this.prevPositions) {
       for (const idx of this.trackedIndices) {
         const curr = positions[idx];
@@ -292,13 +382,22 @@ class MovementTrackerBlock {
   }
 }
 
+export interface BodySymmetryBlockOptions {
+  drawAxis?: boolean;
+  color?: string;
+}
+
 class BodySymmetryBlock {
-  constructor(options = {}) {
+  public drawAxis: boolean;
+  public color: string;
+
+  constructor(options: BodySymmetryBlockOptions = {}) {
     this.drawAxis = options.drawAxis ?? false;
     this.color = options.color ?? '#FF69B4';
   }
-  render(ctx, keypoints, vw, vh) {
-    const pairs = [
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): number {
+    const pairs: Array<[number, number]> = [
       [5, 6], [7, 8], [9, 10], [11, 12], [13, 14], [15, 16]
     ];
     let totalSym = 0, count = 0;
@@ -346,14 +445,24 @@ class BodySymmetryBlock {
   }
 }
 
+export interface DepthEstimationBlockOptions {
+  showLabels?: boolean;
+  maxDepth?: number;
+  color?: string;
+}
+
 class DepthEstimationBlock {
-  constructor(options = {}) {
+  public showLabels: boolean;
+  public maxDepth: number;
+  public color: string;
+
+  constructor(options: DepthEstimationBlockOptions = {}) {
     this.showLabels = options.showLabels ?? false;
     this.maxDepth = options.maxDepth ?? 10;
     this.color = options.color ?? '#FF4500';
   }
-  render(ctx, keypoints, vw, vh) {
-    const nose = keypoints[0];
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): Keypoint[] {
     const lsh = keypoints[5], rsh = keypoints[6];
     const lhip = keypoints[11], rhip = keypoints[12];
     let shoulderWidth = 0;
@@ -367,7 +476,7 @@ class DepthEstimationBlock {
     const avgWidth = shoulderWidth > 0 && hipWidth > 0 ? (shoulderWidth + hipWidth) / 2 : (shoulderWidth || hipWidth);
     const depth = avgWidth > 0 ? Math.min(this.maxDepth, (vw * 0.4) / avgWidth) : 0;
 
-    const zKeypoints = keypoints.map((kp, i) => {
+    const zKeypoints = keypoints.map((kp) => {
       const zVal = (kp.score ?? 1) >= 0.3 ? depth * (0.5 + Math.random() * 0.1) : 0;
       return { ...kp, z: zVal };
     });
@@ -383,8 +492,21 @@ class DepthEstimationBlock {
   }
 }
 
+export interface RepCounterBlockOptions {
+  exercise?: string;
+  triggerAngle?: number;
+  onRep?: ((count: number) => void) | null;
+}
+
 class RepCounterBlock {
-  constructor(options = {}) {
+  public exercise: string;
+  public triggerAngle: number;
+  public onRep: ((count: number) => void) | null;
+  public count: number;
+  public wasBelow: boolean;
+  public lastAngle: number;
+
+  constructor(options: RepCounterBlockOptions = {}) {
     this.exercise = options.exercise ?? 'squat';
     this.triggerAngle = options.triggerAngle ?? 100;
     this.onRep = options.onRep ?? null;
@@ -392,9 +514,10 @@ class RepCounterBlock {
     this.wasBelow = false;
     this.lastAngle = 0;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): { count: number; angle: number } {
     let angle = 0;
-    if (this.exercise === 'squat' || this.exercise === 'squat') {
+    if (this.exercise === 'squat') {
       const lk = keypoints[13], rk = keypoints[14];
       const lh = keypoints[11], rh = keypoints[12];
       const la = keypoints[15], ra = keypoints[16];
@@ -451,15 +574,28 @@ class RepCounterBlock {
   }
 }
 
+export interface PostureAlertBlockOptions {
+  slouchThreshold?: number;
+  onAlert?: ((type: string, data: any) => void) | null;
+  alertCooldown?: number;
+}
+
 class PostureAlertBlock {
-  constructor(options = {}) {
+  public slouchThreshold: number;
+  public onAlert: ((type: string, data: any) => void) | null;
+  public prevShoulderAngle: number | null;
+  public lastAlertTime: number;
+  public alertCooldown: number;
+
+  constructor(options: PostureAlertBlockOptions = {}) {
     this.slouchThreshold = options.slouchThreshold ?? 25;
     this.onAlert = options.onAlert ?? null;
     this.prevShoulderAngle = null;
     this.lastAlertTime = 0;
     this.alertCooldown = options.alertCooldown ?? 3000;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], vw: number, vh: number): Record<string, any> {
     const le = keypoints[7], re = keypoints[8];
     const ls = keypoints[5], rs = keypoints[6];
     if (!le || !re || !ls || !rs) return {};
@@ -472,7 +608,7 @@ class PostureAlertBlock {
     const angleDiff = this.prevShoulderAngle !== null ? Math.abs(shoulderAngle - this.prevShoulderAngle) : 0;
     this.prevShoulderAngle = shoulderAngle;
 
-    const alerts = [];
+    const alerts: Array<{ type: string; [key: string]: any }> = [];
     if (shoulderAngle < 90 - this.slouchThreshold) {
       alerts.push({ type: 'slouch', shoulderAngle: Math.round(shoulderAngle) });
     }
@@ -496,40 +632,63 @@ class PostureAlertBlock {
   }
 }
 
+export interface MultiPersonBlockOptions {
+  maxPersons?: number;
+  colors?: string[];
+  lineWidth?: number;
+  minScore?: number;
+}
+
 class MultiPersonBlock {
-  constructor(options = {}) {
+  public maxPersons: number;
+  public colors: string[];
+  public lineWidth: number;
+  public minScore: number;
+  public blockInstances: Array<{ skeleton: SkeletonBlock; keypoints: KeypointBlock }> | null;
+
+  constructor(options: MultiPersonBlockOptions = {}) {
     this.maxPersons = options.maxPersons ?? 2;
     this.colors = options.colors ?? ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'];
     this.lineWidth = options.lineWidth ?? 2;
     this.minScore = options.minScore ?? 0.3;
     this.blockInstances = null;
   }
-  render(ctx, allKeypointsList, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, allKeypointsList: any[], vw: number, vh: number): void {
     if (!allKeypointsList || allKeypointsList.length === 0) return;
+    let list = allKeypointsList;
     if (!Array.isArray(allKeypointsList[0]?.[0])) {
-      allKeypointsList = [allKeypointsList];
+      list = [allKeypointsList];
     }
-    const count = Math.min(allKeypointsList.length, this.maxPersons);
+    const count = Math.min(list.length, this.maxPersons);
     if (!this.blockInstances) {
-      this.blockInstances = allKeypointsList.map((_, i) => ({
+      this.blockInstances = list.map((_, i) => ({
         skeleton: new SkeletonBlock({ lineColor: this.colors[i % this.colors.length], lineWidth: this.lineWidth, minScore: this.minScore }),
         keypoints: new KeypointBlock({ dotRadius: 3, color: this.colors[i % this.colors.length], minScore: this.minScore }),
       }));
     }
     for (let i = 0; i < count; i++) {
       const inst = this.blockInstances[i];
-      inst.skeleton.render(ctx, allKeypointsList[i], vw, vh);
-      inst.keypoints.render(ctx, allKeypointsList[i], vw, vh);
+      inst.skeleton.render(ctx, list[i], vw, vh);
+      inst.keypoints.render(ctx, list[i], vw, vh);
     }
   }
 }
 
+export interface SmoothingBlockOptions {
+  alpha?: number;
+}
+
 class SmoothingBlock {
-  constructor(options = {}) {
+  public alpha: number;
+  public smoothed: Keypoint[] | null;
+
+  constructor(options: SmoothingBlockOptions = {}) {
     this.alpha = options.alpha ?? 0.45;
     this.smoothed = null;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, keypoints: Keypoint[], _vw: number, _vh: number): Keypoint[] {
     if (!this.smoothed || this.smoothed.length !== keypoints.length) {
       this.smoothed = keypoints.map(k => ({ ...k }));
       return this.smoothed;
@@ -550,19 +709,28 @@ class SmoothingBlock {
     }
     return this.smoothed;
   }
-  reset() {
+
+  reset(): void {
     this.smoothed = null;
   }
 }
 
+export interface PerformanceMonitorBlockOptions {}
+
 class PerformanceMonitorBlock {
-  constructor(options = {}) {
+  public frameTimestamps: number[];
+  public lastFrameTime: number | null;
+  public fps: number;
+  public latencyMs: number;
+
+  constructor(_options: PerformanceMonitorBlockOptions = {}) {
     this.frameTimestamps = [];
     this.lastFrameTime = null;
     this.fps = 0;
     this.latencyMs = 0;
   }
-  render(ctx, keypoints, vw, vh) {
+
+  render(ctx: CanvasRenderingContext2D, _keypoints: Keypoint[], vw: number, _vh: number): { fps: number; latency: number } {
     const now = performance.now();
     if (this.lastFrameTime !== null) {
       this.latencyMs = Math.round(now - this.lastFrameTime);
@@ -586,7 +754,7 @@ class PerformanceMonitorBlock {
   }
 }
 
-const BLOCK_CLASSES = {
+const BLOCK_CLASSES: Record<string, any> = {
   keypoint: KeypointBlock,
   skeleton: SkeletonBlock,
   boundingbox: BoundingBoxBlock,
@@ -603,8 +771,24 @@ const BLOCK_CLASSES = {
   perf: PerformanceMonitorBlock,
 };
 
+export interface PoseDetectionSuiteOptions {
+  perf?: boolean;
+  blocks?: string[];
+  smooth?: number;
+  [key: string]: any;
+}
+
 class PoseDetectionSuite {
-  constructor(canvas, options = {}) {
+  public canvas: HTMLCanvasElement;
+  public blocks: any[];
+  public perfBlock: PerformanceMonitorBlock | null;
+  public smoothBlock: SmoothingBlock | null;
+  public multiPersonBlock: MultiPersonBlock | null;
+  public lastKeypoints: Keypoint[] | null;
+  public lastVw: number;
+  public lastVh: number;
+
+  constructor(canvas: HTMLCanvasElement, options: PoseDetectionSuiteOptions = {}) {
     this.canvas = canvas;
     this.blocks = [];
     this.perfBlock = options.perf !== false ? new PerformanceMonitorBlock() : null;
@@ -632,8 +816,10 @@ class PoseDetectionSuite {
     }
   }
 
-  render(keypoints, videoWidth, videoHeight, rawPoses) {
+  render(keypoints: Keypoint[], videoWidth?: number, videoHeight?: number, rawPoses?: any) {
     const ctx = this.canvas.getContext('2d');
+    if (!ctx) return { results: {}, perf: { fps: 0, latency: 0 } };
+
     const vw = videoWidth || this.canvas.width;
     const vh = videoHeight || this.canvas.height;
     this.lastKeypoints = keypoints;
@@ -645,8 +831,7 @@ class PoseDetectionSuite {
       currentKeypoints = this.smoothBlock.render(ctx, currentKeypoints, vw, vh);
     }
 
-    const results = {};
-    const perfStart = performance.now();
+    const results: Record<string, any> = {};
 
     for (const block of this.blocks) {
       if (block instanceof SmoothingBlock || block instanceof PerformanceMonitorBlock || block instanceof MultiPersonBlock) continue;
@@ -669,7 +854,7 @@ class PoseDetectionSuite {
     return { results, perf };
   }
 
-  getSmoothed() {
+  getSmoothed(): Keypoint[] | null {
     return this.smoothBlock ? this.smoothBlock.smoothed : this.lastKeypoints;
   }
 }
