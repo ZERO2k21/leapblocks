@@ -4,6 +4,5 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 
-// Re-export the main LogixApp as default for backward compatibility
-export { default } from './client/LogixApp';
-export { default as LogixApp } from './client/LogixApp';
+export { default } from './client/LogixApp'
+export { default as LogixApp } from './client/LogixApp'
