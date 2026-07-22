@@ -18,6 +18,7 @@ const PRESET_BACKDROPS = [
     { id: 'beach', name: 'Beach', src: 'assets/backdrops/Beach.png', color: '#FFF9C4' },
     { id: 'castle', name: 'Castle', src: 'assets/backdrops/Castle.png', color: '#E1BEE7' },
     { id: 'space_photo', name: 'Galaxy', src: 'assets/backdrops/Space.png', color: '#0D0D2B' },
+    { id: 'school', name: 'School', src: 'assets/backdrops/school.png', color: '#C62828' },
 ];
 
 const mappedleapBackdrops = leapBackdrops.map(bg => ({

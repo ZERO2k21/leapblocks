@@ -59,6 +59,7 @@ const PRESET_BACKDROPS: BackdropEntry[] = [
     { id: 'beach', name: 'Beach', image: 'assets/backdrops/Beach.png', category: 'Outdoors' },
     { id: 'castle', name: 'Castle', image: 'assets/backdrops/Castle.png', category: 'Fantasy' },
     { id: 'space_photo', name: 'Galaxy', image: 'assets/backdrops/Space.png', category: 'Space' },
+    { id: 'school', name: 'School', image: 'assets/backdrops/school.png', category: 'Outdoors' },
 ];
 
 // Deduplicate by id — preset backdrops take priority over generated ones
