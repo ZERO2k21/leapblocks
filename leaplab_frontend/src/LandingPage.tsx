@@ -242,8 +242,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           </div>
           <div className="flex items-center gap-3 sm:gap-4 md:gap-6 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
             <LeapLabAuthButton variant="light" size="md" />
-            <div className="hidden sm:block w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
-            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="hidden sm:block h-[clamp(40px,5vw,50px)]" />
+            <div className="hidden md:block w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
+            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="hidden md:block h-[clamp(40px,5vw,50px)]" />
             
             {/* Hamburger button for Mobile */}
             <button
