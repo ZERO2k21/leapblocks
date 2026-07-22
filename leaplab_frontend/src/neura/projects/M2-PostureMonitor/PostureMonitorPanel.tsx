@@ -1,0 +1,740 @@
+import React, { useRef, useState, useEffect, useCallback } from 'react'
+import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
+import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
+import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+
+interface PostureMonitorPanelProps {
+    mode: UseNeuraProjectReturn
+}
+
+const POSTURE_CLASSES = ['Good Posture', 'Bad Posture', 'Leaning Left', 'Leaning Right']
+
+const BODY_CONNECTIONS: [number, number][] = [
+    [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+    [5, 11], [6, 12], [11, 12],
+    [11, 13], [13, 15], [12, 14], [14, 16],
+]
+
+const SKELETON_COLOR = '#6366f1'
+const KEYPOINT_COLOR = '#818cf8'
+const ACCENT = '#6366f1'
+const ACCENT_LIGHT = '#eef2ff'
+
+const PREDICT_INTERVAL_MS = 1000
+const BAD_POSTURE_THRESHOLD = 3
+const BREAK_REMINDER_MS = 30 * 60 * 1000
+
+type PostureState = 'Good Posture' | 'Bad Posture' | 'Leaning Left' | 'Leaning Right' | null
+
+const POSTURE_CONFIG: Record<string, { emoji: string; color: string; bgColor: string }> = {
+    'Good Posture': { emoji: '✅', color: '#10b981', bgColor: '#ecfdf5' },
+    'Bad Posture': { emoji: '⚠️', color: '#ef4444', bgColor: '#fef2f2' },
+    'Leaning Left': { emoji: '⬅️', color: '#f59e0b', bgColor: '#fffbeb' },
+    'Leaning Right': { emoji: '➡️', color: '#f59e0b', bgColor: '#fffbeb' },
+}
+
+export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
+    const classifierRef = useRef(new PoseClassifier())
+    const streamRef = useRef<MediaStream | null>(null)
+    const animFrameRef = useRef<number>(0)
+    const isPredictingRef = useRef(false)
+    const rebuildAbortRef = useRef(0)
+    const testCameraStartedRef = useRef(false)
+    const lastPredictTimeRef = useRef(0)
+    const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const breakTimerRef = useRef<NodeJS.Timeout | null>(null)
+    const sessionStartRef = useRef<number>(Date.now())
+
+    const [isCapturing, setIsCapturing] = useState(false)
+    const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [stream, setStream] = useState<MediaStream | null>(null)
+    const [modelLoading, setModelLoading] = useState(false)
+    const [poseDetected, setPoseDetected] = useState(false)
+    const [captureStatus, setCaptureStatus] = useState<'idle' | 'detecting' | 'success' | 'no-pose' | 'error'>('idle')
+    const [cameraError, setCameraError] = useState<string | null>(null)
+    const [cameraOn, setCameraOn] = useState(false)
+    const cameraOnRef = useRef(false)
+    const streamStateRef = useRef<MediaStream | null>(null)
+    const [inferenceTime, setInferenceTime] = useState(0)
+    const [savedMessage, setSavedMessage] = useState<string | null>(null)
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
+    const [currentKeypoints, setCurrentKeypoints] = useState<Keypoint[]>([])
+    const [detectionCount, setDetectionCount] = useState(0)
+
+    const [postureState, setPostureState] = useState<PostureState>(null)
+    const [consecutiveBadCount, setConsecutiveBadCount] = useState(0)
+    const [showBadPostureAlert, setShowBadPostureAlert] = useState(false)
+    const [showBreakReminder, setShowBreakReminder] = useState(false)
+    const [goodCount, setGoodCount] = useState(0)
+    const [badCount, setBadCount] = useState(0)
+    const [leftCount, setLeftCount] = useState(0)
+    const [rightCount, setRightCount] = useState(0)
+    const [sessionDuration, setSessionDuration] = useState(0)
+    const consecutiveBadRef = useRef(0)
+
+    const showSaved = useCallback((msg: string) => {
+        setSavedMessage(msg)
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+        savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
+    }, [])
+
+    const startCamera = useCallback(async () => {
+        setCameraError(null)
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480, facingMode: 'user' }
+            })
+            streamRef.current = mediaStream
+            setStream(mediaStream)
+            setCameraOn(true)
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream
+                await videoRef.current.play()
+            }
+        } catch (err) {
+            console.error('[PostureMonitor] Camera access denied:', err)
+            setCameraError('Camera access is needed for posture monitoring.')
+            setCameraOn(false)
+        }
+    }, [])
+
+    const stopCamera = useCallback(() => {
+        const s = streamRef.current
+        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
+        setStream(null)
+        setCameraOn(false)
+        setPoseDetected(false)
+        setPrediction(null)
+        setCurrentKeypoints([])
+        setPostureState(null)
+    }, [])
+
+    const toggleCamera = useCallback(() => {
+        if (cameraOn) stopCamera(); else startCamera()
+    }, [cameraOn, startCamera, stopCamera])
+
+    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
+    useEffect(() => { streamStateRef.current = stream }, [stream])
+
+    useEffect(() => {
+        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream
+            videoRef.current.play().catch(() => undefined)
+        }
+    }, [stream])
+
+    useEffect(() => {
+        return () => {
+            stopCamera()
+            cancelAnimationFrame(animFrameRef.current)
+            classifierRef.current.dispose()
+            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+            if (breakTimerRef.current) clearTimeout(breakTimerRef.current)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (mode.mode !== 'collect' && mode.mode !== 'test') stopCamera()
+    }, [mode.mode])
+
+    useEffect(() => {
+        if (mode.mode !== 'test') testCameraStartedRef.current = false
+    }, [mode.mode])
+
+    useEffect(() => {
+        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+            const thisBuild = ++rebuildAbortRef.current
+            let cancelled = false
+            setModelLoading(true)
+            const rebuild = async () => {
+                classifierRef.current.clear()
+                for (const cls of mode.project!.classes) {
+                    if (thisBuild !== rebuildAbortRef.current) return
+                    if (cls.samples.length > 0) {
+                        for (const sample of cls.samples) {
+                            try {
+                                const keypoints = JSON.parse(sample.data)
+                                await classifierRef.current.addSampleFromKeypoints(keypoints, cls.name)
+                            } catch { /* skip */ }
+                        }
+                    }
+                }
+                if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
+            }
+            rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
+            return () => { cancelled = true }
+        }
+    }, [mode.mode, mode.project])
+
+    useEffect(() => {
+        if (mode.mode !== 'test') {
+            sessionStartRef.current = Date.now()
+            setGoodCount(0)
+            setBadCount(0)
+            setLeftCount(0)
+            setRightCount(0)
+            setConsecutiveBadCount(0)
+            consecutiveBadRef.current = 0
+            setShowBadPostureAlert(false)
+            setShowBreakReminder(false)
+            if (breakTimerRef.current) clearTimeout(breakTimerRef.current)
+        }
+    }, [mode.mode])
+
+    useEffect(() => {
+        if (mode.mode === 'test') {
+            const interval = setInterval(() => {
+                setSessionDuration(Math.floor((Date.now() - sessionStartRef.current) / 1000))
+            }, 1000)
+            return () => clearInterval(interval)
+        }
+    }, [mode.mode])
+
+    useEffect(() => {
+        if (mode.mode === 'test' && !breakTimerRef.current) {
+            breakTimerRef.current = setTimeout(() => {
+                setShowBreakReminder(true)
+            }, BREAK_REMINDER_MS)
+            return () => {
+                if (breakTimerRef.current) clearTimeout(breakTimerRef.current)
+                breakTimerRef.current = null
+            }
+        }
+    }, [mode.mode])
+
+    const drawSkeletonOverlay = useCallback((keypoints: Keypoint[]) => {
+        const canvas = overlayCanvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        const displayW = canvas.clientWidth || 640
+        const displayH = canvas.clientHeight || 480
+        canvas.width = displayW
+        canvas.height = displayH
+
+        ctx.clearRect(0, 0, displayW, displayH)
+
+        const scaleX = displayW / 640
+        const scaleY = displayH / 480
+
+        ctx.strokeStyle = SKELETON_COLOR
+        ctx.lineWidth = 3
+        ctx.shadowColor = 'rgba(99, 102, 241, 0.5)'
+        ctx.shadowBlur = 8
+
+        for (const [i, j] of BODY_CONNECTIONS) {
+            if (keypoints[i] && keypoints[j] && keypoints[i].score > 0.3 && keypoints[j].score > 0.3) {
+                ctx.beginPath()
+                ctx.moveTo(keypoints[i].x * scaleX, keypoints[i].y * scaleY)
+                ctx.lineTo(keypoints[j].x * scaleX, keypoints[j].y * scaleY)
+                ctx.stroke()
+            }
+        }
+
+        ctx.shadowBlur = 0
+        for (const kp of keypoints) {
+            if (kp.score > 0.3) {
+                ctx.beginPath()
+                ctx.arc(kp.x * scaleX, kp.y * scaleY, 5, 0, 2 * Math.PI)
+                ctx.fillStyle = KEYPOINT_COLOR
+                ctx.fill()
+                ctx.strokeStyle = '#fff'
+                ctx.lineWidth = 2
+                ctx.stroke()
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (mode.mode !== 'test' || modelLoading) return
+        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
+            testCameraStartedRef.current = true
+            startCamera()
+        }
+        const runPrediction = async () => {
+            if (isPredictingRef.current) return
+            if (streamStateRef.current && videoRef.current && canvasRef.current) {
+                isPredictingRef.current = true
+                setIsProcessing(true)
+                try {
+                    const start = performance.now()
+                    const ctx = canvasRef.current.getContext('2d')
+                    if (ctx) {
+                        canvasRef.current.width = 640
+                        canvasRef.current.height = 480
+                        ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+
+                        const result = await classifierRef.current.predictFromImage(canvasRef.current, 5)
+                        const elapsed = Math.round(performance.now() - start)
+                        const keypoints = await classifierRef.current.detectPose(canvasRef.current)
+
+                        setCurrentKeypoints(keypoints)
+                        drawSkeletonOverlay(keypoints)
+
+                        if (keypoints.length > 0 && keypoints.some(kp => kp.score > 0.3)) {
+                            setPoseDetected(true)
+                            setDetectionCount(prev => prev + 1)
+                        } else {
+                            setPoseDetected(false)
+                        }
+
+                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                            setPrediction(result)
+                            setInferenceTime(elapsed)
+                            const newPosture = result.label as PostureState
+                            setPostureState(newPosture)
+
+                            if (newPosture === 'Good Posture') {
+                                setGoodCount(prev => prev + 1)
+                                consecutiveBadRef.current = 0
+                                setConsecutiveBadCount(0)
+                                setShowBadPostureAlert(false)
+                            } else if (newPosture === 'Bad Posture') {
+                                setBadCount(prev => prev + 1)
+                                consecutiveBadRef.current += 1
+                                setConsecutiveBadCount(consecutiveBadRef.current)
+                                if (consecutiveBadRef.current >= BAD_POSTURE_THRESHOLD) {
+                                    setShowBadPostureAlert(true)
+                                }
+                            } else if (newPosture === 'Leaning Left') {
+                                setLeftCount(prev => prev + 1)
+                                consecutiveBadRef.current = 0
+                                setConsecutiveBadCount(0)
+                            } else if (newPosture === 'Leaning Right') {
+                                setRightCount(prev => prev + 1)
+                                consecutiveBadRef.current = 0
+                                setConsecutiveBadCount(0)
+                            }
+                        }
+                    }
+                } catch { /* ignore */ }
+                setIsProcessing(false)
+                isPredictingRef.current = false
+            }
+        }
+        lastPredictTimeRef.current = performance.now()
+        const tick = () => {
+            const now = performance.now()
+            if (now - lastPredictTimeRef.current >= PREDICT_INTERVAL_MS) {
+                lastPredictTimeRef.current = now
+                runPrediction()
+            }
+            animFrameRef.current = requestAnimationFrame(tick)
+        }
+        animFrameRef.current = requestAnimationFrame(tick)
+        return () => cancelAnimationFrame(animFrameRef.current)
+    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold, drawSkeletonOverlay])
+
+    const handleCapture = useCallback(async () => {
+        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            showSaved('Sample limit reached!')
+            return
+        }
+        setIsCapturing(true)
+        setCaptureStatus('detecting')
+        try {
+            const video = videoRef.current
+            const tempCanvas = document.createElement('canvas')
+            tempCanvas.width = video.videoWidth || 640
+            tempCanvas.height = video.videoHeight || 480
+            const ctx = tempCanvas.getContext('2d')!
+            ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height)
+            const keypoints = await classifierRef.current.detectPose(tempCanvas)
+            if (keypoints && keypoints.length > 0 && keypoints.some(kp => kp.score > 0.3)) {
+                const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(keypoints) })
+                if (!added) {
+                    showSaved('Sample limit reached!')
+                    setCaptureStatus('idle')
+                    setIsCapturing(false)
+                    return
+                }
+                classifierRef.current.addSampleFromKeypoints(keypoints, mode.getSelectedClass()?.name || '').catch(() => {})
+                setCaptureStatus('success')
+                showSaved(`Saved to ${mode.getSelectedClass()?.name}!`)
+            } else {
+                setCaptureStatus('no-pose')
+                showSaved('No pose detected!')
+            }
+        } catch (err) {
+            setCaptureStatus('error')
+        } finally {
+            setIsCapturing(false)
+            setTimeout(() => setCaptureStatus('idle'), 1500)
+        }
+    }, [cameraOn, isCapturing, mode, showSaved])
+
+    const resetSession = useCallback(() => {
+        setGoodCount(0)
+        setBadCount(0)
+        setLeftCount(0)
+        setRightCount(0)
+        setConsecutiveBadCount(0)
+        consecutiveBadRef.current = 0
+        setShowBadPostureAlert(false)
+        setShowBreakReminder(false)
+        sessionStartRef.current = Date.now()
+        setSessionDuration(0)
+        setPostureState(null)
+        setPrediction(null)
+        if (breakTimerRef.current) clearTimeout(breakTimerRef.current)
+        breakTimerRef.current = setTimeout(() => {
+            setShowBreakReminder(true)
+        }, BREAK_REMINDER_MS)
+        showSaved('Session reset!')
+    }, [showSaved])
+
+    const dismissBreakReminder = useCallback(() => {
+        setShowBreakReminder(false)
+        breakTimerRef.current = setTimeout(() => {
+            setShowBreakReminder(true)
+        }, BREAK_REMINDER_MS)
+    }, [])
+
+    const dismissBadPostureAlert = useCallback(() => {
+        setShowBadPostureAlert(false)
+        consecutiveBadRef.current = 0
+        setConsecutiveBadCount(0)
+    }, [])
+
+    const canTrain = !!(mode.project && mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2))
+    const selectedClass = mode.getSelectedClass()
+    const totalReadings = goodCount + badCount + leftCount + rightCount
+    const postureScore = totalReadings > 0 ? Math.round((goodCount / totalReadings) * 100) : 0
+    const formatDuration = (seconds: number) => {
+        const m = Math.floor(seconds / 60)
+        const s = seconds % 60
+        return `${m}m ${s}s`
+    }
+
+    return (
+        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
+            {savedMessage && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#6366f1] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                    {savedMessage}
+                </div>
+            )}
+
+            {showBadPostureAlert && (
+                <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in flex items-center gap-2">
+                    <span className="text-lg">⚠️</span>
+                    <span>Bad posture detected! Please sit up straight.</span>
+                    <button onClick={dismissBadPostureAlert} className="ml-2 px-2 py-0.5 bg-white/20 rounded-md hover:bg-white/30 transition-colors">✕</button>
+                </div>
+            )}
+
+            {showBreakReminder && (
+                <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in flex items-center gap-2">
+                    <span className="text-lg">☕</span>
+                    <span>Time for a break! You've been sitting for 30 minutes.</span>
+                    <button onClick={dismissBreakReminder} className="ml-2 px-2 py-0.5 bg-white/20 rounded-md hover:bg-white/30 transition-colors">✕</button>
+                </div>
+            )}
+
+            {/* COLLECT MODE */}
+            {mode.mode === 'collect' && (
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center mb-1">
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Posture Monitor!</h2>
+                            <p className="text-xs text-[#4a4455]">Teach the AI to recognize sitting postures!</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
+                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
+                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                                <canvas ref={canvasRef} className="hidden" />
+                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                {cameraOn && (
+                                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                        <span className="text-white text-[9px] font-bold">LIVE</span>
+                                    </div>
+                                )}
+                                {captureStatus === 'success' && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-green-500/20 backdrop-blur-sm">
+                                        <span className="text-6xl">✓</span>
+                                    </div>
+                                )}
+                                {!cameraOn && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-5xl mb-3">🪑</span>
+                                        <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
+                                        <p className="text-white/50 text-[10px] mb-4">Start camera to collect posture samples</p>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Turn On Camera</button>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                    {cameraOn ? 'Stop' : 'Start'}
+                                </button>
+                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
+                                    style={{ background: isCapturing ? '#94a3b8' : ACCENT }}>
+                                    {isCapturing ? '...' : 'Capture Pose'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
+                            <div className="rounded-xl p-3 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Posture Types</p>
+                                <div className="flex flex-col gap-1">
+                                    {POSTURE_CLASSES.map(posture => (
+                                        <span key={posture} className="text-[9px] text-gray-600 flex items-center gap-1.5">
+                                            <span>{POSTURE_CONFIG[posture]?.emoji}</span>
+                                            {posture}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl p-3 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Tips</p>
+                                <div className="flex flex-col gap-1">
+                                    {['Sit facing the camera', 'Keep back straight for good posture', 'Slouch for bad posture samples', 'Lean left/right for leaning samples'].map(tip => (
+                                        <span key={tip} className="text-[9px] text-gray-600">• {tip}</span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {selectedClass && (
+                                <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: selectedClass.color }} />
+                                            <span className="text-xs font-bold text-gray-800">{selectedClass.name}</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-gray-400">{selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                    <p className="text-[8px] text-gray-500 font-bold uppercase">Total</p>
+                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.getTotalSamples()}</p>
+                                </div>
+                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                    <p className="text-[8px] text-gray-500 font-bold uppercase">Classes</p>
+                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.project?.classes.length || 0}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TRAIN MODE */}
+            {mode.mode === 'train' && (
+                <div className="flex-1 flex flex-col items-center justify-center p-8">
+                    <div className="text-center mb-6">
+                        <h2 className="text-2xl font-extrabold mb-2" style={{ color: ACCENT }}>Training Posture AI!</h2>
+                        <p className="text-sm text-gray-500">Teaching the AI to recognize sitting postures...</p>
+                    </div>
+                    {modelLoading ? (
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 border-4 rounded-full animate-spin" style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
+                            <p className="text-sm font-bold" style={{ color: ACCENT }}>Loading model...</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-4">
+                            <span className="text-6xl">✓</span>
+                            <p className="text-sm font-bold text-green-600">Model Ready!</p>
+                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg" style={{ background: ACCENT }}>
+                                Start Monitoring
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TEST MODE */}
+            {mode.mode === 'test' && (
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                    <div className="w-full flex flex-col items-center animate-fade-in">
+                        <div className="text-center mb-1">
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Posture Monitoring</h2>
+                            <p className="text-xs text-[#4a4455]">Sit properly and get real-time feedback!</p>
+                        </div>
+                        <div className="w-full max-w-[720px]">
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
+                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
+                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                                <canvas ref={canvasRef} className="hidden" />
+                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                {cameraOn && (
+                                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                        <span className="text-white text-[9px] font-bold">LIVE</span>
+                                    </div>
+                                )}
+                                {postureState && POSTURE_CONFIG[postureState] && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="animate-fade-in px-8 py-4 rounded-2xl flex flex-col items-center" style={{ background: `${POSTURE_CONFIG[postureState].color}CC`, backdropFilter: 'blur(8px)' }}>
+                                            <span className="text-5xl mb-1">{POSTURE_CONFIG[postureState].emoji}</span>
+                                            <span className="text-3xl font-black text-white">{postureState}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {!cameraOn && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-5xl mb-3">🪑</span>
+                                        <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
+                                        <p className="text-white/50 text-[10px] mb-4">Start camera to monitor posture</p>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Start Camera</button>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center justify-center gap-2 mt-2">
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                    {cameraOn ? 'Stop Camera' : 'Start Camera'}
+                                </button>
+                                <button onClick={resetSession} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-gray-300 text-gray-600 bg-white">
+                                    Reset Session
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
+                            {/* Current Posture Indicator */}
+                            <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100 text-center">
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Current Posture</p>
+                                <div className="text-5xl mb-1">{postureState && POSTURE_CONFIG[postureState] ? POSTURE_CONFIG[postureState].emoji : '🪑'}</div>
+                                <div className="text-lg font-black" style={{ color: postureState && POSTURE_CONFIG[postureState] ? POSTURE_CONFIG[postureState].color : '#94a3b8' }}>
+                                    {postureState || 'Waiting...'}
+                                </div>
+                                {prediction && (
+                                    <p className="text-xs font-bold text-gray-500 mt-1">
+                                        {Math.round(prediction.confidences[prediction.label] * 100)}% confidence
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Posture Score */}
+                            <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold text-gray-700">Posture Score</span>
+                                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-md" style={{ color: postureScore >= 70 ? '#10b981' : postureScore >= 40 ? '#f59e0b' : '#ef4444', background: postureScore >= 70 ? '#ecfdf5' : postureScore >= 40 ? '#fffbeb' : '#fef2f2' }}>
+                                        {postureScore}%
+                                    </span>
+                                </div>
+                                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-500" style={{
+                                        width: `${postureScore}%`,
+                                        background: postureScore >= 70 ? '#10b981' : postureScore >= 40 ? '#f59e0b' : '#ef4444'
+                                    }} />
+                                </div>
+                            </div>
+
+                            {/* Session Stats */}
+                            <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                                <p className="text-[10px] font-bold text-gray-700 mb-2">Session Stats</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="text-center p-2 rounded-lg" style={{ background: '#ecfdf5' }}>
+                                        <p className="text-[8px] text-gray-500 font-bold uppercase">Good</p>
+                                        <p className="text-lg font-extrabold text-green-600">{goodCount}</p>
+                                    </div>
+                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fef2f2' }}>
+                                        <p className="text-[8px] text-gray-500 font-bold uppercase">Bad</p>
+                                        <p className="text-lg font-extrabold text-red-600">{badCount}</p>
+                                    </div>
+                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fffbeb' }}>
+                                        <p className="text-[8px] text-gray-500 font-bold uppercase">Left</p>
+                                        <p className="text-lg font-extrabold text-amber-600">{leftCount}</p>
+                                    </div>
+                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fffbeb' }}>
+                                        <p className="text-[8px] text-gray-500 font-bold uppercase">Right</p>
+                                        <p className="text-lg font-extrabold text-amber-600">{rightCount}</p>
+                                    </div>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-[10px] text-gray-500 font-bold">
+                                    <span>Total: {totalReadings} readings</span>
+                                    <span>⏱ {formatDuration(sessionDuration)}</span>
+                                </div>
+                            </div>
+
+                            {/* Confidence Threshold */}
+                            <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold text-gray-700">Confidence</span>
+                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md" style={{ color: ACCENT }}>{Math.round(confidenceThreshold * 100)}%</span>
+                                </div>
+                                <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                    onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                    style={{ background: `linear-gradient(to right, ${ACCENT} ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                            </div>
+
+                            {/* Speed & Pose Detection */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                    <p className="text-[8px] text-gray-500 font-bold uppercase">Speed</p>
+                                    <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
+                                </div>
+                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                    <p className="text-[8px] text-gray-500 font-bold uppercase">Pose</p>
+                                    <p className="text-lg font-extrabold" style={{ color: poseDetected ? '#10b981' : '#94a3b8' }}>
+                                        {poseDetected ? 'Found' : 'None'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Consecutive Bad Count */}
+                            {consecutiveBadCount > 0 && (
+                                <div className="rounded-xl p-3 border" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-red-600">Consecutive Bad</span>
+                                        <span className="text-sm font-extrabold text-red-600">{consecutiveBadCount}/{BAD_POSTURE_THRESHOLD}</span>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-red-200 rounded-full overflow-hidden mt-1">
+                                        <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${(consecutiveBadCount / BAD_POSTURE_THRESHOLD) * 100}%` }} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* All Confidences */}
+                            {prediction && (
+                                <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                                    <p className="text-[10px] font-bold text-gray-700 mb-2">All Confidences</p>
+                                    <div className="flex flex-col gap-1.5">
+                                        {Object.entries(prediction.confidences)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .map(([label, conf]) => (
+                                                <div key={label} className="flex items-center gap-2">
+                                                    <span className="text-[9px] font-bold text-gray-600 w-20 truncate">{label}</span>
+                                                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div className="h-full rounded-full transition-all" style={{ width: `${conf * 100}%`, background: ACCENT }} />
+                                                    </div>
+                                                    <span className="text-[9px] font-bold" style={{ color: ACCENT }}>{Math.round(conf * 100)}%</span>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}

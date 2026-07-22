@@ -83,17 +83,7 @@ const CLASSIFIER_TYPES: {
     ]
 
 const PROJECT_TEMPLATES = [
-    {
-        name: 'Rock Paper Scissors',
-        description: 'Play against AI that knows your hand moves!',
-        icon: '✊',
-        icon2: '📄',
-        icon3: '✂️',
-        classes: ['rock', 'paper', 'scissors'],
-        color: '#7c3aed',
-        bg: 'from-[#7c3aed]/10 to-[#a855f7]/10',
-        tag: '🕹️ Game'
-    },
+    // Image Classifier
     {
         name: 'Fruit Finder',
         description: 'Teach AI to recognize yummy fruits!',
@@ -103,19 +93,23 @@ const PROJECT_TEMPLATES = [
         classes: ['Apple', 'Banana', 'Orange'],
         color: '#c32c00',
         bg: 'from-[#c32c00]/10 to-[#ef4444]/10',
-        tag: '🍏 Healthy'
+        tag: '🖼️ Image',
+        projectType: 'image-classifier' as ProjectType
     },
+    // Audio Classifier
     {
-        name: 'Pet Identifier',
-        description: 'Can your AI tell a cat from a dog?',
-        icon: '🐱',
-        icon2: '🐶',
-        icon3: '🐦',
-        classes: ['Cat', 'Dog', 'Bird'],
-        color: '#006c44',
-        bg: 'from-[#006c44]/10 to-[#10b981]/10',
-        tag: '🐾 Pets'
+        name: 'Sound Identifier',
+        description: 'Recognize different sounds!',
+        icon: '🔊',
+        icon2: '🎵',
+        icon3: '🎤',
+        classes: ['Clap', 'Whistle', 'Snap', 'Click'],
+        color: '#10b981',
+        bg: 'from-[#10b981]/10 to-[#34d399]/10',
+        tag: '🔊 Audio',
+        projectType: 'audio-classifier' as ProjectType
     },
+    // Hand Pose Classifier
     {
         name: 'Finger Counter',
         description: 'Count fingers with AI hand tracking!',
@@ -125,19 +119,60 @@ const PROJECT_TEMPLATES = [
         classes: ['One', 'Two', 'Three', 'Four', 'Five'],
         color: '#0ea5e9',
         bg: 'from-[#0ea5e9]/10 to-[#38bdf8]/10',
-        tag: '✋ Hands',
-        projectType: 'hand-pose-classifier' as ProjectType
+        tag: '✋ Hand Gesture',
+        projectType: 'finger-counter' as ProjectType
     },
+    // Body Pose Classifier
     {
-        name: 'Eco Sorter',
-        description: 'Help save the planet by sorting trash!',
-        icon: '♻️',
-        icon2: '🌍',
-        icon3: '🌱',
-        classes: ['Paper', 'Plastic', 'Metal'],
-        color: '#630ed4',
+        name: 'Yoga Poses',
+        description: 'Check your yoga form!',
+        icon: '🧘',
+        icon2: '🧘‍♀️',
+        icon3: '🧘‍♂️',
+        classes: ['Tree Pose', 'Warrior Pose', 'Mountain Pose', 'Cobra Pose', "Child's Pose"],
+        color: '#06b6d4',
+        bg: 'from-[#06b6d4]/10 to-[#22d3ee]/10',
+        tag: '🧘 Body Pose',
+        projectType: 'yoga-checker' as ProjectType
+    },
+    // Text Classifier
+    {
+        name: 'Sentiment Checker',
+        description: 'Detect if text is happy, sad or neutral!',
+        icon: '😊',
+        icon2: '😐',
+        icon3: '😢',
+        classes: ['Happy', 'Neutral', 'Sad'],
+        color: '#8b5cf6',
+        bg: 'from-[#8b5cf6]/10 to-[#a78bfa]/10',
+        tag: '📝 Text',
+        projectType: 'text-classifier' as ProjectType
+    },
+    // Numbers Classifier
+    {
+        name: 'Number Ninja',
+        description: 'Understand numbers and patterns!',
+        icon: '🔢',
+        icon2: '➕',
+        icon3: '➖',
+        classes: ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'],
+        color: '#f59e0b',
+        bg: 'from-[#f59e0b]/10 to-[#fbbf24]/10',
+        tag: '🔢 Numbers',
+        projectType: 'numbers-cr' as ProjectType
+    },
+    // Object Detection
+    {
+        name: 'Object Finder',
+        description: 'Find and spot multiple things!',
+        icon: '🔍',
+        icon2: '📦',
+        icon3: '🎯',
+        classes: ['Person', 'Object', 'Background'],
+        color: '#4F46E5',
         bg: 'from-[#630ed4]/10 to-[#3b82f6]/10',
-        tag: '🌱 Eco'
+        tag: '🎯 Detection',
+        projectType: 'object-detection' as ProjectType
     }
 ]
 
@@ -549,7 +584,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5" style={{ gap: '20px' }}>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4" style={{ gap: '20px' }}>
                             {/* Create Blank Project */}
                             <button
                                 onClick={handleBlankProject}
