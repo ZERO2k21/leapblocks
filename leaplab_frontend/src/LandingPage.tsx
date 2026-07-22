@@ -80,7 +80,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
       }
     }
 
-    return `group rounded-xl p-[clamp(12px,1.4vw,20px)] cursor-pointer [transition:transform_.4s_cubic-bezier(0.34,1.56,0.64,1),box-shadow_.5s_ease,opacity_.3s_ease] relative overflow-hidden h-auto min-h-[clamp(160px,14vw,220px)] flex flex-col justify-between border border-[rgba(0,0,0,0.03)] border-t-[rgba(255,255,255,0.82)] border-l-[rgba(255,255,255,0.4)] max-[560px]:min-h-auto max-[560px]:flex-row max-[560px]:items-center max-[560px]:gap-3 max-[560px]:p-3 max-[480px]:p-3 max-[480px]:gap-3 max-[480px]:rounded-[10px] hover:translate-y-[-8px] hover:scale-[1.02] hover:z-[5] ${themeClasses} ${stateClasses}`;
+    return `group rounded-xl p-[clamp(14px,1.4vw,22px)] cursor-pointer [transition:transform_.4s_cubic-bezier(0.34,1.56,0.64,1),box-shadow_.5s_ease,opacity_.3s_ease] relative overflow-hidden h-auto min-h-[clamp(180px,15vw,260px)] flex flex-col justify-between border border-[rgba(0,0,0,0.03)] border-t-[rgba(255,255,255,0.82)] border-l-[rgba(255,255,255,0.4)] max-[560px]:min-h-auto max-[560px]:flex-row max-[560px]:items-center max-[560px]:gap-3 max-[560px]:p-3 max-[480px]:p-3 max-[480px]:gap-3 max-[480px]:rounded-[10px] hover:translate-y-[-8px] hover:scale-[1.02] hover:z-[5] ${themeClasses} ${stateClasses}`;
   };
 
   /* ── Cleanup scan on unmount ── */
@@ -312,10 +312,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {activeTab === 'modules' && (
             <>
               {/* HERO */}
-              <div className="grid grid-cols-[1.1fr_0.9fr] items-center w-full max-w-[1400px] mx-auto py-3 px-10 gap-10 flex-none min-h-[clamp(200px,35vh,480px)] max-[1024px]:grid-cols-1 max-[1024px]:text-center max-[1024px]:gap-6 max-[1024px]:p-6 max-[1024px]:min-h-0 max-[1024px]:flex-none max-[640px]:py-[30px] max-[640px]:px-4 max-[640px]:gap-[30px] max-[480px]:py-5 max-[480px]:px-3 max-[480px]:gap-5">
+              <div className="grid grid-cols-[1.1fr_0.9fr] items-center w-full max-w-[1600px] mx-auto py-4 px-10 gap-10 flex-none min-h-[clamp(240px,38vh,520px)] max-[1024px]:grid-cols-1 max-[1024px]:text-center max-[1024px]:gap-6 max-[1024px]:p-6 max-[1024px]:min-h-0 max-[1024px]:flex-none max-[640px]:py-[30px] max-[640px]:px-4 max-[640px]:gap-[30px] max-[480px]:py-5 max-[480px]:px-3 max-[480px]:gap-5">
                 <div className="max-[1024px]:flex max-[1024px]:flex-col max-[1024px]:items-center">
                   <div className="inline-block text-[10px] font-extrabold text-black uppercase tracking-[0.25em] mb-2 px-3 py-1 bg-[#BEF264] border-2 border-black shadow-[2px_2px_0px_#000] -rotate-1 max-[480px]:text-[10px] max-[480px]:px-2.5 max-[480px]:py-1 max-[480px]:mb-2 animate-hero-reveal">Curiosity - Creativity - Critical Thinking</div>
-                  <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[1.1] tracking-[-0.04em] mb-2.5 text-[#0F172A] max-[640px]:text-[2.5rem] max-[480px]:text-[2rem] animate-hero-reveal [animation-delay:0.1s]">
+                  <h1 className="text-[clamp(2rem,3.2vw,4rem)] font-black leading-[1.1] tracking-[-0.04em] mb-2.5 text-[#0F172A] max-[640px]:text-[2.5rem] max-[480px]:text-[2rem] animate-hero-reveal [animation-delay:0.1s]">
                     Learn to <span className="text-transparent [-webkit-text-stroke:2px_#6366F1] [-webkit-text-fill-color:transparent] tracking-[-0.02em]">code</span> <br />
                     the <span className="italic text-transparent bg-[linear-gradient(135deg,#6366F1_0%,#7C3AED_50%,#8B5CF6_100%)] [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] bg-clip-text tracking-[0.02em] px-1">bold</span> way
                   </h1>
@@ -355,102 +355,102 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 8 TRACK CARDS */}
-              <div className="cards-wrap w-full mx-auto py-[clamp(6px,0.8vw,12px)] px-[clamp(16px,2vw,28px)] pb-[clamp(4px,0.5vw,8px)] shrink-0 flex items-center justify-center max-[560px]:p-3 max-[560px]:px-4 max-[480px]:p-4 max-[480px]:px-3">
-                <div className={`grid grid-cols-8 gap-[clamp(8px,1vw,16px)] w-full max-w-[1400px] max-[1400px]:grid-cols-4 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1 max-[480px]:gap-2.5 ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
+              <div className="cards-wrap w-full mx-auto py-[clamp(8px,1vw,16px)] px-[clamp(20px,2.5vw,48px)] pb-[clamp(6px,0.8vw,12px)] shrink-0 flex items-center justify-center max-[560px]:p-3 max-[560px]:px-4 max-[480px]:p-4 max-[480px]:px-3">
+                <div className={`grid grid-cols-8 gap-[clamp(10px,1.2vw,20px)] w-full max-w-[1800px] max-[1100px]:grid-cols-4 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1 max-[480px]:gap-2.5 ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
 
                   {/* 1 IGNITE */}
                   <div className={getCardClasses(0, 'bg-[linear-gradient(155deg,#ffffff_0%,#fff0e5_60%,#fce5d4_100%)] border-b-4 border-b-[#F97316] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15),0_0_0_1px_rgba(249,115,22,0.1)]')} onClick={() => handleCardClick(() => onSelect('junior'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/ignite_icon.png" alt="Ignite Robot" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Ignite</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">leap & block coding</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Ignite</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">leap & block coding</div>
                     </div>
                   </div>
 
                   {/* 2 EMBED */}
                   <div className={getCardClasses(1, 'bg-[linear-gradient(155deg,#ffffff_0%,#e5f2f5_60%,#d5f2f7_100%)] border-b-4 border-b-[#59aaa4ff] hover:shadow-[0_20px_40px_rgba(15,118,109,0.15),0_0_0_1px_rgba(15,118,110,0.1)]')} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/arduino_icon.png" alt="Circuit Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Embed</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Block Coding, Arduino & Embedded Systems</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Embed</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Block Coding, Arduino & Embedded Systems</div>
                     </div>
                   </div>
 
                   {/* 3 Logix */}
                   <div className={getCardClasses(2, 'bg-[linear-gradient(155deg,#ffffff_0%,#ebf0fd_60%,#ccdafa_100%)] border-b-4 border-b-[#3B82F6] hover:shadow-[0_20px_40px_rgba(59,130,246,0.15),0_0_0_1px_rgba(59,130,246,0.1)]')} onClick={() => handleCardClick(() => onSelect('python'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/python_icon.png" alt="Logix Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Logix</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Python Programming</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Logix</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Python Programming</div>
                     </div>
                   </div>
 
                   {/* 4 NEURA */}
                   <div className={getCardClasses(3, 'bg-[linear-gradient(155deg,#ffffff_0%,#f0ecfd_60%,#ddd0fb_100%)] border-b-4 border-b-[#7C3AED] hover:shadow-[0_20px_40px_rgba(124,58,237,0.15),0_0_0_1px_rgba(124,58,237,0.1)]')} onClick={() => handleCardClick(() => onSelect('neura'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/ml_brain_icon.png" alt="Neura Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Neura</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">AI Logic & Advanced Block Programming</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Neura</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">AI Logic & Advanced Block Programming</div>
                     </div>
                   </div>
 
                   {/* 5 ELECTRA */}
                   <div className={getCardClasses(4, 'bg-[linear-gradient(155deg,#ffffff_0%,#eaf8ed_60%,#d6f7df_100%)] border-b-4 border-b-[#22C55E] hover:shadow-[0_20px_40px_rgba(34,197,94,0.15),0_0_0_1px_rgba(34,197,94,0.1)]')} onClick={() => handleCardClick(() => onSelect('electra'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/creocad_icon.png" alt="Forge Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Electra</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Circuit Design & Simulation</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Electra</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Circuit Design & Simulation</div>
                     </div>
                   </div>
 
                   {/* 6 VISION3D */}
                   <div className={getCardClasses(5, 'bg-[linear-gradient(155deg,#ffffff_0%,#e5f6f8_60%,#d2f6fa_100%)] border-b-4 border-b-[#06B6D4] hover:shadow-[0_20px_40px_rgba(6,182,212,0.15),0_0_0_1px_rgba(6,182,212,0.1)]')} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/vision3d_icon.png" alt="Vision3D Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Vision3D</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">3D Design & Modeling </div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Vision3D</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">3D Design & Modeling</div>
                     </div>
                   </div>
 
                   {/* 7 CREOVA */}
                   <div className={getCardClasses(6, 'bg-[linear-gradient(155deg,#ffffff_0%,#fbedf4_60%,#fae1ee_100%)] border-b-4 border-b-[#EC4899] hover:shadow-[0_20px_40px_rgba(236,72,153,0.15),0_0_0_1px_rgba(236,72,153,0.1)]')} onClick={() => handleCardClick(() => onSelect('creova'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/app_game_dev_icon.png" alt="Creova Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Creova</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">App & Game Development</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Creova</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">App & Game Development</div>
                     </div>
                   </div>
 
                   {/* 8 PULSE */}
                   <div className={getCardClasses(7, 'bg-[linear-gradient(155deg,#ffffff_0%,#eafcf1_60%,#c7fade_100%)] border-b-4 border-b-[#10B981] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15),0_0_0_1px_rgba(16,185,129,0.1)]')} onClick={() => handleCardClick(() => onSelect('pulse'))}>
-                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                    <div className="flex items-center justify-center mb-3 h-[clamp(56px,6.5vw,96px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
                       <img src="assets/quiz_icon.png" alt="Quiz Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
                       <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
-                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Pulse</div>
-                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Assessment & Quiz Creation</div>
+                      <div className="text-[clamp(13px,1.1vw,17px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Pulse</div>
+                      <div className="text-[clamp(10px,0.85vw,13px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Assessment & Quiz Creation</div>
                     </div>
                   </div>
 
