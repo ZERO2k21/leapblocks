@@ -73,7 +73,7 @@ export default function TestPanel({
 
     const getPredictionLabel = () => {
         if (!prediction) return ''
-        return prediction.label.charAt(0).toUpperCase() + prediction.label.slice(1)
+        return prediction.label
     }
 
     const [isDragging, setIsDragging] = useState(false)

@@ -111,6 +111,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const runTrainingEpoch = useCallback((epoch: number) => {
         if (epoch > maxEpochs) {
             setIsTraining(false); setIsComplete(true)
+            setTrainingProgress(100)
             if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }
             return
         }
@@ -141,6 +142,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             if (trainingIntervalRef.current) { clearInterval(trainingIntervalRef.current); trainingIntervalRef.current = null }
         }
         setIsTraining(false)
+        setTrainingProgress(100)
     }, [isObjectDetection, trainer])
 
     const handleResetTraining = useCallback(() => {
