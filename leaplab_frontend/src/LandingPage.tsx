@@ -60,13 +60,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     action();
   };
 
-  const tcClass = (index: number) =>
-    [
-      scanIndex === index ? 'tc-scan-active' : '',
-      highlightCards && scanIndex === -1 ? 'tc-highlight' : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
+  const getCardClasses = (index: number, themeClasses: string) => {
+    const isScanning = scanIndex >= 0;
+    const isActive = scanIndex === index;
+
+    let stateClasses = '';
+    if (isScanning) {
+      if (isActive) {
+        stateClasses = '[transform:perspective(1000px)_translate3d(0,-8px,20px)_scale(1.05)_rotateX(4deg)!important] shadow-[0_0_0_3px_#6366F1,0_15px_35px_rgba(99,102,241,0.35),inset_0_2px_4px_rgba(255,255,255,1)!important] z-10 border-[rgba(99,102,241,0.5)]';
+      } else {
+        stateClasses = 'opacity-40 scale-95 shadow-none';
+      }
+    } else {
+      if (highlightCards) {
+        stateClasses = 'shadow-[0_0_0_2px_rgba(99,102,241,0.35),0_8px_20px_rgba(99,102,241,0.08)]';
+      } else {
+        stateClasses = 'shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_8px_rgba(0,0,0,0.04),0_12px_24px_rgba(0,0,0,0.02),inset_0_0_0_1px_rgba(255,255,255,0.7)]';
+      }
+    }
+
+    return `group rounded-xl p-[clamp(12px,1.4vw,20px)] cursor-pointer [transition:transform_.4s_cubic-bezier(0.34,1.56,0.64,1),box-shadow_.5s_ease,opacity_.3s_ease] relative overflow-hidden h-auto min-h-[clamp(160px,14vw,220px)] flex flex-col justify-between border border-[rgba(0,0,0,0.03)] border-t-[rgba(255,255,255,0.82)] border-l-[rgba(255,255,255,0.4)] max-[560px]:min-h-auto max-[560px]:flex-row max-[560px]:items-center max-[560px]:gap-3 max-[560px]:p-3 max-[480px]:p-3 max-[480px]:gap-3 max-[480px]:rounded-[10px] hover:translate-y-[-8px] hover:scale-[1.02] hover:z-[5] ${themeClasses} ${stateClasses}`;
+  };
 
   /* ── Cleanup scan on unmount ── */
   useEffect(() => {
@@ -92,92 +106,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
   return (
     <>
-      {showSplash && (
-        <div className="splash-screen">
-          <div className="splash-rocket-container">
-            <img src="assets/sprites/robot/robot_idle.svg" alt="Robot Flow" className="splash-robot-img" />
-          </div>
-          <div className="splash-text-container">
-            <div className="splash-text-welcome">Welcome to the</div>
-            <img src="assets/splash_logo_b.png" alt="Leaplab Logo" className="splash-logo" />
-            <div className="splash-powered-by">
-              <span>Powered by</span>
-              <img src="assets/topbar_logo.svg" alt="LeapLab" />
-            </div>
-          </div>
-        </div>
-      )}
       <style dangerouslySetInnerHTML={{
         __html: `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-:root {
-  --brand-primary: #100051;
-  --brand-secondary: #4F46E5;
-  --bg-main: #F8FAFC;
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --accent: #BEF264;
-  --accent-secondary: #F472B6;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ─── TOPBAR GRADIENT LINE ─── */
-.topbar-gradient-line {
-  width: 100%;
-  position: relative;
-  z-index: 150;
-}
-
-.topbar-gradient-line .line-primary {
-  height: 3px;
-  width: 100%;
-  background: linear-gradient(
-    90deg,
-    #F97316 0%,
-    #14B8A6 20%,
-    #3B82F6 40%,
-    #A855F7 60%,
-    #22C55E 80%,
-    #EC4899 100%
-  );
-}
-
-.topbar-gradient-line .line-secondary {
-  height: 2px;
-  width: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(249,115,22,0.5),
-    rgba(20,184,166,0.5),
-    rgba(59,130,246,0.5),
-    rgba(168,85,247,0.5),
-    rgba(34,197,94,0.5),
-    rgba(236,72,153,0.5)
-  );
-  opacity: 0.6;
-}
-
-/* ─── SPLASH SCREEN ─── */
-.splash-screen {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #f8f9fa;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
-  animation: splash-fade-out 0.8s ease-in-out 3s forwards;
-}
 @keyframes splash-fade-out {
   0% { opacity: 1; visibility: visible; }
   100% { opacity: 0; visibility: hidden; }
-}
-.splash-rocket-container {
-  position: absolute;
-  animation: rocket-fly 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  z-index: 2;
-}
-.splash-robot-img {
-  width: clamp(100px, 25vw, 140px); height: auto;
-  filter: drop-shadow(0 10px 30px rgba(124, 92, 252, 0.5));
 }
 @keyframes rocket-fly {
   0%   { transform: translateY(120vh) scale(1); opacity: 1; }
@@ -186,489 +119,67 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   85%  { transform: translateY(-120vh) scale(0.8); opacity: 1; }
   100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
 }
-.splash-text-container {
-  z-index: 1; opacity: 0;
-  animation: splash-text-reveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.splash-text-welcome {
-  font-size: clamp(1rem, 3vw, 1.8rem); font-weight: 500;
-  color: rgba(0, 0, 0, 0.6); letter-spacing: 0.1em;
-  text-transform: uppercase; margin-bottom: -15px;
-}
-.splash-logo {
-  height: clamp(60px, 15vw, 120px);
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 30px rgba(124, 92, 252, 0.4));
-}
 @keyframes splash-text-reveal {
   0%   { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); }
   100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
 }
-.splash-powered-by {
-  margin-top: 15px; display: flex; align-items: center; gap: 10px;
-  opacity: 0; animation: splash-text-reveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.8s forwards;
-}
-.splash-powered-by span {
-  font-size: 0.85rem; font-weight: 600; color: rgba(0, 0, 0, 0.4);
-  text-transform: uppercase; letter-spacing: 0.1em;
-}
-.splash-powered-by img { height: 28px; opacity: 0.8; }
-
-.hero-powered-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 14px;
-  background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15);
-  backdrop-filter: blur(8px); border-radius: 100px; margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); transition: all 0.3s ease;
-}
-.hero-powered-badge:hover {
-  transform: translateY(-2px); background: rgba(99, 102, 241, 0.08);
-  border-color: rgba(99, 102, 241, 0.25);
-}
-.hero-powered-badge .pb-text {
-  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--text-muted);
-}
-.hero-powered-badge .pb-logo { height: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-.hero-powered-badge .pb-info-icon {
-  width: 14px; height: 14px; background: var(--brand-primary); color: #fff;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 900; font-family: serif;
-}
-
-.landing-page-container {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background: var(--bg-main);
-  background-image: radial-gradient(rgba(99, 102, 241, 0.05) 1.5px, transparent 1.5px);
-  background-size: 30px 30px;
-  color: var(--text-main);
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-}
-
-/* ─── BACKGROUND NODES ─── */
-.landing-page-container .bg-nodes {
-  position: fixed; top: 0; right: 0;
-  width: 100%; max-width: 1200px; height: 100vh;
-  pointer-events: none; z-index: 0; overflow: hidden; opacity: 0.3;
-}
-@media (min-width: 1024px) {
-  .landing-page-container .bg-nodes { width: 60%; opacity: 0.6; }
-}
-.landing-page-container .bg-nodes svg { width: 100%; height: 100%; opacity: 0.5; }
-
-/* ─── TOPBAR ─── */
-.landing-page-container nav {
-  flex-shrink: 0;
-  height: 64px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px;
-  background: rgba(248, 250, 252, 0.85);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-@media (max-width: 640px) {
-  .landing-page-container nav { padding: 0 16px; height: 56px; }
-}
-.landing-page-container .nav-brand {
-  display:flex; align-items:center; gap:10px; text-decoration:none;
-  filter: drop-shadow(0 2px 8px rgba(99,102,241,0.15));
-}
-.landing-page-container .brand-logo { height: 42px; width:auto; object-fit:contain; }
-@media (max-width: 640px) {
-  .landing-page-container .brand-logo { height: 32px; }
-}
-.landing-page-container .nav-actions {
-  display:flex; align-items:center; gap:14px;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08));
-}
-.landing-page-container .nav-links { display: flex; gap: 24px; margin-left: 12px; align-items: center; }
-@media (max-width: 768px) { .landing-page-container .nav-links { display: none; } }
-.landing-page-container .nav-link {
-  background: transparent;
-  border: none;
-  color: #0f172a;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 999px;
-  transition: all 0.2s ease;
-}
-.landing-page-container .nav-link:hover { color: #4f46e5; background: rgba(79,70,229,0.06); }
-.landing-page-container .nav-link.active { color: #ffffff; background: #4f46e5; }
-
-/* ─── PAGE CONTENT ─── */
-.landing-page-container .page {
-  position:relative; z-index:1;
-  display: flex; flex-direction: column;
-  flex: 1; min-height: 0;
-  overflow: hidden;
-}
-
-/* ─── HERO ─── */
-.landing-page-container .hero-grid {
-  display: grid; grid-template-columns: 1.1fr 0.9fr;
-  align-items: center; max-width: 1400px; margin: 0 auto;
-  padding: 12px 40px 8px;
-  gap: 40px; flex: 1 1 0; min-height: 0;
-  overflow: hidden;
-}
-@media (max-width: 1024px) {
-  .landing-page-container .hero-grid {
-    grid-template-columns: 1fr; text-align: center;
-    gap: 24px; padding: 20px 24px; height: auto; flex: 0 1 auto;
-  }
-  .landing-page-container .hero-left { display: flex; flex-direction: column; align-items: center; }
-  .landing-page-container .hero-sub { margin-left: auto; margin-right: auto; max-width: 90%; }
-  .landing-page-container .hero-btns { justify-content: center; width: 100%; gap: 16px; }
-}
-@media (max-width: 640px) {
-  .landing-page-container .hero-grid { padding: 30px 16px; gap: 30px; }
-  .landing-page-container .hero-title { font-size: 2.5rem; }
-  .landing-page-container .hero-sub { font-size: 1rem; max-width: 100%; padding: 0; }
-  .landing-page-container .hero-btns { gap: 12px; flex-direction: column; }
-  .landing-page-container .btn-adventure,
-  .landing-page-container .btn-demo {
-    width: 100%;
-    padding: 14px 20px;
-    font-size: 1rem;
-  }
-}
-@media (max-width: 480px) {
-  .landing-page-container .hero-grid { padding: 20px 12px; gap: 20px; }
-  .landing-page-container .hero-title { font-size: 2rem; }
-  .landing-page-container .hero-tagline { font-size: 10px; padding: 4px 10px; margin-bottom: 8px; }
-  .landing-page-container .hero-sub { font-size: 0.9rem; line-height: 1.4; margin-bottom: 16px; }
-  .landing-page-container .btn-adventure,
-  .landing-page-container .btn-demo { padding: 12px 16px; font-size: 0.9rem; }
-}
-
-.landing-page-container .hero-title {
-  font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900;
-  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 10px; color: #0F172A;
-}
-.landing-page-container .hero-title .hw-code {
-  color: transparent; -webkit-text-stroke: 2px #6366F1;
-  -webkit-text-fill-color: transparent; letter-spacing: -0.02em;
-}
-.landing-page-container .hero-title .hw-bold {
-  font-style: italic; color: transparent;
-  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  letter-spacing: 0.02em; padding: 0 4px;
-}
-.landing-page-container .hero-tagline {
-  display: inline-block; font-size: 10px;
-  font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 8px; padding: 5px 12px;
-  background: var(--accent); border: 2px solid #000; box-shadow: 2px 2px 0px #000;
-  transform: rotate(-1deg);
-}
-.landing-page-container .hero-sub {
-  font-size: clamp(0.9rem, 1.5vw, 1.1rem); color: #0f172a;
-  line-height: 1.4; max-width: 600px; margin-bottom: 14px;
-  position: relative; z-index: 2; opacity: 0.85;
-}
-.landing-page-container .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
-.landing-page-container .btn-adventure {
-  background: var(--brand-primary); border: none; color: #fff;
-  font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit;
-  padding: 12px 24px; border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 12px -3px rgba(99, 102, 241, 0.3);
-}
-.landing-page-container .btn-adventure:hover {
-  background: var(--brand-secondary); transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 16px 20px -5px rgba(99, 102, 241, 0.4);
-}
-.landing-page-container .btn-demo {
-  background: #fff; border: 2px solid #000; color: var(--text-main);
-  font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit;
-  padding: 12px 24px; border-radius: 12px; transition: all 0.2s;
-  box-shadow: 3px 3px 0px #000;
-}
-.landing-page-container .btn-demo:hover {
-  background: var(--bg-main); transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000;
-}
-
-/* ─── ANIMATIONS ─── */
 @keyframes hero-reveal {
   0%   { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(5px); }
   100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
 }
-.hero-tagline { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-.hero-title   { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards; }
-.hero-sub     { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards; }
-.hero-btns    { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s forwards; }
-.hero-right   { animation: hero-reveal 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s forwards; }
-
-/* ─── FLOATING SHAPES ─── */
-.shape { position: absolute; z-index: 0; filter: blur(40px); opacity: 0.4; animation: float-slow 10s ease-in-out infinite; }
-.shape-1 { width: 300px; height: 300px; background: var(--accent); top: 10%; left: -5%; }
-.shape-2 { width: 400px; height: 400px; background: linear-gradient(135deg, #4e42c0 0%, #1a24af 100%); top: 40%; right: -10%; animation-delay: -2s; }
-.shape-3 { width: 250px; height: 250px; background: var(--accent-secondary); bottom: 10%; left: 20%; animation-delay: -5s; }
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   33%       { transform: translate(30px, 50px) rotate(5deg); }
   66%       { transform: translate(-20px, 30px) rotate(-5deg); }
 }
-
-/* RIGHT — 3D Hero Scene */
-.landing-page-container .hero-right {
-  display: flex; align-items: center; justify-content: center; position: relative;
-  width: 100%; height: 100%; min-height: 0; max-height: 100%;
-}
-.landing-page-container .hero-right::after {
-  content: ''; position: absolute; width: 120%; height: 120%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
-  z-index: -1; animation: float-glow 6s ease-in-out infinite;
-  pointer-events: none;
-}
 @keyframes float-glow {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50%       { transform: scale(1.1); opacity: 0.8; }
-}
-@media (max-width: 1024px) {
-  .landing-page-container .hero-right { min-height: 280px; max-height: 360px; }
-}
-@media (max-width: 768px) {
-  .landing-page-container .hero-right { min-height: 220px; max-height: 280px; }
-}
-@media (max-width: 480px) {
-  .landing-page-container .hero-right { min-height: 180px; max-height: 220px; }
-}
-
-/* ─── CARDS ROW ─── */
-.landing-page-container .cards-wrap {
-  width: 100%; margin: 0 auto;
-  padding: clamp(6px, 0.8vw, 12px) clamp(16px, 2vw, 28px) clamp(4px, 0.5vw, 8px);
-  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-}
-.landing-page-container .cards-row {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: clamp(8px, 1vw, 16px);
-  width: 100%;
-  max-width: 1400px;
-}
-@media (max-width: 1400px) {
-  .landing-page-container .cards-row {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-@media (max-width: 900px) {
-  .landing-page-container .cards-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 560px) {
-  .landing-page-container .cards-row {
-    grid-template-columns: 1fr;
-  }
-  .landing-page-container .cards-wrap {
-    padding: 12px 16px;
-  }
-}
-@media (max-width: 480px) {
-  .landing-page-container .cards-row {
-    gap: 10px;
-  }
-  .landing-page-container .cards-wrap {
-    padding: 16px 12px;
-  }
-}
-
-/* ── Card base + scan transitions ── */
-.landing-page-container .tc {
-  border-radius: 12px;
-  padding: clamp(12px, 1.4vw, 20px);
-  cursor: pointer;
-  transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow .5s ease,
-              opacity .3s ease;
-  position: relative;
-  overflow: hidden;
-  height: auto;
-  min-height: clamp(160px, 14vw, 220px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 
-    0 1px 2px rgba(0,0,0,0.06), 
-    0 4px 8px rgba(0,0,0,0.04),
-    0 12px 24px rgba(0,0,0,0.02),
-    inset 0 0 0 1px rgba(255,255,255,0.7);
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  border-top: 1px solid rgba(255, 255, 255, 0.82);
-  border-left: 1px solid rgba(255, 255, 255, 0.4);
-}
-@media (max-width: 560px) {
-  .landing-page-container .tc {
-    min-height: auto;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-  }
-}
-@media (max-width: 480px) {
-  .landing-page-container .tc {
-    padding: 12px;
-    gap: 12px;
-    border-radius: 10px;
-  }
-  .landing-page-container .tc-icon { width: 44px; height: 44px; }
-  .landing-page-container .tc-icon img { width: 28px; height: 28px; }
-  .landing-page-container .tc-name { font-size: 14px; }
-  .landing-page-container .tc-desc { font-size: 11px; }
-  .landing-page-container .tc-cat { font-size: 10px; }
-}
-.landing-page-container .tc:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 
-    0 2px 4px rgba(0,0,0,0.1), 
-    0 12px 28px rgba(0,0,0,0.08), 
-    0 24px 50px rgba(0,0,0,0.05),
-    inset 0 0 0 1px rgba(255,255,255,1);
-  z-index: 5;
-}
-
-/* Scanning spotlight — active card (3D Pop Animation) */
-.landing-page-container .tc.tc-scan-active {
-  transform: perspective(1000px) translate3d(0, -8px, 20px) scale(1.05) rotateX(4deg) !important;
-  box-shadow: 
-    0 0 0 3px #6366F1, 
-    0 15px 35px rgba(99,102,241,0.35),
-    inset 0 2px 4px rgba(255,255,255,1) !important;
-  z-index: 10;
-  border-color: rgba(99,102,241,0.5);
-}
-
-/* Dim non-active cards while scanning */
-.landing-page-container .cards-row.is-scanning .tc:not(.tc-scan-active) {
-  opacity: 0.4;
-  transform: scale(0.95);
-  box-shadow: none;
-}
-
-/* Subtle glow on all cards before scan starts */
-.landing-page-container .tc.tc-highlight {
-  box-shadow: 0 0 0 2px rgba(99,102,241,0.35), 0 8px 20px rgba(99,102,241,0.08);
-}
-
-.landing-page-container .tc-ignite  { background:linear-gradient(155deg,#ffffff 0%, #fff0e5 60%,#fce5d4 100%); border-bottom: 4px solid #F97316; }
-.landing-page-container .tc-ignite:hover { box-shadow: 0 20px 40px rgba(249,115,22,0.15), 0 0 0 1px rgba(249,115,22,0.1); }
-.landing-page-container .tc-embed   { background:linear-gradient(155deg,#ffffff 0%, #e5f2f5 60%,#d5f2f7 100%); border-bottom: 4px solid #59aaa4ff; }
-.landing-page-container .tc-embed:hover { box-shadow: 0 20px 40px rgba(15, 118, 109, 0.15), 0 0 0 1px rgba(15,118,110,0.1); }
-.landing-page-container .tc-Logix   { background:linear-gradient(155deg,#ffffff 0%, #ebf0fd 60%,#ccdafa 100%); border-bottom: 4px solid #3B82F6; }
-.landing-page-container .tc-Logix:hover { box-shadow: 0 20px 40px rgba(59,130,246,0.15), 0 0 0 1px rgba(59,130,246,0.1); }
-.landing-page-container .tc-neura   { background:linear-gradient(155deg,#ffffff 0%, #f0ecfd 60%,#ddd0fb 100%); border-bottom: 4px solid #7C3AED; }
-.landing-page-container .tc-neura:hover { box-shadow: 0 20px 40px rgba(124,58,237,0.15), 0 0 0 1px rgba(124,58,237,0.1); }
-.landing-page-container .tc-electra { background:linear-gradient(155deg,#ffffff 0%, #eaf8ed 60%,#d6f7df 100%); border-bottom: 4px solid #22C55E; }
-.landing-page-container .tc-electra:hover { box-shadow: 0 20px 40px rgba(34,197,94,0.15), 0 0 0 1px rgba(34,197,94,0.1); }
-.landing-page-container .tc-vision3d{ background:linear-gradient(155deg,#ffffff 0%, #e5f6f8 60%,#d2f6fa 100%); border-bottom: 4px solid #06B6D4; }
-.landing-page-container .tc-vision3d:hover { box-shadow: 0 20px 40px rgba(6,182,212,0.15), 0 0 0 1px rgba(6,182,212,0.1); }
-.landing-page-container .tc-creova  { background:linear-gradient(155deg,#ffffff 0%, #fbedf4 60%,#fae1ee 100%); border-bottom: 4px solid #EC4899; }
-.landing-page-container .tc-creova:hover { box-shadow: 0 20px 40px rgba(236,72,153,0.15), 0 0 0 1px rgba(236,72,153,0.1); }
-.landing-page-container .tc-pulse   { background:linear-gradient(155deg,#ffffff 0%, #eafcf1 60%,#c7fade 100%); border-bottom: 4px solid #10B981; }
-.landing-page-container .tc-pulse:hover { box-shadow: 0 20px 40px rgba(16,185,129,0.15), 0 0 0 1px rgba(16,185,129,0.1); }
-
-.landing-page-container .tc-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-  height: clamp(50px, 6vw, 80px);
-}
-.landing-page-container .tc-icon img {
-  height: 100%;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
-}
-@media (max-width: 560px) {
-  .landing-page-container .tc-icon {
-    margin-bottom: 0;
-    height: 50px;
-    width: 50px;
-    flex: 0 0 50px;
-  }
-  .landing-page-container .tc-icon img {
-    height: 100%;
-    width: 100%;
-  }
-}
-.landing-page-container .tc:hover .tc-icon img {
-  transform: scale(1.08) translateY(-4px);
-  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.15));
-}
-.landing-page-container .tc-cat-logo {
-  height: clamp(10px, 1vw, 14px);
-  width: auto;
-  object-fit: contain;
-  margin-bottom: 4px;
-  opacity: 0.75;
-  display: block;
-}
-.landing-page-container .tc-cat {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #0a0328;
-  margin-bottom: 4px;
-  line-height: 1.1;
-  opacity: 0.65;
-}
-.landing-page-container .tc-name {
-  font-size: clamp(13px, 1.2vw, 16px);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: #281746;
-  margin-bottom: 4px;
-  line-height: 1.1;
-}
-.landing-page-container .tc-desc {
-  font-size: clamp(10px, 1vw, 12px);
-  color: #020046b1;
-  line-height: 1.3;
-  font-weight: 500;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ─── Missing keyframes ─── */
-@keyframes lp-toast-in {
-  0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes hero3d-spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+@keyframes lp-toast-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-` }} />
-      <div className="landing-page-container">
+.animate-splash-fade-out { animation: splash-fade-out 0.8s ease-in-out 3s forwards; }
+.animate-rocket-fly { animation: rocket-fly 2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.animate-splash-text-reveal { animation: splash-text-reveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards; }
+.animate-splash-text-reveal-delayed { animation: splash-text-reveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1.8s forwards; }
+.animate-hero-reveal { animation: hero-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.animate-float-slow { animation: float-slow 10s ease-in-out infinite; }
+.animate-float-glow { animation: float-glow 6s ease-in-out infinite; }
+.animate-hero3d-spin { animation: hero3d-spin 0.8s linear infinite; }
+.animate-lp-toast-in { animation: lp-toast-in .3s ease-out; }
+`
+      }} />
+      {showSplash && (
+        <div className="fixed inset-0 z-[9999] bg-[#f8f9fa] flex items-center justify-center flex-col animate-splash-fade-out">
+          <div className="absolute z-[2] animate-rocket-fly">
+            <img src="assets/sprites/robot/robot_idle.svg" alt="Robot Flow" className="w-[clamp(100px,25vw,140px)] h-auto [filter:drop-shadow(0_10px_30px_rgba(124,92,252,0.5))]" />
+          </div>
+          <div className="z-10 opacity-0 animate-splash-text-reveal flex flex-col items-center gap-2.5">
+            <div className="text-[clamp(1rem,3vw,1.8rem)] font-medium text-black/60 tracking-[0.1em] uppercase mb-[-15px]">Welcome to the</div>
+            <img src="assets/splash_logo_b.png" alt="Leaplab Logo" className="h-[clamp(60px,15vw,120px)] w-auto object-contain [filter:drop-shadow(0_10px_30px_rgba(124,92,252,0.4))]" />
+            <div className="mt-3.75 flex items-center gap-2.5 opacity-0 animate-splash-text-reveal-delayed">
+              <span className="text-[0.85rem] font-semibold text-black/40 uppercase tracking-[0.1em]">Powered by</span>
+              <img src="assets/topbar_logo.svg" alt="LeapLab" className="h-[28px] opacity-80" />
+            </div>
+          </div>
+        </div>
+      )}
 
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
+      <div className="font-sans bg-[#F8FAFC] bg-[radial-gradient(rgba(99,102,241,0.05)_1.5px,transparent_1.5px)] bg-[size:30px_30px] text-[#0F172A] h-[100dvh] flex flex-col relative overflow-hidden">
 
-        <div className="bg-nodes">
-          <svg viewBox="0 0 820 920" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div className="absolute z-0 blur-[40px] opacity-40 animate-float-slow w-[300px] h-[300px] bg-[#BEF264] top-[10%] left-[-5%]"></div>
+        <div className="absolute z-0 blur-[40px] opacity-40 animate-float-slow w-[400px] h-[400px] bg-[linear-gradient(135deg,#4e42c0_0%,#1a24af_100%)] top-[40%] right-[-10%] [animation-delay:-2s]"></div>
+        <div className="absolute z-0 blur-[40px] opacity-40 animate-float-slow w-[250px] h-[250px] bg-[#F472B6] bottom-[10%] left-[20%] [animation-delay:-5s]"></div>
+
+        <div className="fixed top-0 right-0 w-full max-w-[1200px] h-screen pointer-events-none z-0 overflow-hidden opacity-30 lg:w-[60%] lg:opacity-60">
+          <svg viewBox="0 0 820 920" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-50">
             <circle cx="690" cy="72" r="54" fill="rgba(200,210,240,0.6)" stroke="rgba(90,110,180,0.2)" strokeWidth="1.5" />
             <circle cx="690" cy="72" r="42" fill="rgba(210,220,245,0.5)" />
             <circle cx="690" cy="72" r="26" fill="rgba(220,230,250,0.4)" />
@@ -699,24 +210,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         </div>
 
         {/* TOPBAR */}
-        <nav>
-          <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#" className="nav-brand" onClick={() => {
+        <nav className="shrink-0 h-[64px] flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[56px]">
+          <div className="flex items-center gap-[32px]">
+            <a href="#" className="flex items-center gap-[10px] no-underline filter drop-shadow-[0_2px_8px_rgba(99,102,241,0.15)]" onClick={() => {
               setActiveTab('modules');
               sessionStorage.setItem('landingActiveTab', 'modules');
               sessionStorage.removeItem('myProjectsSelectedMode');
             }}>
-              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="brand-logo" />
+              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[42px] w-auto object-contain sm:h-[32px]" />
             </a>
-            <div className="nav-links">
-              <button className="nav-link" onClick={() => (window as any).showComingSoon('Tutorials')}>
+            <div className="hidden md:flex gap-6 ml-3 items-center">
+              <button className="bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06]" onClick={() => (window as any).showComingSoon('Tutorials')}>
                 Tutorials
               </button>
-              <button className="nav-link" onClick={() => (window as any).showComingSoon('Explore')}>
+              <button className="bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06]" onClick={() => (window as any).showComingSoon('Explore')}>
                 Explore
               </button>
               <button
-                className={`nav-link ${showProjects ? 'active' : ''}`}
+                className={`bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06] ${showProjects ? 'text-white bg-[#4f46e5] hover:text-white hover:bg-[#4f46e5]' : ''}`}
                 onClick={() => {
                   const target = showProjects ? 'modules' : 'my-projects';
                   setActiveTab(target);
@@ -727,21 +238,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </button>
             </div>
           </div>
-          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div className="flex items-center gap-6 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
             <LeapLabAuthButton variant="light" size="md" />
-            <div className="nav-separator" style={{ width: '1.5px', height: '24px', backgroundColor: 'rgba(15, 23, 42, 0.15)' }}></div>
-            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="nav-logo" style={{ height: 'clamp(40px, 5vw, 50px)' }} />
+            <div className="w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
+            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="h-[clamp(40px,5vw,50px)]" />
           </div>
-
         </nav>
 
         {/* Gradient Divider Line */}
-        <div className="topbar-gradient-line">
-          <div className="line-primary"></div>
-          <div className="line-secondary"></div>
+        <div className="w-full relative z-[150]">
+          <div className="h-[3px] w-full bg-[linear-gradient(90deg,#F97316_0%,#14B8A6_20%,#3B82F6_40%,#A855F7_60%,#22C55E_80%,#EC4899_100%)]"></div>
+          <div className="h-[2px] w-full bg-[linear-gradient(90deg,rgba(249,115,22,0.5),rgba(20,184,166,0.5),rgba(59,130,246,0.5),rgba(168,85,247,0.5),rgba(34,197,94,0.5),rgba(236,72,153,0.5))] opacity-60"></div>
         </div>
 
-        <div className="page">
+        <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">
 
           {activeTab === 'my-projects' && (
             <MyProjectsDashboard onOpenProject={(mode) => onSelect(mode)} />
@@ -750,20 +260,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {activeTab === 'modules' && (
             <>
               {/* HERO */}
-              <div className="hero-grid">
-                <div className="hero-left">
-                  <div className="hero-tagline">Curiosity · Creativity · Critical Thinking</div>
-                  <h1 className="hero-title">
-                    Learn to <span className="hw-code">code</span><br />
-                    the <span className="hw-bold">bold</span> way
+              <div className="grid grid-cols-[1.1fr_0.9fr] items-center w-full max-w-[1400px] mx-auto py-3 px-10 gap-10 flex-[1_1_0%] min-h-0 overflow-hidden max-[1024px]:grid-cols-1 max-[1024px]:text-center max-[1024px]:gap-6 max-[1024px]:p-6 max-[1024px]:h-auto max-[1024px]:flex-none max-[640px]:py-[30px] max-[640px]:px-4 max-[640px]:gap-[30px] max-[480px]:py-5 max-[480px]:px-3 max-[480px]:gap-5">
+                <div className="max-[1024px]:flex max-[1024px]:flex-col max-[1024px]:items-center">
+                  <div className="inline-block text-[10px] font-extrabold text-black uppercase tracking-[0.25em] mb-2 px-3 py-1 bg-[#BEF264] border-2 border-black shadow-[2px_2px_0px_#000] -rotate-1 max-[480px]:text-[10px] max-[480px]:px-2.5 max-[480px]:py-1 max-[480px]:mb-2 animate-hero-reveal">Curiosity - Creativity - Critical Thinking</div>
+                  <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[1.1] tracking-[-0.04em] mb-2.5 text-[#0F172A] max-[640px]:text-[2.5rem] max-[480px]:text-[2rem] animate-hero-reveal [animation-delay:0.1s]">
+                    Learn to <span className="text-transparent [-webkit-text-stroke:2px_#6366F1] [-webkit-text-fill-color:transparent] tracking-[-0.02em]">code</span><br />
+                    the <span className="italic text-transparent bg-[linear-gradient(135deg,#6366F1_0%,#7C3AED_50%,#8B5CF6_100%)] [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] bg-clip-text tracking-[0.02em] px-1">bold</span> way
                   </h1>
-                  <p className="hero-sub">
+                  <p className="text-[clamp(0.9rem,1.5vw,1.1rem)] text-[#0f172a] leading-[1.4] max-w-[600px] mb-3.5 relative z-10 opacity-85 max-[1024px]:mx-auto max-[1024px]:max-w-[90%] max-[640px]:text-md max-[640px]:max-w-full max-[640px]:p-0 max-[480px]:text-[0.9rem] max-[480px]:leading-[1.4] max-[480px]:mb-4 animate-hero-reveal [animation-delay:0.2s]">
                     Eight unique tracks from junior picture-blocks all the way to AI,
                     robotics, and machine vision. Pick your adventure.
                   </p>
-                  <div className="hero-btns">
+                  <div className="flex gap-4 flex-wrap max-[1024px]:justify-center max-[1024px]:w-full max-[1024px]:gap-4 max-[640px]:gap-3 max-[640px]:flex-col animate-hero-reveal [animation-delay:0.3s]">
                     <button
-                      className="btn-adventure"
+                      className="bg-[#100051] border-none text-white text-[0.95rem] font-semibold cursor-pointer font-inherit py-4 px-8 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_8px_12px_-3px_rgba(99,102,241,0.3)] hover:bg-[#4F46E5] hover:scale-[1.05] hover:rotate-2 hover:shadow-[0_16px_20px_-5px_rgba(99,102,241,0.4)] max-[640px]:w-full max-[640px]:py-3.5 max-[640px]:px-5 max-[640px]:text-md max-[480px]:py-3 max-[480px]:px-4 max-[480px]:text-[0.9rem]"
                       onClick={() => {
                         if (highlightCards) {
                            stopCardScan();
@@ -775,15 +285,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                     >
                       Choose your adventure
                     </button>
-                    <button className="btn-demo" onClick={() => (window as any).showComingSoon('Demo Video')}>Watch 2-min demo</button>
+                    <button className="bg-white border-2 border-black text-[#0F172A] text-[0.95rem] font-bold cursor-pointer font-inherit py-4 px-8 rounded-xl transition-all duration-200 shadow-[3px_3px_0px_#000] hover:bg-[#F8FAFC] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#000] max-[640px]:w-full max-[640px]:py-3.5 max-[640px]:px-5 max-[640px]:text-md max-[480px]:py-3 max-[480px]:px-4 max-[480px]:text-[0.9rem]" onClick={() => (window as any).showComingSoon('Demo Video')}>Watch 2-min demo</button>
                   </div>
                 </div>
 
                 {/* RIGHT: 3D Hero Scene */}
-                <div className="hero-right">
+                <div className="flex items-center justify-center relative w-full h-full min-h-0 max-h-full max-[1024px]:min-h-[280px] max-[1024px]:max-h-[360px] max-[768px]:min-h-[220px] max-[768px]:max-h-[280px] max-[480px]:min-h-[180px] max-[480px]:max-h-[220px] animate-hero-reveal [animation-delay:0.4s]">
+                  <div className="absolute w-[120%] h-[120%] bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_70%)] z-[-1] animate-float-glow pointer-events-none" />
                   <Suspense fallback={
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,0.15)', borderTopColor: '#6366F1', borderRadius: '50%', animation: 'hero3d-spin 0.8s linear infinite' }} />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-10 h-10 border-3 border-[rgba(99,102,241,0.15)] border-t-[#6366F1] rounded-full animate-hero3d-spin" />
                     </div>
                   }>
                     <Robot3DAnimation onSelect={onSelect} />
@@ -792,102 +303,102 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               </div>
 
               {/* 8 TRACK CARDS */}
-              <div className="cards-wrap">
-                <div className={`cards-row ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
+              <div className="w-full mx-auto py-[clamp(6px,0.8vw,12px)] px-[clamp(16px,2vw,28px)] pb-[clamp(4px,0.5vw,8px)] shrink-0 flex items-center justify-center max-[560px]:p-3 max-[560px]:px-4 max-[480px]:p-4 max-[480px]:px-3">
+                <div className={`grid grid-cols-8 gap-[clamp(8px,1vw,16px)] w-full max-w-[1400px] max-[1400px]:grid-cols-4 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1 max-[480px]:gap-2.5 ${highlightCards ? 'highlight-active' : ''} ${scanIndex >= 0 ? 'is-scanning' : ''}`}>
 
                   {/* 1 IGNITE */}
-                  <div className={`tc tc-ignite ${tcClass(0)}`} onClick={() => handleCardClick(() => onSelect('junior'))}>
-                    <div className="tc-icon">
-                      <img src="assets/ignite_icon.png" alt="Ignite Robot" />
+                  <div className={getCardClasses(0, 'bg-[linear-gradient(155deg,#ffffff_0%,#fff0e5_60%,#fce5d4_100%)] border-b-4 border-b-[#F97316] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15),0_0_0_1px_rgba(249,115,22,0.1)]')} onClick={() => handleCardClick(() => onSelect('junior'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/ignite_icon.png" alt="Ignite Robot" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Ignite</div>
-                      <div className="tc-desc">leap & block coding</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Ignite</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">leap & block coding</div>
                     </div>
                   </div>
 
                   {/* 2 EMBED */}
-                  <div className={`tc tc-embed ${tcClass(1)}`} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
-                    <div className="tc-icon">
-                      <img src="assets/arduino_icon.png" alt="Circuit Icon" />
+                  <div className={getCardClasses(1, 'bg-[linear-gradient(155deg,#ffffff_0%,#e5f2f5_60%,#d5f2f7_100%)] border-b-4 border-b-[#59aaa4ff] hover:shadow-[0_20px_40px_rgba(15,118,109,0.15),0_0_0_1px_rgba(15,118,110,0.1)]')} onClick={() => handleCardClick(() => onSelect('intermediate'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/arduino_icon.png" alt="Circuit Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Embed</div>
-                      <div className="tc-desc">Block Coding, Arduino & Embedded Systems</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Embed</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Block Coding, Arduino & Embedded Systems</div>
                     </div>
                   </div>
 
                   {/* 3 Logix */}
-                  <div className={`tc tc-Logix ${tcClass(2)}`} onClick={() => handleCardClick(() => onSelect('python'))}>
-                    <div className="tc-icon">
-                      <img src="assets/python_icon.png" alt="Logix Icon" />
+                  <div className={getCardClasses(2, 'bg-[linear-gradient(155deg,#ffffff_0%,#ebf0fd_60%,#ccdafa_100%)] border-b-4 border-b-[#3B82F6] hover:shadow-[0_20px_40px_rgba(59,130,246,0.15),0_0_0_1px_rgba(59,130,246,0.1)]')} onClick={() => handleCardClick(() => onSelect('python'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/python_icon.png" alt="Logix Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Logix</div>
-                      <div className="tc-desc">Python Programming</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Logix</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Python Programming</div>
                     </div>
                   </div>
 
                   {/* 4 NEURA */}
-                  <div className={`tc tc-neura ${tcClass(3)}`} onClick={() => handleCardClick(() => onSelect('neura'))}>
-                    <div className="tc-icon">
-                      <img src="assets/ml_brain_icon.png" alt="Neura Icon" />
+                  <div className={getCardClasses(3, 'bg-[linear-gradient(155deg,#ffffff_0%,#f0ecfd_60%,#ddd0fb_100%)] border-b-4 border-b-[#7C3AED] hover:shadow-[0_20px_40px_rgba(124,58,237,0.15),0_0_0_1px_rgba(124,58,237,0.1)]')} onClick={() => handleCardClick(() => onSelect('neura'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/ml_brain_icon.png" alt="Neura Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Neura</div>
-                      <div className="tc-desc">AI Logic & Advanced Block Programming</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Neura</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">AI Logic & Advanced Block Programming</div>
                     </div>
                   </div>
 
                   {/* 5 ELECTRA */}
-                  <div className={`tc tc-electra ${tcClass(4)}`} onClick={() => handleCardClick(() => onSelect('electra'))}>
-                    <div className="tc-icon">
-                      <img src="assets/creocad_icon.png" alt="Forge Icon" />
+                  <div className={getCardClasses(4, 'bg-[linear-gradient(155deg,#ffffff_0%,#eaf8ed_60%,#d6f7df_100%)] border-b-4 border-b-[#22C55E] hover:shadow-[0_20px_40px_rgba(34,197,94,0.15),0_0_0_1px_rgba(34,197,94,0.1)]')} onClick={() => handleCardClick(() => onSelect('electra'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/creocad_icon.png" alt="Forge Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Electra</div>
-                      <div className="tc-desc">Circuit Design & Simulation</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Electra</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Circuit Design & Simulation</div>
                     </div>
                   </div>
 
                   {/* 6 VISION3D */}
-                  <div className={`tc tc-vision3d ${tcClass(5)}`} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
-                    <div className="tc-icon">
-                      <img src="assets/vision3d_icon.png" alt="Vision3D Icon" />
+                  <div className={getCardClasses(5, 'bg-[linear-gradient(155deg,#ffffff_0%,#e5f6f8_60%,#d2f6fa_100%)] border-b-4 border-b-[#06B6D4] hover:shadow-[0_20px_40px_rgba(6,182,212,0.15),0_0_0_1px_rgba(6,182,212,0.1)]')} onClick={() => handleCardClick(() => onSelect('vision3d'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/vision3d_icon.png" alt="Vision3D Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Vision3D</div>
-                      <div className="tc-desc">3D Design & Modeling </div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Vision3D</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">3D Design & Modeling </div>
                     </div>
                   </div>
 
                   {/* 7 CREOVA */}
-                  <div className={`tc tc-creova ${tcClass(6)}`} onClick={() => handleCardClick(() => onSelect('creova'))}>
-                    <div className="tc-icon">
-                      <img src="assets/app_game_dev_icon.png" alt="Creova Icon" />
+                  <div className={getCardClasses(6, 'bg-[linear-gradient(155deg,#ffffff_0%,#fbedf4_60%,#fae1ee_100%)] border-b-4 border-b-[#EC4899] hover:shadow-[0_20px_40px_rgba(236,72,153,0.15),0_0_0_1px_rgba(236,72,153,0.1)]')} onClick={() => handleCardClick(() => onSelect('creova'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/app_game_dev_icon.png" alt="Creova Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Creova</div>
-                      <div className="tc-desc">App & Game Development</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Creova</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">App & Game Development</div>
                     </div>
                   </div>
 
                   {/* 8 PULSE */}
-                  <div className={`tc tc-pulse ${tcClass(7)}`} onClick={() => handleCardClick(() => onSelect('pulse'))}>
-                    <div className="tc-icon">
-                      <img src="assets/quiz_icon.png" alt="Quiz Icon" />
+                  <div className={getCardClasses(7, 'bg-[linear-gradient(155deg,#ffffff_0%,#eafcf1_60%,#c7fade_100%)] border-b-4 border-b-[#10B981] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15),0_0_0_1px_rgba(16,185,129,0.1)]')} onClick={() => handleCardClick(() => onSelect('pulse'))}>
+                    <div className="flex items-center justify-center mb-2.5 h-[clamp(50px,6vw,80px)] max-[560px]:mb-0 max-[560px]:h-[50px] max-[560px]:w-[50px] max-[560px]:flex-[0_0_50px]">
+                      <img src="assets/quiz_icon.png" alt="Quiz Icon" className="h-full w-auto object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.1))] [transition:transform_0.4s_cubic-bezier(0.34,1.56,0.64,1),filter_0.4s_ease] max-[560px]:w-full group-hover:scale-[1.08] group-hover:-translate-y-1 group-hover:[filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.15))]" />
                     </div>
                     <div>
-                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="tc-cat-logo" />
-                      <div className="tc-name">Pulse</div>
-                      <div className="tc-desc">Assessment & Quiz Creation</div>
+                      <img src="assets/splash_logo_b.png" alt="Leaplab" className="h-[clamp(10px,1vw,14px)] w-auto object-contain mb-1 opacity-75 block" />
+                      <div className="text-[clamp(13px,1.2vw,16px)] font-extrabold tracking-[0.01em] uppercase text-[#281746] mb-1 leading-[1.1] max-[480px]:text-[14px]">Pulse</div>
+                      <div className="text-[clamp(10px,1vw,12px)] text-[#020046b1] leading-[1.3] font-medium line-clamp-2 overflow-hidden max-[480px]:text-[11px]">Assessment & Quiz Creation</div>
                     </div>
                   </div>
 
@@ -898,54 +409,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
           {/* FOOTER */}
           {activeTab === 'modules' && (
-            <footer style={{
-              position: 'relative',
-              width: '100%',
-              textAlign: 'center',
-              padding: '24px 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              flexShrink: 0,
-              zIndex: 10,
-              marginTop: 'auto',
-              borderTop: '1px solid rgba(0, 0, 0, 0.05)',
-              background: 'rgba(248, 250, 252, 0.5)',
-              backdropFilter: 'blur(8px)'
-            }}>
+            <footer className="relative w-full text-center py-6 px-6 flex items-center justify-center gap-2 shrink-0 z-10 mt-auto border-t border-[rgba(0,0,0,0.05)] bg-[rgba(248,250,252,0.5)] backdrop-blur-[8px]">
               {/* Ambient glow dot */}
-              <span style={{
-                display: 'inline-block',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, #6366f1, #a855f7)',
-                boxShadow: '0 0 8px 2px rgba(99,102,241,0.5)',
-                flexShrink: 0,
-              }} />
-              <span style={{
-                fontSize: 'clamp(0.7rem, 1.2vw, 0.85rem)',
-                fontFamily: '"Poppins", sans-serif',
-                fontWeight: 500,
-                letterSpacing: '0.04em',
-                background: 'linear-gradient(90deg, #0a015a 0%, #6366f1 50%, #a855f7 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[radial-gradient(circle,#6366f1,#a855f7)] shadow-[0_0_8px_2px_rgba(99,102,241,0.5)] shrink-0" />
+              <span className="text-[clamp(0.7rem,1.2vw,0.85rem)] font-['Poppins',sans-serif] font-medium tracking-[0.04em] bg-[linear-gradient(90deg,#0a015a_0%,#6366f1_50%,#a855f7_100%)] [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] bg-clip-text">
                 LeapLab v1.0 &copy; 2026 Creoleap Technologies Pvt. Ltd. — All rights reserved.
               </span>
               {/* Ambient glow dot */}
-              <span style={{
-                display: 'inline-block',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, #a855f7, #6366f1)',
-                boxShadow: '0 0 8px 2px rgba(168,85,247,0.5)',
-                flexShrink: 0,
-              }} />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[radial-gradient(circle,#a855f7,#6366f1)] shadow-[0_0_8px_2px_rgba(168,85,247,0.5)] shrink-0" />
             </footer>
           )}
 
@@ -953,30 +424,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
         {/* Toast notification */}
         {toast.visible && (
-          <div style={{
-            position: 'fixed',
-            bottom: 32,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '14px 20px',
-            borderRadius: 18,
-            background: 'rgba(15,23,42,0.94)',
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 700,
-            fontFamily: '"Poppins", sans-serif',
-            boxShadow: '0 18px 34px rgba(15,23,42,0.22)',
-            animation: 'lp-toast-in .3s ease-out',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <span style={{
-              width: 10, height: 10, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #f59e0b, #38bdf8)',
-              boxShadow: '0 0 14px rgba(56,189,248,0.45)',
-            }} />
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 py-3.5 px-5 rounded-[18px] bg-[rgba(15,23,42,0.94)] text-white text-[13px] font-bold font-['Poppins',sans-serif] shadow-[0_18px_34px_rgba(15,23,42,0.22)] animate-lp-toast-in z-[1000] flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[linear-gradient(135deg,#f59e0b,#38bdf8)] shadow-[0_0_14px_rgba(56,189,248,0.45)]" />
             {toast.message}
           </div>
         )}
