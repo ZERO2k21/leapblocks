@@ -6,6 +6,7 @@ import { useNeuraProject } from '../hooks/useNeuraProject'
 import { fileService } from '../../Electra/Client/Src/services/FileService'
 import ClassCard from './components/ClassCard'
 import DiscardConfirmModal from './components/DiscardConfirmModal'
+import { useCloudProjectStore } from '../../store/cloudProjectStore'
 
 interface ProjectWorkspaceProps {
     type: ProjectType
@@ -138,6 +139,26 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             localStorage.removeItem(`neura-project-${type}`)
         }
     }, [hasUnsavedWork, mode, type])
+
+    useEffect(() => {
+        const { pendingProject, clearPendingProject } = useCloudProjectStore.getState()
+        if (pendingProject && pendingProject.mode === 'neura') {
+            const data = pendingProject.data
+            clearPendingProject()
+            const projectData: NeuraProject = {
+                id: data.id || Date.now().toString(36),
+                type: data.type || type || 'image-classifier',
+                name: data.projectName || data.name || 'Cloud Project',
+                classes: data.classes || [],
+                createdAt: data.createdAt || data.timestamp || Date.now(),
+                updatedAt: data.updatedAt || Date.now(),
+                modelTrained: data.modelTrained || false,
+                accuracy: data.accuracy,
+                projectData: data.projectData
+            }
+            mode.loadProject(projectData)
+        }
+    }, [mode, type])
 
     const handleHomeClick = useCallback(() => {
         if (hasUnsavedWork) {

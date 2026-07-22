@@ -8,6 +8,7 @@
 import React, { useState, useCallback, lazy, Suspense } from 'react'
 import type { ProjectType } from './types/neura.types'
 import Loader from '../components/Loader'
+import { useCloudProjectStore } from '../store/cloudProjectStore'
 
 const NeuraHome = lazy(() => import('./ui/NeuraHome'))
 const ProjectWorkspace = lazy(() => import('./ui/ProjectWorkspace'))
@@ -56,6 +57,15 @@ function getClassifierPanel(type: ProjectType) {
 
 export default function NeuraApp({ onBack }: NeuraAppProps) {
     const [view, setView] = useState<ViewState>({ screen: 'home' })
+
+    React.useEffect(() => {
+        const { pendingProject } = useCloudProjectStore.getState()
+        if (pendingProject && pendingProject.mode === 'neura') {
+            const data = pendingProject.data
+            const projectType: ProjectType = data.type || 'image-classifier'
+            setView({ screen: 'workspace', type: projectType })
+        }
+    }, [])
 
     const handleSelectType = (type: ProjectType, template?: { name: string; classes: string[] }) => {
         setView({ screen: 'workspace', type, template })

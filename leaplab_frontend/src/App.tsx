@@ -300,17 +300,24 @@ export default function App() {
                 const isElectraPayload = data.mode === 'electra' ||
                     (hasElectraCircuit && hasElectraBoard);
 
-                const VALID_MODES: AppMode[] = ['junior', 'intermediate', 'python', 'creova', 'electra', 'neura', 'vision3d'];
+                const normalizeMode = (m?: string | null): AppMode | null => {
+                    if (!m) return null;
+                    if (m === 'blocks' || m === 'intermediate') return 'intermediate';
+                    if (m === 'ignite' || m === 'junior') return 'junior';
+                    if (m === 'logix' || m === 'python') return 'python';
+                    if (m === 'appforge' || m === 'app_game_dev' || m === 'electra') return 'electra';
+                    if (m === 'creova') return 'creova';
+                    if (m === 'neura') return 'neura';
+                    if (m === 'vision3d') return 'vision3d';
+                    if (m === 'pulse') return 'pulse';
+                    if (m === 'notebook') return 'notebook';
+                    return null;
+                };
+
                 const detectedMode: AppMode =
-                    (urlMode && VALID_MODES.includes(urlMode as any))
-                        ? (urlMode as AppMode)
-                        : data.mode === 'junior' ? 'junior' :
-                          data.mode === 'python' ? 'python' :
-                          data.mode === 'creova' ? 'creova' :
-                          data.mode === 'neura' ? 'neura' :
-                          data.mode === 'vision3d' ? 'vision3d' :
-                          isElectraPayload ? 'electra' :
-                          'intermediate';
+                    normalizeMode(urlMode) ||
+                    normalizeMode(data.mode) ||
+                    (isElectraPayload ? 'electra' : 'intermediate');
 
                 useCloudProjectStore.getState().setPendingProject({
                     mode: detectedMode,
@@ -479,14 +486,14 @@ export default function App() {
                         projectUrl={resolvedProjectUrl}
                     />}
                     {projectUrlReady && mode === 'junior' && <JuniorApp key={juniorKey} onBack={requestExit} projectUrl={resolvedProjectUrl} />}
-                    {mode === 'python' && <PythonApp
+                    {projectUrlReady && mode === 'python' && <PythonApp
                         onBack={requestExit}
                         onSwitchToNotebook={() => requestSwitch('python', 'notebook')}
                         onSwitchToBlocks={() => requestSwitch('python', 'intermediate', 'blocks')}
                         onSwitchToCostumes={() => requestSwitch('python', 'intermediate', 'costumes')}
                     />}
-                    {mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
-                    {mode === 'creova' && <AppInventor
+                    {projectUrlReady && mode === 'notebook' && <PythonNotebook onBack={requestExit} onSwitchToIDE={() => handleSetMode('python')} />}
+                    {projectUrlReady && mode === 'creova' && <AppInventor
                         onBack={requestExit}
                         onRedirectToElectra={handleRedirectToElectra}
                         redirectProjectData={redirectProjectData?.type === 'creova' ? redirectProjectData : null}
@@ -506,10 +513,10 @@ export default function App() {
                         redirectProjectData={redirectProjectData?.type === 'electra' ? redirectProjectData : null}
                         clearRedirectProjectData={clearRedirectProjectData}
                     />}
-                    {mode === 'neura' && <NeuraApp onBack={requestExit} />}
-                    {mode === 'vision3d' && <Leap3DApp onBack={requestExit} />}
-                    {mode === 'pulse' && <PulseApp onBack={requestExit} />}
-                    {mode === 'home' && <LandingPage onSelect={handleSetMode} />}
+                    {projectUrlReady && mode === 'neura' && <NeuraApp onBack={requestExit} />}
+                    {projectUrlReady && mode === 'vision3d' && <Leap3DApp onBack={requestExit} />}
+                    {projectUrlReady && mode === 'pulse' && <PulseApp onBack={requestExit} />}
+                    {projectUrlReady && mode === 'home' && <LandingPage onSelect={handleSetMode} />}
                 </Suspense>
 
 
