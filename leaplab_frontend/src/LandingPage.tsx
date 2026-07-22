@@ -312,7 +312,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           {activeTab === 'modules' && (
             <>
               {/* HERO */}
-              <div className="grid grid-cols-[1.1fr_0.9fr] items-center w-full max-w-[1400px] mx-auto py-3 px-10 gap-10 flex-[1_1_0%] min-h-0 overflow-hidden max-[1024px]:grid-cols-1 max-[1024px]:text-center max-[1024px]:gap-6 max-[1024px]:p-6 max-[1024px]:h-auto max-[1024px]:flex-none max-[640px]:py-[30px] max-[640px]:px-4 max-[640px]:gap-[30px] max-[480px]:py-5 max-[480px]:px-3 max-[480px]:gap-5">
+              <div className="grid grid-cols-[1.1fr_0.9fr] items-center w-full max-w-[1400px] mx-auto py-3 px-10 gap-10 flex-none min-h-[clamp(200px,35vh,480px)] max-[1024px]:grid-cols-1 max-[1024px]:text-center max-[1024px]:gap-6 max-[1024px]:p-6 max-[1024px]:min-h-0 max-[1024px]:flex-none max-[640px]:py-[30px] max-[640px]:px-4 max-[640px]:gap-[30px] max-[480px]:py-5 max-[480px]:px-3 max-[480px]:gap-5">
                 <div className="max-[1024px]:flex max-[1024px]:flex-col max-[1024px]:items-center">
                   <div className="inline-block text-[10px] font-extrabold text-black uppercase tracking-[0.25em] mb-2 px-3 py-1 bg-[#BEF264] border-2 border-black shadow-[2px_2px_0px_#000] -rotate-1 max-[480px]:text-[10px] max-[480px]:px-2.5 max-[480px]:py-1 max-[480px]:mb-2 animate-hero-reveal">Curiosity - Creativity - Critical Thinking</div>
                   <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[1.1] tracking-[-0.04em] mb-2.5 text-[#0F172A] max-[640px]:text-[2.5rem] max-[480px]:text-[2rem] animate-hero-reveal [animation-delay:0.1s]">
