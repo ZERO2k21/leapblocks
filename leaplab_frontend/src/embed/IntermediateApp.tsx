@@ -1360,6 +1360,33 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     }, [editorMode, projectUrl]);
 
+    // Handle cloud store pendingProject or direct projectUrl loading into IntermediateApp
+    useEffect(() => {
+        const { pendingProject, clearPendingProject } = useCloudProjectStore.getState();
+        if (pendingProject && (pendingProject.mode === 'intermediate' || pendingProject.mode === 'blocks')) {
+            const data = pendingProject.data;
+            clearPendingProject();
+            loadProjectFromData(data, 'Cloud Project');
+            return;
+        }
+
+        if (projectUrl && loadedProjectUrlRef.current !== projectUrl) {
+            loadedProjectUrlRef.current = projectUrl;
+            (async () => {
+                try {
+                    addLog('Fetching project from URL...');
+                    const resp = await fetch(projectUrl);
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const data = await resp.json();
+                    loadProjectFromData(data, 'URL Project');
+                } catch (err: any) {
+                    console.error('[IntermediateApp] Failed to load projectUrl:', err);
+                    addLog(`Failed to load project: ${err.message}`);
+                }
+            })();
+        }
+    }, [projectUrl, loadProjectFromData, addLog]);
+
 
 
     // Define sound, costume, and backdrop helpers for Blockly

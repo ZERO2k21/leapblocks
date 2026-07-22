@@ -137,7 +137,8 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const projectUrl = params.get('project') || params.get('projectUrl') || null;
     const shareId = params.get('share') || null;
-    const isElectraMode = params.get('mode') === 'electra';
+    const urlMode = params.get('mode') as AppMode | null;
+    const isElectraMode = urlMode === 'electra';
 
     const [mode, setMode] = useState<AppMode>(isElectraMode ? 'electra' : 'home');
     const [projectUrlReady, setProjectUrlReady] = useState(false);
@@ -299,18 +300,23 @@ export default function App() {
                 const isElectraPayload = data.mode === 'electra' ||
                     (hasElectraCircuit && hasElectraBoard);
 
+                const VALID_MODES: AppMode[] = ['junior', 'intermediate', 'python', 'creova', 'electra', 'neura', 'vision3d'];
                 const detectedMode: AppMode =
-                    data.mode === 'junior' ? 'junior' :
-                    isElectraPayload ? 'electra' :
-                    'intermediate';
+                    (urlMode && VALID_MODES.includes(urlMode as any))
+                        ? (urlMode as AppMode)
+                        : data.mode === 'junior' ? 'junior' :
+                          data.mode === 'python' ? 'python' :
+                          data.mode === 'creova' ? 'creova' :
+                          data.mode === 'neura' ? 'neura' :
+                          data.mode === 'vision3d' ? 'vision3d' :
+                          isElectraPayload ? 'electra' :
+                          'intermediate';
 
-                if (detectedMode === 'electra') {
-                    useCloudProjectStore.getState().setPendingProject({
-                        mode: 'electra',
-                        data,
-                        projectName: data.projectName || 'Untitled Project',
-                    });
-                }
+                useCloudProjectStore.getState().setPendingProject({
+                    mode: detectedMode,
+                    data,
+                    projectName: data.projectName || data.name || 'Untitled Project',
+                });
 
                 setMode(detectedMode);
             } catch (err) {
@@ -321,7 +327,7 @@ export default function App() {
                 setProjectUrlReady(true);
             }
         })();
-    }, [projectUrl]);
+    }, [projectUrl, urlMode]);
 
     // When ?share=<shareId> is present, fetch the shared project and route to the correct module
     React.useEffect(() => {
