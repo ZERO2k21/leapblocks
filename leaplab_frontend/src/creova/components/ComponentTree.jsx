@@ -8,7 +8,7 @@ import ComponentIcon from './ComponentIcon';
 
 /**
  * ComponentTree - Displays hierarchical tree of components on current screen
- * Inspired by Leap App Inventor's component hierarchy panel
+ * Sleek, professional sidebar tree UI inspired by Xcode / VS Code / Framer
  */
 const ARRANGEMENT_TYPES = new Set([
     'HorizontalArrangement',
@@ -46,19 +46,29 @@ const findComponentById = (id, list) => {
     return null;
 };
 
+const countComponents = (components) => {
+    if (!components) return 0;
+    let count = components.length;
+    for (const comp of components) {
+        if (comp.children?.length) {
+            count += countComponents(comp.children);
+        }
+    }
+    return count;
+};
+
 export default function ComponentTree({ appState }) {
     const { currentScreen, selectedComponent, selectComponent, deleteComponent, renameComponent, moveComponent } = appState;
     const [expandedNodes, setExpandedNodes] = useState(new Set(['Screen1']));
     const [renamingId, setRenamingId] = useState(null);
     const [renameValue, setRenameValue] = useState('');
-    const [contextMenu, setContextMenu] = useState(null);
     const [dragOverId, setDragOverId] = useState(null);
     const [draggedComponentId, setDraggedComponentId] = useState(null);
     const [dropPosition, setDropPosition] = useState(null);
 
     if (!currentScreen) {
         return (
-            <div className="p-4 text-center text-slate-900 text-sm font-bold">
+            <div className="p-4 text-center text-slate-500 text-xs font-semibold">
                 No screen selected
             </div>
         );
@@ -170,11 +180,6 @@ export default function ComponentTree({ appState }) {
         setExpandedNodes(newExpanded);
     };
 
-    const handleRename = (component) => {
-        setRenamingId(component.id);
-        setRenameValue(component.id);
-    };
-
     const handleRenameSubmit = (oldId) => {
         if (renameValue && renameValue !== oldId) {
             renameComponent(oldId, renameValue);
@@ -183,22 +188,8 @@ export default function ComponentTree({ appState }) {
         setRenameValue('');
     };
 
-    const handleContextMenu = (e, component) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            component
-        });
-    };
-
-    const handleDelete = (component) => {
-        if (window.confirm(`Delete ${component.id}?`)) {
-            deleteComponent(component.id);
-        }
-        setContextMenu(null);
-    };
+    const totalCount = (currentScreen.components ? countComponents(currentScreen.components) : 0) +
+        (currentScreen.nonVisibleComponents ? currentScreen.nonVisibleComponents.length : 0);
 
     const renderComponent = (component, depth = 0) => {
         const isExpanded = expandedNodes.has(component.id);
@@ -213,20 +204,28 @@ export default function ComponentTree({ appState }) {
         const showInsideIndicator = isDragOver && dropPosition === 'inside';
 
         return (
-            <div key={component.id}>
+            <div key={component.id} className="relative">
+                {/* Minimal Hierarchy Guide Line */}
+                {depth > 0 && (
+                    <div
+                        className="absolute top-0 bottom-0 border-l border-slate-200/70 pointer-events-none"
+                        style={{ left: `${(depth - 1) * 14 + 14}px` }}
+                    />
+                )}
+
                 <div
-                    className={`relative flex items-center py-2 px-3 rounded-xl cursor-pointer mx-2 mb-0.5 transition-all ${isSelfDragged
-                        ? 'opacity-40'
-                        : isDragOver && dropPosition === 'inside'
-                            ? 'bg-purple-100 text-purple-700 shadow-sm ring-2 ring-purple-300'
+                    className={`group relative flex items-center h-8 px-2 my-0.5 rounded-lg cursor-pointer transition-colors duration-100 select-none gap-1.5 ${isSelfDragged
+                        ? 'opacity-30'
+                        : showInsideIndicator
+                            ? 'bg-purple-100 text-purple-900 ring-2 ring-purple-400 ring-inset'
                             : isSelected
-                                ? 'bg-purple-50 text-purple-700 shadow-sm'
-                                : 'text-slate-700 hover:bg-slate-50'
+                                ? 'bg-purple-100/90 text-purple-950 font-semibold shadow-2xs border border-purple-200/80'
+                                : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 border border-transparent'
                         }`}
                     style={{
-                        marginLeft: `${depth * 14}px`,
-                        ...(showTopIndicator ? { borderTop: '2px solid #7c3aed' } : {}),
-                        ...(showBottomIndicator ? { borderBottom: '2px solid #7c3aed' } : {}),
+                        paddingLeft: `${depth * 14 + 6}px`,
+                        ...(showTopIndicator ? { borderTop: '2px solid #8b5cf6' } : {}),
+                        ...(showBottomIndicator ? { borderBottom: '2px solid #8b5cf6' } : {}),
                     }}
                     onClick={() => selectComponent(component.id)}
                     draggable
@@ -250,33 +249,41 @@ export default function ComponentTree({ appState }) {
                     }}
                     onDrop={(e) => handleDrop(e, component.id)}
                 >
-                    {/* Expand/Collapse Arrow */}
+                    {/* Expand/Collapse Chevron */}
                     {hasChildren ? (
                         <button
-                            className="w-5 h-5 flex items-center justify-center mr-1 rounded-md hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
+                            className="w-4 h-4 flex items-center justify-center rounded text-slate-400 hover:text-purple-600 hover:bg-slate-200/60 transition-colors shrink-0"
                             onClick={(e) => { e.stopPropagation(); toggleExpand(component.id); }}
-                            style={{ fontSize: '9px' }}
                         >
-                            {isExpanded ? '▼' : '▶'}
+                            <svg
+                                width="9"
+                                height="9"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`transition-transform duration-150 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}
+                            >
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
                         </button>
                     ) : (
-                        <span className="w-5 mr-1 flex items-center justify-center">
-                            <span className="w-1.5 h-[2px] bg-slate-300 rounded-full" />
+                        <span className="w-4 flex items-center justify-center shrink-0">
+                            <span className="w-1 h-1 bg-slate-300 group-hover:bg-purple-400 rounded-full transition-colors" />
                         </span>
                     )}
 
                     {/* Component Icon */}
-                    <div style={{
-                        width: '24px', height: '24px', borderRadius: '6px',
-                        background: isSelected ? 'linear-gradient(135deg, #ede9fe, #f5f3ff)' : 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginRight: '8px', flexShrink: 0,
-                        border: `1px solid ${isSelected ? '#e9e5f5' : '#e2e8f0'}`
-                    }}>
-                        <ComponentIcon type={component.type} size={14} />
+                    <div className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${isSelected
+                        ? 'bg-purple-600 text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200/70 group-hover:border-purple-200 group-hover:text-purple-600'
+                        }`}>
+                        <ComponentIcon type={component.type} size={13} />
                     </div>
 
-                    {/* Component Name */}
+                    {/* Component Name & Type Tag */}
                     {isRenaming ? (
                         <input
                             type="text"
@@ -288,13 +295,17 @@ export default function ComponentTree({ appState }) {
                                 if (e.key === 'Escape') { setRenamingId(null); setRenameValue(''); }
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-2 py-0.5 text-[12px] border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200"
+                            className="flex-1 px-1.5 py-0.5 text-[11.5px] font-semibold border border-purple-400 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-300 bg-white text-slate-800"
                             autoFocus
                         />
                     ) : (
-                        <div className="flex-1 min-w-0">
-                            <span className="text-[12.5px] font-semibold block truncate">{component.id}</span>
-                            <span className="text-[10px] text-slate-400 font-medium block truncate mt-0.5 uppercase tracking-wider">
+                        <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 overflow-hidden">
+                            <span className={`text-[12px] truncate transition-colors ${isSelected ? 'font-bold text-purple-950' : 'font-medium text-slate-700 group-hover:text-slate-900'
+                                }`}>
+                                {component.id}
+                            </span>
+                            <span className={`text-[9px] font-semibold uppercase tracking-wide shrink-0 transition-colors ${isSelected ? 'text-purple-700 font-bold' : 'text-slate-400 group-hover:text-purple-600'
+                                }`}>
                                 {component.type}
                             </span>
                         </div>
@@ -303,7 +314,7 @@ export default function ComponentTree({ appState }) {
 
                 {/* Render Children */}
                 {hasChildren && isExpanded && (
-                    <div>
+                    <div className="relative">
                         {component.children.map((child) => renderComponent(child, depth + 1))}
                     </div>
                 )}
@@ -312,17 +323,19 @@ export default function ComponentTree({ appState }) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white overflow-hidden">
-            {/* Standardized Header */}
-            <div
-                style={{ paddingTop: '16px', paddingBottom: '20px', paddingLeft: '20px', paddingRight: '20px' }}
-                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
-            >
-                <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Components</span>
+        <div className="flex flex-col h-full bg-white overflow-hidden font-sans border-r border-slate-200/80">
+            {/* Header */}
+            <div className="h-10 px-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between shrink-0">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                    Components
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600 text-[10px] font-bold">
+                    {totalCount}
+                </span>
             </div>
 
             <div
-                className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body"
+                className="flex-1 overflow-y-auto overflow-x-hidden p-1.5 leap-panel-body"
                 onDragOver={(e) => {
                     e.preventDefault();
                 }}
@@ -331,17 +344,13 @@ export default function ComponentTree({ appState }) {
                 }}
                 onDrop={(e) => handleDrop(e, currentScreen.id)}
             >
-                {/* Screen Node */}
+                {/* Screen Root Node */}
                 <div
-                    style={{
-                        paddingLeft: '20px', paddingRight: '16px', paddingTop: '20px', paddingBottom: '12px',
-                        ...(dragOverId === currentScreen.id && dropPosition === 'inside' ? { borderBottom: '2px solid #7c3aed' } : {})
-                    }}
-                    className={`relative flex items-center py-3 border-b cursor-pointer sticky top-0 z-10 backdrop-blur-md transition-all ${dragOverId === currentScreen.id && dropPosition === 'inside'
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
+                    className={`group relative flex items-center h-8.5 px-2 my-0.5 rounded-lg cursor-pointer transition-colors duration-100 select-none gap-2 ${dragOverId === currentScreen.id && dropPosition === 'inside'
+                        ? 'bg-purple-100 text-purple-900 ring-2 ring-purple-400 ring-inset'
                         : selectedComponent?.id === currentScreen.id
-                            ? 'border-purple-200 bg-purple-50/80 text-purple-700'
-                            : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'
+                            ? 'bg-purple-600 text-white font-bold shadow-xs'
+                            : 'bg-slate-100/90 text-slate-800 hover:bg-slate-200/70'
                         }`}
                     onClick={() => selectComponent(currentScreen.id)}
                     onDragOver={(e) => {
@@ -358,61 +367,69 @@ export default function ComponentTree({ appState }) {
                     onDrop={(e) => handleDrop(e, currentScreen.id)}
                 >
                     <button
-                        className="w-6 h-6 flex items-center justify-center mr-2 rounded-md hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
+                        className={`w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 ${selectedComponent?.id === currentScreen.id
+                            ? 'text-white/80 hover:text-white'
+                            : 'text-slate-400 hover:text-slate-600'
+                            }`}
                         onClick={(e) => { e.stopPropagation(); toggleExpand(currentScreen.id); }}
-                        style={{ fontSize: '9px' }}
                     >
-                        {expandedNodes.has(currentScreen.id) ? '▼' : '▶'}
+                        <svg
+                            width="9"
+                            height="9"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform duration-150 ${expandedNodes.has(currentScreen.id) ? 'rotate-90' : 'rotate-0'}`}
+                        >
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
                     </button>
-                    <div style={{
-                        width: '28px', height: '28px', borderRadius: '8px',
-                        background: 'linear-gradient(135deg, #ede9fe, #f5f3ff)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginRight: '10px', flexShrink: 0, border: '1px solid #e9e5f5'
-                    }}>
-                        <ComponentIcon type="Screen" size={16} />
+
+                    <div className={`w-5.5 h-5.5 rounded-md flex items-center justify-center shrink-0 ${selectedComponent?.id === currentScreen.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-purple-100 text-purple-600'
+                        }`}>
+                        <ComponentIcon type="Screen" size={13} />
                     </div>
-                    <span className="text-[13px] font-bold truncate">{currentScreen.id}</span>
+
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-1 overflow-hidden">
+                        <span className="text-[12.5px] font-bold truncate">{currentScreen.id}</span>
+                        <span className={`text-[9px] font-bold uppercase tracking-wide shrink-0 ${selectedComponent?.id === currentScreen.id
+                            ? 'text-white/90'
+                            : 'text-purple-600'
+                            }`}>
+                            Screen
+                        </span>
+                    </div>
                 </div>
 
-                {/* Visible Components */}
+                {/* Visible Components Tree */}
                 {expandedNodes.has(currentScreen.id) && (
-                    <div className="py-2">
+                    <div className="py-0.5">
                         {currentScreen.components && currentScreen.components.length > 0 ? (
                             currentScreen.components.map((comp) => renderComponent(comp, 0))
                         ) : (
-                            <div style={{ paddingLeft: '32px', paddingRight: '32px', paddingTop: '48px', paddingBottom: '48px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
-                                <div style={{
-                                    width: '48px', height: '48px', borderRadius: '14px',
-                                    background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto 12px', border: '1px solid #e2e8f0'
-                                }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                                        <path d="M12 8v8M8 12h8" />
-                                    </svg>
-                                </div>
-                                <p className="text-[11px] font-bold text-slate-500">No Components Yet</p>
-                                <p className="text-[10px] text-slate-400 mt-1">Drag from the palette</p>
+                            <div className="py-8 px-4 text-center flex flex-col items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-200 my-2">
+                                <p className="text-[11.5px] font-semibold text-slate-500">No components added</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Drag items from palette</p>
                             </div>
                         )}
 
                         {/* Non-Visible Components Section */}
                         {currentScreen.nonVisibleComponents && currentScreen.nonVisibleComponents.length > 0 && (
-                            <div className="mt-6 mx-2">
-                                <div className="py-2 px-3 mb-1 text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
-                                    Non-visible
+                            <div className="mt-4 pt-3 border-t border-slate-200/70">
+                                <div className="px-2 mb-1 text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
+                                    Non-Visible
                                 </div>
                                 {currentScreen.nonVisibleComponents.map((comp) => renderComponent(comp, 0))}
                             </div>
                         )}
                     </div>
                 )}
-
-                {/* Context Menu Removed */}
             </div>
         </div>
     );
 }
-
