@@ -98,12 +98,17 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
   const borderCol = dk ? "border-gray-700" : "border-gray-100";
   const sidebarBg = dk ? "bg-[#1c1c21]" : "bg-white";
 
-  const pill = `px-5 py-2.5 border ${borderCol} rounded-2xl text-sm font-semibold
-    focus:border-violet-500 focus:ring-4 focus:ring-violet-100 focus:outline-none
-    ${dk ? "bg-[#26262d] text-gray-100" : "bg-gray-50 text-slate-700"}
+  const pill = `px-3 py-1.5 border ${borderCol} rounded-xl text-xs font-semibold
+    focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none
+    ${dk ? "bg-[#26262d] text-gray-100" : "bg-slate-50 text-slate-700"}
     disabled:opacity-40 transition-all`;
 
-  const lbl = `text-[12px] font-bold flex-shrink-0 uppercase tracking-widest ${dk ? "text-gray-400" : "text-gray-400"}`;
+  const numPill = `w-[58px] px-1.5 py-1.5 border ${borderCol} rounded-xl text-xs font-bold text-center
+    focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none
+    ${dk ? "bg-[#26262d] text-gray-100" : "bg-slate-50 text-slate-700"}
+    disabled:opacity-40 transition-all`;
+
+  const lbl = `text-[11px] font-bold flex-shrink-0 uppercase tracking-wider ${dk ? "text-gray-400" : "text-slate-400"}`;
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${panelBg}`}>
@@ -111,10 +116,10 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
       {/* ══════════════════════════════════════════════════════════════════
           INFO BAR
           ══════════════════════════════════════════════════════════════════ */}
-      <div className={`px-6 pt-5 pb-6 border-b ${borderCol} ${infoBg} flex-shrink-0`}>
+      <div className={`px-4 py-3 border-b ${borderCol} ${infoBg} flex-shrink-0`}>
 
         {/* Row 1: Sprite | [Name] | ↔ x [val] | ↕ y [val] */}
-        <div className="flex items-center gap-5 min-w-0" style={{ paddingLeft: '12px' }}>
+        <div className="flex items-center gap-3 min-w-0">
           <span className={lbl}>{isStageSelected ? "Stage" : "Sprite"}</span>
           <input
             type="text"
@@ -125,66 +130,66 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           />
           {!isStageSelected && selectedSprite && (
             <>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`text-base select-none font-mono ${dk ? "text-gray-400" : "text-gray-400"}`}>↔</span>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`text-xs select-none font-mono ${dk ? "text-gray-400" : "text-slate-400"}`}>↔</span>
                 <span className={lbl}>x</span>
                 <input type="number" value={Math.round(selectedSprite.x)}
                   onChange={(e) => selectedSprite.setX?.(Number(e.target.value))}
-                  className={`w-[72px] text-center ${pill}`} />
+                  className={numPill} />
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`text-base select-none font-mono ${dk ? "text-gray-400" : "text-gray-400"}`}>↕</span>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`text-xs select-none font-mono ${dk ? "text-gray-400" : "text-slate-400"}`}>↕</span>
                 <span className={lbl}>y</span>
                 <input type="number" value={Math.round(selectedSprite.y)}
                   onChange={(e) => selectedSprite.setY?.(Number(e.target.value))}
-                  className={`w-[72px] text-center ${pill}`} />
+                  className={numPill} />
               </div>
             </>
           )}
         </div>
 
         {/* Row 2: Show [👁][🚫] | Size [val] | Direction [val] */}
-        <div className="flex items-center gap-5 mt-5 min-w-0 overflow-x-hidden" style={{ paddingLeft: '12px' }}>
+        <div className="flex items-center gap-3.5 mt-2.5 min-w-0">
           {!isStageSelected && selectedSprite ? (
             <>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={lbl}>Show</span>
                 <button onClick={() => selectedSprite.show?.()} title="Show"
-                  className={`w-10 h-10 border-2 rounded-2xl flex items-center justify-center transition-all duration-150
+                  className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all duration-150
                     ${selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-lg shadow-purple-200"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:border-gray-300"}`}`}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-md shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
                 <button onClick={() => selectedSprite.hide?.()} title="Hide"
-                  className={`w-10 h-10 border-2 rounded-2xl flex items-center justify-center transition-all duration-150
+                  className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all duration-150
                     ${!selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-lg shadow-purple-200"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:border-gray-300"}`}`}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-md shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                     <line x1="1" y1="1" x2="23" y2="23" />
                   </svg>
                 </button>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={lbl}>Size</span>
                 <input type="number" value={Math.round(selectedSprite.size)}
                   onChange={(e) => selectedSprite.setSize?.(Number(e.target.value))}
-                  className={`w-[72px] text-center ${pill}`} />
+                  className={numPill} />
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={lbl}>Direction</span>
                 <input type="number" value={Math.round(selectedSprite.direction)}
                   onChange={(e) => selectedSprite.pointInDirection?.(Number(e.target.value))}
-                  className={`w-[72px] text-center ${pill}`} />
+                  className={numPill} />
               </div>
             </>
           ) : (
-            <p className={`text-xs font-medium ${dk ? "text-gray-500" : "text-gray-400"}`}>
+            <p className={`text-xs font-medium ${dk ? "text-gray-500" : "text-slate-400"}`}>
               Stage backdrops cannot be moved or hidden.
             </p>
           )}
@@ -242,7 +247,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
                       : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                     }`}
-                  style={{ aspectRatio: '1 / 1.08' }}
+                  style={{ aspectRatio: '1 / 1' }}
                 >
                   {/* Delete button — playful purple circle with cross */}
                   <button
@@ -271,7 +276,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   )}
 
                   {/* Sprite image container */}
-                  <div className={`flex-1 flex items-center justify-center p-1 min-h-0 overflow-hidden w-full rounded-t-[18px]
+                  <div className={`flex-1 flex items-center justify-center p-0.5 min-h-0 overflow-hidden w-full rounded-t-[18px]
                     ${isSelected
                       ? (dk ? "bg-[#251f38]" : "bg-gradient-to-b from-purple-50/70 to-white")
                       : (dk ? "bg-[#18181c]" : "bg-gradient-to-b from-slate-50/90 to-white group-hover:from-purple-50/40")
@@ -297,7 +302,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                         <img
                           src={costumeImgSrc}
                           alt={sprite.name}
-                          className="w-full h-full object-contain scale-115 filter drop-shadow-md transition-transform duration-200 group-hover:scale-125"
+                          className="w-full h-full object-contain scale-125 filter drop-shadow-md transition-transform duration-200 group-hover:scale-135"
                           draggable={false}
                         />
                       ) : (
@@ -309,8 +314,8 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   </div>
 
                   {/* Name badge */}
-                  <div className={`text-center text-[12px] font-extrabold py-1.5 px-2
-                    truncate flex-shrink-0 transition-colors rounded-b-[18px] tracking-wide
+                  <div className={`text-center text-[10px] font-extrabold py-0.5 px-1
+                    truncate flex-shrink-0 transition-colors rounded-b-[18px] leading-snug tracking-tight
                     ${isSelected
                       ? "bg-[#7b44c7] text-white shadow-inner"
                       : `${dk ? "bg-[#26262d] text-gray-300 group-hover:bg-[#322c42] group-hover:text-purple-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
