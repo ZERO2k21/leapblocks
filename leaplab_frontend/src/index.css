@@ -283,26 +283,27 @@
 }
 
 /* ── Neura Module — Custom Scrollbars ───────────────────────────────────── */
-.neura-scrollbar {
+@utility neura-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(124, 58, 237, 0.25) transparent;
-}
-.neura-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-.neura-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-}
-.neura-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.3) 100%);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-.neura-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, rgba(124, 58, 237, 0.35) 0%, rgba(99, 102, 241, 0.45) 100%);
-  background-clip: padding-box;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.3) 100%);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, rgba(124, 58, 237, 0.35) 0%, rgba(99, 102, 241, 0.45) 100%);
+    background-clip: padding-box;
+  }
 }
 
 /* ── Creova Module — Custom Scrollbars ──────────────────────────────────── */
@@ -442,7 +443,8 @@
   transform: scale(1.05) !important;
 }
 
-.leap-blockly-workspace .blocklyToolboxSeparator {
+.leap-blockly-workspace .blocklyToolboxSeparator,
+.blocklyZoom {
   display: none !important;
 }
 
@@ -498,23 +500,23 @@ textarea:focus-visible {
 }
 
 /* ── Neura Lumina — Glass Card System ────────────────────────────────── */
-.neura-glass-card {
+@utility neura-glass-card {
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px 0 rgba(70, 72, 212, 0.05);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.neura-glass-card:hover {
-  background: rgba(255, 255, 255, 0.6);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px 0 rgba(70, 72, 212, 0.1);
+  &:hover {
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(70, 72, 212, 0.1);
+  }
 }
 
 /* ── Neura Lumina — Mesh Gradient Background ─────────────────────────── */
-.neura-mesh-gradient {
+@utility neura-mesh-gradient {
   background-color: #faf8ff;
   background-image:
     radial-gradient(at 0% 0%, rgba(70, 72, 212, 0.15) 0px, transparent 50%),
@@ -529,7 +531,7 @@ textarea:focus-visible {
   50% { transform: translateY(-10px); }
 }
 
-.neura-float {
+@utility neura-float {
   animation: neura-float 6s ease-in-out infinite;
 }
 
@@ -539,27 +541,19 @@ textarea:focus-visible {
 }
 
 /* ── Neura Lumina — Project Card Image Hover ─────────────────────────── */
-.neura-project-img {
+@utility neura-project-img {
+  filter: grayscale(1);
   transition: filter 0.5s ease, transform 0.5s ease;
 }
 
-.neura-project-card:hover .neura-project-img {
-  filter: grayscale(0);
-  transform: scale(1.05);
-}
-
-.neura-project-img {
-  filter: grayscale(1);
-}
-
 /* ── Neura Lumina — Create Blank Card ────────────────────────────────── */
-.neura-blank-card {
+@utility neura-blank-card {
   border: 2px dashed rgba(118, 117, 134, 0.3);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.neura-blank-card:hover {
-  border-color: rgba(70, 72, 212, 0.5);
+  &:hover {
+    border-color: rgba(70, 72, 212, 0.5);
+  }
 }
 
 /* Sharp Font Rendering Override */

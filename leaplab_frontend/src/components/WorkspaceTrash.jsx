@@ -55,8 +55,8 @@ export default function WorkspaceTrash({ workspaceRef }) {
     if (!isDragging) return null;
 
     return (
-        <div className={`workspace-trash-overlay ${isOverTrash ? 'active' : ''}`}>
-            <div className="workspace-trash-icon">
+        <div className={`absolute left-0 top-0 w-[18%] h-full flex items-center justify-center z-[85] pointer-events-none transition-colors duration-200 ${isOverTrash ? 'bg-red-500/10' : ''}`}>
+            <div className={`flex flex-col items-center justify-center transition-all duration-200 ${isOverTrash ? 'text-red-500/80 scale-115' : 'text-slate-400/60'}`}>
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -65,7 +65,7 @@ export default function WorkspaceTrash({ workspaceRef }) {
                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                 </svg>
                 {isOverTrash && (
-                    <div className="workspace-trash-x">✕</div>
+                    <div className="text-[22px] font-bold text-red-500/90 mt-0.5 animate-pulse">✕</div>
                 )}
             </div>
         </div>

@@ -10,7 +10,6 @@ import { STAGE_CONFIG } from '../engine/StageConfig';
 import Blockly, { LEAP_CUSTOM_BLOCK_CONTEXT_MENU_FLAG } from '@blockly-runtime';
 
 import leaplabBlocksCss from '../styles/Leaplab-blocks.css?inline'; // Import leap-style blocks CSS (inlined for dynamic injection)
-import '../components/workspace/WorkspaceControls.css';
 
 import { COLORS } from '../blocks/blockDefinitions';
 

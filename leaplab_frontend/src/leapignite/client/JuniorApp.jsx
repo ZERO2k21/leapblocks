@@ -53,8 +53,6 @@ const TUTORIALS = {
     'make_sounds': makeSoundsTutorial
 };
 
-import "../../components/workspace/WorkspaceControls.css";
-
 // Robot Assets
 const robotIdle = "assets/sprites/robot/robot_idle.svg";
 const robotWave1 = "assets/sprites/robot/image-Photoroom.png";
