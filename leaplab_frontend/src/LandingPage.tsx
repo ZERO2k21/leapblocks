@@ -450,13 +450,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
   width: 100%; margin: 0 auto;
-  padding: 8px 24px 4px;
+  padding: clamp(6px, 0.8vw, 12px) clamp(16px, 2vw, 28px) clamp(4px, 0.5vw, 8px);
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
 }
 .landing-page-container .cards-row {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
+  gap: clamp(8px, 1vw, 16px);
   width: 100%;
   max-width: 1400px;
 }
@@ -490,7 +490,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ── Card base + scan transitions ── */
 .landing-page-container .tc {
   border-radius: 12px;
-  padding: 14px;
+  padding: clamp(12px, 1.4vw, 20px);
   cursor: pointer;
   transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow .5s ease,
@@ -498,7 +498,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   position: relative;
   overflow: hidden;
   height: auto;
-  min-height: 170px;
+  min-height: clamp(160px, 14vw, 220px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -587,7 +587,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
-  height: 60px;
+  height: clamp(50px, 6vw, 80px);
 }
 .landing-page-container .tc-icon img {
   height: 100%;
@@ -613,7 +613,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   filter: drop-shadow(0 8px 12px rgba(0,0,0,0.15));
 }
 .landing-page-container .tc-cat-logo {
-  height: 12px;
+  height: clamp(10px, 1vw, 14px);
   width: auto;
   object-fit: contain;
   margin-bottom: 4px;
@@ -631,7 +631,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   opacity: 0.65;
 }
 .landing-page-container .tc-name {
-  font-size: 16px;
+  font-size: clamp(13px, 1.2vw, 16px);
   font-weight: 800;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -640,7 +640,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   line-height: 1.1;
 }
 .landing-page-container .tc-desc {
-  font-size: 12px;
+  font-size: clamp(10px, 1vw, 12px);
   color: #020046b1;
   line-height: 1.3;
   font-weight: 500;
