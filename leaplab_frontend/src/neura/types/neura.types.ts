@@ -10,7 +10,15 @@ export type ProjectType =
     | 'hand-pose-classifier'
     | 'audio-classifier'
     | 'numbers-cr'
-    | 'text-classifier';
+    | 'text-classifier'
+    | 'finger-counter'
+    | 'virtual-piano'
+    | 'volume-controller'
+    | 'drawing-canvas'
+    | 'yoga-checker'
+    | 'rep-counter'
+    | 'dance-pose'
+    | 'posture-monitor';
 
 export interface ProjectTypeInfo {
     id: ProjectType;

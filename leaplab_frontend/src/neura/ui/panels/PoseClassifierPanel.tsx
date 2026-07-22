@@ -43,6 +43,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const [isDragging, setIsDragging] = useState(false)
     const cameraOnRef = useRef(false)
     const streamStateRef = useRef<MediaStream | null>(null)
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -185,9 +186,11 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height)
                         const result = await classifierRef.current.predictFromImage(canvasRef.current)
                         const elapsed = Math.round(performance.now() - start)
-                        if (result) {
+                        if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
                             setInferenceTime(elapsed)
+                        } else if (result) {
+                            setPrediction(null)
                         }
                     }
                 } catch { /* ignore */ }
@@ -200,7 +203,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             const interval = setInterval(runPrediction, 1000)
             return () => clearInterval(interval)
         }
-    }, [mode.mode, stream, cameraOn, modelLoading])
+    }, [mode.mode, stream, cameraOn, modelLoading, confidenceThreshold])
 
     const handleCapture = async () => {
         if (!videoRef.current || !canvasRef.current || !mode.selectedClassId || !cameraOn) return
@@ -742,6 +745,17 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                        </div>
+                        {/* Confidence Threshold */}
+                        <div className="w-full max-w-[720px] mt-2 bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence Threshold</span>
+                                <span className="text-xs font-extrabold text-[#630ed4] bg-[#f5f3ff] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
+                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                style={{ background: `linear-gradient(to right, #630ed4 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
                         </div>
                     </div>
                     <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
