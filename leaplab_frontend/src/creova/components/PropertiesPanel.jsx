@@ -545,10 +545,10 @@ export default function PropertiesPanel({ appState }) {
               ) : (
                 <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
-                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1' }} />
-                <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1', flexShrink: 0 }} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Selected</span>
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
