@@ -248,8 +248,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ─── BACKGROUND NODES ─── */
@@ -312,20 +311,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   position:relative; z-index:1;
   display: flex; flex-direction: column;
   flex: 1; min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* ─── HERO ─── */
 .landing-page-container .hero-grid {
   display: grid; grid-template-columns: 1.1fr 0.9fr;
   align-items: center; max-width: 1400px; margin: 0 auto;
-  padding: 24px 40px;
-  gap: 60px; flex: 1 1 auto; min-height: 0;
+  padding: 12px 40px 8px;
+  gap: 40px; flex: 1 1 0; min-height: 0;
+  overflow: hidden;
 }
 @media (max-width: 1024px) {
   .landing-page-container .hero-grid {
     grid-template-columns: 1fr; text-align: center;
-    gap: 40px; padding: 40px 24px; height: auto; flex: 0 1 auto;
+    gap: 24px; padding: 20px 24px; height: auto; flex: 0 1 auto;
   }
   .landing-page-container .hero-left { display: flex; flex-direction: column; align-items: center; }
   .landing-page-container .hero-sub { margin-left: auto; margin-right: auto; max-width: 90%; }
@@ -353,8 +353,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 
 .landing-page-container .hero-title {
-  font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 900;
-  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 16px; color: #0F172A;
+  font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900;
+  line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 10px; color: #0F172A;
 }
 .landing-page-container .hero-title .hw-code {
   color: transparent; -webkit-text-stroke: 2px #6366F1;
@@ -367,22 +367,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   letter-spacing: 0.02em; padding: 0 4px;
 }
 .landing-page-container .hero-tagline {
-  display: inline-block; font-size: 11px;
+  display: inline-block; font-size: 10px;
   font-weight: 800; color: #000; text-transform: uppercase;
-  letter-spacing: 0.25em; margin-bottom: 12px; padding: 6px 14px;
+  letter-spacing: 0.25em; margin-bottom: 8px; padding: 5px 12px;
   background: var(--accent); border: 2px solid #000; box-shadow: 2px 2px 0px #000;
   transform: rotate(-1deg);
 }
 .landing-page-container .hero-sub {
-  font-size: clamp(1rem, 1.8vw, 1.25rem); color: #0f172a;
-  line-height: 1.5; max-width: 600px; margin-bottom: 20px;
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem); color: #0f172a;
+  line-height: 1.4; max-width: 600px; margin-bottom: 14px;
   position: relative; z-index: 2; opacity: 0.85;
 }
 .landing-page-container .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
 .landing-page-container .btn-adventure {
   background: var(--brand-primary); border: none; color: #fff;
-  font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit;
-  padding: 16px 28px; border-radius: 12px;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  padding: 12px 24px; border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 8px 12px -3px rgba(99, 102, 241, 0.3);
 }
@@ -392,8 +392,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 }
 .landing-page-container .btn-demo {
   background: #fff; border: 2px solid #000; color: var(--text-main);
-  font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit;
-  padding: 16px 28px; border-radius: 12px; transition: all 0.2s;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  padding: 12px 24px; border-radius: 12px; transition: all 0.2s;
   box-shadow: 3px 3px 0px #000;
 }
 .landing-page-container .btn-demo:hover {
@@ -425,7 +425,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* RIGHT — 3D Hero Scene */
 .landing-page-container .hero-right {
   display: flex; align-items: center; justify-content: center; position: relative;
-  width: 100%; height: 100%; min-height: 0;
+  width: 100%; height: 100%; min-height: 0; max-height: 100%;
 }
 .landing-page-container .hero-right::after {
   content: ''; position: absolute; width: 120%; height: 120%;
@@ -450,13 +450,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ─── CARDS ROW ─── */
 .landing-page-container .cards-wrap {
   width: 100%; margin: 0 auto;
-  padding: 16px 24px;
+  padding: 8px 24px 4px;
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
 }
 .landing-page-container .cards-row {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   max-width: 1400px;
 }
@@ -475,7 +475,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     grid-template-columns: 1fr;
   }
   .landing-page-container .cards-wrap {
-    padding: 24px 16px;
+    padding: 12px 16px;
   }
 }
 @media (max-width: 480px) {
@@ -490,7 +490,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 /* ── Card base + scan transitions ── */
 .landing-page-container .tc {
   border-radius: 12px;
-  padding: 20px;
+  padding: 14px;
   cursor: pointer;
   transition: transform .4s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow .5s ease,
@@ -498,7 +498,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   position: relative;
   overflow: hidden;
   height: auto;
-  min-height: 220px;
+  min-height: 170px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -516,8 +516,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
     min-height: auto;
     flex-direction: row;
     align-items: center;
-    gap: 16px;
-    padding: 16px;
+    gap: 12px;
+    padding: 12px;
   }
 }
 @media (max-width: 480px) {
@@ -586,8 +586,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  height: 80px;
+  margin-bottom: 10px;
+  height: 60px;
 }
 .landing-page-container .tc-icon img {
   height: 100%;
