@@ -27,6 +27,96 @@ function formatTime(timestamp: number): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+// Hand landmark connections for skeleton visualization
+const HAND_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+    [0, 5], [5, 6], [6, 7], [7, 8], // Index
+    [0, 9], [9, 10], [10, 11], [11, 12], // Middle
+    [0, 13], [13, 14], [14, 15], [15, 16], // Ring
+    [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
+    [5, 9], [9, 13], [13, 17], // Palm
+]
+
+// Pose landmark connections for body skeleton
+const POSE_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4], // Right arm
+    [0, 5], [5, 6], [6, 7], [7, 8], // Left arm
+    [0, 9], [9, 10], [10, 11], [11, 12], // Right leg
+    [0, 13], [13, 14], [14, 15], [15, 16], // Left leg
+    [0, 17], [17, 18], [18, 19], [19, 20], // Torso
+]
+
+function KeypointSkeleton({ data }: { data: string }) {
+    try {
+        const keypoints = JSON.parse(data)
+        if (!Array.isArray(keypoints) || keypoints.length < 5) {
+            return <span style={{ fontSize: '1.25rem' }}>🤸</span>
+        }
+
+        const isHand = keypoints.length === 21 || keypoints.length === 78
+        const connections = isHand ? HAND_CONNECTIONS : POSE_CONNECTIONS
+
+        // Normalize keypoints to 0-1 range
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        for (const kp of keypoints) {
+            const x = kp.x ?? kp[0] ?? 0
+            const y = kp.y ?? kp[1] ?? 0
+            if (x < minX) minX = x
+            if (x > maxX) maxX = x
+            if (y < minY) minY = y
+            if (y > maxY) maxY = y
+        }
+        const rangeX = maxX - minX || 1
+        const rangeY = maxY - minY || 1
+
+        const normalizedKps = keypoints.map((kp) => {
+            const x = kp.x ?? kp[0] ?? 0
+            const y = kp.y ?? kp[1] ?? 0
+            return {
+                x: ((x - minX) / rangeX) * 80 + 10,
+                y: ((y - minY) / rangeY) * 80 + 10,
+            }
+        })
+
+        return (
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', padding: '4px' }}>
+                {/* Draw connections */}
+                {connections.map(([i, j], idx) => {
+                    if (i >= normalizedKps.length || j >= normalizedKps.length) return null
+                    const kp1 = normalizedKps[i]
+                    const kp2 = normalizedKps[j]
+                    return (
+                        <line
+                            key={idx}
+                            x1={kp1.x}
+                            y1={kp1.y}
+                            x2={kp2.x}
+                            y2={kp2.y}
+                            stroke="#f59e0b"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                    )
+                })}
+                {/* Draw keypoints */}
+                {normalizedKps.map((kp, idx) => (
+                    <circle
+                        key={idx}
+                        cx={kp.x}
+                        cy={kp.y}
+                        r="2"
+                        fill="#ea580c"
+                        stroke="#fff"
+                        strokeWidth="0.5"
+                    />
+                ))}
+            </svg>
+        )
+    } catch {
+        return <span style={{ fontSize: '1.25rem' }}>🤸</span>
+    }
+}
+
 export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGridProps) {
     const [deletedSample, setDeletedSample] = useState<{ sample: Sample; classId?: string } | null>(null)
     const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -158,8 +248,9 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
+                                position: 'relative',
                             }}>
-                                <span style={{ fontSize: '1.25rem' }}>🤸</span>
+                                <KeypointSkeleton data={sample.data} />
                             </div>
                         )}
 

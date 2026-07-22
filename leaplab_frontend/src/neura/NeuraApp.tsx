@@ -19,16 +19,6 @@ const TextClassifierPanel = lazy(() => import('./ui/panels/TextClassifierPanel')
 const NumberClassifierPanel = lazy(() => import('./ui/panels/NumberClassifierPanel'))
 const ObjectDetectorPanel = lazy(() => import('./ui/panels/ObjectDetectorPanel'))
 
-// Project-specific panels
-const FingerCounterPanel = lazy(() => import('./projects/M1-FingerCounter/FingerCounterPanel'))
-const VirtualPianoPanel = lazy(() => import('./projects/M1-VirtualPiano/VirtualPianoPanel'))
-const VolumeControllerPanel = lazy(() => import('./projects/M1-VolumeController/VolumeControllerPanel'))
-const DrawingCanvasPanel = lazy(() => import('./projects/M1-DrawingCanvas/DrawingCanvasPanel'))
-const YogaCheckerPanel = lazy(() => import('./projects/M2-YogaChecker/YogaCheckerPanel'))
-const RepCounterPanel = lazy(() => import('./projects/M2-RepCounter/RepCounterPanel'))
-const DancePosePanel = lazy(() => import('./projects/M2-DancePose/DancePosePanel'))
-const PostureMonitorPanel = lazy(() => import('./projects/M2-PostureMonitor/PostureMonitorPanel'))
-
 interface NeuraAppProps {
     onBack?: () => void
 }
@@ -42,8 +32,16 @@ function getClassifierPanel(type: ProjectType) {
         case 'audio-classifier':
             return AudioClassifierPanel
         case 'pose-classifier':
+        case 'yoga-checker':
+        case 'rep-counter':
+        case 'dance-pose':
+        case 'posture-monitor':
             return PoseClassifierPanel
         case 'hand-pose-classifier':
+        case 'finger-counter':
+        case 'virtual-piano':
+        case 'volume-controller':
+        case 'drawing-canvas':
             return HandPoseClassifierPanel
         case 'text-classifier':
             return TextClassifierPanel
@@ -51,23 +49,6 @@ function getClassifierPanel(type: ProjectType) {
             return NumberClassifierPanel
         case 'object-detection':
             return ObjectDetectorPanel
-        // Project-specific panels
-        case 'finger-counter':
-            return FingerCounterPanel
-        case 'virtual-piano':
-            return VirtualPianoPanel
-        case 'volume-controller':
-            return VolumeControllerPanel
-        case 'drawing-canvas':
-            return DrawingCanvasPanel
-        case 'yoga-checker':
-            return YogaCheckerPanel
-        case 'rep-counter':
-            return RepCounterPanel
-        case 'dance-pose':
-            return DancePosePanel
-        case 'posture-monitor':
-            return PostureMonitorPanel
         default:
             return ImageClassifierPanel
     }
