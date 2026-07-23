@@ -301,13 +301,13 @@ export default function MediaManager({ appState }) {
             </div>
 
             {/* Media Grid/List */}
-            <div className={`flex-1 bg-white leap-panel-body ${filteredMedia.length === 0 ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
+            <div className="flex-1 bg-white leap-panel-body overflow-y-auto overflow-x-hidden">
                 {filteredMedia.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full px-6 py-8 transition-all duration-300">
+                    <div className="flex flex-col items-center justify-center min-h-full px-4 py-6 transition-all duration-300">
                         {/* Icon */}
-                        <div className={`relative mb-4 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
-                            <div className={`relative w-[52px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200'}`}>
-                                <FolderOpen className={`w-6 h-6 transition-colors duration-300 ${isDragOver ? 'text-blue-500' : 'text-slate-400'}`} strokeWidth={1.5} />
+                        <div className={`relative mb-3 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
+                            <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200'}`}>
+                                <FolderOpen className={`w-5 h-5 transition-colors duration-300 ${isDragOver ? 'text-blue-500' : 'text-slate-400'}`} strokeWidth={1.5} />
                             </div>
                         </div>
 
@@ -318,15 +318,16 @@ export default function MediaManager({ appState }) {
                                 <p className="text-[11px] text-blue-400 font-medium">Release to upload</p>
                             </div>
                         ) : (
-                            <div className="text-center">
-                                <p className="text-[13px] font-bold text-slate-600 mb-0.5">No Assets Yet</p>
-                                <p className="text-[11px] text-slate-400 font-medium mb-4 max-w-[200px] leading-relaxed">
+                            <div className="text-center flex flex-col items-center">
+                                <p className="text-xs font-bold text-slate-700 mb-0.5">No Assets Yet</p>
+                                <p className="text-[11px] text-slate-400 font-medium mb-3 max-w-[200px] leading-snug">
                                     {searchTerm ? 'Try different search terms' : 'Drag files here or click below to upload'}
                                 </p>
                                 {!searchTerm && (
                                     <button
+                                        type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="inline-flex items-center gap-2 px-4.5 py-2 bg-gradient-to-r from-purple-700 to-violet-600 text-white rounded-xl text-xs font-bold shadow-[0_2px_8px_rgba(99,14,212,0.25)] hover:shadow-[0_4px_14px_rgba(99,14,212,0.35)] hover:-translate-y-0.5 transition-all border-none cursor-pointer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-700 to-violet-600 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all border-none cursor-pointer mb-2"
                                     >
                                         <Upload size={12} strokeWidth={2.5} />
                                         Browse Files

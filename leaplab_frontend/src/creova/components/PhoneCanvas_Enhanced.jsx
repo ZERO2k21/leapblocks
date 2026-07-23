@@ -272,9 +272,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
         setDragOver(false);
         setDropTarget(null);
 
-        const type = e.dataTransfer.getData('componentType');
-        const componentData = e.dataTransfer.getData('componentData');
-        const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+        let type = e.dataTransfer.getData('componentType');
+        let componentData = e.dataTransfer.getData('componentData');
+        let draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+
+        // Fallback for touch devices: polyfill dataTransfer may not persist
+        if (!type && !draggedId && window.__dragComponent) {
+            type = window.__dragComponent.type;
+            componentData = window.__dragComponent.data;
+            window.__dragComponent = null;
+        }
 
         // If a layout is currently selected, unconditionally place the dropped element inside that layout container
         let finalTargetId = targetContainerId;

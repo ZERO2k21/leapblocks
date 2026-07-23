@@ -7,7 +7,7 @@ import { PALETTE_ENHANCED } from '../data/paletteComponents_Enhanced';
 import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import ComponentIcon from './ComponentIcon';
 
-export default function PaletteEnhanced() {
+export default function PaletteEnhanced({ onAddComponent }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [collapsedCategories, setCollapsedCategories] = useState({});
     const [hoveredComponent, setHoveredComponent] = useState(null);
@@ -29,6 +29,8 @@ export default function PaletteEnhanced() {
     const handleDragStart = (e, component) => {
         e.dataTransfer.setData('componentType', component.type);
         e.dataTransfer.setData('componentData', JSON.stringify(component));
+        // Store for touch devices where dataTransfer may not persist
+        window.__dragComponent = { type: component.type, data: JSON.stringify(component) };
 
         // Create drag preview
         const dragPreview = document.createElement('div');
@@ -39,6 +41,10 @@ export default function PaletteEnhanced() {
         document.body.appendChild(dragPreview);
         e.dataTransfer.setDragImage(dragPreview, 0, 0);
         setTimeout(() => document.body.removeChild(dragPreview), 0);
+    };
+
+    const handleDragEnd = () => {
+        window.__dragComponent = null;
     };
 
     return (
@@ -100,6 +106,8 @@ export default function PaletteEnhanced() {
                                             key={item.type}
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, item)}
+                                            onDragEnd={handleDragEnd}
+                                            onClick={() => onAddComponent?.(item.type, {})}
                                             onMouseEnter={() => setHoveredComponent(item)}
                                             onMouseLeave={() => setHoveredComponent(null)}
                                             style={{ padding: '20px 14px', gap: '10px' }}

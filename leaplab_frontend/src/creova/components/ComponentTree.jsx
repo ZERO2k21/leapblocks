@@ -124,8 +124,16 @@ export default function ComponentTree({ appState }) {
             return;
         }
 
-        const type = e.dataTransfer.getData('componentType');
-        const componentData = e.dataTransfer.getData('componentData');
+        let type = e.dataTransfer.getData('componentType');
+        let componentData = e.dataTransfer.getData('componentData');
+
+        // Fallback for touch devices
+        if (!type && window.__dragComponent) {
+            type = window.__dragComponent.type;
+            componentData = window.__dragComponent.data;
+            window.__dragComponent = null;
+        }
+
         if (!type) return;
 
         let visible = true;

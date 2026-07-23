@@ -134,7 +134,7 @@ export default function AppInventorLayout({
         {activeTab === 'designer' ? (
           <>
             <div className="min-h-[400px] overflow-hidden bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-px flex flex-col transition-all duration-300 desktop:col-[1] desktop:row-[1/span_2] desktop:min-h-0 wide:col-[1] wide:row-[1]">
-              <Palette />
+              <Palette onAddComponent={appState.addComponent} />
             </div>
 
             <div className="min-h-[500px] flex flex-col bg-transparent desktop:col-[2] desktop:row-[1/span_2] desktop:min-h-0 wide:col-[2] wide:row-[1]">

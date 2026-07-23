@@ -216,24 +216,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                 <div
                   key={sprite.id}
                   data-sprite-id={sprite.id}
-                  draggable={true}
                   onClick={() => onSelectSprite(sprite.id)}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', sprite.id);
-                    e.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const sourceId = e.dataTransfer.getData('text/plain');
-                    if (sourceId && sourceId !== sprite.id) {
-                      onCopyCodeToSprite?.(sourceId, sprite.id);
-                    }
-                  }}
                   className={`relative group flex flex-col rounded-2xl cursor-pointer aspect-square
                     transition-all duration-200 border-2 select-none
                     ${isSelected
@@ -408,18 +391,6 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             <div
               data-sprite-id="stage"
               onClick={() => onSelectSprite('stage')}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'copy';
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const sourceId = e.dataTransfer.getData('text/plain');
-                if (sourceId && sourceId !== 'stage') {
-                  onCopyCodeToSprite?.(sourceId, 'stage');
-                }
-              }}
               className={`mx-3.5 mt-4 mb-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 select-none overflow-hidden
                 ${isStageSelected
                   ? `border-purple-600 ring-4 ring-purple-400/25 ${dk ? "bg-purple-950/40" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
