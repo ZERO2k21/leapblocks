@@ -351,6 +351,44 @@ export default function PhoneCanvasEnhanced({ appState }) {
         addComponent(type, { visible, parentId: finalTargetId });
     };
 
+    // Global Touch Drop Handler for Touchscreen / Mobile / Tablet support
+    useEffect(() => {
+        const handleTouchDropCustom = (e) => {
+            const { type, componentData, target } = e.detail || {};
+            if (!type) return;
+
+            // Check if touch released over the phone canvas container
+            if (canvasRef.current && (canvasRef.current.contains(target) || canvasRef.current === target || containerRef.current?.contains(target))) {
+                let visible;
+                if (componentData) {
+                    try {
+                        const parsed = JSON.parse(componentData);
+                        visible = parsed.visible;
+                    } catch {
+                        visible = undefined;
+                    }
+                }
+
+                let parentId = null;
+                if (selectedComponent) {
+                    const isLayout = isArrangementType(selectedComponent.type) && selectedComponent.type !== 'Map' && selectedComponent.type !== 'FeatureCollection';
+                    if (isLayout) {
+                        parentId = selectedComponent.id;
+                    }
+                }
+
+                if (parentId) {
+                    setSelectedId(parentId);
+                }
+
+                addComponent(type, { visible, parentId });
+            }
+        };
+
+        window.addEventListener('creova-touch-drop', handleTouchDropCustom);
+        return () => window.removeEventListener('creova-touch-drop', handleTouchDropCustom);
+    }, [addComponent, selectedComponent, isArrangementType, setSelectedId]);
+
     const handleDragOver = (e) => {
         e.preventDefault();
         setDragOver(true);

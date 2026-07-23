@@ -47,6 +47,62 @@ export default function PaletteEnhanced({ onAddComponent }) {
         window.__dragComponent = null;
     };
 
+    const handleTouchStart = (e, item) => {
+        const touch = e.touches[0];
+        window.__touchDragComponent = { type: item.type, data: JSON.stringify(item), label: item.label };
+        
+        const existingGhost = document.getElementById('creova-touch-ghost');
+        if (existingGhost) existingGhost.remove();
+
+        const ghost = document.createElement('div');
+        ghost.id = 'creova-touch-ghost';
+        ghost.style.position = 'fixed';
+        ghost.style.left = `${touch.clientX}px`;
+        ghost.style.top = `${touch.clientY}px`;
+        ghost.style.pointerEvents = 'none';
+        ghost.style.zIndex = '99999';
+        ghost.className = 'bg-white border-2 border-blue-500 rounded-2xl p-3 shadow-2xl flex items-center gap-2 -translate-x-1/2 -translate-y-1/2';
+        ghost.innerHTML = `<span class="text-xs font-black text-blue-600 uppercase tracking-widest">${item.label}</span>`;
+        document.body.appendChild(ghost);
+    };
+
+    const handleTouchMove = (e) => {
+        if (!window.__touchDragComponent) return;
+        const touch = e.touches[0];
+        const ghost = document.getElementById('creova-touch-ghost');
+        if (ghost) {
+            ghost.style.left = `${touch.clientX}px`;
+            ghost.style.top = `${touch.clientY}px`;
+        }
+    };
+
+    const handleTouchEnd = (e, item) => {
+        const ghost = document.getElementById('creova-touch-ghost');
+        if (ghost) ghost.remove();
+
+        if (!window.__touchDragComponent) return;
+
+        const touch = e.changedTouches[0];
+        if (touch) {
+            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (targetElement) {
+                const dropEvent = new CustomEvent('creova-touch-drop', {
+                    detail: {
+                        type: window.__touchDragComponent.type,
+                        componentData: window.__touchDragComponent.data,
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        target: targetElement
+                    },
+                    bubbles: true
+                });
+                targetElement.dispatchEvent(dropEvent);
+            }
+        }
+
+        window.__touchDragComponent = null;
+    };
+
     return (
         <div className="flex flex-col h-full w-full bg-white">
             {/* Header */}
@@ -107,6 +163,9 @@ export default function PaletteEnhanced({ onAddComponent }) {
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, item)}
                                             onDragEnd={handleDragEnd}
+                                            onTouchStart={(e) => handleTouchStart(e, item)}
+                                            onTouchMove={handleTouchMove}
+                                            onTouchEnd={(e) => handleTouchEnd(e, item)}
                                             onClick={() => onAddComponent?.(item.type, {})}
                                             onMouseEnter={() => setHoveredComponent(item)}
                                             onMouseLeave={() => setHoveredComponent(null)}
