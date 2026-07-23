@@ -2782,7 +2782,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         onBack();
                     }}>
                         <Logo height={50} />
-                        <span className="text-white text-[17px] font-black tracking-wider font-sans">Logix</span>
+                        <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans">Logix</span>
                     </div>
                     {showDesktopMenus && (
                         <>

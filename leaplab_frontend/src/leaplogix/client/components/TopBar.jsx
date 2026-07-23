@@ -129,7 +129,7 @@ export default function TopBar() {
                             ctx.onBack();
                         }}>
                             <Logo height={48} />
-                            <span className="text-white text-22px font-black tracking-wider leading-snug border-l border-white/15 pl-2">Logix</span>
+                            <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-2">Logix</span>
                         </div>
 
                         {showDesktopMenus && (

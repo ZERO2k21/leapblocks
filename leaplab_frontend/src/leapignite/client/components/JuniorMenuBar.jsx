@@ -101,7 +101,7 @@ export default function JuniorMenuBar({
                             {/* Logo + brand label */}
                             <div className="flex items-center gap-2 shrink-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
                                 <Logo height={48} />
-                                <div className="text-white text-22px font-black tracking-tighter font-sans">
+                                <div className="text-white text-[22px] font-black tracking-[0.08em] font-sans">
                                     IGNITE
                                 </div>
                             </div>

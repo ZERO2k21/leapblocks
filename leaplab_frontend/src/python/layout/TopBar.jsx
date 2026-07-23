@@ -67,7 +67,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 {/* Logo + App Name */}
                 <div className="flex items-center gap-2 mr-2 shrink-0">
                     <Logo height={48} />
-                    <span className="text-white text-22px font-black tracking-wider leading-snug font-sans drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] border-l border-white/15 pl-2">
+                    <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] border-l border-white/15 pl-2">
                         Logix{" "}
                     </span>
                 </div>
