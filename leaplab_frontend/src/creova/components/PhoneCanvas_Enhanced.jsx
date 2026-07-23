@@ -167,21 +167,21 @@ export default function PhoneCanvasEnhanced({ appState }) {
         e.dataTransfer.setData('draggedComponentId', compId);
         e.dataTransfer.effectAllowed = 'move';
         setDraggedComponentId(compId);
+        window.__draggedComponentId = compId;
     };
 
     const handleComponentDragEnd = (e) => {
         setDraggedComponentId(null);
         setDropTargetComponent(null);
         setDropTarget(null);
+        window.__draggedComponentId = null;
     };
 
     const handleComponentDragOver = (e, targetId) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const activeDraggedId = e.dataTransfer.types.includes('draggedcomponentid')
-            ? (e.dataTransfer.getData('draggedComponentId') || draggedComponentId)
-            : draggedComponentId;
+        const activeDraggedId = draggedComponentId || window.__draggedComponentId;
 
         if (!activeDraggedId || activeDraggedId === targetId) return;
 
@@ -231,7 +231,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
         e.preventDefault();
         e.stopPropagation();
 
-        const draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+        let draggedId = e.dataTransfer ? e.dataTransfer.getData('draggedComponentId') : '';
+        if (!draggedId) {
+            draggedId = draggedComponentId || window.__draggedComponentId;
+        }
+
         setDropTargetComponent(null);
         setDropTarget(null);
 
@@ -276,6 +280,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
         if (appState.moveComponent) {
             appState.moveComponent(draggedId, targetId, position);
         }
+
+        setDraggedComponentId(null);
+        window.__draggedComponentId = null;
     };
 
     const handleDrop = (e, targetContainerId = null) => {
