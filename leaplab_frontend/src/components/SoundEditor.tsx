@@ -303,21 +303,6 @@ const globalSoundBank: SoundBank = new Proxy({} as SoundBank, {
     }
 });
 
-const generateWaveformPoints = (width: number, height: number): string => {
-    let points = '';
-    const pointsCount = 100;
-    const centerY = height / 2;
-    for (let i = 0; i < pointsCount; i++) {
-        const x = (i / pointsCount) * width;
-        const amplitude = Math.sin(i * 0.2) * Math.cos(i * 0.5) * Math.random();
-        const y = centerY + amplitude * (height / 2.5);
-        points += `${x},${y} `;
-        const y2 = centerY - amplitude * (height / 2.5);
-        points += `${x},${y2} `;
-    }
-    return points;
-};
-
 export const SoundEditor: React.FC<SoundEditorProps> = ({
     sounds,
     spriteName,
@@ -466,7 +451,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         }
     };
 
-    const applyEffect = (effectName: string) => {
+    const applyEffect = (effectName: any) => {
         if (!audioBuffer) return;
 
         const effects = new AudioEffects(audioBuffer, effectName, selectionStart, selectionEnd);
@@ -890,8 +875,8 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                         <EffectTool icon={<ArrowUpFromLine size={18} />} onClick={() => applyEffect('faster')} label="Faster" />
                                         <EffectTool icon={<ArrowDownToLine size={18} />} onClick={() => applyEffect('slower')} label="Slower" />
                                         <div className="w-px h-8 bg-slate-200 mx-1 flex-shrink-0" />
-                                        <EffectTool icon={<Volume2 size={18} />} onClick={() => applyEffect('louder')} label="Louder" />
-                                        <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('softer')} label="Softer" />
+                                        <EffectTool icon={<Volume2 size={18} />} onClick={() => applyEffect('higher')} label="Louder" />
+                                        <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('lower')} label="Softer" />
                                         <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('mute')} label="Mute" />
                                         <div className="w-px h-8 bg-slate-200 mx-1 flex-shrink-0" />
                                         <EffectTool icon={<ArrowLeftRight size={18} />} onClick={() => applyEffect('fade in')} label="Fade in" />
@@ -998,4 +983,3 @@ const EffectTool = ({ icon, label, onClick }: { icon: React.ReactNode, label: st
 );
 
 export default SoundEditor;
-

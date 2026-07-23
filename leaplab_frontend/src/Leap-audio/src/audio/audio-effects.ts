@@ -122,31 +122,31 @@ class AudioEffects {
       this.source.playbackRate.setValueAtTime(1.0, this.adjustedTrimEndSeconds)
       break
     case effectTypes.LOUDER:
-      ({input, output} = new VolumeEffect(this.audioContext, 1.25,
+      ({input, output} = new VolumeEffect(this.audioContext as any, 1.25,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.SOFTER:
-      ({input, output} = new VolumeEffect(this.audioContext, 0.75,
+      ({input, output} = new VolumeEffect(this.audioContext as any, 0.75,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.ECHO:
-      ({input, output} = new EchoEffect(this.audioContext,
+      ({input, output} = new EchoEffect(this.audioContext as any,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.ROBOT:
-      ({input, output} = new RobotEffect(this.audioContext,
+      ({input, output} = new RobotEffect(this.audioContext as any,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.FADEIN:
-      ({input, output} = new FadeEffect(this.audioContext, true,
+      ({input, output} = new FadeEffect(this.audioContext as any, true,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.FADEOUT:
-      ({input, output} = new FadeEffect(this.audioContext, false,
+      ({input, output} = new FadeEffect(this.audioContext as any, false,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     case effectTypes.MUTE:
-      ({input, output} = new MuteEffect(this.audioContext,
+      ({input, output} = new MuteEffect(this.audioContext as any,
         this.adjustedTrimStartSeconds, this.adjustedTrimEndSeconds))
       break
     }
