@@ -4,17 +4,16 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import './sound-editor.css'; // We will create this CSS file later
 
 const RecordButton = ({ isRecording, onClick }) => {
     return (
-        <div className="record-button-container">
+        <div className="flex justify-center w-full mt-[10px]">
             <button
-                className={`record-button ${isRecording ? 'recording' : ''}`}
+                className="w-[60px] h-[60px] rounded-full border-[3px] border-[#ff4d4d] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 outline-none hover:scale-[1.05]"
                 onClick={onClick}
                 title={isRecording ? "Stop Recording" : "Record Sound"}
             >
-                <div className="record-button-inner"></div>
+                <div className={`w-6 h-6 bg-[#ff4d4d] transition-all duration-200 ${isRecording ? 'rounded-[4px]' : 'rounded-full'}`}></div>
             </button>
         </div>
     );

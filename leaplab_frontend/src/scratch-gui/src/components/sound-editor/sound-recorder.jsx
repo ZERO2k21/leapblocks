@@ -8,7 +8,6 @@ import AudioRecorder from '../../lib/audio/audio-recorder';
 import RecordButton from './record-button';
 import LevelMeter from './level-meter';
 import WaveformDisplay from './waveform-display';
-import './sound-editor.css';
 
 const SoundRecorder = ({ isOpen, onClose, onSave }) => {
     const [isRecording, setIsRecording] = useState(false);
@@ -66,23 +65,23 @@ const SoundRecorder = ({ isOpen, onClose, onSave }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="sound-recorder-overlay">
-            <div className="sound-recorder-modal">
-                <div className="sound-recorder-header">
+        <div className="fixed inset-0 w-screen h-screen bg-black/40 flex items-center justify-center z-[10000]">
+            <div className="bg-white w-[500px] rounded-lg shadow-[0_4px_15px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden">
+                <div className="bg-[#6200a9] text-white p-4 flex justify-between items-center font-bold text-[1.1rem]">
                     <span>Record Sound</span>
-                    <button className="close-btn" onClick={onClose} aria-label="Close">×</button>
+                    <button className="bg-transparent border-0 text-white text-[1.5rem] cursor-pointer leading-none" onClick={onClose} aria-label="Close">×</button>
                 </div>
 
-                <div className="sound-recorder-body">
+                <div className="p-6 flex flex-col items-center gap-[20px]">
                     {/* Visualizer Row */}
                     {!audioData && (
-                        <div className="level-meter-container">
+                        <div className="w-full">
                             <LevelMeter analyser={analyser} />
                         </div>
                     )}
 
                     {audioData && (
-                        <div className="waveform-container">
+                        <div className="w-full">
                             <WaveformDisplay buffer={audioData.buffer} />
                         </div>
                     )}
@@ -102,10 +101,10 @@ const SoundRecorder = ({ isOpen, onClose, onSave }) => {
                     )}
                 </div>
 
-                <div className="sound-recorder-footer">
-                    <button className="button-cancel" onClick={onClose}>Cancel</button>
+                <div className="flex justify-end p-4 bg-[#f9f9f9] border-t border-[#eee] gap-[10px]">
+                    <button className="bg-white border border-[#ccc] px-4 py-2 rounded cursor-pointer hover:bg-[#f0f0f0]" onClick={onClose}>Cancel</button>
                     <button
-                        className="button-save"
+                        className="bg-[#0fbd8c] text-white border-0 px-4 py-2 rounded cursor-pointer font-bold disabled:bg-[#ccc] disabled:cursor-not-allowed"
                         onClick={handleSave}
                         disabled={!audioData || isRecording}
                     >

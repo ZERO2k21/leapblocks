@@ -3179,7 +3179,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {appMode === 'blocks' && editorMode === 'stage' && (
 
-                <div style={styles.unifiedToolbar}>
+                <div className={styles.unifiedToolbar}>
 
                     {/* Left: Workspace Tabs */}
 
@@ -3187,7 +3187,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <button
 
-                            style={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                            className={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
 
                             onClick={() => handleWorkspaceTabChange('blocks')}
 
@@ -3199,7 +3199,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <button
 
-                            style={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                            className={workspaceTab === 'python' ? styles.tabActive : styles.tab}
 
                             onClick={() => {
 
@@ -3223,7 +3223,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <button
 
-                            style={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                            className={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
 
                             onClick={() => handleWorkspaceTabChange('costumes')}
 
@@ -3235,7 +3235,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <button
 
-                            style={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                            className={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
 
                             onClick={() => handleWorkspaceTabChange('sounds')}
 
@@ -3253,13 +3253,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px', borderRight: '1px solid #ddd', height: '100%', paddingLeft: '16px' }}>
 
-                        <button style={styles.undoRedoBtn} onClick={handleUndo} title="Undo">
+                        <button className={styles.undoRedoBtn} onClick={handleUndo} title="Undo">
 
                             <Undo2 size={18} color="#575E75" />
 
                         </button>
 
-                        <button style={styles.undoRedoBtn} onClick={handleRedo} title="Redo">
+                        <button className={styles.undoRedoBtn} onClick={handleRedo} title="Redo">
 
                             <Redo2 size={18} color="#575E75" />
 
@@ -3273,15 +3273,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', paddingLeft: '12px' }}>
 
-                        <div style={styles.actionButtons}>
+                        <div className={styles.actionButtons}>
 
-                            <button style={styles.runButtonTop} onClick={handleRunClick} title="Run">
+                            <button className={styles.runButtonTop} onClick={handleRunClick} title="Run">
 
                                 <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
 
                             </button>
 
-                            <button style={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+                            <button className={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
 
                                 <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
 
@@ -3299,31 +3299,31 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                        <button style={{ ...styles.iconBtn, ...(isCameraOn ? styles.iconBtnActive : {}) }} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+                        <button className={`${styles.iconBtn} ${isCameraOn ? styles.iconBtnActive : ''}`} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
 
                             {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(showGrid ? styles.iconBtnActive : {}) }} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
+                        <button className={`${styles.iconBtn} ${showGrid ? styles.iconBtnActive : ''}`} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
 
                             <Grid3X3 size={18} />
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'small' ? styles.iconBtnActive : {}) }} onClick={() => { setStageLayout('small'); addLog("Switched to Small Stage mode"); }} title="Small Stage">
+                        <button className={`${styles.iconBtn} ${stageLayout === 'small' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('small'); addLog("Switched to Small Stage mode"); }} title="Small Stage">
 
                             <LayoutTemplate size={18} />
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(stageLayout === 'large' ? styles.iconBtnActive : {}) }} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
+                        <button className={`${styles.iconBtn} ${stageLayout === 'large' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
 
                             <LayoutPanelLeft size={18} />
 
                         </button>
 
-                        <button style={{ ...styles.iconBtn, ...(isFullscreen ? styles.iconBtnActive : {}) }} onClick={handleFullscreen} title="Fullscreen">
+                        <button className={`${styles.iconBtn} ${isFullscreen ? styles.iconBtnActive : ''}`} onClick={handleFullscreen} title="Fullscreen">
 
                             {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
 
@@ -3398,11 +3398,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Main Content */}
 
-            <div style={styles.main} className="main-container-responsive">
+            <div className={`${styles.main} main-container-responsive`}>
 
                 {/* Blockly Workspace */}
 
-                <div style={styles.workspaceContainer} className="workspace-container-responsive">
+                <div className={`${styles.workspaceContainer} workspace-container-responsive`}>
 
 
 
@@ -3413,9 +3413,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         which would orphan the Blockly workspace SVG and lose all blocks. */}
                     <div
                         ref={blocklyDiv}
-                        className={editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}
+                        className={`${styles.blockly} ${editorMode === 'stage' && workspaceTab !== 'blocks' ? 'hide-flyout' : ''}`}
                         style={{
-                            ...styles.blockly,
                             display: ((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') ? undefined : 'none'
                         }}
                     />
@@ -3470,7 +3469,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     {editorMode === 'stage' && workspaceTab === 'python' && (
 
-                        <div style={styles.pythonEditor}>
+                        <div className={styles.pythonEditor}>
 
                             <PythonEditorTab
 
@@ -3486,7 +3485,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     {editorMode === 'stage' && workspaceTab === 'costumes' && (
 
-                        <div style={styles.costumesEditor}>
+                        <div className={styles.costumesEditor}>
                             <SuspenseTab onBackToBlocks={() => handleWorkspaceTabChange('blocks')} tabName="Costumes">
                                 <CostumesTab
 
@@ -3510,7 +3509,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     {editorMode === 'stage' && workspaceTab === 'sounds' && (
 
-                        <div style={styles.soundsEditor}>
+                        <div className={styles.soundsEditor}>
                             <SuspenseTab onBackToBlocks={() => handleWorkspaceTabChange('blocks')} tabName="Sounds">
                                 <SoundsTab
 
@@ -3542,18 +3541,16 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 {/* Right Panel — hidden in embed mode when sounds tab is active (full-screen sound editor) */}
                 {(isEmbedMode && workspaceTab === 'sounds') ? null : (
-                <div style={{
+                <div className={`${styles.rightPanel} right-panel-responsive`} style={{
 
-                    ...styles.rightPanel,
                     width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
 
                     transition: 'width 0.2s ease-in-out',
 
-                }} className="right-panel-responsive">
+                }}>
 
                     {/* Stage Container */}
-                    <div ref={stageContainerRef} className="stage-container-responsive" style={{
-                        ...(!isFullscreen ? styles.stageContainer : {}),
+                    <div ref={stageContainerRef} className={`${!isFullscreen ? styles.stageContainer : ''} stage-container-responsive`} style={{
                         width: isFullscreen ? '100vw' : '100%',
                         height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
                         transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
@@ -3767,8 +3764,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     {/* Sprite & Stage Panel Unit — hidden in fullscreen for clean presentation */}
                                     {editorMode === 'stage' && !isFullscreen && (
-                                        <div style={{
-                                            ...styles.assetsContainer,
+                                        <div className={styles.assetsContainer} style={{
                                             width: isFullscreen ? '240px' : '100%',
                                             flex: isFullscreen ? 'none' : '1 1 auto',
                                             minHeight: 0,
@@ -3818,23 +3814,23 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             {/* Code Preview */}
 
-                            <div style={styles.codeHeader}>
+                            <div className={styles.codeHeader}>
 
                                 <span>💻 Arduino Code</span>
 
-                                {uploadProgress && <span style={styles.uploadStatus}>{uploadProgress}</span>}
+                                {uploadProgress && <span className={styles.uploadStatus}>{uploadProgress}</span>}
 
                             </div>
 
-                            <div style={styles.codeArea} className="code-preview-area">
+                            <div className={`${styles.codeArea} code-preview-area`}>
 
-                                <pre style={styles.codeContent}>
+                                <pre className={styles.codeContent}>
 
                                     {generatedCode.split('\n').map((line, i) => (
 
-                                        <div key={i} style={styles.codeLine}>
+                                        <div key={i} className={styles.codeLine}>
 
-                                            <span style={styles.lineNumber}>{i + 1}</span>
+                                            <span className={styles.lineNumber}>{i + 1}</span>
 
                                             <span>{line}</span>
 
@@ -3858,11 +3854,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         <>
 
-                            <div style={styles.bottomTabs}>
+                            <div className={styles.bottomTabs}>
 
                                 <button
 
-                                    style={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
+                                    className={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
 
                                     onClick={() => setActiveTab('log')}
 
@@ -3870,7 +3866,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                 <button
 
-                                    style={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
+                                    className={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
 
                                     onClick={() => setActiveTab('serial')}
 
@@ -3878,11 +3874,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             </div>
 
-                            <div style={styles.logArea} className="log-area-responsive">
+                            <div className={`${styles.logArea} log-area-responsive`}>
 
                                 {activeTab === 'log' ? (
 
-                                    logMessages.map((msg, i) => <div key={i} style={styles.logLine}>{msg}</div>)
+                                    logMessages.map((msg, i) => <div key={i} className={styles.logLine}>{msg}</div>)
 
                                 ) : (
 
@@ -3927,11 +3923,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 promptState.isOpen && (
 
-                    <div style={styles.modalOverlay}>
+                    <div className={styles.modalOverlay}>
 
-                        <div style={styles.modalContent}>
+                        <div className={styles.modalContent}>
 
-                            <div style={{ ...styles.modalTitle, backgroundColor: '#855CD6' }}>
+                            <div className={styles.modalTitle}>
 
                                 {promptState.type === 'variable' ? 'New Variable' : (promptState.message?.includes('Rename') ? 'Rename Variable' : 'Input')}
 
@@ -3939,7 +3935,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     onClick={handlePromptCancel}
 
-                                    style={{ cursor: 'pointer', float: 'right', fontSize: '20px', fontWeight: 'bold' }}
+                                    style={{ cursor: 'pointer', fontSize: '18px', opacity: 0.8 }}
 
                                 >×</div>
 
@@ -3947,25 +3943,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                            <div style={{ padding: '20px' }}>
+                            <div style={{ padding: '0 16px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                                {promptState.type === 'variable' ? (
+                                <p style={{ margin: 0, fontSize: '14px', color: '#555' }}>
 
-                                    <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
+                                    {promptState.message || 'Enter variable name:'}
 
-                                        New variable name:
-
-                                    </div>
-
-                                ) : promptState.message ? (
-
-                                    <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
-
-                                        {promptState.message}
-
-                                    </div>
-
-                                ) : null}
+                                </p>
 
 
 
@@ -3979,8 +3963,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     onChange={(e) => setPromptInput(e.target.value)}
 
-
-
                                     onKeyDown={(e) => {
 
                                         if (e.key === 'Enter') handlePromptSubmit();
@@ -3989,7 +3971,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                     }}
 
-                                    style={styles.modalInput}
+                                    className={styles.modalInput}
 
                                 />
 
@@ -4117,11 +4099,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                                <div style={styles.modalButtons}>
+                                <div className={styles.modalButtons}>
 
-                                    <button onClick={handlePromptCancel} style={styles.modalCancel}>Cancel</button>
+                                    <button onClick={handlePromptCancel} className={styles.modalCancel}>Cancel</button>
 
-                                    <button onClick={handlePromptSubmit} style={styles.modalSubmit}>OK</button>
+                                    <button onClick={handlePromptSubmit} className={styles.modalSubmit}>OK</button>
 
                                 </div>
 
