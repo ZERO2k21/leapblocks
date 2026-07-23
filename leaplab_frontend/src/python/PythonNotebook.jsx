@@ -544,7 +544,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <Bell size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
                     <Settings size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
 
-                    <LeapLabAuthButton variant="dark" size="sm" className="h-8 rounded box-border" />
+                    <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '4px', boxSizing: 'border-box' }} />
 
                     {/* CREOLEAP Right Logo */}
                     <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0 h-[34px] overflow-hidden drop-shadow-md">

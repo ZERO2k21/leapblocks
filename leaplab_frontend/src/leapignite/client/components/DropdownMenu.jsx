@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN MENU — Glassmorphism + slide-in animation (same design as Intermediate)
@@ -66,12 +66,15 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                                 className={`flex items-center gap-2.5 w-full px-3.5 py-2 text-sm font-medium text-left transition-all tracking-normal ${
                                     item.disabled
                                         ? 'cursor-not-allowed text-gray-300 bg-transparent'
-                                        : 'cursor-pointer text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+                                        : item.active
+                                            ? 'cursor-pointer text-purple-700 font-bold bg-purple-100/60'
+                                            : 'cursor-pointer text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
                                 }`}
                             >
                                 {item.icon && <item.icon size={16} strokeWidth={2} className="text-purple-600 opacity-85 shrink-0" />}
                                 <span className="flex-1">{item.label}</span>
-                                {item.shortcut && (
+                                {item.active && <Check size={14} strokeWidth={2.5} className="text-purple-600 shrink-0" />}
+                                {!item.active && item.shortcut && (
                                     <span className="text-xs text-gray-400 font-medium bg-black/5 px-1.5 py-0.5 rounded font-mono">
                                         {item.shortcut}
                                     </span>

@@ -131,15 +131,15 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
 
     if (!selectedClass) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', padding: '40px 32px', textAlign: 'center' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'linear-gradient(135deg, #f3f0ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 4px 20px rgba(99,14,212,0.1)', border: '1px solid rgba(224,213,255,0.5)' }}>
-                    <span style={{ fontSize: '36px' }}>📁</span>
+            <div className="flex flex-col items-center justify-center h-full w-full py-10 px-8 text-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#f3f0ff] to-[#ede9fe] flex items-center justify-center mb-6 shadow-lg shadow-purple-600/10 border border-purple-200/50">
+                    <span className="text-4xl">📁</span>
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', marginBottom: '8px', letterSpacing: '-0.025em' }}>Select a class first</h3>
-                <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, maxWidth: '260px', fontWeight: 500 }}>Choose or create a class in the sidebar, then come back to browse images.</p>
-                <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', background: '#f8f7ff', border: '1px solid rgba(224,213,255,0.6)' }}>
+                <h3 className="text-lg font-extrabold text-[#131b2e] mb-2 tracking-tight">Select a class first</h3>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-[260px] font-medium">Choose or create a class in the sidebar, then come back to browse images.</p>
+                <div className="mt-6 flex items-center gap-2 py-2.5 px-4 rounded-xl bg-[#f8f7ff] border border-purple-200/60">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#630ed4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4' }}>Look in the sidebar</span>
+                    <span className="text-xs font-bold text-[#630ed4]">Look in the sidebar</span>
                 </div>
             </div>
         )
@@ -149,7 +149,7 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
     if (viewState === 'complete' && downloadComplete) {
         return (
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fade-in">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center mb-4 shadow-xs">
                     <span className="text-3xl">✅</span>
                 </div>
                 <h3 className="text-lg font-extrabold text-[#131b2e] mb-1.5">Images Added!</h3>
@@ -160,8 +160,9 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
                     from {selectedDataset?.title}
                 </p>
                 <button
+                    type="button"
                     onClick={handleReset}
-                    className="px-5 py-2.5 bg-[#f3f0ff] text-[#630ed4] rounded-xl text-xs font-bold hover:bg-[#e8e0ff] transition-all"
+                    className="px-5 py-2.5 bg-[#f3f0ff] text-[#630ed4] rounded-xl text-xs font-bold hover:bg-[#e8e0ff] transition-all cursor-pointer border-none"
                 >
                     🔄 Search More
                 </button>
@@ -173,7 +174,7 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
     if (viewState === 'downloading' || isDownloading) {
         return (
             <div className="flex flex-col items-center py-12 px-6 animate-fade-in">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mb-4 shadow-xs">
                     <div className="w-8 h-8 border-3 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
                 </div>
                 <h3 className="text-base font-extrabold text-[#131b2e] mb-1.5">Downloading Images...</h3>
@@ -195,12 +196,12 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
     if (viewState === 'results' && selectedDataset) {
         return (
             <div className="flex flex-col py-6 px-4 animate-fade-in">
-                <button onClick={() => setSelectedDataset(null)} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline">
+                <button type="button" onClick={() => setSelectedDataset(null)} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline bg-transparent border-none cursor-pointer">
                     ← Back to results
                 </button>
 
                 <div className="text-center mb-5">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mx-auto mb-3 shadow-xs">
                         <span className="text-2xl">📦</span>
                     </div>
                     <h3 className="text-base font-extrabold text-[#131b2e] mb-1">{selectedDataset.title}</h3>
@@ -217,8 +218,9 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
                         {[10, 20, 30, 50].map(q => (
                             <button
                                 key={q}
+                                type="button"
                                 onClick={() => setMaxImages(q)}
-                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all border-none cursor-pointer ${
                                     maxImages === q
                                         ? 'bg-[#630ed4] text-white shadow-md'
                                         : 'bg-[#f3f0ff] text-[#4a4455] hover:bg-[#e8e0ff]'
@@ -238,9 +240,10 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
 
                 <div className="text-center">
                     <button
+                        type="button"
                         onClick={handleDownload}
                         disabled={isDownloading}
-                        className="px-6 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2 mx-auto border-none cursor-pointer"
                     >
                         📥 Download {maxImages} Images
                     </button>
@@ -256,7 +259,7 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
     if (viewState === 'results') {
         return (
             <div className="flex flex-col py-6 px-4 animate-fade-in">
-                <button onClick={() => setViewState('search')} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline">
+                <button type="button" onClick={() => setViewState('search')} className="self-start mb-4 flex items-center gap-1 text-[11px] font-bold text-[#630ed4] hover:underline bg-transparent border-none cursor-pointer">
                     ← New search
                 </button>
 
@@ -267,7 +270,7 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
 
                 {datasets.length === 0 ? (
                     <div className="text-center py-10">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#e8e0ff] flex items-center justify-center mx-auto mb-3 shadow-xs">
                             <span className="text-2xl">🔍</span>
                         </div>
                         <p className="text-xs font-bold text-[#131b2e] mb-1">No datasets found</p>
@@ -278,8 +281,9 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
                         {datasets.map(dataset => (
                             <button
                                 key={dataset.ref}
+                                type="button"
                                 onClick={() => handleSelectDataset(dataset)}
-                                className="w-full flex items-center gap-3 p-3 bg-white rounded-xl border border-[#e5e7eb] hover:border-[#630ed4]/30 hover:shadow-md transition-all text-left"
+                                className="w-full flex items-center gap-3 p-3 bg-white rounded-xl border border-[#e5e7eb] hover:border-[#630ed4]/30 hover:shadow-md transition-all text-left cursor-pointer"
                             >
                                 <div className="w-10 h-10 rounded-lg bg-[#eaedff] flex items-center justify-center shrink-0">
                                     <span className="text-lg">📦</span>
@@ -319,9 +323,10 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
                     className="flex-1 px-3.5 py-2.5 text-xs border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#630ed4] focus:border-transparent bg-white"
                 />
                 <button
+                    type="button"
                     onClick={handleSearch}
                     disabled={isSearching || !searchQuery.trim()}
-                    className="px-4 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                    className="px-4 py-2.5 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5 border-none cursor-pointer"
                 >
                     {isSearching ? (
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -339,8 +344,9 @@ export default function KaggleDatasetBrowser({ mode, credentials, onImagesAdded 
                     {['cat', 'dog', 'car', 'fruit', 'bird', 'flower', 'food', 'animal'].map(term => (
                         <button
                             key={term}
+                            type="button"
                             onClick={() => { setSearchQuery(term); }}
-                            className="px-2.5 py-1 bg-[#f3f0ff] text-[#630ed4] rounded-full text-[10px] font-bold hover:bg-[#e8e0ff] transition-all"
+                            className="px-2.5 py-1 bg-[#f3f0ff] text-[#630ed4] rounded-full text-[10px] font-bold hover:bg-[#e8e0ff] transition-all border-none cursor-pointer"
                         >
                             {term}
                         </button>

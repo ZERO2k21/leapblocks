@@ -110,8 +110,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         if (!indexTip || indexTip.score < 0.3) return null
         const canvas = drawingCanvasRef.current
         if (!canvas) return null
-        const scaleX = canvas.width / CANVAS_WIDTH
-        const scaleY = canvas.height / CANVAS_HEIGHT
         return {
             x: (1 - indexTip.x / CANVAS_WIDTH) * canvas.width,
             y: (indexTip.y / CANVAS_HEIGHT) * canvas.height
@@ -419,30 +417,30 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#10b981] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
                 </div>
             )}
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#10b981] mb-0">Virtual Drawing Canvas!</h2>
-                            <p className="text-xs text-[#4a4455]">Learn hand gestures to control drawing tools!</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-emerald-500 mb-0">Virtual Drawing Canvas!</h2>
+                            <p className="text-xs text-gray-600">Learn hand gestures to control drawing tools!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="hand-pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={hiddenCanvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -459,17 +457,16 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                         <span className="text-5xl mb-3">🎨</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect gesture samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#10b981] text-white rounded-xl text-xs font-bold shadow-lg">Turn On Camera</button>
+                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#ecfdf5] text-[#059669]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600 border-none cursor-pointer">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : '#10b981' }}>
+                                <button type="button" onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white border-none cursor-pointer disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-emerald-500'}`}>
                                     {isCapturing ? '...' : '📸 Capture'}
                                 </button>
                             </div>
@@ -482,7 +479,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                     {CLASSES.map(cls => {
                                         const config = TOOL_CONFIG[cls]
                                         return (
-                                            <div key={cls} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#ecfdf5]">
+                                            <div key={cls} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-50">
                                                 <span className="text-sm">{config.emoji}</span>
                                                 <div className="flex-1">
                                                     <span className="text-[10px] font-bold text-gray-800">{config.description}</span>
@@ -493,11 +490,11 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-[#ecfdf5] to-[#d1fae5] rounded-xl p-3 border border-[#10b981]/10">
-                                <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wide mb-1.5">Gesture Guide</p>
+                            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-3 border border-emerald-500/10">
+                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1.5">Gesture Guide</p>
                                 <div className="flex flex-col gap-1">
                                     {CLASSES.map(cls => (
-                                        <span key={cls} className="text-[9px] text-[#065f46]">• {cls}: {TOOL_CONFIG[cls].gesture}</span>
+                                        <span key={cls} className="text-[9px] text-emerald-900">• {cls}: {TOOL_CONFIG[cls].gesture}</span>
                                     ))}
                                 </div>
                             </div>
@@ -522,19 +519,19 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold text-[#10b981] mb-2">Training Your Drawing AI!</h2>
+                        <h2 className="text-2xl font-extrabold text-emerald-500 mb-2">Training Your Drawing AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize drawing gestures...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 border-[#10b981] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-[#059669]">Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-emerald-600">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✅</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 bg-[#10b981] text-white rounded-xl text-sm font-bold shadow-lg">
+                            <button type="button" onClick={() => mode.setMode('test')} className="px-6 py-3 bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg border-none cursor-pointer">
                                 Start Drawing
                             </button>
                         </div>
@@ -544,29 +541,29 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#10b981] mb-0">Draw with Gestures!</h2>
-                            <p className="text-xs text-[#4a4455]">Show hand gestures to control drawing tools!</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-emerald-500 mb-0">Draw with Gestures!</h2>
+                            <p className="text-xs text-gray-600">Show hand gestures to control drawing tools!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="hand-pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col min-w-0">
                             {/* Drawing Canvas */}
-                            <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200" style={{ minHeight: '320px' }}>
+                            <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200 min-h-[320px]">
                                 <canvas
                                     ref={drawingCanvasRef}
                                     width={CANVAS_WIDTH}
                                     height={CANVAS_HEIGHT}
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                    className="w-full h-full object-contain block"
                                 />
                                 {activeTool && (
-                                    <div className="absolute top-2 left-2 px-3 py-1.5 rounded-xl backdrop-blur-md text-white text-xs font-bold" style={{ background: 'rgba(16,185,129,0.85)' }}>
+                                    <div className="absolute top-2 left-2 px-3 py-1.5 rounded-xl backdrop-blur-md text-white text-xs font-bold bg-emerald-500/85">
                                         <span className="mr-1">{TOOL_CONFIG[activeTool]?.emoji}</span>
                                         {activeTool}
                                     </div>
@@ -589,13 +586,13 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
                             {/* Drawing Controls */}
                             <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#ecfdf5] text-[#059669]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={handleUndo} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600">
+                                <button type="button" onClick={handleUndo} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 border-none cursor-pointer">
                                     ↩️ Undo
                                 </button>
-                                <button onClick={handleClearCanvas} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600">
+                                <button type="button" onClick={handleClearCanvas} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 border-none cursor-pointer">
                                     🗑️ Clear
                                 </button>
                             </div>
@@ -608,7 +605,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                 {activeTool ? (
                                     <div className="flex flex-col items-center gap-1">
                                         <span className="text-5xl">{TOOL_CONFIG[activeTool]?.emoji}</span>
-                                        <span className="text-lg font-black text-[#10b981]">{activeTool}</span>
+                                        <span className="text-lg font-black text-emerald-500">{activeTool}</span>
                                         <span className="text-[10px] text-gray-500">{TOOL_CONFIG[activeTool]?.description}</span>
                                     </div>
                                 ) : (
@@ -620,11 +617,11 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Confidence</span>
-                                    <span className="text-xs font-extrabold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
                                 <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-emerald-500"
                                     style={{ background: `linear-gradient(to right, #10b981 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
                             </div>
 
@@ -635,8 +632,9 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                     {COLORS.map((color, i) => (
                                         <button
                                             key={color}
+                                            type="button"
                                             onClick={() => setCurrentColorIndex(i)}
-                                            className="w-8 h-8 rounded-lg border-2 transition-all"
+                                            className="w-8 h-8 rounded-lg border-2 transition-all cursor-pointer"
                                             style={{
                                                 background: color,
                                                 borderColor: i === currentColorIndex ? '#111827' : 'transparent',
@@ -654,13 +652,13 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                     {Object.entries(BRUSH_SIZES).map(([name, size]) => (
                                         <button
                                             key={name}
+                                            type="button"
                                             onClick={() => setBrushSize(name as keyof typeof BRUSH_SIZES)}
-                                            className="flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-[10px] font-bold transition-all"
-                                            style={{
-                                                background: brushSize === name ? '#ecfdf5' : '#f9fafb',
-                                                color: brushSize === name ? '#059669' : '#6b7280',
-                                                border: brushSize === name ? '1.5px solid #10b981' : '1.5px solid transparent',
-                                            }}
+                                            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-[10px] font-bold transition-all border-none cursor-pointer ${
+                                                brushSize === name
+                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-500'
+                                                    : 'bg-gray-50 text-gray-500 border border-transparent'
+                                            }`}
                                         >
                                             <div className="rounded-full bg-current" style={{ width: `${Math.min(size * 1.5, 18)}px`, height: `${Math.min(size * 1.5, 18)}px` }} />
                                             {name}
@@ -671,13 +669,13 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
                             {/* Speed & Hand */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#ecfdf5] rounded-xl p-2.5 border border-[#d1fae5]">
+                                <div className="bg-emerald-50 rounded-xl p-2.5 border border-emerald-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="bg-[#ecfdf5] rounded-xl p-2.5 border border-[#d1fae5]">
+                                <div className="bg-emerald-50 rounded-xl p-2.5 border border-emerald-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Hand</p>
-                                    <p className="text-lg font-extrabold" style={{ color: handDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${handDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {handDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>

@@ -240,7 +240,7 @@ export default function TopBar() {
                             )}
                         </button>
 
-                        <LeapLabAuthButton variant="dark" size="sm" className="h-8.5 rounded-full box-border" />
+                        <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
                         </>)}
                     </div>
 
@@ -371,7 +371,7 @@ export default function TopBar() {
                     </button>
 
                     <div className="mt-auto flex flex-col gap-2">
-                        <LeapLabAuthButton variant="dark" size="sm" className="w-full h-8.5 rounded-full box-border" />
+                        <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
                     </div>
                 </MobileDrawer>
                 </>

@@ -34,151 +34,60 @@ export default function DiscardConfirmModal({ isOpen, classCount, onConfirm, onC
         <div
             ref={modalRef}
             onClick={handleOverlayClick}
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-            style={{ animation: 'modalFadeIn 0.25s ease-out' }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 animate-[modalFadeIn_0.25s_ease-out]"
         >
             {/* Backdrop */}
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,1,40,0.6)', backdropFilter: 'blur(8px)' }} />
+            <div className="absolute inset-0 bg-[#0a0128]/60 backdrop-blur-md" />
 
             {/* Modal */}
-            <div
-                style={{
-                    position: 'relative',
-                    width: '100%',
-                    maxWidth: '380px',
-                    animation: 'modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-            >
+            <div className="relative w-full max-w-[380px] animate-[modalSlideIn_0.3s_cubic-bezier(0.16,1,0.3,1)]">
                 {/* Glow border */}
-                <div style={{
-                    position: 'absolute',
-                    inset: '-1px',
-                    borderRadius: '24px',
-                    background: 'linear-gradient(135deg, rgba(192,132,252,0.3), rgba(129,140,248,0.2), rgba(99,14,212,0.3))',
-                    filter: 'blur(1px)',
-                }} />
+                <div className="absolute -inset-px rounded-3xl bg-gradient-to-r from-purple-400/30 via-indigo-400/20 to-[#630ed4]/30 blur-xs" />
 
                 {/* Card */}
-                <div style={{
-                    position: 'relative',
-                    background: '#fff',
-                    borderRadius: '24px',
-                    overflow: 'hidden',
-                    boxShadow: '0 25px 60px -12px rgba(99,14,212,0.2), 0 0 0 1px rgba(99,14,212,0.05)',
-                }}>
+                <div className="relative bg-white rounded-3xl overflow-hidden shadow-[0_25px_60px_-12px_rgba(99,14,212,0.2),0_0_0_1px_rgba(99,14,212,0.05)]">
                     {/* Top gradient bar */}
-                    <div style={{ height: '4px', background: 'linear-gradient(90deg, #c084fc, #630ed4, #818cf8)' }} />
+                    <div className="h-1 bg-gradient-to-r from-purple-400 via-[#630ed4] to-indigo-400" />
 
                     {/* Content */}
-                    <div style={{ padding: '28px 28px 20px', textAlign: 'center' }}>
+                    <div className="p-7 pb-5 text-center">
                         {/* Icon */}
-                        <div style={{ position: 'relative', width: '56px', height: '56px', margin: '0 auto 16px' }}>
-                            <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                transform: 'rotate(3deg)',
-                                boxShadow: '0 4px 12px rgba(245,158,11,0.15)',
-                            }} />
-                            <div style={{
-                                position: 'relative',
-                                width: '100%',
-                                height: '100%',
-                                borderRadius: '16px',
-                                background: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                                border: '1px solid rgba(253,230,138,0.3)',
-                            }}>
-                                <span style={{ fontSize: '1.6rem' }}>⚠️</span>
+                        <div className="relative w-14 h-14 mx-auto mb-4">
+                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 rotate-3 shadow-md shadow-amber-500/15" />
+                            <div className="relative w-full h-full rounded-2xl bg-white flex items-center justify-center shadow-xs border border-amber-200/30">
+                                <span className="text-2xl">⚠️</span>
                             </div>
                         </div>
 
                         {/* Title */}
-                        <h3 style={{
-                            fontSize: '1.15rem',
-                            fontWeight: 800,
-                            color: '#131b2e',
-                            marginBottom: '8px',
-                            lineHeight: 1.3,
-                        }}>
+                        <h3 className="text-[1.15rem] font-extrabold text-[#131b2e] mb-2 leading-snug">
                             {title || 'Leave without adding samples?'}
                         </h3>
 
                         {/* Description */}
-                        <p style={{
-                            fontSize: '13px',
-                            color: '#6b7280',
-                            lineHeight: 1.6,
-                            maxWidth: '300px',
-                            margin: '0 auto',
-                        }}>
+                        <p className="text-xs text-gray-500 leading-relaxed max-w-[300px] mx-auto">
                             {description || (
-                                <>You created <span style={{ fontWeight: 700, color: '#630ed4' }}>{classCount} {classCount === 1 ? 'class' : 'classes'}</span> but haven't added any training data yet. Your progress will be lost!</>
+                                <>You created <span className="font-bold text-[#630ed4]">{classCount} {classCount === 1 ? 'class' : 'classes'}</span> but haven't added any training data yet. Your progress will be lost!</>
                             )}
                         </p>
                     </div>
 
                     {/* Divider */}
-                    <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #e5e7eb, transparent)', margin: '0 24px' }} />
+                    <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mx-6" />
 
                     {/* Buttons */}
-                    <div style={{ padding: '16px 24px 20px', display: 'flex', gap: '10px' }}>
+                    <div className="p-4 px-6 pb-5 flex gap-2.5">
                         <button
+                            type="button"
                             onClick={onCancel}
-                            style={{
-                                flex: 1,
-                                padding: '12px 0',
-                                borderRadius: '14px',
-                                fontSize: '13px',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                color: '#fff',
-                                boxShadow: '0 4px 16px rgba(99,14,212,0.25)',
-                                transition: 'all 0.2s ease',
-                                letterSpacing: '0.02em',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-1px)'
-                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,14,212,0.3)'
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)'
-                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(99,14,212,0.25)'
-                            }}
+                            className="flex-1 py-3 rounded-2xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-md shadow-purple-600/25 transition-all duration-200 tracking-wide hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/30"
                         >
                             Stay 🏠
                         </button>
                         <button
+                            type="button"
                             onClick={onConfirm}
-                            style={{
-                                flex: 1,
-                                padding: '12px 0',
-                                borderRadius: '14px',
-                                fontSize: '13px',
-                                fontWeight: 700,
-                                border: '2px solid #e5e7eb',
-                                cursor: 'pointer',
-                                background: '#fff',
-                                color: '#374151',
-                                transition: 'all 0.2s ease',
-                                letterSpacing: '0.02em',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#c084fc'
-                                e.currentTarget.style.background = '#faf5ff'
-                                e.currentTarget.style.transform = 'translateY(-1px)'
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#e5e7eb'
-                                e.currentTarget.style.background = '#fff'
-                                e.currentTarget.style.transform = 'translateY(0)'
-                            }}
+                            className="flex-1 py-3 rounded-2xl text-xs font-bold border-2 border-gray-200 cursor-pointer bg-white text-gray-700 transition-all duration-200 tracking-wide hover:border-purple-400 hover:bg-purple-50/50 hover:-translate-y-0.5"
                         >
                             {confirmText || 'Leave 🚪'}
                         </button>

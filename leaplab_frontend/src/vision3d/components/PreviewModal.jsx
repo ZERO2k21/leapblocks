@@ -116,18 +116,11 @@ const PreviewShape = React.memo(({ shape, explosionFactor, center, dir, index, t
         />
       </mesh>
       {t > 0.3 && (
-        <Html distanceFactor={15} style={{ pointerEvents: 'none' }}>
-          <div style={{
-            background: 'rgba(0,0,0,0.75)',
-            color: '#fff',
-            padding: '2px 8px',
-            borderRadius: 4,
-            fontSize: 12,
-            fontFamily: 'sans-serif',
-            whiteSpace: 'nowrap',
-            transform: 'translateY(-20px)',
-            opacity: Math.min(1, (t - 0.3) / 0.3),
-          }}>
+        <Html distanceFactor={15} className="pointer-events-none">
+          <div
+            className="bg-black/75 text-white px-2 py-0.5 rounded text-xs font-sans whitespace-nowrap -translate-y-5"
+            style={{ opacity: Math.min(1, (t - 0.3) / 0.3) }}
+          >
             {shape.name || shape.type}
           </div>
         </Html>
@@ -167,25 +160,17 @@ const PreviewModal = ({ open, onClose }) => {
   if (!open) return null;
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      zIndex: 9999, background: '#1e1e2e',
-    }}>
+    <div className="fixed inset-0 w-screen h-screen z-[9999] bg-[#1e1e2e]">
       <button
+        type="button"
         onClick={onClose}
-        style={{
-          position: 'absolute', top: 16, right: 16, zIndex: 10000,
-          background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
-          fontSize: 20, cursor: 'pointer', width: 40, height: 40, borderRadius: 8,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'sans-serif',
-        }}
+        className="absolute top-4 right-4 z-[10000] bg-white/15 border-none text-white text-xl cursor-pointer w-10 h-10 rounded-lg flex items-center justify-center font-sans hover:bg-white/25 transition-colors"
       >✕</button>
 
       <Canvas
         camera={{ position: [10, 8, 10], fov: 40, near: 0.1, far: 1000 }}
         gl={{ antialias: true, alpha: false }}
-        style={{ width: '100%', height: '100%' }}
+        className="w-full h-full"
         onCreated={({ scene }) => { scene.background = new THREE.Color(0x1e1e2e); }}
       >
         <ambientLight intensity={0.6} />
@@ -196,13 +181,8 @@ const PreviewModal = ({ open, onClose }) => {
         <SceneShapes explosionFactor={explosionFactor} />
       </Canvas>
 
-      <div style={{
-        position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', alignItems: 'center', gap: 16, zIndex: 10000,
-        background: 'rgba(0,0,0,0.6)', padding: '10px 24px', borderRadius: 12,
-        backdropFilter: 'blur(8px)',
-      }}>
-        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'sans-serif', fontWeight: 600 }}>ASSEMBLED</span>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-[10000] bg-black/60 px-6 py-2.5 rounded-xl backdrop-blur-md">
+        <span className="text-white/50 text-[11px] font-sans font-semibold">ASSEMBLED</span>
         <input
           type="range"
           min="0"
@@ -210,9 +190,9 @@ const PreviewModal = ({ open, onClose }) => {
           step="0.01"
           value={explosionFactor}
           onChange={(e) => setExplosionFactor(parseFloat(e.target.value))}
-          style={{ width: 200, accentColor: '#6366f1', cursor: 'pointer' }}
+          className="w-50 accent-indigo-500 cursor-pointer"
         />
-        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'sans-serif', fontWeight: 600 }}>EXPLODED</span>
+        <span className="text-white/50 text-[11px] font-sans font-semibold">EXPLODED</span>
       </div>
     </div>
   );

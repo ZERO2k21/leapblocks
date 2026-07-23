@@ -178,101 +178,13 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-// ── Style Constants ────────────────────────────────────────────────────────
-const CONTAINER_STYLE = {
-    position: 'fixed',
-    top: '56px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 99999,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '10px',
-    pointerEvents: 'none',
-    width: '100%',
-    maxWidth: '460px',
-    padding: '0 16px',
-    boxSizing: 'border-box',
-};
-
-const TOAST_ITEM_BASE = {
-    width: '100%',
-    borderRadius: '14px',
-    padding: '0',
-    color: 'white',
-    fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
-    pointerEvents: 'auto',
-    backdropFilter: 'blur(20px) saturate(1.4)',
-    WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer',
-    transition: 'box-shadow 0.2s ease',
-};
-
-const CONTENT_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '14px 16px',
-    position: 'relative',
-    zIndex: 1,
-};
-
-const MESSAGE_STYLE = {
-    fontSize: '13.5px',
-    fontWeight: 600,
-    lineHeight: 1.4,
-    letterSpacing: '0.01em',
-    color: '#f1f5f9',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-};
-
-const CLOSE_HINT_STYLE = {
-    width: 22, height: 22,
-    borderRadius: '6px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'background 0.15s ease',
-    flexShrink: 0,
-};
-
-const PROGRESS_WRAPPER_STYLE = {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '2.5px',
-    borderRadius: '0 0 14px 14px',
-    overflow: 'hidden',
-};
-
-const PROGRESS_BAR_BASE = {
-    height: '100%',
-    backgroundSize: '200% 100%',
-    transformOrigin: 'left',
-    borderRadius: '0 0 14px 14px',
-};
-
-const SHIMMER_STYLE = {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'toastShimmer 3.5s ease-in-out infinite',
-    borderRadius: '14px',
-    pointerEvents: 'none',
-};
-
 function ToastContainer({ toasts, onDismiss }) {
     useEffect(() => { ensureStyles(); }, []);
 
     if (toasts.length === 0) return null;
 
     return (
-        <div style={CONTAINER_STYLE}>
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[99999] flex flex-col items-center gap-2.5 pointer-events-none w-full max-w-[460px] px-4 box-border">
             {toasts.map(toast => (
                 <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
             ))}
@@ -321,35 +233,16 @@ function ToastIcon({ type }) {
 
     if (type === 'info') {
         return (
-            <div style={{
-                width: 32, height: 32, borderRadius: '10px',
-                background: config.iconBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 2px 8px ${config.accent}40`,
-                flexShrink: 0,
-                position: 'relative',
-            }}>
-                <div style={{
-                    width: 18, height: 18,
-                    border: '2px solid rgba(255,255,255,0.2)',
-                    borderTopColor: '#fff',
-                    borderRadius: '50%',
-                    animation: 'toastSpinner 1.2s linear infinite',
-                }} />
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 relative" style={{ background: config.iconBg, boxShadow: `0 2px 8px ${config.accent}40` }}>
+                <div className="w-4.5 h-4.5 border-2 border-white/20 border-t-white rounded-full animate-[toastSpinner_1.2s_linear_infinite]" />
             </div>
         );
     }
 
     if (type === 'success') {
         return (
-            <div style={{
-                width: 32, height: 32, borderRadius: '10px',
-                background: config.iconBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 2px 8px ${config.accent}40`,
-                flexShrink: 0,
-            }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'toastCheckPop 0.8s ease-out' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: config.iconBg, boxShadow: `0 2px 8px ${config.accent}40` }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="animate-[toastCheckPop_0.8s_ease-out]">
                     <path d="M3 8.5L6.5 12L13 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
             </div>
@@ -358,14 +251,7 @@ function ToastIcon({ type }) {
 
     if (type === 'error') {
         return (
-            <div style={{
-                width: 32, height: 32, borderRadius: '10px',
-                background: config.iconBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 2px 8px ${config.accent}40`,
-                flexShrink: 0,
-                animation: 'toastIconPulse 2s ease-in-out infinite',
-            }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 animate-[toastIconPulse_2s_ease-in-out_infinite]" style={{ background: config.iconBg, boxShadow: `0 2px 8px ${config.accent}40` }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 3V9" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
                     <circle cx="8" cy="12" r="1.25" fill="white" />
@@ -376,13 +262,7 @@ function ToastIcon({ type }) {
 
     if (type === 'warning') {
         return (
-            <div style={{
-                width: 32, height: 32, borderRadius: '10px',
-                background: config.iconBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 2px 8px ${config.accent}40`,
-                flexShrink: 0,
-            }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: config.iconBg, boxShadow: `0 2px 8px ${config.accent}40` }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M7.13 2.58a1 1 0 011.74 0l5.5 9.5A1 1 0 0113.5 14h-11a1 1 0 01-.87-1.5l5.5-9.42z" fill="rgba(255,255,255,0.15)" stroke="white" strokeWidth="1.5" />
                     <path d="M8 6v3" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -402,15 +282,11 @@ function ToastItem({ toast, onDismiss }) {
     const animDuration = toast.exiting ? '0.5s' : '0.7s';
 
     const renderShimmer = () => toast.type === 'info' && (
-        <div style={SHIMMER_STYLE} />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.03)_50%,transparent_100%)] bg-[length:200%_100%] animate-[toastShimmer_3.5s_ease-in-out_infinite] rounded-[14px] pointer-events-none" />
     );
 
     const renderCloseHint = () => (
-        <div style={{
-            ...CLOSE_HINT_STYLE,
-            background: hovered ? 'rgba(255,255,255,0.1)' : 'transparent',
-            opacity: hovered ? 1 : 0.3,
-        }}>
+        <div className={`w-5.5 h-5.5 rounded-md flex items-center justify-center transition-colors duration-150 shrink-0 ${hovered ? 'bg-white/10 opacity-100' : 'bg-transparent opacity-30'}`}>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
@@ -418,19 +294,18 @@ function ToastItem({ toast, onDismiss }) {
     );
 
     const renderContent = () => (
-        <div style={CONTENT_STYLE}>
+        <div className="flex items-center gap-3 p-[14px_16px] relative z-10">
             <ToastIcon type={toast.type} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={MESSAGE_STYLE}>{toast.message}</div>
+            <div className="flex-1 min-w-0">
+                <div className="text-[13.5px] font-semibold leading-snug tracking-wide text-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">{toast.message}</div>
             </div>
             {renderCloseHint()}
         </div>
     );
 
     const renderProgressBar = () => toast.duration > 0 && !toast.exiting && (
-        <div style={PROGRESS_WRAPPER_STYLE}>
-            <div style={{
-                ...PROGRESS_BAR_BASE,
+        <div className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-b-[14px] overflow-hidden">
+            <div className="h-full bg-[length:200%_100%] origin-left rounded-b-[14px]" style={{
                 background: config.progressColor,
                 animation: `toastProgress ${toast.duration}ms linear forwards`,
             }} />
@@ -441,8 +316,8 @@ function ToastItem({ toast, onDismiss }) {
         <div
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            className="w-full rounded-[14px] p-0 text-white font-sans pointer-events-auto backdrop-blur-xl backdrop-saturate-150 relative overflow-hidden cursor-pointer transition-shadow duration-200"
             style={{
-                ...TOAST_ITEM_BASE,
                 background: config.gradient,
                 border: `1px solid ${config.border}`,
                 boxShadow: hovered

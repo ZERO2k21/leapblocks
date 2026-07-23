@@ -3133,11 +3133,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 onModeChange={(m: string) => switchEditorMode(m as EditorMode)}
 
-                selectedBoard={selectedBoardName}
+                board={selectedBoard}
 
-                onBoardSelect={() => setIsBoardModalOpen(true)}
+                onBoardChange={setSelectedBoard}
 
-                connectionStatus={isConnected ? "connected" : "disconnected"}
+                isConnected={isConnected}
 
                 onConnect={handleConnect}
 

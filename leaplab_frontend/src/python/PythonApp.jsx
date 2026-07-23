@@ -92,18 +92,16 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             <button
                 type="button"
                 onClick={onToggle}
-                className={`flex items-center gap-1.5 px-4 py-2 border-0 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
-                    isOpen ? 'bg-white/20 backdrop-blur-xs' : 'bg-transparent hover:bg-white/10'
-                }`}
+                className={`flex items-center gap-1.5 px-4 py-2 border-0 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer ${isOpen ? 'bg-white/20 backdrop-blur-xs' : 'bg-transparent hover:bg-white/10'
+                    }`}
             >
                 {Icon && <Icon size={16} strokeWidth={2.2} className="opacity-90" />}
                 {label}
                 <ChevronDown
                     size={14}
                     strokeWidth={2.5}
-                    className={`opacity-50 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180' : 'rotate-0'
-                    }`}
+                    className={`opacity-50 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'
+                        }`}
                 />
             </button>
 
@@ -124,11 +122,10 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                                 type="button"
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-0 text-sm font-medium text-left transition-all tracking-normal ${
-                                    item.disabled
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-0 text-sm font-medium text-left transition-all tracking-normal ${item.disabled
                                         ? 'cursor-not-allowed text-gray-300 bg-transparent'
                                         : 'cursor-pointer text-gray-700 bg-transparent hover:bg-purple-100/60 hover:text-purple-700'
-                                }`}
+                                    }`}
                             >
                                 {item.icon && <item.icon size={16} strokeWidth={2} className="text-purple-600 opacity-85 shrink-0" />}
                                 <span className="flex-1">{item.label}</span>
@@ -2557,14 +2554,12 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 <div
                                     key={file}
                                     onClick={() => setUploadActiveFile(file)}
-                                    className={`p-2.5 cursor-pointer flex items-center justify-between gap-2 transition-colors ${
-                                        isSelected ? 'border-l-[3px] border-[#8B5CF6] bg-[#EFE8FF]' : 'border-l-[3px] border-transparent hover:bg-gray-100'
-                                    }`}
+                                    className={`p-2.5 cursor-pointer flex items-center justify-between gap-2 transition-colors ${isSelected ? 'border-l-[3px] border-[#8B5CF6] bg-[#EFE8FF]' : 'border-l-[3px] border-transparent hover:bg-gray-100'
+                                        }`}
                                 >
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                                            isBoardSource ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'
-                                        }`}>
+                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isBoardSource ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'
+                                            }`}>
                                             {isBoardSource ? <FileCode2 size={13} /> : <FileText size={13} />}
                                         </div>
                                         <div className="min-w-0">
@@ -2651,11 +2646,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <button
                                 onClick={() => setShowBoardCppMenu((prev) => !prev)}
                                 title={showBoardCppMenu ? "Hide C++ tools" : "Show C++ tools"}
-                                className={`w-[58px] h-[58px] rounded-full border-4 border-purple-100 text-white flex items-center justify-center shadow-lg cursor-pointer transition-all duration-200 ${
-                                    showBoardCppMenu
+                                className={`w-[58px] h-[58px] rounded-full border-4 border-purple-100 text-white flex items-center justify-center shadow-lg cursor-pointer transition-all duration-200 ${showBoardCppMenu
                                         ? 'bg-gradient-to-b from-[#7B4FC4] to-[#5A2D82] shadow-purple-900/30'
                                         : 'bg-[#E91E63] shadow-pink-600/30'
-                                }`}
+                                    }`}
                             >
                                 <div className="flex items-center gap-0.5 text-[11px] font-extrabold">
                                     <Plus size={16} />
@@ -2668,9 +2662,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                 <div className="flex-1 flex flex-col min-w-0 min-h-0">
                     <div className="flex-1 flex flex-col min-h-0">
-                        <div className={`h-[34px] border-b border-gray-200 flex items-center justify-between px-3 text-xs text-gray-800 gap-3 ${
-                            uploadView === "board" ? 'bg-white' : 'bg-gray-100'
-                        }`}>
+                        <div className={`h-[34px] border-b border-gray-200 flex items-center justify-between px-3 text-xs text-gray-800 gap-3 ${uploadView === "board" ? 'bg-white' : 'bg-gray-100'
+                            }`}>
                             <div className="flex items-center gap-2 min-w-0">
                                 {uploadActiveFile === activeBoardFile ? <FileCode2 size={14} /> : <FileText size={14} />}
                                 <span className="font-semibold truncate">
@@ -2735,9 +2728,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                         <button
                                             key={tab.id}
                                             onClick={() => setUploadPanelTab(tab.id)}
-                                            className={`flex items-center gap-1.5 border rounded-lg px-3 py-1.75 text-xs font-semibold cursor-pointer transition-colors ${
-                                                active ? 'border-[#8B5CF6] bg-[#F3EEFF] text-[#8B5CF6]' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'
-                                            }`}
+                                            className={`flex items-center gap-1.5 border rounded-lg px-3 py-1.75 text-xs font-semibold cursor-pointer transition-colors ${active ? 'border-[#8B5CF6] bg-[#F3EEFF] text-[#8B5CF6]' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'
+                                                }`}
                                         >
                                             <Icon size={14} />
                                             {tab.label}
@@ -2749,9 +2741,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <button
                                 onClick={handleUploadFirmware}
                                 disabled={isUploadingFirmware}
-                                className={`flex items-center gap-2 border-none rounded-lg px-3.5 py-2 text-xs font-bold transition-colors ${
-                                    isUploadingFirmware ? 'bg-purple-300 cursor-not-allowed text-white' : 'bg-[#8B5CF6] hover:bg-purple-700 cursor-pointer text-white'
-                                }`}
+                                className={`flex items-center gap-2 border-none rounded-lg px-3.5 py-2 text-xs font-bold transition-colors ${isUploadingFirmware ? 'bg-purple-300 cursor-not-allowed text-white' : 'bg-[#8B5CF6] hover:bg-purple-700 cursor-pointer text-white'
+                                    }`}
                             >
                                 {isUploadingFirmware ? <Loader size={15} className="animate-spin" /> : <Upload size={15} />}
                                 {isUploadingFirmware ? "Uploading..." : "Upload Code"}
@@ -2993,9 +2984,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     { id: 'upload', label: 'Upload' },
                 ].map(({ id, label }) => (
                     <button key={id} onClick={() => { handleWorkflowModeChange(id); setMobileMenuOpen(false); }}
-                        className={`flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-white text-xs font-semibold cursor-pointer text-left transition-all duration-150 ${
-                            workflowMode === id ? 'bg-purple-600/20' : 'bg-transparent hover:bg-purple-600/15'
-                        }`}
+                        className={`flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-white text-xs font-semibold cursor-pointer text-left transition-all duration-150 ${workflowMode === id ? 'bg-purple-600/20' : 'bg-transparent hover:bg-purple-600/15'
+                            }`}
                     >
                         {label}
                         {workflowMode === id && <span className="ml-auto text-[11px] opacity-60">Active</span>}
@@ -3118,18 +3108,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <div className="flex rounded-lg overflow-hidden bg-[#ECE7F8] border border-gray-200">
                             <button
                                 onClick={() => handleUploadViewChange("project")}
-                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${
-                                    uploadView === "project" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
-                                }`}
+                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${uploadView === "project" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
+                                    }`}
                             >
                                 <FileText size={14} />
                                 MicroPython
                             </button>
                             <button
                                 onClick={() => handleUploadViewChange("board")}
-                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${
-                                    uploadView === "board" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
-                                }`}
+                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${uploadView === "board" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
+                                    }`}
                             >
                                 <FileCode2 size={14} />
                                 Board C++
@@ -3166,9 +3154,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </button>
                         <button
                             onClick={handleConnectToBoard}
-                            className={`flex items-center gap-1.5 border-none rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-                                isConnected ? 'bg-[#10B981] hover:bg-emerald-600 text-white' : 'bg-[#EEF2FF] hover:bg-indigo-100 text-gray-800'
-                            }`}
+                            className={`flex items-center gap-1.5 border-none rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${isConnected ? 'bg-[#10B981] hover:bg-emerald-600 text-white' : 'bg-[#EEF2FF] hover:bg-indigo-100 text-gray-800'
+                                }`}
                         >
                             <Plug size={14} />
                             {isConnected ? "Disconnect" : "Connect"}
@@ -3200,11 +3187,10 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <div
                                 key={fname}
                                 onClick={() => setActiveFile(fname)}
-                                className={`px-3.5 py-[6px] text-xs transition-all whitespace-nowrap font-mono cursor-pointer border-r border-[#313244] ${
-                                    activeFile === fname
+                                className={`px-3.5 py-[6px] text-xs transition-all whitespace-nowrap font-mono cursor-pointer border-r border-[#313244] ${activeFile === fname
                                         ? 'bg-[#2d2d3f] text-[#cdd6f4] font-semibold border-b-2 border-[#7C3AED]'
                                         : 'bg-transparent text-[#6c7086] hover:text-gray-300 font-normal border-b-2 border-transparent'
-                                }`}
+                                    }`}
                             >
                                 {fname}
                             </div>
@@ -3222,9 +3208,8 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                         <div className="w-px h-5 bg-[#313244]" />
                         <button onClick={() => handleRun()} title="Run (Ctrl+Enter)" disabled={isRunning}
-                            className={`cursor-pointer px-3 py-[5px] text-xs font-semibold rounded flex items-center gap-1 transition-all border-none text-white ${
-                                isRunning ? 'bg-[#45475a] cursor-not-allowed' : 'bg-[#4CAF50] hover:bg-[#43a047]'
-                            }`}>
+                            className={`cursor-pointer px-3 py-[5px] text-xs font-semibold rounded flex items-center gap-1 transition-all border-none text-white ${isRunning ? 'bg-[#45475a] cursor-not-allowed' : 'bg-[#4CAF50] hover:bg-[#43a047]'
+                                }`}>
                             {isRunning ? (
                                 <><span className="animate-spin">&#x2699;</span> Running...</>
                             ) : (

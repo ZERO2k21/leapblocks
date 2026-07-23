@@ -21,26 +21,8 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
     const currentIndex = modeOrder.indexOf(mode)
 
     return (
-        <div
-            style={{
-                width: '100%',
-                maxWidth: '600px',
-                margin: '0 auto',
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: '#fff',
-                    borderRadius: '16px',
-                    padding: '12px 20px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                    position: 'relative',
-                }}
-            >
+        <div className="w-full max-w-[600px] mx-auto">
+            <div className="flex items-center justify-between bg-white rounded-2xl p-3 px-5 border border-gray-200 shadow-xs relative">
                 {steps.map((step, index) => {
                     const isActive = mode === step.id
                     const isCompleted = index < currentIndex
@@ -48,69 +30,39 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
                     return (
                         <React.Fragment key={step.id}>
                             <button
-                                onClick={() => {
-                                    onModeChange(step.id)
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    padding: '10px 16px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: isActive
-                                        ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
+                                type="button"
+                                onClick={() => onModeChange(step.id)}
+                                className={`flex items-center gap-2.5 p-2.5 px-4 rounded-xl border-none cursor-pointer flex-1 transition-all duration-200 ${
+                                    isActive
+                                        ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed]'
                                         : isCompleted
-                                            ? '#ecfdf5'
-                                            : 'transparent',
-                                    opacity: 1,
-                                    transition: 'all 0.2s ease',
-                                    flex: 1,
-                                }}
+                                            ? 'bg-emerald-50'
+                                            : 'bg-transparent'
+                                }`}
                             >
                                 <div
-                                    style={{
-                                        width: '30px',
-                                        height: '30px',
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '13px',
-                                        background: isActive
-                                            ? 'rgba(255,255,255,0.2)'
+                                    className={`w-7.5 h-7.5 rounded-xl flex items-center justify-center text-xs shrink-0 transition-all duration-200 ${
+                                        isActive
+                                            ? 'bg-white/20 text-white'
                                             : isCompleted
-                                                ? '#10b981'
-                                                : '#f3f4f6',
-                                        color: isActive
-                                            ? '#fff'
-                                            : isCompleted
-                                                ? '#fff'
-                                                : '#6b7280',
-                                        flexShrink: 0,
-                                        transition: 'all 0.2s ease',
-                                    }}
+                                                ? 'bg-emerald-500 text-white'
+                                                : 'bg-gray-100 text-gray-500'
+                                    }`}
                                 >
                                     {isCompleted ? '✓' : step.emoji}
                                 </div>
-                                <div style={{ textAlign: 'left' }}>
+                                <div className="text-left">
                                     <div
-                                        style={{
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            color: isActive ? '#fff' : '#111827',
-                                            lineHeight: 1.2,
-                                        }}
+                                        className={`text-xs font-bold leading-tight ${
+                                            isActive ? 'text-white' : 'text-gray-900'
+                                        }`}
                                     >
                                         {step.label}
                                     </div>
                                     <div
-                                        style={{
-                                            fontSize: '10px',
-                                            color: isActive ? 'rgba(255,255,255,0.7)' : '#6b7280',
-                                            lineHeight: 1.3,
-                                        }}
+                                        className={`text-[10px] leading-snug ${
+                                            isActive ? 'text-white/70' : 'text-gray-500'
+                                        }`}
                                     >
                                         {step.tip}
                                     </div>
@@ -119,34 +71,16 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
 
                             {/* Connector arrow */}
                             {index < steps.length - 1 && (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                        margin: '0 4px',
-                                    }}
-                                >
+                                <div className="flex items-center justify-center shrink-0 mx-1">
                                     <div
-                                        style={{
-                                            width: '12px',
-                                            height: '2px',
-                                            background: index < currentIndex ? '#10b981' : '#e5e7eb',
-                                            borderRadius: '1px',
-                                            transition: 'background 0.3s ease',
-                                        }}
+                                        className={`w-3 h-0.5 rounded-xs transition-colors duration-300 ${
+                                            index < currentIndex ? 'bg-emerald-500' : 'bg-gray-200'
+                                        }`}
                                     />
                                     <div
-                                        style={{
-                                            width: 0,
-                                            height: 0,
-                                            borderTop: '4px solid transparent',
-                                            borderBottom: '4px solid transparent',
-                                            borderLeft: '5px solid ' + (index < currentIndex ? '#10b981' : '#e5e7eb'),
-                                            marginLeft: '-1px',
-                                            transition: 'border-color 0.3s ease',
-                                        }}
+                                        className={`w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-5 -ml-px transition-colors duration-300 ${
+                                            index < currentIndex ? 'border-l-emerald-500' : 'border-l-gray-200'
+                                        }`}
                                     />
                                 </div>
                             )}

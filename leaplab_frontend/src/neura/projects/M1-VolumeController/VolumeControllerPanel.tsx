@@ -322,30 +322,30 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#ef4444] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
                 </div>
             )}
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#ef4444] mb-0">🔊 Volume Controller!</h2>
-                            <p className="text-xs text-[#4a4455]">Learn hand gestures to control media volume! 🎵</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-red-500 mb-0">🔊 Volume Controller!</h2>
+                            <p className="text-xs text-gray-600">Learn hand gestures to control media volume! 🎵</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="hand-pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -362,17 +362,16 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect gesture samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#ef4444] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
+                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#fef2f2] text-[#dc2626]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : '#ef4444' }}>
+                                <button type="button" onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white border-none cursor-pointer disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-red-500'}`}>
                                     {isCapturing ? '⏳...' : '📸 Capture'}
                                 </button>
                             </div>
@@ -386,7 +385,7 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                     {CLASSES.map(cls => {
                                         const config = GESTURE_MAP[cls]
                                         return (
-                                            <div key={cls} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#fef2f2]">
+                                            <div key={cls} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-50">
                                                 <span className="text-sm">{config.emoji}</span>
                                                 <div className="flex-1">
                                                     <span className="text-[10px] font-bold text-gray-800">{config.description}</span>
@@ -398,11 +397,11 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                             </div>
 
                             {/* Tips */}
-                            <div className="bg-gradient-to-br from-[#fef2f2] to-[#fee2e2] rounded-xl p-3 border border-[#ef4444]/10">
-                                <p className="text-[10px] font-bold text-[#dc2626] uppercase tracking-wide mb-1.5">💡 Gesture Guide</p>
+                            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-3 border border-red-500/10">
+                                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1.5">💡 Gesture Guide</p>
                                 <div className="flex flex-col gap-1">
                                     {CLASSES.map(cls => (
-                                        <span key={cls} className="text-[9px] text-[#991b1b]">• {GESTURE_GUIDE[cls]}</span>
+                                        <span key={cls} className="text-[9px] text-red-900">• {GESTURE_GUIDE[cls]}</span>
                                     ))}
                                 </div>
                             </div>
@@ -427,19 +426,19 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold text-[#ef4444] mb-2">🏋️ Training Your Volume AI!</h2>
+                        <h2 className="text-2xl font-extrabold text-red-500 mb-2">🏋️ Training Your Volume AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize volume gestures...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 border-[#ef4444] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-[#dc2626]">Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-red-600">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✅</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 bg-[#ef4444] text-white rounded-xl text-sm font-bold shadow-lg">
+                            <button type="button" onClick={() => mode.setMode('test')} className="px-6 py-3 bg-red-500 text-white rounded-xl text-sm font-bold shadow-lg border-none cursor-pointer">
                                 🔊 Start Controlling
                             </button>
                         </div>
@@ -449,23 +448,23 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#ef4444] mb-0">🧪 Test Volume Control!</h2>
-                            <p className="text-xs text-[#4a4455]">Show hand gestures to control media! 🎵</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-red-500 mb-0">🧪 Test Volume Control!</h2>
+                            <p className="text-xs text-gray-600">Show hand gestures to control media! 🎵</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="hand-pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -476,10 +475,7 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                 {/* Action Feedback Overlay */}
                                 {actionFeedback && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="animate-fade-in px-8 py-4 rounded-2xl" style={{
-                                            background: 'rgba(239, 68, 68, 0.85)',
-                                            backdropFilter: 'blur(8px)'
-                                        }}>
+                                        <div className="animate-fade-in px-8 py-4 rounded-2xl bg-red-500/85 backdrop-blur-md">
                                             <span className="text-4xl font-black text-white block">{GESTURE_MAP[actionFeedback]?.emoji}</span>
                                             <span className="text-lg font-bold text-white/90 block text-center mt-1">{GESTURE_MAP[actionFeedback]?.description}</span>
                                         </div>
@@ -500,12 +496,12 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to control volume</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#ef4444] text-white rounded-xl text-xs font-bold shadow-lg">📷 Start Camera</button>
+                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#fef2f2] text-[#dc2626]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                             </div>
@@ -516,11 +512,11 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence</span>
-                                    <span className="text-xs font-extrabold text-[#ef4444] bg-[#fef2f2] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
                                 <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-red-500"
                                     style={{ background: `linear-gradient(to right, #ef4444 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
                             </div>
 
@@ -528,13 +524,13 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">🔊 Volume</span>
-                                    <span className="text-xs font-extrabold text-[#ef4444] bg-[#fef2f2] px-2 py-0.5 rounded-md">{isMuted ? 'Muted' : `${volumeLevel}%`}</span>
+                                    <span className="text-xs font-extrabold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">{isMuted ? 'Muted' : `${volumeLevel}%`}</span>
                                 </div>
                                 <div className="flex gap-[3px] items-end h-6">
                                     {Array.from({ length: volumeBarSegments }).map((_, i) => (
                                         <div
                                             key={i}
-                                            className="flex-1 rounded-sm transition-all duration-150"
+                                            className="flex-1 rounded-xs transition-all duration-150"
                                             style={{
                                                 height: `${30 + (i / volumeBarSegments) * 70}%`,
                                                 background: i < activeVolumeSegments
@@ -548,12 +544,11 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                 <div className="flex items-center justify-between mt-1.5">
                                     <span className="text-[8px] text-gray-400">0%</span>
                                     <button
+                                        type="button"
                                         onClick={() => setIsMuted(prev => !prev)}
-                                        className="text-[9px] font-bold px-2 py-0.5 rounded-md"
-                                        style={{
-                                            background: isMuted ? '#ef4444' : '#f3f4f6',
-                                            color: isMuted ? '#fff' : '#6b7280',
-                                        }}
+                                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md border-none cursor-pointer ${
+                                            isMuted ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'
+                                        }`}
                                     >
                                         {isMuted ? '🔇 Unmute' : '🔊 Mute'}
                                     </button>
@@ -568,7 +563,7 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
                                     <div className="flex items-center justify-center gap-2">
                                         <span className="text-3xl">{GESTURE_MAP[lastAction]?.emoji}</span>
                                         <div>
-                                            <div className="text-lg font-black text-[#ef4444]">{lastAction}</div>
+                                            <div className="text-lg font-black text-red-500">{lastAction}</div>
                                             <div className="text-[10px] text-gray-500">{GESTURE_MAP[lastAction]?.description}</div>
                                         </div>
                                     </div>
@@ -579,13 +574,13 @@ export default function VolumeControllerPanel({ mode }: VolumeControllerPanelPro
 
                             {/* Speed & Hand */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#fef2f2] rounded-xl p-2.5 border border-[#fee2e2]">
+                                <div className="bg-red-50 rounded-xl p-2.5 border border-red-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">⚡ Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="bg-[#fef2f2] rounded-xl p-2.5 border border-[#fee2e2]">
+                                <div className="bg-red-50 rounded-xl p-2.5 border border-red-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">✋ Hand</p>
-                                    <p className="text-lg font-extrabold" style={{ color: handDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${handDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {handDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>

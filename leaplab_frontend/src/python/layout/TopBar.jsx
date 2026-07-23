@@ -144,7 +144,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                             size={18}
                         />
 
-                        <LeapLabAuthButton variant="dark" size="sm" className="h-8 rounded box-border" />
+                        <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '4px', boxSizing: 'border-box' }} />
 
                         {showCreoleap && (
                             <div className="ml-3 flex items-center shrink-0 h-[40px] overflow-hidden drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]">
@@ -235,7 +235,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             </TopbarShareButton>
 
             <div className="mt-auto flex flex-col gap-2">
-                <LeapLabAuthButton variant="dark" size="sm" className="w-full h-[34px] rounded-full box-border" />
+                <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
             </div>
         </MobileDrawer>
         </>

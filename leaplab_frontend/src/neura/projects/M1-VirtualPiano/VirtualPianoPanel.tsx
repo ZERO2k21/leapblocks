@@ -332,7 +332,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#8b5cf6] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
                 </div>
             )}
@@ -342,8 +342,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#8b5cf6] mb-0">🎹 Virtual Piano!</h2>
-                            <p className="text-xs text-[#4a4455]">Learn hand gestures for each note and capture them! 🎵</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-purple-600 mb-0">🎹 Virtual Piano!</h2>
+                            <p className="text-xs text-gray-600">Learn hand gestures for each note and capture them! 🎵</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
@@ -372,16 +372,16 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                         <span className="text-5xl mb-3">🎹</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect gesture samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#8b5cf6] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
+                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#f5f3ff] text-[#6d28d9]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#8b5cf6]'}`}>
+                                <button type="button" onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white border-none cursor-pointer disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-purple-600'}`}>
                                     {isCapturing ? '⏳...' : '📸 Capture'}
                                 </button>
                             </div>
@@ -407,11 +407,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                             </div>
 
                             {/* Tips */}
-                            <div className="bg-gradient-to-br from-[#faf5ff] to-[#f3e8ff] rounded-xl p-3 border border-[#8b5cf6]/10">
-                                <p className="text-[10px] font-bold text-[#6d28d9] uppercase tracking-wide mb-1.5">💡 Gesture Guide</p>
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-3 border border-purple-600/10">
+                                <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide mb-1.5">💡 Gesture Guide</p>
                                 <div className="flex flex-col gap-1">
                                     {['Do: Fist (closed hand)', 'Re: Index finger up', 'Mi: Two fingers up', 'Fa: Three fingers up', 'Sol: Four fingers up', 'La: Open hand (five)', 'Si: Thumb up'].map(tip => (
-                                        <span key={tip} className="text-[9px] text-[#4c1d95]">• {tip}</span>
+                                        <span key={tip} className="text-[9px] text-purple-900">• {tip}</span>
                                     ))}
                                 </div>
                             </div>
@@ -436,19 +436,19 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold text-[#8b5cf6] mb-2">🏋️ Training Your Piano AI!</h2>
+                        <h2 className="text-2xl font-extrabold text-purple-600 mb-2">🏋️ Training Your Piano AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize note gestures...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 border-[#8b5cf6] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-[#6d28d9]">Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-purple-700">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✅</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 bg-[#8b5cf6] text-white rounded-xl text-sm font-bold shadow-lg">
+                            <button type="button" onClick={() => mode.setMode('test')} className="px-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-lg border-none cursor-pointer">
                                 🎹 Start Playing
                             </button>
                         </div>
@@ -461,8 +461,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#8b5cf6] mb-0">🧪 Test Your Piano!</h2>
-                            <p className="text-xs text-[#4a4455]">Show hand gestures to play notes! 🎵</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-purple-600 mb-0">🧪 Test Your Piano!</h2>
+                            <p className="text-xs text-gray-600">Show hand gestures to play notes! 🎵</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
@@ -497,12 +497,12 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to play piano</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#8b5cf6] text-white rounded-xl text-xs font-bold shadow-lg">📷 Start Camera</button>
+                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#f5f3ff] text-[#6d28d9]">
+                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                             </div>
@@ -513,11 +513,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence</span>
-                                    <span className="text-xs font-extrabold text-[#8b5cf6] bg-[#f5f3ff] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
                                 <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-purple-600"
                                     style={{ background: `linear-gradient(to right, #8b5cf6 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
                             </div>
 
@@ -525,11 +525,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">🔊 Volume</span>
-                                    <span className="text-xs font-extrabold text-[#8b5cf6] bg-[#f5f3ff] px-2 py-0.5 rounded-md">{Math.round(volume * 100)}%</span>
+                                    <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{Math.round(volume * 100)}%</span>
                                 </div>
                                 <input type="range" min="0" max="100" value={Math.round(volume * 100)}
                                     onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-purple-600"
                                     style={{ background: `linear-gradient(to right, #8b5cf6 ${Math.round(volume * 100)}%, #e5e7eb ${Math.round(volume * 100)}%)` }} />
                             </div>
 
@@ -546,11 +546,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
 
                             {/* Speed & Hand */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#f5f3ff] rounded-xl p-2.5 border border-[#ede9fe]">
+                                <div className="bg-purple-50 rounded-xl p-2.5 border border-purple-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">⚡ Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="bg-[#f5f3ff] rounded-xl p-2.5 border border-[#ede9fe]">
+                                <div className="bg-purple-50 rounded-xl p-2.5 border border-purple-100">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">✋ Hand</p>
                                     <p className={`text-lg font-extrabold ${handDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {handDetected ? 'Found' : 'None'}
@@ -577,8 +577,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 <p className="text-[10px] font-bold text-gray-700 mb-2">🎹 Keyboard</p>
                                 <div className="flex gap-0.5">
                                     {Object.entries(NOTE_CONFIG).map(([note, config]) => (
-                                        <button key={note} onMouseDown={() => playNote(note)} onMouseUp={() => stopNote(note)}
-                                            className={`flex-1 h-14 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1 transition-all ${activeNote === note ? '' : 'bg-white'}`}
+                                        <button key={note} type="button" onMouseDown={() => playNote(note)} onMouseUp={() => stopNote(note)}
+                                            className={`flex-1 h-14 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1 transition-all cursor-pointer ${activeNote === note ? '' : 'bg-white'}`}
                                             style={{ background: activeNote === note ? config.color : undefined }}>
                                             <span className={`text-[8px] font-bold ${activeNote === note ? 'text-white' : ''}`} style={{ color: activeNote === note ? undefined : config.color }}>
                                                 {config.key}
