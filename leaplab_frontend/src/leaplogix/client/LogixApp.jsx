@@ -24,7 +24,6 @@ import { usePipManager } from "./hooks/usePipManager";
 import { useSpriteManager } from "./hooks/useSpriteManager";
 
 // ─── Data / Utils ──────────────────────────────────────────────────────────
-import { C } from "./utils/theme";
 import { EXTENSIONS } from "./data/extensions";
 import { BACKDROP_LIBRARY } from "./data/backdrops";
 import { getDefaultSpritePresets, createIntermediateBlocksBridge } from "../../python/SpriteBridge";
@@ -402,12 +401,7 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
 
     return (
         <LogixProvider value={contextValue}>
-            <div style={{
-                display: "flex", flexDirection: "column",
-                height: "100vh", width: "100vw",
-                background: C.BG, color: C.TEXT, overflow: "clip",
-                fontFamily: "'Inter', 'Segoe UI', sans-serif",
-            }}>
+            <div className="flex flex-col h-screen w-screen bg-[#F9FAFB] text-[#1F2937] overflow-clip font-sans">
                 <TopBar />
 
                 {workflowMode === "stage" ? (

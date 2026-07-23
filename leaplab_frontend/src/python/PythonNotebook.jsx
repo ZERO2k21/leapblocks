@@ -15,23 +15,7 @@ import { SkulptEngine } from "../leapignite/server/engine/SkulptEngine";
 import Logo, { CreoleapLogo } from "../components/Logo";
 import LeapLabAuthButton from "../auth/LeapLabAuthButton";
 import { fileService } from "../Electra/Client/Src/services/FileService";
-// ─── Theme Colors ─────────────────────────────────────────────────────────────
-const C = {
-    PURPLE: "#210d4fff",
-    DARK_PURPLE: "#1b075aff",
-    LIGHT_PURPLE: "#EDE9FE",
-    PURPLE_BG: "#F5F3FF",
-    BORDER: "#E5E7EB",
-    BG: "#F9FAFB",
-    BG2: "#F3F4F6",
-    TEXT: "#1F2937",
-    MUTED: "#6B7280",
-    GREEN: "#10B981",
-    RED: "#EF4444",
-    BLUE: "#3B82F6",
-    ORANGE: "#F59E0B",
-    YELLOW: "#FACC15",
-};
+
 
 // ─── Default Notebook Cells ───────────────────────────────────────────────────
 const DEFAULT_CELLS = [
@@ -507,7 +491,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
-            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md flex-shrink-0" style={{ background: "#5A2D82" }}>
+            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md shrink-0 bg-[#5A2D82]">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
@@ -557,25 +541,14 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <Bell size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
                     <Settings size={18} className="cursor-pointer opacity-80 hover:opacity-100" />
 
-                    <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
+                    <LeapLabAuthButton variant="dark" size="sm" className="h-8 rounded box-border" />
 
                     {/* CREOLEAP Right Logo */}
-                    <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0" style={{
-                        height: '34px',
-                        overflow: 'hidden',
-                        filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-                    }}>
+                    <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0 h-[34px] overflow-hidden drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]">
                         <img
                             src="assets/logo-creoleap.png"
                             alt="CREOLEAP"
-                            style={{
-                                width: '145px',
-                                height: 'auto',
-                                objectFit: 'contain',
-                                display: 'block',
-                                flexShrink: 0,
-                                filter: 'brightness(1.2) contrast(1.06)',
-                            }}
+                            className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.2] contrast-[1.06]"
                         />
                     </div>
                 </div>

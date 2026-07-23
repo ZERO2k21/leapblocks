@@ -10,75 +10,14 @@ const isLetterOrNumber = (sprite) =>
     sprite.type?.startsWith('letter_') || sprite.id?.startsWith('letter_') ||
     sprite.type?.startsWith('number_') || sprite.id?.startsWith('number_');
 
-const BADGE_BASE = {
-    position: 'absolute', top: '3px', width: '22px', height: '22px',
-    background: '#7B4FC4', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', cursor: 'pointer', zIndex: 2,
-    boxShadow: '0 1px 4px rgba(123,79,196,0.3)', transition: 'transform 0.15s',
-};
-
-const IMAGE_AREA_STYLE = {
-    width: '100%', height: '82px', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', background: 'transparent', padding: '6px', position: 'relative',
-};
-
-const LABEL_BAR_STYLE = {
-    width: '100%', fontSize: '10px', fontWeight: '700', color: 'white',
-    background: '#7B4FC4', padding: '4px 0', textAlign: 'center', letterSpacing: '0.3px',
-};
-
-const SIZE_BTN_BASE = {
-    width: '20px', height: '20px', background: '#7B4FC4', borderRadius: '5px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-    zIndex: 2, boxShadow: '0 1px 4px rgba(123,79,196,0.3)', transition: 'transform 0.15s', pointerEvents: 'auto',
-};
-
-const SIZE_BAR_STYLE = {
-    position: 'absolute', bottom: '0', left: 0, right: 0,
-    display: 'flex', justifyContent: 'space-between',
-    padding: '0 3px 3px 3px', pointerEvents: 'none',
-};
-
-const getCardStyle = ({ isHoveredWhileDragging, active, isSuccess }) => ({
-    position: 'relative', width: '110px',
-    background: isHoveredWhileDragging ? 'rgba(255,191,0,0.1)' : 'rgba(255,255,255,0.7)',
-    backdropFilter: 'blur(8px)', borderRadius: '10px',
-    border: isHoveredWhileDragging ? '3px solid #FFBF00'
-        : (active ? '3px solid #7B4FC4' : '2px solid rgba(224,224,224,0.5)'),
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    cursor: 'pointer', overflow: 'hidden',
-    boxShadow: isSuccess ? '0 0 25px #22c55e'
-        : (isHoveredWhileDragging ? '0 4px 15px rgba(255,191,0,0.4)'
-            : (active ? '0 3px 12px rgba(123,79,196,0.3)' : '0 1px 4px rgba(0,0,0,0.06)')),
-    transition: 'all 0.2s ease', flexShrink: 0,
-    transform: isSuccess ? 'scale(1.1)' : (isHoveredWhileDragging ? 'scale(1.05)' : 'scale(1)'),
-    zIndex: (isHoveredWhileDragging || isSuccess) ? 10 : 1,
-});
-
-const getSpriteTextStyle = (sprite) => {
-    const ln = isLetterOrNumber(sprite);
-    return {
-        fontSize: ln ? '56px' : '48px', fontWeight: '900',
-        color: sprite.textColor || '#FF8C1A',
-        fontFamily: ln ? '"Arial Black", sans-serif' : 'inherit',
-        WebkitTextStroke: ln ? '2px black' : 'none',
-        textShadow: ln ? '4px 4px 0px rgba(0,0,0,1)' : 'none',
-        lineHeight: 1,
-    };
-};
-
 function ActionBadge({ side, title, icon, onClick }) {
     return (
         <div
             onClick={onClick}
-            style={{
-                ...BADGE_BASE,
-                [side]: '3px',
-                borderRadius: side === 'left' ? '50%' : '5px',
-            }}
+            className={`absolute top-[3px] w-[22px] h-[22px] bg-[#7B4FC4] flex items-center justify-center cursor-pointer z-[2] shadow-[0_1px_4px_rgba(123,79,196,0.3)] transition-transform hover:scale-115 ${
+                side === 'left' ? 'left-[3px] rounded-full' : 'right-[3px] rounded-[5px]'
+            }`}
             title={title}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
             {icon}
         </div>
@@ -115,6 +54,8 @@ export default function SpriteCard({
     const displayIcon = sprite.costumes?.[sprite.currentCostume] || '🐻';
     const label = sprite.name;
 
+    const ln = isLetterOrNumber(sprite);
+
     return (
         <div
             onClick={onClick}
@@ -122,17 +63,21 @@ export default function SpriteCard({
             onMouseEnter={() => isDraggingBlock && setIsHoveredWhileDragging(true)}
             onMouseLeave={() => setIsHoveredWhileDragging(false)}
             data-sprite-id={sprite.id}
-            style={getCardStyle({ isHoveredWhileDragging, active, isSuccess })}
+            className={`relative w-[110px] backdrop-blur-md rounded-lg flex flex-col items-center cursor-pointer overflow-hidden transition-all duration-200 shrink-0 ${
+                isSuccess
+                    ? 'scale-110 z-10 shadow-[0_0_25px_#22c55e] border-[3px] border-[#7B4FC4] bg-white/70'
+                    : isHoveredWhileDragging
+                        ? 'scale-105 z-10 shadow-[0_4px_15px_rgba(255,191,0,0.4)] border-[3px] border-[#FFBF00] bg-[#FFBF00]/10'
+                        : active
+                            ? 'border-[3px] border-[#7B4FC4] shadow-[0_3px_12px_rgba(123,79,196,0.3)] bg-white/70'
+                            : 'border-2 border-gray-200/50 shadow-[0_1px_4px_rgba(0,0,0,0.06)] bg-white/70'
+            }`}
         >
             {isSuccess && (
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'rgba(34, 197, 94, 0.15)', zIndex: 5, pointerEvents: 'none',
-                    animation: 'pulse 0.5s infinite alternate',
-                }} />
+                <div className="absolute inset-0 bg-green-500/15 z-[5] pointer-events-none animate-pulse" />
             )}
 
-            <div style={IMAGE_AREA_STYLE}>
+            <div className="w-full h-[82px] flex items-center justify-center bg-transparent p-1.5 relative">
                 <ActionBadge
                     side="left"
                     title="Edit Sprite"
@@ -147,25 +92,30 @@ export default function SpriteCard({
                 />
 
                 {spriteImage || (typeof displayIcon === 'string' && displayIcon.includes('/')) ? (
-                    <img src={spriteImage || displayIcon} alt={label} style={{ maxWidth: '76px', maxHeight: '76px', objectFit: 'contain' }} />
+                    <img src={spriteImage || displayIcon} alt={label} className="max-w-[76px] max-h-[76px] object-contain" />
                 ) : (
-                    <span style={getSpriteTextStyle(sprite)}>{displayIcon}</span>
+                    <span
+                        className={`font-black leading-none ${ln ? 'text-[56px] font-mono [text-shadow:4px_4px_0px_rgba(0,0,0,1)]' : 'text-[48px]'}`}
+                        style={{ color: sprite.textColor || '#FF8C1A', WebkitTextStroke: ln ? '2px black' : 'none' }}
+                    >
+                        {displayIcon}
+                    </span>
                 )}
             </div>
 
-            <div style={LABEL_BAR_STYLE}>{label}</div>
+            <div className="w-full text-[10px] font-bold text-white bg-[#7B4FC4] py-1 text-center tracking-[0.3px] whitespace-nowrap overflow-hidden text-ellipsis">{label}</div>
 
-            <div style={SIZE_BAR_STYLE}>
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between p-[0_3px_3px_3px] pointer-events-none">
                 <div
                     onClick={(e) => handleSizeChange(e, 10)}
-                    style={SIZE_BTN_BASE}
+                    className="w-5 h-5 bg-[#7B4FC4] rounded-[5px] flex items-center justify-center cursor-pointer z-[2] shadow-[0_1px_4px_rgba(123,79,196,0.3)] transition-transform hover:scale-115 pointer-events-auto"
                     title="Increase Size"
                 >
                     <Plus size={10} color="white" strokeWidth={2.5} />
                 </div>
                 <div
                     onClick={(e) => handleSizeChange(e, -10)}
-                    style={SIZE_BTN_BASE}
+                    className="w-5 h-5 bg-[#7B4FC4] rounded-[5px] flex items-center justify-center cursor-pointer z-[2] shadow-[0_1px_4px_rgba(123,79,196,0.3)] transition-transform hover:scale-115 pointer-events-auto"
                     title="Decrease Size"
                 >
                     <Minus size={10} color="white" strokeWidth={2.5} />

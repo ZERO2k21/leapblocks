@@ -5,7 +5,6 @@
  */
 import React from "react";
 import { useLogix } from "../context/LogixContext";
-import { C } from "../utils/theme";
 
 export default function SpriteLibraryModal() {
     const ctx = useLogix();
@@ -13,26 +12,14 @@ export default function SpriteLibraryModal() {
     if (!ctx.showSpriteLibrary) return null;
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-        }}>
-            <div style={{
-                backgroundColor: 'white', borderRadius: '12px', width: '600px',
-                maxHeight: '80vh', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            }}>
-                <div style={{
-                    backgroundColor: C.PURPLE, color: 'white', padding: '12px 16px',
-                    fontSize: '16px', fontWeight: 'bold', display: 'flex',
-                    justifyContent: 'space-between', alignItems: 'center',
-                }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+            <div className="bg-white rounded-xl w-[600px] max-h-[80vh] shadow-[0_8px_32px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col">
+                <div className="bg-[#8B5CF6] text-white p-3 px-4 text-base font-bold flex justify-between items-center">
                     {ctx.libraryMode === "costume" ? "Choose a Costume" : "Choose a Sprite"}
-                    <div onClick={() => ctx.setShowSpriteLibrary(false)} style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}>×</div>
+                    <div onClick={() => ctx.setShowSpriteLibrary(false)} className="cursor-pointer text-xl font-bold">×</div>
                 </div>
-                <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+                <div className="p-4 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-5 gap-3">
                         {ctx.getSpriteLibrary().map(sp => (
                             <div key={sp.name} onClick={() => {
                                 if (ctx.libraryMode === "costume" && ctx.selectedSpriteId) {
@@ -48,9 +35,9 @@ export default function SpriteLibraryModal() {
                                     ctx.addSpriteFromLibrary(sp);
                                 }
                                 ctx.setShowSpriteLibrary(false);
-                            }} style={{ background: '#F5F0FF', border: '2px solid transparent', borderRadius: 10, padding: 12, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
-                                <img src={sp.img} alt={sp.name} style={{ width: 48, height: 48, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
-                                <div style={{ fontSize: 11, fontWeight: 600, color: C.TEXT, marginTop: 6 }}>{sp.name}</div>
+                            }} className="bg-[#F5F0FF] border-2 border-transparent hover:border-[#8B5CF6] rounded-xl p-3 cursor-pointer text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                                <img src={sp.img} alt={sp.name} className="w-12 h-12 object-contain mx-auto" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                                <div className="text-[11px] font-semibold text-slate-800 mt-1.5">{sp.name}</div>
                             </div>
                         ))}
                     </div>

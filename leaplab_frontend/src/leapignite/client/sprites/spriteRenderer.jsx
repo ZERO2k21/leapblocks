@@ -33,7 +33,7 @@ export function renderIcon({ type, id, costumes, currentCostume, textColor, imgE
             <img
                 src={costumeValue}
                 alt={id}
-                style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))' }}
+                className="w-[80px] h-[80px] object-contain drop-shadow-[0px_2px_4px_rgba(0,0,0,0.15)]"
                 draggable={false}
                 onError={() => setImgError(true)}
             />
@@ -49,30 +49,19 @@ export function renderIcon({ type, id, costumes, currentCostume, textColor, imgE
 
             if (isLetterOrNumber) {
                 return (
-                    <div style={{
-                        color: textColor || '#FF8C1A',
-                        fontSize: '90px',
-                        fontWeight: '900',
-                        fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
-                        WebkitTextStroke: '4px black',
-                        textShadow: '8px 8px 0px rgba(0,0,0,1)',
-                        lineHeight: 1,
-                        display: 'inline-block',
-                        userSelect: 'none',
-                        transform: 'scale(1.1)',
-                    }}>
+                    <div
+                        className="text-[90px] font-black font-mono inline-block select-none scale-110 leading-none [text-shadow:8px_8px_0px_rgba(0,0,0,1)]"
+                        style={{
+                            color: textColor || '#FF8C1A',
+                            WebkitTextStroke: '4px black',
+                        }}
+                    >
                         {costumeValue}
                     </div>
                 );
             }
             return (
-                <span style={{
-                    fontSize: '60px',
-                    lineHeight: 1,
-                    display: 'block',
-                    textAlign: 'center',
-                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))'
-                }}>
+                <span className="text-[60px] leading-none block text-center drop-shadow-[0px_2px_4px_rgba(0,0,0,0.15)]">
                     {costumeValue}
                 </span>
             );
@@ -113,41 +102,37 @@ export default function SpriteDisplay({
     return (
         <>
             {speech && (
-                <div style={{
-                    position: 'absolute', bottom: '100%', left: '50%',
-                    transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
-                    background: 'white', border: '2px solid #333', borderRadius: '8px',
-                    padding: '3px 8px', marginBottom: '6px', whiteSpace: 'nowrap',
-                    zIndex: 10, fontSize: '13px', fontWeight: '600', color: '#333',
-                }}>
+                <div
+                    className="absolute bottom-full left-1/2 bg-white border-2 border-gray-800 rounded-lg px-2 py-0.75 mb-1.5 whitespace-nowrap z-10 text-xs font-semibold text-gray-800"
+                    style={{
+                        transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
+                    }}
+                >
                     {speech}
                 </div>
             )}
 
-            <div style={{
-                fontSize: '50px',
-                lineHeight: 1,
-                transform: (isPenDown && isPenSprite) ? 'rotate(-5deg)' : 'none',
-                transformOrigin: `${relativeTipX}px ${relativeTipY}px`
-            }}>
+            <div
+                className={`text-[50px] leading-none ${isPenDown && isPenSprite ? '-rotate-[5deg]' : ''}`}
+                style={{
+                    transformOrigin: `${relativeTipX}px ${relativeTipY}px`
+                }}
+            >
                 {renderIcon({ type, id, costumes, currentCostume, textColor, imgError, setImgError })}
             </div>
 
             {isPenDown && isPenSprite && (
-                <div style={{
-                    position: 'absolute',
-                    left: `${relativeTipX}px`,
-                    top: `${relativeTipY}px`,
-                    transform: 'translate(-50%, -50%)',
-                    width: Math.max(6, (window.penSize || 5)),
-                    height: Math.max(6, (window.penSize || 5)),
-                    borderRadius: '50%',
-                    backgroundColor: penIndicatorColor,
-                    boxShadow: `0 0 6px ${penIndicatorColor}, 0 0 12px ${penIndicatorColor}40`,
-                    animation: 'penPulse 1s ease-in-out infinite',
-                    zIndex: 5,
-                    pointerEvents: 'none',
-                }} />
+                <div
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full z-5 pointer-events-none animate-pulse"
+                    style={{
+                        left: `${relativeTipX}px`,
+                        top: `${relativeTipY}px`,
+                        width: Math.max(6, (window.penSize || 5)),
+                        height: Math.max(6, (window.penSize || 5)),
+                        backgroundColor: penIndicatorColor,
+                        boxShadow: `0 0 6px ${penIndicatorColor}, 0 0 12px ${penIndicatorColor}40`,
+                    }}
+                />
             )}
         </>
     );

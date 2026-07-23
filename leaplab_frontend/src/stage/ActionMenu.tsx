@@ -55,72 +55,28 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
     return (
         <div
-            style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', overflow: 'visible' }}
+            className="relative inline-flex items-center overflow-visible"
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
         >
             {/* ── Drop-up pill menu ──────────────────────────────────────── */}
-            <div style={{
-                position: 'absolute',
-                bottom: '52px',
-                left: '50%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '2px',
-                padding: '10px 0',
-                background: '#3D1A6E',
-                borderRadius: '22px',
-                width: '44px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-                opacity: open ? 1 : 0,
-                visibility: open ? 'visible' : 'hidden',
-                transform: open
-                    ? 'translateX(-50%) translateY(0)'
-                    : 'translateX(-50%) translateY(10px)',
-                transition: 'opacity 0.18s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), visibility 0.18s',
-                zIndex: 200,
-                pointerEvents: open ? 'auto' : 'none',
-            }}>
+            <div className={`absolute bottom-[52px] left-1/2 flex flex-col items-center gap-0.5 py-2.5 bg-[#3D1A6E] rounded-[22px] w-[44px] shadow-[0_8px_24px_rgba(0,0,0,0.35)] z-[200] transition-all duration-180 ${
+                open ? 'opacity-100 visible -translate-x-1/2 translate-y-0 pointer-events-auto' : 'opacity-0 invisible -translate-x-1/2 translate-y-[10px] pointer-events-none'
+            }`}>
                 {actions.map((action) => (
                     <div
                         key={action.id}
-                        style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
+                        className="relative w-full flex justify-center"
                         onMouseEnter={() => setHoveredId(action.id)}
                         onMouseLeave={() => setHoveredId(null)}
                     >
                         {/* Tooltip — crimson pill to the left */}
-                        <div style={{
-                            position: 'absolute',
-                            right: '52px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: '#E6194B',
-                            color: 'white',
-                            padding: '6px 14px',
-                            borderRadius: '20px',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            whiteSpace: 'nowrap',
-                            pointerEvents: 'none',
-                            opacity: hoveredId === action.id ? 1 : 0,
-                            transition: 'opacity 0.15s ease',
-                            boxShadow: '0 2px 8px rgba(230,25,75,0.4)',
-                            zIndex: 201,
-                        }}>
+                        <div className={`absolute right-[52px] top-1/2 -translate-y-1/2 bg-[#E6194B] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap pointer-events-none transition-opacity duration-150 shadow-[0_2px_8px_rgba(230,25,75,0.4)] z-[201] ${
+                            hoveredId === action.id ? 'opacity-100' : 'opacity-0'
+                        }`}>
                             {action.label}
                             {/* Arrow pointing right */}
-                            <span style={{
-                                position: 'absolute',
-                                right: '-6px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                width: 0,
-                                height: 0,
-                                borderTop: '5px solid transparent',
-                                borderBottom: '5px solid transparent',
-                                borderLeft: '6px solid #E6194B',
-                            }} />
+                            <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-[#E6194B]" />
                         </div>
 
                         {/* Icon button */}
@@ -132,22 +88,9 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                                 action.onClick();
                             }}
                             title={action.label}
-                            style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: hoveredId === action.id
-                                    ? 'rgba(255,255,255,0.15)'
-                                    : 'transparent',
-                                border: 'none',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'background 0.15s',
-                                flexShrink: 0,
-                            }}
+                            className={`w-8 h-8 rounded-full border-none text-white flex items-center justify-center cursor-pointer transition-colors duration-150 shrink-0 ${
+                                hoveredId === action.id ? 'bg-white/15' : 'bg-transparent'
+                            }`}
                         >
                             {action.icon}
                         </button>
@@ -156,22 +99,11 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             </div>
 
             {/* ── Main FAB ──────────────────────────────────────────────── */}
-            <div style={{
-                position: 'relative',
-                width: '44px',
-                height: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}>
+            <div className="relative w-[44px] h-[44px] flex items-center justify-center">
                 {/* Glow ring */}
-                <div style={{
-                    position: 'absolute',
-                    inset: '-5px',
-                    borderRadius: '50%',
-                    background: glowBg,
-                    transition: 'background 0.2s',
-                }} />
+                <div className={`absolute -inset-[5px] rounded-full transition-colors duration-200 ${
+                    open ? 'bg-[#E6194B]/20' : 'bg-[#8B5CF6]/22'
+                }`} />
 
                 <button
                     onClick={(e) => {
@@ -185,24 +117,11 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                         }
                     }}
                     title={tooltipLabel}
-                    style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '50%',
-                        background: fabBg,
-                        border: 'none',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: fabShadow,
-                        transition: 'background 0.2s, box-shadow 0.2s, transform 0.15s',
-                        transform: open ? 'scale(1.08)' : 'scale(1)',
-                        position: 'relative',
-                        zIndex: 201,
-                        flexShrink: 0,
-                    }}
+                    className={`w-[44px] h-[44px] rounded-full border-none text-white flex items-center justify-center cursor-pointer transition-all duration-200 relative z-[201] shrink-0 ${
+                        open
+                            ? 'bg-[#E6194B] shadow-[0_4px_14px_rgba(230,25,75,0.5)] scale-108'
+                            : 'bg-[#6c3fc5] shadow-[0_4px_12px_rgba(108,63,197,0.45)] scale-100'
+                    }`}
                 >
                     {mainIcon}
                 </button>

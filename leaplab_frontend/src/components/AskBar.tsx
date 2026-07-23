@@ -25,33 +25,10 @@ const AskBar: React.FC<AskBarProps> = ({ question, onSubmit }) => {
     };
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 10px',
-                backgroundColor: '#fff',
-                borderTop: '2px solid #4C97FF',
-                boxSizing: 'border-box',
-                width: '100%',
-            }}
-        >
+        <div className="flex items-center gap-1.5 py-1.5 px-2.5 bg-white border-t-2 border-t-[#4C97FF] box-border w-full">
             {/* Question label */}
             <span
-                style={{
-                    backgroundColor: '#4C97FF',
-                    color: '#fff',
-                    borderRadius: 14,
-                    padding: '3px 10px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                    maxWidth: '40%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    flexShrink: 0,
-                }}
+                className="bg-[#4C97FF] text-white rounded-[14px] py-[3px] px-2.5 text-xs font-semibold whitespace-nowrap max-w-[40%] overflow-hidden text-ellipsis shrink-0"
                 title={question}
             >
                 {question}
@@ -66,34 +43,14 @@ const AskBar: React.FC<AskBarProps> = ({ question, onSubmit }) => {
                 onKeyDown={e => {
                     if (e.key === 'Enter') submit();
                 }}
-                style={{
-                    flex: 1,
-                    border: '2px solid #4C97FF',
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    fontSize: 13,
-                    outline: 'none',
-                    minWidth: 0,
-                }}
+                className="flex-1 border-2 border-[#4C97FF] rounded py-1 px-2 text-[13px] outline-none min-w-0"
             />
 
             {/* Submit (checkmark) button */}
             <button
                 type="button"
                 onClick={submit}
-                style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    backgroundColor: '#4C97FF',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    padding: 0,
-                }}
+                className="w-[26px] h-[26px] rounded-full bg-[#4C97FF] border-none cursor-pointer flex items-center justify-center shrink-0 p-0"
                 title="Submit"
             >
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none">

@@ -253,7 +253,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                 `}
             </style>
             <div
-                className={jiggleKey > 0 ? 'sprite-jiggle' : ''}
+                className={`select-none touch-none ${jiggleKey > 0 ? 'sprite-jiggle' : ''} ${visible ? 'block' : 'hidden'} ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 key={`sprite-wrapper-${jiggleKey}`} // Force re-mount to re-trigger animation
                 style={{
                     position: 'absolute',
@@ -262,14 +262,10 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
                     transform: `rotate(${angle}deg) scale(${(size / 100) * (isDragging && !isPenSprite ? 1.15 : 1)}) scaleX(${mirrored ? -scaleX : scaleX})`,
                     transition: isDragging ? 'transform 0.1s ease-out' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.2s, left 0.2s',
                     opacity: visible ? 1 : 0.5,
-                    display: visible ? 'block' : 'none',
                     zIndex: isDragging ? 50 : (active ? 20 : 10),
-                    cursor: isDragging ? 'grabbing' : 'grab',
                     filter: isDragging
                         ? 'drop-shadow(0 15px 15px rgba(0,0,0,0.3)) brightness(1.1)'
                         : (active ? 'drop-shadow(0 0 8px rgba(123,79,196,0.6))' : 'none'),
-                    userSelect: 'none',
-                    touchAction: 'none',
                 }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
@@ -294,11 +290,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             </div>
             {/* Stage Feedback Toast */}
             {active && feedback && (
-                <div style={{
-                    position: 'fixed', top: '50%', left: '70%', transform: 'translate(-50%, -50%)',
-                    background: 'rgba(0,0,0,0.7)', color: 'white', padding: '15px 25px', borderRadius: '10px',
-                    fontSize: '20px', fontWeight: 'bold', zIndex: 100, pointerEvents: 'none'
-                }}>
+                <div className="fixed top-1/2 left-[70%] -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-6 py-3.75 rounded-xl text-xl font-bold z-[100] pointer-events-none">
                     {feedback}
                 </div>
             )}

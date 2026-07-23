@@ -203,16 +203,15 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             FOOTER_H = 60px   (FAB row, same on both sides)
             TOTAL    = 250px  (both columns identical height → FABs aligned)
           ══════════════════════════════════════════════════════════════════ */}
-      <div className={`flex flex-1 min-h-0 ${gridBg}`} style={{ overflow: 'visible' }}>
+      <div className={`flex flex-1 min-h-0 overflow-visible ${gridBg}`}>
 
         {/* ── LEFT: sprite grid + FAB footer ──────────────────────────── */}
-        <div className="flex-1 min-w-0 flex flex-col" style={{ overflow: 'visible' }}>
+        <div className="flex-1 min-w-0 flex flex-col overflow-visible">
 
           {/* Scrollable grid */}
           <div
-            className={`p-4 grid grid-cols-5 gap-3.5 content-start
+            className={`p-4 grid grid-cols-5 gap-3.5 content-start flex-1 max-h-[200px]
               overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
-            style={{ flex: '1 1 0', maxHeight: '200px' }}
           >
             {normalSprites.map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
@@ -240,13 +239,12 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       onCopyCodeToSprite?.(sourceId, sprite.id);
                     }
                   }}
-                  className={`relative group flex flex-col rounded-[20px] cursor-pointer
+                  className={`relative group flex flex-col rounded-[20px] cursor-pointer aspect-square
                     transition-all duration-200 border-2 select-none
                     ${isSelected
                       ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
                       : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                     }`}
-                  style={{ aspectRatio: '1 / 1' }}
                 >
                   {/* Delete button — playful purple circle with cross */}
                   <button
@@ -327,8 +325,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           </div>
 
           {/* ── FAB footer — fixed 60px, always at bottom ───────────── */}
-          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${gridBg}`}
-            style={{ height: '60px', minHeight: '60px', overflow: 'visible' }}>
+          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${gridBg} h-[60px] min-h-[60px] overflow-visible`}>
             <ActionMenu
               mainIcon={
                 /* Bear face icon */
@@ -406,7 +403,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
         {/* ── RIGHT: stage sidebar ──────────────────────────────────── */}
         <div className={`w-[96px] flex-shrink-0 border-l ${borderCol}
-          ${sidebarBg} flex flex-col`} style={{ overflow: 'visible' }}>
+          ${sidebarBg} flex flex-col overflow-visible`}>
 
           {/* Sidebar content */}
           <div className="flex-1 min-h-0 flex flex-col">
@@ -444,8 +441,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
               {/* Backdrop thumbnail */}
               <div
-                className={`w-full overflow-hidden ${dk ? "bg-[#26262d]" : "bg-slate-50"}`}
-                style={{ aspectRatio: '4/3' }}>
+                className={`w-full overflow-hidden aspect-[4/3] ${dk ? "bg-[#26262d]" : "bg-slate-50"}`}>
                 {currentBackdropSrc ? (
                   <img
                     src={currentBackdropSrc}
@@ -482,8 +478,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           </div>
 
           {/* FAB footer — fixed 60px */}
-          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${sidebarBg}`}
-            style={{ height: '60px', minHeight: '60px', overflow: 'visible' }}>
+          <div className={`flex items-center justify-center px-4 border-t ${borderCol} ${sidebarBg} h-[60px] min-h-[60px] overflow-visible`}>
             <ActionMenu
               mainIcon={
                 /* Image+ icon */

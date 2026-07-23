@@ -53,15 +53,7 @@ export default function EditorLayout({
     const closeLeft = useCallback(() => setLeftOpen(false), [])
 
     return (
-        <div style={{
-            height: '100vh',
-            width: '100vw',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            background: '#f8fafc',
-            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-        }}>
+        <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#f8fafc] font-[Segoe_UI,Inter,system-ui,sans-serif]">
             {/* ==================== FIXED TOP BAR ==================== */}
             {topBar}
 
@@ -69,39 +61,18 @@ export default function EditorLayout({
             {toolbar}
 
             {/* ==================== MAIN CONTENT AREA (100% height) ==================== */}
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
-                overflow: 'hidden',
-                position: 'relative',
-            }}>
+            <div className={`flex-1 flex overflow-hidden relative ${isMobile ? 'flex-col' : 'flex-row'}`}>
                 {/* LEFT SIDEBAR - Block Categories */}
                 {leftSidebar && !isMobile && (
-                    <div style={{
-                        width: isTablet ? 200 : 260,
-                        minWidth: isTablet ? 200 : 260,
-                        background: '#f1f5f9',
-                        borderRight: '1px solid #e2e8f0',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                    }}>
-                        <div style={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            overflowX: 'hidden',
-                            scrollbarWidth: 'thin',
-                        }}>
+                    <div
+                        className="bg-[#f1f5f9] border-r border-[#e2e8f0] flex flex-col overflow-hidden"
+                        style={{ width: isTablet ? 200 : 260, minWidth: isTablet ? 200 : 260 }}
+                    >
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
                             {leftSidebar}
                         </div>
                         {addExtensionButton && (
-                            <div style={{
-                                padding: '12px 16px',
-                                borderTop: '1px solid #e2e8f0',
-                                background: '#fff',
-                                flexShrink: 0,
-                            }}>
+                            <div className="px-4 py-3 border-t border-[#e2e8f0] bg-white shrink-0">
                                 {addExtensionButton}
                             </div>
                         )}
@@ -111,30 +82,16 @@ export default function EditorLayout({
                 {/* Mobile left sidebar overlay */}
                 {leftSidebar && isMobile && leftOpen && (
                     <>
-                        <div onClick={closeLeft} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 40 }} />
-                        <div style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            bottom: 0,
-                            width: '260px',
-                            maxWidth: '80vw',
-                            background: '#f1f5f9',
-                            borderRight: '1px solid #e2e8f0',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                            zIndex: 50,
-                            boxShadow: '4px 0 16px rgba(0,0,0,0.15)',
-                        }}>
-                            <div style={{ padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
-                                <button onClick={closeLeft} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>✕</button>
+                        <div onClick={closeLeft} className="fixed inset-0 bg-black/30 z-40" />
+                        <div className="fixed top-0 left-0 bottom-0 w-[260px] max-w-[80vw] bg-[#f1f5f9] border-r border-[#e2e8f0] flex flex-col overflow-hidden z-50 shadow-[4px_0_16px_rgba(0,0,0,0.15)]">
+                            <div className="px-3 py-2 border-b border-[#e2e8f0] flex justify-end">
+                                <button onClick={closeLeft} className="bg-none border-none text-lg cursor-pointer text-slate-500">✕</button>
                             </div>
-                            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'thin' }}>
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
                                 {leftSidebar}
                             </div>
                             {addExtensionButton && (
-                                <div style={{ padding: '12px 16px', borderTop: '1px solid #e2e8f0', background: '#fff', flexShrink: 0 }}>
+                                <div className="px-4 py-3 border-t border-[#e2e8f0] bg-white shrink-0">
                                     {addExtensionButton}
                                 </div>
                             )}
@@ -143,46 +100,19 @@ export default function EditorLayout({
                 )}
 
                 {/* CENTRAL WORKSPACE */}
-                <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    background: '#fff',
-                    position: 'relative',
-                    minHeight: isMobile ? '50vh' : 0,
-                }}>
+                <div className={`flex-1 flex flex-col overflow-hidden bg-white relative ${isMobile ? 'min-h-[50vh]' : 'min-h-0'}`}>
                     {isMobile && leftSidebar && (
-                        <button onClick={() => setLeftOpen(true)} style={{
-                            position: 'absolute',
-                            top: '8px',
-                            left: '8px',
-                            zIndex: 10,
-                            padding: '6px 10px',
-                            background: '#fff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        }}>☰</button>
+                        <button onClick={() => setLeftOpen(true)} className="absolute top-2 left-2 z-10 px-2.5 py-1.5 bg-white border border-[#e2e8f0] rounded-lg cursor-pointer text-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]">☰</button>
                     )}
                     {children}
                 </div>
 
                 {/* RIGHT PANEL - Stage / Arduino Code / Log */}
                 {rightPanel && (
-                    <div style={{
-                        width: isMobile ? '100%' : isTablet ? 320 : 380,
-                        minWidth: isMobile ? '100%' : isTablet ? 320 : 380,
-                        height: isMobile ? '50vh' : 'auto',
-                        background: '#f8fafc',
-                        borderLeft: isMobile ? 'none' : '1px solid #e2e8f0',
-                        borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                    }}>
+                    <div
+                        className={`flex flex-col overflow-hidden ${isMobile ? 'w-full h-[50vh] border-t border-[#e2e8f0]' : 'border-l border-[#e2e8f0]'} bg-[#f8fafc]`}
+                        style={isMobile ? undefined : { width: isTablet ? 320 : 380, minWidth: isTablet ? 320 : 380 }}
+                    >
                         {rightPanel}
                     </div>
                 )}

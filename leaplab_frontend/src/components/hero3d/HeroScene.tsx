@@ -88,26 +88,8 @@ const SceneContent: React.FC = () => {
    ──────────────────────────────────────────────────────────────────── */
 
 const LoadingFallback: React.FC = () => (
-  <div
-    style={{
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'transparent',
-    }}
-  >
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        border: '3px solid rgba(99, 102, 241, 0.15)',
-        borderTopColor: '#6366F1',
-        borderRadius: '50%',
-        animation: 'hero3d-spin 0.8s linear infinite',
-      }}
-    />
+  <div className="w-full h-full flex items-center justify-center bg-transparent">
+    <div className="w-10 h-10 border-[3px] border-[rgba(99,102,241,0.15)] border-t-[#6366F1] rounded-full animate-[hero3d-spin_0.8s_linear_infinite]" />
     <style>{`@keyframes hero3d-spin { to { transform: rotate(360deg); } }`}</style>
   </div>
 );
@@ -129,11 +111,8 @@ const HeroScene: React.FC = () => {
   return (
     <div
       ref={containerRef}
+      className="w-full h-full min-h-[300px] relative"
       style={{
-        width: '100%',
-        height: '100%',
-        minHeight: 300,
-        position: 'relative',
         opacity: isVisible ? 1 : 0,
         transition: `opacity ${TIMING.entranceDuration}s cubic-bezier(0.4, 0, 0.2, 1)`,
       }}
@@ -154,7 +133,7 @@ const HeroScene: React.FC = () => {
             toneMappingExposure: 1.1,
           }}
           dpr={[1, 1.5]} // Cap pixel ratio for performance
-          style={{ background: 'transparent' }}
+          className="bg-transparent"
         >
           <SceneContent />
         </Canvas>

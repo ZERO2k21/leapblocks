@@ -82,22 +82,15 @@ export default function TopbarShareButton({
             ) : (
                 <button
                     title="Share project"
-                    className={className}
-                    style={{ paddingRight: '16px', marginRight: '8px', ...style }}
+                    className={`pr-4 mr-2 ${className}`}
+                    style={style}
                     onClick={handleClick}
                     disabled={loading}
                 >
                     {loading ? (
                         <span
-                            style={{
-                                width: size,
-                                height: size,
-                                border: '2px solid currentColor',
-                                borderTopColor: 'transparent',
-                                borderRadius: '50%',
-                                animation: 'spin 0.6s linear infinite',
-                                display: 'inline-block',
-                            }}
+                            className="inline-block rounded-full border-2 border-current border-t-transparent animate-spin"
+                            style={{ width: size, height: size }}
                         />
                     ) : (
                         <Share2 size={size} strokeWidth={strokeWidth} />
@@ -107,90 +100,31 @@ export default function TopbarShareButton({
 
             {showSaveConfirm && (
                 <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(15, 23, 42, 0.3)',
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10000,
-                    }}
+                    className="fixed inset-0 bg-[rgba(15,23,42,0.3)] backdrop-blur-[4px] flex items-center justify-center z-[10000]"
                     onClick={() => setShowSaveConfirm(false)}
                 >
                     <div
-                        style={{
-                            background: '#ffffff',
-                            borderRadius: 16,
-                            padding: '28px 32px',
-                            maxWidth: 400,
-                            width: '90%',
-                            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.15)',
-                            border: '1px solid #e2e8f0',
-                        }}
+                        className="bg-white rounded-2xl py-7 px-8 max-w-[400px] w-[90%] shadow-[0_20px_60px_rgba(15,23,42,0.15)] border border-[#e2e8f0]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 style={{ color: '#1e293b', margin: '0 0 8px', fontSize: 18, fontWeight: 700 }}>
+                        <h3 className="text-[#1e293b] m-0 mb-2 text-lg font-bold">
                             Save Project First
                         </h3>
-                        <p style={{ color: '#64748b', margin: '0 0 24px', fontSize: 14, lineHeight: 1.5, fontWeight: 500 }}>
+                        <p className="text-[#64748b] m-0 mb-6 text-sm leading-relaxed font-medium">
                             You need to save your project to the cloud before sharing.
                             {projectName ? ` "${projectName}"` : ''} Save now?
                         </p>
-                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                        <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowSaveConfirm(false)}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: 8,
-                                    border: '1px solid #cbd5e1',
-                                    background: '#ffffff',
-                                    color: '#475569',
-                                    cursor: 'pointer',
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                    e.currentTarget.style.color = '#0f172a';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#ffffff';
-                                    e.currentTarget.style.color = '#475569';
-                                }}
+                                className="py-2 px-5 rounded-lg border border-[#cbd5e1] bg-white text-[#475569] cursor-pointer text-sm font-bold transition-all duration-200 hover:bg-[#f8fafc] hover:text-[#0f172a]"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSaveAndShare}
                                 disabled={loading}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: 8,
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    opacity: loading ? 0.7 : 1,
-                                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5, #4338ca)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.3)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.2)';
-                                    }
-                                }}
+                                className={`py-2 px-5 rounded-lg border-none bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white cursor-pointer text-sm font-bold shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-all duration-200 hover:from-[#4f46e5] hover:to-[#4338ca] hover:shadow-[0_6px_16px_rgba(79,70,229,0.3)] ${loading ? 'opacity-70' : ''}`}
                             >
                                 {loading ? 'Saving...' : 'Save & Share'}
                             </button>

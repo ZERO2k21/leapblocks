@@ -5,25 +5,6 @@
  */
 import React from "react";
 
-// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
-const C = {
-    PURPLE: "#8B5CF6",
-    DARK_PURPLE: "#7C3AED",
-    LIGHT_PURPLE: "#EDE9FE",
-    PURPLE_BG: "#F5F3FF",
-    BORDER: "#E5E7EB",
-    BG: "#F9FAFB",
-    BG2: "#F3F4F6",
-    TEXT: "#1F2937",
-    MUTED: "#6B7280",
-    GREEN: "#10B981",
-    RED: "#EF4444",
-    BLUE: "#3B82F6",
-    ORANGE: "#F59E0B",
-    ACCENT: "#8B5CF6",
-    HEADER_BG: "#8B5CF6",
-};
-
 // ─── Coordinate Conversion Helpers ─────────────────────────────────────────
 // leap coordinates: center is (0,0), X ranges -240 to 240, Y ranges -180 to 180
 // Pixel coordinates: top-left is (0,0), Y increases downward
@@ -146,65 +127,37 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
             onClick={onClick}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
+            className={`absolute w-[60px] h-[60px] flex items-center justify-center touch-none select-none ${
+                isDragging && draggingSpriteId === sprite.id ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
             style={{
-                position: 'absolute',
                 left: pixelX,
                 top: pixelY,
-                width: 60,
-                height: 60,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: isDragging && draggingSpriteId === sprite.id ? 'grabbing' : 'grab',
                 transform: `rotate(${angle}deg) scale(${size / 100})`,
                 zIndex: isSelected || (isDragging && draggingSpriteId === sprite.id) ? 20 : 10,
                 filter: isSelected || (isDragging && draggingSpriteId === sprite.id)
                     ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))'
                     : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
                 transition: isDragging && draggingSpriteId === sprite.id ? 'none' : 'all 0.2s ease',
-                touchAction: 'none',
-                userSelect: 'none',
             }}
         >
             {isImage ? (
                 <img
                     src={costumeValue}
                     alt={sprite.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    className="w-full h-full object-contain pointer-events-none"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
             ) : (
-                <span style={{ fontSize: 40, lineHeight: 1, pointerEvents: 'none' }}>{costumeValue}</span>
+                <span className="text-[40px] leading-none pointer-events-none">{costumeValue}</span>
             )}
             {sprite.speech && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'white',
-                    border: '2px solid #333',
-                    borderRadius: '10px',
-                    padding: '4px 8px',
-                    marginBottom: '8px',
-                    whiteSpace: 'nowrap',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    zIndex: 30,
-                    pointerEvents: 'none',
-                }}>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-white border-2 border-gray-800 rounded-xl px-2 py-1 mb-2 whitespace-nowrap text-xs font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.15)] z-30 pointer-events-none">
                     {sprite.speech}
                 </div>
             )}
             {isSelected && (
-                <div style={{
-                    position: 'absolute',
-                    inset: -4,
-                    border: '2px dashed #8B5CF6',
-                    borderRadius: 8,
-                    pointerEvents: 'none'
-                }} />
+                <div className="absolute -inset-1 border-2 border-dashed border-[#8B5CF6] rounded-lg pointer-events-none" />
             )}
         </div>
     );
@@ -226,15 +179,9 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
 
     return (
         <div
-            style={{
-                width: '100%',
-                height: '100%',
-                position: "relative",
-                background: backdrop ? "transparent" : "#F5F5F5",
-                overflow: "hidden",
-                borderRadius: 8,
-                touchAction: 'none',
-            }}
+            className={`w-full h-full relative overflow-hidden rounded-lg touch-none ${
+                backdrop ? "bg-transparent" : "bg-[#F5F5F5]"
+            }`}
             ref={stageRef}
             onMouseUp={handlePointerUp}
             onMouseLeave={handlePointerUp}
@@ -245,25 +192,18 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
                 <img
                     src={backdrop}
                     alt="backdrop"
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        zIndex: 0
-                    }}
+                    className="absolute inset-0 w-full h-full object-cover z-0"
                 />
             )}
 
             {/* Stage coordinate grid (subtle) */}
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1, opacity: 0.2 }}>
-                <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: "#999" }} />
-                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "#999" }} />
+            <div className="absolute inset-0 pointer-events-none z-[1] opacity-20">
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-400" />
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-400" />
             </div>
 
             {/* Sprites */}
-            <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+            <div className="absolute inset-0 z-[2]">
                 {sprites.map(sp => (
                     <SpriteRenderer
                         key={sp.id}
@@ -283,19 +223,10 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
 
                 {/* Empty state message when no sprites */}
                 {sprites.length === 0 && (
-                    <div style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#999",
-                        fontSize: 12
-                    }}>
-                        <img src="assets/sprites/robot/robot_idle.svg" alt="Empty stage" style={{ width: 64, height: 64, opacity: 0.5, marginBottom: 8 }} />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-xs">
+                        <img src="assets/sprites/robot/robot_idle.svg" alt="Empty stage" className="w-16 h-16 opacity-50 mb-2" />
                         <span>No sprites yet</span>
-                        <span style={{ fontSize: 10 }}>Click "Add Sprite" to get started</span>
+                        <span className="text-[10px]">Click "Add Sprite" to get started</span>
                     </div>
                 )}
             </div>

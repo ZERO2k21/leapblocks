@@ -50,7 +50,7 @@ export default function EditorPanel({
     shellInputRef,
 }) {
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="flex-1 flex flex-col overflow-hidden">
             <FileTabs
                 projectFiles={projectFiles}
                 activeFile={activeFile}

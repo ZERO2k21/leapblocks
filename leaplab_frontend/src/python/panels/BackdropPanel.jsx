@@ -6,61 +6,36 @@
 import React from "react";
 import { Plus } from "lucide-react";
 
-// ─── Theme (Leapblocks Colors) ─────────────────────────────────────────────────
-const C = {
-    PURPLE: "#8B5CF6",
-    DARK_PURPLE: "#7C3AED",
-    LIGHT_PURPLE: "#EDE9FE",
-    PURPLE_BG: "#F5F3FF",
-    BORDER: "#E5E7EB",
-    BG: "#F9FAFB",
-    BG2: "#F3F4F6",
-    TEXT: "#1F2937",
-    MUTED: "#6B7280",
-    GREEN: "#10B981",
-    RED: "#EF4444",
-    BLUE: "#3B82F6",
-    ORANGE: "#F59E0B",
-    ACCENT: "#8B5CF6",
-    HEADER_BG: "#8B5CF6",
-};
-
 export default function BackdropPanel({ BACKDROP_LIBRARY, backdrop, handleSetBackdrop, onBrowseBackdrops }) {
     return (
         <>
-            <div style={{padding:"10px 12px 6px", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                <span style={{fontSize:11,fontWeight:700,color:C.MUTED,letterSpacing:"0.08em"}}>BACKDROPS</span>
+            <div className="p-[10px_12px_6px] flex items-center justify-between">
+                <span className="text-[11px] font-bold text-gray-500 tracking-wider">BACKDROPS</span>
                 <button
                     onClick={onBrowseBackdrops}
                     title="Browse Backdrops"
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: C.PURPLE,
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "2px 4px",
-                    }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-[#8B5CF6] bg-transparent border-none cursor-pointer p-[2px_4px] hover:text-purple-700"
                 >
                     <Plus size={12} /> Add
                 </button>
             </div>
-            <div style={{flex:1,overflowY:"auto",padding:"0 8px 8px"}}>
-                {BACKDROP_LIBRARY.map(bd=>(
-                    <div key={bd.name} onClick={()=>handleSetBackdrop(bd)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,cursor:"pointer",marginBottom:4,background:backdrop===bd.img?"#EDE7F6":"transparent",border:backdrop===bd.img?`1px solid ${C.PURPLE}`:"1px solid transparent",transition:"all 0.2s"}}
-                        onMouseEnter={e=>e.currentTarget.style.background="#F5F0FF"}
-                        onMouseLeave={e=>e.currentTarget.style.background=backdrop===bd.img?"#EDE7F6":"transparent"}>
-                        <div style={{width:36,height:24,borderRadius:4,overflow:"hidden",flexShrink:0,background:bd.img?"#ddd":"#fff",border:"1px solid #ddd"}}>
-                            {bd.img && <img src={bd.img} alt={bd.name} style={{width:"100%",height:"100%",objectFit:"cover"}} />}
-                            {!bd.img && <div style={{width:"100%",height:"100%",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#999"}}>Blank</div>}
+            <div className="flex-1 overflow-y-auto p-[0_8px_8px]">
+                {BACKDROP_LIBRARY.map(bd => (
+                    <div key={bd.name} onClick={() => handleSetBackdrop(bd)}
+                        className={`flex items-center gap-2 p-[7px_8px] rounded-lg cursor-pointer mb-1 border transition-all duration-200 ${
+                            backdrop === bd.img
+                                ? "bg-[#EDE7F6] border-[#8B5CF6]"
+                                : "bg-transparent border-transparent hover:bg-[#F5F0FF]"
+                        }`}>
+                        <div className="w-9 h-6 rounded overflow-hidden shrink-0 border border-gray-300 bg-white">
+                            {bd.img ? (
+                                <img src={bd.img} alt={bd.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-white flex items-center justify-center text-[9px] text-gray-400">Blank</div>
+                            )}
                         </div>
-                        <span style={{fontSize:12,color:C.TEXT}}>{bd.name}</span>
-                        {backdrop===bd.img && <span style={{marginLeft:"auto",fontSize:10,color:C.PURPLE}}>✓</span>}
+                        <span className="text-xs text-gray-800">{bd.name}</span>
+                        {backdrop === bd.img && <span className="ml-auto text-[10px] color-[#8B5CF6] text-[#8B5CF6]">✓</span>}
                     </div>
                 ))}
             </div>

@@ -74,29 +74,15 @@ export default function ActionButton({
       onClick={disabled || loading ? undefined : onClick}
       disabled={disabled || loading}
       title={title || label}
-      className={className}
+      className={`relative overflow-hidden flex items-center gap-2 py-2 px-5 rounded-lg text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 shrink-0 translate-y-0 ${className}`}
       style={{
-        position: 'relative',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '8px 20px',
         background: disabled
           ? 'rgba(255,255,255,0.15)'
           : `linear-gradient(135deg, ${v.from} 0%, ${v.to} 100%)`,
         color: disabled ? 'rgba(255,255,255,0.6)' : v.color,
-        borderRadius: 8,
-        fontSize: 11,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
         boxShadow: disabled ? 'none' : `${v.shadow} 0px 4px 14px`,
         cursor: disabled || loading ? 'default' : 'pointer',
-        transition: '0.2s',
-        flexShrink: 0,
         border: `1px solid ${disabled ? 'rgba(255,255,255,0.05)' : v.border}`,
-        transform: 'translateY(0px)',
         ...style,
       }}
       onMouseEnter={(e) => {

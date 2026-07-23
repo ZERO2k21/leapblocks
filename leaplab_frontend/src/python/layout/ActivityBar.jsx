@@ -6,14 +6,6 @@
 import React from "react";
 import { FileText, Sprout, Image, Package, Download, Upload, Plus } from "lucide-react";
 
-const C = {
-    PURPLE: "#8B5CF6",
-    DARK_BG: "#2D2B55",
-    DARKER_BG: "#1E1B4B",
-    MUTED: "#9CA3AF",
-    ACTIVE: "#A78BFA",
-};
-
 const ACTIVITY_ITEMS = [
     { id: "files", icon: FileText, label: "Files" },
     { id: "sprites", icon: Sprout, label: "Sprites" },
@@ -56,20 +48,7 @@ export default function ActivityBar({
     ];
 
     return (
-        <div
-            style={{
-                width: 48,
-                background: C.DARK_BG,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                paddingTop: 8,
-                flexShrink: 0,
-                borderRight: `1px solid ${C.DARKER_BG}`,
-                position: "relative",
-                overflow: "visible",
-            }}
-        >
+        <div className="w-12 bg-[#2D2B55] flex flex-col items-center pt-2 shrink-0 border-r border-[#1E1B4B] relative overflow-visible">
             {ACTIVITY_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = sidePanel === item.id;
@@ -79,56 +58,22 @@ export default function ActivityBar({
                         key={item.id}
                         onClick={() => setSidePanel(item.id)}
                         title={item.label}
-                        style={{
-                            width: 40,
-                            height: 40,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            marginBottom: 4,
-                            borderRadius: 6,
-                            background: isActive ? "rgba(139, 92, 246, 0.3)" : "transparent",
-                            borderLeft: isActive ? `3px solid ${C.PURPLE}` : "3px solid transparent",
-                            transition: "all 0.15s ease",
-                        }}
+                        className={`w-10 h-10 flex items-center justify-center cursor-pointer mb-1 rounded-md transition-all duration-150 border-l-[3px] ${
+                            isActive
+                                ? "bg-[#8B5CF6]/30 border-[#8B5CF6]"
+                                : "bg-transparent border-transparent hover:bg-white/5"
+                        }`}
                     >
-                        <Icon size={20} style={{ color: isActive ? C.ACTIVE : C.MUTED }} />
+                        <Icon size={20} className={isActive ? "text-[#A78BFA]" : "text-gray-400"} />
                     </div>
                 );
             })}
 
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
-            <div
-                ref={uploadAreaRef}
-                style={{
-                    position: "relative",
-                    paddingBottom: 14,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
+            <div ref={uploadAreaRef} className="relative pb-3.5 flex items-center justify-center">
                 {showUploadMenu && (
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: 12,
-                            bottom: 72,
-                            width: 184,
-                            background: "rgba(24, 24, 40, 0.96)",
-                            border: "1px solid rgba(167, 139, 250, 0.24)",
-                            borderRadius: 16,
-                            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.28)",
-                            padding: 8,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 6,
-                            zIndex: 30,
-                            backdropFilter: "blur(14px)",
-                        }}
-                    >
+                    <div className="absolute left-3 bottom-[72px] w-[184px] bg-[#181828]/96 border border-[#A78BFA]/25 rounded-2xl shadow-[0_18px_40px_rgba(15,23,42,0.28)] p-2 flex flex-col gap-1.5 z-30 backdrop-blur-md">
                         {uploadItems.map((item) => (
                             <button
                                 key={item.id}
@@ -136,36 +81,12 @@ export default function ActivityBar({
                                     setShowUploadMenu(false);
                                     item.onClick?.();
                                 }}
-                                style={{
-                                    width: "100%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    padding: "10px 12px",
-                                    borderRadius: 12,
-                                    border: "none",
-                                    background: "rgba(255, 255, 255, 0.04)",
-                                    color: "#F5F3FF",
-                                    cursor: "pointer",
-                                    textAlign: "left",
-                                }}
+                                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border-none bg-white/5 text-[#F5F3FF] cursor-pointer text-left hover:bg-white/10 transition-colors"
                             >
-                                <span
-                                    style={{
-                                        minWidth: 34,
-                                        padding: "3px 6px",
-                                        borderRadius: 999,
-                                        background: "rgba(139, 92, 246, 0.22)",
-                                        color: "#C4B5FD",
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        fontFamily: "monospace",
-                                        textAlign: "center",
-                                    }}
-                                >
+                                <span className="min-w-[34px] p-0.5 px-1.5 rounded-full bg-[#8B5CF6]/20 text-[#C4B5FD] text-[10px] font-bold font-mono text-center">
                                     {item.badge}
                                 </span>
-                                <span style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</span>
+                                <span className="text-xs font-semibold">{item.label}</span>
                             </button>
                         ))}
                     </div>
@@ -174,37 +95,10 @@ export default function ActivityBar({
                 <button
                     onClick={() => setShowUploadMenu((prev) => !prev)}
                     title="Upload Files"
-                    style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: "50%",
-                        border: "3px solid rgba(255,255,255,0.75)",
-                        background: "linear-gradient(180deg, #FF3B7A 0%, #E11D48 100%)",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                        boxShadow: "0 12px 28px rgba(225, 29, 72, 0.35)",
-                    }}
+                    className="w-10.5 h-10.5 rounded-full border-[3px] border-white/75 bg-gradient-to-b from-[#FF3B7A] to-[#E11D48] cursor-pointer flex items-center justify-center relative shadow-[0_12px_28px_rgba(225,29,72,0.35)] hover:scale-105 transition-transform"
                 >
-                    <Upload size={18} style={{ color: "#fff" }} />
-                    <span
-                        style={{
-                            position: "absolute",
-                            top: -3,
-                            right: -3,
-                            width: 16,
-                            height: 16,
-                            borderRadius: "50%",
-                            background: "#fff",
-                            color: "#E11D48",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.2)",
-                        }}
-                    >
+                    <Upload size={18} className="text-white" />
+                    <span className="absolute -top-0.75 -right-0.75 w-4 h-4 rounded-full bg-white text-[#E11D48] flex items-center justify-center shadow-[0_2px_8px_rgba(15,23,42,0.2)]">
                         <Plus size={11} />
                     </span>
                 </button>

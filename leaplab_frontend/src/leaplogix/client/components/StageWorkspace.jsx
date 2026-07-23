@@ -11,14 +11,13 @@ import StagePanel from "../../../python/panels/StagePanel";
 import TerminalPanel from "../../../python/terminal/TerminalPanel";
 import MonacoEditor from "../../../python/editor/MonacoEditor";
 import StatusBar from "../../../python/editor/StatusBar";
-import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";
 
 export default function StageWorkspace() {
     const ctx = useLogix();
 
     return (
-        <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
+        <div className="flex-1 flex overflow-auto min-h-0">
             <SidePanel
                 sidePanel={ctx.sidePanel} setSidePanel={ctx.setSidePanel}
                 projectFiles={ctx.projectFiles} activeFile={ctx.activeFile} setActiveFile={ctx.setActiveFile}

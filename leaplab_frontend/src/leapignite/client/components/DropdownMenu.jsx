@@ -31,59 +31,24 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 16px',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    borderRadius: 22,
-                    transition: 'all 0.2s ease',
-                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
-                    letterSpacing: '0.02em',
-                }}
-                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
+                className={`flex items-center gap-1.5 px-4 py-2 text-white text-[15px] font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
+                    isOpen ? 'bg-white/18 backdrop-blur-sm' : 'bg-transparent hover:bg-white/10'
+                }`}
             >
-                {Icon && <Icon size={16} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={16} strokeWidth={2.2} className="opacity-90" />}
                 {label}
                 <ChevronDown
                     size={14}
                     strokeWidth={2.5}
-                    style={{
-                        opacity: 0.5,
-                        transition: 'transform 0.2s ease',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
+                    className={`opacity-50 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                 />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    background: 'rgba(255,255,255,0.92)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: 12,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    minWidth: 200,
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                    padding: '6px 0',
-                    animation: 'jrMenuSlideIn 0.18s ease-out',
-                }}>
+                <div className="absolute top-[calc(100%+6px)] left-0 bg-white/92 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08)] border border-white/60 min-w-[200px] overflow-hidden z-[1000] py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
                     <style>{`
                         @keyframes jrMenuSlideIn {
                             from { opacity: 0; transform: translateY(-6px) scale(0.98); }
@@ -92,57 +57,24 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{
-                                height: 1,
-                                background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent)',
-                                margin: '5px 12px',
-                            }} />
+                            <div key={idx} className="h-px bg-gradient-to-r from-transparent via-black/8 to-transparent my-1.5 mx-3" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    width: '100%',
-                                    padding: '9px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontSize: 15,
-                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151',
-                                    transition: 'all 0.12s ease',
-                                    borderRadius: 0,
-                                    letterSpacing: '0.01em',
-                                }}
-                                onMouseEnter={e => {
-                                    if (!item.disabled) {
-                                        e.currentTarget.style.background = 'rgba(107,70,193,0.08)';
-                                        e.currentTarget.style.color = '#6B46C1';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
-                                }}
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.25 text-[15px] font-medium text-left transition-all tracking-normal ${
+                                    item.disabled
+                                        ? 'cursor-not-allowed text-gray-300 bg-transparent'
+                                        : 'cursor-pointer text-gray-700 hover:bg-[#6B46C1]/10 hover:text-[#6B46C1]'
+                                }`}
                             >
-                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.85, flexShrink: 0 }} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} className="opacity-85 shrink-0" />}
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{
-                                        fontSize: 11,
-                                        color: '#aaa',
-                                        fontWeight: 500,
-                                        background: 'rgba(0,0,0,0.04)',
-                                        padding: '2px 6px',
-                                        borderRadius: 4,
-                                        fontFamily: "'Segoe UI', monospace",
-                                    }}>{item.shortcut}</span>
+                                    <span className="text-[11px] text-gray-400 font-medium bg-black/5 px-1.5 py-0.5 rounded font-mono">
+                                        {item.shortcut}
+                                    </span>
                                 )}
                             </button>
                         )

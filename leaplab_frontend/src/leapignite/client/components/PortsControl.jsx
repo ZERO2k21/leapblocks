@@ -8,29 +8,11 @@ import { RotateCcw } from 'lucide-react';
 
 export default function PortsControl({ ports, selectedPort, onPortSelect, onRefreshPorts, onConnect, isConnected }) {
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: 'rgba(0,0,0,0.3)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 20,
-            padding: '0 8px',
-            height: 32,
-            flexShrink: 0,
-        }}>
+        <div className="flex items-center gap-1 bg-black/30 border border-white/10 rounded-full px-2 h-8 shrink-0">
             <button
                 onClick={onRefreshPorts}
                 title="Refresh ports"
-                style={{
-                    background: 'none', border: 'none',
-                    color: 'rgba(255,255,255,0.6)',
-                    cursor: 'pointer', padding: 2,
-                    display: 'flex', alignItems: 'center',
-                    borderRadius: 6, transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                className="bg-transparent border-none text-white/60 hover:text-white cursor-pointer p-0.5 flex items-center rounded-md transition-colors"
             >
                 <RotateCcw size={12} strokeWidth={2.5} />
             </button>
@@ -38,23 +20,13 @@ export default function PortsControl({ ports, selectedPort, onPortSelect, onRefr
             <select
                 value={selectedPort}
                 onChange={(e) => onPortSelect?.(e.target.value)}
-                style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(255,255,255,0.85)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    outline: 'none',
-                    cursor: 'pointer',
-                    width: 80,
-                    fontFamily: "'Segoe UI', Inter, monospace, sans-serif",
-                }}
+                className="bg-transparent border-none text-white/85 text-[11px] font-semibold outline-none cursor-pointer w-[80px] font-mono"
             >
-                <option value="" style={{ background: '#0a015a' }}>
+                <option value="" className="bg-[#0a015a]">
                     {ports.length === 0 ? 'No Ports' : 'Select Port'}
                 </option>
                 {ports.map(p => (
-                    <option key={p.path} value={p.path} style={{ background: '#0a015a' }}>
+                    <option key={p.path} value={p.path} className="bg-[#0a015a]">
                         {p.path}
                     </option>
                 ))}
@@ -62,23 +34,11 @@ export default function PortsControl({ ports, selectedPort, onPortSelect, onRefr
 
             <button
                 onClick={onConnect}
-                style={{
-                    padding: '3px 10px',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    border: 'none',
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: isConnected
-                        ? 'linear-gradient(135deg, #10B981, #059669)'
-                        : 'rgba(255,255,255,0.12)',
-                    color: '#fff',
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    letterSpacing: '0.04em',
-                }}
-                onMouseEnter={e => { if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
-                onMouseLeave={e => { if (!isConnected) e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                className={`px-2.5 py-0.75 text-[10px] font-bold border-none rounded-full cursor-pointer transition-all text-white tracking-wider ${
+                    isConnected
+                        ? 'bg-gradient-to-br from-[#10B981] to-[#059669]'
+                        : 'bg-white/12 hover:bg-white/22'
+                }`}
             >
                 {isConnected ? '● ON' : 'CONNECT'}
             </button>

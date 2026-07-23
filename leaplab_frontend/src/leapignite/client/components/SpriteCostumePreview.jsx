@@ -24,32 +24,15 @@ export default function SpriteCostumePreview({ sprites, activeSpriteId }) {
     if (!imgSrc && !isEmoji) return null;
 
     return (
-        <div style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            width: '60px',
-            height: '60px',
-            background: 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(5px)',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            border: '2px solid #0a015a',
-            pointerEvents: 'none',
-            zIndex: 10,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '6px',
-        }}>
+        <div className="absolute top-4 right-4 w-[60px] h-[60px] bg-white/85 backdrop-blur-sm rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-2 border-[#0a015a] pointer-events-none z-10 flex justify-center items-center p-1.5">
             {(!isEmoji && imgSrc) ? (
                 <img
                     src={imgSrc}
                     alt={activeSprite.name}
-                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    className="max-w-full max-h-full object-contain"
                 />
             ) : (
-                <span style={{ fontSize: '36px' }}>{imgSrc}</span>
+                <span className="text-4xl">{imgSrc}</span>
             )}
         </div>
     );

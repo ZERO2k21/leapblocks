@@ -14,8 +14,8 @@ export default function Logo({ height = 100, className = "" }) {
             onError={(e) => {
                 e.target.src = 'assets/leaplab_logo.png';
             }}
-            style={{ height, objectFit: 'contain' }}
-            className={className}
+            className={`object-contain ${className}`}
+            style={{ height }}
         />
     );
 }
@@ -29,13 +29,8 @@ export function CreoleapLogo({ height = 250, className = "", style = {} }) {
             onError={(e) => {
                 e.target.src = 'assets/creoleap_logo.svg';
             }}
-            style={{
-                height,
-                objectFit: 'contain',
-                filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.2))',
-                ...style
-            }}
-            className={className}
+            className={`object-contain brightness-[1.2] contrast-[1.1] drop-shadow-[0_0_2px_rgba(255,255,255,0.2)] ${className}`}
+            style={{ height, ...style }}
         />
     );
 }

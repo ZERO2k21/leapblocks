@@ -10,14 +10,13 @@ import MonacoEditor from "../../../python/editor/MonacoEditor";
 import StatusBar from "../../../python/editor/StatusBar";
 import TerminalPanel from "../../../python/terminal/TerminalPanel";
 import { FileCode2, Plus } from "lucide-react";
-import { C } from "../utils/theme";
 import { BACKDROP_LIBRARY } from "../data/backdrops";
 
 export default function IdeWorkspace() {
     const ctx = useLogix();
 
     return (
-        <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, background: "#1e1e2e" }}>
+        <div className="flex-1 flex overflow-hidden min-h-0 bg-[#1e1e2e]">
             {/* Left Sidebar */}
             <SidePanel
                 sidePanel={ctx.sidePanel} setSidePanel={ctx.setSidePanel}
@@ -40,20 +39,13 @@ export default function IdeWorkspace() {
             />
 
             {/* Center: Code Editor */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: "1px solid #313244" }}>
+            <div className="flex-1 flex flex-col overflow-hidden border-r border-[#313244]">
                 {Object.keys(ctx.projectFiles).length === 0 ? (
-                    <div style={{
-                        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                        color: "#6c7086", gap: 16, fontFamily: "'Cascadia Code', 'Fira Code', Consolas, monospace",
-                    }}>
-                        <FileCode2 size={48} strokeWidth={1.2} style={{ opacity: 0.4 }} />
-                        <div style={{ fontSize: 16, fontWeight: 500, color: "#8b8fa3" }}>No files yet</div>
-                        <div style={{ fontSize: 13, color: "#585b70" }}>Create a new file from the sidebar to get started</div>
-                        <button onClick={ctx.handleCreateNewFile} style={{
-                            marginTop: 8, padding: "8px 20px", background: "#7C3AED", color: "#fff",
-                            border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: 6,
-                        }}>
+                    <div className="flex-1 flex flex-col items-center justify-center text-[#6c7086] gap-4 font-mono">
+                        <FileCode2 size={48} strokeWidth={1.2} className="opacity-40" />
+                        <div className="text-base font-medium text-[#8b8fa3]">No files yet</div>
+                        <div className="text-xs text-[#585b70]">Create a new file from the sidebar to get started</div>
+                        <button onClick={ctx.handleCreateNewFile} className="mt-2 p-2 px-5 bg-[#7C3AED] text-white border-none rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-purple-700">
                             <Plus size={14} /> New File
                         </button>
                     </div>
@@ -73,9 +65,9 @@ export default function IdeWorkspace() {
             </div>
 
             {/* Right: Terminal / REPL */}
-            <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
+            <div className="w-[380px] flex flex-col overflow-hidden shrink-0">
                 <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
-                <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <div className="ide-terminal-full flex-1 flex flex-col overflow-hidden">
                     <TerminalPanel
                         activePanel={ctx.activePanel} setActivePanel={ctx.setActivePanel}
                         terminalOutput={ctx.terminalOutput}
