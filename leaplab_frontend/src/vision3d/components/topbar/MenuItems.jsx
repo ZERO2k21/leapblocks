@@ -10,29 +10,14 @@ export function MenuItem({ icon, iconColor, label, shortcut, disabled, active, o
     <button
       disabled={disabled}
       onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '7px 14px',
-        border: 'none',
-        background: 'transparent',
-        fontSize: '12px',
-        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-        fontWeight: 500,
-        textAlign: 'left',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.12s ease',
-      }}
-      className={disabled ? 'opacity-40 text-[#374151]/40' : active ? 'text-[#7C3AED] font-semibold hover:bg-[#7C3AED]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+      className={`flex items-center justify-between w-full px-[14px] py-[7px] border-0 bg-transparent text-[12px] font-sans font-medium text-left transition-all duration-150 ${disabled ? 'opacity-40 text-[#374151]/40 cursor-not-allowed' : active ? 'text-[#7C3AED] font-semibold hover:bg-[#7C3AED]/8 cursor-pointer' : 'text-[#374151] hover:bg-[#7C3AED]/8 cursor-pointer'}`}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="flex items-center gap-[10px]">
         <span className={iconColor || 'text-[#7C3AED]/80'}>{icon}</span>
         <span>{label}</span>
       </div>
       {shortcut && (
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>
+        <span className="text-[10px] text-[#9CA3AF] bg-[#F3F4F6] px-[4px] py-[2px] rounded-[4px]">
           {shortcut}
         </span>
       )}

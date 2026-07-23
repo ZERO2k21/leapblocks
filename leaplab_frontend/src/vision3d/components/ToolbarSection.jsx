@@ -234,16 +234,14 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
       </div>
       <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
         <div 
-          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default" 
-          style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box' }}
+          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default px-3 h-9 inline-flex items-center gap-2 rounded-lg box-border" 
           title="Objects in scene"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span>{shapes.length}</span>
         </div>
         <div 
-          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default" 
-          style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box' }}
+          className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 hover:text-slate-600 cursor-default px-3 h-9 inline-flex items-center gap-2 rounded-lg box-border" 
           title="Selected shapes"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
@@ -251,8 +249,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
         </div>
         {tempWorkplane && (
           <div 
-            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
-            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#f97316' }}
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default px-3 h-9 inline-flex items-center gap-2 rounded-lg box-border text-orange-500" 
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
             <span>Workplane</span>
@@ -260,8 +257,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
         )}
         {rulerActive && (
           <div 
-            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
-            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#ef4444' }}
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default px-3 h-9 inline-flex items-center gap-2 rounded-lg box-border text-red-500" 
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M3 12h18"/></svg>
             <span>Ruler</span>
@@ -269,8 +265,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
         )}
         {editMode !== 'object' && (
           <div 
-            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default" 
-            style={{ padding: '0 12px', height: '36px', display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '8px', boxSizing: 'border-box', color: '#a855f7' }}
+            className="text-xs font-semibold bg-slate-50 border border-slate-200/80 select-none transition-all duration-150 hover:bg-slate-100 cursor-default px-3 h-9 inline-flex items-center gap-2 rounded-lg box-border text-purple-500" 
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
             <span>{editMode === 'vertex' ? `Vertex (${selectedVertices.length})` : editMode === 'edge' ? `Edge (${selectedEdges.length})` : `Face (${selectedFaces.length})`}</span>
@@ -318,14 +313,14 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
           type="file"
           accept=".stl,.obj"
           onChange={handleImport}
-          style={{ display: 'none' }}
+          className="hidden"
         />
         <input
           ref={openProjectInputRef}
           type="file"
           accept=".json,.leap"
           onChange={handleOpenProjectFile}
-          style={{ display: 'none' }}
+          className="hidden"
         />
       </div>
     </div>

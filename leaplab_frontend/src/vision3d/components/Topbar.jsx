@@ -119,10 +119,8 @@ export const Topbar = ({
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-
       <div
-        style={{ paddingLeft: '2px', width: '100%', minWidth: '100vw', boxSizing: 'border-box' }}
-        className="flex items-center justify-between h-[68px] pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
+        className="pl-[2px] w-full min-w-[100vw] box-border flex items-center justify-between h-[68px] pr-[18px] z-[200] select-none border-b gap-4 bg-gradient-to-br from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-[rgba(100,180,255,0.08)] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]"
       >
         <div className="flex items-center gap-3.5 flex-auto min-w-0 h-full">
           <button
@@ -132,8 +130,7 @@ export const Topbar = ({
               sessionStorage.removeItem('myProjectsSelectedMode');
               onBack();
             }}
-            style={{ marginLeft: '16px' }}
-            className="flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
+            className="ml-4 flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
           >
             <Home size={20} strokeWidth={2.2} />
           </button>
@@ -157,11 +154,10 @@ export const Topbar = ({
                 File
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${fileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
- 
+
               {fileMenuOpen && (
                 <div
-                  style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '240px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
-                  className="animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+                  className="absolute top-[calc(100%+6px)] left-0 rounded-lg min-w-[240px] py-1 z-[1000] overflow-hidden animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
                 >
                   <MenuItem icon={<FilePlus size={14} />} iconColor="text-[#7C3AED]/80" label="New Project" shortcut="Ctrl+N" onClick={() => { clearScene(); closeAllMenus(); }} />
                   <MenuItem icon={<FolderOpen size={14} />} iconColor="text-[#7C3AED]/80" label="Open Project" shortcut="Ctrl+O" onClick={() => { onOpenProject?.(); closeAllMenus(); }} />
@@ -178,7 +174,7 @@ export const Topbar = ({
                 </div>
               )}
             </div>
- 
+
             {/* Edit Menu */}
             <div ref={editMenuRef} className="relative">
               <button
@@ -188,11 +184,10 @@ export const Topbar = ({
                 Edit
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${editMenuOpen ? 'rotate-180' : ''}`} />
               </button>
- 
+
               {editMenuOpen && (
                 <div
-                  style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '240px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
-                  className="animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+                  className="absolute top-[calc(100%+6px)] left-0 rounded-lg min-w-[240px] py-1 z-[1000] overflow-hidden animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
                 >
                   <MenuItem icon={<Undo2 size={14} />} iconColor="text-[#7C3AED]/80" label="Undo" shortcut="Ctrl+Z" disabled={!effectiveCanUndo} onClick={() => { if (effectiveCanUndo) { effectiveUndo(); closeAllMenus(); } }} />
                   <MenuItem icon={<Redo2 size={14} />} iconColor="text-[#7C3AED]/80" label="Redo" shortcut="Ctrl+Y" disabled={!effectiveCanRedo} onClick={() => { if (effectiveCanRedo) { effectiveRedo(); closeAllMenus(); } }} />
@@ -206,7 +201,7 @@ export const Topbar = ({
                 </div>
               )}
             </div>
- 
+
             {/* View Menu */}
             <div ref={viewMenuRef} className="relative">
               <button
@@ -216,18 +211,17 @@ export const Topbar = ({
                 View
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${viewMenuOpen ? 'rotate-180' : ''}`} />
               </button>
- 
+
               {viewMenuOpen && (
                 <div
-                  style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: '8px', minWidth: '200px', padding: '4px 0', zIndex: 1000, overflow: 'hidden' }}
-                  className="animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+                  className="absolute top-[calc(100%+6px)] left-0 rounded-lg min-w-[200px] py-1 z-[1000] overflow-hidden animate-[slideDown_0.15s_ease-out] border border-white/60 bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
                 >
                   <MenuItem icon={<Grid3x3 size={14} />} iconColor="text-[#7C3AED]/80" label={showGrid ? 'Hide Grid' : 'Show Grid'} active={showGrid} onClick={() => { setShowGrid(!showGrid); closeAllMenus(); }} />
                   <MenuItem icon={<Ruler size={14} />} iconColor="text-[#7C3AED]/80" label={showAxes ? 'Hide Axes' : 'Show Axes'} active={showAxes} onClick={() => { setShowAxes(!showAxes); closeAllMenus(); }} />
                 </div>
               )}
             </div>
- 
+
             <button className="flex items-center gap-1.25 px-[10px] py-[6px] text-[15px] font-medium font-sans cursor-pointer rounded-[6px] transition-all duration-200 tracking-wide bg-transparent border-0 text-white hover:bg-white/10">
               <BookOpen size={14} strokeWidth={2.2} className="opacity-90" />
               Tutorials
@@ -235,7 +229,7 @@ export const Topbar = ({
             </button>
           </div>
         </div>
- 
+
         {/* Center section */}
         <div className="flex items-center justify-center gap-4 px-4 flex-1 min-w-0">
           <ProjectNameInput
@@ -245,21 +239,21 @@ export const Topbar = ({
             isSaving={isSaving}
           />
         </div>
- 
+
         {/* Right section */}
         <div className="flex items-center justify-end gap-3 flex-auto min-w-0">
           <div className="hidden sm:flex items-center gap-3 pr-4 mr-2 border-r border-[rgba(191,219,254,0.22)] h-8 shrink-0">
             <TopbarShareButton className="bg-transparent border-none cursor-pointer transition-colors duration-200 flex items-center text-[rgba(191,219,254,0.85)] hover:text-white" size={16} onSave={onSave} projectName={title} />
           </div>
- 
+
           <div className="hidden sm:flex sm:items-center sm:gap-4 shrink-0 ml-4">
             <LeapLabAuthButton variant="dark" size="sm" style={{ height: '36px', borderRadius: '16px', boxSizing: 'border-box' }} />
           </div>
- 
+
           <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
             <img alt="Leap into the AI Future" src="assets/logo-creoleap.png" className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]" />
           </div>
- 
+
           <button
             title="Open Menu"
             onClick={() => setMobileMenuOpen(true)}
@@ -278,12 +272,7 @@ export const Topbar = ({
       {/* Mobile slide-out drawer */}
       <div
         ref={mobileMenuRef}
-        className={`fixed top-0 right-0 h-full z-[1000] shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l bg-[#0b1b42] border-[#bfdbfe]/20 text-white ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
-        style={{
-          width: '290px',
-          padding: '24px',
-          boxSizing: 'border-box'
-        }}
+        className={`fixed top-0 right-0 h-full w-[290px] p-6 box-border z-[1000] shadow-2xl flex flex-col gap-6 transition-all duration-300 ease-in-out border-l bg-[#0b1b42] border-[#bfdbfe]/20 text-white ${mobileMenuOpen ? 'translate-x-0 visible opacity-100' : 'translate-x-full invisible opacity-0'}`}
       >
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">

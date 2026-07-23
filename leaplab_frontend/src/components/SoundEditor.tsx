@@ -32,6 +32,7 @@ const Waveform: React.FC<WaveformProps> = ({ buffer, color, selectionStart = 0, 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState(0);
+    const [hoverRatio, setHoverRatio] = useState<number | null>(null);
 
     const getRatioFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
@@ -49,13 +50,20 @@ const Waveform: React.FC<WaveformProps> = ({ buffer, color, selectionStart = 0, 
     };
 
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDragging || !onSelectionChange) return;
         const currentRatio = getRatioFromEvent(e);
-        onSelectionChange(Math.min(dragStart, currentRatio), Math.max(dragStart, currentRatio));
+        setHoverRatio(currentRatio);
+        if (isDragging && onSelectionChange) {
+            onSelectionChange(Math.min(dragStart, currentRatio), Math.max(dragStart, currentRatio));
+        }
     };
 
     const handleMouseUp = () => {
         setIsDragging(false);
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+        setHoverRatio(null);
     };
 
     useEffect(() => {
@@ -65,61 +73,182 @@ const Waveform: React.FC<WaveformProps> = ({ buffer, color, selectionStart = 0, 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const width = canvas.width;
-        const height = canvas.height;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+
         const data = buffer.getChannelData(0);
-        const step = Math.ceil(data.length / width);
-        const amp = height / 2;
+        const duration = buffer.duration;
 
-        ctx.clearRect(0, 0, width, height);
+        // Dark background for DAW aesthetic
+        ctx.fillStyle = '#0b0f19';
+        ctx.fillRect(0, 0, width, height);
 
-        // Draw basic waveform
+        const rulerHeight = 22;
+        const ampRegionHeight = height - rulerHeight;
+        const ampCenterY = rulerHeight + ampRegionHeight / 2;
+
+        // 1. Time Ruler at Top
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(0, 0, width, rulerHeight);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(0, amp);
-
-        for (let i = 0; i < width; i++) {
-            let min = 1.0;
-            let max = -1.0;
-            for (let j = 0; j < step; j++) {
-                const datum = data[(i * step) + j];
-                if (datum < min) min = datum;
-                if (datum > max) max = datum;
-            }
-            ctx.lineTo(i, (1 + min) * amp);
-            ctx.lineTo(i, (1 + max) * amp);
-        }
-
+        ctx.moveTo(0, rulerHeight);
+        ctx.lineTo(width, rulerHeight);
         ctx.stroke();
 
-        // Draw selection overlay
-        if (selectionStart !== selectionEnd) {
-            ctx.fillStyle = 'rgba(133, 92, 214, 0.3)';
-            ctx.fillRect(width * selectionStart, 0, width * (selectionEnd - selectionStart), height);
+        // Time ticks
+        const ticksCount = Math.max(2, Math.floor(width / 90));
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.font = '500 9px monospace';
+        ctx.textAlign = 'center';
 
-            // Draw Handles
-            ctx.fillStyle = '#6e45c4';
-            const handleRadius = 6;
+        for (let t = 0; t <= ticksCount; t++) {
+            const tickRatio = t / ticksCount;
+            const tickX = tickRatio * width;
+            const timeSec = (tickRatio * duration).toFixed(2) + 's';
+
             ctx.beginPath();
-            ctx.arc(width * selectionStart, handleRadius, handleRadius, 0, Math.PI * 2);
-            ctx.arc(width * selectionStart, height - handleRadius, handleRadius, 0, Math.PI * 2);
-            ctx.arc(width * selectionEnd, handleRadius, handleRadius, 0, Math.PI * 2);
-            ctx.arc(width * selectionEnd, height - handleRadius, handleRadius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.moveTo(tickX, rulerHeight - 6);
+            ctx.lineTo(tickX, rulerHeight);
+            ctx.stroke();
+
+            const textX = Math.max(16, Math.min(width - 16, tickX));
+            ctx.fillText(timeSec, textX, 13);
         }
-    }, [buffer, color, selectionStart, selectionEnd]);
+
+        // 2. Waveform Background Grid Lines
+        [0.25, 0.5, 0.75].forEach(r => {
+            const gridY = rulerHeight + ampRegionHeight * r;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.beginPath();
+            ctx.moveTo(0, gridY);
+            ctx.lineTo(width, gridY);
+            ctx.stroke();
+        });
+
+        // Center zero line
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, ampCenterY);
+        ctx.lineTo(width, ampCenterY);
+        ctx.stroke();
+
+        // 3. Audio Waveform Bars
+        const numBars = Math.floor(width / 2);
+        const samplesPerBar = Math.floor(data.length / numBars);
+
+        const gradient = ctx.createLinearGradient(0, rulerHeight, 0, height);
+        gradient.addColorStop(0, '#d8b4fe');
+        gradient.addColorStop(0.5, '#c084fc');
+        gradient.addColorStop(1, '#818cf8');
+
+        ctx.fillStyle = gradient;
+
+        for (let i = 0; i < numBars; i++) {
+            let max = 0;
+            const startSample = i * samplesPerBar;
+            for (let j = 0; j < samplesPerBar; j++) {
+                const val = Math.abs(data[startSample + j] || 0);
+                if (val > max) max = val;
+            }
+
+            const barHeight = Math.max(3, max * (ampRegionHeight / 2 - 4));
+            const x = i * 2;
+            const y = ampCenterY - barHeight;
+
+            ctx.fillRect(x, y, 1.5, barHeight * 2);
+        }
+
+        // 4. Selection Overlay
+        if (selectionStart !== selectionEnd) {
+            const startX = width * selectionStart;
+            const endX = width * selectionEnd;
+
+            // Translucent unselected masks
+            ctx.fillStyle = 'rgba(11, 15, 25, 0.65)';
+            ctx.fillRect(0, 0, startX, height);
+            ctx.fillRect(endX, 0, width - endX, height);
+
+            // Active selection glow box
+            ctx.fillStyle = 'rgba(168, 85, 247, 0.22)';
+            ctx.fillRect(startX, rulerHeight, endX - startX, ampRegionHeight);
+
+            // Boundary handles
+            ctx.strokeStyle = '#e9d5ff';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, rulerHeight);
+            ctx.lineTo(startX, height);
+            ctx.moveTo(endX, rulerHeight);
+            ctx.lineTo(endX, height);
+            ctx.stroke();
+
+            // Handle head grip pills
+            ctx.fillStyle = '#a855f7';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+
+            // Start handle
+            ctx.beginPath();
+            ctx.roundRect(startX - 5, rulerHeight + 3, 10, 16, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // End handle
+            ctx.beginPath();
+            ctx.roundRect(endX - 5, height - 19, 10, 16, 4);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 5. Active Hover Playhead Guide Line
+        if (hoverRatio !== null && !isDragging) {
+            const hoverX = width * hoverRatio;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(hoverX, rulerHeight);
+            ctx.lineTo(hoverX, height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Floating Hover Time Badge
+            const hoverTimeText = (hoverRatio * duration).toFixed(2) + 's';
+            ctx.fillStyle = '#9333ea';
+            ctx.font = 'bold 9px sans-serif';
+            const badgeWidth = 38;
+            const badgeX = Math.max(2, Math.min(width - badgeWidth - 2, hoverX - badgeWidth / 2));
+            
+            ctx.beginPath();
+            ctx.roundRect(badgeX, rulerHeight + 2, badgeWidth, 14, 4);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText(hoverTimeText, badgeX + badgeWidth / 2, rulerHeight + 12);
+        }
+    }, [buffer, color, selectionStart, selectionEnd, hoverRatio, isDragging]);
 
     return (
         <canvas
             ref={canvasRef}
-            className="w-full h-full cursor-crosshair"
-            width={1000}
-            height={200}
+            className="w-full h-full cursor-crosshair select-none block"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
         />
     );
 };
@@ -180,12 +309,9 @@ const generateWaveformPoints = (width: number, height: number): string => {
     const centerY = height / 2;
     for (let i = 0; i < pointsCount; i++) {
         const x = (i / pointsCount) * width;
-        // Generate pseudo-random realistic looking waveform
         const amplitude = Math.sin(i * 0.2) * Math.cos(i * 0.5) * Math.random();
         const y = centerY + amplitude * (height / 2.5);
         points += `${x},${y} `;
-
-        // Add bottom half of waveform for symmetry
         const y2 = centerY - amplitude * (height / 2.5);
         points += `${x},${y2} `;
     }
@@ -258,7 +384,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             setHistory([buffer]);
             setHistoryIndex(0);
 
-            // Also update sidebar cache for the active sound
             setSidebarBuffers(prev => {
                 const next = new Map(prev);
                 next.set(activeSoundIndex, buffer);
@@ -267,7 +392,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         }
     };
 
-    // Pre-load all buffers for sidebar previews
     useEffect(() => {
         const loadAllSidebarBuffers = async () => {
             const newBuffers = new Map(sidebarBuffers);
@@ -301,13 +425,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     const pushHistory = (newBuffer: AudioBuffer) => {
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push(newBuffer);
-        // Limit history to 10 steps
         if (newHistory.length > 10) newHistory.shift();
         setHistory(newHistory);
         setHistoryIndex(newHistory.length - 1);
         setAudioBuffer(newBuffer);
-
-        // Also update the source in the parent component
         updateParentSource(newBuffer);
     };
 
@@ -321,9 +442,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             });
             const blob = new Blob([wavData], { type: 'audio/wav' });
             const url = URL.createObjectURL(blob);
-            // We use onAddSound to update the existing sound in the list
-            // In a real implementation we might need a dedicated updateSound callback
-            // For now, we'll assume the parent handles the 'src' change.
             onAddSound(activeSound.name, url);
         } catch (err) {
             console.error("Failed to encode and save sound:", err);
@@ -415,15 +533,12 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         const originalData = audioBuffer.getChannelData(0);
         const clipboardData = clipboardBuffer.getChannelData(0);
 
-        // Pre-paste
         for (let i = 0; i < startSample; i++) {
             newChannelData[i] = originalData[i];
         }
-        // Paste
         for (let i = 0; i < clipboardBuffer.length; i++) {
             newChannelData[startSample + i] = clipboardData[i];
         }
-        // Post-paste
         for (let i = startSample; i < audioBuffer.length; i++) {
             newChannelData[clipboardBuffer.length + i] = originalData[i];
         }
@@ -445,11 +560,9 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         const newChannelData = newBuffer.getChannelData(0);
         const originalData = audioBuffer.getChannelData(0);
 
-        // Before selection
         for (let i = 0; i < startSample; i++) {
             newChannelData[i] = originalData[i];
         }
-        // After selection
         for (let i = endSample; i < audioBuffer.length; i++) {
             newChannelData[startSample + (i - endSample)] = originalData[i];
         }
@@ -498,12 +611,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         const file = e.target.files?.[0];
         if (!file || !onAddSound) return;
 
-        // Convert to base64 data URL
         const arrayBuffer = await file.arrayBuffer();
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const buffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        // Convert to WAV blob for storage
         const wavData = await WavEncoder.encode({
             sampleRate: buffer.sampleRate,
             channelData: [buffer.getChannelData(0)]
@@ -511,11 +622,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         const blob = new Blob([wavData], { type: 'audio/wav' });
         const url = URL.createObjectURL(blob);
 
-        const name = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+        const name = file.name.replace(/\.[^/.]+$/, '');
         await onAddSound(name, url);
         onSoundChange?.();
 
-        // Reset input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -525,8 +635,12 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         fileInputRef.current?.click();
     };
 
+    const hasSelection = selectionStart !== selectionEnd;
+    const durationSec = audioBuffer ? audioBuffer.duration : 0;
+    const selectionDuration = hasSelection ? (selectionEnd - selectionStart) * durationSec : 0;
+
     return (
-        <div className="flex flex-1 w-full h-full bg-white select-none overflow-hidden font-sans border-t border-gray-100">
+        <div className="flex flex-1 w-full h-full bg-slate-50/50 select-none overflow-hidden font-sans text-slate-800 border-t border-slate-200/80">
             {/* Hidden file input for sound upload */}
             <input
                 ref={fileInputRef}
@@ -541,51 +655,69 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                 onClose={() => setIsLibraryOpen(false)}
                 onSelectSound={handleSelectFromLibrary}
             />
+
             {/* 1. LEFT SIDEBAR (Sounds Panel) */}
-            <div className="w-[80px] border-r border-gray-200 flex flex-col bg-[#EDF1F7] overflow-hidden relative">
-                <div className="flex-1 overflow-y-auto p-1.5 flex flex-col gap-2 no-scrollbar pb-16">
+            <div className="w-24 min-w-[96px] border-r border-slate-200/80 flex flex-col bg-slate-100/70 overflow-hidden relative">
+                <div className="text-[10px] font-extrabold tracking-wider uppercase text-slate-400 px-2 pt-3 pb-1 text-center border-b border-slate-200/50">
+                    Sounds ({sounds.length})
+                </div>
+                
+                <div className="flex-1 overflow-y-auto px-2 py-2.5 flex flex-col gap-2.5 no-scrollbar pb-20">
                     {sounds.map((s, i) => (
-                        <div key={i} className="relative group">
+                        <div key={i} className="relative group w-full flex justify-center">
                             <div
                                 onClick={() => setActiveSoundIndex(i)}
-                                className={`w-[64px] h-[64px] rounded-lg border-2 flex flex-col items-center justify-center p-1 bg-white cursor-pointer relative ${activeSoundIndex === i ? 'border-[#855CD6] shadow-sm' : 'border-gray-200'}`}
+                                className={`w-[76px] h-[76px] rounded-xl border-2 flex flex-col items-center justify-between p-1.5 cursor-pointer relative transition-all duration-200 ${
+                                    activeSoundIndex === i 
+                                        ? 'bg-white border-purple-600 shadow-md shadow-purple-500/10 ring-2 ring-purple-500/20 translate-x-0.5' 
+                                        : 'bg-white/70 hover:bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                                }`}
                             >
-                                <span className="absolute top-0.5 left-1 text-[9px] text-gray-400 font-bold">{i + 1}</span>
-                                <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
+                                <span className="absolute top-1 left-1.5 text-[9px] font-extrabold text-slate-400 bg-slate-100/90 px-1 rounded-md">
+                                    {i + 1}
+                                </span>
+                                <div className="flex-1 w-full flex items-center justify-center pt-2 overflow-hidden">
                                     {sidebarBuffers.has(i) ? (
                                         <MiniWaveform
                                             buffer={sidebarBuffers.get(i)!}
-                                            width={48}
-                                            height={32}
-                                            color={activeSoundIndex === i ? '#855CD6' : '#999'}
+                                            width={52}
+                                            height={34}
+                                            color={activeSoundIndex === i ? '#9333ea' : '#94a3b8'}
                                         />
                                     ) : (
-                                        <div className="w-8 h-8 bg-[#f0f0f0] rounded-lg flex items-center justify-center text-gray-300">
-                                            <Volume2 size={18} />
+                                        <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                                            <Volume2 size={16} />
                                         </div>
                                     )}
                                 </div>
-                                <div className="w-full text-[9px] text-center truncate text-gray-500 font-bold px-0.5 mt-0.5" title={s.name}>{s.name}</div>
+                                <div 
+                                    className={`w-full text-[10px] font-bold text-center truncate px-0.5 transition-colors ${
+                                        activeSoundIndex === i ? 'text-purple-700' : 'text-slate-600 group-hover:text-slate-900'
+                                    }`} 
+                                    title={s.name}
+                                >
+                                    {s.name}
+                                </div>
                             </div>
 
-                            {/* Context Actions (Hover) */}
-                            <div className={`absolute -top-2 -right-2 flex-col gap-1 z-10 hidden group-hover:flex ${activeSoundIndex === i ? 'flex' : ''}`}>
+                            {/* Floating Action Overlay (Delete / Duplicate) */}
+                            <div className="absolute -top-1.5 -right-1 flex gap-1 z-20 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 {onDeleteSound && (
                                     <button
-                                        className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-rose-500 rounded-full flex items-center justify-center shadow-md transition-colors"
+                                        className="w-6 h-6 bg-white border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all"
                                         title="Delete"
                                         onClick={(e) => { e.stopPropagation(); onDeleteSound(i); onSoundChange?.(); }}
                                     >
-                                        <Trash2 size={12} />
+                                        <Trash2 size={11} />
                                     </button>
                                 )}
                                 {onDuplicateSound && (
                                     <button
-                                        className="w-6 h-6 bg-white border border-gray-200 text-gray-500 hover:text-[#855CD6] rounded-full flex items-center justify-center shadow-md transition-colors"
+                                        className="w-6 h-6 bg-white border border-slate-200 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all"
                                         title="Duplicate"
                                         onClick={(e) => { e.stopPropagation(); onDuplicateSound(i); onSoundChange?.(); }}
                                     >
-                                        <Copy size={12} />
+                                        <Copy size={11} />
                                     </button>
                                 )}
                             </div>
@@ -593,10 +725,10 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                     ))}
                 </div>
 
-                {/* Action Menu (Floating Bottom Left) */}
-                <div className="absolute bottom-4 left-4 z-50">
+                {/* Floating Add Sound Action Menu */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
                     <ActionMenu
-                        mainIcon={<MusicIcon size={20} />}
+                        mainIcon={<MusicIcon size={18} />}
                         color="#855CD6"
                         tooltipLabel="Choose a Sound"
                         actions={[
@@ -617,152 +749,231 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
             </div>
 
             {/* 2. MAIN EDITOR AREA */}
-            <div className="flex-1 flex flex-col overflow-hidden bg-[#f9f9f9]">
+            <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50">
                 {activeSound ? (
                     <>
                         {/* TOP TOOLBAR */}
-                        <div className="h-10 px-4 border-b border-gray-200 flex items-center bg-white justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="text-xs font-bold text-gray-400">Edit Sound</div>
+                        <div className="h-14 px-6 border-b border-slate-200/80 bg-white flex items-center justify-between shadow-xs z-10">
+                            {/* Left Header Title */}
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+                                    <Volume2 size={18} />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-slate-800">Edit Sound</span>
+                                    <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200/60">
+                                        {activeSound.name}
+                                    </span>
+                                </div>
                             </div>
+
+                            {/* Right Editing Tools */}
                             <div className="flex items-center gap-2">
+                                {/* Undo / Redo group */}
+                                <div className="flex items-center bg-slate-100/80 p-1 rounded-xl gap-0.5 border border-slate-200/60">
+                                    <button
+                                        className="p-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-purple-600 hover:shadow-xs transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                        onClick={handleUndo}
+                                        disabled={historyIndex <= 0}
+                                        title="Undo"
+                                    >
+                                        <Undo size={16} />
+                                    </button>
+                                    <button
+                                        className="p-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-purple-600 hover:shadow-xs transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                        onClick={handleRedo}
+                                        disabled={historyIndex >= history.length - 1}
+                                        title="Redo"
+                                    >
+                                        <Redo size={16} />
+                                    </button>
+                                </div>
+
+                                <div className="w-px h-5 bg-slate-200 mx-1.5" />
+
+                                {/* Action Buttons */}
                                 <button
-                                    className={`p-1.5 rounded-lg transition-colors ${historyIndex > 0 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
-                                    onClick={handleUndo}
-                                    disabled={historyIndex <= 0}
-                                    title="Undo"
+                                    onClick={copyToClipboard}
+                                    disabled={!hasSelection}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/60 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
                                 >
-                                    <Undo size={16} />
+                                    <Copy size={14} />
+                                    <span>Copy</span>
                                 </button>
+
                                 <button
-                                    className={`p-1.5 rounded-lg transition-colors ${historyIndex < history.length - 1 ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-200 cursor-not-allowed'}`}
-                                    onClick={handleRedo}
-                                    disabled={historyIndex >= history.length - 1}
-                                    title="Redo"
+                                    onClick={pasteFromClipboard}
+                                    disabled={!clipboardBuffer}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/60 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
                                 >
-                                    <Redo size={16} />
+                                    <ClipboardIcon size={14} />
+                                    <span>Paste</span>
                                 </button>
-                                <div className="w-px h-5 bg-gray-200 mx-0.5" />
-                                <ToolBtnHorizontal onClick={copyToClipboard} icon={<Copy size={16} />} label="Copy" disabled={selectionStart === selectionEnd} />
-                                <ToolBtnHorizontal onClick={pasteFromClipboard} icon={<ClipboardIcon size={16} />} label="Paste" disabled={!clipboardBuffer} />
-                                <ToolBtnHorizontal onClick={copyToNew} icon={<MusicIcon size={16} />} label="Copy to New" disabled={selectionStart === selectionEnd} />
+
+                                <button
+                                    onClick={copyToNew}
+                                    disabled={!hasSelection}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                                >
+                                    <MusicIcon size={14} />
+                                    <span>Copy to New</span>
+                                </button>
+
                                 <button
                                     onClick={deleteSelection}
-                                    disabled={selectionStart === selectionEnd}
-                                    className={`flex flex-col items-center gap-0 px-2 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${selectionStart === selectionEnd ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <div className="text-[#855CD6]"><Scissors size={16} /></div>
-                                    <span className="text-[9px] font-bold text-gray-400 capitalize">Delete</span>
+                                    disabled={!hasSelection}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                                >
+                                    <Scissors size={14} />
+                                    <span>Delete</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* EDITOR CONTENT AREA (Waveform + Properties) */}
+                        {/* EDITOR CONTENT AREA */}
                         <div className="flex-1 flex flex-row overflow-hidden">
-                            {/* WAVEFORM & CONTROLS */}
-                            <div className="flex-1 flex flex-col px-4 py-3 relative overflow-y-auto">
-                                {/* Playback Control Button */}
-                                <div className="absolute top-3 left-3 z-10">
-                                    <button
-                                        onClick={handlePlayPause}
-                                        className="w-11 h-11 rounded-full bg-[#855CD6] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all outline-none"
-                                    >
-                                        {isPlaying ? <Square size={20} fill="white" /> : <Play size={22} fill="white" className="ml-1" />}
-                                    </button>
-                                </div>
+                            {/* WAVEFORM DECK & CONTROLS */}
+                            <div className="flex-1 flex flex-col p-6 gap-5 overflow-y-auto max-w-5xl mx-auto w-full">
+                                
+                                {/* Waveform Control Deck */}
+                                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col overflow-hidden">
+                                    {/* Control Bar Header */}
+                                    <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200/60 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={handlePlayPause}
+                                                className="w-11 h-11 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center justify-center shadow-md shadow-purple-500/25 hover:scale-105 active:scale-95 transition-all outline-none cursor-pointer"
+                                                title={isPlaying ? "Stop" : "Play"}
+                                            >
+                                                {isPlaying ? <Square size={18} fill="white" /> : <Play size={20} fill="white" className="ml-0.5" />}
+                                            </button>
 
-                                {/* Waveform Visualization */}
-                                <div className="flex-1 bg-white rounded-xl border-2 border-[#e0d6ff] shadow-sm relative overflow-hidden flex items-center justify-center mt-12 mb-2 mx-auto w-full max-w-4xl">
-                                    <div className="absolute inset-0 flex items-center group w-full">
-                                        <Waveform
-                                            buffer={audioBuffer}
-                                            color="#855CD6"
-                                            selectionStart={selectionStart}
-                                            selectionEnd={selectionEnd}
-                                            onSelectionChange={(start, end) => {
-                                                setSelectionStart(start);
-                                                setSelectionEnd(end);
-                                            }}
-                                        />
+                                            <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs font-mono text-xs font-bold text-slate-700">
+                                                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                                                <span>Duration: {durationSec.toFixed(2)}s</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Selection Stats */}
+                                        <div className="text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200/60 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5">
+                                            {hasSelection ? (
+                                                <span>Selection: {(selectionStart * durationSec).toFixed(2)}s - {(selectionEnd * durationSec).toFixed(2)}s ({selectionDuration.toFixed(2)}s)</span>
+                                            ) : (
+                                                <span className="text-slate-500">Drag on waveform to select a segment</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Waveform Canvas Area Container */}
+                                    <div className="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 relative overflow-hidden flex flex-col group transition-all">
+                                        <div className="w-full h-56 relative rounded-xl overflow-hidden bg-[#0b0f19] border border-slate-800/80 shadow-inner">
+                                            <Waveform
+                                                buffer={audioBuffer}
+                                                color="#a855f7"
+                                                selectionStart={selectionStart}
+                                                selectionEnd={selectionEnd}
+                                                onSelectionChange={(start, end) => {
+                                                    setSelectionStart(start);
+                                                    setSelectionEnd(end);
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Audio Effect Tools */}
-                                <div className="h-16 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center justify-around px-3 max-w-4xl mx-auto w-full overflow-x-auto no-scrollbar">
-                                    <EffectTool icon={<ArrowUpFromLine size={18} />} onClick={() => applyEffect('faster')} label="Faster" />
-                                    <EffectTool icon={<ArrowDownToLine size={18} />} onClick={() => applyEffect('slower')} label="Slower" />
-                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
-                                    <EffectTool icon={<Volume2 size={18} />} onClick={() => applyEffect('louder')} label="Louder" />
-                                    <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('softer')} label="Softer" />
-                                    <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('mute')} label="Mute" />
-                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
-                                    <EffectTool icon={<ArrowLeftRight size={18} />} onClick={() => applyEffect('fade in')} label="Fade in" />
-                                    <EffectTool icon={<ArrowRightLeft size={18} />} onClick={() => applyEffect('fade out')} label="Fade out" />
-                                    <EffectTool icon={<RotateCcw size={18} />} onClick={() => applyEffect('reverse')} label="Reverse" />
-                                    <div className="w-px h-8 bg-gray-200 mx-0.5 flex-shrink-0" />
-                                    <EffectTool icon={<MusicIcon size={18} />} onClick={() => applyEffect('robot')} label="Robot" />
+                                {/* Audio Effect Tools Panel */}
+                                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs p-3.5 flex flex-col gap-2.5">
+                                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1">
+                                        Effects & Manipulations
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
+                                        <EffectTool icon={<ArrowUpFromLine size={18} />} onClick={() => applyEffect('faster')} label="Faster" />
+                                        <EffectTool icon={<ArrowDownToLine size={18} />} onClick={() => applyEffect('slower')} label="Slower" />
+                                        <div className="w-px h-8 bg-slate-200 mx-1 flex-shrink-0" />
+                                        <EffectTool icon={<Volume2 size={18} />} onClick={() => applyEffect('louder')} label="Louder" />
+                                        <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('softer')} label="Softer" />
+                                        <EffectTool icon={<VolumeX size={18} />} onClick={() => applyEffect('mute')} label="Mute" />
+                                        <div className="w-px h-8 bg-slate-200 mx-1 flex-shrink-0" />
+                                        <EffectTool icon={<ArrowLeftRight size={18} />} onClick={() => applyEffect('fade in')} label="Fade in" />
+                                        <EffectTool icon={<ArrowRightLeft size={18} />} onClick={() => applyEffect('fade out')} label="Fade out" />
+                                        <EffectTool icon={<RotateCcw size={18} />} onClick={() => applyEffect('reverse')} label="Reverse" />
+                                        <div className="w-px h-8 bg-slate-200 mx-1 flex-shrink-0" />
+                                        <EffectTool icon={<MusicIcon size={18} />} onClick={() => applyEffect('robot')} label="Robot" />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* 3. PROPERTIES PANEL (Right Sidebar) */}
-                            <div className="w-52 min-w-[200px] border-l border-gray-200 bg-white p-4 flex flex-col gap-5 shadow-sm overflow-y-auto">
-                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Properties</h3>
+                            <div className="w-72 min-w-[280px] border-l border-slate-200/80 bg-white p-5 flex flex-col gap-6 shadow-xs overflow-y-auto">
+                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                    <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Properties</h3>
+                                </div>
 
                                 {/* Sound Name */}
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Sound Name</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Sound Name</label>
                                     <input
                                         type="text"
                                         value={soundName}
                                         onChange={(e) => setSoundName(e.target.value)}
-                                        className="bg-[#f8f8f8] border-2 border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:border-[#855CD6] focus:bg-white transition-all"
+                                        className="w-full bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 outline-none transition-all shadow-2xs"
                                     />
                                 </div>
 
                                 {/* Volume Control */}
-                                <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-3 bg-slate-50/60 border border-slate-100 p-3.5 rounded-2xl">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Volume</label>
-                                        <span className="text-xs font-bold text-[#855CD6] bg-[#e0d6ff] px-2 py-0.5 rounded-full">{volume}%</span>
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Volume</label>
+                                        <span className="text-xs font-bold text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full border border-purple-200/60">
+                                            {volume}%
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <VolumeX size={16} className="text-gray-400" />
+                                        <VolumeX size={16} className="text-slate-400" />
                                         <input
                                             type="range"
                                             min="0"
                                             max="100"
                                             value={volume}
                                             onChange={(e) => setVolume(Number(e.target.value))}
-                                            className="flex-1 accent-[#855CD6] cursor-pointer"
+                                            className="flex-1 accent-purple-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
                                         />
-                                        <Volume2 size={16} className="text-gray-400" />
+                                        <Volume2 size={16} className="text-slate-400" />
                                     </div>
                                 </div>
 
-                                {/* Duration */}
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Duration</label>
-                                    <div className="bg-[#f8f8f8] border-2 border-gray-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
-                                        <span className="text-sm font-bold text-gray-700">
-                                            {audioBuffer ? audioBuffer.duration.toFixed(2) : '0.00'}s
+                                {/* Audio Information Grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-slate-50/80 border border-slate-100 p-3 rounded-xl flex flex-col gap-1">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Duration</span>
+                                        <span className="text-base font-extrabold text-slate-800 font-mono">
+                                            {audioBuffer ? `${audioBuffer.duration.toFixed(2)}s` : '0.00s'}
                                         </span>
-                                        <MusicIcon size={16} className="text-gray-300" />
+                                    </div>
+                                    <div className="bg-slate-50/80 border border-slate-100 p-3 rounded-xl flex flex-col gap-1">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Format</span>
+                                        <span className="text-xs font-bold text-purple-700 mt-1">
+                                            WAV Audio
+                                        </span>
                                     </div>
                                 </div>
 
                                 {/* Info Box */}
-                                <div className="mt-auto bg-[#f8f6ff] border border-[#e0d6ff] rounded-lg p-3">
-                                    <p className="text-[10px] text-[#855CD6] font-medium leading-relaxed">
-                                        Edit, trim, and apply effects to your sounds here.
+                                <div className="mt-auto bg-gradient-to-br from-purple-50 via-indigo-50/40 to-purple-50/30 border border-purple-100 rounded-2xl p-4 shadow-2xs">
+                                    <p className="text-xs text-purple-900 font-medium leading-relaxed">
+                                        ✨ Edit, trim, and apply real-time audio effects to your sound clips with full undo & redo support.
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-[#855CD6] bg-[#f9f9f9] text-center p-8">
-                        <span style={{ fontSize: '64px' }}>🎵</span>
-                        <h3 className="text-2xl font-bold mt-4 mb-2">No Sound Selected</h3>
-                        <p className="text-gray-500 max-w-sm">Select a sound from the panel on the left, or use the menu below to add a new sound.</p>
+                    <div className="flex-1 flex flex-col items-center justify-center text-purple-600 bg-slate-50/50 text-center p-8">
+                        <div className="w-20 h-20 rounded-3xl bg-purple-100/70 border border-purple-200/60 flex items-center justify-center shadow-inner mb-4">
+                            <MusicIcon size={40} className="text-purple-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">No Sound Selected</h3>
+                        <p className="text-slate-500 max-w-sm text-sm">Select a sound from the panel on the left, or use the menu below to add a new sound clip.</p>
                     </div>
                 )}
             </div>
@@ -770,20 +981,21 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
     );
 };
 
-const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-[#855CD6]", disabled = false }: any) => (
-    <button onClick={onClick} disabled={disabled} className={`flex flex-col items-center gap-0 px-2 hover:bg-gray-50 rounded-lg transition-all active:scale-95 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+const ToolBtnHorizontal = ({ onClick, icon, label, color = "text-purple-600", disabled = false }: any) => (
+    <button onClick={onClick} disabled={disabled} className={`flex flex-col items-center gap-0.5 px-2.5 py-1 hover:bg-slate-100 rounded-xl transition-all active:scale-95 ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}>
         <div className={color}>{icon}</div>
-        <span className="text-[9px] font-bold text-gray-400 capitalize">{label}</span>
+        <span className="text-[9px] font-bold text-slate-500 capitalize">{label}</span>
     </button>
 );
 
 const EffectTool = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: () => void }) => (
-    <button onClick={onClick} className="flex flex-col items-center justify-center gap-1 p-1.5 w-14 rounded-lg hover:bg-[#EDF1F7] text-[#855CD6] transition-colors group">
-        <div className="bg-[#f8f6ff] p-2 rounded-full group-hover:bg-white shadow-sm border border-transparent group-hover:border-[#e0d6ff] transition-all">
+    <button onClick={onClick} className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl hover:bg-purple-50/80 border border-slate-100 hover:border-purple-200/80 text-slate-600 hover:text-purple-700 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group min-w-[64px]">
+        <div className="w-9 h-9 rounded-xl bg-slate-100/80 group-hover:bg-purple-100/80 flex items-center justify-center text-slate-600 group-hover:text-purple-700 transition-colors shadow-2xs">
             {icon}
         </div>
-        <span className="text-[10px] font-bold text-gray-500 group-hover:text-[#855CD6]">{label}</span>
+        <span className="text-[10px] font-bold text-slate-600 group-hover:text-purple-700">{label}</span>
     </button>
 );
 
 export default SoundEditor;
+
