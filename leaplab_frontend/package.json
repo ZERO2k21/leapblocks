@@ -101,6 +101,7 @@
     "lit": "^3.0.0",
     "lucide-react": "^0.562.0",
     "matter-js": "^0.20.0",
+    "mobile-drag-drop": "^3.0.0-rc.0",
     "node-fetch": "^3.3.2",
     "pako": "^2.1.0",
     "react": "^19.2.3",
