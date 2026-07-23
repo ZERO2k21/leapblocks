@@ -92,14 +92,14 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             <button
                 type="button"
                 onClick={onToggle}
-                className={`flex items-center gap-1.5 px-2 py-1 border-0 text-white text-sm font-medium font-sans cursor-pointer rounded transition-all duration-200 ${
-                    isOpen ? 'bg-white/20 backdrop-blur-xs' : 'bg-transparent hover:bg-white/15'
+                className={`flex items-center gap-1.5 px-4 py-2 border-0 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
+                    isOpen ? 'bg-white/20 backdrop-blur-xs' : 'bg-transparent hover:bg-white/10'
                 }`}
             >
-                {Icon && <Icon size={14} strokeWidth={2.2} className="opacity-90" />}
+                {Icon && <Icon size={16} strokeWidth={2.2} className="opacity-90" />}
                 {label}
                 <ChevronDown
-                    size={12}
+                    size={14}
                     strokeWidth={2.5}
                     className={`opacity-50 transition-transform duration-200 ${
                         isOpen ? 'rotate-180' : 'rotate-0'
@@ -108,32 +108,32 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full mt-1.5 left-0 bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl border border-white/60 min-w-40 overflow-hidden z-50 py-1 animate-[pyMenuSlideIn_0.1s_ease-out]">
+                <div className="absolute top-full mt-1.5 left-0 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 min-w-[200px] overflow-hidden z-50 py-1.5 animate-[pyMenuSlideIn_0.18s_ease-out]">
                     <style>{`
                         @keyframes pyMenuSlideIn {
-                            from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+                            from { opacity: 0; transform: translateY(-6px) scale(0.98); }
                             to { opacity: 1; transform: translateY(0) scale(1); }
                         }
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} className="h-px bg-black/10 my-1 mx-3" />
+                            <div key={idx} className="h-px bg-gradient-to-r from-transparent via-black/10 to-transparent my-1.5 mx-3" />
                         ) : (
                             <button
                                 key={idx}
                                 type="button"
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-0 text-xs font-sans font-medium text-left transition-all duration-150 ${
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-0 text-sm font-medium text-left transition-all tracking-normal ${
                                     item.disabled
-                                        ? 'cursor-not-allowed text-slate-300 bg-transparent'
-                                        : 'cursor-pointer text-slate-700 bg-transparent hover:bg-purple-600/10 hover:text-purple-900'
+                                        ? 'cursor-not-allowed text-gray-300 bg-transparent'
+                                        : 'cursor-pointer text-gray-700 bg-transparent hover:bg-purple-100/60 hover:text-purple-700'
                                 }`}
                             >
-                                {item.icon && <item.icon size={14} strokeWidth={2} className="text-purple-600 opacity-80" />}
+                                {item.icon && <item.icon size={16} strokeWidth={2} className="text-purple-600 opacity-85 shrink-0" />}
                                 <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded">
+                                    <span className="text-xs text-gray-400 font-medium bg-black/5 px-1.5 py-0.5 rounded font-mono">
                                         {item.shortcut}
                                     </span>
                                 )}
@@ -2797,32 +2797,36 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <>
                             <div className="w-px h-5 bg-white/70" />
 
-                            <DropdownMenu
-                                label="File"
-                                isOpen={openMenuId === 'file'}
-                                onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')}
-                                onClose={() => setOpenMenuId(null)}
-                                items={[
-                                    { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
-                                    { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
-                                    { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
-                                    { divider: true },
-                                    { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
-                                    { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
-                                    { divider: true },
-                                    { label: 'Share', icon: Share, onClick: handleShareProject },
-                                    { divider: true },
-                                    {
-                                        label: 'My Projects',
-                                        icon: FolderOpen,
-                                        onClick: () => {
-                                            sessionStorage.setItem('landingActiveTab', 'my-projects');
-                                            sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                            onBack();
-                                        }
-                                    }
-                                ]}
-                            />
+                            <TopbarShareButton size={18} onSave={handleSaveProject} projectName={projectName}>
+                                {({ onClick: handleShareClick }) => (
+                                    <DropdownMenu
+                                        label="File"
+                                        isOpen={openMenuId === 'file'}
+                                        onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')}
+                                        onClose={() => setOpenMenuId(null)}
+                                        items={[
+                                            { label: 'New Project', icon: File, onClick: handleNewProject, shortcut: 'Ctrl+N' },
+                                            { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject, shortcut: 'Ctrl+O' },
+                                            { label: 'Open Python File', icon: FileCode2, onClick: handleOpenPythonFile },
+                                            { divider: true },
+                                            { label: 'Save to your computer', icon: Save, onClick: handleSaveProject, shortcut: 'Ctrl+S' },
+                                            { label: 'Download .leap file', icon: Download, onClick: handleDownloadProject },
+                                            { divider: true },
+                                            { label: 'Share', icon: Share, onClick: () => { handleShareClick(); handleShareProject?.(); } },
+                                            { divider: true },
+                                            {
+                                                label: 'My Projects',
+                                                icon: FolderOpen,
+                                                onClick: () => {
+                                                    sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                                    sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                                                    onBack();
+                                                }
+                                            }
+                                        ]}
+                                    />
+                                )}
+                            </TopbarShareButton>
 
                             <DropdownMenu
                                 label="Edit"

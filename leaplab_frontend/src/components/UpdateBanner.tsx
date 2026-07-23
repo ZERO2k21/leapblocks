@@ -89,36 +89,22 @@ export function UpdateBanner() {
   const isIdle = !installing || isDone;
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 20,
-      right: 20,
-      zIndex: 99999,
-      width: 380,
-      borderRadius: 12,
-      background: '#fff',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-      border: '1px solid #e2e8f0',
-      overflow: 'hidden',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    }}>
-      <div style={{ padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+    <div className="fixed bottom-5 right-5 z-[99999] w-[380px] rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden font-sans">
+      <div className="p-4 px-5">
+        <div className="flex items-start justify-between mb-2">
           <div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1e293b' }}>
+            <h3 className="m-0 text-sm font-bold text-slate-800">
               Update Available
             </h3>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+            <p className="m-0 mt-1 text-xs text-slate-500">
               LeapLab v{updateInfo.latestVersion} is ready to install
             </p>
           </div>
           {isIdle && (
             <button
+              type="button"
               onClick={handleDismiss}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8',
-                fontSize: 18, lineHeight: 1, padding: 0,
-              }}
+              className="bg-transparent border-0 cursor-pointer text-slate-400 text-lg leading-none p-0 hover:text-slate-600"
               title="Dismiss"
             >
               &times;
@@ -127,51 +113,47 @@ export function UpdateBanner() {
         </div>
 
         {updateInfo.releaseNotes && (
-          <p style={{ margin: '8px 0', fontSize: 12, color: '#64748b', lineHeight: 1.4, maxHeight: 60, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+          <p className="my-2 text-xs text-slate-500 leading-relaxed max-h-15 overflow-auto whitespace-pre-wrap">
             {updateInfo.releaseNotes}
           </p>
         )}
 
         {isDownloading && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b', marginBottom: 4 }}>
+          <div className="mt-3">
+            <div className="flex justify-between text-[11px] text-slate-500 mb-1">
               <span>Downloading...</span>
               <span>{progressPercent}%</span>
             </div>
-            <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${progressPercent}%`, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', borderRadius: 3, transition: 'width 0.3s ease' }} />
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         )}
 
         {isVerifying && (
-          <p style={{ margin: '12px 0 0', fontSize: 12, color: '#64748b' }}>
+          <p className="mt-3 m-0 text-xs text-slate-500">
             Verifying download...
           </p>
         )}
 
         {error && (
-          <p style={{ margin: '12px 0 0', fontSize: 12, color: '#ef4444' }}>
+          <p className="mt-3 m-0 text-xs text-red-500 font-medium">
             {error}
           </p>
         )}
 
         {isIdle && !error && !isDone && (
           <button
+            type="button"
             onClick={handleUpdate}
-            style={{
-              marginTop: 12, width: '100%', padding: '10px 0', borderRadius: 8, border: 'none',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
-            }}
+            className="mt-3 w-full py-2.5 rounded-xl border-0 bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-semibold cursor-pointer shadow-md shadow-indigo-500/25 hover:from-indigo-600 hover:to-purple-700 transition-all"
           >
             Update to v{updateInfo.latestVersion}
           </button>
         )}
 
         {isDone && (
-          <p style={{ margin: '12px 0 0', fontSize: 12, color: '#10b981', textAlign: 'center' }}>
+          <p className="mt-3 m-0 text-xs text-emerald-600 font-semibold text-center">
             Update installed. The app will restart.
           </p>
         )}

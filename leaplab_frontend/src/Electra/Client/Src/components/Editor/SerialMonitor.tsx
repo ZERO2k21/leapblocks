@@ -52,51 +52,41 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
 
   return (
     <div
-      className={`flex flex-col h-full overflow-hidden ${
-        isDark ? 'bg-[rgba(5,7,10,0.6)] text-[var(--lp-text-color)]' : 'bg-[#f8fafc] text-[#0f172a]'
+      className={`flex flex-col h-full overflow-hidden font-mono ${
+        isDark ? 'bg-slate-950/60 text-slate-200' : 'bg-slate-50 text-slate-900'
       }`}
-      style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
     >
       {/* ── OUTPUT ── */}
       <div
         ref={terminalRef}
-        className={`flex-1 overflow-y-auto overflow-x-hidden relative p-[16px_20px] text-[12px] leading-[1.7] whitespace-pre-wrap break-all ${
-          isDark ? 'text-[rgba(148,163,184,0.9)]' : 'text-[#334155]'
+        className={`flex-1 overflow-y-auto overflow-x-hidden relative p-4 text-xs leading-relaxed whitespace-pre-wrap break-all ${
+          isDark
+            ? 'bg-gradient-to-b from-slate-950/40 to-slate-950/60 text-slate-300 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.012)_1px,transparent_0)] bg-[size:18px_18px]'
+            : 'bg-gradient-to-b from-slate-50 to-slate-100 text-slate-700 bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.015)_1px,transparent_0)] bg-[size:18px_18px]'
         }`}
-        style={{
-          background: isDark
-            ? 'linear-gradient(180deg, rgba(5, 7, 10, 0.4) 0%, rgba(8, 10, 14, 0.6) 100%)'
-            : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-          backgroundImage: isDark
-            ? 'radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0)'
-            : 'radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.015) 1px, transparent 0)',
-          backgroundSize: '18px 18px',
-        }}
       >
         {/* Floating action buttons when output exists */}
         {output && (
-          <div
-            className="absolute flex items-center top-[12px] right-[12px] gap-[4px] z-[5]"
-          >
+          <div className="absolute flex items-center top-3 right-3 gap-1 z-10 backdrop-blur-md rounded-md p-0.5">
             <button
+              type="button"
               onClick={handleDownload}
-              className={`flex items-center cursor-pointer transition-all duration-200 gap-[4px] p-[4px_8px] text-[9px] font-bold tracking-[0.05em] uppercase rounded-[5px] ${
+              className={`flex items-center cursor-pointer transition-all duration-200 gap-1 px-2 py-1 text-[9px] font-bold tracking-wider uppercase rounded ${
                 isDark
-                  ? 'bg-[rgba(15,17,23,0.8)] text-[rgba(148,163,184,0.6)] border border-solid border-[rgba(255,255,255,0.06)] hover:text-[var(--lp-accent-bright)] hover:border-[rgba(59,130,246,0.3)]'
-                  : 'bg-[rgba(255,255,255,0.9)] text-[rgba(100,116,139,0.6)] border border-solid border-[rgba(15,23,42,0.08)] hover:text-[#0284c7] hover:border-[rgba(2,132,199,0.2)]'
+                  ? 'bg-slate-900/80 text-slate-400 border border-white/10 hover:text-blue-400 hover:border-blue-500/40'
+                  : 'bg-white/90 text-slate-500 border border-slate-200 hover:text-sky-600 hover:border-sky-500/30'
               }`}
-              style={{ backdropFilter: 'blur(8px)' }}
             >
               <Download size={10} strokeWidth={2.5} /> Export
             </button>
             <button
+              type="button"
               onClick={onClear}
-              className={`flex items-center cursor-pointer transition-all duration-200 gap-[4px] p-[4px_8px] text-[9px] font-bold tracking-[0.05em] uppercase rounded-[5px] ${
+              className={`flex items-center cursor-pointer transition-all duration-200 gap-1 px-2 py-1 text-[9px] font-bold tracking-wider uppercase rounded ${
                 isDark
-                  ? 'bg-[rgba(15,17,23,0.8)] text-[rgba(148,163,184,0.6)] border border-solid border-[rgba(255,255,255,0.06)]'
-                  : 'bg-[rgba(255,255,255,0.9)] text-[rgba(100,116,139,0.6)] border border-solid border-[rgba(15,23,42,0.08)]'
-              } hover:text-[#f43f5e] hover:border-[rgba(244,63,94,0.3)]`}
-              style={{ backdropFilter: 'blur(8px)' }}
+                  ? 'bg-slate-900/80 text-slate-400 border border-white/10'
+                  : 'bg-white/90 text-slate-500 border border-slate-200'
+              } hover:text-rose-500 hover:border-rose-500/40`}
             >
               <Trash2 size={10} strokeWidth={2.5} /> Clear
             </button>
@@ -104,16 +94,16 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
         )}
 
         {output ? (
-          <div className="font-['JetBrains_Mono',monospace]">
+          <div className="font-mono">
             {output.split('\n').map((line, i) => {
               if (line.includes('❌') || line.includes('ERROR')) {
-                return <div key={i} className="text-[#f43f5e] font-medium">{line}</div>;
+                return <div key={i} className="text-rose-500 font-medium">{line}</div>;
               }
               if (line.includes('━━━')) {
-                return <div key={i} className={`${isDark ? 'text-[rgba(100,116,139,0.3)]' : 'text-[rgba(148,163,184,0.4)]'}`}>{line}</div>;
+                return <div key={i} className={isDark ? 'text-slate-600/60' : 'text-slate-400/60'}>{line}</div>;
               }
               if (line.startsWith('✓') || line.includes('success')) {
-                return <div key={i} className="text-[#10b981]">{line}</div>;
+                return <div key={i} className="text-emerald-500">{line}</div>;
               }
               return <div key={i}>{line}</div>;
             })}
@@ -121,29 +111,23 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
         ) : (
           <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center select-none">
             <div
-              className={`relative flex items-center justify-center w-[48px] h-[48px] rounded-[14px] mb-[14px] ${
+              className={`relative flex items-center justify-center w-12 h-12 rounded-xl mb-3.5 ${
                 isDark
-                  ? 'bg-[rgba(255,255,255,0.025)] border border-solid border-[rgba(255,255,255,0.04)]'
-                  : 'bg-[rgba(15,23,42,0.025)] border border-solid border-[rgba(15,23,42,0.04)]'
+                  ? 'bg-white/[0.025] border border-white/5'
+                  : 'bg-slate-900/[0.025] border border-slate-900/5'
               }`}
             >
               <Terminal
                 size={20}
                 strokeWidth={1.5}
-                className={`${isDark ? 'text-[rgba(100,116,139,0.35)]' : 'text-[rgba(148,163,184,0.4)]'}`}
+                className={isDark ? 'text-slate-500' : 'text-slate-400'}
               />
-              <div
-                className="absolute inset-0 rounded-[14px]"
-                style={{
-                  border: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.08)' : 'rgba(148, 163, 184, 0.08)'}`,
-                  animation: 'serial-pulse 3s ease-in-out infinite',
-                }}
-              />
+              <div className="absolute inset-0 rounded-xl border border-slate-500/20 animate-ping opacity-30" />
             </div>
-            <div className={`text-[12px] font-medium mb-[4px] ${isDark ? 'text-[rgba(100,116,139,0.5)]' : 'text-[rgba(148,163,184,0.6)]'}`}>
+            <div className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
               No serial output yet
             </div>
-            <div className={`text-[10px] ${isDark ? 'text-[rgba(71,85,105,0.4)]' : 'text-[rgba(148,163,184,0.4)]'}`}>
+            <div className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
               Start simulation to see serial data
             </div>
           </div>
@@ -153,37 +137,31 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
       {/* ── INPUT ── */}
       {onSend && (
         <div
-          className={`shrink-0 p-[12px_16px] ${
-            isDark ? 'bg-[rgba(10,12,16,0.5)]' : 'bg-[rgba(255,255,255,0.8)]'
+          className={`shrink-0 p-3 px-4 border-t ${
+            isDark
+              ? 'bg-slate-950/50 border-white/5'
+              : 'bg-white/80 border-slate-200'
           }`}
-          style={{
-            borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(15, 23, 42, 0.06)'}`,
-          }}
         >
-          <div className="flex items-center gap-[8px]" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             <div
-              className="relative flex-1 flex items-center rounded-[8px] transition-all duration-[0.25s]"
-              style={{
-                height: '36px',
-                background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
-                border: `1px solid ${
-                  isInputFocused
-                    ? (isDark ? 'rgba(59, 130, 246, 0.4)' : '#0284c7')
-                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#d1d5db')
-                }`,
-                boxShadow: isInputFocused
-                  ? `0 0 0 3px ${isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(2, 132, 199, 0.08)'}`
-                  : 'none',
-              }}
+              className={`relative flex-1 flex items-center h-9 rounded-lg transition-all border ${
+                isInputFocused
+                  ? isDark
+                    ? 'border-blue-500/60 ring-2 ring-blue-500/10'
+                    : 'border-sky-600 ring-2 ring-sky-500/10'
+                  : isDark
+                    ? 'border-white/10 bg-white/[0.03]'
+                    : 'border-slate-300 bg-white'
+              }`}
             >
               <ChevronRight
                 size={15}
-                className="absolute pointer-events-none left-[11px] transition-colors duration-[0.25s]"
-                style={{
-                  color: isInputFocused
-                    ? (isDark ? 'var(--lp-accent-primary)' : '#0284c7')
-                    : (isDark ? 'rgba(100, 116, 139, 0.5)' : '#9ca3af'),
-                }}
+                className={`absolute pointer-events-none left-2.5 transition-colors ${
+                  isInputFocused
+                    ? isDark ? 'text-blue-400' : 'text-sky-600'
+                    : isDark ? 'text-slate-500' : 'text-slate-400'
+                }`}
                 strokeWidth={2.5}
               />
               <input
@@ -195,35 +173,20 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder="Type message..."
-                className="w-full outline-none serial-input-field bg-transparent border-none text-[12px]"
-                style={{
-                  height: '100%',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: isDark ? 'var(--lp-text-color)' : '#0f172a',
-                  caretColor: isDark ? 'var(--lp-accent-primary)' : '#0284c7',
-                  paddingLeft: '32px',
-                  paddingRight: '12px',
-                  paddingTop: 0,
-                  paddingBottom: 0,
-                }}
+                className={`w-full h-full outline-none bg-transparent border-0 text-xs font-mono pl-8 pr-3 ${
+                  isDark ? 'text-slate-100 placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'
+                }`}
               />
             </div>
 
             <select
               value={lineEnding}
               onChange={(e) => setLineEnding(e.target.value as any)}
-              className={`cursor-pointer outline-none text-[9px] font-bold tracking-[0.04em] uppercase rounded-[8px] transition-all duration-[0.2s] ${
+              className={`h-9 px-3 cursor-pointer outline-none text-[9px] font-bold tracking-wider uppercase rounded-lg border transition-all ${
                 isDark
-                  ? 'bg-[rgba(255,255,255,0.03)] border border-solid border-[rgba(255,255,255,0.08)] text-[rgba(148,163,184,0.6)] shadow-none'
-                  : 'bg-[#ffffff] border border-solid border-[#d1d5db] text-[#64748b] shadow-[0_1px_2px_rgba(15,23,42,0.04)]'
+                  ? 'bg-white/[0.03] border-white/10 text-slate-400'
+                  : 'bg-white border-slate-300 text-slate-600 shadow-sm'
               }`}
-              style={{
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                paddingLeft: '12px',
-                paddingRight: '12px',
-              }}
             >
               <option value="none">No Ending</option>
               <option value="nl">Newline (\n)</option>
@@ -232,29 +195,22 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
             </select>
 
             <button
+              type="button"
               onClick={handleSend}
               disabled={!inputValue}
-              className={`flex items-center justify-center gap-[5px] text-[10px] font-extrabold tracking-[0.06em] uppercase rounded-[8px] border-none transition-all duration-[0.2s] ${
+              className={`h-9 px-4 flex items-center justify-center gap-1.5 text-[10px] font-extrabold tracking-wider uppercase rounded-lg border-0 transition-all ${
                 inputValue
                   ? `cursor-pointer opacity-100 ${
                       isDark
-                        ? 'bg-[var(--lp-accent-primary)] text-[var(--lp-btn-text,#000)] hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
-                        : 'bg-[#0284c7] text-[#ffffff] shadow-[0_1px_3px_rgba(2,132,199,0.15)] hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(2,132,199,0.2)]'
+                        ? 'bg-blue-600 text-white hover:-translate-y-0.5 shadow-md shadow-blue-600/20'
+                        : 'bg-sky-600 text-white shadow-md shadow-sky-600/20 hover:-translate-y-0.5'
                     }`
                   : `cursor-not-allowed opacity-60 shadow-none ${
                       isDark
-                        ? 'bg-[rgba(255,255,255,0.04)] text-[rgba(100,116,139,0.3)]'
-                        : 'bg-[#f1f5f9] text-[#94a3b8]'
+                        ? 'bg-white/5 text-slate-600'
+                        : 'bg-slate-100 text-slate-400'
                     }`
               }`}
-              style={{
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingLeft: '16px',
-                paddingRight: '16px',
-              }}
             >
               <Send size={11} strokeWidth={2.5} />
               Send
@@ -262,16 +218,6 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes serial-pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.05); }
-        }
-        .serial-input-field::placeholder {
-          color: #9ca3af;
-        }
-      `}</style>
     </div>
   );
 };

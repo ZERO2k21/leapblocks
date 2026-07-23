@@ -30,43 +30,28 @@ export const EditDropdownMenu: React.FC<EditDropdownMenuProps> = ({
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        left: 0,
-        borderRadius: '8px',
-        minWidth: '240px',
-        padding: '4px 0',
-        zIndex: 1000,
-        overflow: 'hidden'
-      }}
-      className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+      className={`absolute top-full mt-1.5 left-0 rounded-xl min-w-[220px] py-1.5 z-50 overflow-hidden backdrop-blur-xl shadow-2xl border transition-all animate-[electraEditSlideIn_0.18s_ease-out] ${
         isElectra
-          ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-          : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+          ? 'bg-[#18181b]/95 border-[#27272a] shadow-black/50'
+          : 'bg-white/90 border-white/60'
       }`}
     >
-      <button
-        disabled={!canUndo}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: !canUndo ? 'not-allowed' : 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={!canUndo
-          ? `opacity-40 ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#374151]/40'}`
-          : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'
+      <style>{`
+        @keyframes electraEditSlideIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
+      `}</style>
+      <button
+        type="button"
+        disabled={!canUndo}
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 text-sm font-medium text-left transition-all tracking-normal ${
+          !canUndo
+            ? 'cursor-not-allowed text-gray-300 bg-transparent'
+            : isElectra
+              ? 'cursor-pointer text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400'
+              : 'cursor-pointer text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           if (canUndo) {
             onUndo?.();
@@ -74,34 +59,23 @@ export const EditDropdownMenu: React.FC<EditDropdownMenuProps> = ({
           }
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Undo size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <Undo size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Undo</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Z</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+Z</span>
       </button>
 
       <button
+        type="button"
         disabled={!canRedo}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: !canRedo ? 'not-allowed' : 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={!canRedo
-          ? `opacity-40 ${isElectra ? 'text-[#f4f4f5]/40' : 'text-[#374151]/40'}`
-          : isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'
-        }
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 text-sm font-medium text-left transition-all tracking-normal ${
+          !canRedo
+            ? 'cursor-not-allowed text-gray-300 bg-transparent'
+            : isElectra
+              ? 'cursor-pointer text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400'
+              : 'cursor-pointer text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           if (canRedo) {
             onRedo?.();
@@ -109,100 +83,64 @@ export const EditDropdownMenu: React.FC<EditDropdownMenuProps> = ({
           }
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Redo size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <Redo size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Redo</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Y</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+Y</span>
       </button>
 
-      <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
+      <div className={`h-px my-1.5 mx-3 ${isElectra ? 'bg-white/10' : 'bg-gradient-to-r from-transparent via-black/10 to-transparent'}`} />
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onCut?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Scissors size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <Scissors size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Cut</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+X</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+X</span>
       </button>
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onCopy?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Copy size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <Copy size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Copy</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+C</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+C</span>
       </button>
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onPaste?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Clipboard size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <Clipboard size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Paste</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+V</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+V</span>
       </button>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilePlus, FolderOpen, Download, FileText } from 'lucide-react';
+import { FilePlus, FolderOpen, Download, FileText, Share2 } from 'lucide-react';
 
 interface FileDropdownMenuProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface FileDropdownMenuProps {
   onOpen?: () => void;
   onDownload?: () => void;
   onSaveAs?: () => void;
+  onShare?: () => void;
   onBack: () => void;
   onClose: () => void;
 }
@@ -21,6 +22,7 @@ export const FileDropdownMenu: React.FC<FileDropdownMenuProps> = ({
   onOpen,
   onDownload,
   onSaveAs,
+  onShare,
   onBack,
   onClose,
 }) => {
@@ -28,160 +30,116 @@ export const FileDropdownMenu: React.FC<FileDropdownMenuProps> = ({
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        left: 0,
-        borderRadius: '8px',
-        minWidth: '240px',
-        padding: '4px 0',
-        zIndex: 1000,
-        overflow: 'hidden'
-      }}
-      className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+      className={`absolute top-full mt-1.5 left-0 rounded-xl min-w-[220px] py-1.5 z-50 overflow-hidden backdrop-blur-xl shadow-2xl border transition-all animate-[creovaMenuSlideIn_0.18s_ease-out] ${
         isElectra
-          ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-          : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+          ? 'bg-[#18181b]/95 border-[#27272a] shadow-black/50'
+          : 'bg-white/90 border-white/60'
       }`}
     >
+      <style>{`
+        @keyframes creovaMenuSlideIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onNew?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FilePlus size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <FilePlus size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>New Project</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+N</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+N</span>
       </button>
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onOpen?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FolderOpen size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <FolderOpen size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Open Project</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+O</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+O</span>
       </button>
 
-      <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
+      <div className={`h-px my-1.5 mx-3 ${isElectra ? 'bg-white/10' : 'bg-gradient-to-r from-transparent via-black/10 to-transparent'}`} />
 
       {onDownload && (
         <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '7px 14px',
-            border: 'none',
-            background: 'transparent',
-            fontSize: '12px',
-            fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-            fontWeight: 500,
-            textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'all 0.12s ease'
-          }}
-          className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+          type="button"
+          className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+            isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+          }`}
           onClick={() => {
             onDownload();
             onClose();
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Download size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+          <div className="flex items-center gap-2.5">
+            <Download size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
             <span>Download .leap</span>
           </div>
         </button>
       )}
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           onSaveAs?.();
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FileText size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <FileText size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>Save As...</span>
         </div>
-        <span style={{ fontSize: '10px', color: '#9CA3AF', background: isElectra ? '#27272a' : '#F3F4F6', padding: '2px 4px', borderRadius: '4px' }}>Ctrl+Shift+S</span>
+        <span className={`text-xs font-mono px-1.5 py-0.5 rounded font-medium ${isElectra ? 'bg-zinc-800 text-zinc-400' : 'bg-black/5 text-gray-400'}`}>Ctrl+Shift+S</span>
       </button>
 
-      <div className={`h-px my-1 mx-3.5 ${isElectra ? 'bg-white/8' : 'bg-black/8'}`} />
+      <div className={`h-px my-1.5 mx-3 ${isElectra ? 'bg-white/10' : 'bg-gradient-to-r from-transparent via-black/10 to-transparent'}`} />
+
+      {onShare && (
+        <button
+          type="button"
+          className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+            isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+          }`}
+          onClick={() => {
+            onShare();
+            onClose();
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <Share2 size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
+            <span>Share</span>
+          </div>
+        </button>
+      )}
+
+      <div className={`h-px my-1.5 mx-3 ${isElectra ? 'bg-white/10' : 'bg-gradient-to-r from-transparent via-black/10 to-transparent'}`} />
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={isElectra ? 'text-[#f4f4f5] hover:bg-[#22d3ee]/8' : 'text-[#374151] hover:bg-[#7C3AED]/8'}
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           const currentModule = brandName === 'CREOVA' ? 'creova' : 'electra';
           sessionStorage.setItem('landingActiveTab', 'my-projects');
@@ -190,8 +148,8 @@ export const FileDropdownMenu: React.FC<FileDropdownMenuProps> = ({
           onBack();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FolderOpen size={14} strokeWidth={2} className={isElectra ? 'text-[#22d3ee]/80' : 'text-[#7C3AED]/80'} />
+        <div className="flex items-center gap-2.5">
+          <FolderOpen size={16} strokeWidth={2} className={isElectra ? 'text-cyan-400 opacity-85' : 'text-purple-600 opacity-85'} />
           <span>My Projects</span>
         </div>
       </button>

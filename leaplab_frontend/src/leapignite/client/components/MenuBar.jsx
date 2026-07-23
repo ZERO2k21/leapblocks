@@ -1,7 +1,6 @@
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -58,8 +57,6 @@ export default function MenuBar({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-
-
     useEffect(() => {
         if (!mobileMenuOpen) return;
         const handleClickOutside = (e) => {
@@ -75,26 +72,6 @@ export default function MenuBar({
 
     const toggleMenu = (menu) => setOpenMenu(openMenu === menu ? null : menu);
     const closeMenu = () => setOpenMenu(null);
-
-    const fileMenuItems = [
-        { label: 'New Project', icon: File, shortcut: 'Ctrl+N', onClick: () => onFileAction?.('new') },
-        { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
-        { divider: true },
-        { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
-        { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
-        { divider: true },
-        { label: 'Share', icon: Share, onClick: () => onFileAction?.('share') },
-        { divider: true },
-        {
-            label: 'My Projects',
-            icon: FolderOpen,
-            onClick: () => {
-                sessionStorage.setItem('landingActiveTab', 'my-projects');
-                sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
-                onBack?.();
-            }
-        },
-    ];
 
     const editMenuItems = [
         { label: 'Undo', icon: Undo, shortcut: 'Ctrl+Z', onClick: () => onEditAction?.('undo') },
@@ -144,13 +121,39 @@ export default function MenuBar({
                 {/* Menus */}
                 {showDesktopMenus && (
                     <div className="flex items-center gap-0.5">
-                        <DropdownMenu
-                            label="File"
-                            items={fileMenuItems}
-                            isOpen={openMenu === 'file'}
-                            onToggle={() => toggleMenu('file')}
-                            onClose={closeMenu}
-                        />
+                        <TopbarShareButton size={18} onSave={onSave} projectName={projectName}>
+                            {({ onClick: handleShareClick }) => {
+                                const fileMenuItems = [
+                                    { label: 'New Project', icon: File, shortcut: 'Ctrl+N', onClick: () => onFileAction?.('new') },
+                                    { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
+                                    { divider: true },
+                                    { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
+                                    { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
+                                    { divider: true },
+                                    { label: 'Share', icon: Share, onClick: () => { handleShareClick(); onFileAction?.('share'); } },
+                                    { divider: true },
+                                    {
+                                        label: 'My Projects',
+                                        icon: FolderOpen,
+                                        onClick: () => {
+                                            sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                            sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
+                                            onBack?.();
+                                        }
+                                    },
+                                ];
+
+                                return (
+                                    <DropdownMenu
+                                        label="File"
+                                        items={fileMenuItems}
+                                        isOpen={openMenu === 'file'}
+                                        onToggle={() => toggleMenu('file')}
+                                        onClose={closeMenu}
+                                    />
+                                );
+                            }}
+                        </TopbarShareButton>
                         <DropdownMenu
                             label="Edit"
                             items={editMenuItems}
@@ -252,20 +255,44 @@ export default function MenuBar({
             theme="dark"
         >
             <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
-            {fileMenuItems.map((item, idx) =>
-                item.divider ? (
-                    <div key={idx} className="h-px bg-white/10 my-1" />
-                ) : (
-                    <button
-                        key={idx}
-                        onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
-                    >
-                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                        {item.label}
-                    </button>
-                )
-            )}
+            <TopbarShareButton size={18} onSave={onSave} projectName={projectName}>
+                {({ onClick: handleShareClick }) => {
+                    const mobileFileMenuItems = [
+                        { label: 'New Project', icon: File, shortcut: 'Ctrl+N', onClick: () => onFileAction?.('new') },
+                        { label: 'Open Project', icon: FolderOpen, shortcut: 'Ctrl+O', onClick: () => onFileAction?.('open') },
+                        { divider: true },
+                        { label: 'Save', icon: Save, shortcut: 'Ctrl+S', onClick: () => onFileAction?.('save') },
+                        { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
+                        { divider: true },
+                        { label: 'Share', icon: Share, onClick: () => { handleShareClick(); onFileAction?.('share'); } },
+                        { divider: true },
+                        {
+                            label: 'My Projects',
+                            icon: FolderOpen,
+                            onClick: () => {
+                                sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
+                                onBack?.();
+                            }
+                        },
+                    ];
+
+                    return mobileFileMenuItems.map((item, idx) =>
+                        item.divider ? (
+                            <div key={idx} className="h-px bg-white/10 my-1" />
+                        ) : (
+                            <button
+                                key={idx}
+                                onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                                className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
+                            >
+                                {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                                {item.label}
+                            </button>
+                        )
+                    );
+                }}
+            </TopbarShareButton>
 
             <div className="h-px bg-white/10 my-1" />
 

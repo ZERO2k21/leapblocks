@@ -77,34 +77,25 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             if (isEmbedded()) {
                 // Compact inline error bar for embed context — does not cover the whole page
                 return (
-                    <div style={{
-                        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 99999,
-                        background: '#2a1a1a', color: '#ff6b6b', fontFamily: 'monospace',
-                        padding: '10px 16px', display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between', borderTop: '2px solid #f44336',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
-                            <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Error:</span>
-                            <span style={{ fontSize: 12, opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="fixed bottom-0 left-0 right-0 z-[99999] bg-[#2a1a1a] text-[#ff6b6b] font-mono px-4 py-2.5 flex items-center justify-between border-t-2 border-red-500">
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                            <span className="font-bold whitespace-nowrap">Error:</span>
+                            <span className="text-xs opacity-85 overflow-hidden text-ellipsis whitespace-nowrap">
                                 {this.state.error?.message || String(this.state.error)}
                             </span>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                        <div className="flex gap-2 shrink-0">
                             <button
+                                type="button"
                                 onClick={() => this.setState({ hasError: false, error: null })}
-                                style={{
-                                    padding: '4px 12px', borderRadius: 4, border: '1px solid #555',
-                                    background: 'transparent', color: '#ccc', cursor: 'pointer', fontSize: 11,
-                                }}
+                                className="px-3 py-1 rounded border border-gray-600 bg-transparent text-gray-300 cursor-pointer text-xs hover:bg-white/5"
                             >
                                 Dismiss
                             </button>
                             <button
+                                type="button"
                                 onClick={() => window.location.reload()}
-                                style={{
-                                    padding: '4px 12px', borderRadius: 4, border: 'none',
-                                    background: '#f44336', color: '#fff', cursor: 'pointer', fontSize: 11,
-                                }}
+                                className="px-3 py-1 rounded border-0 bg-red-500 text-white cursor-pointer text-xs font-semibold hover:bg-red-600"
                             >
                                 Reload
                             </button>
@@ -114,14 +105,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             }
             // Full-page error for non-embedded context
             return (
-                <div style={{ padding: 20, background: '#fff', color: '#f44336', fontFamily: 'monospace' }}>
-                    <h1>Something went wrong.</h1>
-                    <pre>{this.state.error?.toString()}</pre>
-                    <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                        <button onClick={() => this.setState({ hasError: false, error: null })} style={{ padding: '6px 14px', cursor: 'pointer' }}>
+                <div className="p-5 bg-white text-red-500 font-mono">
+                    <h1 className="text-xl font-bold mb-2">Something went wrong.</h1>
+                    <pre className="p-3 bg-red-50 rounded border border-red-200 text-xs overflow-auto">{this.state.error?.toString()}</pre>
+                    <div className="flex gap-2.5 mt-3">
+                        <button type="button" onClick={() => this.setState({ hasError: false, error: null })} className="px-3.5 py-1.5 rounded border border-slate-300 bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer hover:bg-slate-200">
                             Dismiss
                         </button>
-                        <button onClick={() => window.location.reload()} style={{ padding: '6px 14px', cursor: 'pointer' }}>
+                        <button type="button" onClick={() => window.location.reload()} className="px-3.5 py-1.5 rounded border-0 bg-red-500 text-white text-xs font-semibold cursor-pointer hover:bg-red-600">
                             Reload
                         </button>
                     </div>
@@ -521,19 +512,19 @@ export default function App() {
 
 
                 {switchPrompt && (
-                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 'min(360px, 90vw)', borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
-                            <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Switching Coding Environment</h2>
-                            <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
-                                You are switching from <strong>{switchPrompt.from}</strong> into <strong>{switchPrompt.to}</strong>.
+                    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 flex flex-col">
+                            <h2 className="m-0 mb-2.5 text-lg font-bold text-slate-900">Switching Coding Environment</h2>
+                            <p className="m-0 mb-5 text-sm text-slate-600 leading-relaxed font-medium">
+                                You are switching from <strong className="text-slate-900 font-semibold">{switchPrompt.from}</strong> into <strong className="text-slate-900 font-semibold">{switchPrompt.to}</strong>.
                                 {switchPrompt.tab ? ` (target tab: ${switchPrompt.tab})` : ''}
                                 The existing code in the current editor will stop running.
                             </p>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button onClick={cancelSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                            <div className="flex justify-end gap-2.5">
+                                <button type="button" onClick={cancelSwitch} className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold cursor-pointer transition-all hover:bg-slate-50">
                                     Cancel
                                 </button>
-                                <button onClick={confirmSwitch} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
+                                <button type="button" onClick={confirmSwitch} className="px-4 py-2 rounded-xl border-0 bg-purple-700 text-white text-xs font-semibold cursor-pointer transition-all hover:bg-purple-800 shadow-md shadow-purple-700/20">
                                     Go Ahead
                                 </button>
                             </div>
@@ -545,38 +536,16 @@ export default function App() {
 
                 {/* Global drag-and-drop overlay */}
                 {isGlobalDragOver && (
-                    <div style={{
-                        position: 'fixed',
-                        inset: 0,
-                        backgroundColor: 'rgba(99, 14, 212, 0.12)',
-                        backdropFilter: 'blur(6px)',
-                        WebkitBackdropFilter: 'blur(6px)',
-                        zIndex: 99999,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pointerEvents: 'auto',
-                    }}>
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.97)',
-                            border: '3px dashed #630ed4',
-                            borderRadius: '24px',
-                            padding: '40px 60px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '12px',
-                            boxShadow: '0 24px 48px rgba(99, 14, 212, 0.18)',
-                        }}>
-                            <span style={{ fontSize: '56px' }}>📥</span>
-                            <h3 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: 800 }}>
+                    <div className="fixed inset-0 bg-purple-950/20 backdrop-blur-md z-[99999] flex flex-col items-center justify-center p-4 pointer-events-auto">
+                        <div className="bg-white/95 border-3 border-dashed border-purple-600 rounded-3xl p-10 px-14 flex flex-col items-center gap-3 shadow-2xl shadow-purple-600/20">
+                            <span className="text-5xl mb-1">📥</span>
+                            <h3 className="m-0 text-slate-900 text-xl font-extrabold tracking-tight">
                                 {globalDragLabel === '.leap Project' ? 'Drop to Open Project' : 'Drop to Upload'}
                             </h3>
-                            <p style={{ margin: 0, color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>
+                            <p className="m-0 text-slate-500 text-sm font-medium">
                                 {globalDragLabel === '.leap Project'
                                     ? 'Release to open in the matching module'
-                                    : <>Release to upload to <span style={{ color: '#630ed4', fontWeight: 800 }}>{globalDragLabel}</span></>
+                                    : <>Release to upload to <span className="text-purple-600 font-bold">{globalDragLabel}</span></>
                                 }
                             </p>
                         </div>
@@ -584,17 +553,17 @@ export default function App() {
                 )}
 
                 {exitPrompt && (
-                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 'min(360px, 90vw)', borderRadius: 12, background: '#fff', padding: 20, boxShadow: '0 12px 30px rgba(0,0,0,0.3)' }}>
-                            <h2 style={{ margin: '0 0 10px', fontSize: 18 }}>Exit to Home?</h2>
-                            <p style={{ margin: '0 0 16px', lineHeight: 1.4 }}>
+                    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 flex flex-col">
+                            <h2 className="m-0 mb-2.5 text-lg font-bold text-slate-900">Exit to Home?</h2>
+                            <p className="m-0 mb-5 text-sm text-slate-600 leading-relaxed font-medium">
                                 Are you sure you want to exit? The code in the current editor will stop running.
                             </p>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button onClick={cancelExit} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                            <div className="flex justify-end gap-2.5">
+                                <button type="button" onClick={cancelExit} className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold cursor-pointer transition-all hover:bg-slate-50">
                                     No
                                 </button>
-                                <button onClick={confirmExit} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', backgroundColor: '#5A2D82', color: '#fff', cursor: 'pointer' }}>
+                                <button type="button" onClick={confirmExit} className="px-4 py-2 rounded-xl border-0 bg-purple-700 text-white text-xs font-semibold cursor-pointer transition-all hover:bg-purple-800 shadow-md shadow-purple-700/20">
                                     Yes
                                 </button>
                             </div>

@@ -214,17 +214,22 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                 <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${fileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
  
-              <FileDropdownMenu
-                isOpen={fileMenuOpen}
-                isElectra={isElectra}
-                brandName={brandName}
-                onNew={onNew}
-                onOpen={onOpen}
-                onDownload={onDownload}
-                onSaveAs={onSaveAs}
-                onBack={onBack}
-                onClose={() => setFileMenuOpen(false)}
-              />
+              <TopbarShareButton onSave={onSave} projectName={title}>
+                {({ onClick: handleShareClick }) => (
+                  <FileDropdownMenu
+                    isOpen={fileMenuOpen}
+                    isElectra={isElectra}
+                    brandName={brandName}
+                    onNew={onNew}
+                    onOpen={onOpen}
+                    onDownload={onDownload}
+                    onSaveAs={onSaveAs}
+                    onShare={handleShareClick}
+                    onBack={onBack}
+                    onClose={() => setFileMenuOpen(false)}
+                  />
+                )}
+              </TopbarShareButton>
             </div>
  
             {/* Edit Menu */}

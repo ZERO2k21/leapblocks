@@ -20,42 +20,25 @@ export const BoardDropdownMenu: React.FC<BoardDropdownMenuProps> = ({
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        left: 0,
-        borderRadius: '8px',
-        minWidth: '240px',
-        padding: '4px 0',
-        zIndex: 1000,
-        overflow: 'hidden'
-      }}
-      className={`animate-[slideDown_0.15s_ease-out] border backdrop-blur-xl ${
+      className={`absolute top-full mt-1.5 left-0 rounded-xl min-w-[220px] py-1.5 z-50 overflow-hidden backdrop-blur-xl shadow-2xl border transition-all animate-[electraBoardSlideIn_0.18s_ease-out] ${
         isElectra
-          ? 'bg-[#18181b]/95 border-[#27272a] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-          : 'bg-white/95 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)]'
+          ? 'bg-[#18181b]/95 border-[#27272a] shadow-black/50'
+          : 'bg-white/90 border-white/60'
       }`}
     >
-      <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={currentBoard === 'arduino-uno'
-          ? (isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold')
-          : (isElectra ? 'text-[#f4f4f5]' : 'text-[#374151]')
+      <style>{`
+        @keyframes electraBoardSlideIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
+      `}</style>
+      <button
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          currentBoard === 'arduino-uno'
+            ? isElectra ? 'text-cyan-400 font-bold bg-cyan-500/10' : 'text-purple-700 font-bold bg-purple-100/60'
+            : isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           if (currentBoard !== 'arduino-uno') {
             onSwitchBoard('arduino-uno');
@@ -63,35 +46,22 @@ export const BoardDropdownMenu: React.FC<BoardDropdownMenuProps> = ({
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className={`w-2 h-2 rounded-full ${currentBoard === 'arduino-uno' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2 h-2 rounded-full ${currentBoard === 'arduino-uno' ? 'bg-cyan-400' : 'bg-zinc-600'}`} />
           <span>Arduino Uno</span>
         </div>
         {currentBoard === 'arduino-uno' && (
-          <Check size={14} strokeWidth={2.5} className={isElectra ? 'text-[#22d3ee]' : 'text-[#7C3AED]'} />
+          <Check size={16} strokeWidth={2.5} className={isElectra ? 'text-cyan-400' : 'text-purple-600'} />
         )}
       </button>
 
       <button
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '7px 14px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '12px',
-          fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-          fontWeight: 500,
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'all 0.12s ease'
-        }}
-        className={currentBoard === 'esp32-c3'
-          ? (isElectra ? 'text-[#22d3ee] font-bold' : 'text-[#2563eb] font-bold')
-          : (isElectra ? 'text-[#f4f4f5]' : 'text-[#374151]')
-        }
+        type="button"
+        className={`flex items-center justify-between w-full px-3.5 py-2 border-0 bg-transparent text-sm font-medium text-left cursor-pointer transition-all tracking-normal ${
+          currentBoard === 'esp32-c3'
+            ? isElectra ? 'text-cyan-400 font-bold bg-cyan-500/10' : 'text-purple-700 font-bold bg-purple-100/60'
+            : isElectra ? 'text-zinc-100 hover:bg-cyan-500/10 hover:text-cyan-400' : 'text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
+        }`}
         onClick={() => {
           if (currentBoard !== 'esp32-c3') {
             onSwitchBoard('esp32-c3');
@@ -99,12 +69,12 @@ export const BoardDropdownMenu: React.FC<BoardDropdownMenuProps> = ({
           onClose();
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className={`w-2 h-2 rounded-full ${currentBoard === 'esp32-c3' ? 'bg-[#22d3ee]' : 'bg-zinc-600'}`} />
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2 h-2 rounded-full ${currentBoard === 'esp32-c3' ? 'bg-cyan-400' : 'bg-zinc-600'}`} />
           <span>ESP32-C3</span>
         </div>
         {currentBoard === 'esp32-c3' && (
-          <Check size={14} strokeWidth={2.5} className={isElectra ? 'text-[#22d3ee]' : 'text-[#7C3AED]'} />
+          <Check size={16} strokeWidth={2.5} className={isElectra ? 'text-cyan-400' : 'text-purple-600'} />
         )}
       </button>
     </div>
