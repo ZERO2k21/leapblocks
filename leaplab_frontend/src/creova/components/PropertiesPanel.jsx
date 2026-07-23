@@ -497,12 +497,37 @@ export default function PropertiesPanel({ appState }) {
 
     return (
       <div className="min-h-full bg-transparent p-5">
-        {/* Pro Header - Clean Flex Layout */}
-        <div className="mb-6 flex flex-col bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
+        {/* Pro Header - 3-Row Non-Overlapping Layout */}
+        <div className="mb-5 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           <div className="h-1.5 bg-blue-600 w-full" />
-          <div className="p-6 flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1.5">Active Module</div>
+          <div className="p-4 flex flex-col gap-2.5">
+            {/* Row 1: ACTIVE MODULE Label + Action Buttons */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Module</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {!isRenaming && (
+                  <button
+                    type="button"
+                    onClick={handleStartRename}
+                    className="w-8 h-8 bg-slate-50 hover:bg-blue-50 text-slate-500 hover:text-blue-600 border border-slate-200/80 hover:border-blue-200/60 rounded-lg transition-all duration-200 shadow-2xs active:scale-95 flex items-center justify-center group cursor-pointer"
+                    title="Rename Module"
+                  >
+                    <Pencil className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm({ id, type: selectedComponent.type })}
+                  className="w-8 h-8 bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200/60 rounded-lg transition-all duration-200 shadow-2xs active:scale-95 flex items-center justify-center group cursor-pointer"
+                  title="Delete Module"
+                >
+                  <Trash2 className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: Module Title (ID) */}
+            <div className="min-w-0">
               {isRenaming ? (
                 <input
                   ref={renameInputRef}
@@ -512,34 +537,22 @@ export default function PropertiesPanel({ appState }) {
                   onBlur={handleRenameSubmit}
                   onKeyDown={handleRenameKeyDown}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xl font-black tracking-tight p-0.5 px-2 rounded-md border-2 border-blue-500 bg-slate-50 text-slate-900 w-full outline-none"
+                  className="text-base font-black tracking-tight p-1 px-2.5 rounded-lg border-2 border-blue-500 bg-slate-50 text-slate-900 w-full outline-none"
                 />
               ) : (
-                <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">{id}</h3>
+                <h3 className="text-base font-black text-slate-900 tracking-tight truncate leading-snug m-0" title={id}>{id}</h3>
               )}
-              <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
-                <span className="py-0.75 px-2 text-[10px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-600">{type}</span>
-                <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
-                <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider whitespace-nowrap">Selected</span>
-              </div>
             </div>
-            <div className="flex gap-2 shrink-0">
-              {!isRenaming && (
-                <button
-                  onClick={handleStartRename}
-                  className="w-10 h-10 bg-slate-50 hover:bg-blue-50/50 text-slate-500 hover:text-blue-600 border border-slate-200/80 hover:border-blue-200/60 rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center group shrink-0 cursor-pointer"
-                  title="Rename Module"
-                >
-                  <Pencil className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110" />
-                </button>
-              )}
-              <button
-                onClick={() => setDeleteConfirm({ id, type: selectedComponent.type })}
-                className="w-10 h-10 bg-slate-50 hover:bg-rose-50/60 text-slate-500 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200/60 rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center group shrink-0 cursor-pointer"
-                title="Delete Module"
-              >
-                <Trash2 className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6" />
-              </button>
+
+            {/* Row 3: Type Badge + Selected Status */}
+            <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-slate-100 min-w-0">
+              <span className="py-0.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-600 truncate min-w-0 flex-1 max-w-[170px]" title={type}>
+                {type}
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Selected</span>
+              </div>
             </div>
           </div>
         </div>
