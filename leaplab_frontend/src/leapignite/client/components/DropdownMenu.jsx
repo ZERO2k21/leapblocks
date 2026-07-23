@@ -34,8 +34,8 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
         <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                className={`flex items-center gap-1.5 px-4 py-2 text-white text-[15px] font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
-                    isOpen ? 'bg-white/18 backdrop-blur-sm' : 'bg-transparent hover:bg-white/10'
+                className={`flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
+                    isOpen ? 'bg-white/20 backdrop-blur-sm' : 'bg-transparent hover:bg-white/10'
                 }`}
             >
                 {Icon && <Icon size={16} strokeWidth={2.2} className="opacity-90" />}
@@ -48,7 +48,7 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
             </button>
 
             {isOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 bg-white/92 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08)] border border-white/60 min-w-[200px] overflow-hidden z-[1000] py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
+                <div className="absolute top-full mt-1.5 left-0 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 min-w-[200px] overflow-hidden z-50 py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
                     <style>{`
                         @keyframes jrMenuSlideIn {
                             from { opacity: 0; transform: translateY(-6px) scale(0.98); }
@@ -57,22 +57,22 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} className="h-px bg-gradient-to-r from-transparent via-black/8 to-transparent my-1.5 mx-3" />
+                            <div key={idx} className="h-px bg-gradient-to-r from-transparent via-black/10 to-transparent my-1.5 mx-3" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                className={`flex items-center gap-2.5 w-full px-3.5 py-2.25 text-[15px] font-medium text-left transition-all tracking-normal ${
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 text-sm font-medium text-left transition-all tracking-normal ${
                                     item.disabled
                                         ? 'cursor-not-allowed text-gray-300 bg-transparent'
-                                        : 'cursor-pointer text-gray-700 hover:bg-[#6B46C1]/10 hover:text-[#6B46C1]'
+                                        : 'cursor-pointer text-gray-700 hover:bg-purple-100/60 hover:text-purple-700'
                                 }`}
                             >
-                                {item.icon && <item.icon size={16} color="#7C3AED" strokeWidth={2} className="opacity-85 shrink-0" />}
+                                {item.icon && <item.icon size={16} strokeWidth={2} className="text-purple-600 opacity-85 shrink-0" />}
                                 <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span className="text-[11px] text-gray-400 font-medium bg-black/5 px-1.5 py-0.5 rounded font-mono">
+                                    <span className="text-xs text-gray-400 font-medium bg-black/5 px-1.5 py-0.5 rounded font-mono">
                                         {item.shortcut}
                                     </span>
                                 )}

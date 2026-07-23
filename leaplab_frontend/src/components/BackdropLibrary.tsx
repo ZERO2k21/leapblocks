@@ -123,8 +123,8 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
         <div className="fixed inset-0 w-screen h-screen bg-black/50 z-[9999] flex items-center justify-center backdrop-blur-xs" onClick={onClose}>
             <div className="w-screen h-screen bg-white flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div className="bg-gradient-to-br from-[#855CD6] to-[#6D44C0] p-4 px-6 flex items-center justify-between">
-                    <button className="bg-white/20 border-none text-white text-sm font-semibold p-2 px-4 rounded-full cursor-pointer transition-colors hover:bg-white/30" onClick={onClose}>
+                <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-4 px-6 flex items-center justify-between">
+                    <button type="button" className="bg-white/20 border-0 text-white text-sm font-semibold p-2 px-4 rounded-full cursor-pointer transition-colors hover:bg-white/30" onClick={onClose}>
                         ← Back
                     </button>
                     <h2 className="text-white text-lg font-bold m-0 tracking-wide">Choose a Backdrop</h2>
@@ -133,17 +133,17 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
 
                 {/* Search + Category Filters */}
                 <div className="p-4 px-5 pb-3 flex flex-col gap-3 border-b border-slate-100">
-                    <div className="flex items-center bg-slate-100 rounded-full px-4 border border-slate-300 max-w-[300px]">
+                    <div className="flex items-center bg-slate-100 rounded-full px-4 border border-slate-300 max-w-xs">
                         <span className="text-sm mr-2">🔍</span>
                         <input
                             type="text"
                             placeholder="Search backdrops..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="border-none bg-transparent py-2.5 text-sm outline-none flex-1 text-slate-800"
+                            className="border-0 bg-transparent py-2.5 text-sm outline-none flex-1 text-slate-800"
                         />
                         {searchQuery && (
-                            <button className="border-none bg-transparent cursor-pointer text-sm text-slate-400 p-1 hover:text-slate-600" onClick={() => setSearchQuery('')}>
+                            <button type="button" className="border-0 bg-transparent cursor-pointer text-sm text-slate-400 p-1 hover:text-slate-600" onClick={() => setSearchQuery('')}>
                                 ✕
                             </button>
                         )}
@@ -152,10 +152,11 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
                         {CATEGORIES.map(cat => (
                             <button
                                 key={cat.id}
-                                className={`p-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-all whitespace-nowrap ${
+                                type="button"
+                                className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-all whitespace-nowrap ${
                                     activeCategory === cat.id
-                                        ? 'text-white border-none'
-                                        : 'text-[#575E75] bg-transparent border border-slate-300 hover:border-slate-400'
+                                        ? 'text-white border-0'
+                                        : 'text-slate-600 bg-transparent border border-slate-300 hover:border-slate-400'
                                 }`}
                                 style={{ backgroundColor: activeCategory === cat.id ? cat.color : undefined }}
                                 onClick={() => setActiveCategory(cat.id)}
@@ -168,11 +169,11 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
 
                 {/* Backdrop Grid */}
                 <div className="flex-1 overflow-auto p-4 px-5">
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                         {filteredBackdrops.map(backdrop => (
                             <div
                                 key={backdrop.id}
-                                className="bg-white rounded-xl border-2 border-slate-200 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col hover:border-[#855CD6] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(133,92,214,0.2)]"
+                                className="bg-white rounded-xl border-2 border-slate-200 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/20"
                                 onClick={() => onSelectBackdrop(backdrop)}
                                 onMouseEnter={() => setHoveredId(backdrop.id)}
                                 onMouseLeave={() => setHoveredId(null)}
@@ -184,11 +185,11 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="w-full p-1.5 px-2 text-[11px] font-semibold text-[#575E75] text-center border-t border-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">{backdrop.name}</div>
+                                <div className="w-full p-1.5 px-2 text-xs font-semibold text-slate-600 text-center border-t border-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">{backdrop.name}</div>
                             </div>
                         ))}
                         {filteredBackdrops.length === 0 && (
-                            <div className="col-span-full text-center py-15 text-slate-400">
+                            <div className="col-span-full text-center py-12 text-slate-400">
                                 <span className="text-5xl">🔍</span>
                                 <p className="mt-2">No backdrops found for "{searchQuery}"</p>
                             </div>
@@ -199,7 +200,8 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
                 {/* Floating Action Buttons */}
                 <div className="absolute bottom-5 right-6 flex flex-col gap-2.5 z-10">
                     <button
-                        className="w-12 h-12 rounded-full border-none text-[22px] text-white bg-[#4C97FF] cursor-pointer flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
+                        type="button"
+                        className="w-12 h-12 rounded-full border-0 text-xl text-white bg-blue-500 cursor-pointer flex items-center justify-center shadow-lg transition-transform hover:scale-105"
                         onClick={() => fileInputRef.current?.click()}
                         title="Upload a backdrop"
                     >

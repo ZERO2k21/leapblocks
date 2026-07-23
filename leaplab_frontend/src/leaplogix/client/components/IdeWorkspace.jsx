@@ -16,7 +16,7 @@ export default function IdeWorkspace() {
     const ctx = useLogix();
 
     return (
-        <div className="flex-1 flex overflow-hidden min-h-0 bg-[#1e1e2e]">
+        <div className="flex-1 flex overflow-hidden min-h-0 bg-slate-900">
             {/* Left Sidebar */}
             <SidePanel
                 sidePanel={ctx.sidePanel} setSidePanel={ctx.setSidePanel}
@@ -39,13 +39,13 @@ export default function IdeWorkspace() {
             />
 
             {/* Center: Code Editor */}
-            <div className="flex-1 flex flex-col overflow-hidden border-r border-[#313244]">
+            <div className="flex-1 flex flex-col overflow-hidden border-r border-slate-800">
                 {Object.keys(ctx.projectFiles).length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-[#6c7086] gap-4 font-mono">
+                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-4 font-mono">
                         <FileCode2 size={48} strokeWidth={1.2} className="opacity-40" />
-                        <div className="text-base font-medium text-[#8b8fa3]">No files yet</div>
-                        <div className="text-xs text-[#585b70]">Create a new file from the sidebar to get started</div>
-                        <button onClick={ctx.handleCreateNewFile} className="mt-2 p-2 px-5 bg-[#7C3AED] text-white border-none rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-purple-700">
+                        <div className="text-base font-medium text-slate-300">No files yet</div>
+                        <div className="text-xs text-slate-500">Create a new file from the sidebar to get started</div>
+                        <button onClick={ctx.handleCreateNewFile} className="mt-2 py-2 px-5 bg-violet-600 text-white border-0 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-violet-700 transition-colors">
                             <Plus size={14} /> New File
                         </button>
                     </div>
@@ -65,7 +65,7 @@ export default function IdeWorkspace() {
             </div>
 
             {/* Right: Terminal / REPL */}
-            <div className="w-[380px] flex flex-col overflow-hidden shrink-0">
+            <div className="w-96 flex flex-col overflow-hidden shrink-0">
                 <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
                 <div className="ide-terminal-full flex-1 flex flex-col overflow-hidden">
                     <TerminalPanel

@@ -658,7 +658,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
 
 
     return (
-        <div className="junior-mode" style={{ display: "flex", flexDirection: "column", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#f8f9fc" }}>
+        <div className="junior-mode flex flex-col h-screen font-sans bg-slate-50 overflow-hidden">
             <style>{`
                 @keyframes pulse { from { opacity:0.5; transform:scale(1); } to { opacity:0.8; transform:scale(1.05); } }
 

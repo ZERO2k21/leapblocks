@@ -23,7 +23,7 @@ export default function ModeSwitcher({
 }: ModeSwitcherProps) {
   return (
     <nav
-      className={`flex items-center p-[3px] bg-[rgba(9,9,11,0.6)] border border-white/20 rounded-lg shrink-0 ${className}`}
+      className={`flex items-center p-1 bg-zinc-900/60 border border-white/20 rounded-lg shrink-0 ${className}`}
       style={style}
     >
       {modes.map((mode) => {
@@ -31,13 +31,13 @@ export default function ModeSwitcher({
         return (
           <button
             key={mode.id}
+            type="button"
             onClick={() => onChange(mode.id)}
-            className="flex items-center gap-2 py-1.5 px-4 rounded-md text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 cursor-pointer shrink-0 border border-transparent"
-            style={{
-              backgroundColor: isActive ? 'rgb(37, 99, 235)' : 'transparent',
-              color: isActive ? 'rgb(255, 255, 255)' : 'rgba(255, 255, 255, 0.65)',
-              boxShadow: isActive ? 'rgba(37, 99, 235, 0.3) 0px 4px 12px' : 'none',
-            }}
+            className={`flex items-center gap-2 py-1.5 px-4 rounded-md text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 border border-transparent ${
+              isActive
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'bg-transparent text-white/65 hover:text-white hover:bg-white/5'
+            }`}
           >
             {mode.icon}
             <span>{mode.label}</span>

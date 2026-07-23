@@ -52,9 +52,9 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
     const blackKeyLeftPositions = { 1: '45px', 3: '87px', 6: '171px', 8: '213px', 10: '255px' };
 
     return (
-        <div className="fixed inset-0 w-screen h-screen z-[9005]" onClick={onClose}>
+        <div className="fixed inset-0 w-screen h-screen z-50" onClick={onClose}>
             <div
-                className="bg-[#CF63CF] rounded-xl p-[10px] shadow-[0_8px_32px_rgba(0,0,0,0.3)] select-none min-w-[320px]"
+                className="bg-fuchsia-500 rounded-xl p-2.5 shadow-2xl select-none min-w-[320px]"
                 style={{
                     position: 'absolute',
                     left: position.x,
@@ -62,20 +62,20 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-b-2 border-l-transparent border-r-transparent border-b-[#CF63CF]" style={{ borderLeftWidth: '8px', borderRightWidth: '8px', borderBottomWidth: '8px' }}></div>
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-fuchsia-500"></div>
 
-                <div className="flex justify-between items-center bg-white/20 rounded-lg mb-[10px] px-[10px] py-1">
-                    <button className="bg-none border-none text-white cursor-pointer flex items-center p-0" onClick={() => changeOctave(-1)}>
+                <div className="flex justify-between items-center bg-white/20 rounded-lg mb-2.5 px-2.5 py-1">
+                    <button type="button" className="bg-transparent border-0 text-white cursor-pointer flex items-center p-0" onClick={() => changeOctave(-1)}>
                         <ChevronLeft size={20} />
                     </button>
                     <span className="text-white font-bold text-lg">{octave}</span>
-                    <button className="bg-none border-none text-white cursor-pointer flex items-center p-0" onClick={() => changeOctave(1)}>
+                    <button type="button" className="bg-transparent border-0 text-white cursor-pointer flex items-center p-0" onClick={() => changeOctave(1)}>
                         <ChevronRight size={20} />
                     </button>
                 </div>
 
                 <div
-                    className="bg-white rounded-md flex p-1 relative h-[120px]"
+                    className="bg-white rounded-md flex p-1 relative h-30"
                     onMouseDown={() => setIsMouseDown(true)}
                     onMouseUp={() => setIsMouseDown(false)}
                     onMouseLeave={() => setIsMouseDown(false)}
@@ -83,10 +83,10 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
                     {NOTES.map((note, index) => (
                         <div
                             key={index}
-                            className={`cursor-pointer rounded-[4px] transition-all duration-100 ${
+                            className={`cursor-pointer rounded-sm transition-all duration-100 ${
                                 note.type === 'white'
-                                    ? `w-10 h-full bg-white border border-[#ddd] mr-[2px] flex items-end justify-center pb-[10px] z-[1] last:mr-0 ${selectedNote === note.name ? 'bg-[#B3E5FC]' : ''}`
-                                    : `w-6 h-[65px] bg-[#333] absolute z-[2] ${selectedNote === note.name ? 'bg-[#03A9F4]' : ''}`
+                                    ? `w-10 h-full bg-white border border-gray-300 mr-0.5 flex items-end justify-center pb-2.5 z-0 last:mr-0 ${selectedNote === note.name ? 'bg-sky-200' : ''}`
+                                    : `w-6 h-16 bg-slate-800 absolute z-10 ${selectedNote === note.name ? 'bg-sky-500' : ''}`
                             }`}
                             style={note.type === 'black' ? { left: blackKeyLeftPositions[index], marginLeft: '-13px' } : {}}
                             onMouseDown={(e) => {
@@ -101,7 +101,7 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
                                 handleNoteClick(note.name);
                             }}
                         >
-                            {note.type === 'white' && <span className="text-[#666] font-bold text-base">{note.nameLong || note.name}</span>}
+                            {note.type === 'white' && <span className="text-slate-500 font-bold text-base">{note.nameLong || note.name}</span>}
                         </div>
                     ))}
                 </div>

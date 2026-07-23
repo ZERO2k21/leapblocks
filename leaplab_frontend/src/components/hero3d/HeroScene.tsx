@@ -89,8 +89,7 @@ const SceneContent: React.FC = () => {
 
 const LoadingFallback: React.FC = () => (
   <div className="w-full h-full flex items-center justify-center bg-transparent">
-    <div className="w-10 h-10 border-[3px] border-[rgba(99,102,241,0.15)] border-t-[#6366F1] rounded-full animate-[hero3d-spin_0.8s_linear_infinite]" />
-    <style>{`@keyframes hero3d-spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="w-10 h-10 border-4 border-indigo-500/15 border-t-indigo-500 rounded-full animate-spin" />
   </div>
 );
 

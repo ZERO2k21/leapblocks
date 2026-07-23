@@ -52,7 +52,7 @@ export default function BlockPaletteButton({ type, icon, label, onDragStart }) {
 
     return (
         <div
-            className={`palette-block w-20 h-[60px] m-[5px] bg-[#5FA8F5] rounded-[18px] flex flex-col items-center justify-center cursor-pointer transition-transform duration-100 select-none relative ${isActive ? 'active-pulse scale-95' : ''}`}
+            className={`palette-block w-20 h-14 m-1 bg-sky-400 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-transform duration-100 select-none relative ${isActive ? 'active-pulse scale-95' : ''}`}
             onPointerDown={handlePointerDown}
         >
             <div className="icon w-8 h-8 pointer-events-none">

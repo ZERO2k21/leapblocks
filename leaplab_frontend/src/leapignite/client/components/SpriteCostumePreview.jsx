@@ -24,7 +24,7 @@ export default function SpriteCostumePreview({ sprites, activeSpriteId }) {
     if (!imgSrc && !isEmoji) return null;
 
     return (
-        <div className="absolute top-4 right-4 w-[60px] h-[60px] bg-white/85 backdrop-blur-sm rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-2 border-[#0a015a] pointer-events-none z-10 flex justify-center items-center p-1.5">
+        <div className="absolute top-4 right-4 w-15 h-15 bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border-2 border-indigo-950 pointer-events-none z-10 flex justify-center items-center p-1.5">
             {(!isEmoji && imgSrc) ? (
                 <img
                     src={imgSrc}

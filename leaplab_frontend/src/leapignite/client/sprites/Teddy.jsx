@@ -290,7 +290,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
             </div>
             {/* Stage Feedback Toast */}
             {active && feedback && (
-                <div className="fixed top-1/2 left-[70%] -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-6 py-3.75 rounded-xl text-xl font-bold z-[100] pointer-events-none">
+                <div className="fixed top-1/2 left-2/3 -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-6 py-4 rounded-xl text-xl font-bold z-50 pointer-events-none">
                     {feedback}
                 </div>
             )}

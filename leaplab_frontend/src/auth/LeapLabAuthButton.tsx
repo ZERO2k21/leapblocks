@@ -33,146 +33,59 @@ export default function LeapLabAuthButton({ variant = 'light', size = 'md', styl
     // ─── SIGNED IN: show user chip with dropdown ───
     if (isAuthenticated && username) {
         return (
-            <div style={{ position: 'relative', fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}>
+            <div className="relative font-sans" style={style}>
                 <button
+                    type="button"
                     onClick={() => setIsDropdownOpen(v => !v)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: isSmall ? '6px' : '8px',
-                        padding: isSmall ? '5px 10px 5px 6px' : '6px 14px 6px 8px',
-                        borderRadius: '10px',
-                        border: `2px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#100051'}`,
-                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
-                        color: isDark ? '#fff' : '#100051',
-                        cursor: 'pointer',
-                        fontSize: isSmall ? '12px' : '13px',
-                        fontWeight: 700,
-                        fontFamily: 'inherit',
-                        transition: 'all 0.2s ease',
-                        backdropFilter: 'blur(8px)',
-                        boxShadow: isDark
-                            ? '0 2px 8px rgba(0,0,0,0.3)'
-                            : '0 2px 8px rgba(16,0,81,0.08)',
-                        ...style,
-                    }}
-                    onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-                        (e.currentTarget as HTMLElement).style.boxShadow = isDark
-                            ? '0 4px 12px rgba(0,0,0,0.4)'
-                            : '0 4px 12px rgba(16,0,81,0.15)';
-                    }}
-                    onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                        (e.currentTarget as HTMLElement).style.boxShadow = isDark
-                            ? '0 2px 8px rgba(0,0,0,0.3)'
-                            : '0 2px 8px rgba(16,0,81,0.08)';
-                    }}
+                    className={`flex items-center rounded-xl border-2 cursor-pointer font-bold transition-all backdrop-blur-md shadow-sm hover:-translate-y-0.5 hover:shadow-md ${
+                        isSmall ? 'gap-1.5 py-1 px-2.5 text-xs' : 'gap-2 py-1.5 px-3 text-sm'
+                    } ${
+                        isDark 
+                            ? 'border-white/20 bg-white/10 text-white shadow-black/30' 
+                            : 'border-indigo-950 bg-white/90 text-indigo-950 shadow-indigo-950/10'
+                    }`}
                     aria-label="User menu"
                     id="leaplab-user-menu-btn"
                 >
-                    <div style={{
-                        width: isSmall ? '22px' : '26px',
-                        height: isSmall ? '22px' : '26px',
-                        borderRadius: '7px',
-                        background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                    }}>
-                        <User style={{ width: isSmall ? '12px' : '14px', height: isSmall ? '12px' : '14px', color: '#fff' }} />
+                    <div className={`rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0 ${
+                        isSmall ? 'w-5.5 h-5.5' : 'w-6.5 h-6.5'
+                    }`}>
+                        <User className={`text-white ${isSmall ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
                     </div>
-                    <span style={{
-                        maxWidth: '120px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}>
+                    <span className="max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
                         {username}
                     </span>
-                    <ChevronDown style={{
-                        width: '12px',
-                        height: '12px',
-                        opacity: 0.6,
-                        transition: 'transform 0.2s',
-                        transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
-                    }} />
+                    <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </button>
 
                 {/* Dropdown */}
                 {isDropdownOpen && (
                     <>
-                        {/* Backdrop to close dropdown */}
                         <div
-                            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+                            className="fixed inset-0 z-40"
                             onClick={() => setIsDropdownOpen(false)}
                         />
                         <div
-                            style={{
-                                position: 'absolute',
-                                top: 'calc(100% + 6px)',
-                                right: 0,
-                                minWidth: '200px',
-                                background: '#fff',
-                                border: '2px solid #100051',
-                                borderRadius: '12px',
-                                boxShadow: '4px 4px 0px #100051',
-                                padding: '8px',
-                                zIndex: 9999,
-                                animation: 'leaplab-dropdown-in 0.15s ease-out',
-                                fontFamily: 'inherit',
-                            }}
+                            className="absolute top-full mt-1.5 right-0 min-w-[200px] bg-white border-2 border-indigo-950 rounded-xl shadow-[4px_4px_0px_#100051] p-2 z-50 animate-[leaplab-dropdown-in_0.15s_ease-out] font-sans"
                             id="leaplab-user-dropdown"
                         >
-                            {/* User info */}
-                            <div style={{
-                                padding: '10px 12px',
-                                borderBottom: '1px solid rgba(16,0,81,0.1)',
-                                marginBottom: '6px',
-                            }}>
-                                <div style={{
-                                    fontSize: '13px',
-                                    fontWeight: 800,
-                                    color: '#100051',
-                                    marginBottom: '2px',
-                                }}>
+                            <div className="p-2.5 border-b border-indigo-950/10 mb-1.5">
+                                <div className="text-sm font-extrabold text-indigo-950 mb-0.5">
                                     {username}
                                 </div>
                                 {institutionName && (
-                                    <div style={{
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        color: '#64748B',
-                                    }}>
+                                    <div className="text-xs font-semibold text-slate-500">
                                         {institutionName}
                                     </div>
                                 )}
                             </div>
-                            {/* Sign out */}
                             <button
+                                type="button"
                                 onClick={handleSignOut}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '8px 12px',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    background: 'transparent',
-                                    color: '#DC2626',
-                                    fontSize: '13px',
-                                    fontWeight: 700,
-                                    fontFamily: 'inherit',
-                                    cursor: 'pointer',
-                                    transition: 'background 0.15s',
-                                }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                                className="w-full flex items-center gap-2 p-2 rounded-lg bg-transparent text-red-600 text-sm font-bold cursor-pointer hover:bg-red-50 transition-colors"
                                 id="leaplab-sign-out-btn"
                             >
-                                <LogOut style={{ width: '14px', height: '14px' }} />
+                                <LogOut className="w-3.5 h-3.5" />
                                 Sign out
                             </button>
                         </div>
@@ -193,68 +106,20 @@ export default function LeapLabAuthButton({ variant = 'light', size = 'md', styl
     return (
         <>
             <button
+                type="button"
                 onClick={() => setIsModalOpen(true)}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isSmall ? '5px' : '7px',
-                    padding: isSmall ? '6px 12px' : '8px 16px',
-                    borderRadius: '10px',
-                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.25)' : '#100051'}`,
-                    background: isDark
-                        ? 'rgba(255,255,255,0.08)'
-                        : 'linear-gradient(135deg, #100051, #1a0070)',
-                    color: isDark ? '#fff' : '#fff',
-                    fontSize: isSmall ? '12px' : '13px',
-                    fontWeight: 800,
-                    fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    backdropFilter: isDark ? 'blur(8px)' : 'none',
-                    boxShadow: isDark
-                        ? '0 2px 8px rgba(0,0,0,0.3)'
-                        : '3px 3px 0px #100051',
-                    letterSpacing: '0.02em',
-                    ...style,
-                }}
-                onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.transform = 'translateY(-1px)';
-                    if (!isDark) {
-                        el.style.background = 'linear-gradient(135deg, #1a0070, #4F46E5)';
-                        el.style.boxShadow = '4px 4px 0px #100051';
-                    } else {
-                        el.style.background = 'rgba(255,255,255,0.15)';
-                    }
-                }}
-                onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.transform = 'translateY(0)';
-                    if (!isDark) {
-                        el.style.background = 'linear-gradient(135deg, #100051, #1a0070)';
-                        el.style.boxShadow = '3px 3px 0px #100051';
-                    } else {
-                        el.style.background = 'rgba(255,255,255,0.08)';
-                    }
-                }}
-                onMouseDown={e => {
-                    const el = e.currentTarget as HTMLElement;
-                    if (!isDark) {
-                        el.style.transform = 'translate(3px, 3px)';
-                        el.style.boxShadow = 'none';
-                    }
-                }}
-                onMouseUp={e => {
-                    const el = e.currentTarget as HTMLElement;
-                    if (!isDark) {
-                        el.style.transform = 'translateY(-1px)';
-                        el.style.boxShadow = '4px 4px 0px #100051';
-                    }
-                }}
+                className={`flex items-center rounded-xl border-2 font-extrabold font-sans cursor-pointer transition-all tracking-wide ${
+                    isSmall ? 'gap-1.25 py-1.5 px-3 text-xs' : 'gap-1.75 py-2 px-4 text-sm'
+                } ${
+                    isDark 
+                        ? 'border-white/25 bg-white/10 text-white backdrop-blur-md shadow-md hover:bg-white/20' 
+                        : 'border-indigo-950 bg-gradient-to-r from-indigo-950 to-indigo-900 text-white shadow-[3px_3px_0px_#100051] hover:bg-gradient-to-r hover:from-indigo-900 hover:to-indigo-600 hover:shadow-[4px_4px_0px_#100051] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none'
+                }`}
+                style={style}
                 aria-label="Sign in to LeapLab"
                 id="leaplab-sign-in-btn"
             >
-                <LogIn style={{ width: isSmall ? '13px' : '15px', height: isSmall ? '13px' : '15px' }} />
+                <LogIn className={isSmall ? 'w-3.25 h-3.25' : 'w-3.75 h-3.75'} />
                 Sign in
             </button>
 

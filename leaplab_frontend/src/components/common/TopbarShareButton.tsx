@@ -100,31 +100,33 @@ export default function TopbarShareButton({
 
             {showSaveConfirm && (
                 <div
-                    className="fixed inset-0 bg-[rgba(15,23,42,0.3)] backdrop-blur-[4px] flex items-center justify-center z-[10000]"
+                    className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center z-[9999]"
                     onClick={() => setShowSaveConfirm(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl py-7 px-8 max-w-[400px] w-[90%] shadow-[0_20px_60px_rgba(15,23,42,0.15)] border border-[#e2e8f0]"
+                        className="bg-white rounded-2xl py-7 px-8 max-w-sm w-[90%] shadow-2xl border border-slate-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-[#1e293b] m-0 mb-2 text-lg font-bold">
+                        <h3 className="text-slate-800 m-0 mb-2 text-lg font-bold">
                             Save Project First
                         </h3>
-                        <p className="text-[#64748b] m-0 mb-6 text-sm leading-relaxed font-medium">
+                        <p className="text-slate-500 m-0 mb-6 text-sm leading-relaxed font-medium">
                             You need to save your project to the cloud before sharing.
                             {projectName ? ` "${projectName}"` : ''} Save now?
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button
+                                type="button"
                                 onClick={() => setShowSaveConfirm(false)}
-                                className="py-2 px-5 rounded-lg border border-[#cbd5e1] bg-white text-[#475569] cursor-pointer text-sm font-bold transition-all duration-200 hover:bg-[#f8fafc] hover:text-[#0f172a]"
+                                className="py-2 px-5 rounded-lg border border-slate-300 bg-white text-slate-600 cursor-pointer text-sm font-bold transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
                             >
                                 Cancel
                             </button>
                             <button
+                                type="button"
                                 onClick={handleSaveAndShare}
                                 disabled={loading}
-                                className={`py-2 px-5 rounded-lg border-none bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white cursor-pointer text-sm font-bold shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-all duration-200 hover:from-[#4f46e5] hover:to-[#4338ca] hover:shadow-[0_6px_16px_rgba(79,70,229,0.3)] ${loading ? 'opacity-70' : ''}`}
+                                className={`py-2 px-5 rounded-lg border-0 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white cursor-pointer text-sm font-bold shadow-md shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-600 hover:to-indigo-700 ${loading ? 'opacity-70' : ''}`}
                             >
                                 {loading ? 'Saving...' : 'Save & Share'}
                             </button>

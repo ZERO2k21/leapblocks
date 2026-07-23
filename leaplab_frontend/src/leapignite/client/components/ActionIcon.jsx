@@ -20,25 +20,17 @@ export default function ActionIcon({ icon, label, onClick, bgColor, hoverBg, out
 
     return (
         <button
+            type="button"
             onClick={onClick}
             title={label}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            className="rounded-xl cursor-pointer flex items-center justify-center transition-all duration-200 outline-none p-0 hover:scale-110 hover:shadow-lg shadow-sm"
             style={{
                 width: `${size}px`,
                 height: `${size}px`,
-                borderRadius: "12px",
                 border: outlineColor && !isFilled && outlineColor !== "transparent" ? `2.5px solid ${outlineColor}` : "none",
                 background: bg,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s ease",
-                transform: hovered ? "scale(1.1)" : "scale(1)",
-                boxShadow: hovered ? "0 4px 12px rgba(123,79,196,0.25)" : "0 1px 4px rgba(0,0,0,0.08)",
-                outline: "none",
-                padding: 0,
             }}
         >
             {icon}

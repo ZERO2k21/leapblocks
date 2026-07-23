@@ -9,21 +9,7 @@ export default function AddButton({ onClick, icon }) {
     return (
         <div
             onClick={onClick}
-            style={{
-                minWidth: 70, // Changed width to minWidth to prevent shrinking
-                width: 70,
-                height: 70,
-                borderRadius: 12,
-                border: "2px dashed #aaa",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                fontSize: 24,
-                background: "#f9f9f9"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "#fff"}
-            onMouseLeave={e => e.currentTarget.style.background = "#f9f9f9"}
+            className="min-w-18 w-18 h-18 shrink-0 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer text-2xl bg-gray-50 hover:bg-white transition-colors"
         >
             {icon}
         </div>

@@ -1,69 +1,10 @@
 import React from 'react';
 
-const OVERLAY_STYLE = {
-    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-    background: 'rgba(10, 1, 90, 0.6)', backdropFilter: 'blur(6px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 99998, animation: 'goalFadeIn 0.25s ease-out',
-};
-
-const CARD_STYLE = {
-    position: 'relative', width: '400px', maxWidth: '90vw',
-    background: 'white', borderRadius: '20px', overflow: 'hidden',
-    animation: 'goalPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-    boxShadow: '0 20px 60px rgba(10, 1, 90, 0.25), 0 0 0 1px rgba(123, 79, 196, 0.1)',
-};
-
-const HEADER_STYLE = {
-    background: 'linear-gradient(135deg, #0a015a 0%, #0d0370 50%, #080a25 100%)',
-    padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '14px',
-};
-
-const ICON_WRAPPER_STYLE = {
-    width: '44px', height: '44px', borderRadius: '12px',
-    background: 'linear-gradient(135deg, #7B4FC4, #9B6FE4)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '22px', boxShadow: '0 4px 12px rgba(123, 79, 196, 0.4)',
-    animation: 'goalIconPulse 2s ease-in-out infinite', flexShrink: 0,
-};
-
-const TITLE_STYLE = {
-    fontSize: '20px', fontWeight: 800, color: 'white',
-    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", letterSpacing: '0.3px',
-};
-
-const GOAL_TEXT_STYLE = {
-    fontSize: '15px', fontWeight: 500, color: '#444',
-    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", lineHeight: 1.6,
-    background: '#f8f7fc', borderRadius: '12px', padding: '16px 18px',
-    borderLeft: '4px solid #7B4FC4',
-};
-
-const OK_BUTTON_STYLE = {
-    width: '100%', marginTop: '20px',
-    background: 'linear-gradient(135deg, #7B4FC4, #9B6FE4)',
-    color: 'white', border: 'none', borderRadius: '12px',
-    padding: '13px 24px', fontSize: '15px', fontWeight: 700,
-    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-    cursor: 'pointer', transition: 'all 0.2s ease',
-    boxShadow: '0 4px 16px rgba(123, 79, 196, 0.3)',
-};
-
-const OK_BUTTON_HOVER_IN = {
-    transform: 'translateY(-1px)',
-    boxShadow: '0 6px 20px rgba(123, 79, 196, 0.4)',
-};
-
-const OK_BUTTON_HOVER_OUT = {
-    transform: 'translateY(0)',
-    boxShadow: '0 4px 16px rgba(123, 79, 196, 0.3)',
-};
-
 const GoalPopup = ({ isOpen, goalText, onClose }) => {
     if (!isOpen || !goalText) return null;
 
     return (
-        <div style={OVERLAY_STYLE}>
+        <div className="fixed inset-0 w-screen h-screen bg-indigo-950/60 backdrop-blur-md flex items-center justify-center z-50 animate-[goalFadeIn_0.25s_ease-out]">
             <style>{`
                 @keyframes goalFadeIn {
                     from { opacity: 0; }
@@ -79,20 +20,19 @@ const GoalPopup = ({ isOpen, goalText, onClose }) => {
                 }
             `}</style>
 
-            <div style={CARD_STYLE}>
-                <div style={HEADER_STYLE}>
-                    <div style={ICON_WRAPPER_STYLE}>🎯</div>
-                    <div style={TITLE_STYLE}>Goal</div>
+            <div className="relative w-full max-w-sm bg-white rounded-2xl overflow-hidden animate-[goalPopIn_0.4s_cubic-bezier(0.34,1.56,0.64,1)] shadow-2xl mx-4">
+                <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-900 p-5 px-6 flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-purple-600/40 animate-[goalIconPulse_2s_ease-in-out_infinite] shrink-0">🎯</div>
+                    <div className="text-xl font-extrabold text-white tracking-wide font-sans">Goal</div>
                 </div>
 
-                <div style={{ padding: '24px' }}>
-                    <div style={GOAL_TEXT_STYLE}>{goalText}</div>
+                <div className="p-6">
+                    <div className="text-sm font-medium text-gray-700 font-sans leading-relaxed bg-purple-50/60 rounded-xl p-4 border-l-4 border-purple-600">{goalText}</div>
 
                     <button
+                        type="button"
                         onClick={onClose}
-                        style={OK_BUTTON_STYLE}
-                        onMouseEnter={e => Object.assign(e.currentTarget.style, OK_BUTTON_HOVER_IN)}
-                        onMouseLeave={e => Object.assign(e.currentTarget.style, OK_BUTTON_HOVER_OUT)}
+                        className="w-full mt-5 bg-gradient-to-r from-purple-600 to-purple-500 text-white border-0 rounded-xl py-3 px-6 text-sm font-bold font-sans cursor-pointer transition-all duration-200 shadow-lg shadow-purple-600/30 hover:-translate-y-0.5 hover:shadow-purple-600/40"
                     >
                         OK, got it!
                     </button>

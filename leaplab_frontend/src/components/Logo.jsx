@@ -29,7 +29,7 @@ export function CreoleapLogo({ height = 250, className = "", style = {} }) {
             onError={(e) => {
                 e.target.src = 'assets/creoleap_logo.svg';
             }}
-            className={`object-contain brightness-[1.2] contrast-[1.1] drop-shadow-[0_0_2px_rgba(255,255,255,0.2)] ${className}`}
+            className={`object-contain brightness-125 contrast-110 drop-shadow-sm ${className}`}
             style={{ height, ...style }}
         />
     );

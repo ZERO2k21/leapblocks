@@ -53,7 +53,7 @@ export default function EditorLayout({
     const closeLeft = useCallback(() => setLeftOpen(false), [])
 
     return (
-        <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#f8fafc] font-[Segoe_UI,Inter,system-ui,sans-serif]">
+        <div className="h-screen w-screen flex flex-col overflow-hidden bg-slate-50 font-sans">
             {/* ==================== FIXED TOP BAR ==================== */}
             {topBar}
 
@@ -65,14 +65,14 @@ export default function EditorLayout({
                 {/* LEFT SIDEBAR - Block Categories */}
                 {leftSidebar && !isMobile && (
                     <div
-                        className="bg-[#f1f5f9] border-r border-[#e2e8f0] flex flex-col overflow-hidden"
+                        className="bg-slate-100 border-r border-slate-200 flex flex-col overflow-hidden"
                         style={{ width: isTablet ? 200 : 260, minWidth: isTablet ? 200 : 260 }}
                     >
                         <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
                             {leftSidebar}
                         </div>
                         {addExtensionButton && (
-                            <div className="px-4 py-3 border-t border-[#e2e8f0] bg-white shrink-0">
+                            <div className="px-4 py-3 border-t border-slate-200 bg-white shrink-0">
                                 {addExtensionButton}
                             </div>
                         )}
@@ -83,15 +83,15 @@ export default function EditorLayout({
                 {leftSidebar && isMobile && leftOpen && (
                     <>
                         <div onClick={closeLeft} className="fixed inset-0 bg-black/30 z-40" />
-                        <div className="fixed top-0 left-0 bottom-0 w-[260px] max-w-[80vw] bg-[#f1f5f9] border-r border-[#e2e8f0] flex flex-col overflow-hidden z-50 shadow-[4px_0_16px_rgba(0,0,0,0.15)]">
-                            <div className="px-3 py-2 border-b border-[#e2e8f0] flex justify-end">
-                                <button onClick={closeLeft} className="bg-none border-none text-lg cursor-pointer text-slate-500">✕</button>
+                        <div className="fixed top-0 left-0 bottom-0 w-[260px] max-w-[80vw] bg-slate-100 border-r border-slate-200 flex flex-col overflow-hidden z-50 shadow-2xl">
+                            <div className="px-3 py-2 border-b border-slate-200 flex justify-end">
+                                <button type="button" onClick={closeLeft} className="bg-transparent border-0 text-lg cursor-pointer text-slate-500">✕</button>
                             </div>
                             <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
                                 {leftSidebar}
                             </div>
                             {addExtensionButton && (
-                                <div className="px-4 py-3 border-t border-[#e2e8f0] bg-white shrink-0">
+                                <div className="px-4 py-3 border-t border-slate-200 bg-white shrink-0">
                                     {addExtensionButton}
                                 </div>
                             )}
@@ -102,7 +102,7 @@ export default function EditorLayout({
                 {/* CENTRAL WORKSPACE */}
                 <div className={`flex-1 flex flex-col overflow-hidden bg-white relative ${isMobile ? 'min-h-[50vh]' : 'min-h-0'}`}>
                     {isMobile && leftSidebar && (
-                        <button onClick={() => setLeftOpen(true)} className="absolute top-2 left-2 z-10 px-2.5 py-1.5 bg-white border border-[#e2e8f0] rounded-lg cursor-pointer text-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]">☰</button>
+                        <button type="button" onClick={() => setLeftOpen(true)} className="absolute top-2 left-2 z-10 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer text-sm shadow-md">☰</button>
                     )}
                     {children}
                 </div>
@@ -110,7 +110,7 @@ export default function EditorLayout({
                 {/* RIGHT PANEL - Stage / Arduino Code / Log */}
                 {rightPanel && (
                     <div
-                        className={`flex flex-col overflow-hidden ${isMobile ? 'w-full h-[50vh] border-t border-[#e2e8f0]' : 'border-l border-[#e2e8f0]'} bg-[#f8fafc]`}
+                        className={`flex flex-col overflow-hidden ${isMobile ? 'w-full h-[50vh] border-t border-slate-200' : 'border-l border-slate-200'} bg-slate-50`}
                         style={isMobile ? undefined : { width: isTablet ? 320 : 380, minWidth: isTablet ? 320 : 380 }}
                     >
                         {rightPanel}

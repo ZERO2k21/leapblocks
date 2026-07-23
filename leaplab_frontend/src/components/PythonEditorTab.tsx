@@ -1,12 +1,6 @@
-/**
- * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
- * All rights reserved. Proprietary and confidential.
- * Unauthorized copying, distribution, or modification is strictly prohibited.
- */
 import React, { useEffect, useState } from 'react';
 import Blockly from '@blockly-runtime';
 import { pythonGenerator } from '../generators/python-generator';
-
 
 interface PythonEditorTabProps {
     workspace: Blockly.WorkspaceSvg | null;
@@ -48,79 +42,38 @@ export const PythonEditorTab: React.FC<PythonEditorTabProps> = ({ workspace, onO
     }, [workspace]);
 
     return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#1e1e1e' }}>
-            <div style={{
-                padding: '8px 16px',
-                backgroundColor: '#252526',
-                borderBottom: '1px solid #333',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                color: '#cccccc'
-            }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>PYTHON CODE</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="w-full h-full flex flex-col bg-zinc-900">
+            <div className="py-2 px-4 bg-zinc-800 border-b border-zinc-700 flex justify-between items-center text-zinc-300">
+                <span className="text-xs font-bold tracking-wider">PYTHON CODE</span>
+                <div className="flex gap-2">
                     {onOpenFullIDE && (
                         <button
+                            type="button"
                             onClick={onOpenFullIDE}
-                            style={{
-                                padding: '4px 10px',
-                                fontSize: '11px',
-                                background: 'linear-gradient(135deg, #3776ab, #ffd343)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                            }}
+                            className="py-1 px-2.5 text-xs bg-gradient-to-r from-sky-600 to-amber-400 text-white border-0 rounded-md cursor-pointer font-bold flex items-center gap-1 hover:brightness-110 transition-all"
                         >
                             🐍 Open in Python IDE
                         </button>
                     )}
                     <button
+                        type="button"
                         onClick={() => { try { navigator.clipboard?.writeText(code).catch(() => {}); } catch (_) {} }}
-                        style={{
-                            padding: '4px 10px',
-                            fontSize: '11px',
-                            backgroundColor: '#22c55e',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                        }}
+                        className="py-1 px-2.5 text-xs bg-emerald-500 text-white border-0 rounded-md cursor-pointer font-bold hover:bg-emerald-600 transition-colors"
                     >
                         📋 Copy Python
                     </button>
                 </div>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden', padding: '10px' }}>
+            <div className="flex-1 overflow-hidden p-2.5">
                 {renderError ? (
-                    <div style={{ color: '#ff5555', fontFamily: 'monospace', padding: '10px' }}>
+                    <div className="text-red-400 font-mono p-2.5">
                         <strong>Error:</strong> {renderError}
                     </div>
                 ) : (
                     <textarea
                         readOnly
                         value={code}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: '#1e1e1e',
-                            color: '#d4d4d4',
-                            border: 'none',
-                            fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
-                            fontSize: '13px',
-                            lineHeight: '1.6',
-                            resize: 'none',
-                            outline: 'none',
-                            padding: '15px',
-                            whiteSpace: 'pre',
-                            overflow: 'auto'
-                        }}
+                        className="w-full h-full bg-zinc-900 text-zinc-300 border-0 font-mono text-xs leading-relaxed resize-none outline-none p-4 whitespace-pre overflow-auto"
                     />
                 )}
             </div>

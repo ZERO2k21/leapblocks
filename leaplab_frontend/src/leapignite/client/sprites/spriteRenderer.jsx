@@ -33,7 +33,7 @@ export function renderIcon({ type, id, costumes, currentCostume, textColor, imgE
             <img
                 src={costumeValue}
                 alt={id}
-                className="w-[80px] h-[80px] object-contain drop-shadow-[0px_2px_4px_rgba(0,0,0,0.15)]"
+                className="w-20 h-20 object-contain drop-shadow-md"
                 draggable={false}
                 onError={() => setImgError(true)}
             />
@@ -50,7 +50,7 @@ export function renderIcon({ type, id, costumes, currentCostume, textColor, imgE
             if (isLetterOrNumber) {
                 return (
                     <div
-                        className="text-[90px] font-black font-mono inline-block select-none scale-110 leading-none [text-shadow:8px_8px_0px_rgba(0,0,0,1)]"
+                        className="text-8xl font-black font-mono inline-block select-none scale-110 leading-none [text-shadow:8px_8px_0px_rgba(0,0,0,1)]"
                         style={{
                             color: textColor || '#FF8C1A',
                             WebkitTextStroke: '4px black',
@@ -61,7 +61,7 @@ export function renderIcon({ type, id, costumes, currentCostume, textColor, imgE
                 );
             }
             return (
-                <span className="text-[60px] leading-none block text-center drop-shadow-[0px_2px_4px_rgba(0,0,0,0.15)]">
+                <span className="text-6xl leading-none block text-center drop-shadow-md">
                     {costumeValue}
                 </span>
             );
@@ -103,7 +103,7 @@ export default function SpriteDisplay({
         <>
             {speech && (
                 <div
-                    className="absolute bottom-full left-1/2 bg-white border-2 border-gray-800 rounded-lg px-2 py-0.75 mb-1.5 whitespace-nowrap z-10 text-xs font-semibold text-gray-800"
+                    className="absolute bottom-full left-1/2 bg-white border-2 border-gray-800 rounded-lg px-2 py-1 mb-1.5 whitespace-nowrap z-10 text-xs font-semibold text-gray-800"
                     style={{
                         transform: `translateX(-50%) scaleX(${mirrored ? -scaleX : scaleX})`,
                     }}
@@ -113,7 +113,7 @@ export default function SpriteDisplay({
             )}
 
             <div
-                className={`text-[50px] leading-none ${isPenDown && isPenSprite ? '-rotate-[5deg]' : ''}`}
+                className={`text-5xl leading-none ${isPenDown && isPenSprite ? '-rotate-3' : ''}`}
                 style={{
                     transformOrigin: `${relativeTipX}px ${relativeTipY}px`
                 }}
