@@ -1286,7 +1286,7 @@ function PaintEditor({
                 type="file"
                 accept="image/*"
                 onChange={handleUpload}
-                style={{ display: 'none' }}
+                className="hidden"
             />
 
             {/* Costume Library Modal (rendered only if not overridden) */}

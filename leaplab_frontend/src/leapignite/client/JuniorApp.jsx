@@ -724,7 +724,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 .junior-mode g[data-category="motion"] .blocklyPath { stroke:#3A7BD5; stroke-width:1px; }
                 .junior-mode g[data-category="motion"] text.blocklyText { fill:#fff !important; font-weight:700; }
             `}</style>
-            <input type="file" ref={project.fileInputRef} style={{ display: "none" }} accept=".json" onChange={project.handleFileLoad} />
+            <input type="file" ref={project.fileInputRef} className="hidden" accept=".json" onChange={project.handleFileLoad} />
 
             <JuniorMenuBar
                 projectName={projectName}
@@ -793,66 +793,36 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 />
             )}
 
-            <div style={{ flex: 1, display: "flex", overflow: 'hidden', gap: 0 }}>
-                <div id="wrapper" style={{ width: "60%", height: "100%", position: "relative", zIndex: 20, overflow: 'hidden', background: '#f0f2f8' }}>
+            <div className="flex-1 flex overflow-hidden gap-0">
+                <div id="wrapper" className="w-[60%] h-full relative z-20 overflow-hidden bg-[#f0f2f8]">
                     <SpriteCostumePreview sprites={sprites} activeSpriteId={activeSpriteId} />
-                    <div id="blocklyDiv" ref={blocklyDiv} className="workspace" style={{ width: "100%", height: "100%" }}></div>
+                    <div id="blocklyDiv" ref={blocklyDiv} className="workspace w-full h-full"></div>
 
                     <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={wp.resetFlyoutScale} style={{ bottom: `${wp.flyoutHeight + 110}px`, right: '16px' }} />
                     <WorkspaceTrash workspaceRef={workspaceRef} />
 
-                    <div className="junior-toolbar" style={{
-                        position: "absolute",
-                        left: "16px",
-                        right: "16px",
-                        bottom: `${wp.flyoutHeight}px`,
-                        height: "58px",
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        zIndex: 90,
-                        background: "#ffffff",
-                        border: "1px solid #e8ecf2",
-                        padding: "0 0 0 6px",
-                        borderRadius: "16px",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
-                        overflow: "hidden"
-                    }}>
-                        <div style={{ display: "flex", gap: "6px", alignItems: "center", height: "100%", overflowX: "auto", paddingRight: "8px", paddingLeft: "4px" }} className="no-scrollbar">
+                    <div className="junior-toolbar absolute left-4 right-4 h-[58px] flex flex-row items-center justify-between z-90 bg-white border border-[#e8ecf2] pl-[6px] pr-0 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden" style={{ bottom: `${wp.flyoutHeight}px` }}>
+                        <div className="flex gap-1.5 items-center h-full overflow-x-auto pr-2 pl-1 no-scrollbar">
                             {wp.categories.map((cat, i) => (
                                 <CategoryButton key={cat.id || i} category={cat} isActive={wp.activeCategory === cat.id} onClick={() => wp.handleCategoryClick(cat.id)} />
                             ))}
                         </div>
 
                         <button
-                            className="junior-extensions-btn"
+                            className="junior-extensions-btn w-14 h-[46px] border-0 cursor-pointer flex items-center justify-center transition-all duration-200 relative shrink-0 ml-auto mr-1.5 shadow-[0_2px_8px_rgba(10,1,90,0.2)]"
                             onClick={() => wp.setIsExtensionLibraryOpen(true)}
                             title="Add More Blocks"
                             style={{
-                                width: "56px",
-                                height: "46px",
                                 background: "linear-gradient(135deg, #0a015a, #1a0a7a)",
-                                border: "none",
-                                borderRadius: "10px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "all 0.2s",
-                                position: "relative",
-                                flexShrink: 0,
-                                marginLeft: "auto",
-                                marginRight: "6px",
-                                boxShadow: "0 2px 8px rgba(10,1,90,0.2)"
+                                transform: "scale(1)"
                             }}
                             onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg, #12017a, #2a0a9a)"; e.currentTarget.style.transform = "scale(1.04)"; }}
                             onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg, #0a015a, #1a0a7a)"; e.currentTarget.style.transform = "scale(1)"; }}
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="none" style={{ transform: "rotate(15deg) scale(0.9) translate(1px, -2px)" }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="none" className="rotate-[15deg] scale-90 translate-x-px -translate-y-0.5">
                                 <path d="M19 14.5a2.5 2.5 0 1 1-5 0V14h-3v4.5a2.5 2.5 0 1 1-5 0V14H4.5a2.5 2.5 0 1 1 0-5H4V6c0-1.1.9-2 2-2h3V2.5a2.5 2.5 0 1 1 5 0V4h3c1.1 0 2 .9 2 2v3h1.5a2.5 2.5 0 1 1 0 5H19v.5z" />
                             </svg>
-                            <span style={{ position: "absolute", top: "6px", right: "10px", fontWeight: "900", fontSize: "14px", color: "white", lineHeight: 1 }}>+</span>
+                            <span className="absolute top-[6px] right-[10px] font-black text-sm text-white leading-none">+</span>
                         </button>
                     </div>
                 </div>
@@ -899,8 +869,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                         return Math.max(-1, Math.min(22, 23 - (spriteCenter / h) * 23));
                     })()}
                 >
-                    <div ref={stageContainerRef} className="stage" style={{
-                        width: '100%', height: '100%', position: "relative", overflow: "visible",
+                    <div ref={stageContainerRef} className="stage w-full h-full relative overflow-visible" style={{
                         background: currentScene.backgroundImage
                             ? `url(${currentScene.backgroundImage}) center/cover no-repeat`
                             : (currentScene.background || 'transparent'),
@@ -911,17 +880,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                                 autoPlay
                                 playsInline
                                 muted
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    zIndex: 0,
-                                    transform: "scaleX(-1)",
-                                    borderRadius: "4px",
-                                }}
+                                className="absolute top-0 left-0 w-full h-full object-cover z-0 -scale-x-100 rounded"
                             />
                         )}
                         {sprites.map(sprite => (
@@ -944,7 +903,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                             ref={canvasRef}
                             width={stageSize.width}
                             height={stageSize.height}
-                            style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 5, width: '100%', height: '100%' }}
+                            className="absolute top-0 left-0 pointer-events-none z-5 w-full h-full"
                         />
                     </div>
                 </RightPanel>

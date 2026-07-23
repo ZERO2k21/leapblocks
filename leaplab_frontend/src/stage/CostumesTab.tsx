@@ -343,7 +343,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         };
 
         return (
-            <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden min-h-0 w-full" key={`${selectedSprite.id}-${refreshTick}`} onClick={handleContainerClick}>
+            <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden min-h-0 w-full" key={`${selectedSprite.id}-${refreshTick}`} onClick={handleContainerClick}>
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -352,8 +352,8 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     onChange={onUploadCostume}
                 />
                 <div className="flex h-full w-full min-h-0">
-                    <div className="w-[180px] border-r border-gray-200 bg-white flex flex-col">
-                        <div className="h-[40px] flex items-center px-3 font-bold text-[#4c2f8e] border-b border-[#EEEAF8]">Costumes</div>
+                    <div className="w-44 border-r border-slate-200 bg-white flex flex-col">
+                        <div className="h-10 flex items-center px-3 font-bold text-purple-900 border-b border-purple-100">Costumes</div>
                         <div className="flex-1 overflow-y-auto p-2">
                             {allCostumes.map((c, i) => {
                                 const isActive = i === activeCostumeIndex;
@@ -393,13 +393,13 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                             selectCostume(i);
                                         }}
                                         className={`relative h-[90px] rounded-xl border mb-2 flex items-center gap-2 p-2 cursor-pointer transition-all duration-200 ${
-                                            isActive ? 'border-2 border-purple-600 bg-purple-600/8' : 'border-[#ECEAF5] bg-white'
-                                        } ${isDragging ? 'opacity-60 scale-105 shadow-xl shadow-black/18' : ''}`}
+                                            isActive ? 'border-2 border-purple-600 bg-purple-600/10' : 'border-purple-100 bg-white'
+                                        } ${isDragging ? 'opacity-60 scale-105 shadow-xl shadow-black/20' : ''}`}
                                     >
                                         {dropIndex === i && draggedIndex !== null && draggedIndex !== i && <div className="absolute left-1.5 right-1.5 -top-0.5 h-0.5 bg-purple-600 rounded-xs" />}
                                         <div className="text-zinc-400 text-sm select-none">⠿</div>
-                                        <div className="w-[60px] h-[60px] rounded-lg bg-white border border-gray-200 flex items-center justify-center relative shrink-0">
-                                            <span className="absolute top-1 left-1 min-w-[16px] h-4 rounded-full px-1 bg-gray-400 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                                        <div className="w-[60px] h-[60px] rounded-lg bg-white border border-slate-200 flex items-center justify-center relative shrink-0">
+                                            <span className="absolute top-1 left-1 min-w-[16px] h-4 rounded-full px-1 bg-slate-400 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
                                             <img src={c.image} alt={c.name} className="w-full h-full object-contain p-0.5" />
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -422,11 +422,11 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                                         if (e.key === 'Enter') saveRename(i);
                                                         if (e.key === 'Escape') setRenameIndex(null);
                                                     }}
-                                                    className="w-full border-none border-b border-purple-600 outline-none text-xs text-gray-700 bg-transparent py-0.5"
+                                                    className="w-full border-0 border-b border-purple-600 outline-none text-xs text-slate-700 bg-transparent py-0.5"
                                                 />
                                             ) : (
                                                 <div
-                                                    className={`text-gray-600 text-xs leading-tight line-clamp-2 overflow-hidden text-ellipsis ${isActive ? 'font-bold' : ''}`}
+                                                    className={`text-slate-600 text-xs leading-tight line-clamp-2 overflow-hidden text-ellipsis ${isActive ? 'font-bold' : ''}`}
                                                     onDoubleClick={(e) => {
                                                         e.stopPropagation();
                                                         console.log(LOG_PREFIX, 'DOUBLE_CLICK name | index:', i, 'name:', c.name);
@@ -442,13 +442,14 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                 );
                             })}
                         </div>
-                        <div className="border-t border-[#EEEAF8] p-2 grid grid-cols-3 gap-1.5">
-                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Choose button'); onOpenLibrary?.(); }}>🐱 Choose</button>
-                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Paint button'); createBlankCostume(); }}>🎨 Paint</button>
-                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Surprise button'); addSurpriseCostume(); }}>😮 Surprise</button>
-                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Upload button'); fileInputRef.current?.click(); }}>⬆️ Upload</button>
+                        <div className="border-t border-purple-100 p-2 grid grid-cols-3 gap-1.5">
+                            <button type="button" className="border border-purple-200 bg-white text-purple-900 rounded-lg p-2 px-1 text-xs font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Choose button'); onOpenLibrary?.(); }}>🐱 Choose</button>
+                            <button type="button" className="border border-purple-200 bg-white text-purple-900 rounded-lg p-2 px-1 text-xs font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Paint button'); createBlankCostume(); }}>🎨 Paint</button>
+                            <button type="button" className="border border-purple-200 bg-white text-purple-900 rounded-lg p-2 px-1 text-xs font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Surprise button'); addSurpriseCostume(); }}>😮 Surprise</button>
+                            <button type="button" className="border border-purple-200 bg-white text-purple-900 rounded-lg p-2 px-1 text-xs font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Upload button'); fileInputRef.current?.click(); }}>⬆️ Upload</button>
                             <button
-                                className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50"
+                                type="button"
+                                className="border border-purple-200 bg-white text-purple-900 rounded-lg p-2 px-1 text-xs font-bold cursor-pointer hover:bg-purple-50"
                                 onClick={async () => {
                                     console.log(LOG_PREFIX, 'CLICK Camera button');
                                     try {
@@ -459,7 +460,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                         const box = document.createElement('div');
                                         box.className = 'bg-white rounded-2xl overflow-hidden w-[480px] max-w-[90vw] shadow-2xl';
                                         const header = document.createElement('div');
-                                        header.className = 'bg-[#7B4FC4] p-3 px-5 flex items-center justify-between';
+                                        header.className = 'bg-purple-600 p-3 px-5 flex items-center justify-between';
                                         header.innerHTML = '<span className="text-white font-bold">📷 Camera Capture</span>';
                                         const closeBtn = document.createElement('button');
                                         closeBtn.textContent = '×';

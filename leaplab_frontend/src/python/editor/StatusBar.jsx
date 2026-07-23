@@ -7,7 +7,7 @@ import React from "react";
 
 export default function StatusBar({ editorCursor, isRunning, activeFile }) {
     return (
-        <div className="h-5.5 bg-[#7C3AED] flex items-center px-3 text-[11px] text-white/85 gap-4 shrink-0 font-sans">
+        <div className="h-6 bg-violet-600 flex items-center px-3 text-xs text-white/90 gap-4 shrink-0 font-sans">
             <span>Python 3</span>
             <span>Ln {editorCursor.line}, Col {editorCursor.col}</span>
             <span>{isRunning ? "● Running" : "○ Ready"}</span>

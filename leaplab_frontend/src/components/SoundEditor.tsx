@@ -632,7 +632,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                 type="file"
                 accept="audio/*"
                 onChange={handleUpload}
-                style={{ display: 'none' }}
+                className="hidden"
             />
 
             <SoundLibrary

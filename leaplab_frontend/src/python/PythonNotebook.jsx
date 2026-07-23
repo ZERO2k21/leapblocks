@@ -354,7 +354,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
             <div
                 key={cell.id}
                 className={`group relative mb-4 rounded-lg border-2 transition-all ${isActive
-                        ? "border-leap-purple shadow-lg shadow-purple-100"
+                        ? "border-purple-600 shadow-lg shadow-purple-100"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                 onClick={() => setActiveCellId(cell.id)}
@@ -491,17 +491,18 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             {/* ══ TOPBAR ══════════════════════════════════════════════════════ */}
-            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md shrink-0 bg-[#5A2D82]">
+            <header className="h-12 flex items-center px-4 justify-between text-white z-10 shadow-md shrink-0 bg-purple-900">
                 <div className="flex items-center gap-4">
                     <button
+                        type="button"
                         onClick={onBack}
-                        className="flex items-center gap-2 hover:opacity-80 transition"
+                        className="flex items-center gap-2 hover:opacity-80 transition bg-transparent border-0 text-white cursor-pointer"
                     >
                         <ArrowLeft size={18} />
                         <Logo height={48} />
                     </button>
                     <div className="w-px h-5 bg-white/30" />
-                    <span className="text-sm opacity-85 font-extrabold tracking-widest text-yellow-400">NOTEBOOK</span>
+                    <span className="text-sm opacity-85 font-extrabold tracking-widest text-amber-400">NOTEBOOK</span>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Notebook name */}
@@ -509,7 +510,7 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                         <input
                             value={notebookName}
                             onChange={(e) => setNotebookName(e.target.value)}
-                            className="bg-transparent border-none text-white w-32 outline-none text-sm"
+                            className="bg-transparent border-0 text-white w-32 outline-none text-sm font-sans placeholder-white/50"
                         />
                         <Save size={14} className="opacity-80 cursor-pointer" />
                         <Download
@@ -524,16 +525,18 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     </div>
                     {/* Switch to IDE button */}
                     <button
+                        type="button"
                         onClick={onSwitchToIDE}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-sm font-semibold transition"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-sm font-semibold transition border-0 text-white cursor-pointer"
                     >
                         <Terminal size={14} />
                         Switch to IDE
                     </button>
                     <div className="w-px h-5 bg-white/30" />
                     <button
+                        type="button"
                         onClick={() => setShowGuide(g => !g)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold border border-white/25 transition ${showGuide ? "bg-white/30" : "bg-white/12"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-semibold border border-white/25 transition cursor-pointer text-white ${showGuide ? "bg-white/30" : "bg-white/10"
                             }`}
                     >
                         <HelpCircle size={14} /> Guide
@@ -544,11 +547,11 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <LeapLabAuthButton variant="dark" size="sm" className="h-8 rounded box-border" />
 
                     {/* CREOLEAP Right Logo */}
-                    <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0 h-[34px] overflow-hidden drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]">
+                    <div className="hidden min-[1200px]:flex ml-3 items-center shrink-0 h-[34px] overflow-hidden drop-shadow-md">
                         <img
                             src="assets/logo-creoleap.png"
                             alt="CREOLEAP"
-                            className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.2] contrast-[1.06]"
+                            className="w-[145px] h-auto object-contain block shrink-0 brightness-125 contrast-110"
                         />
                     </div>
                 </div>
@@ -567,14 +570,16 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                     <div className="w-px h-5 bg-gray-200" />
                     {/* Cell type selector */}
                     <button
+                        type="button"
                         onClick={() => addCell(activeCellId, "code")}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition border-0 bg-transparent cursor-pointer"
                     >
                         <Plus size={12} /> Code
                     </button>
                     <button
+                        type="button"
                         onClick={() => addCell(activeCellId, "markdown")}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded transition"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded transition border-0 bg-transparent cursor-pointer"
                     >
                         <Plus size={12} /> Markdown
                     </button>
@@ -582,20 +587,23 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
                 <div className="flex items-center gap-2">
                     {/* Run controls */}
                     <button
+                        type="button"
                         onClick={() => executeCell(activeCellId)}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 rounded transition"
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 rounded transition border-0 bg-transparent cursor-pointer"
                     >
                         <Play size={12} /> Run Cell
                     </button>
                     <button
+                        type="button"
                         onClick={executeAllCells}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-100 rounded transition"
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 rounded transition border-0 bg-transparent cursor-pointer"
                     >
                         <Zap size={12} /> Run All
                     </button>
                     <button
+                        type="button"
                         onClick={clearAllOutputs}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition"
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded transition border-0 bg-transparent cursor-pointer"
                     >
                         <RotateCcw size={12} /> Clear Outputs
                     </button>
@@ -620,8 +628,9 @@ export default function PythonNotebook({ onBack, onSwitchToIDE }) {
 
                         {/* Add Cell Button */}
                         <button
+                            type="button"
                             onClick={() => addCell(cells[cells.length - 1].id, "code")}
-                            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 hover:border-leap-purple hover:text-leap-purple transition flex items-center justify-center gap-2"
+                            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 hover:border-purple-600 hover:text-purple-600 transition flex items-center justify-center gap-2 bg-transparent cursor-pointer"
                         >
                             <Plus size={16} /> Add Cell
                         </button>

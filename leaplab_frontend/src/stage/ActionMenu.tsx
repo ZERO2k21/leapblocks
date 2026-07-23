@@ -60,8 +60,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             onMouseLeave={handleLeave}
         >
             {/* ── Drop-up pill menu ──────────────────────────────────────── */}
-            <div className={`absolute bottom-[52px] left-1/2 flex flex-col items-center gap-0.5 py-2.5 bg-[#3D1A6E] rounded-[22px] w-[44px] shadow-[0_8px_24px_rgba(0,0,0,0.35)] z-[200] transition-all duration-180 ${
-                open ? 'opacity-100 visible -translate-x-1/2 translate-y-0 pointer-events-auto' : 'opacity-0 invisible -translate-x-1/2 translate-y-[10px] pointer-events-none'
+            <div className={`absolute bottom-13 left-1/2 flex flex-col items-center gap-0.5 py-2.5 bg-purple-950 rounded-full w-11 shadow-2xl z-40 transition-all duration-150 ${
+                open ? 'opacity-100 visible -translate-x-1/2 translate-y-0 pointer-events-auto' : 'opacity-0 invisible -translate-x-1/2 translate-y-2.5 pointer-events-none'
             }`}>
                 {actions.map((action) => (
                     <div
@@ -71,16 +71,17 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                         onMouseLeave={() => setHoveredId(null)}
                     >
                         {/* Tooltip — crimson pill to the left */}
-                        <div className={`absolute right-[52px] top-1/2 -translate-y-1/2 bg-[#E6194B] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap pointer-events-none transition-opacity duration-150 shadow-[0_2px_8px_rgba(230,25,75,0.4)] z-[201] ${
+                        <div className={`absolute right-13 top-1/2 -translate-y-1/2 bg-rose-600 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap pointer-events-none transition-opacity duration-150 shadow-md shadow-rose-600/40 z-50 ${
                             hoveredId === action.id ? 'opacity-100' : 'opacity-0'
                         }`}>
                             {action.label}
                             {/* Arrow pointing right */}
-                            <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[6px] border-l-[#E6194B]" />
+                            <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-[6px] border-l-rose-600" />
                         </div>
 
                         {/* Icon button */}
                         <button
+                            type="button"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setOpen(false);
@@ -88,7 +89,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                                 action.onClick();
                             }}
                             title={action.label}
-                            className={`w-8 h-8 rounded-full border-none text-white flex items-center justify-center cursor-pointer transition-colors duration-150 shrink-0 ${
+                            className={`w-8 h-8 rounded-full border-0 text-white flex items-center justify-center cursor-pointer transition-colors duration-150 shrink-0 ${
                                 hoveredId === action.id ? 'bg-white/15' : 'bg-transparent'
                             }`}
                         >
@@ -99,13 +100,14 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             </div>
 
             {/* ── Main FAB ──────────────────────────────────────────────── */}
-            <div className="relative w-[44px] h-[44px] flex items-center justify-center">
+            <div className="relative w-11 h-11 flex items-center justify-center">
                 {/* Glow ring */}
-                <div className={`absolute -inset-[5px] rounded-full transition-colors duration-200 ${
-                    open ? 'bg-[#E6194B]/20' : 'bg-[#8B5CF6]/22'
+                <div className={`absolute -inset-1.25 rounded-full transition-colors duration-200 ${
+                    open ? 'bg-rose-600/20' : 'bg-purple-500/20'
                 }`} />
 
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation();
                         if (!open) {
@@ -117,10 +119,10 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                         }
                     }}
                     title={tooltipLabel}
-                    className={`w-[44px] h-[44px] rounded-full border-none text-white flex items-center justify-center cursor-pointer transition-all duration-200 relative z-[201] shrink-0 ${
+                    className={`w-11 h-11 rounded-full border-0 text-white flex items-center justify-center cursor-pointer transition-all duration-200 relative z-50 shrink-0 ${
                         open
-                            ? 'bg-[#E6194B] shadow-[0_4px_14px_rgba(230,25,75,0.5)] scale-108'
-                            : 'bg-[#6c3fc5] shadow-[0_4px_12px_rgba(108,63,197,0.45)] scale-100'
+                            ? 'bg-rose-600 shadow-lg shadow-rose-600/50 scale-105'
+                            : 'bg-purple-600 shadow-lg shadow-purple-600/45 scale-100'
                     }`}
                 >
                     {mainIcon}

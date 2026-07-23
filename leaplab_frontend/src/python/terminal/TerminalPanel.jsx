@@ -8,12 +8,12 @@ import { Play, Square, Trash2, Package, CornerDownLeft } from "lucide-react";
 import PipPanel from "../panels/PipPanel";
 
 const getLogTextColor = (type, text) => {
-    if (type === "error") return "text-[#F44747]";
-    if (type === "success") return "text-[#6A9955]";
-    if (type === "info") return (text.includes("🤖") || text.includes("➡️") || text.includes("🏃") || text.includes("🎭")) ? "text-[#9CDCFE]" : "text-[#569CD6]";
-    if (type === "warning") return "text-[#FFD700]";
-    if (type === "repl-in") return "text-[#C586C0]";
-    return "text-[#D4D4D4]";
+    if (type === "error") return "text-red-400";
+    if (type === "success") return "text-emerald-400";
+    if (type === "info") return (text.includes("🤖") || text.includes("➡️") || text.includes("🏃") || text.includes("🎭")) ? "text-sky-300" : "text-sky-400";
+    if (type === "warning") return "text-amber-300";
+    if (type === "repl-in") return "text-purple-300";
+    return "text-slate-300";
 };
 
 export default function TerminalPanel({
@@ -62,16 +62,17 @@ export default function TerminalPanel({
 
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span className="text-xs">▶</span> },
-        { id: "repl", label: "REPL", icon: <span className="text-[11px]">{">>>"}</span> },
+        { id: "repl", label: "REPL", icon: <span className="text-xs font-mono">{">>>"}</span> },
         { id: "shell", label: "Shell", icon: <span className="text-xs font-mono">$_</span> },
     ];
 
     return (
-        <div className="flex flex-col border-t border-gray-200 bg-white shrink-0" style={{ height: terminalHeight }}>
-            <div className="flex bg-[#F5F5F5] border-b border-gray-200 h-8 items-center">
+        <div className="flex flex-col border-t border-slate-200 bg-white shrink-0" style={{ height: terminalHeight }}>
+            <div className="flex bg-slate-100 border-b border-slate-200 h-8 items-center">
                 {tabs.map(({ id, label, icon }) => (
-                    <div
+                    <button
                         key={id}
+                        type="button"
                         onClick={() => {
                             setActivePanel(id);
                             if (id === "repl") {
@@ -80,12 +81,12 @@ export default function TerminalPanel({
                         }}
                         className={`px-3.5 h-full flex items-center gap-1.5 cursor-pointer text-xs font-semibold border-b-2 transition-colors ${
                             activePanel === id
-                                ? "text-[#8B5CF6] border-[#8B5CF6] bg-white"
-                                : "text-gray-500 border-transparent bg-transparent"
+                                ? "text-purple-600 border-purple-600 bg-white"
+                                : "text-slate-500 border-transparent bg-transparent"
                         }`}
                     >
                         {icon} {label}
-                    </div>
+                    </button>
                 ))}
             </div>
 
@@ -96,11 +97,11 @@ export default function TerminalPanel({
                             terminalInputRef.current?.focus();
                         }
                     }}
-                    className={`flex-1 flex flex-col overflow-hidden bg-[#1E1E1E] ${isWaitingForInput ? "cursor-text" : "cursor-default"}`}
+                    className={`flex-1 flex flex-col overflow-hidden bg-zinc-900 ${isWaitingForInput ? "cursor-text" : "cursor-default"}`}
                 >
                     <div className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed">
                         {terminalOutput.length === 0 ? (
-                            <div className="text-[#6A9955] italic">
+                            <div className="text-emerald-500 italic">
                                 <div>// LeapBlocks Python Terminal</div>
                                 <div>// Click Run or Run All to execute</div>
                                 <div>// Open the REPL tab for interactive commands</div>
@@ -112,14 +113,14 @@ export default function TerminalPanel({
                                     key={i}
                                     className={`mb-0.5 whitespace-pre-wrap break-words ${getLogTextColor(log.type, log.text)} ${
                                         isSpecialInfo
-                                            ? "border-l-2 border-[#9CDCFE] pl-2"
+                                            ? "border-l-2 border-sky-300 pl-2"
                                             : log.type === "repl-in"
                                                 ? "pl-0"
                                                 : "pl-1"
                                     }`}
                                 >
-                                    {log.type === "repl-in" ? <span className="select-none text-[#6A9955]">{">>> "}</span> : null}
-                                    {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-[#F44747]">✗ </span> : null}
+                                    {log.type === "repl-in" ? <span className="select-none text-emerald-500">{">>> "}</span> : null}
+                                    {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-red-400">✗ </span> : null}
                                     {log.text}
                                 </div>
                             );
@@ -127,22 +128,22 @@ export default function TerminalPanel({
                         {isWaitingForInput && (
                             <div className="flex items-center gap-1.5 mt-1 font-mono text-xs">
                                 {inputPromptText ? (
-                                    <span className="text-[#CE9178]">{inputPromptText}</span>
+                                    <span className="text-amber-400">{inputPromptText}</span>
                                 ) : (
-                                    <span className="text-[#8B5CF6] font-bold">❯ </span>
+                                    <span className="text-purple-500 font-bold">❯ </span>
                                 )}
                                 <input
                                     ref={terminalInputRef}
                                     value={terminalInputValue}
                                     onChange={(e) => setTerminalInputValue(e.target.value)}
                                     onKeyDown={handleTerminalInputKey}
-                                    className="flex-1 border-none outline-none font-mono text-xs bg-transparent text-[#D4D4D4] caret-[#D4D4D4]"
+                                    className="flex-1 border-0 outline-none font-mono text-xs bg-transparent text-slate-300 caret-slate-300"
                                     autoFocus
                                 />
                             </div>
                         )}
                         {isRunning && !isWaitingForInput && (
-                            <div className="text-[#569CD6] mt-1">
+                            <div className="text-sky-400 mt-1">
                                 <span className="animate-pulse">▋</span> Running...
                             </div>
                         )}
@@ -153,27 +154,27 @@ export default function TerminalPanel({
 
             {activePanel === "repl" && (
                 <div className="flex-1 flex flex-col overflow-hidden">
-                    <div className={`py-1.5 px-3.5 text-[11px] border-b border-gray-200 ${isWaitingForInput ? "text-[#CE9178]" : "text-gray-500"}`}>
+                    <div className={`py-1.5 px-3.5 text-xs border-b border-slate-200 ${isWaitingForInput ? "text-amber-500 font-medium" : "text-slate-500"}`}>
                         {isWaitingForInput
                             ? "⌨ Program needs input — type your response and press Enter"
                             : "Interactive Python REPL - type commands and press Enter"}
                     </div>
                     <div className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed">
                         {isWaitingForInput ? (
-                            <div className="text-[#CE9178] mb-2">
+                            <div className="text-amber-500 mb-2">
                                 <span className="font-semibold">⏸ Program paused for input</span>
                                 <div className="mt-1 italic">"{inputPromptText}"</div>
-                                <div className="mt-2 text-gray-500">Type your response below and press Enter to continue.</div>
+                                <div className="mt-2 text-slate-500">Type your response below and press Enter to continue.</div>
                             </div>
                         ) : (
                             <>
-                                <div className="text-gray-500">Python 3 — LeapBlocks Interactive Shell</div>
-                                <div className="text-gray-500 mb-2">Type Python code and press Enter. Use up/down arrows for history.</div>
+                                <div className="text-slate-500">Python 3 — LeapBlocks Interactive Shell</div>
+                                <div className="text-slate-500 mb-2">Type Python code and press Enter. Use up/down arrows for history.</div>
                             </>
                         )}
                     </div>
-                    <div className="flex border-t border-gray-200 py-1.5 px-2.5 items-center gap-2 bg-[#FAFAFA]">
-                        <span className={`font-mono font-bold text-sm ${isWaitingForInput ? "text-[#CE9178]" : "text-[#8B5CF6]"}`}>
+                    <div className="flex border-t border-slate-200 py-1.5 px-2.5 items-center gap-2 bg-slate-50">
+                        <span className={`font-mono font-bold text-sm ${isWaitingForInput ? "text-amber-500" : "text-purple-600"}`}>
                             {isWaitingForInput ? "⌨" : ">>>"}
                         </span>
                         <input
@@ -182,11 +183,12 @@ export default function TerminalPanel({
                             onChange={(e) => setReplInput(e.target.value)}
                             onKeyDown={handleReplKey}
                             placeholder={isWaitingForInput ? "Provide response to program input..." : "Enter Python expression or statement..."}
-                            className="flex-1 border-none outline-none font-mono text-xs bg-transparent text-gray-800"
+                            className="flex-1 border-0 outline-none font-mono text-xs bg-transparent text-slate-800"
                         />
                         <button
+                            type="button"
                             onClick={handleReplSubmit}
-                            className="py-1 px-3 bg-[#8B5CF6] hover:bg-violet-600 text-white border-none rounded-md cursor-pointer text-xs font-bold transition-colors"
+                            className="py-1 px-3 bg-purple-600 hover:bg-purple-700 text-white border-0 rounded-md cursor-pointer text-xs font-bold transition-colors"
                         >
                             {isWaitingForInput ? "Send" : "Run"}
                         </button>
@@ -208,34 +210,34 @@ export default function TerminalPanel({
             {activePanel === "shell" && (
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {!isElectron ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#1E1E1E]">
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-zinc-900">
                             <div className="text-2xl mb-3 opacity-50">⚠</div>
-                            <div className="text-[#FFD700] text-sm font-semibold mb-2">
+                            <div className="text-amber-300 text-sm font-semibold mb-2">
                                 Shell is only available in desktop mode
                             </div>
-                            <div className="text-gray-400 text-xs text-center leading-relaxed">
+                            <div className="text-slate-400 text-xs text-center leading-relaxed">
                                 Install the LeapLab desktop app (.exe) for full terminal support.<br />
-                                You can then run commands like <span className="text-[#9CDCFE] font-mono">pip install numpy</span> directly.
+                                You can then run commands like <span className="text-sky-300 font-mono">pip install numpy</span> directly.
                             </div>
                         </div>
                     ) : (
                         <>
-                            <div className="py-1.5 px-3.5 text-[11px] text-gray-500 border-b border-gray-200 bg-[#FAFAFA]">
-                                System shell — type commands like <span className="font-mono text-[#8B5CF6]">pip install numpy</span> and press Enter
+                            <div className="py-1.5 px-3.5 text-xs text-slate-500 border-b border-slate-200 bg-slate-50">
+                                System shell — type commands like <span className="font-mono text-purple-600 font-semibold">pip install numpy</span> and press Enter
                             </div>
-                            <div className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed bg-[#1E1E1E]">
+                            <div className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed bg-zinc-900">
                                 {terminalOutput.length === 0 ? (
                                     <>
-                                        <div className="text-[#6A9955] italic mb-2">
+                                        <div className="text-emerald-500 italic mb-2">
                                             $ pip install &lt;package&gt;  — install Python packages
                                         </div>
-                                        <div className="text-[#6A9955] italic mb-2">
+                                        <div className="text-emerald-500 italic mb-2">
                                             $ python -c "import &lt;module&gt;"  — verify installation
                                         </div>
-                                        <div className="text-[#6A9955] italic mb-3">
+                                        <div className="text-emerald-500 italic mb-3">
                                             $ python -m pip list  — list installed packages
                                         </div>
-                                        <div className="text-[#569CD6] mb-1 text-[11px]">────────────────────────────────────────</div>
+                                        <div className="text-sky-400 mb-1 text-xs">────────────────────────────────────────</div>
                                     </>
                                 ) : terminalOutput.map((log, i) => (
                                     <div
@@ -244,22 +246,22 @@ export default function TerminalPanel({
                                             log.type === "repl-in" ? "pl-0" : "pl-1"
                                         }`}
                                     >
-                                        {log.type === "repl-in" ? <span className="select-none text-[#6A9955]">$ </span> : null}
-                                        {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-[#F44747]">✗ </span> : null}
+                                        {log.type === "repl-in" ? <span className="select-none text-emerald-500">$ </span> : null}
+                                        {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-red-400">✗ </span> : null}
                                         {log.text}
                                     </div>
                                 ))}
                                 <div ref={terminalEndRef} />
                             </div>
-                            <div className="flex border-t border-gray-200 py-1.5 px-2.5 items-center gap-2 bg-[#1E1E1E]">
-                                <span className="text-[#6A9955] font-mono font-bold text-sm">$</span>
+                            <div className="flex border-t border-slate-700 py-1.5 px-2.5 items-center gap-2 bg-zinc-900">
+                                <span className="text-emerald-500 font-mono font-bold text-sm">$</span>
                                 <input
                                     ref={shellInputRef}
                                     value={shellInput}
                                     onChange={(e) => setShellInput(e.target.value)}
                                     onKeyDown={handleShellKey}
                                     placeholder="Type a command and press Enter..."
-                                    className="flex-1 border-none outline-none font-mono text-xs bg-transparent text-[#D4D4D4] caret-[#D4D4D4]"
+                                    className="flex-1 border-0 outline-none font-mono text-xs bg-transparent text-slate-300 caret-slate-300"
                                     autoFocus={activePanel === "shell"}
                                 />
                             </div>

@@ -91,23 +91,23 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
   // ── colour tokens ────────────────────────────────────────────────────────
   const dk = isFullscreen;
-  const panelBg = dk ? "bg-[#16161a]" : "bg-white";
-  const gridBg = dk ? "bg-[#111115]" : "bg-[#F8F9FB]";
-  const infoBg = dk ? "bg-[#1c1c21]" : "bg-white";
-  const borderCol = dk ? "border-gray-700" : "border-gray-100";
-  const sidebarBg = dk ? "bg-[#1c1c21]" : "bg-white";
+  const panelBg = dk ? "bg-zinc-900" : "bg-white";
+  const gridBg = dk ? "bg-zinc-950" : "bg-slate-50";
+  const infoBg = dk ? "bg-zinc-900" : "bg-white";
+  const borderCol = dk ? "border-zinc-800" : "border-slate-100";
+  const sidebarBg = dk ? "bg-zinc-900" : "bg-white";
 
   const pill = `px-3 py-1.5 border ${borderCol} rounded-xl text-xs font-semibold
     focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none
-    ${dk ? "bg-[#26262d] text-gray-100" : "bg-slate-50 text-slate-700"}
+    ${dk ? "bg-zinc-800 text-zinc-100" : "bg-slate-50 text-slate-700"}
     disabled:opacity-40 transition-all`;
 
   const numPill = `w-[58px] px-1.5 py-1.5 border ${borderCol} rounded-xl text-xs font-bold text-center
     focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none
-    ${dk ? "bg-[#26262d] text-gray-100" : "bg-slate-50 text-slate-700"}
+    ${dk ? "bg-zinc-800 text-zinc-100" : "bg-slate-50 text-slate-700"}
     disabled:opacity-40 transition-all`;
 
-  const lbl = `text-[11px] font-bold flex-shrink-0 uppercase tracking-wider ${dk ? "text-gray-400" : "text-slate-400"}`;
+  const lbl = `text-xs font-bold flex-shrink-0 uppercase tracking-wider ${dk ? "text-zinc-400" : "text-slate-400"}`;
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${panelBg}`}>
@@ -130,14 +130,14 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           {!isStageSelected && selectedSprite && (
             <>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className={`text-xs select-none font-mono ${dk ? "text-gray-400" : "text-slate-400"}`}>↔</span>
+                <span className={`text-xs select-none font-mono ${dk ? "text-zinc-400" : "text-slate-400"}`}>↔</span>
                 <span className={lbl}>x</span>
                 <input type="number" value={Math.round(selectedSprite.x)}
                   onChange={(e) => selectedSprite.setX?.(Number(e.target.value))}
                   className={numPill} />
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className={`text-xs select-none font-mono ${dk ? "text-gray-400" : "text-slate-400"}`}>↕</span>
+                <span className={`text-xs select-none font-mono ${dk ? "text-zinc-400" : "text-slate-400"}`}>↕</span>
                 <span className={lbl}>y</span>
                 <input type="number" value={Math.round(selectedSprite.y)}
                   onChange={(e) => selectedSprite.setY?.(Number(e.target.value))}
@@ -153,21 +153,21 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
             <>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={lbl}>Show</span>
-                <button onClick={() => selectedSprite.show?.()} title="Show"
+                <button type="button" onClick={() => selectedSprite.show?.()} title="Show"
                   className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all duration-150
                     ${selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-md shadow-purple-200"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
+                      ? "border-purple-600 bg-purple-600 text-white shadow-md shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-zinc-800 text-zinc-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
-                <button onClick={() => selectedSprite.hide?.()} title="Hide"
+                <button type="button" onClick={() => selectedSprite.hide?.()} title="Hide"
                   className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all duration-150
                     ${!selectedSprite.visible
-                      ? "border-[#7b44c7] bg-[#7b44c7] text-white shadow-md shadow-purple-200"
-                      : `${borderCol} ${dk ? "bg-[#26262d] text-gray-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
+                      ? "border-purple-600 bg-purple-600 text-white shadow-md shadow-purple-200"
+                      : `${borderCol} ${dk ? "bg-zinc-800 text-zinc-400" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300"}`}`}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                     <line x1="1" y1="1" x2="23" y2="23" />
@@ -188,7 +188,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
               </div>
             </>
           ) : (
-            <p className={`text-xs font-medium ${dk ? "text-gray-500" : "text-slate-400"}`}>
+            <p className={`text-xs font-medium ${dk ? "text-zinc-500" : "text-slate-400"}`}>
               Stage backdrops cannot be moved or hidden.
             </p>
           )}
@@ -197,11 +197,6 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
       {/* ══════════════════════════════════════════════════════════════════
           MAIN ROW: sprite grid + stage sidebar
-          ─────────────────────────────────────────────────────────────────
-          Layout contract:
-            GRID_H   = 190px  (2+ rows of cards, scrolls after 10 sprites)
-            FOOTER_H = 60px   (FAB row, same on both sides)
-            TOTAL    = 250px  (both columns identical height → FABs aligned)
           ══════════════════════════════════════════════════════════════════ */}
       <div className={`flex flex-1 min-h-0 overflow-visible ${gridBg}`}>
 
@@ -211,7 +206,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
           {/* Scrollable grid */}
           <div
             className={`p-4 grid grid-cols-5 gap-3.5 content-start flex-1 max-h-[200px]
-              overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
+              overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent`}
           >
             {normalSprites.map((sprite) => {
               const isSelected = selectedSpriteId === sprite.id;
@@ -239,19 +234,20 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                       onCopyCodeToSprite?.(sourceId, sprite.id);
                     }
                   }}
-                  className={`relative group flex flex-col rounded-[20px] cursor-pointer aspect-square
+                  className={`relative group flex flex-col rounded-2xl cursor-pointer aspect-square
                     transition-all duration-200 border-2 select-none
                     ${isSelected
-                      ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
-                      : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
+                      ? `border-purple-600 ring-4 ring-purple-400/25 ${dk ? "bg-purple-950/40" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
+                      : `border-slate-200/90 ${dk ? "bg-zinc-900 border-zinc-700" : "bg-white hover:border-purple-600/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                     }`}
                 >
                   {/* Delete button — playful purple circle with cross */}
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); onDeleteSprite(sprite.id); }}
                     title="Delete sprite"
                     className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full
-                      bg-[#7b44c7] text-white flex items-center justify-center
+                      bg-purple-600 text-white flex items-center justify-center
                       shadow-md transition-all duration-150 z-30
                       hover:bg-rose-500 hover:scale-110 active:scale-95
                       ${isSelected ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"}`}
@@ -266,17 +262,17 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   {/* Clone badge */}
                   {cloneCount > 0 && (
                     <div className="absolute -top-1.5 -left-1.5 bg-amber-400 text-amber-950
-                      text-[10px] font-black w-5 h-5 rounded-full border-2 border-white
+                      text-xs font-black w-5 h-5 rounded-full border-2 border-white
                       flex items-center justify-center z-30 shadow-sm">
                       {cloneCount}
                     </div>
                   )}
 
                   {/* Sprite image container */}
-                  <div className={`flex-1 flex items-center justify-center p-0.5 min-h-0 overflow-hidden w-full rounded-t-[18px]
+                  <div className={`flex-1 flex items-center justify-center p-0.5 min-h-0 overflow-hidden w-full rounded-t-2xl
                     ${isSelected
-                      ? (dk ? "bg-[#251f38]" : "bg-gradient-to-b from-purple-50/70 to-white")
-                      : (dk ? "bg-[#18181c]" : "bg-gradient-to-b from-slate-50/90 to-white group-hover:from-purple-50/40")
+                      ? (dk ? "bg-purple-950/60" : "bg-gradient-to-b from-purple-50/70 to-white")
+                      : (dk ? "bg-zinc-950" : "bg-gradient-to-b from-slate-50/90 to-white group-hover:from-purple-50/40")
                     }`}>
                     {(() => {
                       const getCostumeSrc = (c: any): string => {
@@ -311,11 +307,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   </div>
 
                   {/* Name badge */}
-                  <div className={`text-center text-[10px] font-extrabold py-0.5 px-1
-                    truncate flex-shrink-0 transition-colors rounded-b-[18px] leading-snug tracking-tight
+                  <div className={`text-center text-xs font-extrabold py-0.5 px-1
+                    truncate flex-shrink-0 transition-colors rounded-b-2xl leading-snug tracking-tight
                     ${isSelected
-                      ? "bg-[#7b44c7] text-white shadow-inner"
-                      : `${dk ? "bg-[#26262d] text-gray-300 group-hover:bg-[#322c42] group-hover:text-purple-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
+                      ? "bg-purple-600 text-white shadow-inner"
+                      : `${dk ? "bg-zinc-800 text-zinc-300 group-hover:bg-purple-900/50 group-hover:text-purple-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
                     }`}>
                     {sprite.name}
                   </div>
@@ -402,7 +398,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
         </div>
 
         {/* ── RIGHT: stage sidebar ──────────────────────────────────── */}
-        <div className={`w-[96px] flex-shrink-0 border-l ${borderCol}
+        <div className={`w-24 flex-shrink-0 border-l ${borderCol}
           ${sidebarBg} flex flex-col overflow-visible`}>
 
           {/* Sidebar content */}
@@ -424,24 +420,24 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                   onCopyCodeToSprite?.(sourceId, 'stage');
                 }
               }}
-              className={`mx-3.5 mt-4 mb-2 rounded-[20px] cursor-pointer transition-all duration-200 border-2 select-none overflow-hidden
+              className={`mx-3.5 mt-4 mb-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 select-none overflow-hidden
                 ${isStageSelected
-                  ? `border-[#7b44c7] ring-4 ring-purple-400/25 ${dk ? "bg-[#1e1a2e]" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
-                  : `border-slate-200/90 ${dk ? "bg-[#1c1c21] border-gray-700" : "bg-white hover:border-[#7b44c7]/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
+                  ? `border-purple-600 ring-4 ring-purple-400/25 ${dk ? "bg-purple-950/40" : "bg-white"} shadow-lg shadow-purple-500/20 scale-[1.02]`
+                  : `border-slate-200/90 ${dk ? "bg-zinc-900 border-zinc-700" : "bg-white hover:border-purple-600/50 hover:shadow-md hover:shadow-purple-100 hover:-translate-y-0.5"}`
                 }`}
             >
               {/* "Stage" header */}
-              <div className={`text-center text-[12px] font-extrabold py-1.5 transition-colors tracking-wide
+              <div className={`text-center text-xs font-extrabold py-1.5 transition-colors tracking-wide
                 ${isStageSelected
-                  ? "bg-[#7b44c7] text-white"
-                  : `${dk ? "bg-[#26262d] text-gray-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
+                  ? "bg-purple-600 text-white"
+                  : `${dk ? "bg-zinc-800 text-zinc-300" : "bg-slate-100 text-slate-700 group-hover:bg-purple-100/80 group-hover:text-purple-900"}`
                 }`}>
                 Stage
               </div>
 
               {/* Backdrop thumbnail */}
               <div
-                className={`w-full overflow-hidden aspect-[4/3] ${dk ? "bg-[#26262d]" : "bg-slate-50"}`}>
+                className={`w-full overflow-hidden aspect-[4/3] ${dk ? "bg-zinc-800" : "bg-slate-50"}`}>
                 {currentBackdropSrc ? (
                   <img
                     src={currentBackdropSrc}
@@ -464,11 +460,11 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
             {/* Backdrops count */}
             <div className="text-center flex-shrink-0 pb-4 mt-2">
-              <p className={`text-[12px] leading-tight font-bold tracking-widest ${dk ? "text-gray-400" : "text-gray-400"}`}>
+              <p className={`text-xs leading-tight font-bold tracking-widest ${dk ? "text-zinc-400" : "text-slate-400"}`}>
                 Backdrops
               </p>
               <p className={`text-xl font-extrabold leading-tight mt-0.5
-                ${dk ? "text-[#7b44c7]/80" : "text-[#7b44c7]"}`}>
+                ${dk ? "text-purple-400" : "text-purple-600"}`}>
                 {backdropCount}
               </p>
             </div>

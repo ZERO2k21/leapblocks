@@ -48,24 +48,25 @@ export default function ActivityBar({
     ];
 
     return (
-        <div className="w-12 bg-[#2D2B55] flex flex-col items-center pt-2 shrink-0 border-r border-[#1E1B4B] relative overflow-visible">
+        <div className="w-12 bg-slate-900 flex flex-col items-center pt-2 shrink-0 border-r border-slate-800 relative overflow-visible">
             {ACTIVITY_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = sidePanel === item.id;
 
                 return (
-                    <div
+                    <button
                         key={item.id}
+                        type="button"
                         onClick={() => setSidePanel(item.id)}
                         title={item.label}
-                        className={`w-10 h-10 flex items-center justify-center cursor-pointer mb-1 rounded-md transition-all duration-150 border-l-[3px] ${
+                        className={`w-10 h-10 flex items-center justify-center cursor-pointer mb-1 rounded-md transition-all duration-150 border-l-4 ${
                             isActive
-                                ? "bg-[#8B5CF6]/30 border-[#8B5CF6]"
+                                ? "bg-purple-600/30 border-purple-500"
                                 : "bg-transparent border-transparent hover:bg-white/5"
                         }`}
                     >
-                        <Icon size={20} className={isActive ? "text-[#A78BFA]" : "text-gray-400"} />
-                    </div>
+                        <Icon size={20} className={isActive ? "text-purple-300" : "text-slate-400"} />
+                    </button>
                 );
             })}
 
@@ -73,17 +74,18 @@ export default function ActivityBar({
 
             <div ref={uploadAreaRef} className="relative pb-3.5 flex items-center justify-center">
                 {showUploadMenu && (
-                    <div className="absolute left-3 bottom-[72px] w-[184px] bg-[#181828]/96 border border-[#A78BFA]/25 rounded-2xl shadow-[0_18px_40px_rgba(15,23,42,0.28)] p-2 flex flex-col gap-1.5 z-30 backdrop-blur-md">
+                    <div className="absolute left-3 bottom-18 w-44 bg-slate-900/95 border border-purple-300/25 rounded-2xl shadow-2xl p-2 flex flex-col gap-1.5 z-30 backdrop-blur-md">
                         {uploadItems.map((item) => (
                             <button
                                 key={item.id}
+                                type="button"
                                 onClick={() => {
                                     setShowUploadMenu(false);
                                     item.onClick?.();
                                 }}
-                                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border-none bg-white/5 text-[#F5F3FF] cursor-pointer text-left hover:bg-white/10 transition-colors"
+                                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border-0 bg-white/5 text-purple-50 cursor-pointer text-left hover:bg-white/10 transition-colors"
                             >
-                                <span className="min-w-[34px] p-0.5 px-1.5 rounded-full bg-[#8B5CF6]/20 text-[#C4B5FD] text-[10px] font-bold font-mono text-center">
+                                <span className="min-w-9 p-0.5 px-1.5 rounded-full bg-purple-600/20 text-purple-200 text-xs font-bold font-mono text-center">
                                     {item.badge}
                                 </span>
                                 <span className="text-xs font-semibold">{item.label}</span>
@@ -93,12 +95,13 @@ export default function ActivityBar({
                 )}
 
                 <button
+                    type="button"
                     onClick={() => setShowUploadMenu((prev) => !prev)}
                     title="Upload Files"
-                    className="w-10.5 h-10.5 rounded-full border-[3px] border-white/75 bg-gradient-to-b from-[#FF3B7A] to-[#E11D48] cursor-pointer flex items-center justify-center relative shadow-[0_12px_28px_rgba(225,29,72,0.35)] hover:scale-105 transition-transform"
+                    className="w-10.5 h-10.5 rounded-full border-2 border-white/80 bg-gradient-to-b from-rose-500 to-rose-600 cursor-pointer flex items-center justify-center relative shadow-lg shadow-rose-600/30 hover:scale-105 transition-transform"
                 >
                     <Upload size={18} className="text-white" />
-                    <span className="absolute -top-0.75 -right-0.75 w-4 h-4 rounded-full bg-white text-[#E11D48] flex items-center justify-center shadow-[0_2px_8px_rgba(15,23,42,0.2)]">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-rose-600 flex items-center justify-center shadow-md">
                         <Plus size={11} />
                     </span>
                 </button>

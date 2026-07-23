@@ -34,7 +34,7 @@ export const SoundsTab: React.FC<SoundsTabProps> = ({
         const allSounds = stageManager.getAllSounds();
 
         return (
-            <div style={styles.container}>
+            <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden h-full w-full">
                 {isEmbedMode && (
                     <SpritePickerStrip
                         sprites={sprites}
@@ -72,7 +72,7 @@ export const SoundsTab: React.FC<SoundsTabProps> = ({
         const allSounds = selectedSprite.sounds;
 
         return (
-            <div style={styles.container}>
+            <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden h-full w-full">
                 {isEmbedMode && (
                     <SpritePickerStrip
                         sprites={sprites}
@@ -106,11 +106,11 @@ export const SoundsTab: React.FC<SoundsTabProps> = ({
 
     // Fallback if nothing is selected
     return (
-        <div style={styles.container}>
-            <div style={styles.placeholder}>
-                <span style={{ fontSize: '48px' }}>🎵</span>
-                <h3>No Sprite Selected</h3>
-                <p>Select a sprite or stage from the panel to edit its sounds.</p>
+        <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden h-full w-full">
+            <div className="flex-1 flex flex-col items-center justify-center text-purple-600 text-center p-8">
+                <span className="text-5xl mb-2">🎵</span>
+                <h3 className="text-lg font-bold text-slate-800 m-0">No Sprite Selected</h3>
+                <p className="text-sm text-slate-500 mt-1">Select a sprite or stage from the panel to edit its sounds.</p>
             </div>
         </div>
     );
@@ -127,114 +127,43 @@ const SpritePickerStrip: React.FC<{
     stageManager: StageManager;
 }> = ({ sprites, selectedSpriteId, onSelectSprite, stageManager }) => {
     const stageSounds = stageManager.getAllSounds();
-    const hasStageSounds = stageSounds.length > 0;
 
     return (
-        <div style={stripStyles.container}>
+        <div className="flex flex-row gap-1.5 p-1.5 px-3 border-b border-slate-200 overflow-x-auto overflow-y-hidden shrink-0 bg-slate-100 items-center">
             {/* Stage tile */}
             <div
-                style={{
-                    ...stripStyles.spriteTile,
-                    borderColor: selectedSpriteId === 'stage' ? '#855CD6' : '#e0e0e0',
-                    background: selectedSpriteId === 'stage' ? '#f0ebf7' : '#fff',
-                }}
+                className={`flex flex-col items-center gap-0.5 p-1 px-1.5 rounded-lg border-2 cursor-pointer transition-all shrink-0 min-w-13 max-w-16 ${
+                    selectedSpriteId === 'stage'
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
                 onClick={() => onSelectSprite?.('stage')}
                 title={`Stage (${stageSounds.length} sounds)`}
             >
-                <div style={stripStyles.spriteThumb}>
-                    <span style={{ fontSize: 18 }}>🎭</span>
+                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center">
+                    <span className="text-lg">🎭</span>
                 </div>
-                <div style={stripStyles.spriteLabel}>Stage</div>
+                <div className="text-[9px] font-semibold text-slate-600 text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-13">Stage</div>
             </div>
 
             {/* Sprite tiles */}
             {sprites.map((sprite) => (
                 <div
                     key={sprite.id}
-                    style={{
-                        ...stripStyles.spriteTile,
-                        borderColor: selectedSpriteId === sprite.id ? '#855CD6' : '#e0e0e0',
-                        background: selectedSpriteId === sprite.id ? '#f0ebf7' : '#fff',
-                    }}
+                    className={`flex flex-col items-center gap-0.5 p-1 px-1.5 rounded-lg border-2 cursor-pointer transition-all shrink-0 min-w-13 max-w-16 ${
+                        selectedSpriteId === sprite.id
+                            ? 'border-purple-600 bg-purple-50'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
                     onClick={() => onSelectSprite?.(sprite.id)}
                     title={`${sprite.name} (${sprite.sounds.length} sounds)`}
                 >
-                    <div style={stripStyles.spriteThumb}>
-                        <span style={{ fontSize: 18 }}>🐱</span>
+                    <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center">
+                        <span className="text-lg">🐱</span>
                     </div>
-                    <div style={stripStyles.spriteLabel}>{sprite.name}</div>
+                    <div className="text-[9px] font-semibold text-slate-600 text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-13">{sprite.name}</div>
                 </div>
             ))}
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#f9f9f9',
-        overflow: 'hidden',
-        height: '100%',
-        width: '100%'
-    },
-    placeholder: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#855CD6',
-        textAlign: 'center' as const,
-        padding: '2rem'
-    }
-};
-
-const stripStyles: { [key: string]: React.CSSProperties } = {
-    container: {
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '6px',
-        padding: '6px 12px',
-        borderBottom: '1px solid #e0e0e0',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        flexShrink: 0,
-        background: '#f5f5f5',
-        alignItems: 'center',
-    },
-    spriteTile: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '2px',
-        padding: '4px 6px',
-        borderRadius: '8px',
-        border: '2px solid #e0e0e0',
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        flexShrink: 0,
-        minWidth: '52px',
-        maxWidth: '64px',
-    },
-    spriteThumb: {
-        width: '32px',
-        height: '32px',
-        borderRadius: '6px',
-        background: '#f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    spriteLabel: {
-        fontSize: '9px',
-        fontWeight: 600,
-        color: '#666',
-        textAlign: 'center' as const,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap' as const,
-        maxWidth: '52px',
-    },
 };

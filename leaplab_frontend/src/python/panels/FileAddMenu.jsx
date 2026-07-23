@@ -106,13 +106,13 @@ function Tooltip({ label, visible, placement = "right" }) {
         <div
             className={`absolute top-1/2 -translate-y-1/2 ${
                 isLeft ? "right-[calc(100%+10px)]" : "left-[calc(100%+10px)]"
-            } bg-[#222] text-white rounded-md px-2.5 py-1.5 text-[11px] font-semibold whitespace-nowrap shadow-[0_8px_18px_rgba(0,0,0,0.22)] pointer-events-none z-20`}
+            } bg-zinc-900 text-white rounded-md px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap shadow-xl pointer-events-none z-20`}
         >
             <span
                 className={`absolute top-1/2 -mt-1.25 w-0 h-0 ${
                     isLeft
-                        ? "-right-1.5 border-y-5 border-y-transparent border-l-[6px] border-l-[#222]"
-                        : "-left-1.5 border-y-5 border-y-transparent border-r-[6px] border-r-[#222]"
+                        ? "-right-1.5 border-y-4 border-y-transparent border-l-[6px] border-l-zinc-900"
+                        : "-left-1.5 border-y-4 border-y-transparent border-r-[6px] border-r-zinc-900"
                 }`}
             />
             {label}
@@ -231,7 +231,7 @@ function FloatingActionMenu({
                                 action.onClick?.();
                                 scheduleClose();
                             }}
-                            className={`w-8.5 h-8.5 rounded-full border-2 border-white bg-[#855CD6] text-white flex items-center justify-center cursor-pointer shadow-[0_10px_22px_rgba(91,63,168,0.28),0_4px_10px_rgba(15,23,42,0.14)] transition-all duration-160 ease-out hover:scale-105 ${
+                            className={`w-8.5 h-8.5 rounded-full border-2 border-white bg-purple-600 text-white flex items-center justify-center cursor-pointer shadow-lg shadow-purple-600/30 transition-all duration-160 ease-out hover:scale-105 ${
                                 isOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"
                             }`}
                             style={{ transitionDelay: isOpen ? `${index * 40}ms` : "0ms" }}
@@ -266,7 +266,7 @@ function FloatingActionMenu({
                             return next;
                         });
                     }}
-                    className={`w-9.5 h-9.5 rounded-full border-2 border-white bg-[#855CD6] text-white flex items-center justify-center cursor-pointer shadow-[0_10px_22px_rgba(91,63,168,0.28),0_4px_10px_rgba(15,23,42,0.14)] transition-transform duration-160 ease-out ${
+                    className={`w-9.5 h-9.5 rounded-full border-2 border-white bg-purple-600 text-white flex items-center justify-center cursor-pointer shadow-lg shadow-purple-600/30 transition-transform duration-160 ease-out ${
                         isOpen ? "scale-[1.04]" : "scale-100"
                     }`}
                 >

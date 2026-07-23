@@ -533,20 +533,7 @@ export const Stage: React.FC<StageProps> = ({
         // ── OUTER WRAPPER ──────────────────────────────────────────────────
         // CHANGED: overflow:hidden added, softer two-layer shadow, flex-center
         // alignment, borderRadius tightened to 6px.
-        <div style={{
-            position: 'relative',
-            width,
-            height,
-            // CHANGED: slightly warmer background vs pure white
-            backgroundColor: '#F8FAFC',
-            borderRadius: 6,           // was 8
-            overflow: 'hidden',        // NEW — clips canvas within border-radius
-            // CHANGED: softer two-layer shadow
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)',
-            display: 'flex',           // NEW — centres canvas when container shrinks
-            alignItems: 'center',
-            justifyContent: 'center',
-        }}>
+        <div className="relative bg-[#F8FAFC] rounded-[6px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] flex items-center justify-center" style={{ width, height }}>
 
             {/* ── CORNER MARKERS (smaller, violet) ─────────────────────── */}
             <div style={{ ...cornerBase, top: OFF, left: OFF,
@@ -573,13 +560,7 @@ export const Stage: React.FC<StageProps> = ({
                     autoPlay
                     playsInline
                     muted
-                    style={{
-                        position: 'absolute',
-                        top: 0, left: 0,
-                        width: '100%', height: '100%',
-                        objectFit: 'cover',
-                        transform: 'scaleX(-1)',
-                    }}
+                    className="absolute top-0 left-0 w-full h-full object-cover -scale-x-100"
                 />
             )}
 
@@ -587,26 +568,13 @@ export const Stage: React.FC<StageProps> = ({
             <div
                 id="video-playback-container"
                 ref={videoPlaybackContainerRef}
-                style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '100%', height: '100%',
-                    display: 'none',
-                    overflow: 'hidden',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full hidden overflow-hidden pointer-events-none z-[1]"
             >
                 <video
                     id="video-playback"
                     ref={videoPlaybackRef}
                     playsInline
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                    }}
+                    className="w-full h-full object-contain"
                 />
             </div>
 

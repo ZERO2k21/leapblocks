@@ -123,7 +123,7 @@ export function HSBColorPicker({ color, onChange, onClose, title = "Color", onEy
     const hueColorHex = hsbToHex(hsb.h, 100, 100);
 
     return (
-        <div ref={popupRef} className="absolute z-50 bg-white border border-gray-200 rounded-xl shadow-2xl w-64 p-4 flex flex-col gap-4 font-sans select-none" style={{ top: '100%', left: 0, marginTop: '8px' }}>
+        <div ref={popupRef} className="absolute z-50 bg-white border border-gray-200 rounded-xl shadow-2xl w-64 p-4 flex flex-col gap-4 font-sans select-none top-full left-0 mt-2">
             {/* Header: Presets & Tools */}
             <div className="flex items-center justify-between">
                 <div className="flex gap-1.5">

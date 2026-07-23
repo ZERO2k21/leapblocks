@@ -90,9 +90,10 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     return (
         <div ref={menuRef} className="relative">
             <button
+                type="button"
                 onClick={onToggle}
-                className={`flex items-center gap-[5px] px-2 py-1 border-none text-white text-[15px] font-medium font-sans cursor-pointer rounded transition-all duration-200 ${
-                    isOpen ? 'bg-white/18 backdrop-blur-[4px]' : 'bg-transparent hover:bg-white/15'
+                className={`flex items-center gap-1.5 px-2 py-1 border-0 text-white text-sm font-medium font-sans cursor-pointer rounded transition-all duration-200 ${
+                    isOpen ? 'bg-white/20 backdrop-blur-xs' : 'bg-transparent hover:bg-white/15'
                 }`}
             >
                 {Icon && <Icon size={14} strokeWidth={2.2} className="opacity-90" />}
@@ -107,7 +108,7 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
             </button>
 
             {isOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 bg-white/95 backdrop-blur-[20px] rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08)] border border-white/60 min-w-[160px] overflow-hidden z-[1000] py-1 animate-[pyMenuSlideIn_0.1s_ease-out]">
+                <div className="absolute top-full mt-1.5 left-0 bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl border border-white/60 min-w-40 overflow-hidden z-50 py-1 animate-[pyMenuSlideIn_0.1s_ease-out]">
                     <style>{`
                         @keyframes pyMenuSlideIn {
                             from { opacity: 0; transform: translateY(-4px) scale(0.98); }
@@ -116,22 +117,23 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} className="h-px bg-black/8 my-1 mx-3" />
+                            <div key={idx} className="h-px bg-black/10 my-1 mx-3" />
                         ) : (
                             <button
                                 key={idx}
+                                type="button"
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                className={`flex items-center gap-[10px] w-full px-3.5 py-1.75 border-none text-xs font-sans font-medium text-left transition-all duration-150 ${
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-0 text-xs font-sans font-medium text-left transition-all duration-150 ${
                                     item.disabled
-                                        ? 'cursor-not-allowed text-gray-300 bg-transparent'
-                                        : 'cursor-pointer text-gray-700 bg-transparent hover:bg-[#7c3aed]/10 hover:text-[#5A2D82]'
+                                        ? 'cursor-not-allowed text-slate-300 bg-transparent'
+                                        : 'cursor-pointer text-slate-700 bg-transparent hover:bg-purple-600/10 hover:text-purple-900'
                                 }`}
                             >
-                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} className="opacity-80" />}
+                                {item.icon && <item.icon size={14} strokeWidth={2} className="text-purple-600 opacity-80" />}
                                 <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1 py-0.5 rounded">
+                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded">
                                         {item.shortcut}
                                     </span>
                                 )}
@@ -2487,15 +2489,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
             : uploadTerminalOutput;
 
         return (
-            <div style={{
-                flex: 1,
-                overflowY: "auto",
-                background: "#fff",
-                padding: "12px 14px",
-                fontFamily: "'Cascadia Code', Consolas, monospace",
-                fontSize: 12,
-                lineHeight: 1.55,
-            }}>
+            <div className="flex-1 overflow-y-auto bg-white px-3.5 py-3 text-xs leading-[1.55]" style={{ fontFamily: "'Cascadia Code', Consolas, monospace" }}>
                 {lines.map((entry, index) => {
                     const type = entry.type || "info";
                     const color = type === "error"
@@ -2920,7 +2914,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
                         {/* CREOLEAP Right Logo */}
                         <div className="ml-3 flex items-center shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] pointer-events-none">
-                            <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
+                            <CreoleapLogo height={200} className="pointer-events-none" />
                         </div>
                     </>
                 )}
@@ -3243,8 +3237,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             {/* ══ MAIN WORKSPACE ═══════════════════════════════════════════════ */}
             {workflowMode === "stage" ? (
-                <div style={{ flex: 1, display: "flex", overflow: "auto", minHeight: 0 }}>
-
+                <div className="flex-1 flex overflow-auto min-h-0">
 
 
                     {/* ── LEFT SIDEBAR (LeapBlox Style) ── */}

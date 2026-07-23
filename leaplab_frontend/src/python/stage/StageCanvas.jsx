@@ -152,12 +152,12 @@ const SpriteRenderer = ({ sprite, isSelected, onClick, stageWidth, stageHeight, 
                 <span className="text-[40px] leading-none pointer-events-none">{costumeValue}</span>
             )}
             {sprite.speech && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-white border-2 border-gray-800 rounded-xl px-2 py-1 mb-2 whitespace-nowrap text-xs font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.15)] z-30 pointer-events-none">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-white border-2 border-slate-800 rounded-xl px-2 py-1 mb-2 whitespace-nowrap text-xs font-semibold shadow-md z-30 pointer-events-none">
                     {sprite.speech}
                 </div>
             )}
             {isSelected && (
-                <div className="absolute -inset-1 border-2 border-dashed border-[#8B5CF6] rounded-lg pointer-events-none" />
+                <div className="absolute -inset-1 border-2 border-dashed border-purple-600 rounded-lg pointer-events-none" />
             )}
         </div>
     );
@@ -180,7 +180,7 @@ export default function StageCanvas({ sprites, selectedSpriteId, setSelectedSpri
     return (
         <div
             className={`w-full h-full relative overflow-hidden rounded-lg touch-none ${
-                backdrop ? "bg-transparent" : "bg-[#F5F5F5]"
+                backdrop ? "bg-transparent" : "bg-slate-100"
             }`}
             ref={stageRef}
             onMouseUp={handlePointerUp}

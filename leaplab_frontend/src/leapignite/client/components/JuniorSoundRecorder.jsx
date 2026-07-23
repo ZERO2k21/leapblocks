@@ -165,7 +165,7 @@ const WaveformWithTrim = ({ buffer, trimStart, trimEnd, onTrimChange }) => {
     );
 };
 
-const ROTATE_CCW_STYLE = { transform: 'scaleX(-1)' };
+
 
 const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
     const [isRecording, setIsRecording] = useState(false);
@@ -337,7 +337,7 @@ const JuniorSoundRecorder = ({ isOpen, onClose, onSave }) => {
 
                 <div className="flex justify-between p-6 bg-white border-t border-[#e2e8f0]">
                     <button className="bg-white text-[#6b21a8] px-6 py-3 rounded-xl border-2 border-[#e2e8f0] font-bold text-base flex items-center gap-[10px] cursor-pointer" onClick={handleToggleRecording} disabled={isRecording}>
-                        <RotateCcw size={18} style={ROTATE_CCW_STYLE} />
+                        <RotateCcw size={18} className="-scale-x-100" />
                         Re-record
                     </button>
                     <button className="bg-[#6b21a8] text-white px-10 py-3 rounded-xl border-none font-bold text-lg cursor-pointer shadow-[0_4px_0_#4c1d95] transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSave} disabled={!audioData}>
