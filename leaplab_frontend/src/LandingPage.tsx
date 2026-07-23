@@ -219,7 +219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               sessionStorage.removeItem('myProjectsSelectedMode');
               setMenuOpen(false);
             }}>
-              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[42px] w-auto object-contain sm:h-[32px]" />
+              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[52px] w-auto object-contain sm:h-[42px]" />
             </a>
             <div className="hidden md:flex gap-6 ml-3 items-center">
               <button className="bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06]" onClick={() => (window as any).showComingSoon('Tutorials')}>
