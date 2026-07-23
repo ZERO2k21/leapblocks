@@ -166,48 +166,42 @@ export const LibraryManager: React.FC = () => {
     }
   };
 
-  const accentDim = useMemo(() => {
-    if (!isLightTheme) return 'rgba(34, 211, 238, 0.1)';
-    return board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.08)' : 'rgba(2, 132, 199, 0.08)';
-  }, [isLightTheme, board]);
-
-  const t = {
-    bg: 'var(--lp-dark-bg)',
-    surface: 'var(--lp-dark-surface)',
-    surfaceHover: 'var(--lp-zinc-800)',
-    border: 'var(--lp-border)',
-    borderBright: 'var(--lp-border-active)',
-    text: 'var(--lp-zinc-400)',
-    dim: 'var(--lp-zinc-600)',
-    accent: 'var(--lp-accent-primary)',
-    accentBright: 'var(--lp-accent-bright)',
-    accentDim,
-    cyan: 'var(--lp-accent-primary)',
-    cyanBright: 'var(--lp-accent-bright)',
-    orange: 'var(--lp-amber)',
-    danger: 'var(--lp-rose)',
-    success: 'var(--lp-emerald)',
-    white: isLightTheme ? '#0f172a' : '#ffffff',
-  };
-
   return (
-    <div className="flex flex-col h-full bg-[var(--lp-dark-bg)] text-[var(--lp-zinc-400)] font-mono overflow-hidden rounded-xl">
+    <div
+      className={`flex flex-col h-full font-mono overflow-hidden rounded-xl ${
+        isLightTheme ? 'bg-white text-slate-700' : 'bg-[var(--lp-dark-bg)] text-[var(--lp-zinc-400)]'
+      }`}
+    >
 
       {/* Header */}
-      <div className={`p-4 px-6 border-b border-[var(--lp-border)] bg-[var(--lp-dark-surface)] ${isLightTheme ? 'shadow-sm' : 'shadow-md'}`}>
+      <div
+        className={`p-4 px-6 border-b ${
+          isLightTheme
+            ? 'bg-slate-50 border-slate-200 shadow-sm'
+            : 'bg-[var(--lp-dark-surface)] border-[var(--lp-border)] shadow-md'
+        }`}
+      >
         <div className="flex items-center gap-3 mb-1">
           <div className="w-8 h-8 rounded-lg bg-[var(--lp-accent-primary)] flex items-center justify-center">
             <LibraryIcon size={18} color="#000" strokeWidth={3} />
           </div>
-          <h1 className="m-0 text-lg font-black text-slate-900 dark:text-white tracking-widest uppercase">LIBRARY_CORE.V1</h1>
+          <h1 className={`m-0 text-lg font-black tracking-widest uppercase ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>LIBRARY_CORE.V1</h1>
         </div>
-        <p className="m-0 text-[10px] text-[var(--lp-zinc-600)] pl-11 uppercase tracking-wider">
+        <p className={`m-0 text-[10px] pl-11 uppercase tracking-wider ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>
           Central dependency manager for external modules
         </p>
       </div>
 
       {/* Status bar */}
-      <div className={`mx-6 my-3 bg-cyan-500/10 border border-[var(--lp-accent-primary)] rounded-lg py-2 px-3.5 flex items-center gap-2 text-[10px] text-[var(--lp-accent-primary)] font-bold uppercase ${isLightTheme ? '' : 'shadow-[0_2px_8px_rgba(34,211,238,0.08)]'}`}>
+      <div
+        className={`mx-6 my-3 rounded-lg py-2 px-3.5 flex items-center gap-2 text-[10px] font-bold uppercase ${
+          isLightTheme
+            ? board === 'esp32-c3'
+              ? 'bg-orange-500/5 border border-orange-500 text-orange-600'
+              : 'bg-sky-500/5 border border-sky-500 text-sky-600'
+            : 'bg-cyan-500/10 border border-[var(--lp-accent-primary)] text-[var(--lp-accent-primary)] shadow-[0_2px_8px_rgba(34,211,238,0.08)]'
+        }`}
+      >
         <Info size={14} strokeWidth={3} />
         <span>
           {isLoading
@@ -220,25 +214,31 @@ export const LibraryManager: React.FC = () => {
       <div className="flex-1 flex overflow-hidden px-6 pb-4 gap-4">
 
         {/* Left — search + results */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-[var(--lp-border)] pr-4">
+        <div className={`flex-1 flex flex-col min-w-0 border-r pr-4 ${isLightTheme ? 'border-slate-200' : 'border-[var(--lp-border)]'}`}>
 
           {/* Filter input */}
           <div className="relative mb-4">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--lp-accent-primary)] text-xs font-black">&gt;</span>
+            <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black ${
+              isLightTheme
+                ? board === 'esp32-c3' ? 'text-orange-600' : 'text-sky-600'
+                : 'text-[var(--lp-accent-primary)]'
+            }`}>&gt;</span>
             <input
               type="text"
               placeholder="FILTER_MODULES..."
               value={searchQuery}
               onChange={handleQueryChange}
-              className={`w-full bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] rounded-lg py-2.5 pr-3 pl-8 text-slate-900 dark:text-white text-xs outline-none font-bold box-border transition-all focus:border-[var(--lp-accent-primary)] focus:ring-2 ${
-                isLightTheme ? (board === 'esp32-c3' ? 'focus:ring-orange-500/20 shadow-sm' : 'focus:ring-sky-500/20 shadow-sm') : 'focus:ring-cyan-500/20 shadow-md'
+              className={`w-full rounded-lg py-2.5 pr-3 pl-8 text-xs outline-none font-bold box-border transition-all focus:ring-2 ${isLightTheme ? 'text-slate-900' : 'text-white'} ${
+                isLightTheme
+                  ? 'bg-white border border-slate-200 focus:border-sky-500 focus:ring-sky-500/20 shadow-sm'
+                  : 'bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] focus:border-[var(--lp-accent-primary)] focus:ring-cyan-500/20 shadow-md'
               }`}
             />
           </div>
 
           {/* Result count */}
           {!isLoading && (
-            <div className="text-[9px] text-[var(--lp-zinc-600)] mb-2 font-bold tracking-widest">
+            <div className={`text-[9px] mb-2 font-bold tracking-widest ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>
               QUERY_RESULT: {searchResults.length.toLocaleString()} UNITS
             </div>
           )}
@@ -246,12 +246,16 @@ export const LibraryManager: React.FC = () => {
           {/* List */}
           <div ref={listRef} onScroll={handleScroll} className="flex-1 overflow-y-auto pr-1">
             {isLoading ? (
-              <div className="text-center mt-15 text-[var(--lp-zinc-600)]">
-                <Loader2 size={24} className="opacity-60 mb-3 animate-spin text-[var(--lp-accent-primary)] mx-auto" strokeWidth={3} />
+              <div className={`text-center mt-15 ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>
+                <Loader2 size={24} className={`opacity-60 mb-3 animate-spin mx-auto ${
+                  isLightTheme
+                    ? board === 'esp32-c3' ? 'text-orange-600' : 'text-sky-600'
+                    : 'text-[var(--lp-accent-primary)]'
+                }`} strokeWidth={3} />
                 <p className="m-0 text-[11px] font-bold">SYNCING...</p>
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="text-center mt-15 text-[var(--lp-zinc-600)]">
+              <div className={`text-center mt-15 ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>
                 <Search size={32} className="opacity-20 mb-3 mx-auto" />
                 <p className="m-0 text-[11px] font-bold">NO_MATCHES</p>
               </div>
@@ -259,19 +263,31 @@ export const LibraryManager: React.FC = () => {
               visibleResults.map(lib => (
                 <div
                   key={lib.name}
-                  className="bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] rounded-lg p-3 mb-2 transition-all duration-150 ease-in-out hover:border-[var(--lp-accent-primary)] hover:bg-[var(--lp-zinc-800)] hover:-translate-y-0.5 hover:shadow-md"
+                  className={`rounded-lg p-3 mb-2 transition-all duration-150 ease-in-out hover:-translate-y-0.5 hover:shadow-md ${
+                    isLightTheme
+                      ? 'bg-white border border-slate-200 hover:border-sky-500 hover:bg-slate-50'
+                      : 'bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] hover:border-[var(--lp-accent-primary)] hover:bg-[var(--lp-zinc-800)]'
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-1.5">
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-black text-[var(--lp-accent-bright)] overflow-hidden text-ellipsis whitespace-nowrap">{lib.name}</div>
-                      <div className="text-[9px] text-[var(--lp-zinc-600)] mt-0.5 font-bold">AUTOR: {lib.author}</div>
+                      <div className={`text-xs font-black overflow-hidden text-ellipsis whitespace-nowrap ${
+                        isLightTheme
+                          ? board === 'esp32-c3' ? 'text-orange-600' : 'text-sky-600'
+                          : 'text-[var(--lp-accent-bright)]'
+                      }`}>{lib.name}</div>
+                      <div className={`text-[9px] mt-0.5 font-bold ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>AUTOR: {lib.author}</div>
                     </div>
                     <div className="flex items-center gap-2 ml-3 shrink-0">
-                      <span className={`text-[9px] text-[var(--lp-accent-primary)] py-0.5 px-1.5 rounded-[1px] font-bold border border-cyan-500/20 ${
-                        isLightTheme ? (board === 'esp32-c3' ? 'bg-orange-500/5 border-orange-500/20' : 'bg-sky-500/5 border-sky-500/20') : 'bg-cyan-500/5'
+                      <span className={`text-[9px] py-0.5 px-1.5 rounded-[1px] font-bold border ${
+                        isLightTheme
+                          ? board === 'esp32-c3'
+                            ? 'text-orange-600 border-orange-500/20 bg-orange-500/5'
+                            : 'text-sky-600 border-sky-500/20 bg-sky-500/5'
+                          : 'text-[var(--lp-accent-primary)] border-cyan-500/20 bg-cyan-500/5'
                       }`}>{lib.version}</span>
                       {lib.isInstalled ? (
-                        <div className="flex items-center gap-1 text-[var(--lp-emerald)] text-[9px] font-black">
+                        <div className={`flex items-center gap-1 text-[9px] font-black ${isLightTheme ? 'text-emerald-600' : 'text-[var(--lp-emerald)]'}`}>
                           <CheckCircle size={12} strokeWidth={3} /> LINKED
                         </div>
                       ) : (
@@ -286,7 +302,7 @@ export const LibraryManager: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <p className="m-0 text-[11px] leading-relaxed text-slate-900 dark:text-white font-medium">{lib.description}</p>
+                  <p className={`m-0 text-[11px] leading-relaxed font-medium ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{lib.description}</p>
                 </div>
               ))
             )}
@@ -295,28 +311,45 @@ export const LibraryManager: React.FC = () => {
 
         {/* Right — installed */}
         <div className="w-[280px] flex flex-col">
-          <div className={`flex items-center gap-2.5 mb-4 p-2.5 px-3.5 bg-[var(--lp-dark-surface)] rounded-lg border border-[var(--lp-border)] ${isLightTheme ? 'shadow-sm' : 'shadow-md'}`}>
+          <div
+            className={`flex items-center gap-2.5 mb-4 p-2.5 px-3.5 rounded-lg border ${
+              isLightTheme
+                ? 'bg-slate-50 border-slate-200 shadow-sm'
+                : 'bg-[var(--lp-dark-surface)] border-[var(--lp-border)] shadow-md'
+            }`}
+          >
             <div className="w-6 h-6 rounded-[2px] bg-[var(--lp-amber)] flex items-center justify-center">
               <Package size={14} color="#000" strokeWidth={3} />
             </div>
-            <h2 className="m-0 text-xs font-black text-slate-900 dark:text-white tracking-wider uppercase">LOCAL_DEPS</h2>
+            <h2 className={`m-0 text-xs font-black tracking-wider uppercase ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>LOCAL_DEPS</h2>
             <span className="ml-auto text-[10px] bg-[var(--lp-accent-primary)] text-black py-0.25 px-2 rounded-full font-black">{installedLibraries.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto pr-1">
             {installedLibraries.length === 0 ? (
-              <div className="text-center mt-10 text-[var(--lp-zinc-600)] text-[11px] font-bold">
+              <div className={`text-center mt-10 text-[11px] font-bold ${isLightTheme ? 'text-slate-500' : 'text-[var(--lp-zinc-600)]'}`}>
                 <p className="m-0">EMPTY_DEP_TREE</p>
               </div>
             ) : (
               installedLibraries.map(lib => (
-                <div key={lib.name} className="p-2.5 px-3 border-b border-[var(--lp-border)] flex justify-between items-center bg-[var(--lp-dark-surface)] mb-1.5 rounded-[2px]">
+                <div
+                  key={lib.name}
+                  className={`p-2.5 px-3 border-b flex justify-between items-center mb-1.5 rounded-[2px] ${
+                    isLightTheme
+                      ? 'border-slate-200 bg-white'
+                      : 'border-[var(--lp-border)] bg-[var(--lp-dark-surface)]'
+                  }`}
+                >
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-slate-900 dark:text-white overflow-hidden text-ellipsis whitespace-nowrap">{lib.name}</div>
-                    <div className="text-[9px] text-[var(--lp-accent-primary)] mt-0.25 font-bold">{lib.version}</div>
+                    <div className={`text-xs font-black overflow-hidden text-ellipsis whitespace-nowrap ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{lib.name}</div>
+                    <div className={`text-[9px] mt-0.25 font-bold ${
+                      isLightTheme
+                        ? board === 'esp32-c3' ? 'text-orange-600' : 'text-sky-600'
+                        : 'text-[var(--lp-accent-primary)]'
+                    }`}>{lib.version}</div>
                   </div>
                   <button
                     onClick={() => handleRemove(lib.name)}
-                    className="bg-rose-500/10 border border-[var(--lp-rose)] text-[var(--lp-rose)] hover:bg-[var(--lp-rose)] hover:text-black cursor-pointer p-1 flex items-center rounded-[2px] transition-all"
+                    className="bg-rose-500/10 border border-rose-500 text-rose-600 hover:bg-rose-500 hover:text-white cursor-pointer p-1 flex items-center rounded-[2px] transition-all"
                   >
                     <Trash2 size={12} strokeWidth={3} />
                   </button>
@@ -330,9 +363,9 @@ export const LibraryManager: React.FC = () => {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: var(--lp-dark-bg); }
-        ::-webkit-scrollbar-thumb { background: var(--lp-zinc-800); border-radius: 0; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--lp-accent-primary); }
+        ::-webkit-scrollbar-track { background: ${isLightTheme ? '#f1f5f9' : 'var(--lp-dark-bg)'}; }
+        ::-webkit-scrollbar-thumb { background: ${isLightTheme ? '#cbd5e1' : 'var(--lp-zinc-800)'}; border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: ${isLightTheme ? '#94a3b8' : 'var(--lp-accent-primary)'}; }
       `}</style>
     </div>
   );

@@ -62,10 +62,10 @@ export const ForgeEditor: React.FC<ForgeEditorProps> = ({ code, onChange }) => {
       {/* Filename tab bar */}
       <div
         className={`flex items-center shrink-0 h-[30px] px-[16px] md:px-[20px] gap-[2px] ${
-          isDark ? 'bg-[rgba(10,12,16,0.3)]' : 'bg-[rgba(241,245,249,0.6)]'
+          isDark ? 'bg-[rgba(10,12,16,0.3)]' : 'bg-white'
         }`}
         style={{
-          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.05)'}`,
+          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(226, 232, 240, 1)'}`,
         }}
       >
         <div

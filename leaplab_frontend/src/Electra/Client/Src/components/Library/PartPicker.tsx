@@ -139,31 +139,31 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
   );
 
   return (
-    <div className="component-sidebar w-full h-full bg-slate-900 flex flex-col border-r border-slate-800 font-sans">
+    <div className="component-sidebar w-full h-full bg-white flex flex-col border-r border-slate-200 font-sans">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white/90">
         <div className="flex flex-col">
-          <span className="text-cyan-400 text-xs font-extrabold tracking-wider uppercase">Component Library</span>
-          <span className="text-slate-400 text-[9px] font-semibold">v1.1.0-STABLE</span>
+          <span className="text-cyan-600 text-xs font-extrabold tracking-wider uppercase">Component Library</span>
+          <span className="text-slate-500 text-[9px] font-semibold">v1.1.0-STABLE</span>
         </div>
         <button
           onClick={onClose}
-          className="bg-transparent border-none text-slate-400 hover:text-cyan-400 cursor-pointer p-1 flex items-center justify-center transition-colors"
+          className="bg-transparent border-none text-slate-500 hover:text-cyan-600 cursor-pointer p-1 flex items-center justify-center transition-colors"
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Search Bar - outside scrollable area */}
-      <div className="p-3 px-4 bg-slate-900 border-b border-slate-800 shrink-0">
-        <div className="bg-slate-800/80 flex items-center px-2.5 border border-slate-700/60 rounded-lg shadow-inner">
-          <Search size={14} className="text-slate-500 mr-1.5" />
+      <div className="p-3 px-4 bg-white border-b border-slate-200 shrink-0">
+        <div className="bg-slate-100 flex items-center px-2.5 border border-slate-200 rounded-lg shadow-inner">
+          <Search size={14} className="text-slate-400 mr-1.5" />
           <input
             type="text"
             placeholder="Search components..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none py-2 text-slate-200 text-xs outline-none w-full font-sans"
+            className="bg-transparent border-none py-2 text-slate-800 text-xs outline-none w-full font-sans"
           />
         </div>
       </div>
@@ -173,7 +173,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
         <div className="flex flex-col">
           <button
             onClick={() => setLibraryOpen(!libraryOpen)}
-            className="p-3.5 px-4 bg-transparent border-none border-b border-slate-800 flex items-center justify-between text-slate-200 font-bold text-[11px] uppercase tracking-wider cursor-pointer w-full text-left"
+            className="p-3.5 px-4 bg-transparent border-none border-b border-slate-200 flex items-center justify-between text-slate-700 font-bold text-[11px] uppercase tracking-wider cursor-pointer w-full text-left"
           >
             <span>COMPONENT LIBRARY</span>
             <ChevronDown
@@ -183,7 +183,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
           </button>
 
           {libraryOpen && (
-            <div className="flex flex-col bg-black/5">
+            <div className="flex flex-col bg-slate-50">
               {/* 2-Column Grid */}
               <div className="grid grid-cols-2 gap-3 p-3 px-4 pb-4">
                 {filteredComponents.map(comp => (
@@ -192,7 +192,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                       onClick={() => onSelect(comp.id)}
                       draggable={true}
                       onDragStart={(e) => handleDragStart(e, comp.id)}
-                      className="component-card bg-slate-800/90 border border-slate-700/60 w-full aspect-square cursor-grab flex items-center justify-center rounded-2xl shadow-sm relative overflow-hidden transition-all duration-200 hover:border-cyan-500/50 hover:shadow-md"
+                      className="component-card bg-white border border-slate-200 w-full aspect-square cursor-grab flex items-center justify-center rounded-2xl shadow-sm relative overflow-hidden transition-all duration-200 hover:border-cyan-500 hover:shadow-md"
                       title={comp.name}
                     >
                       <div
@@ -207,7 +207,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                         })}
                       </div>
                     </div>
-                    <span className="text-[9px] font-bold text-slate-300 text-center w-full whitespace-nowrap overflow-hidden text-ellipsis opacity-90">
+                    <span className="text-[9px] font-bold text-slate-600 text-center w-full whitespace-nowrap overflow-hidden text-ellipsis opacity-90">
                       {comp.name}
                     </span>
                   </div>
@@ -219,7 +219,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
       </div>
 
       {/* Status Bar */}
-      <div className="p-2 px-4 border-t border-slate-800 text-[9px] font-semibold text-slate-500 flex justify-between bg-slate-900/90">
+      <div className="p-2 px-4 border-t border-slate-200 text-[9px] font-semibold text-slate-400 flex justify-between bg-white/90">
         <span>READY</span>
         <span>{filteredComponents.length} ELEMENTS</span>
       </div>

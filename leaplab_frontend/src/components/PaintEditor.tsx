@@ -443,12 +443,20 @@ function PaintEditor({
                         (canvas.width! - pad) / groupW,
                         (canvas.height! - pad) / groupH
                     );
-                    group.scale(scale);
 
                     if (group.type === 'group') {
                         const items = (group as fabric.Group).removeAll();
+                        items.forEach(item => {
+                            item.set({
+                                left: (item.left || 0) * scale,
+                                top: (item.top || 0) * scale,
+                                scaleX: (item.scaleX || 1) * scale,
+                                scaleY: (item.scaleY || 1) * scale,
+                            });
+                        });
                         canvas.add(...items);
                     } else {
+                        group.scale(scale);
                         canvas.add(group);
                     }
                     canvas.renderAll();
@@ -1753,7 +1761,7 @@ function PaintEditor({
                                         }
                                         onClose();
                                     }}
-                                    className="w-12 h-12 bg-white text-gray-500 rounded-2xl flex items-center justify-center shadow-lg border border-gray-200 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95"
+                                    className="w-12 h-12 bg-white text-gray-500 rounded-2xl flex items-center justify-center shadow-lg border border-gray-200 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-colors active:scale-95"
                                     title="Exit without saving"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -1764,7 +1772,7 @@ function PaintEditor({
                             <div className="absolute bottom-6 right-6">
                                 <button
                                     onClick={handleSave}
-                                    className="px-10 py-3.5 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-white rounded-2xl font-extrabold text-lg flex items-center gap-3 shadow-[0_8px_24px_rgba(34,197,94,0.35)] hover:shadow-[0_12px_32px_rgba(34,197,94,0.45)] transition-all duration-200 hover:scale-[1.03] active:scale-95 border border-green-500/20"
+                                    className="px-10 py-3.5 bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-white rounded-2xl font-extrabold text-lg flex items-center gap-3 shadow-[0_8px_24px_rgba(34,197,94,0.35)] hover:shadow-[0_12px_32px_rgba(34,197,94,0.45)] transition-[transform,shadow] duration-150 active:scale-[0.97] border border-green-500/20"
                                 >
                                     <ImageIcon size={22} strokeWidth={2.5} />
                                     SAVE

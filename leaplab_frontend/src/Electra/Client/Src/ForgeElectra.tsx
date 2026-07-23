@@ -855,14 +855,14 @@ export default function ForgeElectra({
         .leap-node-svg-container:hover { filter: drop-shadow(0 0 1.5px rgba(34, 211, 238, 0.5)); }
         .leap-node-wrapper.is-selected .leap-node-svg-container { filter: drop-shadow(0 0 1px rgba(34, 211, 238, 0.9)) drop-shadow(0 0 3px rgba(34, 211, 238, 0.4)); }
         .monaco-editor, .monaco-editor .margin, .monaco-editor-background { background-color: transparent !important; }
-        .board-arduino-uno .component-sidebar { background: rgba(10, 15, 20, 0.75) !important; border-right: 1px solid rgba(255, 255, 255, 0.08) !important; font-family: 'Outfit', sans-serif !important; }
-        .board-arduino-uno .component-sidebar div, .board-arduino-uno .component-sidebar span { color: #e2e8f0 !important; }
-        .board-arduino-uno .component-sidebar button { color: #94a3b8 !important; }
-        .board-arduino-uno .component-sidebar input { color: #f8fafc !important; }
-        .board-arduino-uno .component-sidebar .component-card { background: rgba(30, 41, 59, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.06) !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; transition: all 0.2s ease !important; }
-        .board-arduino-uno .component-sidebar .component-card:hover { border-color: #00f2fe !important; background: rgba(30, 41, 59, 0.6) !important; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15) !important; transform: translateY(-1px) !important; }
-        .theme-light .component-sidebar { background: #f8fafc !important; border-right: 1px solid var(--lp-border) !important; }
-        .theme-light .component-sidebar div, .theme-light .component-sidebar span { color: #334155 !important; }
+        .board-arduino-uno .component-sidebar { background: #ffffff !important; border-right: 1px solid #e2e8f0 !important; font-family: 'Outfit', sans-serif !important; }
+        .board-arduino-uno .component-sidebar div, .board-arduino-uno .component-sidebar span { color: #475569 !important; }
+        .board-arduino-uno .component-sidebar button { color: #64748b !important; }
+        .board-arduino-uno .component-sidebar input { color: #0f172a !important; }
+        .board-arduino-uno .component-sidebar .component-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important; transition: all 0.2s ease !important; }
+        .board-arduino-uno .component-sidebar .component-card:hover { border-color: #06b6d4 !important; background: #ffffff !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important; transform: translateY(-1px) !important; }
+        .theme-light .component-sidebar { background: #ffffff !important; border-right: 1px solid var(--lp-border) !important; }
+        .theme-light .component-sidebar div, .theme-light .component-sidebar span { color: #475569 !important; }
         .theme-light .component-sidebar button { color: #64748b !important; }
         .theme-light .component-sidebar input { color: #0f172a !important; background: #ffffff !important; border: 1px solid #e2e8f0 !important; }
         .theme-light .component-sidebar .component-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02) !important; }
@@ -970,7 +970,7 @@ export default function ForgeElectra({
               <div
                 className={`flex items-center relative z-10 h-9.5 px-4 gap-0.5 border-b backdrop-blur-md ${
                   uiTheme === 'light'
-                    ? 'bg-white/60 border-slate-900/6'
+                    ? 'bg-white border-slate-200'
                     : 'bg-slate-950/40 border-white/5'
                 }`}
               >
@@ -995,7 +995,7 @@ export default function ForgeElectra({
                 </div>
 
                 {/* Divider */}
-                <div className={`w-px h-4.5 mx-2.5 ${uiTheme === 'light' ? 'bg-slate-900/8' : 'bg-white/6'}`} />
+                <div className={`w-px h-4.5 mx-2.5 ${uiTheme === 'light' ? 'bg-slate-200' : 'bg-white/6'}`} />
 
                 {/* SKETCH tab */}
                 <button
